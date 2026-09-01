@@ -1,0 +1,30 @@
+{
+    "type": "HYBRID_MOBILE_BASE",
+    "body_parts": {
+        "right": {
+            "type": "JOINT_POSITION",
+            "input_max": 10,
+            "input_min": -10,
+            "output_max": 1.0,
+            "output_min": -1.0,
+            "kd": 400,
+            "kv": 200,
+            "kp": 1500,
+            "kp_limits": [0, 1400],
+            "interpolation": null,
+            "input_type": "absolute",
+            "gripper": {
+                "type": "GRIP"
+            }
+        },
+        "torso": {
+            "type": "JOINT_POSITION",
+            "interpolation": "null",
+            "kp": 2000
+        },
+        "base": {
+            "type": "JOINT_VELOCITY",
+            "interpolation": "null"
+        }
+    }
+}

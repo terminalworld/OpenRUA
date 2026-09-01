@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.venv/
+
+# simulator substrates are built locally (docs/simulation.md), never committed
+substrates/
+
+# run data lives on disk, not in git
+runs/
+workspaces/

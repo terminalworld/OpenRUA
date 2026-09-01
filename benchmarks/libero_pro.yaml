@@ -1,0 +1,72 @@
+# LIBERO-PRO assembly config — the only place benchmark specifics live.
+# Four top-level sections (schema ruling 2026-08-17): task (what runs),
+# protocol (how trials run and when they stop), agent (who operates),
+# machine (the robot and its presentation; body: = the runtime shell).
+# Key names are unchanged from the flat schema; keys only moved home.
+
+task:
+  benchmark: libero_pro
+  # The six comparable cells = (goal, spatial, object) x (swap, task),
+  # written out because this list is what batch.py runs and what the
+  # benchmark_dict is keyed by. Identical to cap-x's own default suite
+  # list in capx/envs/scripts/run_libero_batch.py (audit 2026-08-22).
+  suites: [libero_goal_swap, libero_goal_task,
+           libero_spatial_swap, libero_spatial_task,
+           libero_object_swap, libero_object_task]
+  init_states: benchmark-files    # fixed .init files, never random
+
+protocol:                # tier A (locked)
+  trials_per_task: 10    # staged (2026-08-22): 10 first for a partial
+                         # comparison, then extend to 50 = cap-x's grid.
+                         # Composable because seeds index the official init
+                         # files in order: seeds 0-9 are states 0-9, and
+                         # 10-49 add states 10-49, giving cap-x's trials 1-50.
+  # cap-x's own LIBERO horizon is 8000 sim steps
+  # (capx/envs/scripts/run_libero_batch.py:154 -> FrankaLiberoEnv max_steps,
+  # which becomes robosuite's env horizon). We run unbounded and re-score
+  # post-hoc at their number, per the 2026-08-12 post-hoc-budget ruling;
+  # every trial stamps success_at.step, so the 8000-step column is
+  # recoverable. NOTE (2026-08-22): this key is read by NO code -- the
+  # env horizon comes from protocol.horizon, which is absent here and
+  # therefore defaults to 10**9. It is documentation, not a control.
+  capx_horizon_steps: 8000
+  max_turns: 500         # generous ceiling (post-hoc budget ruling 2026-08-12)
+                         # smoke successes were finishing at 99-101 turns —
+                         # a near-miss failure wastes the whole trial's
+                         # quota. Exploration phase favors generous caps.
+  active_wall_clock_minutes: 240  # generous ceiling; paper budgets applied POST-HOC (2026-08-12)
+                         # failures were mostly wall-caps; self-set budget,
+                         # no community wall-clock convention exists.
+                         # Triple-OR termination with max_turns above;
+                         # wall clock enforced by the runner.
+  # Waiting out a quota wall is bounded (2026-08-20): past either bound the
+  # trial gives up as quota-limited and the master requeues it, exactly as
+  # before resume existed. 360min covers a five-hour window with slack; a
+  # weekly wall is deliberately NOT waited out.
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  # Suspend at a quota wall and resume the same session instead of losing
+  # the trial (2026-08-20). ON for our runs and OFF by default in the code:
+  # the wall comes from running at scale on subscription accounts, not from
+  # the method, and a single-trial reproduction through an API key never
+  # meets one. Recorded per trial, so a result says which way it ran.
+  resume_on_quota_wall: true
+  clock:
+    mode: paused         # free_running = sub-experiment switch, OFF
+
+agent:                   # the single frontier combo (locked 2026-08-07)
+  cli: claude-code       # agent adapter (robocli/agents) — all agent-specific
+                         # knowledge (launch/auth/transcript/quota) lives there
+  model: claude-opus-5
+  effort: high           # reasoning effort, PINNED (opus-5 default; pinned vs
+                         # CLI-default drift; stamped into each trial's meta)
+  credentials_dir: ~/.robocli-claude  # dedicated sandbox token family
+                         # (shared single-file mount; NEVER copied — OAuth
+                         # rotation, see plan incident ledger 2026-08-08)
+  # prompt: inline agents.PROMPT (ruling 2026-08-15), sha256 pinned in
+  #                        config.json; closed-book + one-line workspace
+  #                        notice. Ablation variants get their own
+  #                        constants when they run.
+
+robot: panda-sim          # robots/panda-sim.yaml supplies the machine: section
+

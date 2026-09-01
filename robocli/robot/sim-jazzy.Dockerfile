@@ -1,0 +1,25 @@
+# Sim container for the LIBERO-PRO / RoboCasa legs (py3.12 == Jazzy native).
+# Hosts: bridge process (robosuite env + rclpy node), MoveIt (graph-side),
+# original predicates (in-process; ground truth never reaches the graph).
+# The benchmark substrate (cap-x clone + venvs) is volume-mounted, not baked in.
+FROM ros:jazzy
+
+# Package set verified by the P0/P1 spikes (2026-08-07):
+# - python3.12-venv: base image lacks ensurepip (venv creation fails without it)
+# - Mesa GL/EGL stack: MUJOCO_GL=egl + PYOPENGL_PLATFORM=egl software rendering
+#   (llvmpipe, no GPU); both libegl + libgl dispatchers and the mesa DRI
+#   drivers are required; PyOpenGL EGL fails with a partial set.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.12-venv \
+    libegl1 libgl1 libgles2 libglvnd0 libglx0 \
+    libgl1-mesa-dri libglx-mesa0 libegl-mesa0 \
+    ros-jazzy-control-msgs ros-jazzy-tf2-ros-py \
+    ros-jazzy-moveit ros-jazzy-moveit-resources-panda-moveit-config \
+    ros-jazzy-robot-state-publisher \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV MUJOCO_GL=egl PYOPENGL_PLATFORM=egl
+
+# TODO-P2: moveit packages (ros-jazzy-moveit + franka moveit_config copy).
+# TODO-P1: entrypoint that writes ~/.libero/config.yaml from the mounted
+# substrate path, sources ROS, and launches robocli-bridge.

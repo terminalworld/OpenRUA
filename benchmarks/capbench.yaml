@@ -1,0 +1,135 @@
+# CaP-Bench assembly config — second mainline leg (P7). Same bridge code;
+# tasks/predicates/protocol swap to CaP-X's core robosuite tasks, built
+# through cap-x's OWN env factories (task identity byte-identical to their
+# published numbers; see envs._create_capbench_env).
+# Four top-level sections (schema ruling 2026-08-17): task / protocol /
+# agent / machine; key names unchanged, keys only moved home.
+
+task:
+  benchmark: capbench
+  # The suites this benchmark runs, spelled the way every consumer spells
+  # them: batch.py reads this list when --suites is not given, and the
+  # loader strips the benchmark prefix back off. Single-arm five plus the
+  # two bimanual tasks (second-arm ports landed 2026-08-18).
+  suites: [capbench_lift, capbench_stack, capbench_nut, capbench_restack,
+           capbench_wipe, capbench_twoarm_lift, capbench_handover]
+  init_states: seeded-reset   # no fixed init files — seed = init_state_id,
+                         # applied through their reset path
+  # Task language verbatim from cap-x task prompts (their Goal: lines).
+  task_language:
+    lift: "Pick up the red cube and lift it."
+    stack: "Pick up the red cube and gently stack it on top of the green cube, then release it."
+    nut: "Grasp and insert the square nut with its handle onto the small square peg."
+    restack: "Gently place the red cube on top of the green cube and then open the gripper. Nothing should be dropped from a height."
+    wipe: "Wipe up the brown spill."
+    twoarm_lift: "The two arms should coordinate to lift a pot. Arm 0 should grasp handle 0, and Arm 1 should grasp handle 1. Then both arms should lift the pot up at the same height."
+    handover: "Arm 0 should pick up the hammer, lift it, and hand it over to Arm 1. Arm 1 should then grasp the hammer handle (not hammer head). The z-value of hammer must be between 0.15 and 0.20 during the handover to count as a success."
+
+protocol:                # CaP-X paper protocol
+  trials_per_task: 100   # their N=100/cell; pilot = 3 (notes/08 §3 n 分期)
+  max_turns: 500         # generous ceiling (post-hoc budget ruling 2026-08-12)
+  active_wall_clock_minutes: 240  # generous ceiling; paper budgets applied POST-HOC
+                           # via success_at stamps (closed-book = exact;
+                           # design-decisions 2026-08-12)
+  # Waiting out a quota wall is bounded (2026-08-20): past either bound the
+  # trial gives up as quota-limited and the master requeues it, exactly as
+  # before resume existed. 360min covers a five-hour window with slack; a
+  # weekly wall is deliberately NOT waited out.
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  # Suspend at a quota wall and resume the same session instead of losing
+  # the trial (2026-08-20). ON for our runs and OFF by default in the code:
+  # the wall comes from running at scale on subscription accounts, not from
+  # the method, and a single-trial reproduction through an API key never
+  # meets one. Recorded per trial, so a result says which way it ran.
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:                   # same frontier combo + workspace template as LIBERO leg
+  cli: claude-code       # agent adapter (robocli/agents) — all agent-specific
+                         # knowledge (launch/auth/transcript/quota) lives there
+  model: claude-opus-5
+  effort: high           # reasoning effort, PINNED (opus-5's own default; pinned
+                         # so a CLI default change can't drift it mid-campaign;
+                         # 2026-08-19). Load-bearing + absent from transcript, so
+                         # it is carried here and stamped into each trial's meta.
+  credentials_dir: ~/.robocli-claude
+
+robot: panda-sim-humble          # robots/panda-sim-humble.yaml supplies the machine: section
+
+suite_overrides:
+  capbench_wipe:
+    machine:
+      ports: {gripper: null}
+      gripper: null
+      hand: null
+      robot:
+        model: Franka Emika Panda with fixed wiping tool
+        description: 7-joint robot arm with a rigidly mounted wiping pad
+          (no gripper — the tool is pressed against surfaces to wipe them)
+
+  # Bimanual suites (2026-08-18): two Pandas facing each other
+  # (env_configuration "opposed", their factory defaults). The flat
+  # single-arm fields are replaced by an explicit machine.arms list;
+  # run.normalize_arms passes it through untouched. No MoveIt on these
+  # legs (single-arm URDF only) — the manual promises no planner, the
+  # precheck therefore mints no planner check.
+  capbench_twoarm_lift: &twoarm_machine
+    machine:
+      planning: null
+      hand: null
+      tf: {hand: true}   # bridge publishes hand frames (MoveIt-less run)
+      ports: {twist: null, trajectory: null, gripper: null, wrench: null}
+      arm: null
+      gripper: null
+      joint_name_map:
+        robot0_: left_panda_
+        gripper0_: left_panda_
+        robot1_: right_panda_
+        gripper1_: right_panda_
+      frames: {world: world, base: left_panda_link0, hand: null}
+      robot:
+        model: 2x Franka Emika Panda (opposed)
+        description: two 7-joint robot arms with parallel-jaw grippers
+          facing each other across the table; the left arm is arm 0
+          (robot0), the right arm is arm 1 (robot1)
+      arms:
+        - label: left
+          joints: [left_panda_joint1, left_panda_joint2, left_panda_joint3,
+                   left_panda_joint4, left_panda_joint5, left_panda_joint6,
+                   left_panda_joint7]
+          limits_rad: [[-2.90, 2.90], [-1.76, 1.76], [-2.90, 2.90],
+                       [-3.07, -0.07], [-2.90, 2.90], [-0.02, 3.75],
+                       [-2.90, 2.90]]
+          gripper: {open_m: 0.04, closed_m: 0.0, max_effort: 30.0,
+            stops_at: [open, closed]}
+          hand_body: robot0_right_hand
+          tf_base_body: robot0_base
+          base_frame: left_panda_link0
+          hand_frame: left_panda_hand
+          ports:
+            trajectory: /left_arm_controller/follow_joint_trajectory
+            gripper: /left_gripper/gripper_action
+            twist: /left_servo_node/delta_twist_cmds
+            wrench: /left_state_broadcaster/external_wrench
+        - label: right
+          joints: [right_panda_joint1, right_panda_joint2, right_panda_joint3,
+                   right_panda_joint4, right_panda_joint5, right_panda_joint6,
+                   right_panda_joint7]
+          limits_rad: [[-2.90, 2.90], [-1.76, 1.76], [-2.90, 2.90],
+                       [-3.07, -0.07], [-2.90, 2.90], [-0.02, 3.75],
+                       [-2.90, 2.90]]
+          gripper: {open_m: 0.04, closed_m: 0.0, max_effort: 30.0,
+            stops_at: [open, closed]}
+          hand_body: robot1_right_hand
+          tf_base_body: robot1_base
+          base_frame: right_panda_link0
+          hand_frame: right_panda_hand
+          ports:
+            trajectory: /right_arm_controller/follow_joint_trajectory
+            gripper: /right_gripper/gripper_action
+            twist: /right_servo_node/delta_twist_cmds
+            wrench: /right_state_broadcaster/external_wrench
+
+  capbench_handover: *twoarm_machine
