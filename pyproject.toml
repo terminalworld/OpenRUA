@@ -1,0 +1,125 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "robocli"
+version = "0.1.0"
+description = "Connect Claude Code and Codex directly to any robot, natively: the agent works on the robot's own ROS 2 command line."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Zhaoyang Chu", email = "zhaoyang.chu.25@ucl.ac.uk" }]
+keywords = ["robotics", "ros2", "claude-code", "codex", "coding-agent", "llm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    # rclpy comes from the ROS distribution (system site-packages), never from pip.
+    # Simulator deps (robosuite / LIBERO / RoboCasa) live in the substrate venvs.
+    "numpy",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "import-linter"]
+
+[project.urls]
+Homepage = "https://github.com/terminalworld/RoboCLI"
+Repository = "https://github.com/terminalworld/RoboCLI"
+
+[project.scripts]
+robocli = "robocli.cli:main"
+robocli-machine = "robocli.robot.onboard.boot:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["robocli"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# ---------------------------------------------------------------------------
+# Architecture contract (machine-enforced by tests/test_layering.py; the
+# import-linter config below states the same rules). Prose version:
+# docs/ARCHITECTURE.md.
+#
+#   robot       the machine the agent operates. Package top = ground
+#               side (host: build/up/down, data-fed; a real robot needs
+#               only these); onboard/ = the simulated robot's own
+#               software (container: environment + ros_graph + monitor +
+#               boot). Inside onboard the three packages never see each
+#               other (parameters only, passed by boot). Host code never
+#               imports onboard (rclpy lives in the container).
+#   sandbox     the agent's terminal: machine + config -> live sandbox
+#               container with the workspace docs seeded; imports no
+#               other layer (what the agent experiences knows nothing
+#               about scoring)
+#   proxy       the network wall; zero-layer leaf
+#   agents      the occupants: one adapter per coding agent + launcher +
+#               opening prompt; zero-layer leaf
+#   bench       running a task set: run.py (conductor), precheck.py
+#               (every manual promise verified before the agent boards),
+#               record.py (sole writer under runs/), triallock.py.
+#               precheck and record are leaves; run imports everyone
+#               host-side, never robocli.robot.onboard
+#   cli         the front door (robocli up | down | agent | run | ...);
+#               forwards to the verbs above
+#
+# Cross-layer communication otherwise: (1) configs at startup (robots/,
+# benchmarks/), (2) the DDS / subprocess boundary at runtime, (3) files
+# under runs/.
+# ---------------------------------------------------------------------------
+[tool.importlinter]
+root_package = "robocli"
+
+[[tool.importlinter.contracts]]
+name = "nobody host-side imports onboard (container-only; DDS/stdio reach it)"
+type = "forbidden"
+source_modules = ["robocli.cli", "robocli.bench", "robocli.sandbox", "robocli.proxy", "robocli.agents"]
+forbidden_modules = ["robocli.robot.onboard"]
+
+[[tool.importlinter.contracts]]
+name = "only the conductor brings up bodies"
+type = "forbidden"
+source_modules = ["robocli.bench.precheck", "robocli.bench.record", "robocli.sandbox", "robocli.proxy", "robocli.agents"]
+forbidden_modules = ["robocli.robot.build", "robocli.robot.up", "robocli.robot.down"]
+
+[[tool.importlinter.contracts]]
+name = "onboard is bake-ready self-contained (nothing from robocli outside itself)"
+type = "forbidden"
+source_modules = ["robocli.robot.onboard"]
+forbidden_modules = ["robocli.cli", "robocli.bench", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.robot.build", "robocli.robot.up", "robocli.robot.down"]
+
+[[tool.importlinter.contracts]]
+name = "ground verbs consume data only (no shared leaf, never onboard, no host layer)"
+type = "forbidden"
+source_modules = ["robocli.robot.build", "robocli.robot.up", "robocli.robot.down"]
+forbidden_modules = ["robocli.cli", "robocli.bench", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.robot.onboard"]
+
+[[tool.importlinter.contracts]]
+name = "environment, ros_graph, monitor never see each other (parameters only)"
+type = "independence"
+modules = ["robocli.robot.onboard.environment", "robocli.robot.onboard.ros_graph", "robocli.robot.onboard.monitor"]
+
+[[tool.importlinter.contracts]]
+name = "sandbox imports no layer (the cockpit is blind to scoring)"
+type = "forbidden"
+source_modules = ["robocli.sandbox"]
+forbidden_modules = ["robocli.bench", "robocli.cli"]
+
+[[tool.importlinter.contracts]]
+name = "precheck and record are leaves (handles and paths are handed in)"
+type = "forbidden"
+source_modules = ["robocli.bench.precheck", "robocli.bench.record"]
+forbidden_modules = ["robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.cli"]
+
+[[tool.importlinter.contracts]]
+name = "leaves import no layer (agents, proxy)"
+type = "forbidden"
+source_modules = ["robocli.agents", "robocli.proxy"]
+forbidden_modules = ["robocli.bench", "robocli.sandbox", "robocli.cli"]

@@ -1,0 +1,79 @@
+# Franka Emika Panda on a tabletop (robosuite / MuJoCo, CaP-Bench scenes),
+# ROS 2 Humble body. Named by benchmarks/capbench.yaml under `robot:`.
+
+# The scene `robocli up --robot panda-sim-humble` loads when no benchmark is named.
+world:
+  benchmark: capbench
+  task_suite: capbench
+  task_id: 0
+
+machine:
+  body:
+    image: robocli-sim-humble   # runner reads this key
+    sandbox_image: robocli-sandbox-humble  # sandbox distro == robot distro: cross-
+                                # distro moveit_msgs broke service responses
+                                # (Fast CDR, 2026-08-11 canary)
+    substrate:
+      venv: substrates/cap-x/.venv-capbench  # py3.10 == Humble;
+                             # DEDICATED venv (2026-08-10 incident: never touch
+                             # the pilot's .venv-libero)
+      container: sim-humble
+
+  workspace_template: workspace
+
+  controller: JOINT_POSITION   # their low-level uses panda_joint_ctrl.json —
+                               # same joint-space shape as the LIBERO leg
+  controller_kp_scale: 1       # their JSON already carries tuned gains
+                               # (kp=1500, input_type absolute); the x10 that
+                               # LIBERO's stock kp=50 needed does NOT apply
+
+  cameras:
+    resolution: [640, 480]
+    list: null             # publish every camera the scene defines
+    rate_hz: 2
+    render_mode: on_demand  # render a camera only while subscribed
+                            # (agent-indistinguishable; 'always' = debug
+                            # parity mode; 2026-08-13 ruling)
+
+  control:               # graph-side actuation behavior (named apart from
+                         # the gripper/arm FACTS below, which feed the manual)
+    gripper:
+      open_threshold_m: 0.02
+      settle_steps: 10
+
+  ports:                 # identical franka_ros2-shaped surface (same robot)
+    twist: /servo_node/delta_twist_cmds
+    trajectory: /panda_arm_controller/follow_joint_trajectory
+    gripper: /franka_gripper/gripper_action
+    wrench: /franka_robot_state_broadcaster/external_wrench
+
+  joint_name_map:
+    robot0_: panda_
+    gripper0_: panda_
+
+  # Machine-manifest facts — same Panda as the LIBERO leg.
+  robot:
+    model: Franka Emika Panda
+    description: 7-joint robot arm with a parallel-jaw gripper
+  frames: {world: world, base: panda_link0, hand: panda_hand}
+  arm:
+    joints: [panda_joint1, panda_joint2, panda_joint3, panda_joint4,
+             panda_joint5, panda_joint6, panda_joint7]
+    limits_rad: [[-2.90, 2.90], [-1.76, 1.76], [-2.90, 2.90],
+                 [-3.07, -0.07], [-2.90, 2.90], [-0.02, 3.75],
+                 [-2.90, 2.90]]
+  gripper: {open_m: 0.04, closed_m: 0.0, max_effort: 30.0,
+            stops_at: [open, closed]}
+  planning: {moveit: true, move_action: /move_action,
+             ik_service: /compute_ik, group: panda_arm,
+             planning_frame: panda_link0}  # model frame; IK
+                             # frame_id must be EMPTY (audit A1)
+
+  tf:
+    hand: false
+
+# Per-suite machine differences (merged by run.apply_suite_overrides on
+# the trial's assembly view; null deletes a key). Wipe's Panda mounts a
+# rigid 0-DoF wiping pad, not the parallel-jaw gripper — the 2026-08-11
+# canary: the unconditional gripper action column tripped robosuite's
+# action-dim assert on every step (arm never moved, 3 trials).
