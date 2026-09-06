@@ -16,12 +16,12 @@ is visible to the agent.
 
 | Unit | Role | Front door |
 |---|---|---|
-| `robocli/robot/` | the machine, provided by a backend (`up()` dispatches on `machine.backend.kind`). `sim/`: image build, container up/down, the host-side client, and `bridge/`, the simulated robot's own software (`environments/`, `ros/`, `rpc.py`, `main.py`). `real/`: an optional launch command and a handle that waits for the graph. | `python -m robocli.robot.sim.build` |
+| `robocli/robot/` | the machine, provided by a backend (`up()` dispatches on `machine.backend.kind`). `sim/`: image build, container up/down, the host-side client, and `bridge/`, the simulated robot's own software (`environments/`, `ros/`, `rpc.py`, `main.py`). `real/`: an optional launch command (on the host or in a driver image), a handle that waits for the graph, and `probe.py` (a profile draft from the graph). | `python -m robocli.robot.sim.build` |
 | `robocli/sandbox/` | the agent's terminal: an Ubuntu + ROS 2 container with the agent installed and `workspace/` seeded (README, `machine.yaml`, four docs, a few tools). | `python -m robocli.sandbox` |
 | `robocli/proxy/` | a whitelist HTTP proxy, the sandbox's only route out. | `python -m robocli.proxy` |
 | `robocli/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, hooks under `plugins/agents/`, bundled then `~/.robocli/`), the launcher, credentials staging, the prompts. | `python -m robocli.agents launch` |
 | `robocli/runner/` | running trials: `main.py` (`robocli run`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `robocli run` |
-| `robocli/cli/` | the command line: one module per verb under `commands/` (`robots / benchmarks / agents / build / up / agent / down / run / config / doctor`), `output.py`, `state.py`. | `robocli` |
+| `robocli/cli/` | the command line: one module per verb under `commands/` (`robots / benchmarks / agents / build / up / agent / down / run / probe / config / doctor`), `output.py`, `state.py`. | `robocli` |
 | `robocli/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, login, the user directory), `report.py`. | `robocli doctor` |
 
 Shared leaves, importable by every host-side unit and by nothing in
@@ -86,6 +86,10 @@ every agent-specific token inside the manifests and hooks modules.
 runs the bridge: the simulator, a ROS 2 graph over it, and the control
 line the runner scores through. For a real robot (`backend.kind: real`)
 that graph already exists; `up` runs the profile's launch command if it
-has one, points the sandbox at the graph (`backend.discovery`), and
-seeds the workspace from the profile. The agent cannot tell the
-difference, which is the point.
+has one (on the host, or inside `backend.image` on the host network),
+starts the sandbox on the host network pointed at the graph the way
+`backend.discovery` says, waits until the sandbox sees a node, and seeds
+the workspace from the profile. The handle's rpc answers not applicable,
+so a trial records no verdict on hardware. `robocli probe` drafts the
+profile from the graph. The agent cannot tell the difference, which is
+the point.

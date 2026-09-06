@@ -1,14 +1,31 @@
 # A real robot
 
-1. Write a profile (see `docs/your-own-robot.md`) with a `real`
-   backend (launch command, how the sandbox reaches the graph) and the
-   joints, frames, gripper and ports your robot serves.
-2. Make the robot's ROS 2 graph reachable from the host running
-   RoboCLI (same LAN, same `ROS_DOMAIN_ID`).
-3. `robocli up ./my-robot.yaml --ros-domain <id>`
-4. `robocli agent "..."`
+1. With the robot's ROS 2 stack running, draft a profile from its graph
+   and finish the `TODO` lines (see `docs/your-own-robot.md`):
 
-The preflight runs the same checks as in simulation: the ports you
-listed must be served, joint names must match the profile, TF and
-camera frames must flow. If a check fails, `up` refuses and says which
-promise the robot did not keep.
+   ```bash
+   robocli probe --host > my-robot.yaml
+   ```
+
+2. Check it loads and the images and login are in place:
+
+   ```bash
+   robocli doctor ./my-robot.yaml
+   ```
+
+3. Bring it up with the task sentence the agent will be given, then open
+   the agent in a second terminal:
+
+   ```bash
+   robocli up ./my-robot.yaml --ros-domain <id> --task "stack the red cube on the green one"
+   robocli agent
+   ```
+
+Preflight runs the same checks as in simulation: the ports you listed
+must be served, joint names must match the profile, TF and camera frames
+must flow. If a check fails, `up` refuses and says which promise the
+robot did not keep.
+
+`robocli run --config <benchmark> --robot ./my-robot.yaml --task "..."`
+runs the same trial loop on hardware: no reset, no automatic verdict
+(`success: null`, `verdict: not_applicable`), everything else recorded.

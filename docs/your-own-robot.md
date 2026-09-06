@@ -13,6 +13,25 @@ backend instead of a simulator. Put yours in
 `~/.robocli/robots/<name>.yaml` and it is found by name, or pass its
 path.
 
+## Draft it from the graph
+
+Most of the profile is already on the robot's ROS 2 graph. With the
+robot's stack running and reachable from this host:
+
+```bash
+robocli probe --host > ur5e.yaml            # multicast on the host network
+robocli probe --static-peers 192.168.1.20 > ur5e.yaml
+robocli probe --discovery-server 192.168.1.20:11811 > ur5e.yaml
+```
+
+`probe` starts a throwaway sandbox that can see the graph, reads the
+topics, actions and services and `/robot_description`, and prints a
+profile: joint names and limits, base and hand frames, the ports it
+recognised, cameras, and whether MoveIt is up. Lines marked `TODO` need
+you: the model name, a one-line description, the planning group, and
+which of the found ports to keep. Delete any port the robot does not
+actually serve.
+
 ## What the agent reads
 
 `robocli up` generates the agent's `machine.yaml` from the profile's
@@ -24,8 +43,9 @@ machine:
   backend:
     kind: real
     launch: ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur5e robot_ip:=192.168.1.20   # optional; omit if the graph is already up
+    image: null              # or a docker image the launch command runs in (host network), for a driver on another ROS release
     discovery:
-      network: host          # the sandbox joins the host network; or static_peers: [...] / discovery_server: host:port
+      network: host          # or static_peers: [192.168.1.20] / discovery_server: 192.168.1.20:11811
   robot:
     model: Universal Robots UR5e
     description: 6-joint arm with a Robotiq 2F-85 gripper
@@ -61,17 +81,22 @@ describe it to the agent. List only what the robot actually serves.
 ```bash
 cp ur5e.yaml ~/.robocli/robots/
 robocli doctor ur5e                # images, login, and that the profile loads
-robocli up ur5e --ros-domain 7     # or: robocli up ./ur5e.yaml
+robocli up ur5e --ros-domain 7 --task "move the arm to the home pose"
 ```
 
-The sandbox reaches the robot's ROS 2 graph the way `backend.discovery`
-says: the host network, static peers, or a Fast DDS discovery server.
-Then, as always:
+The sandbox joins the host network and reaches the graph the way
+`backend.discovery` says. On a real robot there is no simulator to ask,
+so the task sentence comes from `--task` (on `up` and on `run`), and a
+trial's `result.json` records `success: null` with `verdict:
+not_applicable`; preflight, the agent, the transcript and the provenance
+are the same as in simulation. Then, as always:
 
 ```bash
 robocli agent "move the arm to the home pose and open the gripper"
 ```
 
-Real-robot support is being brought up profile by profile; the
-simulated profiles (`robocli/configs/robots/`) are the reference for what a
-complete `machine:` section looks like.
+One difference from simulation to know about: a sandbox on the host
+network is not on an internal docker network, so the proxy is the route
+the agent is told to use, not a wall it cannot get around. For a scored
+campaign, simulation keeps that isolation; on hardware the point of the
+sandbox is the same toolchain and the same workspace, not containment.
