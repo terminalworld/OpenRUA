@@ -33,8 +33,8 @@ knowledge appears anywhere else.
 | `default_model` | yes | model when the config names none |
 | `hooks` | for launch | hooks module name (`plugins/agents/<hooks>.py`) |
 | `binary` | | the CLI executable inside the sandbox |
-| `version` | | the CLI version the install line pins; `{version}` in `install` is replaced with it |
-| `install` | | one-line root shell chain that installs the CLI into the sandbox image |
+| `install` | | one-line root shell chain that installs the CLI into the sandbox image; `{version}` in it is replaced by a pin when one is given |
+| `version` | | a pin the manifest itself carries; normally absent (see below) |
 | `whitelist` | | regexes of the hosts the CLI must reach through the proxy |
 | `credentials` | | `dirname`, `filename`, `config_env`, `mount_point`: a profile-directory login |
 | `token_env` | | environment variable carrying a long-lived token (passed by file) |
@@ -107,8 +107,15 @@ def test_conforms():
 - Images: `robocli build sandbox --agent my-agent` and `robocli build
   proxy --agent my-agent` take the install line and the whitelist from
   the manifest. Several `--agent` bake several agents into one image;
-  the images carry a label with the hash of what went in, and `robocli
-  doctor` compares it with what the selected agents' manifests say today.
+  the images carry a label per agent with the hash of what went in, and
+  `robocli doctor` compares it with what the selected agents' manifests
+  say today.
+- Versions: a manifest pins nothing, so `robocli build sandbox` installs
+  the agent's current release. To pin, say so where you build and where
+  you run: `robocli build sandbox --agent my-agent@1.2.3` and
+  `agent.version: 1.2.3` in the config (or `~/.robocli/config.yaml`).
+  With a pin, preflight checks the sandbox CLI against it; either way
+  every trial records the version the sandbox reported.
 - Login, two ways. A profile directory (`~/.robocli/credentials/<name>/`
   by default, or `agent.credentials_dir`): log in once on the host with
   that directory as the CLI's config dir; `login_hint` prints the

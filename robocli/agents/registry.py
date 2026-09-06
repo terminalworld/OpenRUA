@@ -43,11 +43,24 @@ class Manifest:
         return tuple(self.fields["whitelist"])
 
 
-def _read(path: Path, source: str, shadowed_by: Path | None = None) -> Manifest:
+def split_pin(spec: str) -> tuple[str, str | None]:
+    """``name`` or ``name@version`` -> (name, version or None)."""
+    name, _, version = spec.partition("@")
+    return name, (version or None)
+
+
+def _read(path: Path, source: str, shadowed_by: Path | None = None,
+          version: str | None = None) -> Manifest:
+    """Validate one manifest. ``version`` pins the CLI (from ``name@version``
+    or a config's ``agent.version``); without a pin the install line
+    installs whatever is current, and no version check is minted."""
     m = config.validate(config.AgentManifest, config.load_yaml(path), path)
     fields = config.dump(m)
-    if m.version:
-        fields["install"] = fields["install"].replace("{version}", m.version)
+    version = version or m.version
+    fields["version"] = version
+    install = fields["install"]
+    fields["install"] = (install.replace("{version}", version) if version
+                         else install.replace("@{version}", "").replace("{version}", ""))
     return Manifest(m.name, path, source, fields, shadowed_by)
 
 
@@ -63,13 +76,15 @@ def manifests(home: Path | None = None) -> list[Manifest]:
     return out
 
 
-def manifest(name: str, home: Path | None = None) -> Manifest:
-    """The manifest for one agent name; unknown names list what exists."""
-    if not name:
+def manifest(spec: str, home: Path | None = None, version: str | None = None) -> Manifest:
+    """The manifest for ``name`` or ``name@version``; unknown names list
+    what exists."""
+    if not spec:
         raise ValueError("agent name is empty; a resolved config always carries agent.name")
+    name, pin = split_pin(spec)
     path = paths.find("agents", name, home)
     source = "user" if path.is_relative_to(paths.user_dir("agents", home)) else "bundled"
-    return _read(path, source)
+    return _read(path, source, version=pin or version)
 
 
 def _load_hooks(hooks: str, home: Path | None) -> type[Agent]:
@@ -126,9 +141,10 @@ def compose(m: Manifest, home: Path | None = None) -> Agent:
     return cls(**fields)
 
 
-def get(name: str, home: Path | None = None) -> Agent:
-    """The Agent for an ``agent.name``: manifest found, hooks imported."""
-    return compose(manifest(name, home), home)
+def get(spec: str, home: Path | None = None, version: str | None = None) -> Agent:
+    """The Agent for an ``agent.name`` (or ``name@version``): manifest
+    found, hooks imported. ``version`` is a config's ``agent.version``."""
+    return compose(manifest(spec, home, version), home)
 
 
 @dataclass(frozen=True)

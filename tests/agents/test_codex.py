@@ -34,7 +34,8 @@ def _transcript(tmp_path, events=EVENTS):
 
 def test_bundled_codex_manifest_conforms():
     a = check_manifest(agents.manifest("codex").path)
-    assert a.name == "codex" and a.version in a.install
+    assert a.name == "codex" and a.version is None and "@openai/codex" in a.install
+    assert "codex@0.153.4" in agents.get("codex@0.153.4").install
 
 
 def test_launch_argv_is_headless_json_with_the_container_as_the_sandbox():

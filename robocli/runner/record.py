@@ -154,8 +154,8 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
     after a quota wall receives, pinned for the same reason."""
 
     def sh(cmd: list[str]) -> str:
-        # Provenance must never kill a trial: a version probe that fails
-        # (the CLI mid-update, say) records "unavailable".
+        # Provenance must never kill a trial: a probe that fails records
+        # "unavailable".
         try:
             return subprocess.run(cmd, capture_output=True, text=True).stdout.strip()
         except OSError:
@@ -221,9 +221,9 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
             hashlib.sha256(resume_prompt.encode()).hexdigest()
             if resume_prompt is not None else None,
         "workspace_template_sha256": template_hash,
-        "agent_cli": {"name": agent.name,
-                      "version": sh(list(agent.version_argv)) if agent.version_argv
-                      else "unavailable"},
+        # The version that ran is read inside each trial's sandbox and
+        # recorded there (agent_version); the pin, if any, is the config's.
+        "agent_cli": {"name": agent.name, "version_pin": agent.version},
         "operator": args.operator,
         "task_suite": args.task_suite,
         "task_ids": args.task_ids,
@@ -278,7 +278,8 @@ def write_run_summary(run_dir: Path) -> Path | None:
             "task": r.get("task_id"), "seed": r.get("init_state_id"),
             "success": r.get("success"), "termination": r.get("termination"),
             "wall_s": r.get("wall_seconds"), "turns": meta.get("num_turns"),
-            "model": meta.get("model"), "anomaly": r.get("anomaly"),
+            "model": meta.get("model"), "agent_version": r.get("agent_version"),
+            "anomaly": r.get("anomaly"),
         })
     scored = [x for x in rows if x["success"] is not None]
     successes = sum(1 for x in scored if x["success"])
@@ -288,10 +289,12 @@ def write_run_summary(run_dir: Path) -> Path | None:
     # the first trial recorded it.
     model = cfg.get("agent", {}).get("model") or next(
         (x["model"] for x in rows if x.get("model")), "?")
+    version = agent.get("version_pin") or next(
+        (x["agent_version"] for x in rows if x.get("agent_version")), "")
     lines = [f"# {run_dir.name}", "",
              f"- benchmark: {cfg.get('task', {}).get('benchmark', '?')}",
              f"- config: `{prov.get('config_file', '?')}` (sha256 {str(prov.get('config_sha256', ''))[:12]})",
-             f"- agent: {agent.get('name', '?')} {agent.get('version', '')}, model "
+             f"- agent: {agent.get('name', '?')} {version}, model "
              f"{model}, operator {prov.get('operator', '?')}",
              f"- code: robocli {prov.get('robocli_version', '?')} @ "
              f"{str(prov.get('robocli_commit', ''))[:12]}"

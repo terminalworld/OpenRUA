@@ -78,8 +78,9 @@ def add_parser(sub) -> None:
     r.add_argument("--tag", default=None, help="image tag (default: robocli-sim-<distro>)")
 
     s = units.add_parser("sandbox", help="the agent terminal image")
-    s.add_argument("--agent", action="append", default=None,
-                   help="agent(s) to install; repeatable (default: the configured default)")
+    s.add_argument("--agent", action="append", default=None, metavar="NAME[@VERSION]",
+                   help="agent(s) to install, repeatable; @VERSION pins the CLI, "
+                   "otherwise the current release (default: the configured default)")
     s.add_argument("--preinstall", default=None,
                    help="install line to bake instead of the agents' manifests")
     s.add_argument("--ros-distro", default="jazzy", help="ROS 2 distro: jazzy | humble")

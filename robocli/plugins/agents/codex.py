@@ -80,7 +80,11 @@ class Codex(Agent):
             *([prompt] if prompt else []),
         ]
 
-    def sandbox_cli_check(self) -> tuple[str, str]:
+    def sandbox_cli_check(self) -> tuple[str, str] | None:
+        """The CLI inside the sandbox is the pinned version; no check
+        without a pin."""
+        if not self.version:
+            return None
         return ("sandbox_cli_matches_pin",
                 f"bash -c 'codex --version | grep -qF {self.version}'")
 

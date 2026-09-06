@@ -113,6 +113,7 @@ def test_provenance_pins_the_whole_chain(tmp_path):
     class _Agent:
         name = "stub"
         version_argv = ("echo", "9.9.9")
+        version = None
 
     class _Args:
         operator, task_suite = "none", "suite"
@@ -143,7 +144,7 @@ def test_provenance_pins_the_whole_chain(tmp_path):
     assert len(prov["simulator_commit"]) == 40  # the cap-x checkout is git
     assert prov["host"]["hostname"] and prov["host"]["cpu_count"] >= 1
     assert prov["ros_domain"] == 44 and prov["gpu_render"] is False
-    assert prov["agent_cli"] == {"name": "stub", "version": "9.9.9"}
+    assert prov["agent_cli"] == {"name": "stub", "version_pin": None}
     assert prov["prompt_sha256"] and prov["config_sha256"]
     # a missing image must record its probe result, never kill the trial
     assert isinstance(prov["sim_image_digest"], str)

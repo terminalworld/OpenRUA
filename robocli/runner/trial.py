@@ -30,6 +30,18 @@ from robocli.sandbox import workspace
 from robocli.sandbox.down import down as sandbox_down
 
 
+def _sandbox_version(sandbox_name: str, agent) -> str | None:
+    """The agent CLI's version as the sandbox reports it, or None."""
+    if not agent.version_argv:
+        return None
+    try:
+        r = subprocess.run(["docker", "exec", sandbox_name, *agent.version_argv],
+                           capture_output=True, text=True, timeout=60)
+        return r.stdout.strip() or None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+
 def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
               wall_cap_min, ros_domain=0, credentials_dir=None, home=None,
               account_alias=None, script=None, token_file=None, task=None):
@@ -90,7 +102,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     proxy_url = ensure_proxy(network)
     if account_alias:
         rec["account_alias"] = account_alias
-    agent = agents.get(cfg.get("agent", {}).get("name"), home)
+    agent = agents.get(cfg.get("agent", {}).get("name"), home,
+                       version=cfg.get("agent", {}).get("version"))
     creds_home = Path(
         credentials_dir
         or cfg.get("agent", {}).get("credentials_dir")
@@ -121,6 +134,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             network, proxy_url, agent.sandbox_mounts(cfg_dir, creds_file),
             ros_domain, robot_log=trial_dir / "bridge.log", home=home)
         sandbox_live = True
+        # The CLI version that actually ran: read inside the sandbox.
+        rec["agent_version"] = _sandbox_version(sandbox_name, agent)
         if scored:
             r = machine.rpc({"cmd": "reset", "init_state_id": seed})
             if not r.get("ok"):

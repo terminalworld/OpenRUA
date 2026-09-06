@@ -15,8 +15,8 @@ def add_parser(sub) -> None:
     p = sub.add_parser("doctor", help="check the install: docker, images, simulator, login")
     p.add_argument("robot", nargs="?", default=None,
                    help="also check this robot's images and simulator")
-    p.add_argument("--agent", action="append", default=None,
-                   help="agent(s) the images must carry (default: the robot's config, "
-                   "else the configured default)")
+    p.add_argument("--agent", action="append", default=None, metavar="NAME[@VERSION]",
+                   help="agent(s) the images must carry, @VERSION as pinned at build "
+                   "(default: the robot's config, else the configured default)")
     add_json(p)
     p.set_defaults(fn=run)
