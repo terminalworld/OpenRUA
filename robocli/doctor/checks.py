@@ -54,11 +54,47 @@ class Context:
     robot: str | None
 
 
+def engine_version() -> str:
+    """What ``docker --version`` prints: Docker Engine, or a podman that
+    provides the docker command (podman-docker)."""
+    try:
+        r = subprocess.run(["docker", "--version"], capture_output=True, text=True,
+                           timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return ""
+    return r.stdout.strip() if r.returncode == 0 else ""
+
+
+def engine_rootless() -> bool:
+    """podman's own answer; Docker Engine has no such field and the
+    template errors, which reads as not rootless."""
+    try:
+        r = subprocess.run(["docker", "info", "--format", "{{.Host.Security.Rootless}}"],
+                           capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return r.returncode == 0 and r.stdout.strip() == "true"
+
+
 def check_docker(ctx: Context) -> list[CheckResult]:
-    if shutil.which("docker"):
-        return [CheckResult("docker", "docker on PATH")]
-    return [CheckResult("docker", "docker not found", "error",
-                        hint="install Docker Engine: https://docs.docker.com/engine/install/")]
+    if not shutil.which("docker"):
+        return [CheckResult("docker", "docker not found", "error",
+                            hint="install Docker Engine: https://docs.docker.com/engine/install/"
+                                 " (or rootless podman with podman-docker: docs/podman.md)")]
+    version = engine_version()
+    rows = [CheckResult("docker", "docker on PATH", detail=version)]
+    if "podman" in version.lower() and engine_rootless():
+        run_args = config.load_user_config(paths.config_path(ctx.home)).sandbox.run_args
+        if "--userns=keep-id" in run_args:
+            rows.append(CheckResult("sandbox-userns", "rootless podman: sandbox keeps your uid"))
+        else:
+            rows.append(CheckResult(
+                "sandbox-userns", "rootless podman without --userns=keep-id", "error",
+                detail="the sandbox user robot would map to a subordinate uid and could "
+                       "not write /workspace",
+                hint=f"add to {paths.config_path(ctx.home)}:\n"
+                     "sandbox:\n  run_args: [\"--userns=keep-id\"]"))
+    return rows
 
 
 def check_home(ctx: Context) -> list[CheckResult]:

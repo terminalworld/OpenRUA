@@ -40,6 +40,28 @@ def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
     assert {"proxy-image", "robot-image", "sandbox-image", "simulator", "login-claude-code"} <= set(ids)
 
 
+def test_rootless_podman_wants_keep_id_in_the_defaults_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
+    monkeypatch.setattr(doctor.checks, "engine_version", lambda: "podman version 6.1.1")
+    monkeypatch.setattr(doctor.checks, "engine_rootless", lambda: True)
+    by = {c.id: c for c in doctor.run(home=tmp_path).checks}
+    assert by["docker"].detail == "podman version 6.1.1"
+    assert by["sandbox-userns"].severity == "error"
+    assert "--userns=keep-id" in by["sandbox-userns"].hint
+    assert str(paths.config_path(tmp_path)) in by["sandbox-userns"].hint
+    (tmp_path / "config.yaml").write_text("sandbox:\n  run_args: ['--userns=keep-id']\n")
+    by = {c.id: c for c in doctor.run(home=tmp_path).checks}
+    assert by["sandbox-userns"].severity == "ok"
+
+
+def test_docker_engine_reports_no_userns_row(tmp_path, monkeypatch):
+    monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
+    monkeypatch.setattr(doctor.checks, "engine_version", lambda: "Docker version 27.1.1, build 6312585")
+    monkeypatch.setattr(doctor.checks, "engine_rootless", lambda: False)
+    ids = [c.id for c in doctor.run(home=tmp_path).checks]
+    assert "docker" in ids and "sandbox-userns" not in ids
+
+
 def test_missing_pieces_are_errors_with_a_fix_and_stale_labels_are_warnings(tmp_path, monkeypatch):
     monkeypatch.setattr(doctor.checks, "docker_inspect", _fake_docker({
         "robocli-proxy": {"robocli.whitelist_sha256": "stale"},

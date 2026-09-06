@@ -44,7 +44,8 @@ Claude Code opens in `/workspace` on the robot's terminal. It reads
 `FollowJointTrajectory` goal, and checks the result, exactly as it
 would on a real machine. `robocli doctor` tells you what is missing
 before the first `up` (Docker, the three images, the simulator
-checkout, an agent login).
+checkout, an agent login). Machines without Docker can run everything
+under rootless Podman ([docs/podman.md](docs/podman.md)).
 
 ## How it works
 

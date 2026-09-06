@@ -115,6 +115,11 @@ def up(config: Path, workspace: Path,
     for e in env:
         extra += ["-e", e]
 
+    # sandbox.run_args: this machine's own flags for the sandbox
+    # container (rootless podman's --userns=keep-id), passed through as
+    # written; the config layering put them there from the defaults file.
+    extra += list(cfg.get("sandbox", {}).get("run_args", []))
+
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     r = subprocess.run(
         ["docker", "run", "-d", "-i", "--tty", "--name", name,

@@ -206,6 +206,11 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
         # comparable across devices; recorded so nobody digs it out of
         # bridge.log.
         "gpu_render": bool(backend.get("gpus", False)),
+        # Whatever answers to `docker` on this host (Docker Engine or a
+        # podman with its docker-compatible command); one string as the
+        # engine prints it, plus the flags the sandbox container took.
+        "container_engine": sh(["docker", "--version"]) or "unavailable",
+        "sandbox_run_args": list(cfg.get("sandbox", {}).get("run_args", [])),
         # Relative to where the run was started when it lives there
         # (records keep no absolute paths they can avoid); a bundled
         # config records its package path.
