@@ -22,9 +22,10 @@ def test_summary_lists_trials_and_totals(tmp_path):
         "robocli_version": "0.1.0", "robocli_commit": "0123456789abcdef", "git_dirty": False,
         "simulator_commit": "fedcba9876543210", "sim_image_digest": "sha256:aaaa",
         "sandbox_image_digest": "sha256:bbbb", "proxy_image_digest": "sha256:cccc",
-        "config": {"task": {"benchmark": "libero_pro"}, "agent": {"model": "claude-opus-5"}}}))
+        "config": {"task": {"benchmark": "libero_pro"}, "agent": {}}}))
     _trial(run, "libero_goal_task", 0, 0, success=True, termination="self_finished",
-           wall_seconds=100.5, operator_meta={"num_turns": 42}, anomaly=None)
+           wall_seconds=100.5, operator_meta={"num_turns": 42, "model": "claude-opus-5"},
+           anomaly=None)
     _trial(run, "libero_goal_task", 0, 1, success=False, termination="anomaly",
            wall_seconds=3.0, operator_meta={}, anomaly="RuntimeError: preflight failed: tf_flow")
     _trial(run, "libero_goal_task", 1, 0, success=None, termination="operator_done",
