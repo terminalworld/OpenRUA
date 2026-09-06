@@ -52,7 +52,12 @@ FORBIDDEN = {
     "bench/record.py": {"robocli.robot", "robocli.sandbox", "robocli.proxy",
                   "robocli.agents", "robocli.bench.run", "robocli.config"} | _TOP,
     "proxy": {"robocli.robot", "robocli.config"} | _LAYERS | _TOP,
-    "agents": {"robocli.robot"} | _LAYERS | _TOP,
+    "agents": {"robocli.robot", "robocli.plugins"} | _LAYERS | _TOP,
+    # hooks modules see the contract and nothing else of robocli
+    "plugins": _HOST_LEAVES | _ONBOARD | _TOP | {
+        "robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.bench",
+        "robocli.agents.registry", "robocli.agents.launcher",
+        "robocli.agents.credentials", "robocli.agents.prompts"},
     # the shared leaves are leaves
     "config": _HOST | {"robocli.robot"} | _TOP,
     "errors.py": _HOST | {"robocli.robot", "robocli.config"} | _TOP,

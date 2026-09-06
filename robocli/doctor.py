@@ -260,7 +260,7 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
             chosen.append(agents.get(n, home))
         except Exception as exc:  # noqa: BLE001
             report.checks.append(CheckResult(f"agent-{n}", f"agent {n}: {exc}", "error",
-                                             hint="robocli agents lists the adapters"))
+                                             hint="robocli agents lists the agents"))
     ctx = Context(home=home, agents=chosen, cfg=cfg, robot=robot)
     for check in checks:
         try:

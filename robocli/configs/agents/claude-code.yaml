@@ -1,0 +1,51 @@
+# Claude Code: the facts RoboCLI needs about this agent. The behaviour
+# (launch command, transcript parsing, quota handling) is the hooks module
+# named at the bottom.
+name: claude-code
+default_model: claude-opus-5
+binary: claude
+# The CLI version baked into the sandbox image and checked inside it, so a
+# trial records which agent version produced it.
+version: "2.1.226"
+# Root shell that installs the CLI into the sandbox image (build time only:
+# the running sandbox has no internet). NodeSource 20.x because the distro
+# node is v18 on 24.04 but v12 on 22.04; one source for every distro.
+# {version} is replaced with the version above.
+install: >-
+  apt-get update
+  && apt-get install -y --no-install-recommends curl ca-certificates
+  && curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+  && apt-get install -y --no-install-recommends nodejs
+  && npm install -g @anthropic-ai/claude-code@{version}
+  && rm -rf /var/lib/apt/lists/*
+# Hosts the CLI must reach through the proxy (tinyproxy filter regexes).
+whitelist:
+  - '^api\.anthropic\.com$'
+  - '^console\.anthropic\.com$'
+  - '^platform\.claude\.com$'
+  - '^claude\.ai$'
+# Subscription login lives in a profile directory of its own, isolated
+# from the operator's personal one: OAuth refresh tokens rotate, and a
+# second copy of the credentials file would invalidate the first.
+credentials:
+  dirname: claude-code
+  filename: .credentials.json
+  config_env: CLAUDE_CONFIG_DIR
+  mount_point: /claude-config
+# A long-lived token from `claude setup-token`, passed to the CLI by file.
+token_env: CLAUDE_CODE_OAUTH_TOKEN
+version_argv: [claude, --version]
+instruction_file: CLAUDE.md
+# Knobs a config may override under agent.options. All pinned explicitly
+# so a CLI update cannot shift them:
+# - effort: reasoning level (low, medium, high, xhigh, max)
+# - autocompact: compaction threshold; 1M = compact only when the context
+#   will not fit
+# - bash_timeout_ms / bash_max_timeout_ms: a robot motion outlives the
+#   CLI's 120 s Bash default
+default_options:
+  effort: high
+  autocompact: 1M
+  bash_timeout_ms: 600000
+  bash_max_timeout_ms: 1800000
+hooks: claude_code

@@ -65,7 +65,9 @@ def test_user_directory_problems_are_reported_not_fatal(tmp_path, monkeypatch):
     (tmp_path / "robots" / "panda-sim.yaml").write_text("machine: {}\n")     # shadows a bundled name
     (tmp_path / "robots" / "bad.yaml").write_text("machine: [unclosed\n")    # not yaml
     (tmp_path / "agents").mkdir()
-    (tmp_path / "agents" / "broken.py").write_text("raise RuntimeError('nope')\n")
+    (tmp_path / "agents" / "broken.yaml").write_text("name: broken\ndefault_model: m\nhooks: broken\n")
+    (tmp_path / "plugins" / "agents").mkdir(parents=True)
+    (tmp_path / "plugins" / "agents" / "broken.py").write_text("raise RuntimeError('nope')\n")
     r = doctor.run(home=tmp_path)
     by = {c.id: c for c in r.checks}
     assert by["robots-panda-sim-shadowed"].severity == "warning"

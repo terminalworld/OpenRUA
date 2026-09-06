@@ -1,13 +1,14 @@
-"""Agent-knowledge boundary (decoupling ruling 2026-08-15).
+"""Agent-knowledge boundary.
 
-EVERY fact about a specific CLI agent (Claude Code today) lives in
-``robocli/agents/``: launch command, auth layout, transcript format,
-quota wording. This test walks every other file in the package and
-fails on any leaked agent-specific token, so "swap the agent" can never
-again mean "edit ten files": consumers touch only the adapter interface.
+Every fact about a specific coding agent lives in its manifest
+(``robocli/configs/agents/``) and its hooks module
+(``robocli/plugins/agents/``): launch command, auth layout, transcript
+format, quota wording. This test walks every other file in the package
+and fails on any agent-specific token, so swapping the agent never means
+editing the harness: consumers touch only the ``Agent`` contract.
 
 Test fixtures (test_*.py) are exempt; they fabricate agent-shaped
-transcripts on purpose, mimicking real artifacts.
+transcripts on purpose.
 """
 
 from __future__ import annotations
@@ -15,7 +16,7 @@ from __future__ import annotations
 from pathlib import Path
 
 PKG = Path(__file__).resolve().parents[1] / "robocli"
-ADAPTER_DIR = PKG / "agents"
+HOOKS_DIR = PKG / "plugins" / "agents"
 
 # Case-insensitive substrings that mark agent-specific knowledge. The
 # quoted 'assistant' forms catch transcript-record-type literals without
@@ -40,26 +41,18 @@ TOKENS = (
 
 def _scanned_files():
     for p in sorted(PKG.rglob("*.py")):
-        if ADAPTER_DIR in p.parents or "__pycache__" in p.parts:
+        if HOOKS_DIR in p.parents or "__pycache__" in p.parts:
             continue
-        # the agent-facing workspace tools talk to ROS, never to an agent
         yield p
     # The sandbox and proxy images are agent-parameterized via --build-arg
-    # (install snippet / whitelist come from the adapter): the recipes
-    # themselves must stay agent-free too.
+    # (install line and whitelist come from the manifests): the recipes
+    # themselves stay agent-free too.
     for f in ("sandbox/sandbox.Dockerfile", "proxy/proxy.Dockerfile",
               "proxy/tinyproxy.conf"):
         yield PKG / f
-    # Inside the adapter package only the adapters themselves may know an
-    # agent: the base class, the launcher and the front door are generic.
-    # The registry (__init__.py) is exempt: naming the default adapter is
-    # its job.
-    yield ADAPTER_DIR / "base.py"
-    yield ADAPTER_DIR / "launcher.py"
-    yield ADAPTER_DIR / "__main__.py"
 
 
-def test_agent_knowledge_stays_in_adapters():
+def test_agent_knowledge_stays_in_manifests_and_hooks():
     leaks = []
     for p in _scanned_files():
         text = p.read_text(errors="replace").lower()
@@ -68,5 +61,5 @@ def test_agent_knowledge_stays_in_adapters():
                 if tok in line:
                     leaks.append(f"{p.relative_to(PKG.parent)}:{i}: {tok!r}")
     assert not leaks, (
-        f"agent-specific knowledge outside the adapters ({len(leaks)} leaks):\n"
+        f"agent-specific knowledge outside plugins/agents ({len(leaks)} leaks):\n"
         + "\n".join(leaks))

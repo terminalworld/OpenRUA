@@ -150,7 +150,7 @@ def cmd_up(args) -> int:
     workdir.mkdir(parents=True)
     network = ensure_internal_network()
     proxy_url = ensure_proxy(network)
-    adapter = agents.get(args.agent or cfg.get("agent", {}).get("cli"), args.home)
+    adapter = agents.get(args.agent or cfg.get("agent", {}).get("name"), args.home)
     creds_home = Path(cfg.get("agent", {}).get("credentials_dir")
                       or paths.credentials_dir(args.home) / adapter.name).expanduser()
     cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter)
