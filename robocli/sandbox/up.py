@@ -99,7 +99,7 @@ def up(config: Path, workspace: Path,
     if static_peer and not peers_xml:
         raise SandboxError(
             "static_peer needs the rendered peers profile too; the "
-            "runner renders it (bringup.FASTDDS_PEERS_XML) and "
+            "runner renders it (bringup.peers_profile) and "
             "passes peers_xml")
     peer_env = ["-e", f"ROS_DOMAIN_ID={ros_domain}"]
     if static_peer:

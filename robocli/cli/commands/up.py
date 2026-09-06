@@ -51,10 +51,13 @@ def run(args) -> int:
         raise UnavailableError(f"[up] robot failed to come up: {e}",
                                hint=f"read {workdir / 'robot.log'}") from e
     try:
-        r = machine.rpc({"cmd": "reset", "init_state_id": args.init_state})
-        if not r.get("ok"):
-            raise RuntimeError(f"reset failed: {r}")
-        task = machine.rpc({"cmd": "task_info"}).get("language", "")
+        if cfg["machine"]["backend"]["kind"] == "sim":
+            r = machine.rpc({"cmd": "reset", "init_state_id": args.init_state})
+            if not r.get("ok"):
+                raise RuntimeError(f"reset failed: {r}")
+            task = machine.rpc({"cmd": "task_info"}).get("language", "")
+        else:
+            task = args.task or ""
     except Exception as e:  # noqa: BLE001
         sandbox_down(sandbox_name)
         machine.shutdown()
@@ -103,7 +106,11 @@ def add_parser(sub) -> None:
                    help="benchmark to take the scene from (default: the profile's world:)")
     p.add_argument("--task-suite", default=None, help="scene suite (default: the profile's)")
     p.add_argument("--task-id", type=int, default=None, help="scene index (default: the profile's)")
-    p.add_argument("--init-state", type=int, default=0, help="episode seed / init state")
+    p.add_argument("--init-state", type=int, default=0,
+                   help="episode seed / init state (simulated robots)")
+    p.add_argument("--task", default=None,
+                   help="task sentence to show `robocli agent` (real robots; a "
+                   "simulated robot's comes from the scene)")
     p.add_argument("--name", default=DEFAULT_NAME,
                    help=f"handle for this robot, for agent/down (default: {DEFAULT_NAME})")
     p.add_argument("--agent", default=None, help="agent to open (default: the config's)")

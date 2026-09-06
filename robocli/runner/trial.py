@@ -32,7 +32,10 @@ from robocli.sandbox.down import down as sandbox_down
 
 def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
               wall_cap_min, ros_domain=0, credentials_dir=None, home=None,
-              account_alias=None, script=None, token_file=None):
+              account_alias=None, script=None, token_file=None, task=None):
+    """One trial. ``task`` is the task sentence for a robot with no truth
+    side (a real robot); a simulated robot's task comes from its bridge."""
+    scored = cfg.get("machine", {}).get("backend", {}).get("kind") == "sim"
     trial_dir = run_dir / "trials" / f"{task_suite}-{task_id}" / f"seed{seed}"
     trial_dir.mkdir(parents=True, exist_ok=True)
     # Container names double as DNS labels for DDS peer resolution; a
@@ -118,21 +121,28 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             network, proxy_url, agent.sandbox_mounts(cfg_dir, creds_file),
             ros_domain, robot_log=trial_dir / "bridge.log", home=home)
         sandbox_live = True
-        r = machine.rpc({"cmd": "reset", "init_state_id": seed})
-        if not r.get("ok"):
-            raise RuntimeError(f"reset failed: {r}")
-        info = machine.rpc({"cmd": "task_info"})
-        task_language = info.get("language", "")
+        if scored:
+            r = machine.rpc({"cmd": "reset", "init_state_id": seed})
+            if not r.get("ok"):
+                raise RuntimeError(f"reset failed: {r}")
+            info = machine.rpc({"cmd": "task_info"})
+            task_language = info.get("language", "")
+            # Optional generic slot: whatever the loader considers the
+            # facts that identify this episode's world (robocasa fills
+            # the kitchen it ran in). Recorded verbatim; a loader that
+            # fills nothing costs nothing.
+            if info.get("init_state"):
+                rec["init_state"] = info["init_state"]
+        else:
+            # No truth side: nothing to reset, no predicate; the task is
+            # the caller's sentence and the verdict is not applicable.
+            task_language = task or ""
+            rec["verdict"] = "not_applicable"
         rec["task_language"] = task_language
-        # Optional generic slot: whatever the loader considers the facts
-        # that identify this episode's world (robocasa fills the kitchen
-        # it ran in). Recorded verbatim; a loader that fills nothing
-        # costs nothing.
-        if info.get("init_state"):
-            rec["init_state"] = info["init_state"]
         if not task_language.strip():
             # An empty task is never a valid trial.
-            raise RuntimeError("task_info returned empty language")
+            raise RuntimeError("empty task: the bridge returned none"
+                               if scored else "empty task: a real robot needs --task")
 
         # Preflight: every verifiable promise the workspace docs make,
         # asserted from the sandbox before the agent starts. Red refuses
@@ -204,24 +214,29 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         if stall:
             raise RuntimeError(stall["msg"])
 
-        # Blind single episode: one ask, after the operator is done. The
-        # bridge latches success per step (official any-step-success
-        # semantics); the end-state verdict is recorded alongside.
-        verdict = machine.rpc({"cmd": "success"})
-        rec["success"] = bool(verdict["success"])
-        if "success_end_state" in verdict:
-            rec["success_end_state"] = bool(verdict["success_end_state"])
-        if "success_at" in verdict:  # time-to-success (post-hoc budgets)
-            rec["success_at"] = verdict["success_at"]
-        # Closing step count, so step-economy statistics exist for failed
-        # trials too. Guarded on its own: auxiliary telemetry must never
-        # retract an already-obtained verdict.
-        try:
-            rec["steps_total"] = machine.rpc(
-                {"cmd": "steps"}, timeout_s=60.0).get("steps")
-        except Exception:  # noqa: BLE001
+        if scored:
+            # Blind single episode: one ask, after the operator is done.
+            # The bridge latches success per step (official
+            # any-step-success semantics); the end-state verdict is
+            # recorded alongside.
+            verdict = machine.rpc({"cmd": "success"})
+            rec["success"] = bool(verdict["success"])
+            if "success_end_state" in verdict:
+                rec["success_end_state"] = bool(verdict["success_end_state"])
+            if "success_at" in verdict:  # time-to-success (post-hoc budgets)
+                rec["success_at"] = verdict["success_at"]
+            # Closing step count, so step-economy statistics exist for
+            # failed trials too. Guarded on its own: auxiliary telemetry
+            # must never retract an already-obtained verdict.
+            try:
+                rec["steps_total"] = machine.rpc(
+                    {"cmd": "steps"}, timeout_s=60.0).get("steps")
+            except Exception:  # noqa: BLE001
+                rec["steps_total"] = None
+            rec["steps_semantics"] = "episode"  # steps since reset
+        else:
+            rec["success"] = None
             rec["steps_total"] = None
-        rec["steps_semantics"] = "episode"  # steps since reset
         rec["operator_meta"] = op_meta
         rec["termination"] = op_meta.get("termination", "operator_done")
         # Validity judgment (quota voiding and the like) belongs to

@@ -16,6 +16,7 @@ from pathlib import Path
 from robocli import robot
 from robocli.config import paths
 from robocli.errors import NotFound
+from robocli.proxy.up import url_from_network as proxy_url_from_network
 from robocli.runner import record
 from robocli.sandbox.down import down as sandbox_down
 from robocli.sandbox.up import up as sandbox_up
@@ -31,13 +32,57 @@ FASTDDS_PEERS_XML = """<?xml version="1.0" encoding="UTF-8" ?>
     <rtps>
       <builtin>
         <initialPeersList>
-          <locator><udpv4><address>{peer}</address></udpv4></locator>
-        </initialPeersList>
+{locators}        </initialPeersList>
       </builtin>
     </rtps>
   </participant>
 </profiles>
 """
+
+
+def peers_profile(peers: list[str]) -> str:
+    """The Fast DDS initial-peers profile naming every peer (container
+    names or addresses)."""
+    locators = "".join(f"          <locator><udpv4><address>{p}</address></udpv4></locator>\n"
+                       for p in peers)
+    return FASTDDS_PEERS_XML.format(locators=locators)
+
+
+def sandbox_reachability(backend: dict, network: str, robot_name: str,
+                         proxy_url: str, proxy_name: str = "robocli-proxy") -> dict:
+    """How the sandbox reaches the robot's graph and the proxy, as
+    ``sandbox.up`` keyword arguments.
+
+    A simulated robot shares the internal docker network with the sandbox;
+    the two find each other by container name through a static peer. A
+    real robot is on the host's network, so the sandbox joins the host
+    network and ``backend.discovery`` says how it finds the graph:
+    ``network: host`` (multicast), ``static_peers`` (unicast, rendered
+    into the peers profile) or ``discovery_server`` (ROS_DISCOVERY_SERVER).
+    On the host network the proxy is reached by address, not by name.
+    """
+    if backend.get("kind") != "real":
+        return {"network": network, "static_peer": robot_name,
+                "peers_xml": peers_profile([robot_name]),
+                "internet": f"proxy:{proxy_url}", "env": ()}
+    discovery = backend.get("discovery", {})
+    out = {"network": "host", "static_peer": None, "peers_xml": None,
+           "internet": f"proxy:{proxy_url_from_network(proxy_name)}", "env": ()}
+    if discovery.get("static_peers"):
+        peers = list(discovery["static_peers"])
+        out["static_peer"] = ",".join(peers)
+        out["peers_xml"] = peers_profile(peers)
+    elif discovery.get("discovery_server"):
+        out["env"] = (f"ROS_DISCOVERY_SERVER={discovery['discovery_server']}",)
+    return out
+
+
+def graph_probe(sandbox_name: str) -> list[str]:
+    """A command that exits 0 once the sandbox sees at least one ROS 2
+    node: what a real robot's handle waits for."""
+    return ["docker", "exec", sandbox_name, "bash", "-lc",
+            "source /opt/ros/${ROS_DISTRO:-jazzy}/setup.bash && "
+            "ros2 node list 2>/dev/null | grep -q ."]
 
 
 def simulator_venv(backend: dict, home: Path | None = None) -> Path:
@@ -66,17 +111,15 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     resolve_robot_files(cfg, dest, home)
     config_path = record.write_config(dest, cfg)
     backend = cfg.get("machine", {}).get("backend", {})
+    reach = sandbox_reachability(backend, network, sim_name, proxy_url)
     sandbox_up(
         config=config_path,
         workspace=dest / "workspace",
         image=backend.get("sandbox_image"),
-        network=network,
-        static_peer=sim_name,
-        peers_xml=FASTDDS_PEERS_XML.format(peer=sim_name),
         ros_domain=ros_domain,
-        internet=f"proxy:{proxy_url}",
         name=sandbox_name,
         mounts=mounts,
+        **reach,
     )
     machine = None
     try:
@@ -96,8 +139,9 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             moveit_log=str(robot_log.with_name("moveit.log")),
             network=network,
             static_peer=sandbox_name,
-            peers_xml=FASTDDS_PEERS_XML.format(peer=sandbox_name),
+            peers_xml=peers_profile([sandbox_name]),
             ros_domain=ros_domain,
+            probe_argv=graph_probe(sandbox_name),
         )
         machine.wait_ready()
     except BaseException:

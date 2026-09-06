@@ -104,6 +104,17 @@ def ensure(network: str, name: str = "robocli-proxy",
     return f"http://{name}:{_port(name)}"
 
 
+def url_from_network(name: str, network: str = "bridge") -> str:
+    """The proxy's URL by IP address on ``network``, for a client that
+    cannot resolve docker container names (a sandbox on the host
+    network)."""
+    ip = _inspect("container", name,
+                  f'{{{{(index .NetworkSettings.Networks "{network}").IPAddress}}}}')
+    if not ip:
+        raise ProxyError(f"proxy {name!r} has no address on docker network {network!r}")
+    return f"http://{ip}:{_port(name)}"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--network", required=True,
