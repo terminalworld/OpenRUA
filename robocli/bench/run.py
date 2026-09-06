@@ -261,7 +261,9 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     )
     machine = None
     try:
-        venv = substrate_venv(body, home)
+        # Real path: the container mounts and runs the venv by this string,
+        # and a host symlink means nothing inside it.
+        venv = substrate_venv(body, home).resolve()
         proc = sim_up(
             name=sim_name,
             gpus=bool(body.get("gpus", False)),
