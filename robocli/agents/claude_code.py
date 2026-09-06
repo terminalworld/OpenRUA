@@ -61,12 +61,21 @@ DEFAULT_AUTOCOMPACT = "1M"
 # restrict -- but do not record it as load-bearing.
 DEFAULT_BASH_TIMEOUT_MS = 600_000
 MAX_BASH_TIMEOUT_MS = 1_800_000
-# PINNED to the host CLI's version: the host (auto-updated) probes
-# rewrite the SHARED credentials file; an older sandbox CLI cannot read
-# the newer schema and launches logged-out (2026-08-12 incident: npm
-# "latest" lagged at 2.1.197 vs host 2.1.226; every post-rebuild trial
-# died in 1min). The precheck enforces sandbox == pin == host.
+# The CLI version this benchmark runs. Baked into the sandbox image at
+# build time and checked inside the sandbox, so a trial records which
+# agent version produced it. It used to ALSO be enforced against the host
+# (sandbox == pin == host), because the host binary and every sandbox
+# shared one rotating credentials file and a schema drift launched the
+# sandbox logged-out (2026-08-12). Sandboxes authenticate with their own
+# minted token now (see TOKEN_ENV), nothing is shared, and the host check
+# retired with the coupling that motivated it (2026-09-02).
 PINNED_CLI_VERSION = "2.1.226"
+# Long-lived subscription token from `claude setup-token`, the sandbox's
+# whole authentication story. Passed by FILE (docker exec --env-file), so
+# the value reaches the CLI process and nowhere else: not the container's
+# stored config (docker inspect), not an argv another user can read in
+# `ps`, and not the sandbox filesystem the agent under test can read.
+TOKEN_ENV = "CLAUDE_CODE_OAUTH_TOKEN"
 # Dedicated sandbox login profile: its own token family, isolated from the
 # operator's personal ~/.claude (an OAuth fork would kill the original).
 DEFAULT_CREDENTIALS_DIR = "~/.robocli-claude"
@@ -83,7 +92,8 @@ _SANDBOX_CONFIG_DIR = "/claude-config"
 def launch_argv(sandbox: str, prompt: str, model: str, max_turns: int,
                 proxy: str, effort: str = DEFAULT_EFFORT,
                 autocompact: str = DEFAULT_AUTOCOMPACT,
-                session_id: str | None = None, resume: bool = False) -> list[str]:
+                session_id: str | None = None, resume: bool = False,
+                token_file: str | None = None) -> list[str]:
     """docker-exec command that runs the agent headless inside the sandbox
     (as the ``robot`` user in /workspace; the model proxy is the only way out).
     The transcript is the process stdout (stream-json). ``effort`` pins the
@@ -95,6 +105,10 @@ def launch_argv(sandbox: str, prompt: str, model: str, max_turns: int,
     transcript. ``resume`` continues that session instead of starting it;
     the prompt then carries no task restatement (the session already holds
     the task) and the CLI reloads the conversation itself.
+
+    ``token_file`` is a host-side file holding ``TOKEN_ENV=<token>``; docker
+    reads it and hands the variable to this process only. Omitted, the CLI
+    falls back to whatever login the mounted profile carries.
     """
     # --resume names an existing session; --session-id creates the named
     # one. They are not interchangeable, so pick by phase.
@@ -104,6 +118,7 @@ def launch_argv(sandbox: str, prompt: str, model: str, max_turns: int,
     return [
         "docker", "exec",
         "-u", "robot", "-w", "/workspace",
+        *(["--env-file", token_file] if token_file else []),
         "-e", f"{CONFIG_ENV}={_SANDBOX_CONFIG_DIR}",
         "-e", f"HTTPS_PROXY={proxy}",
         "-e", f"HTTP_PROXY={proxy}",
@@ -184,12 +199,20 @@ def sandbox_cli_check() -> tuple[str, str]:
 
 # ------------------------------------------------------------------ auth
 
-def sandbox_mounts(config_dir: Path, credentials_file: Path) -> tuple[str, ...]:
-    """SRC:DST mount specs for sandbox.up's generic --mount slot: the
-    per-entry profile copy + the ONE shared rotating credentials file
-    bound over it (see module docstring)."""
-    return (
-        f"{config_dir}:{_SANDBOX_CONFIG_DIR}",
+def sandbox_mounts(config_dir: Path,
+                   credentials_file: Path | None = None) -> tuple[str, ...]:
+    """SRC:DST mount specs for sandbox.up's generic --mount slot.
+
+    The per-entry profile copy always mounts. The credentials file mounts
+    only when one is given, which is the pre-token arrangement: ONE shared
+    rotating file bound into every sandbox (see module docstring). Under
+    TOKEN_ENV there is nothing to share, so the sandbox gets no credentials
+    file at all and the agent under test has none to read.
+    """
+    mounts = (f"{config_dir}:{_SANDBOX_CONFIG_DIR}",)
+    if credentials_file is None:
+        return mounts
+    return mounts + (
         f"{credentials_file}:{_SANDBOX_CONFIG_DIR}/{CREDENTIALS_FILENAME}",
     )
 
@@ -205,6 +228,18 @@ def credentials_check() -> tuple[str, str]:
 
 def login_hint(creds_home: Path) -> str:
     return f"run {CONFIG_ENV}={creds_home} claude login"
+
+
+def token_hint(token_file: Path | str) -> str:
+    """How to produce the file launch_argv expects, in this CLI's terms.
+
+    Minting authorises whichever account is logged in to the BROWSER, not
+    the one CONFIG_ENV points at, which is the easy way to end up with two
+    tokens for the same account and no way to tell them apart.
+    """
+    return (f"mint one with `claude setup-token` (it authorises the account "
+            f"logged in to your browser), then: umask 077 && printf "
+            f"'{TOKEN_ENV}=%s\\n' '<token>' > {token_file}")
 
 
 # ----------------------------------------------------------------- quota

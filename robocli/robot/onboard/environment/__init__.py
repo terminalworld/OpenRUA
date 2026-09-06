@@ -34,7 +34,7 @@ LOADER_INTERFACE = (
     "init_state",   # ctx, seed -> opaque state (its own reset understands it)
     "reset",        # env, ctx, state -> None (restore the world)
     "success",      # env -> bool (the benchmark's ORIGINAL predicate)
-    "task_info",    # env, ctx -> {language, name}
+    "task_info",    # env, ctx -> {language, name, [init_state]}
 )
 
 LOADERS = (LiberoLoader(), CapBenchLoader(), RoboCasaLoader())

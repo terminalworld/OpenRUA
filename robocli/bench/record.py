@@ -47,6 +47,29 @@ def secret_strings(creds_dir: Path) -> list[str]:
     return secrets
 
 
+def secret_strings_from_env_file(path: Path) -> list[str]:
+    """The values in a KEY=value env file = secrets, same rule as above.
+
+    Used for the sandbox's minted auth token, which lives in a file rather
+    than in the credential JSONs. Short values are skipped for the same
+    reason secret_strings() skips them: a two-character value scrubbed out
+    of a transcript would mangle it.
+    """
+    try:
+        text = path.read_text()
+    except OSError:
+        return []
+    out = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        value = line.split("=", 1)[1].strip()
+        if len(value) >= 20:
+            out.append(value)
+    return out
+
+
 def scrub_file(path: Path, secrets: list[str]) -> None:
     """Redact known secret strings before anything enters the git-tracked
     record (defense against the agent cat-ing its own config)."""

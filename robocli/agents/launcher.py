@@ -64,6 +64,9 @@ def main() -> int:
                     "adapter's DEFAULT_AUTOCOMPACT)")
     ap.add_argument("--session-id", default=None,
                     help="name the session up front so it can be resumed")
+    ap.add_argument("--token-file", default=None,
+                    help="file holding the sandbox CLI's auth token as "
+                    "KEY=value; docker hands it to the CLI process only")
     ap.add_argument("--resume", action="store_true",
                     help="continue --session-id instead of starting it; the "
                     "agent is shown agents.RESUME_PROMPT, not the task, and "
@@ -90,6 +93,7 @@ def main() -> int:
         autocompact=args.autocompact or agent.DEFAULT_AUTOCOMPACT,
         session_id=args.session_id,
         resume=args.resume,
+        token_file=args.token_file,
     )
     # stderr goes to a sidecar, not DEVNULL: a launch-dead CLI (docker
     # exec miss, bad flag) exits loud but used to leave zero evidence.

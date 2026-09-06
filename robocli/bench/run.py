@@ -360,6 +360,8 @@ def agent_operator(ctx: dict) -> dict:
         "--autocompact", autocompact,
         "--session-id", session_id,
         "--proxy", ctx.get("proxy", "http://robocli-proxy:8888"),
+        *(["--token-file", str(ctx["token_file"])] if ctx.get("token_file")
+          else []),
     ]
     meta: dict = {"operator": "agent", "cli": agent.NAME, "model": model,
                   "effort": effort, "autocompact": autocompact,
@@ -630,7 +632,7 @@ OPERATORS = {
 
 def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
               wall_cap_min, ros_domain=0, credentials_dir=None,
-              account_alias=None, script=None):
+              account_alias=None, script=None, token_file=None):
     trial_dir = run_dir / "trials" / f"{task_suite}-{task_id}" / f"seed{seed}"
     trial_dir.mkdir(parents=True, exist_ok=True)
     # Container names double as DNS labels for DDS peer resolution; a
@@ -695,8 +697,16 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         or cfg.get("agent", {}).get("credentials_dir",
                                     agent.DEFAULT_CREDENTIALS_DIR)
     ).expanduser()
-    cfg_dir, creds_file = agents.prepare_profile(creds_home, agent)
+    # A token file is the sandbox's whole auth story, so the login profile
+    # is no longer required to carry credentials (see agents.prepare_profile).
+    cfg_dir, creds_file = agents.prepare_profile(
+        creds_home, agent, require_credentials=token_file is None)
     secrets = record.secret_strings(creds_home)  # pre-trial token values
+    if token_file:
+        # The minted token never reaches the record: it is as much a secret
+        # as anything in the credentials file, and the agent can print its
+        # own environment.
+        secrets += record.secret_strings_from_env_file(Path(token_file))
     # Container construction INSIDE the try (audit 2026-08-14 F15): a
     # machine-constructor exception after the sandbox is up must still
     # write result.json (anomaly) and tear the sandbox down, not orphan it
@@ -751,8 +761,15 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         r = machine.rpc({"cmd": "reset", "init_state_id": seed})
         if not r.get("ok"):
             raise RuntimeError(f"reset failed: {r}")
-        task_language = machine.rpc({"cmd": "task_info"}).get("language", "")
+        info = machine.rpc({"cmd": "task_info"})
+        task_language = info.get("language", "")
         rec["task_language"] = task_language
+        # Optional generic slot: whatever the loader considers the facts
+        # that identify THIS episode's world (robocasa fills the kitchen
+        # it ran in). Recorded verbatim; the conductor does not interpret
+        # it, and a loader that fills nothing costs nothing.
+        if info.get("init_state"):
+            rec["init_state"] = info["init_state"]
         if not task_language.strip():
             # An empty mission is never a valid trial (2026-08-11 canary:
             # a task_info bug fed agents "" and they surveyed for 30 min).
@@ -827,6 +844,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
                     "active_wall_clock_min": wall_cap_min,
                     "proxy": proxy_url,
                     "script": script,
+                    "token_file": token_file,
                 }
             )
         finally:
@@ -931,6 +949,12 @@ def main() -> None:
         "adapter's default)",
     )
     ap.add_argument(
+        "--token-file", default=None,
+        help="file holding <TOKEN_ENV>=<token> for the sandbox CLI (the "
+        "account pool sets this); given, the sandbox authenticates with "
+        "that token and no credentials file is mounted",
+    )
+    ap.add_argument(
         "--runs-root", default=None,
         help="where run data lands (default: ./runs)",
     )
@@ -940,6 +964,10 @@ def main() -> None:
         "trial result for per-account accounting",
     )
     args = ap.parse_args()
+    if args.token_file:
+        # See --token-file: the launcher runs with cwd=trial_dir, so a
+        # relative path would resolve to nothing by the time docker reads it.
+        args.token_file = str(Path(args.token_file).expanduser().resolve())
     args.task_ids = [int(x) for x in str(args.task_ids).split(",")]
     args.seeds = [int(x) for x in str(args.seeds).split(",")]
 
@@ -972,6 +1000,7 @@ def main() -> None:
                     args.wall_clock_min, ros_domain=args.ros_domain,
                     credentials_dir=args.credentials_dir,
                     account_alias=args.account_alias, script=args.script,
+                    token_file=args.token_file,
                 )
             except triallock.TrialLocked as e:
                 # Not a failure of this trial: someone else is doing it.

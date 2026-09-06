@@ -39,7 +39,7 @@ ADAPTER_INTERFACE = (
     "sandbox_install", "proxy_filter_lines",
     # auth and precheck checks
     "sandbox_mounts", "credentials_check", "login_hint",
-    "sandbox_cli_check",
+    "sandbox_cli_check", "token_hint",
     # quota
     "quota_probe_argv", "quota_window_open", "matches_quota_anomaly",
     "read_rate_limits",
@@ -92,19 +92,32 @@ The workspace contains starter docs and tools you can use.
 RESUME_PROMPT = "Continue where you left off."
 
 
-def prepare_profile(creds_home: _Path, adapter) -> tuple[_Path, _Path]:
+def prepare_profile(creds_home: _Path, adapter,
+                    require_credentials: bool = True
+                    ) -> tuple[_Path, _Path | None]:
     """Stage the occupant's luggage: auth profile for one sandbox entry.
 
-    Shared-file architecture (post-incident 2026-08-08): OAuth refresh
-    tokens ROTATE, so every consumer must read/write the SAME
-    credentials file or forks kill each other. The credentials file from
-    the dedicated login profile is bind-mounted as a single shared file
-    into every sandbox; the rest of the profile dir is a fresh per-entry
-    copy (non-rotating state). Returns (profile_copy_dir, shared_file);
-    the caller owns deleting the copy dir.
+    The profile dir (settings and other non-rotating state) is always a
+    fresh per-entry copy. What happens to the credentials file depends on
+    how the sandbox authenticates:
+
+    - ``require_credentials=True`` is the shared-file arrangement
+      (post-incident 2026-08-08): OAuth refresh tokens ROTATE, so every
+      consumer must read/write the SAME file or the forks kill each other.
+      The file is returned as a path for bind-mounting, never copied.
+    - ``require_credentials=False`` is the minted-token arrangement
+      (2026-09-02): the sandbox carries its own token, so no credentials
+      file is needed or wanted, and the second element comes back None.
+      Passing a login profile that happens to hold credentials does not
+      change that; nothing gets mounted either way.
+
+    Returns (profile_copy_dir, shared_file_or_None); the caller owns
+    deleting the copy dir.
     """
     creds_file = creds_home / adapter.CREDENTIALS_FILENAME
-    if not creds_file.exists():
+    if not require_credentials:
+        creds_file = None
+    elif not creds_file.exists():
         raise RuntimeError(
             f"credentials missing: {adapter.login_hint(creds_home)}")
     cfg_dir = _Path(_tempfile.mkdtemp(prefix="robocli-agentcfg-"))
