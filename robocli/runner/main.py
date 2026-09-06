@@ -140,6 +140,7 @@ def run(args: argparse.Namespace) -> int:
             trial_dir = (run_dir / "trials" / f"{args.task_suite}-{task_id}"
                          / f"seed{seed}")
             record.write_trial_provenance(trial_dir, prov)
+            record.write_run_summary(run_dir)
             print(
                 f"[{args.task_suite}:{task_id} seed{seed}] "
                 f"success={rec['success']} term={rec['termination']} "
