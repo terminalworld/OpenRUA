@@ -6,7 +6,7 @@ standalone smoke in the phase log; here = everything testable dry.
 
 from __future__ import annotations
 
-from robocli.bench.run import load_config
+from robocli.config import load_config
 
 from pathlib import Path
 
@@ -22,7 +22,7 @@ PKG = Path(workspace.__file__).resolve().parent
 
 
 def _cfg() -> dict:
-    from robocli.bench.run import normalize_arms
+    from robocli.config import normalize_arms
     return normalize_arms(load_config(LIBERO_CFG))
 
 
@@ -44,7 +44,7 @@ def test_manifest_omits_gripper_for_gripperless_machine(tmp_path):
     # The wipe-suite shape: a machine whose config lists no gripper must
     # not promise one in machine.yaml (manual/machine agreement). The
     # deletion happens BEFORE normalize, like a real suite override.
-    from robocli.bench.run import normalize_arms
+    from robocli.config import normalize_arms
     cfg = load_config(LIBERO_CFG)
     del cfg["machine"]["ports"]["gripper"]
     normalize_arms(cfg)
@@ -120,7 +120,7 @@ def test_harness_imports_no_layer():
                 else [node.module] if isinstance(node, ast.ImportFrom) and node.module else []
             for m in mods:
                 assert not any(m.startswith(f"robocli.{layer}")
-                               for layer in ("bridge", "precheck", "record")), \
+                               for layer in ("robot.sim.bridge", "runner")), \
                     f"{py.name} imports {m}"
 
 
@@ -217,7 +217,7 @@ def test_manifest_drive_never_clobbers_the_ros_type():
 def test_manifest_two_arms_two_of_everything(tmp_path):
     import yaml as _yaml
 
-    from robocli.bench.run import apply_suite_overrides, normalize_arms
+    from robocli.config import apply_suite_overrides, normalize_arms
     from robocli.sandbox.workspace import write_machine_manifest
     cfg = load_config(REPO / "robocli" / "configs" / "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_twoarm_lift")

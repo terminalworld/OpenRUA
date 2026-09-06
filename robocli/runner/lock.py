@@ -10,7 +10,7 @@ pulling the running attempt's transcript out from under it.
 The fact therefore lives on disk, next to the thing it protects. Creation
 is O_EXCL, so it is the runner's FIRST act and there is no window in which
 two starters both see a free directory. It guards against any second
-writer, not just a restarted master: a hand-run ``robocli.bench.run`` on a
+writer, not just a restarted master: a hand-run ``robocli run`` on a
 directory the master owns is the same collision and the same corruption.
 
 Staleness needs care -- a lock nobody can reclaim wedges a trial forever.

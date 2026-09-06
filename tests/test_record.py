@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 
 from robocli import agents
-from robocli.bench.record import extract_commands
+from robocli.runner.record import extract_commands
 
 
 def _tool_use(oid, name, inp):
@@ -62,7 +62,7 @@ def test_condensate_replays_bash_write_edit(tmp_path):
 
 
 def test_script_operator_requires_a_script():
-    from robocli.bench.run import OPERATORS, script_operator
+    from robocli.runner.operators import OPERATORS, script_operator
 
     assert set(OPERATORS) == {"none", "script", "agent"}
     with pytest.raises(ValueError, match="--script"):
@@ -72,7 +72,7 @@ def test_script_operator_requires_a_script():
 # ----------------------------------------------- scrubbing and archiving
 
 def test_secret_strings_collects_only_long_values(tmp_path):
-    from robocli.bench.record import secret_strings
+    from robocli.runner.record import secret_strings
     (tmp_path / "creds.json").write_text(json.dumps({
         "accessToken": "tok-" + "a" * 30,
         "nested": {"refresh": ["tok-" + "b" * 30]},
@@ -84,7 +84,7 @@ def test_secret_strings_collects_only_long_values(tmp_path):
 
 
 def test_scrub_file_redacts_every_secret(tmp_path):
-    from robocli.bench.record import scrub_file
+    from robocli.runner.record import scrub_file
     f = tmp_path / "transcript.jsonl"
     f.write_text("saw tok-SECRETSECRETSECRETS twice: tok-SECRETSECRETSECRETS")
     scrub_file(f, ["tok-SECRETSECRETSECRETS"])
@@ -93,7 +93,7 @@ def test_scrub_file_redacts_every_secret(tmp_path):
 
 
 def test_archive_prior_attempt_moves_evidence_down(tmp_path):
-    from robocli.bench.record import archive_prior_attempt
+    from robocli.runner.record import archive_prior_attempt
     trial = tmp_path / "seed0"
     trial.mkdir()
     assert archive_prior_attempt(trial) is None  # nothing yet -> no-op
@@ -108,7 +108,7 @@ def test_archive_prior_attempt_moves_evidence_down(tmp_path):
 
 
 def test_provenance_pins_the_whole_chain(tmp_path):
-    from robocli.bench.record import provenance
+    from robocli.runner.record import provenance
 
     class _Agent:
         name = "stub"
@@ -150,7 +150,7 @@ def test_provenance_pins_the_whole_chain(tmp_path):
 
 
 def test_run_config_is_write_once(tmp_path):
-    from robocli.bench.record import write_run_config
+    from robocli.runner.record import write_run_config
     write_run_config(tmp_path, {"gen": 1})
     write_run_config(tmp_path, {"gen": 2})  # concurrent runner: no rewrite
     assert json.loads((tmp_path / "config.json").read_text()) == {"gen": 1}

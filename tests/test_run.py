@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from robocli.bench.run import load_config
+from robocli.config import load_config
 
 import subprocess
 import sys
@@ -30,7 +30,7 @@ def test_run_spelling_is_the_conductor():
 # --------------------------------------------- suite view resolution
 
 def test_suite_overrides_deep_merge_and_null_delete(tmp_path):
-    from robocli.bench.run import apply_suite_overrides, load_config
+    from robocli.config import apply_suite_overrides, load_config
     cfg = load_config("libero_pro", home=tmp_path)
     cfg["machine"]["ports"].update({"twist": "/t", "gripper": "/g"})
     cfg["suite_overrides"] = {"wipe": {"machine": {
@@ -44,7 +44,7 @@ def test_suite_overrides_deep_merge_and_null_delete(tmp_path):
 
 
 def test_unknown_suite_is_a_no_op():
-    from robocli.bench.run import apply_suite_overrides
+    from robocli.config import apply_suite_overrides
     cfg = {"machine": {"ports": {"twist": "/t"}}}
     import copy
     assert apply_suite_overrides(copy.deepcopy(cfg), "nope") == cfg
@@ -53,13 +53,13 @@ def test_unknown_suite_is_a_no_op():
 def test_capbench_wipe_view_agrees_machine_and_manifest():
     # The shipped override chain end to end: wipe's view must drop the
     # gripper from ports AND from the generated manifest (the 2026-08-11
-    # canary), while the precheck mints the negative check.
+    # canary), while the preflight mints the negative check.
     from pathlib import Path
 
     import yaml
 
-    from robocli.bench.precheck import build_checks
-    from robocli.bench.run import apply_suite_overrides
+    from robocli.runner.preflight import build_checks
+    from robocli.config import apply_suite_overrides
     cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" / "configs" /
                           "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_wipe")
@@ -83,7 +83,7 @@ def test_normalize_arms_synthesizes_from_flat_fields():
 
     import yaml
 
-    from robocli.bench.run import normalize_arms
+    from robocli.config import normalize_arms
     cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" / "configs" /
                           "benchmarks" / "libero_pro.yaml")
     normalize_arms(cfg)
@@ -99,7 +99,7 @@ def test_normalize_arms_synthesizes_from_flat_fields():
 
 
 def test_normalize_arms_keeps_explicit_arms_untouched():
-    from robocli.bench.run import normalize_arms
+    from robocli.config import normalize_arms
     explicit = [{"label": "left", "joints": ["j1"], "ports": {}},
                 {"label": "right", "joints": ["j2"], "ports": {}}]
     cfg = {"machine": {"arms": [dict(a) for a in explicit]}}
@@ -114,7 +114,7 @@ def test_twoarm_suite_view_resolves_two_arms():
 
     import yaml
 
-    from robocli.bench.run import apply_suite_overrides, normalize_arms
+    from robocli.config import apply_suite_overrides, normalize_arms
     cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" / "configs" /
                           "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_twoarm_lift")
@@ -137,6 +137,6 @@ def test_trial_record_stamps_the_workspace_template_hash():
     # every trial: after a mid-campaign template edit only a trial-level
     # stamp can still separate the two halves (2026-08-21).
     import inspect
-    from robocli.bench import run as R
-    src = inspect.getsource(R.run_trial)
+    from robocli.runner import trial as T
+    src = inspect.getsource(T.run_trial)
     assert '"workspace_template_sha256": workspace.template_hash(cfg)' in src

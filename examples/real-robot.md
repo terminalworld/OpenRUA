@@ -7,7 +7,7 @@
 3. `robocli up ./my-robot.yaml --ros-domain <id>`
 4. `robocli agent "..."`
 
-The precheck runs the same checks as in simulation: the ports you
+The preflight runs the same checks as in simulation: the ports you
 listed must be served, joint names must match the manual, TF and
 camera frames must flow. If a check fails, `up` refuses and says which
 promise the robot did not keep.

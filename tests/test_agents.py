@@ -4,7 +4,7 @@ test_harness.py (migration review 2026-08-15, F1)."""
 
 from __future__ import annotations
 
-from robocli.bench.run import load_config
+from robocli.config import load_config
 
 from pathlib import Path
 
@@ -42,8 +42,8 @@ def test_install_line_and_sandbox_check_carry_the_manifest_version():
     assert name == "sandbox_cli_matches_pin" and a.version in cmd
 
 
-def test_precheck_includes_version_checks():
-    from robocli.bench.precheck import build_checks
+def test_preflight_includes_version_checks():
+    from robocli.runner.preflight import build_checks
     cfg = load_config(LIBERO_CFG)
     names = [n for n, _ in build_checks(cfg, agents.get("claude-code"))]
     assert "sandbox_cli_matches_pin" in names
@@ -53,8 +53,8 @@ def test_precheck_includes_version_checks():
 # -------------------------------------------------- credentials pipeline
 # The launcher's precondition is "credentials already live in the
 # container"; that pipeline is prepare_profile -> sandbox_mounts ->
-# sandbox.up --mount (generic slot) -> precheck credentials_readable.
-# Each link gets a dry guard here; the live end is the precheck.
+# sandbox.up --mount (generic slot) -> preflight credentials_readable.
+# Each link gets a dry guard here; the live end is the preflight.
 
 def test_prepare_profile_requires_credentials(tmp_path):
     import pytest
@@ -506,7 +506,7 @@ def test_prepare_profile_needs_no_credentials_when_a_token_authenticates(tmp_pat
 def test_env_file_values_are_treated_as_secrets(tmp_path):
     # The token must be scrubbed from the record like anything in the
     # credential JSONs: the agent can print its own environment.
-    from robocli.bench import record
+    from robocli.runner import record
     a = agents.get("claude-code")
     f = tmp_path / ".env_tw"
     f.write_text(f"# a comment\n{a.token_env}=sk-ant-oat01-{'x' * 90}\n")
@@ -537,7 +537,7 @@ def test_replay_ops_are_adapter_neutral_shapes(tmp_path):
     assert [o["kind"] for o in ops] == ["write", "shell"]
     assert ops[0]["path"] == "/tmp/a.py" and ops[0]["output"] == "ok"
     assert ops[1]["command"] == "ls"
-    from robocli.bench import record
+    from robocli.runner import record
     out = tmp_path / "commands.sh"
     record.extract_commands(t, out, a)
     body = out.read_text()

@@ -1,4 +1,4 @@
-"""Pre-agent machine-manual precheck (A6, 2026-08-12; named 2026-08-18).
+"""Preflight: every promise the workspace manual makes, checked before the agent starts.
 
 Before the agent boards, every verifiable promise the workspace manual
 makes is asserted FROM THE SANDBOX'S OWN VANTAGE (same shell, same DDS
@@ -38,7 +38,7 @@ _DEF_GRIPPER = "/franka_gripper/gripper_action"
 # two Panda controllers + doubled TF take longer to first-publish, and 30s
 # was too tight under contention. Single-arm is unaffected (it passed at
 # 30s and pays nothing for the higher ceiling). Not a measurement-chain
-# change: precheck gates apparatus setup, never the scored episode.
+# change: preflight gates apparatus setup, never the scored episode.
 _CHECK_TIMEOUT_S = 60
 
 
@@ -63,7 +63,7 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
         # timeout is the ceiling for every other probe here because they
         # block until their first message; `topic list | grep` returns
         # instantly, so a single ask spent none of the 60s and failed any
-        # bringup slower than the moment precheck happened to run. LIBERO
+        # bringup slower than the moment preflight happened to run. LIBERO
         # at 14 concurrent trials red-checked this on ~100% of launches at
         # a uniform 38-47s while the same cell run alone passed (2026-08-26).
         # Now it waits like its siblings; a fast bringup still pays nothing.
@@ -160,7 +160,7 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
     return checks
 
 
-def run_precheck(cfg: dict, sandbox_name: str, agent,
+def run_preflight(cfg: dict, sandbox_name: str, agent,
                  timeout_s: float | None = None) -> dict:
     """Execute all checks inside the sandbox; returns
     {ok, checks: [(name, passed)], failed: [names]}."""
@@ -192,7 +192,7 @@ def run_precheck(cfg: dict, sandbox_name: str, agent,
             if status == "FAIL":
                 failed.append(name)
     if not results:  # exec itself broke; that too is a red gate
-        failed = ["precheck_script_did_not_run"]
+        failed = ["preflight_script_did_not_run"]
     # RETIRED 2026-09-02: host_cli_matches_pin. It enforced the host side
     # of sandbox == pin == host, and existed only because the host binary
     # and every sandbox shared one rotating credentials file: a host

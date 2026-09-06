@@ -46,7 +46,7 @@ machine:
 
 Every key is checked against the schema (`robocli config schema`
 prints all of them with their meaning); a misspelled key is an error,
-not a silent no-op. Every port you list becomes a promise: `precheck`
+not a silent no-op. Every port you list becomes a promise: `preflight`
 verifies it is served before an agent boards, and the manual describes
 it to the agent. List only what the robot actually serves.
 
@@ -68,5 +68,5 @@ robocli agent "move the arm to the home pose and open the gripper"
 ```
 
 Real-robot support is being brought up profile by profile; the
-simulated profiles (`robocli/robots/`) are the reference for what a
+simulated profiles (`robocli/configs/robots/`) are the reference for what a
 complete `machine:` section looks like.

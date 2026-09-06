@@ -20,7 +20,7 @@ is visible to the agent.
 | `robocli/sandbox/` | the agent's terminal: an Ubuntu + ROS 2 container with the agent installed and `workspace/` seeded (README, `machine.yaml`, four docs, a few tools). | `python -m robocli.sandbox` |
 | `robocli/proxy/` | the wall: a whitelist HTTP proxy, the sandbox's only route out. | `python -m robocli.proxy` |
 | `robocli/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, hooks under `plugins/agents/`, bundled then `~/.robocli/`), the launcher, credentials staging, the prompts. | `python -m robocli.agents` |
-| `robocli/bench/` | running a task set: `run.py` conducts trials (and owns config assembly: `load_config`, `compose`, `bring_up`), `precheck.py` verifies every promise the manual makes before the agent boards, `record.py` is the only writer under `runs/`. | `robocli run` |
+| `robocli/runner/` | running trials: `main.py` (`robocli run`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the manual makes, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `robocli run` |
 | `robocli/cli.py` | the front door: `robocli robots / benchmarks / agents / build / up / agent / down / run / config / doctor`. | `robocli` |
 | `robocli/doctor.py` | is this machine ready: structured checks over docker, images (their labels against the selected agents), simulator, login, the user directory. | `robocli doctor` |
 
@@ -37,7 +37,7 @@ the bridge:
 Data, not code, is what crosses unit boundaries: a robot profile and a
 benchmark config are validated and assembled once into one config,
 written to disk (`config.yaml`), and read by every party (the sandbox
-seeds the manual from it, the body boots from it, the precheck derives
+seeds the manual from it, the body boots from it, the preflight derives
 its checks from it). At runtime the units talk over DDS, stdio, and
 files under `runs/`.
 
@@ -68,11 +68,11 @@ robocli/configs/{robots,benchmarks,agents}/, robocli/plugins/agents/   bundled, 
   bridge.
 - `sandbox` imports no other layer: what the agent experiences knows
   nothing about scoring.
-- `precheck` and `record` are leaves; handles and paths are handed in.
+- `preflight` and `record` are leaves; handles and paths are handed in.
 - `agents` and `proxy` are leaves (they may use `paths` and `errors`).
 - The schema (`config`) belongs to the conductor: units read validated
   dicts and never import it.
-- Only the conductor (`bench/run.py`, and `cli.py`) brings bodies up.
+- Only the runner (`runner/bringup.py`, used by `robocli run` and `robocli up`) brings robots up.
 - `cli`, `doctor` and `testing` sit above the units; no unit imports them.
 
 The contract is stated in `pyproject.toml` (import-linter) and again in

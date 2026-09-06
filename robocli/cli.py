@@ -36,9 +36,9 @@ import yaml
 from robocli import __version__, agents, doctor
 from robocli.config import paths
 from robocli.errors import NotFound, RoboCLIError, UnavailableError
-from robocli.bench import record
-from robocli.bench.run import (apply_suite_overrides, bring_up, compose,
-                               ensure_internal_network, normalize_arms)
+from robocli.config import apply_suite_overrides, compose, normalize_arms
+from robocli.runner import record
+from robocli.runner.bringup import bring_up, ensure_internal_network
 from robocli.proxy.up import ensure as ensure_proxy
 from robocli import robot
 from robocli.sandbox.down import down as sandbox_down
@@ -331,7 +331,7 @@ VERBS = ("robots", "benchmarks", "agents", "build", "up", "agent", "down", "run"
          "config", "doctor")
 # Verbs that forward their whole argv to another front door (argparse
 # would otherwise eat their --help).
-FORWARDED = {"run": "robocli.bench.run"}
+FORWARDED = {"run": "robocli.runner.main"}
 
 
 def main() -> int:

@@ -246,7 +246,7 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
     cfg = None
     report = Report()
     if robot:
-        from robocli.bench.run import compose   # the same assembly `up` does
+        from robocli.config import compose
         try:
             cfg, _, _ = compose(robot, None, home)
         except Exception as exc:  # noqa: BLE001

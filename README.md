@@ -64,11 +64,11 @@ simulator, an agent login).
 - **The sandbox is a plain Ubuntu + ROS 2 container** with the agent
   installed, a workspace mounted, and a whitelist proxy as its only
   way out (the model API; nothing else).
-- **A robot is a profile** ([`robocli/robots/`](robocli/robots), or
+- **A robot is a profile** ([`robocli/configs/robots/`](robocli/configs/robots), or
   your own under `~/.robocli/robots/`): what it is (`machine:`) and,
   for simulated ones, which body image and scene to boot. A real robot
   needs only the `machine:` facts and a reachable ROS 2 graph.
-- **A benchmark is a task set** ([`robocli/benchmarks/`](robocli/benchmarks)):
+- **A benchmark is a task set** ([`robocli/configs/benchmarks/`](robocli/configs/benchmarks)):
   which suites and init states to load, how a trial runs and stops.
   `robocli run` conducts trials, checks the manual's promises before
   the agent boards, and records every trial with full provenance.
@@ -123,7 +123,7 @@ robocli run --config libero_pro --run-id demo \
             --task-suite libero_goal_task --task-ids 0,1 --seeds 0 --operator agent
 ```
 
-Every trial writes `result.json` (verdict, precheck, termination,
+Every trial writes `result.json` (verdict, preflight, termination,
 token accounting), `provenance.json` (code and simulator commits, image
 digests, config and prompt hashes), the agent's full transcript, and
 the workspace it left behind. Building the simulator simulators:
@@ -142,7 +142,7 @@ robocli/
   sandbox/      the agent's terminal + workspace/ (the docs and tools the agent sees)
   agents/       the adapter contract (base.py) + one adapter per coding agent
   proxy/        the whitelist wall
-  bench/        run · precheck · record: task sets, the gate, the ledger
+  runner/       run: bring-up, preflight, the operator, the verdict, the record
   robots/       one profile per robot
   benchmarks/   one config per task set
 tests/          unit tests + the layering contract + the agent boundary
