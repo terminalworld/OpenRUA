@@ -26,7 +26,7 @@ import time
 
 def main() -> None:
     # Reserve the real stdout for the control channel, then route fd 1 to
-    # stderr; substrate libraries print to stdout (LIBERO does) and would
+    # stderr; simulator libraries print to stdout (LIBERO does) and would
     # otherwise pollute the JSON channel; dup2 catches C-level prints too.
     import os
 

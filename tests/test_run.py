@@ -60,7 +60,7 @@ def test_capbench_wipe_view_agrees_machine_and_manifest():
 
     from robocli.bench.precheck import build_checks
     from robocli.bench.run import apply_suite_overrides
-    cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" /
+    cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" / "configs" /
                           "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_wipe")
     assert not cfg["machine"]["ports"].get("gripper")
@@ -84,7 +84,7 @@ def test_normalize_arms_synthesizes_from_flat_fields():
     import yaml
 
     from robocli.bench.run import normalize_arms
-    cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" /
+    cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" / "configs" /
                           "benchmarks" / "libero_pro.yaml")
     normalize_arms(cfg)
     arms = cfg["machine"]["arms"]
@@ -115,7 +115,7 @@ def test_twoarm_suite_view_resolves_two_arms():
     import yaml
 
     from robocli.bench.run import apply_suite_overrides, normalize_arms
-    cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" /
+    cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" / "configs" /
                           "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_twoarm_lift")
     normalize_arms(cfg)

@@ -26,7 +26,7 @@ class _Env:
 
 class _Loader:
     """success() follows a scripted per-check sequence; reset pumps
-    settling steps through env.step like the cap-x substrates do."""
+    settling steps through env.step like the cap-x simulators do."""
 
     def __init__(self, script):
         self.script = list(script)
@@ -40,7 +40,7 @@ class _Loader:
 
     def reset(self, env, ctx, state):
         self.resets += 1
-        env.step(None)  # substrate settling step during restore
+        env.step(None)  # simulator settling step during restore
 
     def task_info(self, env, ctx):
         return {"task_language": "probe"}

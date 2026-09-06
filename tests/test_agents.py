@@ -13,7 +13,7 @@ import yaml
 from robocli import agents
 
 REPO = Path(__file__).resolve().parents[1]
-LIBERO_CFG = REPO / "robocli" / "benchmarks" / "libero_pro.yaml"
+LIBERO_CFG = REPO / "robocli" / "configs" / "benchmarks" / "libero_pro.yaml"
 
 
 # ---------------------------------------------------------------- prompt
@@ -28,7 +28,7 @@ def test_prompt_has_only_task_placeholder():
 def test_configs_carry_no_stale_prompt_key():
     # Inline ruling 2026-08-15: the prompt lives in agents.PROMPT; a
     # config naming a prompt file would be silently ignored, so ban it.
-    for cfg_file in (REPO / "robocli" / "benchmarks").glob("*.yaml"):
+    for cfg_file in (REPO / "robocli" / "configs" / "benchmarks").glob("*.yaml"):
         cfg = yaml.safe_load(cfg_file.read_text())
         assert "prompt" not in cfg.get("agent", {}), cfg_file.name
 
@@ -220,11 +220,14 @@ def test_front_door_emits_build_facts(tmp_path):
     import subprocess
     import sys
     env_cmd = [sys.executable, "-m", "robocli.agents"]
-    pre = subprocess.run([*env_cmd, "preinstall"], capture_output=True,
-                         text=True)
-    wl = subprocess.run([*env_cmd, "whitelist"], capture_output=True,
-                        text=True)
-    a = agents.get(agents.DEFAULT_CLI)
+    pre = subprocess.run([*env_cmd, "preinstall", "--cli", "claude-code"],
+                         capture_output=True, text=True)
+    wl = subprocess.run([*env_cmd, "whitelist", "--cli", "claude-code"],
+                        capture_output=True, text=True)
+    a = agents.get("claude-code")
+    # the build verbs name their agents; there is no implicit default here
+    bare = subprocess.run([*env_cmd, "whitelist"], capture_output=True, text=True)
+    assert bare.returncode != 0 and "--cli" in bare.stderr
     assert pre.returncode == 0 and pre.stdout.strip() == a.install
     assert wl.returncode == 0
     assert wl.stdout.strip().splitlines() == list(a.whitelist)

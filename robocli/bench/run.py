@@ -182,9 +182,11 @@ def load_config(path: Path | str, robot: str | None = None,
     user's default) pulls in that profile's ``machine:`` section; a file
     carrying its own ``machine:`` is taken as is. The user's
     ``~/.robocli/config.yaml`` supplies agent defaults under the file's
-    own. Returns the assembled dict (config.Assembly, validated)."""
+    own, and the package's ``configs/config.yaml`` under that. Returns the
+    assembled dict (config.Assembly, validated)."""
     p = paths.find("benchmarks", path, home)
     bench = config.validate(config.Benchmark, config.load_yaml(p), p)
+    defaults = config.load_user_config(paths.package_config_path())
     user = config.load_user_config(paths.config_path(home))
     cfg = config.dump(bench)
     named = cfg.pop("robot", None)          # always popped: the argument wins
@@ -195,14 +197,14 @@ def load_config(path: Path | str, robot: str | None = None,
         raise config.ConfigError(
             f"{p}: names no robot (robot: <name>, --robot, or robot: in "
             f"{paths.config_path(home)}) and carries no machine: section")
-    cfg["agent"] = config.layer_agent(user, cfg.get("agent", {}))
+    cfg["agent"] = config.layer_agent(cfg.get("agent", {}), defaults, user)
     return config.dump(config.validate(config.Assembly, cfg, p))
 
 
-def substrate_venv(body: dict, home: Path | None = None) -> Path:
-    """The simulator venv named by machine.body.substrate.venv (see
-    paths.substrate_venv for how relative names resolve)."""
-    return paths.substrate_venv(body["substrate"]["venv"], home)
+def simulator_venv(body: dict, home: Path | None = None) -> Path:
+    """The simulator venv named by machine.body.simulator.venv (see
+    paths.simulator_venv for how relative names resolve)."""
+    return paths.simulator_venv(body["simulator"]["venv"], home)
 
 
 def compose(robot: str | None, bench: str | None,
@@ -263,7 +265,7 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     try:
         # Real path: the container mounts and runs the venv by this string,
         # and a host symlink means nothing inside it.
-        venv = substrate_venv(body, home).resolve()
+        venv = simulator_venv(body, home).resolve()
         proc = sim_up(
             name=sim_name,
             gpus=bool(body.get("gpus", False)),
@@ -272,7 +274,7 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             config_path=str(assembly_path),
             task_suite=task_suite,
             task_id=task_id,
-            substrate=str(paths.substrate_root(venv)),
+            simulator=str(paths.simulator_root(venv)),
             venv=str(venv),
             code_root=str(paths.code_root()),
             log_path=robot_log,
@@ -1043,7 +1045,7 @@ def main() -> None:
     ap.add_argument(
         "--home", default=None,
         help="the user directory (default: ~/.robocli); robot and benchmark "
-        "names, substrates and login profiles are looked up under it",
+        "names, simulators and login profiles are looked up under it",
     )
     ap.add_argument(
         "--account-alias", default=None,
@@ -1076,7 +1078,7 @@ def main() -> None:
         template_hash=workspace.template_hash(cfg),
         prompt=agents.PROMPT, resume_prompt=agents.RESUME_PROMPT,
         code_root=paths.code_root(),
-        substrate_venv=substrate_venv(cfg["machine"].get("body", {}), home),
+        simulator_venv=simulator_venv(cfg["machine"].get("body", {}), home),
     ), "assembly": cfg}
     record.write_run_config(run_dir, prov)
 

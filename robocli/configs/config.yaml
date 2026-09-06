@@ -1,0 +1,4 @@
+# Package defaults. The user's ~/.robocli/config.yaml overrides these key
+# by key; a benchmark config overrides both; command-line flags win last.
+agent:
+  cli: claude-code

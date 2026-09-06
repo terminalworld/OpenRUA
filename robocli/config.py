@@ -109,9 +109,9 @@ class AgentOverrides(Strict):
 
 # --------------------------------------------------------------- machine
 
-class Substrate(Strict):
+class Simulator(Strict):
     venv: str = Field(description="simulator venv: absolute, ~, or relative to "
-                      "~/.robocli/substrates/")
+                      "~/.robocli/simulators/")
     container: str | None = Field(default=None, description="which sim image family "
                                   "(sim-jazzy | sim-humble); documentation")
 
@@ -124,7 +124,7 @@ class Body(Strict):
     gpus: bool = Field(default=False, description="render on the GPU (needs nvidia toolkit)")
     resources: dict[str, Any] | None = Field(
         default=None, description="render_threads: int | off | auto")
-    substrate: Substrate | None = Field(default=None, description="absent for a real robot")
+    simulator: Simulator | None = Field(default=None, description="absent for a real robot")
 
 
 class Cameras(Strict):
@@ -332,14 +332,17 @@ def load_user_config(path: Path) -> UserConfig:
     return validate(UserConfig, load_yaml(path), path)
 
 
-def layer_agent(user: UserConfig, bench_agent: dict) -> dict:
-    """User agent defaults under the benchmark's agent section: only the
-    keys the user actually wrote (exclude_unset) and only where the
-    benchmark is silent."""
-    out = dict(user.agent.model_dump(exclude_unset=True, exclude_none=True))
-    for k, v in bench_agent.items():
-        if k == "options":
-            out["options"] = {**out.get("options", {}), **(v or {})}
-        else:
-            out[k] = v
+def layer_agent(bench_agent: dict, *defaults: UserConfig) -> dict:
+    """The benchmark's agent section over the defaults files, lowest
+    layer first (package defaults, then the user's file). A defaults
+    file contributes only the keys it wrote; ``options`` merge key by
+    key, every other key is replaced by the higher layer."""
+    out: dict = {}
+    layers = [d.agent.model_dump(exclude_unset=True, exclude_none=True) for d in defaults]
+    for layer in layers + [bench_agent]:
+        for k, v in layer.items():
+            if k == "options":
+                out["options"] = {**out.get("options", {}), **(v or {})}
+            else:
+                out[k] = v
     return out

@@ -8,9 +8,9 @@ directory (``~/.robocli/agents/<name>.py``), looked up in that order.
 A third source, pip entry points (group ``robocli.agents``), would come
 after the user directory; not implemented.
 
-Selection: configs carry ``agent.cli`` (default ``claude-code``),
-recorded per trial in ``operator_meta.cli`` so post-hoc tools resolve
-the adapter the trial actually ran.
+Selection: configs carry ``agent.cli`` (the package default lives in
+``configs/config.yaml``), recorded per trial in ``operator_meta.cli`` so
+post-hoc tools resolve the adapter the trial actually ran.
 """
 
 from __future__ import annotations
@@ -28,7 +28,6 @@ from pathlib import Path as _Path
 from robocli import paths
 from robocli.agents.base import HOOKS, Agent, Credentials  # noqa: F401  re-exported
 
-DEFAULT_CLI = "claude-code"
 _log = logging.getLogger(__name__)
 
 # Modules in this package that are not adapters.
@@ -67,10 +66,11 @@ def _agent_of(module, source: str) -> Agent:
     return agent
 
 
-def get(cli: str | None = None, home: _Path | None = None) -> Agent:
+def get(cli: str, home: _Path | None = None) -> Agent:
     """Resolve an adapter by its ``agent.cli`` name: bundled first, then
     ``<home>/agents/<name>.py``. Unknown names list what exists."""
-    cli = cli or DEFAULT_CLI
+    if not cli:
+        raise ValueError("agent name is empty; a resolved config always carries agent.cli")
     mod = _module_name(cli)
     if mod not in _NOT_ADAPTERS:
         try:

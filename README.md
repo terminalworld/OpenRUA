@@ -44,7 +44,7 @@ Claude Code opens in `/workspace` on the robot's terminal. It reads
 `FollowJointTrajectory` goal, and checks the result, exactly as it
 would on a real machine. `robocli doctor` tells you what is missing
 before the first `up` (Docker, the three images, the simulator
-substrate, an agent login).
+simulator, an agent login).
 
 ## How it works
 
@@ -124,9 +124,9 @@ robocli run --config libero_pro --run-id demo \
 ```
 
 Every trial writes `result.json` (verdict, precheck, termination,
-token accounting), `provenance.json` (code and substrate commits, image
+token accounting), `provenance.json` (code and simulator commits, image
 digests, config and prompt hashes), the agent's full transcript, and
-the workspace it left behind. Building the simulator substrates:
+the workspace it left behind. Building the simulator simulators:
 [docs/simulation.md](docs/simulation.md).
 
 ## Architecture
@@ -134,7 +134,7 @@ the workspace it left behind. Building the simulator substrates:
 ```
 robocli/
   cli.py        robocli robots | benchmarks | agents | build | up | agent | down | run | config | doctor
-  doctor.py     structured checks: docker, images, substrate, login
+  doctor.py     structured checks: docker, images, simulator, login
   paths.py      where things live: bundled data, ~/.robocli, the lookup order
   config.py     the schema every profile and config is checked against
   errors.py     errors with a fix and an exit code

@@ -15,7 +15,7 @@ identity; zero reimplementation), ``init_state``/``reset`` speak their
 protocol, ``task_info`` reads their task sentence. The state returned by
 ``init_state`` is opaque to everyone but the same loader's ``reset``.
 
-Zero ROS imports; substrate imports live inside ``create`` (the registry
+Zero ROS imports; simulator imports live inside ``create`` (the registry
 imports cheaply anywhere). Zero knowledge of the sibling ros_graph and
 monitor packages: the env and the loader travel onward as parameters
 (boot.py passes them).

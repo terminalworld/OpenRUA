@@ -27,7 +27,7 @@ def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
         "robocli-sim-jazzy": {},
         "robocli-sandbox": {"robocli.preinstall_sha256": want_pi}}))
     monkeypatch.setattr(doctor.shutil, "which", lambda _: "/usr/bin/docker")
-    (tmp_path / "substrates" / "cap-x" / ".venv-libero").mkdir(parents=True)
+    (tmp_path / "simulators" / "cap-x" / ".venv-libero").mkdir(parents=True)
     creds = paths.credentials_dir(tmp_path) / a.name
     creds.mkdir(parents=True)
     (creds / a.credentials.filename).write_text("{}")
@@ -36,7 +36,7 @@ def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
     assert r.summary["error"] == 0 and r.summary["warning"] == 0
     ids = [c.id for c in r.checks]
     assert ids[:2] == ["docker", "home"]
-    assert {"proxy-image", "robot-image", "sandbox-image", "substrate", "login-claude-code"} <= set(ids)
+    assert {"proxy-image", "robot-image", "sandbox-image", "simulator", "login-claude-code"} <= set(ids)
 
 
 def test_missing_pieces_are_errors_with_a_fix_and_stale_labels_are_warnings(tmp_path, monkeypatch):
@@ -50,7 +50,7 @@ def test_missing_pieces_are_errors_with_a_fix_and_stale_labels_are_warnings(tmp_
     assert by["robot-image"].severity == "error" and by["robot-image"].hint == "robocli build robot"
     assert by["proxy-image"].severity == "warning" and "whitelist" in by["proxy-image"].hint
     assert by["sandbox-image"].severity == "warning" and "preinstall" in by["sandbox-image"].hint
-    assert by["substrate"].severity == "error" and str(tmp_path / "substrates") in by["substrate"].hint
+    assert by["simulator"].severity == "error" and str(tmp_path / "simulators") in by["simulator"].hint
     assert by["login-claude-code"].severity == "error"
     assert "claude login" in by["login-claude-code"].hint
     assert "setup-token" in by["login-claude-code"].hint        # the token route too

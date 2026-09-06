@@ -97,7 +97,7 @@ class Monitor:
             self._loader.reset(self._env, self._ctx, state)
             self._latched = False  # new episode, fresh latch
             # Episode-scoped step counter (audit 2026-08-14 F7/F10):
-            # substrate resets may pump settling steps through env.step
+            # simulator resets may pump settling steps through env.step
             # (cap-x nut runs ~100); zeroing HERE makes success_at.step
             # mean "steps since reset" uniformly across benchmarks.
             self._steps = 0
@@ -158,7 +158,7 @@ class Monitor:
             sim_ = self._env.sim
             # Grasp point between the fingertips (right reference for
             # servoing; the hand body origin sits ~10 cm above it). Site
-            # name differs across substrate generations: robosuite 1.4
+            # name differs across simulator generations: robosuite 1.4
             # (LIBERO fork) vs 1.5 (capbench/robocasa), which prefixes
             # gripper parts per arm.
             grip = None

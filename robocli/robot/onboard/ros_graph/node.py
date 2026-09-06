@@ -32,7 +32,7 @@ class GraphNode(Node):
 
     def refresh(self) -> None:
         """Re-align the graph to the world after it changed under us:
-        re-apply controller tuning (the substrate rebuilds controllers
+        re-apply controller tuning (the simulator rebuilds controllers
         when the world is rebuilt) and push current state to the topics.
         Why the world changed is not this side's business."""
         self.ports.apply_tuning()

@@ -150,7 +150,7 @@ def extract_commands(transcript: Path, out: Path, agent) -> None:
 
 
 def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
-               prompt: str, code_root: Path, substrate_venv: Path | None = None,
+               prompt: str, code_root: Path, simulator_venv: Path | None = None,
                resume_prompt: str | None = None) -> dict:
     """The frozen reproduction record. ``prompt`` is the SAME string the
     launcher formats (F18: one source; the conductor passes agents.PROMPT;
@@ -177,10 +177,10 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
     # generously; the RUNBOOK reconciles builds against these).
     sandbox_image = body.get("sandbox_image", "robocli-sandbox")
     # The benchmark content itself (tasks, predicates, the vendored
-    # forks) lives in the substrate checkout; its commit is as much a
+    # forks) lives in the simulator checkout; its commit is as much a
     # link in the reproduction chain as our own. The checkout root is
-    # the directory holding the substrate venv (resolved by the caller).
-    substrate = str(substrate_venv.parent) if substrate_venv else ""
+    # the directory holding the simulator venv (resolved by the caller).
+    simulator = str(simulator_venv.parent) if simulator_venv else ""
     import os
     import platform
     from robocli import __version__ as robocli_version
@@ -192,12 +192,12 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
         # is the pin.
         "robocli_commit": sh(["git", "-C", str(code_root), "rev-parse", "HEAD"]),
         "git_dirty": bool(sh(["git", "-C", str(code_root), "status", "--porcelain"])),
-        "substrate_commit": (
-            sh(["git", "-C", substrate, "rev-parse", "HEAD"])
-            if substrate else "unavailable"),
-        "substrate_dirty": bool(
-            sh(["git", "-C", substrate, "status", "--porcelain"])
-            if substrate else False),
+        "simulator_commit": (
+            sh(["git", "-C", simulator, "rev-parse", "HEAD"])
+            if simulator else "unavailable"),
+        "simulator_dirty": bool(
+            sh(["git", "-C", simulator, "status", "--porcelain"])
+            if simulator else False),
         # Wall-clock trials render at host speed (llvmpipe scales with
         # cores); where a trial ran is a condition, not trivia.
         "host": {"hostname": platform.node(), "cpu_count": os.cpu_count()},
