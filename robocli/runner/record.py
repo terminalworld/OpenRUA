@@ -278,17 +278,21 @@ def write_run_summary(run_dir: Path) -> Path | None:
             "task": r.get("task_id"), "seed": r.get("init_state_id"),
             "success": r.get("success"), "termination": r.get("termination"),
             "wall_s": r.get("wall_seconds"), "turns": meta.get("num_turns"),
-            "anomaly": r.get("anomaly"),
+            "model": meta.get("model"), "anomaly": r.get("anomaly"),
         })
     scored = [x for x in rows if x["success"] is not None]
     successes = sum(1 for x in scored if x["success"])
     agent = prov.get("agent_cli", {})
     cfg = prov.get("config", {})
+    # The model actually run: the config's, else the agent's default as
+    # the first trial recorded it.
+    model = cfg.get("agent", {}).get("model") or next(
+        (x["model"] for x in rows if x.get("model")), "?")
     lines = [f"# {run_dir.name}", "",
              f"- benchmark: {cfg.get('task', {}).get('benchmark', '?')}",
              f"- config: `{prov.get('config_file', '?')}` (sha256 {str(prov.get('config_sha256', ''))[:12]})",
              f"- agent: {agent.get('name', '?')} {agent.get('version', '')}, model "
-             f"{cfg.get('agent', {}).get('model', '?')}, operator {prov.get('operator', '?')}",
+             f"{model}, operator {prov.get('operator', '?')}",
              f"- code: robocli {prov.get('robocli_version', '?')} @ "
              f"{str(prov.get('robocli_commit', ''))[:12]}"
              f"{' (dirty)' if prov.get('git_dirty') else ''}; "
