@@ -1,22 +1,22 @@
-"""Claude Code adapter: every Claude-specific fact in the harness.
+"""Claude Code hooks: the behaviour behind the claude-code manifest.
 
-Five facets, reached through ``robocli.agents.get("claude-code")``:
+Reached through ``robocli.agents.get("claude-code")``, which composes
+this class with ``configs/agents/claude-code.yaml``:
 
-1. launch: the in-sandbox headless command (``claude -p`` posture locked
-   2026-08-08): skip-permissions inside the container wall; WebSearch/
-   WebFetch disabled at the CLI layer because server-side search cannot
-   be firewalled; stream-json transcript on stdout).
-2. auth: subscription login via a config-dir profile (CLAUDE_CONFIG_DIR).
-   OAuth refresh tokens ROTATE, so the ONE shared ``.credentials.json``
-   is bind-mounted into every trial while the rest of the profile is a
-   fresh per-trial copy (post-incident 2026-08-08); or a minted token
-   passed by file (2026-09-02). No API key anywhere.
-3. transcript accounting: stream-json records; final ``result`` record
-   (num_turns, is_error, subtype), ``assistant`` records with timestamps.
+1. launch: the in-sandbox headless command (``claude -p``; permissions
+   skipped inside the container; WebSearch/WebFetch disabled at the CLI
+   layer because server-side search cannot be proxied; stream-json
+   transcript on stdout).
+2. auth: a profile directory the CLI reads from ``CLAUDE_CONFIG_DIR``
+   (the shared credentials file is bind-mounted, the rest copied), or a
+   token passed by file. No API key anywhere.
+3. transcript accounting: stream-json records; the final ``result``
+   record (num_turns, is_error, subtype), ``assistant`` records with
+   timestamps.
 4. action extraction: world-facing tool_use blocks (Bash/Write/Edit),
    streamed as growing snapshots per tool_use id, normalized to
    shell/write/edit operations.
-5. quota: probe request, quota phrases, rejected rate_limit_event shape.
+5. quota: probe request, quota phrases, the rejected rate_limit_event shape.
 """
 
 from __future__ import annotations
@@ -26,73 +26,20 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from robocli.agents.base import Agent, Credentials
+from robocli.agents.base import Agent
 
-# The CLI version baked into the sandbox image and checked inside it, so a
-# trial records which agent version produced it. It used to ALSO be
-# enforced against the host, because host and sandboxes shared one rotating
-# credentials file and a schema drift launched the sandbox logged-out
-# (2026-08-12); sandboxes authenticate with their own minted token now and
-# the host check retired with the coupling that motivated it (2026-09-02).
-CLI_VERSION = "2.1.226"
 QUOTA_PHRASES = ("session limit", "rate limit", "weekly limit", "usage limit")
-_SANDBOX_CONFIG_DIR = "/claude-config"
 _REPLAY_TOOLS = ("Bash", "Write", "Edit")
 
 
 class ClaudeCode(Agent):
-    name = "claude-code"
-    default_model = "claude-opus-5"
-    binary = "claude"
-    # Root shell snippet that installs the CLI into the sandbox image
-    # (build time only: the running sandbox has no internet by design).
-    # NodeSource 20.x because distro-apt node is v18 on 24.04 but v12 on
-    # 22.04 (Humble); one source that satisfies the CLI on every distro.
-    install = (
-        "apt-get update"
-        " && apt-get install -y --no-install-recommends curl ca-certificates"
-        " && curl -fsSL https://deb.nodesource.com/setup_20.x | bash -"
-        " && apt-get install -y --no-install-recommends nodejs"
-        f" && npm install -g @anthropic-ai/claude-code@{CLI_VERSION}"
-        " && rm -rf /var/lib/apt/lists/*"
-    )
-    whitelist = (
-        r"^api\.anthropic\.com$",
-        r"^console\.anthropic\.com$",
-        r"^platform\.claude\.com$",
-        r"^claude\.ai$",
-    )
-    # Dedicated sandbox login profile: its own token family, isolated from
-    # the operator's personal ~/.claude (an OAuth fork would kill the original).
-    credentials = Credentials(dirname="claude-code", filename=".credentials.json",
-                              config_env="CLAUDE_CONFIG_DIR",
-                              mount_point=_SANDBOX_CONFIG_DIR)
-    # Long-lived subscription token from `claude setup-token`, the sandbox's
-    # whole authentication story when given. Passed by FILE (docker exec
-    # --env-file), so the value reaches the CLI process and nowhere else.
-    token_env = "CLAUDE_CODE_OAUTH_TOKEN"
-    version_argv = ("claude", "--version")
-    instruction_file = "CLAUDE.md"
-    # Knobs a config may override under agent.options. All three are pinned
-    # explicitly rather than left to the CLI default, so an auto-update
-    # cannot shift them mid-campaign (2026-08-19, 2026-08-20):
-    # - effort: reasoning level (low, medium, high, xhigh, max); "high" is
-    #   opus-5's own default. Load-bearing and absent from the transcript,
-    #   so the harness carries it and stamps it into each trial's meta.
-    # - autocompact: compaction threshold at the window ceiling, so a
-    #   compaction fires only when the context genuinely will not fit.
-    # - bash_timeout_ms / bash_max_timeout_ms: a robot motion outlives the
-    #   CLI's 120s Bash default; verified A/B in a live sandbox (150s
-    #   foreground command returns instead of being backgrounded). The
-    #   ceiling is unverified and can only permit, never restrict.
-    default_options = {"effort": "high", "autocompact": "1M",
-                       "bash_timeout_ms": 600_000, "bash_max_timeout_ms": 1_800_000}
+    """Hooks only; every fact comes from the manifest."""
 
     # ---------------------------------------------------------- launch
 
     def _env(self, proxy: str, opts: dict[str, Any]) -> list[str]:
         return [
-            "-e", f"{self.credentials.config_env}={_SANDBOX_CONFIG_DIR}",
+            "-e", f"{self.credentials.config_env}={self.credentials.mount_point}",
             "-e", f"HTTPS_PROXY={proxy}",
             "-e", f"HTTP_PROXY={proxy}",
             "-e", f"BASH_DEFAULT_TIMEOUT_MS={opts['bash_timeout_ms']}",
@@ -150,7 +97,7 @@ class ClaudeCode(Agent):
     def sandbox_cli_check(self) -> tuple[str, str]:
         """The CLI inside the sandbox matches the pin (schema-drift vaccine)."""
         return ("sandbox_cli_matches_pin",
-                f"bash -c 'claude --version | grep -qF {CLI_VERSION}'")
+                f"bash -c 'claude --version | grep -qF {self.version}'")
 
     # ------------------------------------------------------------ auth
 
@@ -514,4 +461,4 @@ def _ts(s: str | None) -> float | None:
         return None
 
 
-AGENT = ClaudeCode()
+HOOKS = ClaudeCode

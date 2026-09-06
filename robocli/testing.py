@@ -1,28 +1,41 @@
-"""What every agent adapter must satisfy, as a test anyone can run.
+"""What every agent must satisfy, as a test anyone can run.
 
-A third-party adapter proves itself with one call from its own tests::
+A third-party agent proves itself with one call from its own tests::
 
-    from robocli.testing import check_agent
-    from my_agent import AGENT
+    from robocli.testing import check_manifest
 
     def test_conforms():
-        check_agent(AGENT)
+        check_manifest("~/.robocli/agents/my-agent.yaml")
 
-``check_agent`` raises AssertionError naming the first violation; the
-bundled adapters run through the same function in RoboCLI's own suite.
-Leaf module: imports only the adapter base.
+``check_manifest`` validates the manifest, composes it with its hooks
+module and runs ``check_agent`` on the result; both raise
+AssertionError naming the first violation. The bundled agents run
+through the same functions in RoboCLI's own suite.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from robocli.agents.base import HOOKS, Agent, Credentials
+from robocli.agents import registry
+from robocli.agents.base import HOOK_NAMES, Agent, Credentials
+
+
+def check_manifest(path: str | Path, home: Path | None = None) -> Agent:
+    """Validate one manifest file, compose it with its hooks, check the
+    result. Returns the composed Agent."""
+    p = Path(path).expanduser()
+    assert p.is_file(), f"manifest not found: {p}"
+    m = registry._read(p, "user")
+    assert m.fields.get("hooks"), f"{p}: names no hooks module; launch_argv would be missing"
+    agent = registry.compose(m, home)
+    check_agent(agent)
+    return agent
 
 
 def check_agent(agent: Agent) -> None:
-    """Assert the adapter contract (see robocli/agents/base.py)."""
-    assert isinstance(agent, Agent), "AGENT must be an robocli.agents.Agent instance"
+    """Assert the agent contract (see robocli/agents/base.py)."""
+    assert isinstance(agent, Agent), "an robocli.agents.Agent instance is required"
     cls = type(agent)
     # identity
     assert agent.name and agent.name.replace("-", "_").isidentifier(), \
@@ -74,11 +87,11 @@ def check_agent(agent: Agent) -> None:
         assert agent.quota_window_open(1, "anything") is True
     # capabilities are derived, never declared
     assert agent.capabilities == frozenset(
-        h for h in HOOKS if getattr(cls, h) is not getattr(Agent, h))
+        h for h in HOOK_NAMES if getattr(cls, h) is not getattr(Agent, h))
     # hooks that exist return the right shape
     hint = agent.login_hint(Path("/home/x"))
     assert isinstance(hint, str) and hint
     for check in (agent.credentials_check(), agent.sandbox_cli_check()):
         assert check is None or (isinstance(check, tuple) and len(check) == 2
                                  and all(isinstance(x, str) for x in check)), \
-            "prechecks are (name, bash) pairs or None"
+            "preflight checks are (name, bash) pairs or None"

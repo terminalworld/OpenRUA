@@ -1,8 +1,8 @@
 """The package's front door: ``python -m robocli.agents <verb> ...``.
 
-From outside, the occupant package is ONE self-contained unit; the
-verbs below are its whole command surface (adapters are never invoked
-by module path). ``preinstall`` and ``whitelist`` emit build-time facts
+From outside, the agents package is one self-contained unit; the verbs
+below are its whole command surface (hooks modules are never invoked by
+module path). ``preinstall`` and ``whitelist`` emit build-time facts
 for the sandbox/proxy images' generic slots, for one or several agents
 (``--agent`` repeats; the union is emitted).
 """
@@ -16,7 +16,7 @@ _VERBS = {
     "launch": "sandbox + task + credentials -> transcript",
     "preinstall": "agents -> seat install command (sandbox.build slot)",
     "whitelist": "agents -> wall domain regexes (proxy.build slot)",
-    "list": "the adapters available (bundled, then ~/.robocli/agents/)",
+    "list": "the agents available (bundled, then ~/.robocli/agents/)",
 }
 
 
@@ -25,7 +25,7 @@ def _usage() -> str:
              "", "verbs:"]
     lines += [f"  {v:<12} {desc}" for v, desc in _VERBS.items()]
     lines += ["", "verb options: python -m robocli.agents <verb> --help",
-              "contract: robocli/agents/base.py; conformance: robocli.testing.check_agent"]
+              "contract: robocli/agents/base.py; conformance: robocli.testing.check_manifest"]
     return "\n".join(lines)
 
 
@@ -35,7 +35,7 @@ def _emit(verb: str, argv: list[str]) -> int:
     ap = argparse.ArgumentParser(
         prog=f"python -m robocli.agents {verb}", description=_VERBS[verb])
     ap.add_argument("--agent", action="append", default=None,
-                    help="adapter name; repeat for several (required except for list)")
+                    help="agent name; repeat for several (required except for list)")
     ap.add_argument("--home", default=None, type=paths.home,
                     help="user directory holding agents/ (default: ~/.robocli)")
     args = ap.parse_args(argv)

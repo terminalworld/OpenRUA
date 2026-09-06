@@ -1,22 +1,21 @@
-"""The agent adapter: what RoboCLI needs to know about one coding agent.
+"""The agent contract: what RoboCLI needs to know about one coding agent.
 
-An adapter is a subclass of ``Agent`` (or an instance with overrides)
-declaring, as plain attributes, the facts the harness needs to seat the
-agent in the sandbox: its name, default model, the shell that installs
-its CLI into the sandbox image, the domains its CLI talks to, how it
-logs in. One method is required, ``launch_argv``: the docker-exec
-command that runs the agent headless on a task. Everything else is a
-hook with a documented default; a consumer that finds the default
-simply does without (no interactive mode, no quota bookkeeping, no
-replay). ``capabilities`` says which hooks an adapter actually
-implements, so ``robocli agents`` and ``doctor`` can list them.
+An ``Agent`` is composed by the registry from two halves:
 
-The minimum adapter is one class with five attributes and one method;
-the bundled adapter module is the reference implementation. A
-new adapter goes in ``~/.robocli/agents/<name>.py`` exposing ``AGENT``,
-or in this package by pull request; ``robocli.testing.check_agent``
-is the conformance test either way. Hooks take ``**_`` so the harness
-can pass new keyword arguments without breaking older adapters.
+- the manifest (``configs/agents/<name>.yaml``): the facts, set here as
+  plain attributes: name, default model, the shell that installs the
+  CLI into the sandbox image, the hosts it talks to, how it logs in;
+- the hooks module (``plugins/agents/<hooks>.py``, exposing ``HOOKS``,
+  a subclass of this class): the behaviour. One method is required,
+  ``launch_argv``, the docker-exec command that runs the agent headless
+  on a task. Every other hook has a documented default; a consumer that
+  finds the default does without (no interactive mode, no quota
+  bookkeeping, no replay). ``capabilities`` says which hooks a class
+  implements, so ``robocli agents`` and ``doctor`` can list them.
+
+Hooks take ``**_`` so the harness can pass new keyword arguments without
+breaking older hooks modules. ``robocli.testing.check_agent`` is the
+conformance test.
 
 Leaf module: imports nothing from robocli.
 """
@@ -47,9 +46,9 @@ class Credentials:
     mount_point: str
 
 
-# The optional hooks, in the order they are documented below. An adapter
-# "has" a capability when it overrides the hook; nothing is declared twice.
-HOOKS = (
+# The optional hooks, in the order they are documented below. An agent
+# "has" a capability when its hooks class overrides the hook.
+HOOK_NAMES = (
     "interactive_argv", "sandbox_cli_check", "login_hint", "token_hint",
     "quota_probe_argv", "quota_window_open", "matches_quota_anomaly",
     "read_rate_limits", "quota_since", "read_final", "scan_transcript",
@@ -58,14 +57,16 @@ HOOKS = (
 
 
 class Agent:
-    """Base adapter. Subclass it, set the attributes, implement ``launch_argv``."""
+    """The contract. The manifest's fields arrive as keyword arguments;
+    a hooks module subclasses this and implements ``launch_argv``."""
 
     # ---- required ---------------------------------------------------
     name: str = ""                      # agent name (``agent.name`` in configs)
     default_model: str = ""             # model when the config names none
 
-    # ---- declared facts, all with defaults --------------------------
+    # ---- manifest facts, all with defaults --------------------------
     binary: str = ""                    # the CLI executable inside the sandbox
+    version: str | None = None          # the CLI version the install line pins
     install: str = ""                   # one-line root shell chain that installs the
                                         # CLI into the sandbox image ("" = nothing)
     whitelist: tuple[str, ...] = ()     # hostname regexes the CLI must reach through
@@ -77,11 +78,11 @@ class Agent:
     instruction_file: str | None = None  # the instructions file this CLI reads on
                                          # its own at start, if any; declared only,
                                          # nothing is seeded from it yet
-    default_options: dict[str, Any] = {}  # adapter knobs a config may override
-                                          # under ``agent.options``
+    default_options: dict[str, Any] = {}  # knobs a config may override under
+                                          # ``agent.options``
 
-    def __init__(self, **overrides: Any) -> None:
-        for k, v in overrides.items():
+    def __init__(self, **fields: Any) -> None:
+        for k, v in fields.items():
             if not hasattr(type(self), k):
                 raise TypeError(f"{type(self).__name__} has no attribute {k!r}")
             setattr(self, k, v)
@@ -118,7 +119,7 @@ class Agent:
         return mounts + (f"{credentials_file}:{c.mount_point}/{c.filename}",)
 
     def credentials_check(self) -> tuple[str, str] | None:
-        """(name, bash) precheck that the mounted credentials file is
+        """(name, bash) preflight check that the mounted credentials file is
         readable by the sandbox user. None without a profile login."""
         if self.credentials is None:
             return None
@@ -127,8 +128,8 @@ class Agent:
 
     @property
     def capabilities(self) -> frozenset[str]:
-        """The hooks this adapter implements (overrides)."""
-        return frozenset(h for h in HOOKS
+        """The hooks this agent's class implements (overrides)."""
+        return frozenset(h for h in HOOK_NAMES
                          if getattr(type(self), h) is not getattr(Agent, h))
 
     # ---- optional hooks; each docstring states the default ----------
@@ -141,8 +142,8 @@ class Agent:
         return None
 
     def sandbox_cli_check(self) -> tuple[str, str] | None:
-        """(name, bash) precheck run inside the sandbox before the agent
-        boards (a version pin, say). Default: None, no check."""
+        """(name, bash) preflight check run inside the sandbox before the
+        agent starts (a version pin, say). Default: None, no check."""
         return None
 
     def login_hint(self, creds_home: Path) -> str:

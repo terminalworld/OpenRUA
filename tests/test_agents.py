@@ -35,12 +35,11 @@ def test_configs_carry_no_stale_prompt_key():
 
 # -------------------------------------------------------------- adapters
 
-def test_adapter_install_snippet_carries_the_pin():
-    from robocli.agents.claude_code import CLI_VERSION
+def test_install_line_and_sandbox_check_carry_the_manifest_version():
     a = agents.get("claude-code")
-    assert CLI_VERSION in a.install
+    assert a.version and a.version in a.install and "{version}" not in a.install
     name, cmd = a.sandbox_cli_check()
-    assert name == "sandbox_cli_matches_pin" and CLI_VERSION in cmd
+    assert name == "sandbox_cli_matches_pin" and a.version in cmd
 
 
 def test_precheck_includes_version_checks():
@@ -141,7 +140,7 @@ def test_launcher_default_proxy_matches_proxy_package_defaults():
 # three package-level names (PROMPT, prepare_profile, get), the adapter
 # plug shape, and a fence against bypassing get().
 
-def test_every_bundled_adapter_conforms():
+def test_every_bundled_agent_conforms():
     from robocli.testing import check_agent
     listed = agents.available()
     assert [a.name for a in listed] == ["claude-code"]
@@ -176,43 +175,53 @@ def test_agent_requires_name_and_model_and_refuses_unknown_attributes():
         agents.Agent(name="x", default_model="m", colour="red")
 
 
-def test_user_directory_adapter_is_found_and_a_broken_one_is_isolated(tmp_path):
+def test_user_directory_agent_is_found_and_a_broken_one_is_isolated(tmp_path):
     import pytest
-    d = tmp_path / "agents"
-    d.mkdir()
-    (d / "my-agent.py").write_text(
+    from robocli.errors import NotFound
+    manifests = tmp_path / "agents"
+    hooks = tmp_path / "plugins" / "agents"
+    manifests.mkdir()
+    hooks.mkdir(parents=True)
+    (manifests / "my-agent.yaml").write_text(
+        "name: my-agent\ndefault_model: m1\nhooks: my_hooks\n")
+    (hooks / "my_hooks.py").write_text(
         "from robocli.agents import Agent\n"
         "class My(Agent):\n"
-        "    name = 'my-agent'\n    default_model = 'm1'\n"
         "    def launch_argv(self, sandbox, prompt, model, max_turns, proxy, **_):\n"
         "        return ['docker', 'exec', sandbox, 'my', prompt]\n"
-        "AGENT = My()\n")
-    (d / "broken.py").write_text("raise RuntimeError('boom')\n")
-    (d / "noagent.py").write_text("x = 1\n")
+        "HOOKS = My\n")
+    (manifests / "broken.yaml").write_text("name: broken\ndefault_model: m\nhooks: broken\n")
+    (hooks / "broken.py").write_text("raise RuntimeError('boom')\n")
+    (manifests / "nohooks.yaml").write_text("name: nohooks\ndefault_model: m\nhooks: nohooks\n")
+    (hooks / "nohooks.py").write_text("x = 1\n")
     got = agents.get("my-agent", tmp_path)
     assert got.name == "my-agent" and got.default_model == "m1"
     listed = {a.name: a for a in agents.available(tmp_path)}
     assert listed["claude-code"].source == "bundled"
     assert listed["my-agent"].source == "user" and listed["my-agent"].agent is not None
     assert listed["broken"].agent is None and "boom" in listed["broken"].error
-    assert listed["noagent"].agent is None and "AGENT" in listed["noagent"].error
-    with pytest.raises(KeyError, match="my-agent"):
+    assert listed["nohooks"].agent is None and "HOOKS" in listed["nohooks"].error
+    with pytest.raises(NotFound, match="my-agent"):
         agents.get("nope", tmp_path)
+    # a manifest without hooks composes to the bare contract; check_manifest says so
+    from robocli.testing import check_manifest
+    (manifests / "facts-only.yaml").write_text("name: facts-only\ndefault_model: m\n")
+    with pytest.raises(AssertionError, match="hooks"):
+        check_manifest(manifests / "facts-only.yaml", tmp_path)
+    check_manifest(manifests / "my-agent.yaml", tmp_path)
 
 
-def test_no_direct_adapter_imports_outside_the_package():
-    # Consumers must go through agents.get(); naming a concrete adapter
-    # module elsewhere breaks the agent-agnostic promise.
-    agents_dir = Path(agents.__file__).resolve().parent
-    src = agents_dir.parent
-    roots = [src]
+def test_no_direct_hooks_imports_outside_the_registry():
+    # Consumers go through agents.get(); naming a hooks module elsewhere
+    # breaks the agent-agnostic promise.
+    src = Path(agents.__file__).resolve().parents[1]
+    registry = src / "agents" / "registry.py"
     offenders = []
-    for root in roots:
-        for f in root.rglob("*.py"):
-            if agents_dir in f.parents or "__pycache__" in f.parts:
-                continue
-            if "agents.claude_code" in f.read_text():
-                offenders.append(str(f))
+    for f in src.rglob("*.py"):
+        if f == registry or "__pycache__" in f.parts or (src / "plugins") in f.parents:
+            continue
+        if "plugins.agents" in f.read_text():
+            offenders.append(str(f))
     assert not offenders, offenders
 
 

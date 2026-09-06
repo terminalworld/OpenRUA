@@ -144,6 +144,12 @@ source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.
 forbidden_modules = ["robocli.cli", "robocli.doctor", "robocli.testing"]
 
 [[tool.importlinter.contracts]]
+name = "hooks modules import the agent contract only"
+type = "forbidden"
+source_modules = ["robocli.plugins"]
+forbidden_modules = ["robocli.agents.registry", "robocli.agents.launcher", "robocli.agents.credentials", "robocli.agents.prompts", "robocli.config", "robocli.errors", "robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.bench", "robocli.cli", "robocli.doctor", "robocli.testing"]
+
+[[tool.importlinter.contracts]]
 name = "the schema is the conductor's: units read validated dicts, never config"
 type = "forbidden"
 source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.bench.precheck", "robocli.bench.record"]

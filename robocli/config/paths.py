@@ -3,12 +3,12 @@
 Two places hold data, in a fixed lookup order:
 
 1. bundled, inside the installed package: declarative files under
-   ``robocli/configs/<kind>/`` (``robots/``, ``benchmarks/``), extension
-   code under ``robocli/plugins/<kind>/``;
+   ``robocli/configs/<kind>/`` (``robots/``, ``benchmarks/``, ``agents/``),
+   extension code under ``robocli/plugins/<kind>/`` (``agents/``);
 2. the user directory, ``~/.robocli`` unless overridden, with the same
-   shape (``robots/``, ``benchmarks/``, ``plugins/<kind>/``) plus what the
-   tool keeps for the user (``credentials/``, ``simulators/``,
-   ``workspaces/``, ``state/``, ``config.yaml``).
+   shape (``robots/``, ``benchmarks/``, ``agents/``, ``plugins/<kind>/``)
+   plus what the tool keeps for the user (``credentials/``,
+   ``simulators/``, ``workspaces/``, ``state/``, ``config.yaml``).
 
 A name is looked up bundled first, then in the user directory; a path
 (anything with a slash or a suffix) is taken as is. A user file carrying
@@ -20,9 +20,9 @@ CLI entry point reads ``ROBOCLI_HOME`` and ``--home`` once and passes the
 result down. Nothing here reads the environment. A third source, pip
 entry points, would slot in after the user directory; not implemented.
 
-Leaf (imports only robocli.errors): every host-side unit may import this. Nothing in
-``robocli.robot.onboard`` does; the container reads resolved absolute
-paths from the resolved config file.
+Imports only robocli.errors. Nothing in ``robocli.robot.onboard``
+imports this; the container reads absolute paths from the resolved
+config file.
 """
 
 from __future__ import annotations
@@ -36,11 +36,10 @@ from robocli.errors import NotFound
 DEFAULT_HOME = "~/.robocli"
 CONFIG_FILENAME = "config.yaml"
 
-# kind -> file suffix of one named entry; the kinds a name can be looked up in
-KINDS = {"robots": ".yaml", "benchmarks": ".yaml", "agents": ".py"}
-# where each kind's bundled entries live inside the package
-_BUNDLED = {"robots": ("configs", "robots"), "benchmarks": ("configs", "benchmarks"),
-            "agents": ("agents",)}
+# Declarative kinds (one yaml per named entry) and the plugin kinds (one
+# python module per entry); a name is looked up by kind.
+KINDS = {"robots": ".yaml", "benchmarks": ".yaml", "agents": ".yaml"}
+PLUGIN_KINDS = {"agents": ".py"}
 
 
 def home(override: str | Path | None = None) -> Path:
@@ -69,6 +68,10 @@ def benchmarks_dir(home_dir: Path | None = None) -> Path:
 
 def agents_dir(home_dir: Path | None = None) -> Path:
     return home(home_dir) / "agents"
+
+
+def plugins_dir(home_dir: Path | None = None) -> Path:
+    return home(home_dir) / "plugins"
 
 
 def credentials_dir(home_dir: Path | None = None) -> Path:
@@ -100,16 +103,41 @@ def code_root() -> Path:
 
 
 def bundled(kind: str) -> Path:
-    """The package directory shipping the entries of one kind."""
+    """The package directory shipping the declarative entries of one kind."""
     if kind not in KINDS:
         raise KeyError(f"unknown kind {kind!r} (kinds: {', '.join(KINDS)})")
-    return Path(str(resources.files("robocli"))).joinpath(*_BUNDLED[kind])
+    return Path(str(resources.files("robocli"))) / "configs" / kind
 
 
 def user_dir(kind: str, home_dir: Path | None = None) -> Path:
+    """The user directory holding the declarative entries of one kind."""
     if kind not in KINDS:
         raise KeyError(f"unknown kind {kind!r} (kinds: {', '.join(KINDS)})")
     return home(home_dir) / kind
+
+
+def configs(kind: str, home_dir: Path | None = None) -> tuple[Path, Path]:
+    """(bundled, user) directories of one declarative kind, lookup order."""
+    return bundled(kind), user_dir(kind, home_dir)
+
+
+def bundled_plugins(kind: str) -> Path:
+    """The package directory shipping the plugin modules of one kind."""
+    if kind not in PLUGIN_KINDS:
+        raise KeyError(f"unknown plugin kind {kind!r} (kinds: {', '.join(PLUGIN_KINDS)})")
+    return Path(str(resources.files("robocli"))) / "plugins" / kind
+
+
+def user_plugins(kind: str, home_dir: Path | None = None) -> Path:
+    """The user directory holding the plugin modules of one kind."""
+    if kind not in PLUGIN_KINDS:
+        raise KeyError(f"unknown plugin kind {kind!r} (kinds: {', '.join(PLUGIN_KINDS)})")
+    return plugins_dir(home_dir) / kind
+
+
+def plugins(kind: str, home_dir: Path | None = None) -> tuple[Path, Path]:
+    """(bundled, user) directories of one plugin kind, lookup order."""
+    return bundled_plugins(kind), user_plugins(kind, home_dir)
 
 
 @dataclass(frozen=True)

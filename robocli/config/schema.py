@@ -341,6 +341,8 @@ class AgentManifest(Strict):
     name: str
     default_model: str
     binary: str | None = Field(default=None, description="executable name inside the sandbox")
+    version: str | None = Field(default=None, description="the CLI version the install "
+                                "line pins; {version} in install is replaced with it")
     install: str = Field(default="", description="shell that installs the agent in the "
                          "sandbox image")
     whitelist: list[str] = Field(default_factory=list, description="regexes of the hosts "

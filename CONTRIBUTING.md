@@ -18,10 +18,11 @@ contract from `pyproject.toml`.
 - **A robot**: a profile under `robocli/robots/<name>.yaml`
   (docs/your-own-robot.md). `robocli doctor <name>` must load it;
   `tests/test_config.py` validates every bundled profile.
-- **An agent**: a module under `robocli/agents/<name>.py` exposing
-  `AGENT` (docs/agents.md). `robocli.testing.check_agent` must pass;
-  the bundled adapters are run through it in `tests/test_agents.py`.
-  Nothing outside `robocli/agents/` may name the agent (the boundary
+- **An agent**: a manifest under `robocli/configs/agents/<name>.yaml`
+  and a hooks module under `robocli/plugins/agents/<hooks>.py`
+  (docs/agents.md). `robocli.testing.check_manifest` must pass; the
+  bundled agents run through it in `tests/test_agents.py`. Nothing
+  outside those two directories may name the agent (the boundary
   test lists the banned tokens).
 - **A benchmark**: a config under `robocli/benchmarks/<name>.yaml` and,
   if it needs a new simulator, a loader under
@@ -53,7 +54,7 @@ contract from `pyproject.toml`.
   out; units talk through parameters and files, never environment
   variables (the one exception is `ROBOCLI_HOME`, read once at the
   CLI entry point).
-- Knowledge lives in one place: an agent fact in its adapter, a path
+- Knowledge lives in one place: an agent fact in its manifest or hooks module, a path
   rule in `config/paths.py`, a config key in `config/schema.py`.
 - Fail loud with the fix in the message; never return a dead artifact
   silently.
