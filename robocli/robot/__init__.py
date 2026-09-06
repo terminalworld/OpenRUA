@@ -50,7 +50,7 @@ def up(backend: dict, *, name: str, config_path: str, task_suite: str,
     if kind == "real":
         from robocli.robot.real.up import up as real_up
         return real_up(name=name, launch=backend.get("launch"), log_path=log_path,
-                       probe_argv=probe_argv)
+                       probe_argv=probe_argv, image=backend.get("image"))
     raise ConfigError(f"machine.backend.kind must be one of {KINDS}, got {kind!r}")
 
 

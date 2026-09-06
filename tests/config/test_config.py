@@ -84,6 +84,11 @@ def test_backend_union_is_strict():
     assert "exactly one" in str(e.value)
     with pytest.raises(config.ConfigError):           # kind is not optional
         config.validate(config.Machine, {"backend": {"image": "x"}}, "t")
+    with pytest.raises(config.ConfigError) as e:      # an image needs a launch to run
+        config.validate(config.Machine, {"backend": {**real, "image": "drv:foxy"}}, "t")
+    assert "launch" in str(e.value)
+    m = config.Machine(backend={**real, "image": "drv:foxy", "launch": "ros2 launch a b"})
+    assert m.backend.image == "drv:foxy"
 
 
 def test_user_config_layers_under_the_benchmark(tmp_path):

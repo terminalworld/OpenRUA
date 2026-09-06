@@ -53,3 +53,20 @@ def test_sim_up_requires_rendered_peers_with_static_peer():
     with pytest.raises(ValueError, match="peers_xml"):
         up(name="x", image="img", config_path="c.yaml", task_suite="s",
            task_id=0, simulator="/s", code_root="/r", static_peer="peer")
+
+
+def test_real_launch_runs_in_the_driver_image_when_one_is_named():
+    from robocli.robot.real.up import launch_argv
+    assert launch_argv("r", "ros2 launch x y.py", None) == ["bash", "-lc", "ros2 launch x y.py"]
+    argv = launch_argv("r", "ros2 launch x y.py", "vendor/driver:foxy")
+    assert argv[:2] == ["docker", "run"] and "--network" in argv and "host" in argv
+    assert "r-driver" in argv and argv[-3:] == ["bash", "-lc", "ros2 launch x y.py"]
+
+
+def test_real_launch_is_remembered_and_stopped(tmp_path):
+    h = robot.up({"kind": "real", "discovery": {"network": "host"}, "launch": "sleep 30"},
+                 name="r3", config_path="c.yaml", task_suite="s", task_id=0,
+                 log_path=tmp_path / "log")
+    assert h.proc is not None and h.proc.poll() is None
+    h.shutdown()
+    assert h.proc.poll() is not None
