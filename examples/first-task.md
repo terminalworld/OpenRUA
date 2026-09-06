@@ -1,7 +1,7 @@
 # First task in simulation
 
 ```bash
-robocli doctor panda-sim             # Docker, images, substrate, login
+robocli doctor panda-sim             # Docker, images, simulator, login
 robocli up panda-sim                 # terminal 1: stays up
 robocli agent "put the bowl on the plate"    # terminal 2
 ```

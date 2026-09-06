@@ -55,11 +55,11 @@ def test_missing_name_says_what_exists_and_where_to_add(tmp_path):
         paths.find("robots", str(tmp_path / "gone.yaml"))
 
 
-def test_substrate_venv_relative_names_live_under_home(tmp_path):
-    assert paths.substrate_venv("cap-x/.venv-libero", tmp_path) == \
-        tmp_path / "substrates" / "cap-x" / ".venv-libero"
-    assert paths.substrate_venv("/abs/.venv-x", tmp_path) == Path("/abs/.venv-x")
-    assert paths.substrate_root(Path("/s/cap-x/.venv-libero")) == Path("/s/cap-x")
+def test_simulator_venv_relative_names_live_under_home(tmp_path):
+    assert paths.simulator_venv("cap-x/.venv-libero", tmp_path) == \
+        tmp_path / "simulators" / "cap-x" / ".venv-libero"
+    assert paths.simulator_venv("/abs/.venv-x", tmp_path) == Path("/abs/.venv-x")
+    assert paths.simulator_root(Path("/s/cap-x/.venv-libero")) == Path("/s/cap-x")
 
 
 def test_code_root_holds_the_package():

@@ -31,7 +31,7 @@ class ControlChannel:
         self._handlers = handlers
         self._on_eof = on_eof  # runner gone -> bridge exits cleanly (no orphans)
         # `out` is the PRIVATE handle to the real stdout (see boot.main's fd
-        # redirection); substrate prints can never pollute the channel.
+        # redirection); simulator prints can never pollute the channel.
         self._out = out if out is not None else sys.stdout
         self._thread = threading.Thread(target=self._loop, daemon=True)
 

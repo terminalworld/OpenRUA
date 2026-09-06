@@ -1,6 +1,6 @@
 # Sim container for the CaP-Bench leg (py3.10 == Humble native; the cap-x
 # robosuite stack for this leg lives in its OWN py3.10 venv, .venv-capbench,
-# volume-mounted like the substrate; NEVER the pilot's .venv-libero).
+# volume-mounted like the simulator; NEVER the pilot's .venv-libero).
 # Hosts: bridge process (robosuite env + rclpy node), MoveIt (graph-side),
 # original predicates (in-process; ground truth never reaches the graph).
 FROM ros:humble

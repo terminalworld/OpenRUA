@@ -8,7 +8,7 @@
     robocli down                           power everything off
     robocli run --config libero_pro ...    run a task set (robocli run --help)
     robocli config schema                  every config key and its meaning
-    robocli doctor [robot]                 check docker, images, substrate, login
+    robocli doctor [robot]                 check docker, images, simulator, login
 
 ``up`` stays in the foreground (like ``docker compose up``): the robot
 holds its control line to this process and powers itself off when the
@@ -245,7 +245,7 @@ def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
     ap.add_argument("--version", action="version", version=f"robocli {__version__}")
     ap.add_argument("--home", default=default_home, type=paths.home,
                     help="the user directory: your robots/, benchmarks/, agents/, "
-                    "credentials/, substrates/ (default: $ROBOCLI_HOME or ~/.robocli)")
+                    "credentials/, simulators/ (default: $ROBOCLI_HOME or ~/.robocli)")
     sub = ap.add_subparsers(dest="verb", metavar="<verb>")
 
     def add_json(parser):
@@ -312,9 +312,9 @@ def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
     p.add_argument("what", choices=("schema",), help="what to show")
     p.set_defaults(fn=cmd_config)
 
-    p = sub.add_parser("doctor", help="check the install: docker, images, substrate, login")
+    p = sub.add_parser("doctor", help="check the install: docker, images, simulator, login")
     p.add_argument("robot", nargs="?", default=None,
-                   help="also check this robot's images and substrate")
+                   help="also check this robot's images and simulator")
     p.add_argument("--cli", action="append", default=None,
                    help="agent(s) the images must carry (default: the robot's config, "
                    "else the bundled default)")

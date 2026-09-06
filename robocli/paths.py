@@ -2,11 +2,12 @@
 
 Two places hold data, in a fixed lookup order:
 
-1. bundled, inside the installed package (``robocli/robots/*.yaml``,
-   ``robocli/benchmarks/*.yaml``, ``robocli/agents/*.py``);
-2. the user directory, ``~/.robocli`` unless overridden, with one
-   subdirectory per kind (``robots/``, ``benchmarks/``, ``agents/``) plus
-   what the tool keeps for the user (``credentials/``, ``substrates/``,
+1. bundled, inside the installed package: declarative files under
+   ``robocli/configs/<kind>/`` (``robots/``, ``benchmarks/``), extension
+   code under ``robocli/plugins/<kind>/``;
+2. the user directory, ``~/.robocli`` unless overridden, with the same
+   shape (``robots/``, ``benchmarks/``, ``plugins/<kind>/``) plus what the
+   tool keeps for the user (``credentials/``, ``simulators/``,
    ``workspaces/``, ``state/``, ``config.yaml``).
 
 A name is looked up bundled first, then in the user directory; a path
@@ -37,6 +38,9 @@ CONFIG_FILENAME = "config.yaml"
 
 # kind -> file suffix of one named entry; the kinds a name can be looked up in
 KINDS = {"robots": ".yaml", "benchmarks": ".yaml", "agents": ".py"}
+# where each kind's bundled entries live inside the package
+_BUNDLED = {"robots": ("configs", "robots"), "benchmarks": ("configs", "benchmarks"),
+            "agents": ("agents",)}
 
 
 def home(override: str | Path | None = None) -> Path:
@@ -45,7 +49,14 @@ def home(override: str | Path | None = None) -> Path:
 
 
 def config_path(home_dir: Path | None = None) -> Path:
+    """The user's defaults file."""
     return home(home_dir) / CONFIG_FILENAME
+
+
+def package_config_path() -> Path:
+    """The package defaults file (``robocli/configs/config.yaml``), the
+    bottom layer under the user's file and the benchmark config."""
+    return Path(str(resources.files("robocli"))) / "configs" / CONFIG_FILENAME
 
 
 def robots_dir(home_dir: Path | None = None) -> Path:
@@ -65,9 +76,9 @@ def credentials_dir(home_dir: Path | None = None) -> Path:
     return home(home_dir) / "credentials"
 
 
-def substrates_dir(home_dir: Path | None = None) -> Path:
+def simulators_dir(home_dir: Path | None = None) -> Path:
     """Simulator checkouts (each holding its ``.venv-*``)."""
-    return home(home_dir) / "substrates"
+    return home(home_dir) / "simulators"
 
 
 def workspaces_dir(home_dir: Path | None = None) -> Path:
@@ -92,7 +103,7 @@ def bundled(kind: str) -> Path:
     """The package directory shipping the entries of one kind."""
     if kind not in KINDS:
         raise KeyError(f"unknown kind {kind!r} (kinds: {', '.join(KINDS)})")
-    return Path(str(resources.files("robocli"))) / kind
+    return Path(str(resources.files("robocli"))).joinpath(*_BUNDLED[kind])
 
 
 def user_dir(kind: str, home_dir: Path | None = None) -> Path:
@@ -148,14 +159,14 @@ def find(kind: str, name_or_path: str | Path, home_dir: Path | None = None) -> P
                    f"{user_dir(kind, home_dir)}/ or pass a path")
 
 
-def substrate_venv(spec: str | Path, home_dir: Path | None = None) -> Path:
+def simulator_venv(spec: str | Path, home_dir: Path | None = None) -> Path:
     """The simulator venv a robot profile names: absolute or ``~`` paths
-    as written, anything else relative to ``<home>/substrates/``."""
+    as written, anything else relative to ``<home>/simulators/``."""
     p = Path(spec).expanduser()
-    return p if p.is_absolute() else substrates_dir(home_dir) / p
+    return p if p.is_absolute() else simulators_dir(home_dir) / p
 
 
-def substrate_root(venv: Path) -> Path:
-    """The substrate checkout holding a venv (the directory above
+def simulator_root(venv: Path) -> Path:
+    """The simulator checkout holding a venv (the directory above
     ``.venv-*``)."""
     return venv.parent

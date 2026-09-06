@@ -17,7 +17,7 @@ machine:
     # answer living in a fallback elsewhere.
     image: robocli-sim-jazzy
     sandbox_image: robocli-sandbox
-    substrate:
+    simulator:
       venv: cap-x/.venv-libero   # py3.12
       container: sim-jazzy
 

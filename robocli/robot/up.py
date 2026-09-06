@@ -26,7 +26,7 @@ def up(
     config_path: str,
     task_suite: str,
     task_id: int,
-    substrate: str,
+    simulator: str,
     code_root: str,
     venv: str | None = None,
     uv_dir: str | None = None,
@@ -43,12 +43,12 @@ def up(
     """docker-run the body with onboard's boot as its first process.
 
     Four host directories are mounted at their own paths: the robocli
-    code (``code_root``, so the substrate venv imports the same package),
+    code (``code_root``, so the simulator venv imports the same package),
     uv's interpreter store (the venv python is a symlink into it), the
-    substrate checkout (venv + simulator), and the directory holding the
+    simulator checkout (venv + simulator), and the directory holding the
     assembly file (the body's config and any file it names by path).
     """
-    # The substrate venvs' python is a symlink into uv's interpreter
+    # The simulator venvs' python is a symlink into uv's interpreter
     # store; mount it read-only at the same path. Derived from the
     # CURRENT user's home, never hardcoded (runs move across machines
     # and accounts).
@@ -87,7 +87,7 @@ def up(
         rt = max(4, min(16, (_os.cpu_count() or 8) // 4))
     if rt != "off":
         peer_env += ["-e", f"LP_NUM_THREADS={int(rt)}"]
-    venv = venv or f"{substrate}/.venv-libero"
+    venv = venv or f"{simulator}/.venv-libero"
     peers_setup = ""
     if peers_xml:
         # ROS_STATIC_PEERS exists only from Iron on; Humble's Fast DDS
@@ -101,11 +101,11 @@ def up(
     inner = f"""
 {peers_setup}mkdir -p /root/.libero
 cat > /root/.libero/config.yaml <<EOF
-assets: {substrate}/capx/third_party/LIBERO-PRO/libero/libero/assets
-bddl_files: {substrate}/capx/third_party/LIBERO-PRO/libero/libero/bddl_files
-benchmark_root: {substrate}/capx/third_party/LIBERO-PRO/libero/libero
-datasets: {substrate}/capx/third_party/LIBERO-PRO/libero/datasets
-init_states: {substrate}/capx/third_party/LIBERO-PRO/libero/libero/init_files
+assets: {simulator}/capx/third_party/LIBERO-PRO/libero/libero/assets
+bddl_files: {simulator}/capx/third_party/LIBERO-PRO/libero/libero/bddl_files
+benchmark_root: {simulator}/capx/third_party/LIBERO-PRO/libero/libero
+datasets: {simulator}/capx/third_party/LIBERO-PRO/libero/datasets
+init_states: {simulator}/capx/third_party/LIBERO-PRO/libero/libero/init_files
 EOF
 source /opt/ros/${{ROS_DISTRO:-jazzy}}/setup.bash
 exec {venv}/bin/python -m robocli.robot.onboard.boot \
@@ -116,7 +116,7 @@ exec {venv}/bin/python -m robocli.robot.onboard.boot \
         [
             "docker", "run", "-i", "--rm", "--name", name,
             *net, *gpu_args, *peer_env, *(extra_env or []),
-            *_mounts(code_root, substrate, str(Path(config_path).resolve().parent)),
+            *_mounts(code_root, simulator, str(Path(config_path).resolve().parent)),
             "-v", f"{uv_dir}:{uv_dir}:ro",
             image, "bash", "-c", inner,
         ],
@@ -164,13 +164,13 @@ def main() -> int:
                     help="RESOLVED assembly yaml (the trial's suite view)")
     ap.add_argument("--task-suite", required=True)
     ap.add_argument("--task-id", type=int, required=True)
-    ap.add_argument("--substrate", required=True,
-                    help="substrate checkout root (the dir holding .venv-*)")
+    ap.add_argument("--simulator", required=True,
+                    help="simulator checkout root (the dir holding .venv-*)")
     ap.add_argument("--venv", default=None,
-                    help="substrate venv path (default <substrate>/.venv-libero)")
+                    help="simulator venv path (default <simulator>/.venv-libero)")
     ap.add_argument("--code-root", required=True,
                     help="directory holding the robocli package (mounted "
-                    "so the substrate venv imports the same code)")
+                    "so the simulator venv imports the same code)")
     ap.add_argument("--log", default=None,
                     help="bridge.log path (default: stderr discarded)")
     ap.add_argument("--moveit-log", default=None)
@@ -182,7 +182,7 @@ def main() -> int:
     proc = up(
         name=args.name, image=args.image, config_path=args.config,
         task_suite=args.task_suite, task_id=args.task_id,
-        substrate=args.substrate, venv=args.venv,
+        simulator=args.simulator, venv=args.venv,
         repo_root=args.repo_root,
         log_path=Path(args.log) if args.log else None,
         moveit_log=args.moveit_log, network=args.network,

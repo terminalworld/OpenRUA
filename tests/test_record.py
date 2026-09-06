@@ -122,24 +122,24 @@ def test_provenance_pins_the_whole_chain(tmp_path):
     code_root = Path(__file__).resolve().parents[1]
     cfg_path = tmp_path / "assembly.yaml"
     cfg_path.write_text("machine: {}\n")
-    # a substrate is a git checkout holding the simulator venv; stand one up
-    substrate = tmp_path / "substrates" / "cap-x"
-    (substrate / ".venv-libero").mkdir(parents=True)
+    # a simulator is a git checkout holding the simulator venv; stand one up
+    simulator = tmp_path / "simulators" / "cap-x"
+    (simulator / ".venv-libero").mkdir(parents=True)
     import subprocess
-    subprocess.run(["git", "init", "-q", str(substrate)], check=True)
-    subprocess.run(["git", "-C", str(substrate), "-c", "user.name=t",
+    subprocess.run(["git", "init", "-q", str(simulator)], check=True)
+    subprocess.run(["git", "-C", str(simulator), "-c", "user.name=t",
                     "-c", "user.email=t@t", "commit", "-q", "--allow-empty",
                     "-m", "x"], check=True)
     cfg = {"machine": {"body": {
         "image": "robocli-definitely-missing",
-        "substrate": {"venv": str(substrate / ".venv-libero")},
+        "simulator": {"venv": str(simulator / ".venv-libero")},
         "gpus": False}}}
     prov = provenance(cfg_path, cfg, _Args(), _Agent(), "tplhash",
                       "prompt text", code_root,
-                      substrate_venv=substrate / ".venv-libero")
+                      simulator_venv=simulator / ".venv-libero")
     assert prov["robocli_version"]
     assert len(prov["robocli_commit"]) == 40
-    assert len(prov["substrate_commit"]) == 40  # the cap-x checkout is git
+    assert len(prov["simulator_commit"]) == 40  # the cap-x checkout is git
     assert prov["host"]["hostname"] and prov["host"]["cpu_count"] >= 1
     assert prov["ros_domain"] == 44 and prov["gpu_render"] is False
     assert prov["agent_cli"] == {"name": "stub", "version": "9.9.9"}

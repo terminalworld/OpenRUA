@@ -21,12 +21,10 @@ _VERBS = {
 
 
 def _usage() -> str:
-    from robocli.agents import DEFAULT_CLI
     lines = ["usage: python -m robocli.agents <verb> [options]",
              "", "verbs:"]
     lines += [f"  {v:<12} {desc}" for v, desc in _VERBS.items()]
-    lines += ["", f"default adapter: {DEFAULT_CLI}",
-              "verb options: python -m robocli.agents <verb> --help",
+    lines += ["", "verb options: python -m robocli.agents <verb> --help",
               "contract: robocli/agents/base.py; conformance: robocli.testing.check_agent"]
     return "\n".join(lines)
 
@@ -36,7 +34,7 @@ def _emit(verb: str, argv: list[str]) -> int:
     ap = argparse.ArgumentParser(
         prog=f"python -m robocli.agents {verb}", description=_VERBS[verb])
     ap.add_argument("--cli", action="append", default=None,
-                    help=f"adapter name; repeat for several (default: {agents.DEFAULT_CLI})")
+                    help="adapter name; repeat for several (required except for list)")
     ap.add_argument("--home", default=None, type=paths.home,
                     help="user directory holding agents/ (default: ~/.robocli)")
     args = ap.parse_args(argv)
@@ -47,7 +45,9 @@ def _emit(verb: str, argv: list[str]) -> int:
             else:
                 print(f"{a.name:<16} {a.source:<8} {' '.join(sorted(a.agent.capabilities))}")
         return 0
-    chosen = [agents.get(c, args.home) for c in (args.cli or [agents.DEFAULT_CLI])]
+    if not args.cli:
+        ap.error("--cli NAME is required (robocli agents lists them)")
+    chosen = [agents.get(c, args.home) for c in args.cli]
     if verb == "preinstall":
         print(agents.preinstall(chosen))
     else:

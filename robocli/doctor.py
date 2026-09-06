@@ -199,18 +199,18 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
     return out
 
 
-def check_substrate(ctx: Context) -> list[CheckResult]:
+def check_simulator(ctx: Context) -> list[CheckResult]:
     if ctx.cfg is None:
         return []
     body = ctx.cfg["machine"].get("body", {})
-    if not body.get("substrate"):
-        return [CheckResult("substrate", "no simulator substrate (real robot)")]
-    venv = paths.substrate_venv(body["substrate"]["venv"], ctx.home)
+    if not body.get("simulator"):
+        return [CheckResult("simulator", "no simulator simulator (real robot)")]
+    venv = paths.simulator_venv(body["simulator"]["venv"], ctx.home)
     if venv.is_dir():
-        return [CheckResult("substrate", f"substrate venv {venv}")]
-    return [CheckResult("substrate", f"substrate venv {venv} missing", "error",
-                        hint=f"build it under {paths.substrates_dir(ctx.home)} (docs/simulation.md) "
-                        "or point machine.body.substrate.venv at it")]
+        return [CheckResult("simulator", f"simulator venv {venv}")]
+    return [CheckResult("simulator", f"simulator venv {venv} missing", "error",
+                        hint=f"build it under {paths.simulators_dir(ctx.home)} (docs/simulation.md) "
+                        "or point machine.body.simulator.venv at it")]
 
 
 def check_login(ctx: Context) -> list[CheckResult]:
@@ -233,7 +233,7 @@ def check_login(ctx: Context) -> list[CheckResult]:
 
 CHECKS: tuple[Callable[[Context], list[CheckResult]], ...] = (
     check_docker, check_home, check_user_entries, check_proxy_image,
-    check_robot_images, check_substrate, check_login,
+    check_robot_images, check_simulator, check_login,
 )
 
 
@@ -251,7 +251,8 @@ def run(robot: str | None = None, clis: list[str] | None = None,
         except Exception as exc:  # noqa: BLE001
             report.checks.append(CheckResult("robot-profile", f"robot {robot}: {exc}", "error",
                                              hint="robocli robots lists the profiles"))
-    names = clis or [(cfg or {}).get("agent", {}).get("cli") or agents.DEFAULT_CLI]
+    names = clis or [(cfg or {}).get("agent", {}).get("cli")
+                     or config.load_user_config(paths.package_config_path()).agent.cli]
     chosen: list[agents.Agent] = []
     for n in names:
         try:

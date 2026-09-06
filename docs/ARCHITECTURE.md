@@ -22,14 +22,14 @@ is visible to the agent.
 | `robocli/agents/` | the occupants: `base.Agent` (the adapter contract), one adapter module per coding agent, the launcher, the opening prompt. Adapters are found bundled, then in `~/.robocli/agents/`. | `python -m robocli.agents` |
 | `robocli/bench/` | running a task set: `run.py` conducts trials (and owns config assembly: `load_config`, `compose`, `bring_up`), `precheck.py` verifies every promise the manual makes before the agent boards, `record.py` is the only writer under `runs/`. | `robocli run` |
 | `robocli/cli.py` | the front door: `robocli robots / benchmarks / agents / build / up / agent / down / run / config / doctor`. | `robocli` |
-| `robocli/doctor.py` | is this machine ready: structured checks over docker, images (their labels against the selected agents), substrate, login, the user directory. | `robocli doctor` |
+| `robocli/doctor.py` | is this machine ready: structured checks over docker, images (their labels against the selected agents), simulator, login, the user directory. | `robocli doctor` |
 
 Shared leaves, importable by every host-side unit and by nothing in
 `onboard/`:
 
 | Leaf | Owns |
 |---|---|
-| `robocli/paths.py` | where things live: the user directory (`~/.robocli`), the bundled data (`robocli/robots/`, `robocli/benchmarks/`, `robocli/agents/`), the lookup order (bundled, then user, then a path), substrate and workspace locations. |
+| `robocli/paths.py` | where things live: the user directory (`~/.robocli`), the bundled data (`robocli/robots/`, `robocli/benchmarks/`, `robocli/agents/`), the lookup order (bundled, then user, then a path), simulator and workspace locations. |
 | `robocli/config.py` | the schema (pydantic): robot profile, benchmark config, user config, the assembled per-trial config; defaults and a description per key; unknown keys are errors. |
 | `robocli/errors.py` | the error family: message, hint, sysexits code. The CLI entry point is the one place an error becomes text. |
 | `robocli/testing.py` | `check_agent`, the adapter conformance test third parties run. |
@@ -49,7 +49,7 @@ robocli/robots/, robocli/benchmarks/, robocli/agents/   bundled, ship in the whe
   config.yaml        your defaults: agent section, default robot
   robots/ benchmarks/ agents/                            yours, looked up after the bundled ones
   credentials/<agent>/                                   login profiles
-  substrates/<name>/.venv-*                              simulator checkouts
+  simulators/<name>/.venv-*                              simulator checkouts
   workspaces/<name>/  state/<name>.yaml                  what `robocli up` keeps
 ./runs/                                                 trial data (--runs-root)
 ```

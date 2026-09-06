@@ -12,7 +12,7 @@ Multi-arm machines (capbench twoarm suites): one port set per entry of
 ``machine.arms`` (run.normalize_arms materialized it); commands address
 one arm, every other arm holds its current configuration for the ticks
 the command spans (arms.arm_targets owns that math). Robot i in the
-substrate's ``env.robots`` is arm i; the full action is the per-robot
+simulator's ``env.robots`` is arm i; the full action is the per-robot
 slices in that order.
 
 Paused-clock semantics: **one incoming command message = one sim step**;

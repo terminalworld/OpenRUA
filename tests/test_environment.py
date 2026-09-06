@@ -3,7 +3,7 @@
 Mirror of the agents adapter guards: every registered loader implements
 every name in LOADER_INTERFACE, the registry resolves all three
 benchmarks' config names, and an unknown name fails loud with the known
-list. No simulator boots here; substrate imports live inside create().
+list. No simulator boots here; simulator imports live inside create().
 """
 
 from __future__ import annotations

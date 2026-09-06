@@ -17,7 +17,7 @@ machine:
                                  # scenes); physics stays CPU — results remain
                                  # comparable across render devices. Key is
                                  # honored by every leg's config.
-    substrate:
+    simulator:
       venv: robocasa365/.venv-robocasa   # DEDICATED venv
       container: sim-humble
 

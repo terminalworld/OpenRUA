@@ -17,7 +17,7 @@ from robocli.sandbox import build as hbuild
 from robocli.sandbox import workspace
 
 REPO = Path(__file__).resolve().parents[1]
-LIBERO_CFG = REPO / "robocli" / "benchmarks" / "libero_pro.yaml"
+LIBERO_CFG = REPO / "robocli" / "configs" / "benchmarks" / "libero_pro.yaml"
 PKG = Path(workspace.__file__).resolve().parent
 
 
@@ -219,7 +219,7 @@ def test_manifest_two_arms_two_of_everything(tmp_path):
 
     from robocli.bench.run import apply_suite_overrides, normalize_arms
     from robocli.sandbox.workspace import write_machine_manifest
-    cfg = load_config(REPO / "robocli" / "benchmarks" / "capbench.yaml")
+    cfg = load_config(REPO / "robocli" / "configs" / "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_twoarm_lift")
     normalize_arms(cfg)
     out = tmp_path / "machine.yaml"

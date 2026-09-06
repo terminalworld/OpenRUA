@@ -13,7 +13,7 @@ machine:
     sandbox_image: robocli-sandbox-humble  # sandbox distro == robot distro: cross-
                                 # distro moveit_msgs broke service responses
                                 # (Fast CDR, 2026-08-11 canary)
-    substrate:
+    simulator:
       venv: cap-x/.venv-capbench  # py3.10 == Humble;
                              # DEDICATED venv (2026-08-10 incident: never touch
                              # the pilot's .venv-libero)
