@@ -7,6 +7,7 @@
     robocli agent                          open a coding agent on that terminal
     robocli down                           power everything off
     robocli run --config libero_pro ...    run a task set
+    robocli probe --host                   draft a profile from a live graph
     robocli config schema                  every config key and its meaning
     robocli doctor [robot]                 check docker, images, simulator, login
 

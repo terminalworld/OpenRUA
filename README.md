@@ -105,10 +105,12 @@ request;
 
 ## Use your own robot
 
-Write a profile with your robot's facts and point `up` at it:
+Draft a profile from the robot's live graph, finish the `TODO` lines,
+and point `up` at it:
 
 ```bash
-robocli up ./my-ur5.yaml          # or copy it to ~/.robocli/robots/ and: robocli up my-ur5
+robocli probe --host > my-ur5.yaml   # joints, limits, frames, ports, cameras from the graph
+robocli up ./my-ur5.yaml --task "..." # or copy it to ~/.robocli/robots/ and: robocli up my-ur5
 ```
 
 The profile's `machine:` section is what the agent's `machine.yaml` is
