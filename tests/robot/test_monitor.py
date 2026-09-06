@@ -2,7 +2,7 @@
 
 The scored number is the LATCH (official any-step semantics); the step
 counter is episode-scoped; success_at stamps exist exactly when latched.
-These are the semantics every audit decision leans on, so they get unit
+These are the semantics every post-hoc decision leans on, so they get unit
 guards independent of any simulator.
 """
 

@@ -1,6 +1,6 @@
-"""Verb ``build``: recipes + parameters -> seat image + wall image.
+"""Verb ``build``: Dockerfile + parameters -> the sandbox image.
 
-Explicit and low-frequency (recipe / preinstall / distro changes only);
+Explicit and low-frequency (Dockerfile / preinstall / distro changes only);
 ``up`` never builds. Docker's layer cache makes an unchanged re-build a
 cheap no-op returning the same digest.
 
@@ -8,8 +8,8 @@ cheap no-op returning the same digest.
         [--preinstall "<one-line install chain>"] \
         [--ros-distro jazzy] [--robot-uid N] [--tag robocli-sandbox]
 
-Value output: ``<tag> <digest>`` (one line). The internet wall is its own
-package (robocli.proxy); the seat and the gatehouse build separately.
+Value output: ``<tag> <digest>`` (one line). The proxy image is the
+proxy package's own build.
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ def _docker_build(dockerfile: Path, context: Path, tag: str,
 def build(preinstall: str = "", ros_distro: str = "jazzy",
           robot_uid: int | None = None,
           tag: str = "robocli-sandbox") -> tuple[str, str]:
-    """Build the seat image; returns (tag, digest)."""
+    """Build the sandbox image; returns (tag, digest)."""
     # Contract: PREINSTALL is a single-line command chain without double
     # quotes (the one quoting hazard of string-valued build args).
     if '"' in preinstall or "\n" in preinstall.strip():
@@ -67,7 +67,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--preinstall", default="",
                     help="one-line install command chain baked into the "
-                    "seat (empty = pure cockpit)")
+                    "image (empty = the bare terminal)")
     ap.add_argument("--ros-distro", default="jazzy")
     ap.add_argument("--robot-uid", type=int, default=None,
                     help="container uid (default: current user)")

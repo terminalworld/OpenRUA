@@ -1,6 +1,6 @@
 # Franka Emika Panda on a tabletop (robosuite / MuJoCo, LIBERO-PRO scenes).
 # The default simulated robot. Loaded by `robocli up panda-sim`;
-# benchmarks/libero_pro.yaml names it under `robot:`.
+# configs/benchmarks/libero_pro.yaml names it under `robot:`.
 
 # The scene `robocli up panda-sim` loads when no benchmark is named.
 world:
@@ -11,42 +11,40 @@ world:
 machine:
   backend:                  # how the robot is provided
     kind: sim
-    # Spelled out rather than left to the code's default (audit F9
-    # 2026-08-14: a hardcoded jazzy name recorded a digest the humble legs
-    # never ran). Same values the default resolves to today, so nothing
-    # changes; the config now says which images it runs instead of the
-    # answer living in a fallback elsewhere.
+    # Spelled out rather than left to the code's default, so the profile
+    # says which images it runs and the record carries the digests of
+    # the images that actually ran.
     image: robocli-sim-jazzy
     sandbox_image: robocli-sandbox
     simulator:
       venv: cap-x/.venv-libero   # py3.12
       container: sim-jazzy
 
-  workspace_template: workspace  # skin layer sole carrier
-                         # (design-decisions 2026-08-10); machine.yaml is
-                         # generated from the facts + ports below at
-                         # seeding; tree sha256 pinned in config.json
+  workspace_template: workspace  # the tree seeded into the sandbox;
+                         # machine.yaml is generated from the facts and
+                         # ports below at seeding; the tree's sha256 is
+                         # recorded per trial
 
   controller: JOINT_POSITION  # base action space (real-robot shape: both
-                              # ports above a joint layer; OSC rejected by
-                              # measurement — null-space drift, see plan P1)
-  controller_kp_scale: 10     # stock kp=50 tracks ~15% of a 20Hz carrot;
+                              # ports above a joint layer; OSC's null-space
+                              # bias fights joint-space trajectory goals)
+  controller_kp_scale: 10     # stock kp=50 tracks ~15% of a 20 Hz setpoint;
                               # measured gain: x10 -> 0.92, x20 overshoots
 
-  cameras:               # copy the scene's own cameras (assembly discipline)
+  cameras:               # the scene's own cameras, unchanged
     resolution: [640, 480]
     list: null           # null = publish every camera the scene defines
     rate_hz: 2           # wall-clock render/publish rate (pull-style; never steps)
 
   control:               # graph-side actuation behavior (named apart from
-                         # the gripper/arm FACTS below, which feed the manual)
+                         # the gripper/arm facts below, which feed machine.yaml)
     gripper:
       open_threshold_m: 0.02 # GripperCommand position below this = close
       settle_steps: 10       # control ticks a gripper goal advances the world
 
   ports:                 # franka_ros2 / moveit_servo-shaped names
-    twist: /servo_node/delta_twist_cmds            # TwistStamped (L4)
-    trajectory: /panda_arm_controller/follow_joint_trajectory  # FJT action (L3, with P2)
+    twist: /servo_node/delta_twist_cmds            # TwistStamped
+    trajectory: /panda_arm_controller/follow_joint_trajectory  # FollowJointTrajectory action
     gripper: /franka_gripper/gripper_action        # GripperCommand action
     wrench: /franka_robot_state_broadcaster/external_wrench    # WrenchStamped
 
@@ -54,9 +52,8 @@ machine:
     robot0_: panda_
     gripper0_: panda_
 
-  # Machine-manifest facts (workspace machine.yaml is generated from
-  # these + ports: at seeding — single source, bridge and docs cannot
-  # drift).
+  # The facts machine.yaml is generated from (with ports: above) at
+  # seeding: one source, so the bridge and the docs cannot drift.
   robot:
     model: Franka Emika Panda
     description: 7-joint robot arm with a parallel-jaw gripper
@@ -69,13 +66,12 @@ machine:
                  [-2.90, 2.90]]
   gripper: {open_m: 0.04, closed_m: 0.0, max_effort: 30.0,
             stops_at: [open, closed]}
-  hand: {tcp_offset_m: 0.1034}  # hand frame -> fingertip grasp
-                                # point (audit A2, 5 groups)
+  hand: {tcp_offset_m: 0.1034}  # hand frame -> fingertip grasp point
   planning: {moveit: true, move_action: /move_action,
              ik_service: /compute_ik, group: panda_arm,
-             planning_frame: panda_link0}  # model frame; IK
-                             # frame_id must be EMPTY (audit A1)
+             planning_frame: panda_link0}  # model frame; the IK request's
+                             # frame_id must be empty
 
   tf:
-    hand: false          # mainline: robot_state_publisher (MoveIt stack)
-                         # owns the arm chain; bridge keeps base + cameras
+    hand: false          # robot_state_publisher (MoveIt stack) owns the
+                         # arm chain; the bridge keeps base + cameras

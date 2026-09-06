@@ -1,7 +1,7 @@
 """Record semantics guards: the commands.sh condensate and the script
 operator's contract.
 
-The condensate (ruling 2026-08-16) carries the agent's full world-facing
+commands.sh carries the agent's full world-facing
 action stream: Bash verbatim + Write/Edit as here-docs; reads excluded.
 The guard here EXECUTES a synthesized condensate and asserts the files
 materialize, so the here-doc encoding is proven by bash itself, not by
@@ -119,7 +119,7 @@ def test_provenance_pins_the_whole_chain(tmp_path):
         task_ids, seeds = [0], [0]
         wall_clock_min, ros_domain = 30, 44
 
-    code_root = Path(__file__).resolve().parents[1]
+    code_root = Path(__file__).resolve().parents[2]
     cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text("machine: {}\n")
     # a simulator is a git checkout holding the simulator venv; stand one up

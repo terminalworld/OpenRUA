@@ -1,5 +1,5 @@
-"""The trial's ACTIVE wall-clock budget: renamed on 2026-08-20 when it
-stopped counting time suspended at a quota wall. A config carrying the old
+"""The trial's active wall-clock budget: renamed when it stopped counting
+time suspended at a quota wall. A config carrying the old
 name must fail loudly -- reading it as if nothing changed would run the new
 semantics under a name that promised total time."""
 
@@ -30,6 +30,6 @@ def test_shipped_configs_use_the_new_key():
     import pathlib
 
     import yaml
-    for cfg in (pathlib.Path(__file__).resolve().parents[1] / "robocli" / "configs" / "benchmarks").glob("*.yaml"):
+    for cfg in (pathlib.Path(__file__).resolve().parents[2] / "robocli" / "configs" / "benchmarks").glob("*.yaml"):
         protocol = (yaml.safe_load(cfg.read_text()) or {}).get("protocol", {})
         assert "wall_clock_minutes" not in protocol, cfg

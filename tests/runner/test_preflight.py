@@ -20,7 +20,7 @@ class _Agent:
 
 
 def _names(cfg):
-    # The gate reads the normalized resolved config, like the conductor.
+    # The checks read the normalized resolved config, like the runner.
     # Deep copy first: normalize mutates, and the fixtures are shared.
     import copy
 
@@ -51,7 +51,7 @@ def test_every_promised_port_mints_its_check():
                      "camera_depth_intrinsics_flow",
                      "workspace_tools_importable", "moveit_ik_answers"):
         assert expected in checks, expected
-    # the joint-name assertion carries the manual's OWN first joint
+    # the joint-name assertion carries the documented first joint
     assert "panda_joint1" in checks["joint_names_match_manual"]
     assert "/compute_ik" in checks["moveit_ik_answers"]
 
@@ -87,14 +87,14 @@ def test_real_configs_generate_a_full_gate():
     from pathlib import Path
 
     import yaml
-    for leg in ("libero_pro", "capbench", "robocasa365"):
-        cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" / "configs" /
-                          "benchmarks" / f"{leg}.yaml")
+    for bench in ("libero_pro", "capbench", "robocasa365"):
+        cfg = load_config(Path(__file__).resolve().parents[2] / "robocli" / "configs" /
+                          "benchmarks" / f"{bench}.yaml")
         checks = _names(cfg)
         for expected in ("clock_topic", "joint_states_flow",
                          "joint_names_match_manual", "tf_flow",
                          "trajectory_action", "camera_frame_flow"):
-            assert expected in checks, (leg, expected)
+            assert expected in checks, (bench, expected)
 
 
 def test_twoarm_view_mints_per_arm_checks():
@@ -112,7 +112,7 @@ def test_twoarm_view_mints_per_arm_checks():
         def sandbox_cli_check(self):
             return ("sandbox_cli_matches_pin", "true")
 
-    cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" / "configs" /
+    cfg = load_config(Path(__file__).resolve().parents[2] / "robocli" / "configs" /
                           "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_twoarm_lift")
     normalize_arms(cfg)
@@ -127,8 +127,8 @@ def test_twoarm_view_mints_per_arm_checks():
 
 
 def test_flow_checks_carry_the_raised_ceiling():
-    # 2026-08-19: bimanual joint_states_flow/tf_flow red-checked at ~35s
-    # under a 7-way load spike; the per-check ceiling was raised 30->60.
+    # Bimanual joint_states_flow/tf_flow take longer than 30 s to first
+    # publish under heavy host load; the per-check ceiling is 60 s.
     # Guard against a silent revert (a lower ceiling would re-open the race
     # without changing any test that only counts check NAMES).
     from robocli.runner.preflight import _CHECK_TIMEOUT_S

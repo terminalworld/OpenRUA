@@ -1,30 +1,30 @@
-"""Harness: the machine's cockpit factory. One contract, three verbs.
+"""The sandbox: the agent's terminal on the robot's ROS 2 graph.
 
     Input : a reachable ROS 2 machine (network / domain / peer) + its
-            resolved config (+ a seat-image choice).
-    Output: ONE LIVE SANDBOX CONTAINER; a workspace generated for this
-            machine, in which a human or an agent operates the robot
-            through its native CLI / rclpy. Nothing else.
+            resolved config (+ an image choice).
+    Output: one live container with a workspace generated for this
+            machine, in which a person or an agent operates the robot
+            through its native CLI and rclpy. Nothing else.
 
-Verbs (each independently runnable; parameter in, value/file out):
+Verbs (each independently runnable; parameters in, value or file out):
 
-- ``build`` : recipe + PREINSTALL (optional one-line install chain) +
-  distro + uid -> seat image (prints name + digest). Images split by
-  distro x preinstall, NEVER by benchmark or task; task facts reach
-  the sandbox only through the workspace at ``up``. The internet wall is
-  its own package (robocli.proxy: the shared gatehouse).
+- ``build`` : Dockerfile + PREINSTALL (an optional one-line install
+  chain) + distro + uid -> image (prints name and digest). Images split
+  by distro and preinstall, never by benchmark or task; task facts reach
+  the sandbox only through the workspace at ``up``. Internet access is
+  the proxy package's job.
 - ``up``    : machine reachability + config + image + workspace dir +
-  generic birth-time slots (--mount / --env) -> one live container
+  generic creation-time slots (--mount / --env) -> one live container
   (prints its name). Never builds: a missing image is an instructive
   error, not an implicit build with guessed parameters.
 - ``down``  : container name -> removed.
 
-What this package deliberately does NOT know: agents, tasks, prompts,
-credentials semantics, scoring, timing. Occupant luggage passes through
-generic slots only (PREINSTALL at build; --mount/--env at up; docker
-mounts must exist at birth). The layering contract (pyproject +
-tests/test_layering.py) machine-enforces that this package imports no
-other layer: the cockpit is blind to measurement.
+What this package does not know: agents, tasks, prompts, credentials
+semantics, scoring, timing. Agent-specific files pass through generic
+slots only (PREINSTALL at build; --mount/--env at up; docker mounts
+must exist at creation). The layering contract (pyproject and
+tests/test_layering.py) enforces that this package imports no other
+unit: what the agent experiences knows nothing about measurement.
 """
 
 
@@ -32,8 +32,6 @@ from robocli.errors import UnavailableError
 
 
 class SandboxError(UnavailableError):
-    """Library-level failure of a sandbox verb. Verbs raise THIS (an
-    ordinary Exception a consumer's anomaly handler can catch); only the
-    CLI mains convert it to SystemExit. Raising SystemExit from library
-    code would bypass `except Exception` guards and kill whole batches
-    (review 2026-08-15 H1)."""
+    """Failure of a sandbox verb. Verbs raise this (an ordinary Exception
+    a consumer's handler can catch); only the command-line entry points
+    convert it to an exit status."""

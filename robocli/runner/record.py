@@ -1,16 +1,13 @@
-"""Trial record semantics: what counts, what gets written, what never leaks.
+"""What a trial writes: provenance, secret scrubbing, the commands.sh
+extract, and every file under a trial directory.
 
-The examiner's bookkeeping: provenance content, secret scrubbing, the
-commands.sh evidence extract, and the writing of every file under a
-trial directory. This module is the only writer under ``runs/``; WHERE
-and WHEN to write is the conductor's decision and arrives as plain path
-parameters; WHAT the files say is decided here. The blind protocol
-holds throughout: success predicates belong to the benchmark's own code
-in the sim process and never appear on the agent's surface.
+This module is the only writer under ``runs/``. Where and when to write
+is the runner's decision and arrives as path parameters; what the files
+say is decided here. Success predicates belong to the benchmark's own
+code in the bridge and never appear on the agent's surface.
 
-Leaf discipline: no robocli imports. The agent adapter, the workspace
-template hash, the prompt text, and the repo root are handed in by the
-conductor (parameter passing, never lookup).
+Leaf: no robocli imports. The agent, the workspace template hash, the
+prompt text and the code root are handed in by the runner.
 """
 
 from __future__ import annotations
@@ -71,8 +68,8 @@ def secret_strings_from_env_file(path: Path) -> list[str]:
 
 
 def scrub_file(path: Path, secrets: list[str]) -> None:
-    """Redact known secret strings before anything enters the git-tracked
-    record (defense against the agent cat-ing its own config)."""
+    """Redact known secret strings before anything enters the record (the
+    agent can print its own configuration)."""
     if not path.exists() or not secrets:
         return
     text = path.read_text(errors="replace")
@@ -118,18 +115,17 @@ def _edit_as_command(op: dict) -> str:
 
 
 def extract_commands(transcript: Path, out: Path, agent) -> None:
-    """Full action condensate: the agent's world-facing ops in order,
-    every detour included. Bash commands verbatim; Write/Edit
-    materialized as shell here-docs (agents keep scripts in the
-    sandbox's /tmp, which is NOT in the archived workspace); reads are
-    not extracted (zero world effect; they stay in the transcript).
+    """The agent's world-facing operations in order, every detour
+    included: shell commands verbatim, writes and edits as shell
+    here-docs (agents keep scripts in the sandbox's /tmp, which is not
+    in the archived workspace); reads are not extracted (no world
+    effect; they stay in the transcript).
 
-    Faithful evidence first; the same file feeds ``--operator script``
-    for OPEN-LOOP best-effort replay. The agent ran closed-loop, so an
-    identical outcome is likely under paused clock + seeded reset, never
-    guaranteed. No ``set -e``: the agent's commands failed and moved on;
-    the condensate does the same. Transcript parsing is the adapter's
-    job (adapter passed in)."""
+    Evidence first; the same file feeds ``--operator script`` for
+    open-loop replay. The agent ran closed-loop, so an identical outcome
+    is likely under a paused clock and a seeded reset, never guaranteed.
+    No ``set -e``: the agent's commands failed and moved on, and the
+    replay does the same. Transcript parsing is the agent's hook."""
     if not transcript.exists():
         return
     lines = ["#!/usr/bin/env bash",
@@ -152,29 +148,24 @@ def extract_commands(transcript: Path, out: Path, agent) -> None:
 def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
                prompt: str, code_root: Path, simulator_venv: Path | None = None,
                resume_prompt: str | None = None) -> dict:
-    """The frozen reproduction record. ``prompt`` is the SAME string the
-    launcher formats (F18: one source; the conductor passes agents.PROMPT;
-    inline by ruling 2026-08-15, no prompt file exists). ``resume_prompt``
-    is the other string an agent can be shown -- the one a trial resumed
-    after a quota wall receives -- pinned for the same reason."""
+    """The reproduction record. ``prompt`` is the same string the launcher
+    formats (one source: the runner passes agents.PROMPT); ``resume_prompt``
+    is the other string an agent can be shown, the one a trial resumed
+    after a quota wall receives, pinned for the same reason."""
 
     def sh(cmd: list[str]) -> str:
-        # Provenance must never kill a trial: the 2026-08-09 incident was
-        # a FileNotFoundError from the agent CLI's version probe during
-        # its auto-update window taking down the whole batch.
+        # Provenance must never kill a trial: a version probe that fails
+        # (the CLI mid-update, say) records "unavailable".
         try:
             return subprocess.run(cmd, capture_output=True, text=True).stdout.strip()
         except OSError:
             return "unavailable"
 
-    # The leg's ACTUAL image (audit 2026-08-14 F9: a hardcoded jazzy name
-    # recorded a digest the humble legs never ran).
+    # The images this trial actually ran in: the agent's toolchain
+    # (sandbox) and the proxy are experiment conditions as much as the
+    # robot image.
     backend = cfg.get("machine", {}).get("backend", {})
     image = backend.get("image", "robocli-sim-jazzy")
-    # All three containers a trial runs in: the agent's toolchain
-    # (sandbox) and the wall (proxy) are experiment conditions as much
-    # as the sim body (completeness ruling 2026-08-18: record
-    # generously; the RUNBOOK reconciles builds against these).
     sandbox_image = backend.get("sandbox_image", "robocli-sandbox")
     # The benchmark content itself (tasks, predicates, the vendored
     # forks) lives in the simulator checkout; its commit is as much a
@@ -198,8 +189,8 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
         "simulator_dirty": bool(
             sh(["git", "-C", simulator, "status", "--porcelain"])
             if simulator else False),
-        # Wall-clock trials render at host speed (llvmpipe scales with
-        # cores); where a trial ran is a condition, not trivia.
+        # Software rendering runs at host speed (llvmpipe scales with
+        # cores); where a trial ran is a condition.
         "host": {"hostname": platform.node(), "cpu_count": os.cpu_count()},
         "ros_domain": getattr(args, "ros_domain", None),
         "sim_image_digest": sh(
@@ -211,13 +202,13 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
         "proxy_image_digest": sh(
             ["docker", "image", "inspect", "--format", "{{.Id}}", "robocli-proxy"]
         ),
-        # Render device disclosure: physics is CPU either way (results
-        # comparable across devices); recorded so nobody has to dig it
-        # out of bridge.log.
+        # Render device: physics is CPU either way, so results are
+        # comparable across devices; recorded so nobody digs it out of
+        # bridge.log.
         "gpu_render": bool(backend.get("gpus", False)),
         # Relative to where the run was started when it lives there
-        # (ruling 2026-08-17: records keep no absolute paths they can
-        # avoid); a bundled config records its package path.
+        # (records keep no absolute paths they can avoid); a bundled
+        # config records its package path.
         "config_file": str(cfg_path.relative_to(Path.cwd())
                            if cfg_path.is_relative_to(Path.cwd())
                            else cfg_path),
@@ -242,11 +233,9 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
 
 
 def write_config(trial_dir: Path, cfg: dict) -> Path:
-    """The trial's resolved suite view, computed ONCE by the conductor
-    and written here as the artifact every consumer reads (manual
-    seeding, body bringup, the machine itself). One computation, one
-    file, zero chance of same-code-different-arguments drift (ruling
-    2026-08-16)."""
+    """The trial's resolved config, computed once by the runner and
+    written here as the file every party reads (workspace seeding, the
+    robot's bring-up, the bridge)."""
     path = trial_dir / "config.yaml"
     path.write_text(yaml.safe_dump(cfg, sort_keys=False))
     return path
@@ -261,18 +250,17 @@ def write_trial_provenance(trial_dir: Path, prov: dict) -> None:
 
 
 def write_run_config(run_dir: Path, prov: dict) -> None:
-    """Run-level config.json is write-once (concurrent single-trial runners
-    under the batch master must not rewrite each other's copy); the
-    authoritative per-execution record is each trial's provenance.json."""
+    """Run-level config.json is write-once (concurrent single-trial
+    runners must not rewrite each other's copy); the per-execution record
+    is each trial's provenance.json."""
     if not (run_dir / "config.json").exists():
         (run_dir / "config.json").write_text(json.dumps(prov, indent=2))
 
 
 def archive_prior_attempt(trial_dir: Path) -> Path | None:
-    """Move any existing trial artifacts into attempts/attempt-NNNN before a
-    rerun writes new ones. Evidence is never overwritten (notes/13 §3.2;
-    minimal-form archiving: layout stays flat, superseded attempts move
-    down, the top level is always the latest attempt)."""
+    """Move any existing trial artifacts into attempts/attempt-NNNN before
+    a rerun writes new ones. Evidence is never overwritten: the top level
+    is always the latest attempt, superseded ones move down."""
     if not trial_dir.exists():
         return None
     entries = [p for p in trial_dir.iterdir() if p.name != "attempts"]
@@ -289,8 +277,8 @@ def archive_prior_attempt(trial_dir: Path) -> Path | None:
 
 
 def finalize_trial(trial_dir: Path, agent, secrets: list[str]) -> None:
-    """Post-trial evidence hygiene: scrub secrets from everything the
-    agent or the sim could have echoed, then extract the replay script."""
+    """After a trial: scrub secrets from everything the agent or the sim
+    could have echoed, then extract the replay script."""
     transcript = trial_dir / "transcript.jsonl"
     scrub_file(transcript, secrets)
     scrub_file(trial_dir / "bridge.log", secrets)

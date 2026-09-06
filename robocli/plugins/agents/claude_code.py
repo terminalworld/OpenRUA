@@ -82,7 +82,7 @@ class ClaudeCode(Agent):
     def interactive_argv(self, sandbox: str, model: str, proxy: str,
                          options: dict[str, Any] | None = None,
                          prompt: str | None = None, **_: Any) -> list[str]:
-        """Same seat, mounts and wall as the headless launch; the optional
+        """Same user, mounts and proxy as the headless launch; the optional
         prompt becomes the opening message."""
         opts = self._opts(options)
         return [
@@ -95,7 +95,7 @@ class ClaudeCode(Agent):
         ]
 
     def sandbox_cli_check(self) -> tuple[str, str]:
-        """The CLI inside the sandbox matches the pin (schema-drift vaccine)."""
+        """The CLI inside the sandbox is the version the manifest pins."""
         return ("sandbox_cli_matches_pin",
                 f"bash -c 'claude --version | grep -qF {self.version}'")
 
@@ -105,8 +105,8 @@ class ClaudeCode(Agent):
         return f"run {self.credentials.config_env}={creds_home} claude login"
 
     def token_hint(self, token_file: Path | str) -> str:
-        """Minting authorises whichever account is logged in to the BROWSER,
-        not the one the profile env points at."""
+        """Minting authorises whichever account is logged in to the browser,
+        not the one the profile environment variable points at."""
         return (f"mint one with `claude setup-token` (it authorises the account "
                 f"logged in to your browser), then: umask 077 && printf "
                 f"'{self.token_env}=%s\\n' '<token>' > {token_file}")
@@ -122,8 +122,8 @@ class ClaudeCode(Agent):
         return returncode == 0 and "limit" not in text.lower()
 
     def matches_quota_anomaly(self, text: str) -> bool:
-        """PHRASES only, not bare substrings (audit 2026-08-14 F11: "joint
-        limit exceeded" is an infra exception, not a walled account)."""
+        """Phrases only, not bare substrings: "joint limit exceeded" is a
+        robot error, not a quota wall."""
         low = text.lower()
         return any(k in low for k in (*QUOTA_PHRASES, "quota"))
 
@@ -131,11 +131,10 @@ class ClaudeCode(Agent):
         """Every quota reading the CLI wrote into a transcript, in file order.
 
         The CLI streams its own rate-limit state as ``rate_limit_event``
-        records (ruling 2026-08-20, replacing an external usage tool): one
-        lands at session start and more as the state changes, so every trial
-        carries at least one reading of each live window. Reading them costs
-        nothing extra and needs no credentials, and each reading belongs to a
-        known trial rather than to a wall-clock instant.
+        records: one lands at session start and more as the state changes,
+        so every trial carries at least one reading of each live window.
+        Reading them costs nothing extra and needs no credentials, and
+        each reading belongs to a known trial rather than to an instant.
 
         Normalized to the shape consumers speak, so no caller has to know the
         CLI's own spelling: {window, utilization, resets_at, status, at}.
@@ -188,20 +187,19 @@ class ClaudeCode(Agent):
         """The trial's totals from the CLI's final result record(s): {num_turns,
         hit_max_turns, usage, cost_usd, duration_ms, segments}. {} when
         unreadable or absent. These land in operator_meta so cost and
-        token-economy stats read straight from result.json (recording ruling
-        2026-08-18: record generously).
+        token statistics read straight from result.json.
 
-        A trial suspended at a quota wall and resumed writes one result record
-        per segment into the same transcript, so the totals SUM across them
-        (ruling 2026-08-20). ``segments`` says how many there were; it is 1 for
-        an uninterrupted trial, whose numbers are unchanged by this. Whether the
-        trial ended on its turn budget is the LAST segment's verdict, not a sum.
+        A trial suspended at a quota wall and resumed writes one result
+        record per segment into the same transcript, so the totals sum
+        across them. ``segments`` says how many there were; it is 1 for an
+        uninterrupted trial, whose numbers are unchanged by this. Whether
+        the trial ended on its turn budget is the last segment's verdict,
+        not a sum.
 
-        The result record is usually a segment's last line but not always: a
-        session that spawned background tasks gets trailing ``system`` task
-        notifications appended AFTER it (2026-08-18 twoarm rehearsal, CLI
-        2.1.226) - so collect every ``type: "result"`` rather than trusting
-        position.
+        The result record is usually a segment's last line but not always:
+        a session that spawned background tasks gets trailing ``system``
+        task notifications appended after it, so every ``type: "result"``
+        is collected rather than trusting position.
         """
         results = [rec for rec in _iter_records(transcript)
                    if rec.get("type") == "result"]
@@ -231,13 +229,12 @@ class ClaudeCode(Agent):
         """Quota evidence written after ``line``, or None. ``line`` is how many
         lines the transcript already had; 0 scans the whole file.
 
-        scan_transcript()'s quota verdict is deliberately sticky: a trial that
-        was ever rejected is voided (ruling 2026-08-14 Q1). That is right for
-        the audit and wrong for the runner deciding whether to wait: after a
-        wall is waited out and the trial resumes and finishes, the sticky
-        verdict still reports the old rejection, and a runner reading it would
-        suspend a trial that has already finished -- over and over until it ran
-        out of suspensions and threw the finished work away.
+        scan_transcript()'s quota verdict is sticky on purpose: a trial
+        that was ever rejected is voided. That is right for post-hoc
+        classification and wrong for the runner deciding whether to wait:
+        after a wall is waited out and the trial resumes and finishes, the
+        sticky verdict still reports the old rejection, and a runner
+        reading it would suspend a finished trial again and again.
 
         The caller supplies the boundary rather than this function inferring
         one. A runner knows exactly how long the file was before it launched a
@@ -257,9 +254,9 @@ class ClaudeCode(Agent):
             hit = _rejection(rec, i + 1, transcript.name)
             if hit:
                 return hit
-            # The 2026-08-09 weekly-limit shape carries no rejection event, only
-            # a quota phrase on an ERROR final result. Phrases are scanned ONLY
-            # on error results (audit 2026-08-14 F1).
+            # A weekly limit carries no rejection event, only a quota
+            # phrase on an error final result. Phrases are scanned only
+            # on error results.
             if rec.get("type") == "result" and rec.get("is_error"):
                 text = str(rec.get("result", ""))
                 if any(p in text.lower() for p in QUOTA_PHRASES):
@@ -269,20 +266,17 @@ class ClaudeCode(Agent):
 
 
     def scan_transcript(self, transcript: Path) -> dict:
-        """Quota/infra evidence for classification. Semantic keys consumed by
-        orchestration/audit/audit.py:
+        """Quota and infrastructure evidence for post-hoc classification:
 
         - quota: rejected rate-limit evidence ({evidence, resets_at, ...})
-          from the CLI's rate_limit_event, or a quota phrase on an ERROR
-          final result. Phrases are scanned ONLY on error results: a normal
-          final record's text is the AGENT'S OWN closing message, and
-          robotics prose plausibly contains quota wording (audit 2026-08-14
-          F1; an ungated scan voids genuine capability failures).
+          from the CLI's rate_limit_event, or a quota phrase on an error
+          final result. Phrases are scanned only on error results: a
+          normal final record's text is the agent's own closing message,
+          and robotics prose plausibly contains quota wording.
         - has_final_result / final_is_error / final_text
         - api_transport_error: the API transport killed the session
-          ("API Error: ..."; 2026-08-12 RestockPantry canary).
-        - logged_out_launch: CLI launched logged-out (credentials race,
-          2026-08-12 restack rerun).
+          ("API Error: ...").
+        - logged_out_launch: the CLI launched logged-out.
         - lines / malformed_lines / read_error
         """
         ev: dict = {"quota": None, "malformed_lines": 0, "lines": 0,
@@ -312,13 +306,11 @@ class ClaudeCode(Agent):
                 text = str(rec.get("result", ""))
                 ev["final_is_error"] = bool(rec.get("is_error"))
                 ev["final_text"] = text[:200]
-                # FINAL-record semantics (refactor review 2026-08-15 F2): the
-                # transport/login verdicts follow the LAST result record; a
-                # later clean result resets them (a truncated/concatenated
-                # transcript may carry several). Matched on the same
-                # 200-char window classify historically used (F3). The quota
-                # latch below is deliberately sticky instead: ever-rejected
-                # voids the trial (ruling 2026-08-14 Q1), full-text match.
+                # The transport and login verdicts follow the last result
+                # record; a later clean result resets them (a concatenated
+                # transcript may carry several). Matched on the 200-char
+                # window. The quota latch below is sticky instead: ever
+                # rejected voids the trial, matched on the full text.
                 low200 = ev["final_text"].lower()
                 ev["api_transport_error"] = (
                     ev["final_is_error"] and "api error" in low200)
@@ -336,7 +328,7 @@ class ClaudeCode(Agent):
 
     def assistant_turns_before(self, transcript: Path, wall_unix: float) -> int | None:
         """Agent turns completed at or before an instant (post-hoc turn
-        budgets, ruling 2026-08-14 Q2)."""
+        budgets)."""
         if not transcript.exists() or wall_unix is None:
             return None
         n = 0
@@ -352,13 +344,13 @@ class ClaudeCode(Agent):
 
     def replay_ops(self, transcript: Path) -> list[dict]:
         """Bash (executed) and Write/Edit (file materialization; agents keep
-        scripts in the sandbox's /tmp, which is NOT in the archived
+        scripts in the sandbox's /tmp, which is not in the archived
         workspace) in order, normalized to shell/write/edit operations.
 
-        The transcript is written STREAMING: one long command appears as
+        The transcript is written streaming: one long command appears as
         several snapshots of the same tool_use id, each a bit longer, the
-        last one complete. Each id is replayed exactly once, with its final
-        input, at its first position (2026-08-13)."""
+        last one complete. Each id is replayed exactly once, with its
+        final input, at its first position."""
         results: dict[str, dict] = {}
         order: list[dict] = []
         for rec in _iter_records(transcript):

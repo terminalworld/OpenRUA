@@ -1,4 +1,4 @@
-"""``python -m robocli`` is the same front door as the ``robocli`` command."""
+"""``python -m robocli`` is the same command line as ``robocli``."""
 
 import sys
 

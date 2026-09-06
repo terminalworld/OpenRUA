@@ -48,25 +48,23 @@ def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> Non
     ap.add_argument(
         "--wall-clock-min", type=float, default=None,
         help="override of the config's protocol.active_wall_clock_minutes "
-        "(audit 2026-08-14 F4: the config is the default's single source; "
-        "a forgotten flag must not silently shrink the protocol cap)",
+        "(the config is the default's single source)",
     )
     ap.add_argument(
         "--ros-domain", type=int, default=0,
         help="ROS_DOMAIN_ID for this run's containers; concurrent runs "
-        "MUST use distinct domains (same DDS network would cross-talk)",
+        "must use distinct domains (one DDS network would cross-talk)",
     )
     ap.add_argument(
         "--credentials-dir", default=None,
-        help="agent login-profile override (account pool sets this; "
-        "default falls back to cfg agent.credentials_dir, then the "
-        "adapter's default)",
+        help="agent login-profile override (default: the config's "
+        "agent.credentials_dir, then ~/.robocli/credentials/<agent>)",
     )
     ap.add_argument(
         "--token-file", default=None,
-        help="file holding <token_env>=<token> for the sandbox CLI (the "
-        "account pool sets this); given, the sandbox authenticates with "
-        "that token and no credentials file is mounted",
+        help="file holding <token_env>=<token> for the sandbox CLI; given, "
+        "the sandbox authenticates with that token and no credentials "
+        "file is mounted",
     )
     ap.add_argument(
         "--runs-root", default=None,
@@ -99,8 +97,8 @@ def run(args: argparse.Namespace) -> int:
     cfg = load_config(cfg_path, args.robot, home)
     if args.wall_clock_min is None:
         args.wall_clock_min = resolve_wall_clock_min(cfg)
-    # The per-suite view, computed exactly once (see config-view section
-    # above); everyone downstream consumes the resulting artifact.
+    # The per-suite view, computed exactly once; everyone downstream
+    # reads the resulting file.
     apply_suite_overrides(cfg, args.task_suite)
     normalize_arms(cfg)
     runs_root = Path(args.runs_root).expanduser() if args.runs_root else RUNS_ROOT
@@ -129,8 +127,6 @@ def run(args: argparse.Namespace) -> int:
                 )
             except triallock.TrialLocked as e:
                 # Not a failure of this trial: someone else is doing it.
-                # Say so and leave their work alone (SystemExit belongs to
-                # the entry point; the library raised).
                 raise SystemExit(f"[trial] {e}")
             trial_dir = (run_dir / "trials" / f"{args.task_suite}-{task_id}"
                          / f"seed{seed}")

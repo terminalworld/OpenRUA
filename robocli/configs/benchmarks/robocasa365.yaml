@@ -1,21 +1,19 @@
-# RoboCasa365 benchmark config — third mainline leg (P8). Same bridge code;
-# the increment over the arm-only legs is the mobile base: /cmd_vel in,
-# /odom out (notes/04 "共享桥设计 + 移动底盘增量"). Envs are built through
-# robosuite.make with THEIR factory kwargs verbatim (see
-# envs._create_robocasa_env); only controller_configs is swapped to our
-# JOINT_POSITION composite — same measurement-backed position as the
-# LIBERO-leg OSC rejection. Tasks/scenes/predicates/split stay theirs.
-# Four top-level sections (schema ruling 2026-08-17): task / protocol /
-# agent / machine; key names unchanged, keys only moved home.
+# RoboCasa365 benchmark config. Same bridge code as the other benchmarks;
+# the increment over the arm-only ones is the mobile base: /cmd_vel in,
+# /odom out. Envs are built through robosuite.make with their factory
+# kwargs verbatim (see environments/robocasa.py); only controller_configs
+# is swapped to the JOINT_POSITION composite. Tasks, scenes, predicates
+# and split stay theirs.
+# Four top-level sections: task / protocol / agent / robot.
 
 task:
   benchmark: robocasa365
-  # THE OFFICIAL target50 EVALUATION SET, copied out of their
+  # The official target50 evaluation set, copied out of their
   # dataset_registry.py (TARGET_TASKS / TASK_SET_REGISTRY["target50"]):
   # 18 atomic-seen + 16 composite-seen + 16 composite-unseen = 50 tasks,
   # "50 representative ones out of the 365 tasks" (their paper 3.4.2).
-  # The suite string IS their env-registry name (no prefix); task_id is
-  # unused on this leg (one env per name).
+  # The suite string is their env-registry name (no prefix); task_id is
+  # unused here (one env per name).
   suites:
     # --- atomic_seen (18) ---
     - CloseBlenderLid
@@ -76,47 +74,38 @@ task:
                              # wrapper's semantics)
 
 protocol:
-  trials_per_task: 10        # ten rollouts per task, drawn THEIR way.
+  trials_per_task: 10        # ten rollouts per task, drawn their way.
                              # Their protocol is 50 rollouts per task with
                              # the (layout, style) pair drawn per reset
-                             # (kitchen.py rng.choice); we cut the count to
-                             # ten and change nothing else. Ten i.i.d. draws
-                             # cover ~6.5 of the ten target kitchens -- so do
-                             # their fifty, unevenly. Stratifying one rollout
-                             # per kitchen was considered and dropped
-                             # 2026-09-05: it would stop measuring the
-                             # sampling their numbers come from. The count is
-                             # the only declared deviation.
-  max_turns: 500             # generous ceiling (post-hoc budget ruling 2026-08-12)
-  active_wall_clock_minutes: 240    # generous ceiling; paper budgets applied POST-HOC
-                             # via success_at stamps (closed-book = exact;
-                             # design-decisions 2026-08-12)
-  # Waiting out a quota wall is bounded (2026-08-20): past either bound the
-  # trial gives up as quota-limited and the master requeues it, exactly as
-  # before resume existed. 360min covers a five-hour window with slack; a
-  # weekly wall is deliberately NOT waited out.
+                             # (kitchen.py rng.choice); the count is cut to
+                             # ten and nothing else changes. Ten i.i.d.
+                             # draws cover about 6.5 of the ten target
+                             # kitchens; so do their fifty, unevenly. The
+                             # count is the only declared deviation.
+  max_turns: 500             # generous ceiling; budgets are applied post hoc
+  active_wall_clock_minutes: 240    # generous ceiling; budgets are applied
+                             # post hoc from the success_at stamps
+  # Waiting out a quota wall is bounded: past either bound the trial
+  # gives up as quota-limited and the caller requeues it. 360 min covers
+  # a five-hour window with slack; a weekly wall is not waited out.
   max_quota_wait_minutes: 360
   max_suspensions: 4
   # Suspend at a quota wall and resume the same session instead of losing
-  # the trial (2026-08-20). ON for our runs and OFF by default in the code:
-  # the wall comes from running at scale on subscription accounts, not from
-  # the method, and a single-trial reproduction through an API key never
-  # meets one. Recorded per trial, so a result says which way it ran.
+  # the trial. On for these runs and off by default in the code (see
+  # libero_pro.yaml). Recorded per trial.
   resume_on_quota_wall: true
   clock:
     mode: paused
-  base_cmd_policy: queue   # queue = 1 msg -> 1 tick, deterministic, flood-
-                           # fused at depth 4 (mainline). latest = real-robot
-                           # setpoint semantics (free-clock/real legs only).
-                           # design-decisions 2026-08-12.
+  base_cmd_policy: queue   # queue = one message -> one tick, deterministic,
+                           # bounded at depth 4 so a flood cannot queue
+                           # displacement. latest = real-robot setpoint
+                           # semantics (free-running clocks only).
 
-agent:                       # same frontier combo + workspace template
-  name: claude-code      # agent (robocli/agents) — all agent-specific
-                         # knowledge (launch/auth/transcript/quota) lives there
+agent:                       # same agent and workspace template as libero_pro
+  name: claude-code      # the agent (configs/agents/claude-code.yaml)
   model: claude-opus-5
   options:
-    effort: high           # reasoning effort, PINNED (opus-5 default; pinned vs
-                         # CLI-default drift; stamped into each trial's meta)
+    effort: high         # reasoning effort, pinned so a CLI default change
+                         # cannot drift it; stamped into each trial's meta
 
-robot: panda-omron-sim          # robots/panda-omron-sim.yaml supplies the machine: section
-
+robot: panda-omron-sim          # configs/robots/panda-omron-sim.yaml supplies the machine: section

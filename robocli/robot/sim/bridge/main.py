@@ -48,7 +48,7 @@ def main() -> None:
     ap.add_argument("--moveit-log", default="/tmp/moveit.log",
                     help="host-visible path for the planning stack's log "
                     "(a mid-trial move_group death must be diagnosable "
-                    "post-mortem; 2026-08-12 incident)")
+                    "afterwards)")
     args = ap.parse_args()
 
     with open(args.config) as f:
@@ -85,11 +85,10 @@ def main() -> None:
     spin_thread = threading.Thread(target=executor.spin, daemon=True)
     spin_thread.start()
 
-    # The robot boots COMPLETE: the planning stack is onboard software,
-    # brought up by the robot itself (ruling 2026-08-16; nobody reaches
-    # into the body to assemble it). The readiness wait services the sim
-    # job queue so sensor timers keep flowing meanwhile; the examiner's
-    # first question simply waits until the whole robot answers.
+    # The robot starts complete: the planning stack is the robot's own
+    # software, brought up here. The readiness wait services the sim
+    # job queue so sensor timers keep flowing meanwhile; the host's
+    # first question waits until the whole robot answers.
     moveit_proc = None
     if cfg.get("machine", {}).get("planning", {}).get("moveit"):
         import subprocess
@@ -103,7 +102,7 @@ def main() -> None:
         # Deterministic readiness: move_group logs this exact line once
         # its capabilities (compute_ik included) are up. A `ros2 service
         # list` probe answers from the ros2 daemon's cached graph and
-        # misses freshly-launched nodes (2026-08-11).
+        # misses freshly-launched nodes.
         deadline = time.time() + 120.0
         while True:
             sim.run_pending(timeout=0.1)

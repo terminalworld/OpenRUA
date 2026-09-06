@@ -1,7 +1,7 @@
 """CaP-Bench loader: cap-x env classes as factories, robosuite driven raw.
 
-Single-wrap discipline (design-decisions 2026-08-07): cap-x's env
-classes are used as FACTORIES only; everything downstream drives the
+Single wrap: cap-x's env classes are used as factories only;
+everything downstream drives the
 inner robosuite env directly and scores with the env's own
 _check_success. Task identity is byte-identical to their published
 numbers because construction goes through their code.
@@ -68,11 +68,9 @@ class CapBenchLoader:
             controller_cfg=str(capx_root / "capx/integrations/robosuite/"
                                f"controllers/config/robots/{ctrl_json}"),
             privileged=False, enable_render=False,
-            # Termination belongs to the evaluator, never to the env (locked;
-            # LIBERO builder L204, robocasa ignore_done): cap-x's default
-            # max_steps (nut 1000, restack 1500) froze mid-task agents and
-            # was the ONLY leg missing the override (2026-08-12 C4 diagnosis:
-            # 5 of 6 nut/restack failures were this, not capability).
+            # Termination belongs to the runner, never to the env (LIBERO
+            # and robocasa are built the same way): cap-x's default
+            # max_steps would freeze a mid-task agent.
             max_steps=10**9,
         )
         env = low.robosuite_env

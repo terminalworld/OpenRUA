@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-PKG = Path(__file__).resolve().parents[1] / "robocli"
+PKG = Path(__file__).resolve().parents[2] / "robocli"
 HOOKS_DIR = PKG / "plugins" / "agents"
 
 # Case-insensitive substrings that mark agent-specific knowledge. The

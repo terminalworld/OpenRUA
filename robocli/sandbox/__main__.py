@@ -1,4 +1,4 @@
-"""The package's front door: ``python -m robocli.sandbox <verb> ...``.
+"""``python -m robocli.sandbox <verb> ...``: the package's command line.
 
 From outside, the package is ONE self-contained unit; verbs are its
 interface and the files behind them are implementation detail. Each
@@ -12,7 +12,7 @@ from __future__ import annotations
 import sys
 
 _VERBS = {
-    "build": ("robocli.sandbox.build", "recipe + PREINSTALL -> seat image"),
+    "build": ("robocli.sandbox.build", "Dockerfile + PREINSTALL -> sandbox image"),
     "up": ("robocli.sandbox.up", "machine + config -> live sandbox container"),
     "down": ("robocli.sandbox.down", "container name -> removed"),
     "workspace": ("robocli.sandbox.workspace",

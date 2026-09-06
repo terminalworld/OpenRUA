@@ -1,4 +1,4 @@
-"""The package front door: one unit, one verb, three equivalent spellings."""
+"""The command line and the config view a trial runs under."""
 
 from __future__ import annotations
 
@@ -52,15 +52,15 @@ def test_unknown_suite_is_a_no_op():
 
 def test_capbench_wipe_view_agrees_machine_and_manifest():
     # The shipped override chain end to end: wipe's view must drop the
-    # gripper from ports AND from the generated manifest (the 2026-08-11
-    # canary), while the preflight mints the negative check.
+    # gripper from ports and from the generated machine.yaml, while
+    # preflight mints the negative check.
     from pathlib import Path
 
     import yaml
 
     from robocli.runner.preflight import build_checks
     from robocli.config import apply_suite_overrides
-    cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" / "configs" /
+    cfg = load_config(Path(__file__).resolve().parents[2] / "robocli" / "configs" /
                           "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_wipe")
     assert not cfg["machine"]["ports"].get("gripper")
@@ -84,7 +84,7 @@ def test_normalize_arms_synthesizes_from_flat_fields():
     import yaml
 
     from robocli.config import normalize_arms
-    cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" / "configs" /
+    cfg = load_config(Path(__file__).resolve().parents[2] / "robocli" / "configs" /
                           "benchmarks" / "libero_pro.yaml")
     normalize_arms(cfg)
     arms = cfg["machine"]["arms"]
@@ -115,7 +115,7 @@ def test_twoarm_suite_view_resolves_two_arms():
     import yaml
 
     from robocli.config import apply_suite_overrides, normalize_arms
-    cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" / "configs" /
+    cfg = load_config(Path(__file__).resolve().parents[2] / "robocli" / "configs" /
                           "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_twoarm_lift")
     normalize_arms(cfg)
@@ -135,7 +135,7 @@ def test_twoarm_suite_view_resolves_two_arms():
 def test_trial_record_stamps_the_workspace_template_hash():
     # config.json carries this too, but the runner rewrites config.json on
     # every trial: after a mid-campaign template edit only a trial-level
-    # stamp can still separate the two halves (2026-08-21).
+    # stamp can still separate the two halves.
     import inspect
     from robocli.runner import trial as T
     src = inspect.getsource(T.run_trial)

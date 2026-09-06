@@ -1,4 +1,4 @@
-"""Proxy package tests: the compound's shared gatehouse.
+"""Proxy package tests: the one shared route to the internet.
 
 Contract: build (whitelist -> image), up (IDEMPOTENT ensure -> url; the
 one singleton-infra verb, unlike sandbox.up which always births anew),
@@ -11,9 +11,9 @@ import ast
 import subprocess
 from pathlib import Path
 
-from conftest import requires_image
+from tests.conftest import requires_image
 
-PKG = Path(__file__).resolve().parents[1] / "robocli" / "proxy"
+PKG = Path(__file__).resolve().parents[2] / "robocli" / "proxy"
 
 
 def test_recipe_is_generic_and_agent_free():
@@ -29,7 +29,7 @@ def test_sandbox_package_no_longer_carries_the_wall():
     assert not (sandbox / "proxy").exists()
     for py in sandbox.glob("*.py"):
         low = py.read_text().lower()
-        # no wall-building parameters (prose mentions of the wall are fine)
+        # no proxy-building parameters (prose mentions of the proxy are fine)
         assert "--whitelist" not in low and "proxy_tag" not in low, py.name
 
 
@@ -78,9 +78,9 @@ def test_up_is_idempotent_ensure_and_down_removes():
 
 
 def test_runner_consumes_the_proxy_package():
-    conductor = (PKG.parent / "runner" / "trial.py").read_text()
-    assert "robocli.proxy" in conductor
-    assert "def ensure_proxy" not in conductor  # the split home is gone
+    runner = (PKG.parent / "runner" / "trial.py").read_text()
+    assert "robocli.proxy" in runner
+    assert "def ensure_proxy" not in runner  # the split home is gone
 
 
 def test_port_parameter_travels_build_to_up():
@@ -111,7 +111,7 @@ def test_ensure_fails_loudly_on_missing_image():
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     with pytest.raises(Exception) as e:
         pup.ensure(network="robocli-internal", name=name,
-                   image="robocli-definitely-missing-wall")
+                   image="robocli-definitely-missing-proxy")
     assert "is the image built" in str(e.value)
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
 

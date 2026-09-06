@@ -118,7 +118,7 @@ def test_conforms():
   only; `token_hint` says how to mint one. The token is scrubbed from
   the trial record like any other secret.
 - Post-hoc: every trial's `operator_meta.agent` names the agent that
-  ran, so audit tools resolve the same one.
+  ran, so post-hoc tools resolve the same one.
 
 ## Bundled
 

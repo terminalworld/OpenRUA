@@ -1,11 +1,11 @@
-"""Headless agent launcher: send an occupant into a live sandbox.
+"""Headless agent launcher: run an agent in a live sandbox.
 
-The agent lives INSIDE the sandbox: this module docker-execs the agent
+The agent lives inside the sandbox: this module docker-execs the agent
 CLI in the sandbox container as the ``robot`` user in /workspace; all
-native tools operate in-sandbox and containment is the container wall
-itself. Invoked by the evaluator as a subprocess (never imported;
-architecture contract). Everything agent-specific (binary, flags, auth
-env, transcript format) comes from the adapter selected by ``--agent``.
+native tools operate in-sandbox and containment is the container
+itself. Invoked by the runner as a subprocess (never imported).
+Everything agent-specific (binary, flags, auth env, transcript format)
+comes from the agent selected by ``--agent``.
 
 ``python -m robocli.agents.launcher --sandbox <container> --task
 "<sentence>" --transcript <path> [--prompt-file <path>] [--agent <name>]
@@ -18,13 +18,11 @@ content-free resume prompt instead of the task (the session already holds
 it), and the new segment is APPENDED to the same transcript so one file
 still holds the whole trial.
 
-Network posture (locked): the sandbox's only way out is the model-API
-wall; the adapter disables any server-side search the CLI offers (it
-cannot be firewalled), verifiable in the transcript.
+Network: the sandbox's only way out is the model-API proxy; the agent's
+hooks disable any server-side search the CLI offers (it cannot be
+proxied), verifiable in the transcript.
 
-The launcher is skeleton: pure process construction, zero tricks. Any
-model-compensating aid belongs in ``addons/`` (does not exist unless
-debugging forces it), never here.
+The launcher is pure process construction: no prompt tricks, no aids.
 """
 
 from __future__ import annotations

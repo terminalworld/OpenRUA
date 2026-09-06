@@ -1,11 +1,9 @@
-"""Tear down the simulated robot's body. HOST-SIDE. The power switch.
+"""Remove the simulated robot's container from outside. Host side.
 
-The graceful path is CONVERSATION, not this module: the caller sends
-the shutdown verb on the stdio line (or simply exits; pipe EOF makes
-the robot power itself off). This is the e-stop: used only when the
-conversation is already dead -- asking a wedged process to stop is
-impossible by definition, so the cut must live outside the robot's own
-software, exactly like a physical e-stop circuit.
+The ordinary way to stop the robot is the control line: the caller sends
+``shutdown`` (or exits; pipe EOF makes the bridge stop itself). This is
+for when that line is dead: a wedged process cannot be asked to stop,
+so the cut lives outside the robot's own software.
 """
 
 from __future__ import annotations
@@ -17,14 +15,14 @@ def down(name: str) -> None:
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
 
 
-def main() -> int:  # standalone: e-stop one body by name
+def main() -> int:  # standalone: remove one robot container by name
     import argparse
 
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--name", required=True, help="body container name")
+    ap.add_argument("--name", required=True, help="robot container name")
     args = ap.parse_args()
     down(args.name)
-    print(f"e-stopped {args.name}")
+    print(f"removed {args.name}")
     return 0
 
 

@@ -1,10 +1,10 @@
 """The agent's workspace: template seeding + machine manifest.
 
-The workspace is the skin layer's SOLE carrier (design-decisions
-2026-08-10): starter docs, tools, and the generated machine.yaml the
-agent finds in /workspace. This module owns what the workspace IS;
-content and generation; when/where it is seeded per trial is the
-evaluator side's call (robocli/run.py).
+Everything the agent is given beyond the robot's native surface lives
+in the workspace: starter docs, tools, and the generated machine.yaml
+the agent finds in /workspace. This module owns what the workspace is
+(content and generation); when and where it is seeded per trial is the
+runner's call.
 """
 
 from __future__ import annotations
@@ -44,8 +44,8 @@ def seed(cfg: dict, dest: Path) -> None:
 
 
 def template_hash(cfg: dict) -> str:
-    """Deterministic sha256 of the template tree (prompt-equal provenance
-    status, design-decisions 2026-08-10); "" when no template."""
+    """Deterministic sha256 of the template tree, recorded with every
+    trial like the prompt's; "" when no template."""
     root = template_dir(cfg)
     if not root:
         return ""
@@ -57,8 +57,8 @@ def template_hash(cfg: dict) -> str:
         if "__pycache__" in p.parts:
             continue
         if p.is_file():
-            # Delimited per-file records (review 2026-08-15 M1): bare
-            # path+content concatenation is collision-constructible
+            # Delimited per-file records: bare path+content
+            # concatenation is collision-constructible
             # (file "ab"+"c" == file "a"+"bc"); a NUL after the path and
             # a content digest give every file an unambiguous record.
             h.update(str(p.relative_to(root)).encode() + b"\0")
@@ -146,10 +146,9 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
             {"kind": "cartesian_twist", "port": aports.get("twist"),
              "type": "geometry_msgs/msg/TwistStamped",
              "frame": arm.get("base_frame"), **tag},
-            # Config extras spread FIRST so the typed columns always
-            # win (review 2026-08-15 M2: robocasa's machine.base.type
-            # "holonomic" was clobbering the ROS message type); a
-            # config "type" survives as "drive".
+            # Config extras spread first so the typed columns always
+            # win (a config "type" such as "holonomic" must not clobber
+            # the ROS message type); it survives as "drive".
             {**{("drive" if k == "type" else k): v
                 for k, v in (arm.get("gripper") or {}).items()},
              "kind": "gripper", "port": aports.get("gripper"),

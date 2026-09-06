@@ -2,7 +2,7 @@
 
 Cross-thread work lands on the owner's loop; same-thread calls nest
 directly; a fire-and-forget failure is COUNTED and printed, never
-silent (audit F8) and never fatal.
+silent and never fatal.
 """
 
 from __future__ import annotations

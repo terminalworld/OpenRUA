@@ -1,6 +1,5 @@
-"""Occupant package unit tests: prompt contract, adapter pins, the
-addons slot. Restores the invariant guards that lived in the deleted
-test_harness.py (migration review 2026-08-15, F1)."""
+"""Agents package unit tests: the prompt contract, the manifest and hooks,
+the launcher, the transcript hooks."""
 
 from __future__ import annotations
 
@@ -12,7 +11,7 @@ import yaml
 
 from robocli import agents
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 LIBERO_CFG = REPO / "robocli" / "configs" / "benchmarks" / "libero_pro.yaml"
 
 
@@ -26,8 +25,8 @@ def test_prompt_has_only_task_placeholder():
 
 
 def test_configs_carry_no_stale_prompt_key():
-    # Inline ruling 2026-08-15: the prompt lives in agents.PROMPT; a
-    # config naming a prompt file would be silently ignored, so ban it.
+    # The prompt lives in agents.PROMPT; a config naming a prompt file
+    # would be silently ignored, so ban it.
     for cfg_file in (REPO / "robocli" / "configs" / "benchmarks").glob("*.yaml"):
         cfg = yaml.safe_load(cfg_file.read_text())
         assert "prompt" not in cfg.get("agent", {}), cfg_file.name
@@ -94,13 +93,13 @@ def test_sandbox_mounts_are_bare_specs_landing_in_the_config_dir(tmp_path):
 
 
 def test_launch_argv_threads_proxy_and_profile_env():
-    # agents -> proxy seam: the wall URL must reach the CLI process env,
+    # agents -> proxy seam: the proxy URL must reach the CLI process env,
     # and the profile env must point at the mounted profile dir.
     a = agents.get("claude-code")
     argv = a.launch_argv(sandbox="box", prompt="p", model="m",
-                         max_turns=3, proxy="http://wall:9999")
-    assert "HTTPS_PROXY=http://wall:9999" in argv
-    assert "HTTP_PROXY=http://wall:9999" in argv
+                         max_turns=3, proxy="http://proxy:9999")
+    assert "HTTPS_PROXY=http://proxy:9999" in argv
+    assert "HTTP_PROXY=http://proxy:9999" in argv
     env = [x for x in argv if x.startswith(a.credentials.config_env + "=")]
     assert len(env) == 1
     _, cfg_dst = a.sandbox_mounts(Path("/x"), Path("/y"))[0].rsplit(":", 1)
@@ -248,11 +247,11 @@ def test_agents_module_exposes_launch_only():
     assert r.returncode == 2 and "launch" in r.stderr
 
 
-# ----------------------------------------------------------- addons slot
+# ------------------------------------------------------------- no aids
 
-def test_addons_absent_by_design():
-    # skeleton/skin discipline: the slot exists in the design, the
-    # directory must NOT exist until debugging forces an aid into it.
+def test_no_agent_aids_ship_with_the_package():
+    # Everything the agent is given beyond the native surface is the
+    # workspace template; no other aid directory exists.
     src = Path(agents.__file__).resolve().parents[1]
     assert not list(src.glob("*/addons"))
 
@@ -270,7 +269,7 @@ def test_read_final_extracts_turns_usage_and_cost(tmp_path):
                    "usage": {"input_tokens": 1200, "output_tokens": 300},
                    "cost_usd": 0.42, "duration_ms": 61000,
                    # an uninterrupted trial is one segment; its numbers are
-                   # unchanged by the cross-segment summing added 2026-08-20
+                   # unchanged by the cross-segment summing
                    "segments": 1}
     bad = tmp_path / "empty.jsonl"
     bad.write_text("")
@@ -278,7 +277,7 @@ def test_read_final_extracts_turns_usage_and_cost(tmp_path):
 
 
 def test_read_final_survives_trailing_system_records(tmp_path):
-    # 2026-08-18 twoarm rehearsal: a session that spawned background
+    # A session that spawned background
     # tasks gets system task-notifications appended AFTER the result
     # record; the token/cost account must still be found.
     import json
@@ -300,7 +299,7 @@ def test_read_final_survives_trailing_system_records(tmp_path):
 
 def test_read_rate_limits_normalizes_and_dates_each_reading(tmp_path):
     # The quota reading rides in the transcript the CLI already writes
-    # (ruling 2026-08-20): no extra request, no credentials, no polling.
+    # no extra request, no credentials, no polling.
     import json
 
     read_rate_limits = agents.get("claude-code").read_rate_limits
@@ -428,7 +427,7 @@ def test_read_final_survives_a_damaged_usage_field(tmp_path):
 
 def test_launch_argv_raises_the_bash_timeouts_above_the_cli_defaults():
     # A robot motion outlives the CLI's 120s Bash default, and a command
-    # pushed to the background mid-motion costs the occupant a poll loop.
+    # pushed to the background mid-motion costs the agent a poll loop.
     # Both timeouts must reach the CLI process env, and the default must
     # stay under the ceiling so `timeout=` can still ask for more.
     a = agents.get("claude-code")
@@ -443,10 +442,10 @@ def test_launch_argv_raises_the_bash_timeouts_above_the_cli_defaults():
 
 def test_sandbox_ships_urdf_kinematics_parsers():
     # /robot_description is on the graph; PyKDL without a parser cannot
-    # turn it into a chain, and the occupant falls back to hand-written DH.
+    # turn it into a chain, and the agent falls back to hand-written DH.
     # The image list and the machine doc must both carry the parsers.
     from pathlib import Path as _P
-    root = _P(__file__).resolve().parents[1] / "robocli" / "sandbox"
+    root = _P(__file__).resolve().parents[2] / "robocli" / "sandbox"
     dockerfile = (root / "sandbox.Dockerfile").read_text()
     doc = (root / "workspace" / "docs" / "10-machine.md").read_text()
     for pkg in ("python3-pykdl", "urdfdom-py"):
@@ -456,7 +455,7 @@ def test_sandbox_ships_urdf_kinematics_parsers():
 
 
 # ------------------------------------------------------ minted-token auth
-# 2026-09-02: the sandbox authenticates with its own `claude setup-token`
+# The sandbox authenticates with its own `claude setup-token`
 # token instead of sharing the host's rotating credentials file. Three
 # properties are worth holding down by machine, because each of them
 # silently un-does the reason for the change.
@@ -467,7 +466,7 @@ def test_launch_argv_hands_the_token_over_by_file_never_by_value():
     # config that `docker inspect` prints.
     a = agents.get("claude-code")
     argv = a.launch_argv(sandbox="box", prompt="p", model="m", max_turns=3,
-                         proxy="http://wall:9999",
+                         proxy="http://proxy:9999",
                          token_file="/secrets/.env_tw")
     assert "--env-file" in argv
     assert argv[argv.index("--env-file") + 1] == "/secrets/.env_tw"
@@ -478,7 +477,7 @@ def test_launch_argv_hands_the_token_over_by_file_never_by_value():
 def test_launch_argv_without_a_token_asks_docker_for_no_env_file():
     a = agents.get("claude-code")
     argv = a.launch_argv(sandbox="box", prompt="p", model="m", max_turns=3,
-                         proxy="http://wall:9999")
+                         proxy="http://proxy:9999")
     assert "--env-file" not in argv
 
 

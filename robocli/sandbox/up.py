@@ -1,4 +1,4 @@
-"""Verb ``up``: a reachable machine + its config -> ONE live sandbox.
+"""Verb ``up``: a reachable machine + its config -> one live sandbox.
 
     python3 -m robocli.sandbox.up --config <config.yaml> \
         --workspace <dir> [--task-suite S] [--image robocli-sandbox] \
@@ -6,23 +6,22 @@
         [--ros-domain N] [--internet none|proxy:<url>|open] \
         [--name <container>] [--mount SRC:DST ...] [--env K=V ...]
 
-Internet posture (default ``none``; the house ships sealed):
-``none`` pairs with a network that has no internet route;
-``proxy:<url>`` bakes HTTPS_PROXY/HTTP_PROXY at birth so every occupant
-(human or agent) lives behind the whitelist wall; ``open`` declares the
-online sub-experiment switch (pair with a routed network). Sealing is
-enforced by the NETWORK (docker --internal); this flag sets the one
-door and keeps the intent explicit.
+Internet access (default ``none``): ``none`` pairs with a network that
+has no internet route; ``proxy:<url>`` sets HTTPS_PROXY/HTTP_PROXY at
+creation so everyone in the container (person or agent) goes through
+the whitelist proxy; ``open`` pairs with a routed network. Isolation is
+enforced by the network (docker --internal); this flag sets the one
+route out and keeps the intent explicit.
 
 Value output: the container name (one line). File output: the seeded
 workspace under --workspace. State output: a running container attached
-to the given network/domain with /workspace mounted; a human enters it
-with ``docker exec -it <name> bash``; sending an agent in is the
-occupant package's verb (robocli.agents), not ours.
+to the given network/domain with /workspace mounted; a person enters it
+with ``docker exec -it <name> bash``; launching an agent in it is the
+agents package's job.
 
---mount/--env are GENERIC birth-time slots (docker mounts exist only at
-container creation); the package does not interpret their values. ``up``
-never builds images: a missing image is an instructive error.
+--mount/--env are generic creation-time slots (docker mounts exist only
+at container creation); the package does not interpret their values.
+``up`` never builds images: a missing image is an instructive error.
 """
 
 from __future__ import annotations
@@ -50,9 +49,9 @@ def up(config: Path, workspace: Path,
        seed_workspace: bool = True, peers_xml: str | None = None) -> str:
     """Create the live sandbox; returns its container name.
 
-    Give every container a FRESH workspace dir: seeding merges into an
-    existing dir (stale files from a previous occupant would leak into
-    the new session).
+    Give every container a fresh workspace dir: seeding merges into an
+    existing dir, and stale files from a previous session would leak
+    into the new one.
     """
     config = Path(config)
     if not config.is_file():
@@ -63,12 +62,10 @@ def up(config: Path, workspace: Path,
         raise SandboxError(f"config is not valid yaml: {config}: {e}")
     if not isinstance(cfg, dict):
         raise SandboxError(f"config is empty or not a mapping: {config}")
-    # The config arrives ALREADY RESOLVED to the trial's suite view (the
-    # conductor computes it once and distributes; ruling 2026-08-16) --
+    # The config arrives already resolved to the trial's suite view;
     # this package applies no overrides of its own.
-    # Internet posture: the house ships SEALED; opening a door is the
-    # caller's explicit decision. `--network` is the robot's net (DDS
-    # reachability); `--internet` is the outside world. Orthogonal.
+    # `--network` is the robot's net (DDS reachability); `--internet`
+    # is the outside world. Orthogonal.
     if internet != "none" and not (internet == "open"
                                    or internet.startswith("proxy:")):
         raise SandboxError(
@@ -79,8 +76,8 @@ def up(config: Path, workspace: Path,
         if not url:
             raise SandboxError("--internet proxy: needs a url "
                               "(e.g. proxy:http://robocli-proxy:8888)")
-        # Baked at birth: humans entering the sandbox live under the
-        # same posture as agents (no exec-time injection asymmetry).
+        # Set at creation: a person entering the sandbox has the same
+        # network access as an agent.
         proxy_env = ["-e", f"HTTPS_PROXY={url}", "-e", f"HTTP_PROXY={url}"]
     image = image or cfg.get("machine", {}).get("backend", {}).get(
         "sandbox_image", DEFAULT_IMAGE)
@@ -102,7 +99,7 @@ def up(config: Path, workspace: Path,
     if static_peer and not peers_xml:
         raise SandboxError(
             "static_peer needs the rendered peers profile too; the "
-            "conductor renders it (run.FASTDDS_PEERS_XML) and "
+            "runner renders it (bringup.FASTDDS_PEERS_XML) and "
             "passes peers_xml")
     peer_env = ["-e", f"ROS_DOMAIN_ID={ros_domain}"]
     if static_peer:
@@ -143,12 +140,12 @@ def up(config: Path, workspace: Path,
             raise SandboxError(_death_report(name, "peers-profile write failed"))
     # Birth verification: `docker run -d` succeeds even when the
     # container exits immediately (image without bash, broken
-    # entrypoint); never hand back the name of a corpse.
+    # entrypoint); never hand back the name of a dead container.
     alive = subprocess.run(
         ["docker", "ps", "-q", "--filter", f"name=^{name}$"],
         capture_output=True, text=True).stdout.strip()
     if not alive:
-        raise SandboxError(_death_report(name, "exited at birth"))
+        raise SandboxError(_death_report(name, "exited at creation"))
     return name
 
 
@@ -171,7 +168,7 @@ def main() -> int:
     ap.add_argument("--workspace", required=True, type=Path,
                     help="host dir to seed and mount at /workspace")
     ap.add_argument("--image", default=None,
-                    help="seat image (default: config machine.backend.sandbox_image, "
+                    help="sandbox image (default: config machine.backend.sandbox_image, "
                     f"then {DEFAULT_IMAGE!r})")
     ap.add_argument("--network", default="host",
                     help="'host' (real machine, multicast) or a docker "
@@ -181,16 +178,16 @@ def main() -> int:
                     "multicast-less networks")
     ap.add_argument("--ros-domain", type=int, default=0)
     ap.add_argument("--internet", default="none",
-                    help="outside-world access: none (default, sealed) | "
-                    "proxy:<url> (whitelist wall, baked at birth) | open")
+                    help="outside-world access: none (default) | "
+                    "proxy:<url> (whitelist proxy, set at creation) | open")
     ap.add_argument("--name", default=None,
                     help="container name (default: sandbox-<hex8>); an "
                     "existing name is replaced")
     ap.add_argument("--mount", action="append", default=[],
-                    metavar="SRC:DST", help="generic birth-time mount "
+                    metavar="SRC:DST", help="generic creation-time mount "
                     "(repeatable; the package does not interpret it)")
     ap.add_argument("--env", action="append", default=[], metavar="K=V",
-                    help="generic birth-time env var (repeatable)")
+                    help="generic creation-time env var (repeatable)")
     ap.add_argument("--no-seed", action="store_true",
                     help="mount the workspace dir as-is (no template "
                     "seeding; replay/custom workspaces)")

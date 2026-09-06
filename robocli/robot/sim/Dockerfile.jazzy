@@ -4,7 +4,7 @@
 # The simulator checkout (cap-x clone + venvs) is volume-mounted, not baked in.
 FROM ros:jazzy
 
-# Package set verified by the P0/P1 spikes (2026-08-07):
+# Package set:
 # - python3.12-venv: base image lacks ensurepip (venv creation fails without it)
 # - Mesa GL/EGL stack: MUJOCO_GL=egl + PYOPENGL_PLATFORM=egl software rendering
 #   (llvmpipe, no GPU); both libegl + libgl dispatchers and the mesa DRI
@@ -19,7 +19,3 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 ENV MUJOCO_GL=egl PYOPENGL_PLATFORM=egl
-
-# TODO-P2: moveit packages (ros-jazzy-moveit + franka moveit_config copy).
-# TODO-P1: entrypoint that writes ~/.libero/config.yaml from the mounted
-# simulator path, sources ROS, and launches robocli-bridge.

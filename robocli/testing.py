@@ -55,7 +55,7 @@ def check_agent(agent: Agent) -> None:
     # the required method
     assert cls.launch_argv is not Agent.launch_argv, "launch_argv must be implemented"
     argv = agent.launch_argv("box", "task text", agent.default_model, 3,
-                             "http://wall:8888", options=dict(agent.default_options),
+                             "http://proxy:8888", options=dict(agent.default_options),
                              session_id="sid", resume=False, token_file=None)
     assert isinstance(argv, list) and argv and all(isinstance(x, str) for x in argv), \
         "launch_argv returns a non-empty list of strings"

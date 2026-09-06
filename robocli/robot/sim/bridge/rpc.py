@@ -67,9 +67,9 @@ class ControlChannel:
             except Exception as exc:  # noqa: BLE001; report, never die
                 resp = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
             if rid is not None:
-                # Echoed request id (2026-08-14 diff-review F-A): lets the
-                # evaluator discard late answers to abandoned (timed-out)
-                # requests instead of mistaking them for the next reply.
+                # Echoed request id: lets the host discard late answers to
+                # abandoned (timed-out) requests instead of mistaking them
+                # for the next reply.
                 resp["id"] = rid
             try:
                 self._out.write(json.dumps(resp) + "\n")
@@ -132,10 +132,10 @@ class Monitor:
             self._record_frame()
         if not self._latched and self._loader.success(self._env):
             self._latched = True
-            # Time-to-success telemetry: with closed-book budgets (the
-            # agent knows none of them), a generous run re-judged under
-            # any tighter budget is behaviorally EXACT; these stamps
-            # are what post-hoc judging looks up (2026-08-12, Zhaoyang).
+            # Time-to-success: the agent knows none of the budgets, so a
+            # generous run re-judged under any tighter budget is
+            # behaviorally exact; these stamps are what post-hoc judging
+            # looks up.
             self._at_step = self._steps
             self._at_sim_time = float(self._env.sim.data.time)
             self._at_wall = time.time()
@@ -150,10 +150,10 @@ class Monitor:
             # knowledge); the monitor only says when.
             self._loader.reset(self._env, self._ctx, state)
             self._latched = False  # new episode, fresh latch
-            # Episode-scoped step counter (audit 2026-08-14 F7/F10):
-            # simulator resets may pump settling steps through env.step
-            # (cap-x nut runs ~100); zeroing HERE makes success_at.step
-            # mean "steps since reset" uniformly across benchmarks.
+            # Episode-scoped step counter: simulator resets may pump
+            # settling steps through env.step; zeroing here makes
+            # success_at.step mean "steps since reset" uniformly across
+            # benchmarks.
             self._steps = 0
             if self._rec_dir:
                 self._record_frame()  # opening frame before any motion
@@ -181,9 +181,9 @@ class Monitor:
         # Sentence semantics are the loader's (bddl-authoritative on
         # libero, per-episode ep_meta on robocasa); may touch the env,
         # so it runs as a sim-thread job. Loaders use .get, never bare
-        # indexing: channel.py reports handler exceptions instead of
-        # dying, so a KeyError here silently hands the agent an EMPTY
-        # MISSION (2026-08-11 capbench canary).
+        # indexing: the channel reports handler exceptions instead of
+        # dying, so a KeyError here would silently hand the agent an
+        # empty task.
         return self._sim.submit(
             lambda: self._loader.task_info(self._env, self._ctx))
 

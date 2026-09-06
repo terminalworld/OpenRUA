@@ -12,7 +12,7 @@ import pytest
 
 from robocli import robot
 
-PKG = Path(__file__).resolve().parents[1] / "robocli" / "robot"
+PKG = Path(__file__).resolve().parents[2] / "robocli" / "robot"
 
 
 def test_dockerfiles_ship_with_the_package():
