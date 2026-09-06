@@ -119,7 +119,7 @@ def test_provenance_pins_the_whole_chain(tmp_path):
         task_ids, seeds = [0], [0]
         wall_clock_min, ros_domain = 30, 44
 
-    repo_root = Path(__file__).resolve().parents[1]
+    code_root = Path(__file__).resolve().parents[1]
     cfg_path = tmp_path / "assembly.yaml"
     cfg_path.write_text("machine: {}\n")
     # a substrate is a git checkout holding the simulator venv; stand one up
@@ -135,7 +135,9 @@ def test_provenance_pins_the_whole_chain(tmp_path):
         "substrate": {"venv": str(substrate / ".venv-libero")},
         "gpus": False}}}
     prov = provenance(cfg_path, cfg, _Args(), _Agent(), "tplhash",
-                      "prompt text", repo_root)
+                      "prompt text", code_root,
+                      substrate_venv=substrate / ".venv-libero")
+    assert prov["robocli_version"]
     assert len(prov["robocli_commit"]) == 40
     assert len(prov["substrate_commit"]) == 40  # the cap-x checkout is git
     assert prov["host"]["hostname"] and prov["host"]["cpu_count"] >= 1

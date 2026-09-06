@@ -18,13 +18,13 @@ machine:
                                  # comparable across render devices. Key is
                                  # honored by every leg's config.
     substrate:
-      venv: substrates/robocasa365/.venv-robocasa   # DEDICATED venv
+      venv: robocasa365/.venv-robocasa   # DEDICATED venv
       container: sim-humble
 
   workspace_template: workspace
 
   controller: JOINT_POSITION
-  controller_config: robots/controllers/pandaomron_joint_ctrl.json
+  controller_config: controllers/pandaomron_joint_ctrl.json  # under robots/ (bundled, then ~/.robocli/robots/), or a path
   controller_kp_scale: 1       # gains live in the JSON (kp=1500 arm, their
                                # defaults for torso/base)
 

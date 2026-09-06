@@ -14,7 +14,7 @@ machine:
                                 # distro moveit_msgs broke service responses
                                 # (Fast CDR, 2026-08-11 canary)
     substrate:
-      venv: substrates/cap-x/.venv-capbench  # py3.10 == Humble;
+      venv: cap-x/.venv-capbench  # py3.10 == Humble;
                              # DEDICATED venv (2026-08-10 incident: never touch
                              # the pilot's .venv-libero)
       container: sim-humble

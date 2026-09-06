@@ -30,6 +30,6 @@ def test_shipped_configs_use_the_new_key():
     import pathlib
 
     import yaml
-    for cfg in (pathlib.Path(__file__).resolve().parents[1] / "benchmarks").glob("*.yaml"):
+    for cfg in (pathlib.Path(__file__).resolve().parents[1] / "robocli" / "benchmarks").glob("*.yaml"):
         protocol = (yaml.safe_load(cfg.read_text()) or {}).get("protocol", {})
         assert "wall_clock_minutes" not in protocol, cfg

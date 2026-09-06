@@ -88,7 +88,7 @@ def test_real_configs_generate_a_full_gate():
 
     import yaml
     for leg in ("libero_pro", "capbench", "robocasa365"):
-        cfg = load_config(Path(__file__).resolve().parents[1] /
+        cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" /
                           "benchmarks" / f"{leg}.yaml")
         checks = _names(cfg)
         for expected in ("clock_topic", "joint_states_flow",
@@ -112,7 +112,7 @@ def test_twoarm_view_mints_per_arm_checks():
         def sandbox_cli_check(self):
             return ("sandbox_cli_matches_pin", "true")
 
-    cfg = load_config(Path(__file__).resolve().parents[1] /
+    cfg = load_config(Path(__file__).resolve().parents[1] / "robocli" /
                           "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_twoarm_lift")
     normalize_arms(cfg)

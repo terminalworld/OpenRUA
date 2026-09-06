@@ -41,4 +41,4 @@ def test_up_requires_rendered_peers_with_static_peer():
 
     with pytest.raises(ValueError, match="peers_xml"):
         up(name="x", image="img", config_path="c.yaml", task_suite="s",
-           task_id=0, substrate="/s", repo_root="/r", static_peer="peer")
+           task_id=0, substrate="/s", code_root="/r", static_peer="peer")
