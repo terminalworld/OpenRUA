@@ -79,14 +79,31 @@ class RoboCasaLoader:
         # Language is EPISODE metadata in robocasa (object instances vary per
         # reset): task_info reads env.get_ep_meta() after reset, never a
         # static sentence.
-        return env, {"task_id": task_id, "robocasa_task": env_name}
+        return env, {"task_id": task_id, "robocasa_task": env_name,
+                     "split": split}
+
+    # Scene sampling is THEIRS, untouched: their kitchen env draws the
+    # (layout, style) pair with rng.choice at every reset, out of a list it
+    # already filtered down to the layouts/styles this task can legally run
+    # in (kitchen.py EXCLUDE_LAYOUTS/EXCLUDE_STYLES). We only seed the rng
+    # and reset -- byte for byte their gym wrapper's reset(seed=...).
+    #
+    # We considered spending the ten rollouts one per target kitchen
+    # (stratified) and dropped it 2026-09-05: their own fifty draws are
+    # i.i.d. too and cover the ten kitchens unevenly, so stratifying would
+    # buy variance reduction at the cost of no longer measuring the same
+    # sampling their numbers come from. The reduced draw count (10, not 50)
+    # is the only protocol deviation; the draw itself is theirs.
 
     def init_state(self, ctx: dict, seed: int):
         """Seed -> env.rng -> reset (their gym wrapper's semantics)."""
-        return seed
+        return {"seed": seed}
 
     def reset(self, env, ctx: dict, state) -> None:
-        env.rng = np.random.default_rng(state)
+        # gym_wrapper.reset(seed): seed the env rng, then reset. The kitchen,
+        # object instances, placements, robot base pose and textures all come
+        # out of that rng, in their code, at their draw.
+        env.rng = np.random.default_rng(state["seed"])
         env.reset()
 
     def success(self, env) -> bool:
@@ -94,5 +111,18 @@ class RoboCasaLoader:
         return bool(env._check_success())
 
     def task_info(self, env, ctx: dict) -> dict:
+        # init_state: the optional slot every loader may fill with the
+        # facts that identify THIS episode's world. Recorded verbatim, so
+        # a result says which kitchen it ran in instead of leaving it to
+        # be re-derived from the seed by whoever reads the code later.
+        # int(): their rng.choice hands back numpy int64, which the trial
+        # record cannot serialise.
+        def _id(attr):
+            v = getattr(env, attr, None)
+            return None if v is None else int(v)
+
         return {"language": env.get_ep_meta().get("lang", ""),
-                "name": ctx.get("robocasa_task", "")}
+                "name": ctx.get("robocasa_task", ""),
+                "init_state": {"layout_id": _id("layout_id"),
+                               "style_id": _id("style_id"),
+                               "split": ctx.get("split")}}

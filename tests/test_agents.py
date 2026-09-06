@@ -382,3 +382,65 @@ def test_sandbox_ships_urdf_kinematics_parsers():
         assert pkg in dockerfile
     for mod in ("PyKDL", "urdf_parser_py"):
         assert mod in doc
+
+
+# ------------------------------------------------------ minted-token auth
+# 2026-09-02: the sandbox authenticates with its own `claude setup-token`
+# token instead of sharing the host's rotating credentials file. Three
+# properties are worth holding down by machine, because each of them
+# silently un-does the reason for the change.
+
+def test_launch_argv_hands_the_token_over_by_file_never_by_value():
+    # By file, so the value reaches the CLI process and nothing else: not
+    # an argv other users can read in `ps`, not the container's stored
+    # config that `docker inspect` prints.
+    a = agents.get("claude-code")
+    argv = a.launch_argv(sandbox="box", prompt="p", model="m", max_turns=3,
+                         proxy="http://wall:9999",
+                         token_file="/secrets/.env_tw")
+    assert "--env-file" in argv
+    assert argv[argv.index("--env-file") + 1] == "/secrets/.env_tw"
+    assert argv.index("--env-file") < argv.index("box")  # before the container
+    assert not any(x.startswith(a.TOKEN_ENV + "=") for x in argv)
+
+
+def test_launch_argv_without_a_token_asks_docker_for_no_env_file():
+    a = agents.get("claude-code")
+    argv = a.launch_argv(sandbox="box", prompt="p", model="m", max_turns=3,
+                         proxy="http://wall:9999")
+    assert "--env-file" not in argv
+
+
+def test_sandbox_mounts_carry_no_credentials_when_a_token_authenticates(tmp_path):
+    # The point of the token is that nothing is shared: no credentials
+    # file on the host to drift, and none inside the sandbox for the agent
+    # under test to read.
+    a = agents.get("claude-code")
+    specs = a.sandbox_mounts(tmp_path / "cfg")
+    assert len(specs) == 1
+    assert a.CREDENTIALS_FILENAME not in specs[0]
+
+
+def test_prepare_profile_needs_no_credentials_when_a_token_authenticates(tmp_path):
+    import shutil
+    a = agents.get("claude-code")
+    (tmp_path / "settings.json").write_text("{}")   # profile, but no creds
+    cfg_dir, shared = agents.prepare_profile(tmp_path, a,
+                                             require_credentials=False)
+    try:
+        assert shared is None
+        assert (cfg_dir / "settings.json").exists()
+    finally:
+        shutil.rmtree(cfg_dir, ignore_errors=True)
+
+
+def test_env_file_values_are_treated_as_secrets(tmp_path):
+    # The token must be scrubbed from the record like anything in the
+    # credential JSONs: the agent can print its own environment.
+    from robocli.bench import record
+    a = agents.get("claude-code")
+    f = tmp_path / ".env_tw"
+    f.write_text(f"# a comment\n{a.TOKEN_ENV}=sk-ant-oat01-{'x' * 90}\n")
+    found = record.secret_strings_from_env_file(f)
+    assert found == [f"sk-ant-oat01-{'x' * 90}"]
+    assert record.secret_strings_from_env_file(tmp_path / "absent") == []

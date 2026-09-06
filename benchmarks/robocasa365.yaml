@@ -10,23 +10,83 @@
 
 task:
   benchmark: robocasa365
-  # Pilot spectrum over the atomic layer: pick-place, navigation (base
-  # port under load), articulation, switch, placement. Full-scale task
-  # list is a later go/no-go (365 tasks; see notes/08 §3 n 分期).
-  # Here the suite string IS their env-registry name (no prefix).
-  suites: [PickPlaceCounterToCabinet, NavigateKitchen, OpenCabinet,
-           TurnOnStove, CoffeeSetupMug]
-  # OpenDoor is the abstract door task (requires fixture_id) — the
-  # instantiable variants bind it (OpenCabinet/OpenMicrowave/...);
-  # canary 2026-08-11 caught the bad name.
+  # THE OFFICIAL target50 EVALUATION SET, copied out of their
+  # dataset_registry.py (TARGET_TASKS / TASK_SET_REGISTRY["target50"]):
+  # 18 atomic-seen + 16 composite-seen + 16 composite-unseen = 50 tasks,
+  # "50 representative ones out of the 365 tasks" (their paper 3.4.2).
+  # The suite string IS their env-registry name (no prefix); task_id is
+  # unused on this leg (one env per name).
+  suites:
+    # --- atomic_seen (18) ---
+    - CloseBlenderLid
+    - CloseFridge
+    - CloseToasterOvenDoor
+    - CoffeeSetupMug
+    - NavigateKitchen
+    - OpenCabinet
+    - OpenDrawer
+    - OpenStandMixerHead
+    - PickPlaceCounterToCabinet
+    - PickPlaceCounterToStove
+    - PickPlaceDrawerToCounter
+    - PickPlaceSinkToCounter
+    - PickPlaceToasterToCounter
+    - SlideDishwasherRack
+    - TurnOffStove
+    - TurnOnElectricKettle
+    - TurnOnMicrowave
+    - TurnOnSinkFaucet
+    # --- composite_seen (16) ---
+    - DeliverStraw
+    - GetToastedBread
+    - KettleBoiling
+    - LoadDishwasher
+    - PackIdenticalLunches
+    - PreSoakPan
+    - PrepareCoffee
+    - RinseSinkBasin
+    - ScrubCuttingBoard
+    - SearingMeat
+    - SetUpCuttingStation
+    - StackBowlsCabinet
+    - SteamInMicrowave
+    - StirVegetables
+    - StoreLeftoversInBowl
+    - WashLettuce
+    # --- composite_unseen (16) ---
+    - ArrangeBreadBasket
+    - ArrangeTea
+    - BreadSelection
+    - CategorizeCondiments
+    - CuttingToolSelection
+    - GarnishPancake
+    - GatherTableware
+    - HeatKebabSandwich
+    - MakeIceLemonade
+    - PanTransfer
+    - PortionHotDogs
+    - RecycleBottlesByType
+    - SeparateFreezerRack
+    - WaffleReheat
+    - WashFruitColander
+    - WeighIngredients
   split: target              # held-out layouts/styles 1-10 (their eval
                              # split mapping, copied verbatim)
   init_states: seeded-reset  # seed -> env.rng -> reset (their gym
                              # wrapper's semantics)
 
 protocol:
-  trials_per_task: 50        # TODO verify against their leaderboard
-                             # protocol before the scale phase; pilot = 3
+  trials_per_task: 10        # ten rollouts per task, drawn THEIR way.
+                             # Their protocol is 50 rollouts per task with
+                             # the (layout, style) pair drawn per reset
+                             # (kitchen.py rng.choice); we cut the count to
+                             # ten and change nothing else. Ten i.i.d. draws
+                             # cover ~6.5 of the ten target kitchens -- so do
+                             # their fifty, unevenly. Stratifying one rollout
+                             # per kitchen was considered and dropped
+                             # 2026-09-05: it would stop measuring the
+                             # sampling their numbers come from. The count is
+                             # the only declared deviation.
   max_turns: 500             # generous ceiling (post-hoc budget ruling 2026-08-12)
   active_wall_clock_minutes: 240    # generous ceiling; paper budgets applied POST-HOC
                              # via success_at stamps (closed-book = exact;

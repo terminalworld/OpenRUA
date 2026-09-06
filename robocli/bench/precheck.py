@@ -193,20 +193,15 @@ def run_precheck(cfg: dict, sandbox_name: str, agent,
                 failed.append(name)
     if not results:  # exec itself broke; that too is a red gate
         failed = ["precheck_script_did_not_run"]
-    # Host side of the version invariant (sandbox == pin == host): the
-    # HOST CLI auto-updates and rewrites the shared credentials schema;
-    # a drifted host must stop trials with an instructive red check, not
-    # a silent logout wave (2026-08-12).
-    pin = getattr(agent, "PINNED_CLI_VERSION", None)
-    if pin:
-        try:
-            host_v = subprocess.run(agent.VERSION_ARGV, capture_output=True,
-                                    text=True, timeout=60).stdout
-        except (OSError, subprocess.TimeoutExpired):
-            host_v = ""
-        ok = pin in host_v
-        results.append(("host_cli_matches_pin", ok))
-        if not ok:
-            failed.append("host_cli_matches_pin")
+    # RETIRED 2026-09-02: host_cli_matches_pin. It enforced the host side
+    # of sandbox == pin == host, and existed only because the host binary
+    # and every sandbox shared one rotating credentials file: a host
+    # auto-update rewrote the schema and the older sandbox CLI launched
+    # logged-out (2026-08-12). Sandboxes now authenticate with their own
+    # minted token and share no file with the host, so host version drift
+    # cannot reach a trial. Keeping the check would only stop runs for a
+    # coupling that no longer exists -- which is exactly what it did on
+    # 2026-09-01, costing 138 trials when the host auto-updated to 2.1.257.
+    # The sandbox-side check stays (build fact, in build_checks()).
     return {"ok": r.returncode == 0 and not failed,
             "checks": results, "failed": failed}
