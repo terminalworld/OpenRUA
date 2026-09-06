@@ -1,8 +1,8 @@
-"""The configuration schema: what a benchmark config, a robot profile
-and the assembled per-trial config may say, with defaults and one-line
-descriptions on every field.
+"""The configuration schema: what a robot profile, a benchmark config,
+an agent manifest and the resolved per-trial config may say, with
+defaults and a one-line description on every field.
 
-Three files feed one assembly:
+Three files feed one resolved config:
 
 - a robot profile (``robots/<name>.yaml``): ``machine:`` (the robot and
   its runtime shell) plus, for simulated ones, ``world:`` (the scene
@@ -14,27 +14,24 @@ Three files feed one assembly:
   section and a default robot, applied under whatever the benchmark
   config says.
 
-Layering, lowest first: the defaults declared here, the user file, the
-benchmark config, command-line flags. Unknown keys are errors at every
+Layering, lowest first: the defaults declared here, the package's
+``configs/config.yaml``, the user file, the benchmark config,
+command-line flags. Unknown keys are errors at every
 level: a misspelled key must fail the load, never silently do nothing.
 Defaults are the values the paper's own runs use (RoboCLI-Dev configs);
 protocol switches that only matter when running at scale on subscription
 accounts (``resume_on_quota_wall``) default off.
 
-The models validate; consumers keep reading plain dicts (``dump()``),
-so the container side never imports pydantic. Leaf module: imports
-only robocli.errors.
+The models validate; consumers keep reading plain dicts
+(``loader.dump()``), so the container side never imports pydantic.
+Leaf module: imports nothing from robocli.
 """
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-import yaml
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
-
-from robocli.errors import ConfigError  # noqa: F401  re-exported: config.ConfigError
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class Strict(BaseModel):
@@ -87,21 +84,21 @@ class Protocol(Strict):
 # ----------------------------------------------------------------- agent
 
 class AgentConfig(Strict):
-    cli: str | None = Field(default=None, description="agent adapter name (robocli agents "
-                            "lists them); default: the bundled default adapter")
+    name: str | None = Field(default=None, description="agent name (robocli agents lists "
+                             "them); the package default lives in configs/config.yaml")
     model: str | None = Field(default=None, description="model id; default: the adapter's")
     credentials_dir: str | None = Field(
         default=None, description="login profile directory; default: "
-        "~/.robocli/credentials/<cli>")
+        "~/.robocli/credentials/<agent name>")
     options: dict[str, Any] = Field(
         default_factory=dict, description="adapter-specific knobs passed through as "
         "given, over the adapter's default_options")
 
 
 class AgentOverrides(Strict):
-    """The user file's agent section: same keys, no defaults, so only
-    what the user wrote is layered in."""
-    cli: str | None = None
+    """A defaults file's agent section: same keys, no defaults, so only
+    what the file wrote is layered in."""
+    name: str | None = None
     model: str | None = None
     credentials_dir: str | None = None
     options: dict[str, Any] | None = None
@@ -116,15 +113,48 @@ class Simulator(Strict):
                                   "(sim-jazzy | sim-humble); documentation")
 
 
-class Body(Strict):
-    """The runtime shell: images, venv, hardware. Non-semantic."""
-    image: str = Field(default="robocli-sim-jazzy", description="simulated body image")
+class SimBackend(Strict):
+    """A simulated robot: a container running the bridge over a simulator venv."""
+    kind: Literal["sim"]
+    image: str = Field(default="robocli-sim-jazzy", description="simulated robot image")
     sandbox_image: str = Field(default="robocli-sandbox", description="agent terminal image "
-                               "(same ROS distro as the body)")
+                               "(same ROS distro as the robot)")
     gpus: bool = Field(default=False, description="render on the GPU (needs nvidia toolkit)")
     resources: dict[str, Any] | None = Field(
         default=None, description="render_threads: int | off | auto")
-    simulator: Simulator | None = Field(default=None, description="absent for a real robot")
+    simulator: Simulator
+
+
+class Discovery(Strict):
+    """How the sandbox reaches a real robot's ROS 2 graph; exactly one key."""
+    network: Literal["host"] | None = Field(
+        default=None, description="host: the sandbox joins the host network")
+    static_peers: list[str] | None = Field(
+        default=None, description="peer addresses for ROS_STATIC_PEERS")
+    discovery_server: str | None = Field(
+        default=None, description="host:port of a Fast DDS discovery server")
+
+    @model_validator(mode="after")
+    def _exactly_one(self):
+        chosen = [k for k in ("network", "static_peers", "discovery_server")
+                  if getattr(self, k) is not None]
+        if len(chosen) != 1:
+            raise ValueError("discovery needs exactly one of network, static_peers, "
+                             f"discovery_server (got {chosen or 'none'})")
+        return self
+
+
+class RealBackend(Strict):
+    """A real robot: its ROS 2 graph is already there or a launch command starts it."""
+    kind: Literal["real"]
+    launch: str | None = Field(default=None, description="command that brings the "
+                               "robot's ROS 2 graph up; null = already running")
+    discovery: Discovery
+    sandbox_image: str = Field(default="robocli-sandbox", description="agent terminal image "
+                               "(same ROS distro as the robot)")
+
+
+Backend = Annotated[SimBackend | RealBackend, Field(discriminator="kind")]
 
 
 class Cameras(Strict):
@@ -230,7 +260,7 @@ class ArmSpec(Strict):
 
 
 class Machine(Strict):
-    body: Body = Field(default_factory=Body)
+    backend: Backend = Field(description="how the robot is provided: kind: sim | real")
     workspace_template: str | None = Field(
         default="workspace", description="workspace tree seeded into the sandbox; null = none")
     controller: str = Field(default="JOINT_POSITION", description="robosuite controller")
@@ -280,8 +310,8 @@ class Benchmark(Strict):
         "null deletes a key")
 
 
-class Assembly(Strict):
-    """The resolved config every party reads (assembly.yaml)."""
+class ResolvedConfig(Strict):
+    """The resolved config every party reads (``<trial>/config.yaml``)."""
     task: Task
     protocol: Protocol = Field(default_factory=Protocol)
     agent: AgentConfig = Field(default_factory=AgentConfig)
@@ -290,59 +320,38 @@ class Assembly(Strict):
 
 
 class UserConfig(Strict):
-    """~/.robocli/config.yaml: the user's defaults."""
+    """A defaults file: the package's configs/config.yaml or ~/.robocli/config.yaml."""
     agent: AgentOverrides = Field(default_factory=AgentOverrides)
     robot: str | None = Field(default=None, description="robot when a command names none")
 
 
-# --------------------------------------------------------------- helpers
+# ---------------------------------------------------------------- agents
 
-def validate(model: type[BaseModel], data: Any, source: str | Path) -> BaseModel:
-    """Validate ``data`` (parsed yaml) against ``model``; raise ConfigError
-    naming ``source`` and each bad key path."""
-    try:
-        return model.model_validate(data if data is not None else {})
-    except ValidationError as e:
-        lines = []
-        for err in e.errors():
-            loc = ".".join(str(x) for x in err["loc"]) or "<root>"
-            lines.append(f"  {loc}: {err['msg']}")
-        raise ConfigError(f"{source}: does not fit the {model.__name__} schema\n"
-                          + "\n".join(lines),
-                          hint="robocli config schema prints every key and its meaning") from None
+class Credentials(Strict):
+    """Where an agent keeps its login and how the sandbox is told about it."""
+    dirname: str = Field(description="profile directory name under ~/.robocli/credentials/")
+    filename: str = Field(description="the credentials file inside that directory")
+    config_env: str = Field(description="environment variable naming the profile directory")
+    mount_point: str = Field(description="where the profile is mounted inside the sandbox")
 
 
-def dump(model: BaseModel) -> dict:
-    """The dict consumers read: defaults filled in, absent optionals
-    (None) left out so ``cfg.get(key, default)`` keeps its meaning."""
-    return model.model_dump(exclude_none=True, by_alias=True)
-
-
-def load_yaml(path: Path) -> Any:
-    try:
-        return yaml.safe_load(path.read_text())
-    except yaml.YAMLError as e:
-        raise ConfigError(f"{path}: not valid YAML: {e}") from None
-
-
-def load_user_config(path: Path) -> UserConfig:
-    """The user's defaults file; absent = no defaults."""
-    if not path.is_file():
-        return UserConfig()
-    return validate(UserConfig, load_yaml(path), path)
-
-
-def layer_agent(bench_agent: dict, *defaults: UserConfig) -> dict:
-    """The benchmark's agent section over the defaults files, lowest
-    layer first (package defaults, then the user's file). A defaults
-    file contributes only the keys it wrote; ``options`` merge key by
-    key, every other key is replaced by the higher layer."""
-    out: dict = {}
-    layers = [d.agent.model_dump(exclude_unset=True, exclude_none=True) for d in defaults]
-    for layer in layers + [bench_agent]:
-        for k, v in layer.items():
-            if k == "options":
-                out["options"] = {**out.get("options", {}), **(v or {})}
-            else:
-                out[k] = v
-    return out
+class AgentManifest(Strict):
+    """configs/agents/<name>.yaml: the facts about one coding agent, no code.
+    The hooks module named by ``hooks`` supplies the behaviour."""
+    name: str
+    default_model: str
+    binary: str | None = Field(default=None, description="executable name inside the sandbox")
+    install: str = Field(default="", description="shell that installs the agent in the "
+                         "sandbox image")
+    whitelist: list[str] = Field(default_factory=list, description="regexes of the hosts "
+                                 "the proxy lets the agent reach")
+    credentials: Credentials | None = None
+    token_env: str | None = Field(default=None, description="environment variable carrying "
+                                  "an auth token")
+    version_argv: list[str] | None = Field(default=None, description="command printing the "
+                                           "agent's version")
+    instruction_file: str | None = Field(default=None, description="the file the agent "
+                                         "reads instructions from, e.g. AGENTS.md")
+    default_options: dict[str, Any] = Field(default_factory=dict)
+    hooks: str | None = Field(default=None, description="hooks module name under "
+                              "plugins/agents/ (bundled, then ~/.robocli/plugins/agents/)")

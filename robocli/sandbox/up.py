@@ -1,6 +1,6 @@
 """Verb ``up``: a reachable machine + its config -> ONE live sandbox.
 
-    python3 -m robocli.sandbox.up --config <assembly.yaml> \
+    python3 -m robocli.sandbox.up --config <config.yaml> \
         --workspace <dir> [--task-suite S] [--image robocli-sandbox] \
         [--network host|<docker-net>] [--static-peer <hostname>] \
         [--ros-domain N] [--internet none|proxy:<url>|open] \
@@ -82,7 +82,7 @@ def up(config: Path, workspace: Path,
         # Baked at birth: humans entering the sandbox live under the
         # same posture as agents (no exec-time injection asymmetry).
         proxy_env = ["-e", f"HTTPS_PROXY={url}", "-e", f"HTTP_PROXY={url}"]
-    image = image or cfg.get("machine", {}).get("body", {}).get(
+    image = image or cfg.get("machine", {}).get("backend", {}).get(
         "sandbox_image", DEFAULT_IMAGE)
     if subprocess.run(["docker", "image", "inspect", image],
                       capture_output=True).returncode != 0:
@@ -102,7 +102,7 @@ def up(config: Path, workspace: Path,
     if static_peer and not peers_xml:
         raise SandboxError(
             "static_peer needs the rendered peers profile too; the "
-            "conductor renders it (assembly.FASTDDS_PEERS_XML) and "
+            "conductor renders it (run.FASTDDS_PEERS_XML) and "
             "passes peers_xml")
     peer_env = ["-e", f"ROS_DOMAIN_ID={ros_domain}"]
     if static_peer:
@@ -165,13 +165,13 @@ def _death_report(name: str, what: str) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--config", required=True, type=Path,
-                    help="RESOLVED assembly yaml (the trial's suite view; "
+                    help="resolved config yaml (the trial's suite view; "
                     "for hand runs without suite overrides the raw config "
                     "is identical)")
     ap.add_argument("--workspace", required=True, type=Path,
                     help="host dir to seed and mount at /workspace")
     ap.add_argument("--image", default=None,
-                    help="seat image (default: config machine.body.sandbox_image, "
+                    help="seat image (default: config machine.backend.sandbox_image, "
                     f"then {DEFAULT_IMAGE!r})")
     ap.add_argument("--network", default="host",
                     help="'host' (real machine, multicast) or a docker "

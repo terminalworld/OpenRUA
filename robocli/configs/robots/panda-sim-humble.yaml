@@ -8,7 +8,8 @@ world:
   task_id: 0
 
 machine:
-  body:
+  backend:
+    kind: sim
     image: robocli-sim-humble   # runner reads this key
     sandbox_image: robocli-sandbox-humble  # sandbox distro == robot distro: cross-
                                 # distro moveit_msgs broke service responses
@@ -73,7 +74,7 @@ machine:
     hand: false
 
 # Per-suite machine differences (merged by run.apply_suite_overrides on
-# the trial's assembly view; null deletes a key). Wipe's Panda mounts a
+# the trial's resolved config; null deletes a key). Wipe's Panda mounts a
 # rigid 0-DoF wiping pad, not the parallel-jaw gripper — the 2026-08-11
 # canary: the unconditional gripper action column tripped robosuite's
 # action-dim assert on every step (arm never moved, 3 trials).

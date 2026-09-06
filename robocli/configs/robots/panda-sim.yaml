@@ -9,7 +9,8 @@ world:
   task_id: 0
 
 machine:
-  body:                  # the runtime shell (non-semantic: images, venvs)
+  backend:                  # how the robot is provided
+    kind: sim
     # Spelled out rather than left to the code's default (audit F9
     # 2026-08-14: a hardcoded jazzy name recorded a digest the humble legs
     # never ran). Same values the default resolves to today, so nothing

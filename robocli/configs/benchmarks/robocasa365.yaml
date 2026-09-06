@@ -1,4 +1,4 @@
-# RoboCasa365 assembly config — third mainline leg (P8). Same bridge code;
+# RoboCasa365 benchmark config — third mainline leg (P8). Same bridge code;
 # the increment over the arm-only legs is the mobile base: /cmd_vel in,
 # /odom out (notes/04 "共享桥设计 + 移动底盘增量"). Envs are built through
 # robosuite.make with THEIR factory kwargs verbatim (see
@@ -111,7 +111,7 @@ protocol:
                            # design-decisions 2026-08-12.
 
 agent:                       # same frontier combo + workspace template
-  cli: claude-code       # agent adapter (robocli/agents) — all agent-specific
+  name: claude-code      # agent (robocli/agents) — all agent-specific
                          # knowledge (launch/auth/transcript/quota) lives there
   model: claude-opus-5
   options:

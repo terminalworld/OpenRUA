@@ -4,7 +4,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from robocli import config, paths
+from robocli import config
+from robocli.config import paths
 from robocli.bench.run import apply_suite_overrides, load_config, load_robot, normalize_arms
 
 BUNDLED = [e.name for e in paths.available("benchmarks")]
@@ -15,7 +16,7 @@ def test_every_bundled_benchmark_assembles(name, tmp_path):
     cfg = load_config(name, home=tmp_path)
     assert set(cfg) >= {"task", "protocol", "agent", "machine"}
     assert "robot" not in cfg                       # resolved into machine:
-    assert cfg["agent"]["cli"] == "claude-code"   # the bundled configs name it
+    assert cfg["agent"]["name"] == "claude-code"   # the bundled configs name it
     assert cfg["agent"]["options"] == {"effort": "high"}
     assert "credentials_dir" not in cfg["agent"]    # default is per agent, under home
 
@@ -26,7 +27,7 @@ def test_every_suite_view_still_fits_the_schema(name, tmp_path):
     for suite in cfg["task"]["suites"]:
         view = apply_suite_overrides(dict(yaml.safe_load(yaml.safe_dump(cfg))), suite)
         normalize_arms(view)
-        config.validate(config.Assembly, view, f"{name}:{suite}")
+        config.validate(config.ResolvedConfig, view, f"{name}:{suite}")
 
 
 def test_explicit_robot_argument_replaces_the_named_one(tmp_path):
@@ -64,9 +65,25 @@ def test_defaults_match_the_paper_runs():
     assert (p.max_turns, p.active_wall_clock_minutes, p.trials_per_task) == (500, 240, 10)
     assert p.resume_on_quota_wall is False          # scale-only switch, off by default
     assert p.clock.mode == "paused"
-    m = config.Machine()
+    m = config.Machine(backend={"kind": "sim", "simulator": {"venv": "x/.venv"}})
     assert m.controller == "JOINT_POSITION" and m.cameras.rate_hz == 2.0
     assert m.control.gripper.open_threshold_m == 0.02
+    assert m.backend.image == "robocli-sim-jazzy"
+
+
+def test_backend_union_is_strict():
+    real = {"kind": "real", "discovery": {"network": "host"}}
+    m = config.Machine(backend=real)
+    assert isinstance(m.backend, config.RealBackend) and m.backend.launch is None
+    with pytest.raises(config.ConfigError) as e:      # a sim-only key on a real robot
+        config.validate(config.Machine, {"backend": {**real, "image": "x"}}, "t")
+    assert "image" in str(e.value)
+    with pytest.raises(config.ConfigError) as e:      # discovery: exactly one way
+        config.validate(config.Machine, {"backend": {"kind": "real", "discovery": {
+            "network": "host", "static_peers": ["10.0.0.2"]}}}, "t")
+    assert "exactly one" in str(e.value)
+    with pytest.raises(config.ConfigError):           # kind is not optional
+        config.validate(config.Machine, {"backend": {"image": "x"}}, "t")
 
 
 def test_user_config_layers_under_the_benchmark(tmp_path):
@@ -106,7 +123,7 @@ def test_robot_profile_camera_list_key_round_trips():
 
 
 def test_schema_is_json_and_documents_fields():
-    s = config.Assembly.model_json_schema()
+    s = config.ResolvedConfig.model_json_schema()
     assert s["properties"]["protocol"]
     protocol = s["$defs"]["Protocol"]["properties"]
     assert "description" in protocol["resume_on_quota_wall"]

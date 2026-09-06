@@ -2,7 +2,8 @@
 import json
 from pathlib import Path
 
-from robocli import agents, doctor, paths
+from robocli import agents, doctor
+from robocli.config import paths
 
 
 def _fake_docker(present: dict[str, dict[str, str]]):
@@ -75,7 +76,7 @@ def test_user_directory_problems_are_reported_not_fatal(tmp_path, monkeypatch):
 
 def test_unknown_robot_or_agent_is_a_finding(tmp_path, monkeypatch):
     monkeypatch.setattr(doctor, "docker_inspect", _fake_docker({}))
-    r = doctor.run(robot="no-such-robot", clis=["no-such-agent"], home=tmp_path)
+    r = doctor.run(robot="no-such-robot", agent_names=["no-such-agent"], home=tmp_path)
     by = {c.id: c for c in r.checks}
     assert by["robot-profile"].severity == "error"
     assert by["agent-no-such-agent"].severity == "error"

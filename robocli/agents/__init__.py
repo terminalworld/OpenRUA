@@ -8,8 +8,8 @@ directory (``~/.robocli/agents/<name>.py``), looked up in that order.
 A third source, pip entry points (group ``robocli.agents``), would come
 after the user directory; not implemented.
 
-Selection: configs carry ``agent.cli`` (the package default lives in
-``configs/config.yaml``), recorded per trial in ``operator_meta.cli`` so
+Selection: configs carry ``agent.name`` (the package default lives in
+``configs/config.yaml``), recorded per trial in ``operator_meta.agent`` so
 post-hoc tools resolve the adapter the trial actually ran.
 """
 
@@ -25,7 +25,7 @@ import tempfile as _tempfile
 from dataclasses import dataclass
 from pathlib import Path as _Path
 
-from robocli import paths
+from robocli.config import paths
 from robocli.agents.base import HOOKS, Agent, Credentials  # noqa: F401  re-exported
 
 _log = logging.getLogger(__name__)
@@ -66,12 +66,12 @@ def _agent_of(module, source: str) -> Agent:
     return agent
 
 
-def get(cli: str, home: _Path | None = None) -> Agent:
-    """Resolve an adapter by its ``agent.cli`` name: bundled first, then
+def get(name: str, home: _Path | None = None) -> Agent:
+    """Resolve an adapter by its ``agent.name``: bundled first, then
     ``<home>/agents/<name>.py``. Unknown names list what exists."""
-    if not cli:
-        raise ValueError("agent name is empty; a resolved config always carries agent.cli")
-    mod = _module_name(cli)
+    if not name:
+        raise ValueError("agent name is empty; a resolved config always carries agent.name")
+    mod = _module_name(name)
     if mod not in _NOT_ADAPTERS:
         try:
             return _agent_of(importlib.import_module(f"robocli.agents.{mod}"),
@@ -79,12 +79,12 @@ def get(cli: str, home: _Path | None = None) -> Agent:
         except ModuleNotFoundError as e:
             if e.name != f"robocli.agents.{mod}":
                 raise
-    for candidate in (paths.agents_dir(home) / f"{cli}.py",
+    for candidate in (paths.agents_dir(home) / f"{name}.py",
                       paths.agents_dir(home) / f"{mod}.py"):
         if candidate.is_file():
             return _agent_of(_load_user_module(candidate), str(candidate))
     names = ", ".join(e.name for e in available(home))
-    raise KeyError(f"unknown agent cli {cli!r} (available: {names}); "
+    raise KeyError(f"unknown agent {name!r} (available: {names}); "
                    f"add one under {paths.agents_dir(home)}/ exposing AGENT")
 
 

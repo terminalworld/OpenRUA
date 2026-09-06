@@ -22,7 +22,7 @@ entry points, would slot in after the user directory; not implemented.
 
 Leaf (imports only robocli.errors): every host-side unit may import this. Nothing in
 ``robocli.robot.onboard`` does; the container reads resolved absolute
-paths from the assembly file.
+paths from the resolved config file.
 """
 
 from __future__ import annotations

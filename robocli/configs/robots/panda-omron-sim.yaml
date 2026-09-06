@@ -8,7 +8,8 @@ world:
   task_id: 0
 
 machine:
-  body:
+  backend:
+    kind: sim
     image: robocli-sim-humble    # py3.10 == Humble, same image as capbench leg
     sandbox_image: robocli-sandbox-humble  # sandbox distro == robot distro (see capbench.yaml)
     gpus: false                  # set true on a GPU host (nvidia-container-

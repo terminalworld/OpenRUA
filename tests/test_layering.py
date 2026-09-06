@@ -23,7 +23,7 @@ _HOST = {"robocli.bench.precheck", "robocli.bench.record", "robocli.sandbox",
 _GROUND_VERBS = {"robocli.robot.build", "robocli.robot.up",
                  "robocli.robot.down"}
 _TOP = {"robocli.cli", "robocli.doctor", "robocli.testing"}
-_HOST_LEAVES = {"robocli.paths", "robocli.config", "robocli.errors"}
+_HOST_LEAVES = {"robocli.config", "robocli.errors"}
 _ONBOARD_BAN = _HOST | _GROUND_VERBS | _TOP | _HOST_LEAVES
 _LAYERS = _ONBOARD | {"robocli.bench.precheck", "robocli.bench.record",
                       "robocli.sandbox"}
@@ -52,11 +52,10 @@ FORBIDDEN = {
     "bench/record.py": {"robocli.robot", "robocli.sandbox", "robocli.proxy",
                   "robocli.agents", "robocli.bench.run", "robocli.config"} | _TOP,
     "proxy": {"robocli.robot", "robocli.config"} | _LAYERS | _TOP,
-    "agents": {"robocli.robot", "robocli.config"} | _LAYERS | _TOP,
+    "agents": {"robocli.robot"} | _LAYERS | _TOP,
     # the shared leaves are leaves
-    "paths.py": _HOST | {"robocli.robot", "robocli.config"} | _TOP,
-    "errors.py": _HOST | {"robocli.robot", "robocli.config", "robocli.paths"} | _TOP,
-    "config.py": _HOST | {"robocli.robot", "robocli.paths"} | _TOP,
+    "config": _HOST | {"robocli.robot"} | _TOP,
+    "errors.py": _HOST | {"robocli.robot", "robocli.config"} | _TOP,
     # doctor sits with cli above the units; nothing below imports it
     "doctor.py": _ONBOARD | {"robocli.testing"},
 }

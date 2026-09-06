@@ -34,7 +34,8 @@ from pathlib import Path
 
 import yaml
 
-from robocli import agents, config, paths
+from robocli import agents, config
+from robocli.config import paths
 from robocli.errors import NotFound, UsageError
 from robocli.bench import record
 from robocli.bench import triallock
@@ -51,7 +52,7 @@ from robocli.sandbox.up import up as sandbox_up
 # ---------------------------------------------------------------- config view
 # The conductor's ONE piece of domain knowledge: how a trial's view of
 # the benchmark config is derived. Computed once per trial and
-# distributed as data (the assembly.yaml artifact + rendered peers
+# distributed as data (the config.yaml artifact + rendered peers
 # profiles); nobody else resolves configs (ruling 2026-08-17, absorbing
 # the former assembly.py leaf -- its importers had collapsed to main
 # after the compute-once refactor).
@@ -82,7 +83,7 @@ def apply_suite_overrides(cfg: dict, task_suite: str) -> dict:
     ``None`` deletes a key; a suite whose robot mounts no gripper (wipe's
     0-DoF pad, 2026-08-11 canary) nulls ``machine.ports.gripper`` and
     ``machine.gripper`` so machine and manifest agree. Every consumer
-    reads the RESULT (the trial's assembly.yaml artifact); only the
+    reads the RESULT (the trial's config.yaml artifact); only the
     conductor runs this.
     """
     def merge(dst: dict, src: dict) -> None:
@@ -101,7 +102,7 @@ def apply_suite_overrides(cfg: dict, task_suite: str) -> dict:
         # fit the schema (a misspelled key in an override is the same
         # mistake as one in the profile).
         checked = config.dump(config.validate(
-            config.Assembly, cfg, f"suite_overrides.{task_suite}"))
+            config.ResolvedConfig, cfg, f"suite_overrides.{task_suite}"))
         cfg.clear()
         cfg.update(checked)
     return cfg
@@ -115,7 +116,7 @@ def normalize_arms(cfg: dict) -> dict:
     every downstream unit (bridge ports, sensors, manifest, precheck)
     loops one uniform list. Multi-arm suites author ``machine.arms``
     explicitly in their suite override and the flat fields are ignored.
-    Runs once here, lands in assembly.yaml; nobody else re-derives it.
+    Runs once here, lands in config.yaml; nobody else re-derives it.
     """
     m = cfg.get("machine")
     if not m or "arms" in m:
@@ -183,7 +184,7 @@ def load_config(path: Path | str, robot: str | None = None,
     carrying its own ``machine:`` is taken as is. The user's
     ``~/.robocli/config.yaml`` supplies agent defaults under the file's
     own, and the package's ``configs/config.yaml`` under that. Returns the
-    assembled dict (config.Assembly, validated)."""
+    assembled dict (config.ResolvedConfig, validated)."""
     p = paths.find("benchmarks", path, home)
     bench = config.validate(config.Benchmark, config.load_yaml(p), p)
     defaults = config.load_user_config(paths.package_config_path())
@@ -198,13 +199,13 @@ def load_config(path: Path | str, robot: str | None = None,
             f"{p}: names no robot (robot: <name>, --robot, or robot: in "
             f"{paths.config_path(home)}) and carries no machine: section")
     cfg["agent"] = config.layer_agent(cfg.get("agent", {}), defaults, user)
-    return config.dump(config.validate(config.Assembly, cfg, p))
+    return config.dump(config.validate(config.ResolvedConfig, cfg, p))
 
 
-def simulator_venv(body: dict, home: Path | None = None) -> Path:
-    """The simulator venv named by machine.body.simulator.venv (see
+def simulator_venv(backend: dict, home: Path | None = None) -> Path:
+    """The simulator venv named by machine.backend.simulator.venv (see
     paths.simulator_venv for how relative names resolve)."""
-    return paths.simulator_venv(body["simulator"]["venv"], home)
+    return paths.simulator_venv(backend["simulator"]["venv"], home)
 
 
 def compose(robot: str | None, bench: str | None,
@@ -232,11 +233,11 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
              task_suite: str, task_id: int, network: str, proxy_url: str,
              mounts: tuple[str, ...], ros_domain: int, robot_log: Path,
              home: Path | None = None) -> tuple[Path, "MachineClient"]:
-    """Assembly, sandbox, body, in that order, from one resolved config.
+    """Resolve, sandbox, robot, in that order, from one resolved config.
 
     Sandbox first: the body's ROS_STATIC_PEERS must resolve the sandbox's
     name at participant creation (mutual unicast discovery). The resolved
-    config is written ONCE as ``dest/assembly.yaml`` and every party reads
+    config is written ONCE as ``dest/config.yaml`` and every party reads
     that same file: the manual seeding, the body's boot, the machine
     itself (ruling 2026-08-16). Files the body opens by path are copied
     next to it first (resolve_body_files).
@@ -247,12 +248,12 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     never inherits half a bring-up.
     """
     resolve_body_files(cfg, dest, home)
-    assembly_path = record.write_assembly(dest, cfg)
-    body = cfg.get("machine", {}).get("body", {})
+    config_path = record.write_config(dest, cfg)
+    backend = cfg.get("machine", {}).get("backend", {})
     sandbox_up(
-        config=assembly_path,
+        config=config_path,
         workspace=dest / "workspace",
-        image=body.get("sandbox_image"),
+        image=backend.get("sandbox_image"),
         network=network,
         static_peer=sim_name,
         peers_xml=FASTDDS_PEERS_XML.format(peer=sim_name),
@@ -271,7 +272,7 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             gpus=bool(body.get("gpus", False)),
             resources=body.get("resources"),
             image=body.get("image", "robocli-sim-jazzy"),
-            config_path=str(assembly_path),
+            config_path=str(config_path),
             task_suite=task_suite,
             task_id=task_id,
             simulator=str(paths.simulator_root(venv)),
@@ -291,7 +292,7 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             machine.shutdown()
         sandbox_down(sandbox_name)
         raise
-    return assembly_path, machine
+    return config_path, machine
 
 
 def resolve_body_files(cfg: dict, dest: Path, home: Path | None = None) -> None:
@@ -454,7 +455,7 @@ def agent_operator(ctx: dict) -> dict:
 
     cfg = ctx["cfg"]
     agent_cfg = cfg.get("agent", {})
-    agent = agents.get(agent_cfg.get("cli"), ctx.get("home"))
+    agent = agents.get(agent_cfg.get("name"), ctx.get("home"))
     model = agent_cfg.get("model") or agent.default_model
     # Adapter knobs (reasoning effort, compaction threshold, tool
     # timeouts, whatever the CLI exposes) are load-bearing experimental parameters that do not
@@ -473,7 +474,7 @@ def agent_operator(ctx: dict) -> dict:
         "--sandbox", ctx["sandbox"],
         "--task", ctx["task_language"],
         "--transcript", str(transcript),
-        "--cli", agent.name,
+        "--agent", agent.name,
         "--model", model,
         *(x for k, v in options.items() for x in ("--option", f"{k}={v}")),
         *(["--home", str(ctx["home"])] if ctx.get("home") else []),
@@ -482,7 +483,7 @@ def agent_operator(ctx: dict) -> dict:
         *(["--token-file", str(ctx["token_file"])] if ctx.get("token_file")
           else []),
     ]
-    meta: dict = {"operator": "agent", "cli": agent.name, "model": model,
+    meta: dict = {"operator": "agent", "agent": agent.name, "model": model,
                   "options": options, "session_id": session_id}
     # The launcher runs with cwd=trial_dir: RELATIVE PYTHONPATH entries
     # (a natural way to invoke the master) would silently break `-m
@@ -809,7 +810,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     proxy_url = ensure_proxy(network)
     if account_alias:
         rec["account_alias"] = account_alias
-    agent = agents.get(cfg.get("agent", {}).get("cli"), home)
+    agent = agents.get(cfg.get("agent", {}).get("name"), home)
     creds_home = Path(
         credentials_dir
         or cfg.get("agent", {}).get("credentials_dir")
@@ -836,7 +837,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         # applied the overrides), written as an artifact by bring_up and
         # consumed by every party below. bring_up tears its own sandbox
         # down if the body fails, so sandbox_live flips only on success.
-        assembly_path, machine = bring_up(
+        config_path, machine = bring_up(
             cfg, trial_dir, sim_name, sandbox_name, task_suite, task_id,
             network, proxy_url, agent.sandbox_mounts(cfg_dir, creds_file),
             ros_domain, robot_log=trial_dir / "bridge.log", home=home)
@@ -1072,14 +1073,14 @@ def main() -> None:
     runs_root = Path(args.runs_root).expanduser() if args.runs_root else RUNS_ROOT
     run_dir = runs_root.resolve() / cfg["task"]["benchmark"] / args.run_id
     run_dir.mkdir(parents=True, exist_ok=True)
-    agent = agents.get(cfg.get("agent", {}).get("cli"), home)
+    agent = agents.get(cfg.get("agent", {}).get("name"), home)
     prov = {**record.provenance(
         cfg_path, cfg, args, agent=agent,
         template_hash=workspace.template_hash(cfg),
         prompt=agents.PROMPT, resume_prompt=agents.RESUME_PROMPT,
         code_root=paths.code_root(),
-        simulator_venv=simulator_venv(cfg["machine"].get("body", {}), home),
-    ), "assembly": cfg}
+        simulator_venv=simulator_venv(cfg["machine"].get("backend", {}), home),
+    ), "config": cfg}
     record.write_run_config(run_dir, prov)
 
     op = OPERATORS[args.operator]

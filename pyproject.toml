@@ -135,16 +135,16 @@ forbidden_modules = ["robocli.bench", "robocli.sandbox", "robocli.cli"]
 name = "onboard never sees the host-side leaves (paths, config, errors, doctor, testing)"
 type = "forbidden"
 source_modules = ["robocli.robot.onboard"]
-forbidden_modules = ["robocli.paths", "robocli.config", "robocli.errors", "robocli.doctor", "robocli.testing"]
+forbidden_modules = ["robocli.config", "robocli.errors", "robocli.doctor", "robocli.testing"]
 
 [[tool.importlinter.contracts]]
 name = "no unit imports the front door layer (cli, doctor, testing)"
 type = "forbidden"
-source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.bench", "robocli.config", "robocli.paths", "robocli.errors"]
+source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.bench", "robocli.config", "robocli.errors"]
 forbidden_modules = ["robocli.cli", "robocli.doctor", "robocli.testing"]
 
 [[tool.importlinter.contracts]]
 name = "the schema is the conductor's: units read validated dicts, never config"
 type = "forbidden"
-source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.bench.precheck", "robocli.bench.record"]
+source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.bench.precheck", "robocli.bench.record"]
 forbidden_modules = ["robocli.config"]

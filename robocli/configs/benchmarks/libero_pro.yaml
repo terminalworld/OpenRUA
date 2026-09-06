@@ -1,7 +1,7 @@
-# LIBERO-PRO assembly config — the only place benchmark specifics live.
+# LIBERO-PRO benchmark config — the only place benchmark specifics live.
 # Four top-level sections (schema ruling 2026-08-17): task (what runs),
 # protocol (how trials run and when they stop), agent (who operates),
-# machine (the robot and its presentation; body: = the runtime shell).
+# machine (the robot and its presentation; backend: = how it is provided).
 # Key names are unchanged from the flat schema; keys only moved home.
 
 task:
@@ -55,7 +55,7 @@ protocol:                # tier A (locked)
     mode: paused         # free_running = sub-experiment switch, OFF
 
 agent:                   # the single frontier combo (locked 2026-08-07)
-  cli: claude-code       # agent adapter (robocli/agents) — all agent-specific
+  name: claude-code      # agent (robocli/agents) — all agent-specific
                          # knowledge (launch/auth/transcript/quota) lives there
   model: claude-opus-5
   options:

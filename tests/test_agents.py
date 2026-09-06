@@ -220,20 +220,20 @@ def test_front_door_emits_build_facts(tmp_path):
     import subprocess
     import sys
     env_cmd = [sys.executable, "-m", "robocli.agents"]
-    pre = subprocess.run([*env_cmd, "preinstall", "--cli", "claude-code"],
+    pre = subprocess.run([*env_cmd, "preinstall", "--agent", "claude-code"],
                          capture_output=True, text=True)
-    wl = subprocess.run([*env_cmd, "whitelist", "--cli", "claude-code"],
+    wl = subprocess.run([*env_cmd, "whitelist", "--agent", "claude-code"],
                         capture_output=True, text=True)
     a = agents.get("claude-code")
     # the build verbs name their agents; there is no implicit default here
     bare = subprocess.run([*env_cmd, "whitelist"], capture_output=True, text=True)
-    assert bare.returncode != 0 and "--cli" in bare.stderr
+    assert bare.returncode != 0 and "--agent" in bare.stderr
     assert pre.returncode == 0 and pre.stdout.strip() == a.install
     assert wl.returncode == 0
     assert wl.stdout.strip().splitlines() == list(a.whitelist)
-    # several --cli: the union, each line once
-    wl2 = subprocess.run([*env_cmd, "whitelist", "--cli", "claude-code",
-                          "--cli", "claude-code"], capture_output=True, text=True)
+    # several --agent: the union, each line once
+    wl2 = subprocess.run([*env_cmd, "whitelist", "--agent", "claude-code",
+                          "--agent", "claude-code"], capture_output=True, text=True)
     assert wl2.stdout.strip().splitlines() == list(a.whitelist)
 
 
