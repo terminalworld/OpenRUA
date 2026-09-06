@@ -19,6 +19,8 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from robocli.robot.sim.client import BridgeClient
+
 
 def up(
     name: str,
@@ -39,8 +41,9 @@ def up(
     extra_env: list[str] | None = None,
     resources: dict | None = None,
     peers_xml: str | None = None,
-) -> subprocess.Popen:
-    """docker-run the body with onboard's boot as its first process.
+) -> BridgeClient:
+    """docker-run the container with the bridge as its first process.
+    Returns the handle (not yet waited for).
 
     Four host directories are mounted at their own paths: the robocli
     code (``code_root``, so the simulator venv imports the same package),
@@ -108,11 +111,11 @@ datasets: {simulator}/capx/third_party/LIBERO-PRO/libero/datasets
 init_states: {simulator}/capx/third_party/LIBERO-PRO/libero/libero/init_files
 EOF
 source /opt/ros/${{ROS_DISTRO:-jazzy}}/setup.bash
-exec {venv}/bin/python -m robocli.robot.onboard.boot \
+exec {venv}/bin/python -m robocli.robot.sim.bridge.main \
   --config {config_path} --task-suite {task_suite} --task-id {task_id}{moveit_arg}
 """
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
-    return subprocess.Popen(
+    proc = subprocess.Popen(
         [
             "docker", "run", "-i", "--rm", "--name", name,
             *net, *gpu_args, *peer_env, *(extra_env or []),
@@ -129,6 +132,7 @@ exec {venv}/bin/python -m robocli.robot.onboard.boot \
                 else subprocess.DEVNULL),
         text=True,
     )
+    return BridgeClient(proc, name)
 
 
 def _mounts(*dirs: str) -> list[str]:
@@ -183,14 +187,14 @@ def main() -> int:
         name=args.name, image=args.image, config_path=args.config,
         task_suite=args.task_suite, task_id=args.task_id,
         simulator=args.simulator, venv=args.venv,
-        repo_root=args.repo_root,
+        code_root=args.code_root,
         log_path=Path(args.log) if args.log else None,
         moveit_log=args.moveit_log, network=args.network,
         ros_domain=args.ros_domain, gpus=args.gpus,
     )
 
     def pump_answers() -> None:
-        for line in proc.stdout:
+        for line in proc.proc.stdout:
             sys.stdout.write(line)
             sys.stdout.flush()
 
@@ -200,17 +204,17 @@ def main() -> int:
           "(Ctrl-D = power off)", file=sys.stderr)
     try:
         for line in sys.stdin:
-            proc.stdin.write(line)
-            proc.stdin.flush()
+            proc.proc.stdin.write(line)
+            proc.proc.stdin.flush()
     except (KeyboardInterrupt, BrokenPipeError):
         pass
     finally:
         try:
-            proc.stdin.close()
+            proc.proc.stdin.close()
         except OSError:
             pass
-        proc.wait(timeout=30)
-    return proc.returncode or 0
+        proc.proc.wait(timeout=30)
+    return proc.proc.returncode or 0
 
 
 if __name__ == "__main__":

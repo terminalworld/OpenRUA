@@ -26,7 +26,7 @@ contract from `pyproject.toml`.
   test lists the banned tokens).
 - **A benchmark**: a config under `robocli/benchmarks/<name>.yaml` and,
   if it needs a new simulator, a loader under
-  `robocli/robot/onboard/environment/`.
+  `robocli/robot/sim/bridge/environments/`.
 - **A config key**: add it to `robocli/config/schema.py` with a default and a
   description; unknown keys are errors everywhere, so the schema is
   the single place a key exists.

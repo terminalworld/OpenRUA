@@ -1,9 +1,10 @@
 """Layering contract, machine-enforced (see pyproject.toml block).
 
-environment and ros_graph are leaves that never see each other (env/sim/cfg
-flow as parameters); boot.py is the only module allowed to import both;
-nobody host-side imports robocli.robot (container process, rclpy);
-precheck and record are leaves (handles and paths are handed in).
+Inside the bridge, environments, ros and rpc never see each other
+(env, worker and cfg flow as parameters); main.py is the only module
+allowed to import all three; nothing host-side imports the bridge
+(container process, rclpy); precheck and record are leaves (handles and
+paths are handed in).
 Parsed from the AST; no import-linter dependency.
 """
 
@@ -14,37 +15,41 @@ from pathlib import Path
 
 PKG = Path(__file__).resolve().parents[1] / "robocli"
 
-_ONBOARD = {"robocli.robot.onboard"}
+_BRIDGE = {"robocli.robot.sim.bridge"}
 _HOST = {"robocli.bench.precheck", "robocli.bench.record", "robocli.sandbox",
          "robocli.proxy", "robocli.agents", "robocli.bench.run"}
-# Onboard is bake-ready self-contained: nothing from robocli outside
-# itself (the resolved config arrives as data), including the robot
-# package's own ground-side verbs.
-_GROUND_VERBS = {"robocli.robot.build", "robocli.robot.up",
-                 "robocli.robot.down"}
+# The bridge is self-contained: nothing from robocli outside itself (the
+# resolved config arrives as data), including the robot package's own
+# host side.
+_ROBOT_HOST = {"robocli.robot.base", "robocli.robot.real", "robocli.robot.sim.build",
+               "robocli.robot.sim.up", "robocli.robot.sim.down", "robocli.robot.sim.client"}
 _TOP = {"robocli.cli", "robocli.doctor", "robocli.testing"}
 _HOST_LEAVES = {"robocli.config", "robocli.errors"}
-_ONBOARD_BAN = _HOST | _GROUND_VERBS | _TOP | _HOST_LEAVES
-_LAYERS = _ONBOARD | {"robocli.bench.precheck", "robocli.bench.record",
-                      "robocli.sandbox"}
+_BRIDGE_BAN = _HOST | _ROBOT_HOST | _TOP | _HOST_LEAVES
+_LAYERS = _BRIDGE | {"robocli.bench.precheck", "robocli.bench.record",
+                     "robocli.sandbox"}
 FORBIDDEN = {
-    # inside onboard: the three halves never see each other; boot may
+    # inside the bridge: the three parts never see each other; main may
     # import all three; nothing imports outward
-    "robot/onboard/environment": _ONBOARD_BAN | {
-        "robocli.robot.onboard.ros_graph", "robocli.robot.onboard.monitor"},
-    "robot/onboard/ros_graph": _ONBOARD_BAN | {
-        "robocli.robot.onboard.environment", "robocli.robot.onboard.monitor"},
-    "robot/onboard/monitor": _ONBOARD_BAN | {
-        "robocli.robot.onboard.environment", "robocli.robot.onboard.ros_graph"},
-    "robot/onboard/boot.py": _ONBOARD_BAN,
-    # robot's ground verbs: consume data handed in by the conductor
-    # and never see onboard
-    "robot/build.py": _HOST | {"robocli.robot.onboard"},
-    "robot/up.py": _HOST | {"robocli.robot.onboard"},
-    "robot/down.py": _HOST | {"robocli.robot.onboard"},
-    # host side: nobody imports onboard (container-only; rclpy); only
-    # main conducts with the ground verbs
-    "bench/run.py": _ONBOARD | _TOP,
+    "robot/sim/bridge/environments": _BRIDGE_BAN | {
+        "robocli.robot.sim.bridge.ros", "robocli.robot.sim.bridge.rpc"},
+    "robot/sim/bridge/ros": _BRIDGE_BAN | {
+        "robocli.robot.sim.bridge.environments", "robocli.robot.sim.bridge.rpc"},
+    "robot/sim/bridge/rpc.py": _BRIDGE_BAN | {
+        "robocli.robot.sim.bridge.environments", "robocli.robot.sim.bridge.ros"},
+    "robot/sim/bridge/main.py": _BRIDGE_BAN,
+    # the robot's host side consumes data handed in by the runner and
+    # never sees the bridge, the config schema or the other units
+    "robot/__init__.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
+    "robot/base.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
+    "robot/sim/build.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
+    "robot/sim/up.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
+    "robot/sim/down.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
+    "robot/sim/client.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
+    "robot/real": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
+    # host side: nobody imports the bridge (container-only; rclpy); only
+    # the runner conducts with the robot package
+    "bench/run.py": _BRIDGE | _TOP,
     "sandbox": {"robocli.robot", "robocli.bench.precheck", "robocli.bench.record",
                 "robocli.config"} | _TOP,
     "bench/precheck.py": {"robocli.robot", "robocli.sandbox", "robocli.proxy",
@@ -54,7 +59,7 @@ FORBIDDEN = {
     "proxy": {"robocli.robot", "robocli.config"} | _LAYERS | _TOP,
     "agents": {"robocli.robot", "robocli.plugins"} | _LAYERS | _TOP,
     # hooks modules see the contract and nothing else of robocli
-    "plugins": _HOST_LEAVES | _ONBOARD | _TOP | {
+    "plugins": _HOST_LEAVES | _BRIDGE | _TOP | {
         "robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.bench",
         "robocli.agents.registry", "robocli.agents.launcher",
         "robocli.agents.credentials", "robocli.agents.prompts"},
@@ -62,7 +67,7 @@ FORBIDDEN = {
     "config": _HOST | {"robocli.robot"} | _TOP,
     "errors.py": _HOST | {"robocli.robot", "robocli.config"} | _TOP,
     # doctor sits with cli above the units; nothing below imports it
-    "doctor.py": _ONBOARD | {"robocli.testing"},
+    "doctor.py": _BRIDGE | {"robocli.testing"},
 }
 
 

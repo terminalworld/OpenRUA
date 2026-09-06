@@ -6,7 +6,7 @@ view the agent will use) by examiner-owned code. A red check refuses the
 trial (anomaly -> classify INFRA -> free rerun); the agent never pays
 for our manual being wrong. Success predicates are NOT here: scoring
 identity keeps the benchmark's own predicates in the sim process
-(robot.onboard); this module only verifies the apparatus.
+(robot.sim.bridge); this module only verifies the apparatus.
 
 Three assertion sources (design discussion 2026-08-12):
 1. machine.yaml is GENERATED from the resolved config; checks are

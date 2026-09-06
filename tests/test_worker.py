@@ -1,4 +1,4 @@
-"""SimJobRunner unit contract: one owner thread touches the sim, ever.
+"""Worker unit contract: one owner thread touches the sim, ever.
 
 Cross-thread work lands on the owner's loop; same-thread calls nest
 directly; a fire-and-forget failure is COUNTED and printed, never
@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import threading
 
-from robocli.robot.onboard.environment.simthread import SimJobRunner
+from robocli.robot.sim.bridge.environments.worker import Worker
 
 
 def _owner_loop(sim, stop):
@@ -19,7 +19,7 @@ def _owner_loop(sim, stop):
 
 
 def test_cross_thread_jobs_execute_on_the_owner():
-    sim, stop, seen = SimJobRunner(), threading.Event(), []
+    sim, stop, seen = Worker(), threading.Event(), []
     t = threading.Thread(target=_owner_loop, args=(sim, stop))
     t.start()
     try:
@@ -33,7 +33,7 @@ def test_cross_thread_jobs_execute_on_the_owner():
 
 
 def test_same_thread_calls_nest_directly():
-    sim = SimJobRunner()
+    sim = Worker()
     sim.bind_current_thread()
     # a job submitting a job must not deadlock on its own queue
     assert sim.submit(lambda: sim.submit(lambda: "nested")) == "nested"
@@ -41,7 +41,7 @@ def test_same_thread_calls_nest_directly():
 
 def test_waited_failure_reraises_to_the_submitter():
     import pytest
-    sim, stop = SimJobRunner(), threading.Event()
+    sim, stop = Worker(), threading.Event()
     t = threading.Thread(target=_owner_loop, args=(sim, stop))
     t.start()
     try:
@@ -55,7 +55,7 @@ def test_waited_failure_reraises_to_the_submitter():
 
 
 def test_fire_and_forget_failure_is_counted_not_silent(capsys):
-    sim = SimJobRunner()
+    sim = Worker()
 
     def boom():
         raise RuntimeError("per-step assert")

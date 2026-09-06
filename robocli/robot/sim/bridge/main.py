@@ -1,19 +1,17 @@
-"""Boot the simulated robot: environment + surface, one process.
+"""The bridge process: environment + ROS 2 surface + control line, one process.
 
-``python -m robocli.robot.onboard.boot --config <resolved yaml>
---task-suite <name> --task-id <n>`` is the body's entry command,
-started by the ground-side up verb (subprocess boundary; no imports).
-Pure wiring:
-every piece of logic lives in the sibling packages; this file only
+``robocli-bridge --config <resolved yaml> --task-suite <name> --task-id
+<n>`` (or ``python -m robocli.robot.sim.bridge.main``) is the simulated
+robot container's entry command, started by ``robot.sim.up``. Pure
+wiring: every piece of logic lives in the sibling packages; this file
 creates them and passes them to each other.
 
-The config arrives ALREADY RESOLVED to this trial's suite view (the
-conductor computes it once and distributes the artifact; ruling
-2026-08-16) -- nothing here imports any other part of robocli, so this
-package bakes into the body image self-contained.
+The config arrives already resolved to this trial's suite view; nothing
+here imports any other part of robocli, so the bridge package can be
+installed on its own inside the container.
 
-Runs INSIDE the body (imports rclpy); host-side code must never import
-robocli.robot.onboard (layering contract).
+Runs inside the container (imports rclpy); host-side code never imports
+``robocli.robot.sim.bridge``.
 """
 
 from __future__ import annotations
@@ -38,11 +36,10 @@ def main() -> None:
     import yaml
     from rclpy.executors import MultiThreadedExecutor
 
-    from . import environment
-    from .environment.simthread import SimJobRunner
-    from .monitor.channel import ControlChannel
-    from .monitor.monitor import Monitor
-    from .ros_graph.node import GraphNode
+    from . import environments
+    from .environments.worker import Worker
+    from .ros.node import GraphNode
+    from .rpc import ControlChannel, Monitor
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
@@ -61,8 +58,8 @@ def main() -> None:
 
     # The main thread creates the env (and its EGL context) and becomes the
     # single sim-owner thread; everything else submits jobs to it.
-    sim = SimJobRunner()
-    loader = environment.get(cfg["task"]["benchmark"])
+    sim = Worker()
+    loader = environments.get(cfg["task"]["benchmark"])
     env, task_ctx = loader.create(cfg, args.task_suite, args.task_id)
     env.reset()
     sim.bind_current_thread()
@@ -98,7 +95,7 @@ def main() -> None:
         import subprocess
         from pathlib import Path
 
-        launch = (Path(__file__).resolve().parent / "ros_graph" / "launch"
+        launch = (Path(__file__).resolve().parent / "ros" / "launch"
                   / "moveit.launch.py")
         moveit_proc = subprocess.Popen(
             ["bash", "-c",

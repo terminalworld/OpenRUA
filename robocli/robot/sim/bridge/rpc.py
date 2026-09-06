@@ -1,32 +1,86 @@
-"""Monitor: watches every step of the world and answers the host's line.
+"""The bridge's private control line: the host asks, the bridge answers.
 
-One Monitor per env. Two duties: (1) after every sim step it asks the
-benchmark's original predicate once and remembers the first success
-(which step, what time); (2) it answers the host's stdin questions
-(reset / success / task_info / steps and the forensic reads
-objects / hand). All benchmark knowledge arrives through the loader
-parameter (the environment package's plug); this file holds only the
-measurement protocol, which is exactly where the audit history lives.
+The runner talks to the bridge process over its stdio: one JSON object
+per line on stdin, one JSON reply per line on stdout (logs go to
+stderr). The line carries the truth-side verbs only (reset to an
+initial state, ask the original predicate, shutdown) and is unreachable
+from the agent's sandbox: no exec path into the sim container, nothing
+here touches DDS.
 
-Official eval semantics latch success per step (any-step success counts
-even if the state later degrades; RoboCasa's runner does
+Protocol:
+    {"cmd": "reset", "init_state_id": 3}   -> {"ok": true}
+    {"cmd": "success"}                     -> {"ok": true, "success": false}
+    {"cmd": "shutdown"}                    -> {"ok": true}  (then exit)
+
+Two classes: ``ControlChannel`` is the server loop; ``Monitor`` holds
+the verbs and the per-step success latch. One Monitor per env: after
+every sim step it asks the benchmark's original predicate once and
+remembers the first success (which step, what time); official eval
+semantics latch success per step (RoboCasa's runner does
 ``successes |= check``, LIBERO/robosuite eval loops end on first
-success). Every step checks and latches; the end-state verdict is
-reported alongside (2026-08-12, Zhaoyang: latch = the scored number,
-end-state kept for ourselves).
-
-``on_reset`` is a plain callable slot: whoever composes the machine may
-need to act right after the world is restored (the ROS graph re-aligns
-itself); this module only fires the slot, inside the same sim-thread
-job, and knows nothing about who filled it.
+success), and the end-state verdict is reported alongside. All benchmark
+knowledge arrives through the loader parameter; ``on_reset`` is a plain
+callable slot fired inside the same sim-thread job right after the world
+is restored (the ROS graph re-aligns itself there).
 """
 
 from __future__ import annotations
 
+import json
 import os
+import sys
+import threading
 import time
+from typing import Callable
 
 import numpy as np
+
+
+class ControlChannel:
+    def __init__(
+        self,
+        handlers: dict[str, Callable[[dict], dict]],
+        on_eof: Callable[[], None],
+        out=None,
+    ):
+        self._handlers = handlers
+        self._on_eof = on_eof  # runner gone -> bridge exits cleanly (no orphans)
+        # `out` is the PRIVATE handle to the real stdout (see boot.main's fd
+        # redirection); simulator prints can never pollute the channel.
+        self._out = out if out is not None else sys.stdout
+        self._thread = threading.Thread(target=self._loop, daemon=True)
+
+    def start(self) -> None:
+        self._thread.start()
+
+    def _loop(self) -> None:
+        for line in sys.stdin:
+            line = line.strip()
+            if not line:
+                continue
+            rid = None
+            try:
+                req = json.loads(line)
+                rid = req.get("id")
+                handler = self._handlers[req["cmd"]]
+                resp = {"ok": True, **(handler(req) or {})}
+            except Exception as exc:  # noqa: BLE001; report, never die
+                resp = {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
+            if rid is not None:
+                # Echoed request id (2026-08-14 diff-review F-A): lets the
+                # evaluator discard late answers to abandoned (timed-out)
+                # requests instead of mistaking them for the next reply.
+                resp["id"] = rid
+            try:
+                self._out.write(json.dumps(resp) + "\n")
+                self._out.flush()
+            except (OSError, ValueError):
+                # Runner died mid-rpc: the answer pipe broke before stdin
+                # reported EOF. Same meaning, same exit; an unhandled
+                # BrokenPipeError here would kill this thread and skip
+                # the no-orphans shutdown below.
+                break
+        self._on_eof()
 
 
 class Monitor:
@@ -35,7 +89,7 @@ class Monitor:
         self._env = env
         self._ctx = task_ctx
         self._loader = loader  # the environment package's plug (parameter)
-        self._sim = sim  # SimJobRunner: all env access goes through it
+        self._sim = sim  # Worker: all env access goes through it
         self.on_reset = on_reset or (lambda: None)
 
         self._latched = False

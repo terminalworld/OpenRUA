@@ -1,10 +1,10 @@
-"""Verb ``build``: blueprint -> the simulated robot's body image. HOST-SIDE.
+"""Build the simulated robot's image from Dockerfile.<distro>.
 
 Explicit and low-frequency (blueprint / distro changes only); ``up``
 never builds. Docker's layer cache makes an unchanged re-build a cheap
 no-op returning the same digest.
 
-    python3 -m robocli.robot.build [--distro jazzy] [--tag ...]
+    python3 -m robocli.robot.sim.build [--distro jazzy] [--tag ...]
 
 Value output: ``<tag> <digest>`` (one line). The image self-describes
 (labels: blueprint sha256 + build time), so a running body can always
@@ -24,10 +24,10 @@ _HERE = Path(__file__).resolve().parent
 
 
 def build(distro: str = "jazzy", tag: str | None = None) -> tuple[str, str]:
-    """Build the body image from sim-<distro>.Dockerfile; (tag, digest)."""
-    dockerfile = _HERE / f"sim-{distro}.Dockerfile"
+    """Build the image from Dockerfile.<distro>; returns (tag, digest)."""
+    dockerfile = _HERE / f"Dockerfile.{distro}"
     if not dockerfile.exists():
-        have = sorted(p.name for p in _HERE.glob("sim-*.Dockerfile"))
+        have = sorted(p.name for p in _HERE.glob("Dockerfile.*"))
         raise RuntimeError(f"no blueprint for distro '{distro}' (have {have})")
     tag = tag or f"robocli-sim-{distro}"
     cmd = [
@@ -51,7 +51,7 @@ def build(distro: str = "jazzy", tag: str | None = None) -> tuple[str, str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--distro", default="jazzy",
-                    help="which blueprint: sim-<distro>.Dockerfile")
+                    help="which Dockerfile: Dockerfile.<distro>")
     ap.add_argument("--tag", default=None,
                     help="image name (default robocli-sim-<distro>)")
     args = ap.parse_args()

@@ -55,7 +55,7 @@ class SensorPublishers:
     def __init__(self, node, env, cfg: dict, sim=None):
         self._node = node
         self._env = env
-        self._runner = sim  # SimJobRunner: all sim access goes through it
+        self._runner = sim  # Worker: all sim access goes through it
         self._pending_state = False
         self._pending_cams = False
         self._sim = env.sim

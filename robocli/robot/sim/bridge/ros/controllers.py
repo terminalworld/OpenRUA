@@ -100,7 +100,7 @@ class CommandPorts:
     def __init__(self, node, env, cfg: dict, on_step, sim=None):
         self._env = env
         self._on_step = on_step  # callback: publish sensors after stepping
-        self._runner = sim  # SimJobRunner: all env access goes through it
+        self._runner = sim  # Worker: all env access goes through it
 
         raw = env.env if hasattr(env, "env") else env
         self._raw = raw

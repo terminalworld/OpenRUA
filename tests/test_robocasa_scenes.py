@@ -12,7 +12,7 @@ seeded from the seed alone, and the seed fully determines the episode.
 import numpy as np
 import pytest
 
-from robocli.robot.onboard.environment.robocasa import RoboCasaLoader
+from robocli.robot.sim.bridge.environments.robocasa import RoboCasaLoader
 
 LOADER = RoboCasaLoader()
 TARGET = {"split": "target"}

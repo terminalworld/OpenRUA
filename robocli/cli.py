@@ -40,7 +40,7 @@ from robocli.bench import record
 from robocli.bench.run import (apply_suite_overrides, bring_up, compose,
                                ensure_internal_network, normalize_arms)
 from robocli.proxy.up import ensure as ensure_proxy
-from robocli.robot.down import down as robot_down
+from robocli import robot
 from robocli.sandbox.down import down as sandbox_down
 
 DEFAULT_NAME = "robocli"
@@ -177,6 +177,7 @@ def cmd_up(args) -> int:
         raise UnavailableError(f"[up] robot failed to reset: {e}",
                                hint=f"read {workdir / 'robot.log'}") from e
     _save_state(args.name, args.home, sim=sim_name, sandbox=sandbox_name,
+                backend=cfg["machine"]["backend"]["kind"],
                 network=network, proxy=proxy_url, agent=adapter.name,
                 model=cfg.get("agent", {}).get("model") or adapter.default_model,
                 options={**adapter.default_options,
@@ -220,8 +221,10 @@ def cmd_agent(args) -> int:
 
 def cmd_down(args) -> int:
     sim_name, sandbox_name = _names(args.name)
+    p = _state_path(args.name, args.home)
+    kind = (yaml.safe_load(p.read_text()) or {}).get("backend", "sim") if p.is_file() else "sim"
     sandbox_down(sandbox_name)
-    robot_down(sim_name)
+    robot.down(sim_name, kind)
     _state_path(args.name, args.home).unlink(missing_ok=True)
     return 0
 

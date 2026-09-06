@@ -23,7 +23,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import select
 import shutil
 import subprocess
 import threading
@@ -42,9 +41,7 @@ from robocli.bench import triallock
 from robocli.bench.precheck import run_precheck
 from robocli.proxy.up import ensure as ensure_proxy
 # Host code touches the robot ONLY through its ground-side verbs;
-# robocli.robot.onboard stays sealed (layering contract).
-from robocli.robot.down import down as sim_down
-from robocli.robot.up import up as sim_up
+from robocli import robot
 from robocli.sandbox import workspace
 from robocli.sandbox.down import down as sandbox_down
 from robocli.sandbox.up import up as sandbox_up
@@ -232,7 +229,7 @@ def compose(robot: str | None, bench: str | None,
 def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
              task_suite: str, task_id: int, network: str, proxy_url: str,
              mounts: tuple[str, ...], ros_domain: int, robot_log: Path,
-             home: Path | None = None) -> tuple[Path, "MachineClient"]:
+             home: Path | None = None) -> tuple[Path, robot.Handle]:
     """Resolve, sandbox, robot, in that order, from one resolved config.
 
     Sandbox first: the body's ROS_STATIC_PEERS must resolve the sandbox's
@@ -264,19 +261,17 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     )
     machine = None
     try:
-        # Real path: the container mounts and runs the venv by this string,
-        # and a host symlink means nothing inside it.
-        venv = simulator_venv(body, home).resolve()
-        proc = sim_up(
+        # The container mounts and runs the venv by this string, and a
+        # host symlink means nothing inside it: hand over the real path.
+        venv = (simulator_venv(backend, home).resolve()
+                if backend.get("kind") == "sim" else None)
+        machine = robot.up(
+            backend,
             name=sim_name,
-            gpus=bool(body.get("gpus", False)),
-            resources=body.get("resources"),
-            image=body.get("image", "robocli-sim-jazzy"),
             config_path=str(config_path),
             task_suite=task_suite,
             task_id=task_id,
-            simulator=str(paths.simulator_root(venv)),
-            venv=str(venv),
+            venv=str(venv) if venv else None,
             code_root=str(paths.code_root()),
             log_path=robot_log,
             moveit_log=str(robot_log.with_name("moveit.log")),
@@ -285,7 +280,6 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             peers_xml=FASTDDS_PEERS_XML.format(peer=sandbox_name),
             ros_domain=ros_domain,
         )
-        machine = MachineClient(proc, sim_name)
         machine.wait_ready()
     except BaseException:
         if machine is not None:
@@ -316,103 +310,6 @@ def resolve_body_files(cfg: dict, dest: Path, home: Path | None = None) -> None:
     dst = dest / src.name
     shutil.copyfile(src, dst)
     machine["controller_config"] = str(dst.resolve())
-
-
-# =====================================================================
-# The robot's phone: the conductor-held end of the private stdio line.
-# The body is built by robot.up (which hands over the pipes);
-# from then on the ONLY ongoing relationship is conversation here --
-# rpc questions on stdin/stdout, stderr already streaming to bridge.log.
-# Conductor dies -> pipe EOF -> the robot powers itself off (no
-# orphans). When the conversation itself is dead, the e-stop
-# (robot.down) cuts power from outside.
-# =====================================================================
-
-class MachineClient:
-    def __init__(self, proc, name: str):
-        self.name = name
-        self._proc = proc
-        # One question, one answer, one thread at a time (audit 2026-08-14
-        # F5): the watchdog probe thread and the main thread share this
-        # pipe; unlocked, a stale probe could steal the final success
-        # verdict and hand the main thread a pre-latch answer.
-        self._rpc_lock = threading.Lock()
-        self._rx = b""  # raw-fd line buffer (see _read_line)
-
-    # ------------------------------------------------------------------- rpc
-    def _read_line(self, deadline: float, note: str) -> str:
-        """One channel line via raw-fd reads (never TextIO readline: its
-        buffer would hide bytes from select and fake a timeout)."""
-        fd = self._proc.stdout.fileno()
-        while b"\n" not in self._rx:
-            remaining = deadline - time.time()
-            if remaining <= 0:
-                raise RuntimeError(f"machine rpc timeout {note}")
-            ready, _, _ = select.select([fd], [], [], remaining)
-            if not ready:
-                raise RuntimeError(f"machine rpc timeout {note}")
-            import os as _os
-            chunk = _os.read(fd, 65536)
-            if not chunk:
-                raise RuntimeError(f"machine died mid-rpc {note}")
-            self._rx += chunk
-        line, _, self._rx = self._rx.partition(b"\n")
-        return line.decode()
-
-    def rpc(self, obj: dict, timeout_note: str = "",
-            timeout_s: float = 900.0) -> dict:
-        """One request/response, serialized, bounded, id-matched.
-
-        The lock makes write+read atomic across threads (audit 2026-08-14
-        F5); the timeout surfaces a wedged sim thread as an exception
-        (F16); the request id lets a later call DISCARD the late answer
-        of an earlier abandoned (timed-out) request instead of taking it
-        for its own reply (diff-review 2026-08-14 F-A; both watchdog
-        probes and the verdict ask "success", so shape alone can't tell
-        them apart).
-        """
-        assert self._proc.stdin and self._proc.stdout
-        rid = uuid.uuid4().hex[:12]
-        deadline = time.time() + timeout_s
-        note = f"{obj.get('cmd')} {timeout_note}"
-        with self._rpc_lock:
-            self._proc.stdin.write(json.dumps({**obj, "id": rid}) + "\n")
-            self._proc.stdin.flush()
-            while True:
-                resp = json.loads(self._read_line(deadline, note))
-                if resp.get("id") in (rid, None):  # None: pre-id machine
-                    return resp
-                import sys as _sys
-                print(f"[rpc] drained stale answer (id {resp.get('id')}) "
-                      f"while waiting for {note}", file=_sys.stderr, flush=True)
-
-    def wait_ready(self, timeout_s: float = 1800.0) -> None:
-        """The control channel answers once the WHOLE robot is up (env,
-        graph, and -- since the robot boots complete -- MoveIt).
-
-        The bound is deliberately generous (diff-review 2026-08-14 F-B:
-        the pre-timeout code effectively waited unboundedly for boot;
-        concurrent llvmpipe whole-room builds legitimately take many
-        minutes); it exists to convert a truly dead boot into a clean
-        anomaly, not to police boot speed.
-        """
-        try:
-            if self.rpc({"cmd": "success"}, "boot", timeout_s=timeout_s).get("ok"):
-                return
-        except (RuntimeError, json.JSONDecodeError) as e:
-            raise TimeoutError(f"machine not ready: {e}") from e
-        raise TimeoutError("machine not ready: control channel answered not-ok")
-
-    # -------------------------------------------------------------- teardown
-    def shutdown(self) -> None:
-        try:
-            # Short leash (diff-review 2026-08-14 F-G): a wedged machine
-            # must fall through to the e-stop in seconds, not squat on
-            # the default rpc timeout per teardown.
-            self.rpc({"cmd": "shutdown"}, timeout_s=15.0)
-            self._proc.wait(timeout=30)
-        except Exception:  # noqa: BLE001
-            sim_down(self.name)
 
 
 def ensure_internal_network(name: str = "robocli-internal") -> str:

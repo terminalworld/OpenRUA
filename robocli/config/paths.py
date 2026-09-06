@@ -20,7 +20,7 @@ CLI entry point reads ``ROBOCLI_HOME`` and ``--home`` once and passes the
 result down. Nothing here reads the environment. A third source, pip
 entry points, would slot in after the user directory; not implemented.
 
-Imports only robocli.errors. Nothing in ``robocli.robot.onboard``
+Imports only robocli.errors. Nothing in ``robocli.robot.sim.bridge``
 imports this; the container reads absolute paths from the resolved
 config file.
 """

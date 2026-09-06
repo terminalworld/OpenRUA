@@ -24,7 +24,7 @@ Each robot profile names its venv under `machine.backend.simulator.venv`,
 relative to that directory (`cap-x/.venv-libero`); an absolute path or
 `~` works too if you keep simulators elsewhere. The venv must have
 `robocli` installed (the body boots with `python -m
-robocli.robot.onboard.boot` from it).
+robocli.robot.sim.bridge.main` from it).
 
 Build recipes for each simulator are being written up here; until
 then `robocli doctor <robot>` reports which venv is missing and where
