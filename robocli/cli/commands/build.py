@@ -35,21 +35,33 @@ def whitelist_for(names: list[str] | None, home: Path | None) -> str:
     return "\n".join(agents.whitelist(manifests_for(names, home)))
 
 
+def agent_labels(manifests: list[agents.Manifest], kind: str) -> dict[str, str]:
+    """One label per agent baked into an image: the hash of its install
+    line (``install``) or whitelist (``whitelist``), so doctor can tell
+    which agents an image carries and whether their manifests changed."""
+    return {f"robocli.agent.{m.name}.{kind}_sha256": agents.fact_sha256(m, kind)
+            for m in manifests}
+
+
 def run(args) -> int:
     if args.unit == "robot":
         from robocli.robot.sim.build import build
         tag, digest = build(distro=args.distro, tag=args.tag)
     elif args.unit == "sandbox":
         from robocli.sandbox.build import build
+        chosen = manifests_for(args.agent, args.home)
         preinstall = (args.preinstall if args.preinstall is not None
-                      else preinstall_for(args.agent, args.home))
+                      else agents.preinstall(chosen))
         tag, digest = build(preinstall=preinstall, ros_distro=args.ros_distro,
-                            robot_uid=args.robot_uid, tag=args.tag)
+                            robot_uid=args.robot_uid, tag=args.tag,
+                            labels=agent_labels(chosen, "install"))
     else:
         from robocli.proxy.build import build
+        chosen = manifests_for(args.agent, args.home)
         whitelist = (args.whitelist if args.whitelist is not None
-                     else whitelist_for(args.agent, args.home))
-        tag, digest = build(whitelist=whitelist, tag=args.tag, port=args.port)
+                     else "\n".join(agents.whitelist(chosen)))
+        tag, digest = build(whitelist=whitelist, tag=args.tag, port=args.port,
+                            labels=agent_labels(chosen, "whitelist"))
     print(f"{tag} {digest}")
     return 0
 

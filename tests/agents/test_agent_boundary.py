@@ -24,6 +24,9 @@ HOOKS_DIR = PKG / "plugins" / "agents"
 TOKENS = (
     "claude",
     "anthropic",
+    "codex",
+    "openai",
+    "codex_home",
     ".credentials.json",
     "rate_limit_event",
     "error_max_turns",

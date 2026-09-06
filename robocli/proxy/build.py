@@ -21,8 +21,9 @@ _HERE = Path(__file__).resolve().parent
 
 
 def build(whitelist: str = "", tag: str = "robocli-proxy",
-          port: int = 8888) -> tuple[str, str]:
-    """Build the proxy image; returns (tag, digest)."""
+          port: int = 8888, labels: dict[str, str] | None = None) -> tuple[str, str]:
+    """Build the proxy image; returns (tag, digest). ``labels`` are stamped
+    alongside the whitelist hash (one per agent, for doctor)."""
     # The image says which whitelist it enforces: doctor compares this
     # label with what the selected agents would emit today.
     digest_in = hashlib.sha256(whitelist.encode()).hexdigest()
@@ -30,7 +31,9 @@ def build(whitelist: str = "", tag: str = "robocli-proxy",
         ["docker", "build", "-f", str(_HERE / "proxy.Dockerfile"),
          "-t", tag, "--build-arg", f"WHITELIST={whitelist}",
          "--build-arg", f"PORT={port}",
-         "--label", f"robocli.whitelist_sha256={digest_in}", str(_HERE)],
+         "--label", f"robocli.whitelist_sha256={digest_in}",
+         *(x for k, v in (labels or {}).items() for x in ("--label", f"{k}={v}")),
+         str(_HERE)],
         capture_output=True, text=True)
     if r.returncode != 0:
         raise ProxyError(f"docker build {tag} failed:\n{r.stderr[-2000:]}")

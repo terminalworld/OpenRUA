@@ -142,7 +142,7 @@ def test_launcher_default_proxy_matches_proxy_package_defaults():
 def test_every_bundled_agent_conforms():
     from robocli.testing import check_agent
     listed = agents.available()
-    assert [a.name for a in listed] == ["claude-code"]
+    assert [a.name for a in listed] == ["claude-code", "codex"]
     for a in listed:
         assert a.agent is not None, a.error
         check_agent(a.agent)
