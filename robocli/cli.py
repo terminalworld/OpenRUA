@@ -1,13 +1,14 @@
 """The front door: ``robocli <verb> ...``.
 
-    robocli robots                      list the shipped robot profiles
-    robocli build <robot|sandbox|proxy> build one of the three images
-    robocli up --robot panda-sim        a live robot (real or simulated) with
-                                        a sandbox terminal on its ROS 2 graph
-    robocli agent [--cli <name>]        open a coding agent on that terminal
-    robocli down                        power everything off
-    robocli run --config benchmarks/... run a task set (robocli.bench.run)
-    robocli doctor                      check docker, images, substrate, login
+    robocli robots | benchmarks | agents   what is available (bundled + yours)
+    robocli build <robot|sandbox|proxy>    build one of the three images
+    robocli up panda-sim                   a live robot (real or simulated) with
+                                           a sandbox terminal on its ROS 2 graph
+    robocli agent                          open a coding agent on that terminal
+    robocli down                           power everything off
+    robocli run --config libero_pro ...    run a task set (robocli run --help)
+    robocli config schema                  every config key and its meaning
+    robocli doctor [robot]                 check docker, images, substrate, login
 
 ``up`` stays in the foreground (like ``docker compose up``): the robot
 holds its control line to this process and powers itself off when the
@@ -22,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import importlib
+import json
 import os
 import shutil
 import signal
@@ -32,17 +34,13 @@ from pathlib import Path
 import yaml
 
 from robocli import __version__, agents, doctor, paths
-from robocli.errors import RoboCLIError, UsageError, NotFound
+from robocli.errors import NotFound, RoboCLIError, UnavailableError
 from robocli.bench import record
-from robocli.bench.run import (MachineClient, apply_suite_overrides, compose,
-                               ensure_internal_network, normalize_arms,
-                               resolve_body_files, substrate_venv,
-                               FASTDDS_PEERS_XML)
+from robocli.bench.run import (apply_suite_overrides, bring_up, compose,
+                               ensure_internal_network, normalize_arms)
 from robocli.proxy.up import ensure as ensure_proxy
 from robocli.robot.down import down as robot_down
-from robocli.robot.up import up as robot_up
 from robocli.sandbox.down import down as sandbox_down
-from robocli.sandbox.up import up as sandbox_up
 
 DEFAULT_NAME = "robocli"
 
@@ -72,20 +70,63 @@ def _load_state(name: str, home: Path) -> dict:
 
 # ------------------------------------------------------------------- verbs
 
+def _describe(kind: str, path: Path) -> str:
+    """One line about a robot profile or a benchmark config, or why it
+    could not be read (a bad user file must not hide the rest)."""
+    try:
+        d = yaml.safe_load(path.read_text()) or {}
+    except Exception as exc:  # noqa: BLE001
+        return f"(unreadable: {exc})"
+    if kind == "robots":
+        r = d.get("machine", {}).get("robot", {})
+        return f"{r.get('model', '?'):<28} {r.get('description', '')}"
+    t = d.get("task", {})
+    suites = t.get("suites", [])
+    return f"{t.get('benchmark', '?'):<14} {len(suites)} suites; robot: {d.get('robot', '(own machine:)')}"
+
+
+def _print_listing(rows: list[dict], as_json: bool) -> None:
+    """Rows of {name, source, description, shadowed_by}: a table, or JSON."""
+    if as_json:
+        print(json.dumps(rows, indent=2))
+        return
+    for r in rows:
+        tag = "" if r["source"] == "bundled" else f"  [{r['source']}]"
+        print(f"{r['name']:<20} {r['description']}{tag}")
+        if r.get("shadowed_by"):
+            print(f"{'':<20} note: {r['shadowed_by']} has the same name and is "
+                  "ignored; rename it to use it")
+
+
+def _list_kind(kind: str, args) -> int:
+    """Bundled entries, then the user's (``<home>/<kind>/``); a user file
+    shadowed by a bundled name is pointed out, not used."""
+    rows = [{"name": e.name, "source": e.source, "path": str(e.path),
+             "description": _describe(kind, e.path),
+             "shadowed_by": str(e.shadowed_by) if e.shadowed_by else None}
+            for e in paths.available(kind, args.home)]
+    _print_listing(rows, args.json)
+    return 0
+
+
 def cmd_robots(args) -> int:
-    """Bundled profiles, then the user's (``<home>/robots/``); a user
-    file shadowed by a bundled name is pointed out, not used."""
-    for e in paths.available("robots", args.home):
-        try:
-            r = yaml.safe_load(e.path.read_text()).get("machine", {}).get("robot", {})
-            desc = f"{r.get('model', '?'):<28} {r.get('description', '')}"
-        except Exception as exc:  # noqa: BLE001  a bad user file must not hide the rest
-            desc = f"(unreadable: {exc})"
-        tag = "" if e.source == "bundled" else "  [user]"
-        print(f"{e.name:<20} {desc}{tag}")
-        if e.shadowed_by:
-            print(f"{'':<20} note: {e.shadowed_by} has the same name and is ignored; "
-                  f"rename it to use it")
+    return _list_kind("robots", args)
+
+
+def cmd_benchmarks(args) -> int:
+    return _list_kind("benchmarks", args)
+
+
+def cmd_agents(args) -> int:
+    rows = []
+    for a in agents.available(args.home):
+        desc = (f"FAILED: {a.error}" if a.agent is None else
+                f"{a.agent.default_model:<24} {' '.join(sorted(a.agent.capabilities))}")
+        rows.append({"name": a.name, "source": a.source, "path": str(a.path),
+                     "description": desc,
+                     "shadowed_by": str(a.shadowed_by) if a.shadowed_by else None,
+                     "capabilities": sorted(a.agent.capabilities) if a.agent else None})
+    _print_listing(rows, args.json)
     return 0
 
 
@@ -106,38 +147,24 @@ def cmd_up(args) -> int:
     if workdir.exists():
         shutil.rmtree(workdir)  # a fresh workspace every time (seeding merges)
     workdir.mkdir(parents=True)
-    resolve_body_files(cfg, workdir, args.home)
-    assembly = record.write_assembly(workdir, cfg)
     network = ensure_internal_network()
     proxy_url = ensure_proxy(network)
     adapter = agents.get(args.cli or cfg.get("agent", {}).get("cli"), args.home)
     creds_home = Path(cfg.get("agent", {}).get("credentials_dir")
                       or paths.credentials_dir(args.home) / adapter.name).expanduser()
     cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter)
-    body = cfg["machine"].get("body", {})
-    print(f"[up] sandbox {sandbox_name}", flush=True)
-    sandbox_up(config=assembly, workspace=workdir / "workspace",
-               image=body.get("sandbox_image"), network=network,
-               static_peer=sim_name,
-               peers_xml=FASTDDS_PEERS_XML.format(peer=sim_name),
-               ros_domain=args.ros_domain, internet=f"proxy:{proxy_url}",
-               name=sandbox_name,
-               mounts=adapter.sandbox_mounts(cfg_dir, creds_file))
-    print(f"[up] robot {sim_name} (booting; MoveIt takes a minute)", flush=True)
-    venv = substrate_venv(body, args.home)
-    proc = robot_up(
-        name=sim_name, image=body.get("image", "robocli-sim-jazzy"),
-        config_path=str(assembly), task_suite=suite, task_id=task_id,
-        substrate=str(paths.substrate_root(venv)), venv=str(venv),
-        code_root=str(paths.code_root()), log_path=workdir / "robot.log",
-        moveit_log=str(workdir / "moveit.log"), network=network,
-        static_peer=sandbox_name,
-        peers_xml=FASTDDS_PEERS_XML.format(peer=sandbox_name),
-        ros_domain=args.ros_domain, gpus=bool(body.get("gpus", False)),
-        resources=body.get("resources"))
-    machine = MachineClient(proc, sim_name)
+    print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
+          flush=True)
     try:
-        machine.wait_ready()
+        _, machine = bring_up(
+            cfg, workdir, sim_name, sandbox_name, suite, task_id, network, proxy_url,
+            adapter.sandbox_mounts(cfg_dir, creds_file), args.ros_domain,
+            robot_log=workdir / "robot.log", home=args.home)
+    except Exception as e:  # noqa: BLE001
+        shutil.rmtree(cfg_dir, ignore_errors=True)
+        raise UnavailableError(f"[up] robot failed to come up: {e}",
+                               hint=f"read {workdir / 'robot.log'}") from e
+    try:
         r = machine.rpc({"cmd": "reset", "init_state_id": args.init_state})
         if not r.get("ok"):
             raise RuntimeError(f"reset failed: {r}")
@@ -145,8 +172,9 @@ def cmd_up(args) -> int:
     except Exception as e:  # noqa: BLE001
         sandbox_down(sandbox_name)
         machine.shutdown()
-        raise SystemExit(f"[up] robot failed to come up: {e}\n"
-                         f"      log: {workdir / 'robot.log'}")
+        shutil.rmtree(cfg_dir, ignore_errors=True)
+        raise UnavailableError(f"[up] robot failed to reset: {e}",
+                               hint=f"read {workdir / 'robot.log'}") from e
     _save_state(args.name, args.home, sim=sim_name, sandbox=sandbox_name,
                 network=network, proxy=proxy_url, cli=adapter.name,
                 model=cfg.get("agent", {}).get("model") or adapter.default_model,
@@ -220,43 +248,68 @@ def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
                     "credentials/, substrates/ (default: $ROBOCLI_HOME or ~/.robocli)")
     sub = ap.add_subparsers(dest="verb", metavar="<verb>")
 
-    p = sub.add_parser("robots", help="list the shipped robot profiles")
-    p.set_defaults(fn=cmd_robots)
+    def add_json(parser):
+        parser.add_argument("--json", action="store_true",
+                            help="machine-readable output")
 
-    p = sub.add_parser("build", help="build the robot / sandbox / proxy image")
+    # Registration order is the --help order; keep it stable.
+    for kind, fn in (("robots", cmd_robots), ("benchmarks", cmd_benchmarks),
+                     ("agents", cmd_agents)):
+        p = sub.add_parser(kind, help=f"list the {kind}: bundled, then ~/.robocli/{kind}/",
+                           description=f"Every {kind[:-1]} RoboCLI can find: the bundled "
+                           f"ones, then yours under <home>/{kind}/. A user file that "
+                           "carries a bundled name is reported and not used.")
+        add_json(p)
+        p.set_defaults(fn=fn)
+
+    p = sub.add_parser("build", help="build the robot / sandbox / proxy image",
+                       description="Build one image; the unit's own options follow "
+                       "(robocli build sandbox --help).")
     p.add_argument("unit", choices=("robot", "sandbox", "proxy"))
     p.add_argument("rest", nargs=argparse.REMAINDER, help="unit's own options")
     p.set_defaults(fn=cmd_build)
 
-    p = sub.add_parser("up", help="bring a robot up with a sandbox terminal on it")
-    p.add_argument("--robot", help="profile name under robots/ or a path")
-    p.add_argument("--bench", help="benchmark config to take the scene from")
-    p.add_argument("--task-suite", default=None)
-    p.add_argument("--task-id", type=int, default=None)
-    p.add_argument("--init-state", type=int, default=0)
-    p.add_argument("--name", default=DEFAULT_NAME, help="handle for this robot")
-    p.add_argument("--cli", default=None, help="agent adapter to seat")
+    p = sub.add_parser("up", help="bring a robot up with a sandbox terminal on it",
+                       description="Bring a robot up (simulated: boot its body; real: "
+                       "join its graph) with a sandbox terminal on it, then stay in the "
+                       "foreground; Ctrl-C powers it off. Open a second terminal for "
+                       "`robocli agent`.")
+    p.add_argument("robot", nargs="?", default=None,
+                   help="robot profile: a name (robocli robots) or a path; "
+                   "default: --bench's robot, else the user config's default")
+    p.add_argument("--bench", default=None,
+                   help="benchmark to take the scene from (default: the profile's world:)")
+    p.add_argument("--task-suite", default=None, help="scene suite (default: the profile's)")
+    p.add_argument("--task-id", type=int, default=None, help="scene index (default: the profile's)")
+    p.add_argument("--init-state", type=int, default=0, help="episode seed / init state")
+    p.add_argument("--name", default=DEFAULT_NAME,
+                   help=f"handle for this robot, for agent/down (default: {DEFAULT_NAME})")
+    p.add_argument("--cli", default=None, help="agent adapter to seat (default: the config's)")
     p.add_argument("--workspace", default=None,
                    help="working directory (default: <home>/workspaces/<name>)")
-    p.add_argument("--ros-domain", type=int, default=0)
+    p.add_argument("--ros-domain", type=int, default=0,
+                   help="ROS_DOMAIN_ID; concurrent robots need distinct ones")
     p.set_defaults(fn=cmd_up)
 
-    p = sub.add_parser("agent", help="open a coding agent on the robot's terminal")
+    p = sub.add_parser("agent", help="open a coding agent on the robot's terminal",
+                       description="Open the seated coding agent interactively on a "
+                       "live robot's terminal (docker exec into its sandbox).")
     p.add_argument("prompt", nargs="?", default=None, help="opening message")
-    p.add_argument("--name", default=DEFAULT_NAME)
-    p.add_argument("--cli", default=None)
-    p.add_argument("--model", default=None)
+    p.add_argument("--name", default=DEFAULT_NAME, help=f"the robot's handle (default: {DEFAULT_NAME})")
+    p.add_argument("--cli", default=None, help="agent adapter (default: the one `up` seated)")
+    p.add_argument("--model", default=None, help="model (default: the one `up` recorded)")
     p.set_defaults(fn=cmd_agent)
 
     p = sub.add_parser("down", help="power a robot and its terminal off")
-    p.add_argument("--name", default=DEFAULT_NAME)
+    p.add_argument("--name", default=DEFAULT_NAME, help=f"the robot's handle (default: {DEFAULT_NAME})")
     p.set_defaults(fn=cmd_down)
 
     sub.add_parser("run", help="run a task set (robocli run --help)")
 
-    p = sub.add_parser("config", help="the configuration schema")
-    p.add_argument("what", choices=("schema",),
-                   help="schema: print the assembled config's JSON schema")
+    p = sub.add_parser("config", help="the configuration schema",
+                       description="Configuration: `robocli config schema` prints the "
+                       "assembled config's JSON schema, every key with its meaning.")
+    p.add_argument("what", choices=("schema",), help="what to show")
     p.set_defaults(fn=cmd_config)
 
     p = sub.add_parser("doctor", help="check the install: docker, images, substrate, login")
@@ -265,13 +318,13 @@ def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
     p.add_argument("--cli", action="append", default=None,
                    help="agent(s) the images must carry (default: the robot's config, "
                    "else the bundled default)")
-    p.add_argument("--json", action="store_true",
-                   help="machine-readable report (also the default when stdout is not a terminal)")
+    add_json(p)
     p.set_defaults(fn=cmd_doctor)
     return ap
 
 
-VERBS = ("robots", "build", "up", "agent", "down", "run", "config", "doctor")
+VERBS = ("robots", "benchmarks", "agents", "build", "up", "agent", "down", "run",
+         "config", "doctor")
 # Verbs that forward their whole argv to another front door (argparse
 # would otherwise eat their --help).
 FORWARDED = {"run": "robocli.bench.run"}
