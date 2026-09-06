@@ -28,7 +28,10 @@ other layer: the cockpit is blind to measurement.
 """
 
 
-class SandboxError(RuntimeError):
+from robocli.errors import UnavailableError
+
+
+class SandboxError(UnavailableError):
     """Library-level failure of a sandbox verb. Verbs raise THIS (an
     ordinary Exception a consumer's anomaly handler can catch); only the
     CLI mains convert it to SystemExit. Raising SystemExit from library

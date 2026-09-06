@@ -24,7 +24,10 @@ and imports no layer.
 """
 
 
-class ProxyError(RuntimeError):
+from robocli.errors import UnavailableError
+
+
+class ProxyError(UnavailableError):
     """Library-level failure of a proxy verb (see SandboxError's
     rationale in robocli.sandbox: libraries raise Exceptions, only CLI
     mains exit)."""
