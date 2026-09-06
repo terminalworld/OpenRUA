@@ -12,6 +12,7 @@ from pathlib import Path
 
 import pytest
 import yaml
+from conftest import requires_image
 
 from robocli.sandbox import build as hbuild
 from robocli.sandbox import workspace
@@ -134,6 +135,7 @@ def test_up_rejects_bad_internet_value(tmp_path):
 
 # ------------------------------------------------- robustness (live docker)
 
+@requires_image("robocli-sandbox")
 def test_up_instructive_errors(tmp_path):
     from robocli.sandbox import up as hup
     # missing config
@@ -156,6 +158,7 @@ def test_up_instructive_errors(tmp_path):
     assert "needs a url" in str(e.value)
 
 
+@requires_image("robocli-sandbox")
 def test_up_surfaces_docker_stderr_on_bad_network(tmp_path):
     from robocli.sandbox import up as hup
     with pytest.raises(Exception) as e:
