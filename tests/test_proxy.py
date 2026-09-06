@@ -11,6 +11,8 @@ import ast
 import subprocess
 from pathlib import Path
 
+from conftest import requires_image
+
 PKG = Path(__file__).resolve().parents[1] / "robocli" / "proxy"
 
 
@@ -42,6 +44,7 @@ def test_proxy_imports_no_layer():
                     f"{py.name} imports {m}"
 
 
+@requires_image("robocli-proxy")
 def test_up_is_idempotent_ensure_and_down_removes():
     # Live singleton semantics on a throwaway name: two ensures return the
     # same URL AND the same container id (second call must not recreate).
@@ -113,6 +116,7 @@ def test_ensure_fails_loudly_on_missing_image():
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
 
 
+@requires_image("robocli-proxy")
 def test_ensure_revives_a_stopped_wall_same_container():
     from robocli.proxy import down as pdown
     from robocli.proxy import up as pup
@@ -133,6 +137,7 @@ def test_ensure_revives_a_stopped_wall_same_container():
         pdown.down(name)
 
 
+@requires_image("robocli-proxy")
 def test_ensure_reconnects_a_detached_wall():
     from robocli.proxy import down as pdown
     from robocli.proxy import up as pup
