@@ -226,6 +226,70 @@ def compose(robot: str | None, bench: str | None,
     return cfg, suite, task_id
 
 
+def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
+             task_suite: str, task_id: int, network: str, proxy_url: str,
+             mounts: tuple[str, ...], ros_domain: int, robot_log: Path,
+             home: Path | None = None) -> tuple[Path, "MachineClient"]:
+    """Assembly, sandbox, body, in that order, from one resolved config.
+
+    Sandbox first: the body's ROS_STATIC_PEERS must resolve the sandbox's
+    name at participant creation (mutual unicast discovery). The resolved
+    config is written ONCE as ``dest/assembly.yaml`` and every party reads
+    that same file: the manual seeding, the body's boot, the machine
+    itself (ruling 2026-08-16). Files the body opens by path are copied
+    next to it first (resolve_body_files).
+
+    Returns the assembly path and the machine's control line, ready
+    (``wait_ready`` done). If the body fails to come up, the sandbox this
+    call started is torn down before the error propagates: the caller
+    never inherits half a bring-up.
+    """
+    resolve_body_files(cfg, dest, home)
+    assembly_path = record.write_assembly(dest, cfg)
+    body = cfg.get("machine", {}).get("body", {})
+    sandbox_up(
+        config=assembly_path,
+        workspace=dest / "workspace",
+        image=body.get("sandbox_image"),
+        network=network,
+        static_peer=sim_name,
+        peers_xml=FASTDDS_PEERS_XML.format(peer=sim_name),
+        ros_domain=ros_domain,
+        internet=f"proxy:{proxy_url}",
+        name=sandbox_name,
+        mounts=mounts,
+    )
+    machine = None
+    try:
+        venv = substrate_venv(body, home)
+        proc = sim_up(
+            name=sim_name,
+            gpus=bool(body.get("gpus", False)),
+            resources=body.get("resources"),
+            image=body.get("image", "robocli-sim-jazzy"),
+            config_path=str(assembly_path),
+            task_suite=task_suite,
+            task_id=task_id,
+            substrate=str(paths.substrate_root(venv)),
+            venv=str(venv),
+            code_root=str(paths.code_root()),
+            log_path=robot_log,
+            moveit_log=str(robot_log.with_name("moveit.log")),
+            network=network,
+            static_peer=sandbox_name,
+            peers_xml=FASTDDS_PEERS_XML.format(peer=sandbox_name),
+            ros_domain=ros_domain,
+        )
+        machine = MachineClient(proc, sim_name)
+        machine.wait_ready()
+    except BaseException:
+        if machine is not None:
+            machine.shutdown()
+        sandbox_down(sandbox_name)
+        raise
+    return assembly_path, machine
+
+
 def resolve_body_files(cfg: dict, dest: Path, home: Path | None = None) -> None:
     """Files the body reads by path (today: ``machine.controller_config``)
     are copied next to the assembly and named there by absolute path, so
@@ -764,52 +828,15 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     sandbox_live = False
     machine = None
     try:
-        # Sandbox first: the sim's ROS_STATIC_PEERS must resolve the sandbox's
-        # name at participant creation (mutual unicast discovery, P4).
-        # The house package seeds the workspace and births the container;
-        # the conductor only decides when/where and passes the wiring.
         # The trial's resolved suite view: computed once (main() already
-        # applied the overrides), written as an artifact, and consumed by
-        # every party below -- the manual, the body, the machine itself
-        # all read the SAME file (ruling 2026-08-16; kills the
-        # same-code-different-arguments drift class). Peers profiles are
-        # rendered here too; the two ups just paste them.
-        resolve_body_files(cfg, trial_dir, home)
-        assembly_path = record.write_assembly(trial_dir, cfg)
-        sandbox_up(
-            config=assembly_path,
-            workspace=trial_dir / "workspace",
-            network=network,
-            static_peer=sim_name,
-            peers_xml=FASTDDS_PEERS_XML.format(peer=sim_name),
-            ros_domain=ros_domain,
-            internet=f"proxy:{proxy_url}",
-            name=sandbox_name,
-            mounts=agent.sandbox_mounts(cfg_dir, creds_file),
-        )
+        # applied the overrides), written as an artifact by bring_up and
+        # consumed by every party below. bring_up tears its own sandbox
+        # down if the body fails, so sandbox_live flips only on success.
+        assembly_path, machine = bring_up(
+            cfg, trial_dir, sim_name, sandbox_name, task_suite, task_id,
+            network, proxy_url, agent.sandbox_mounts(cfg_dir, creds_file),
+            ros_domain, robot_log=trial_dir / "bridge.log", home=home)
         sandbox_live = True
-        body = cfg.get("machine", {}).get("body", {})
-        venv = substrate_venv(body, home)
-        proc = sim_up(
-            name=sim_name,
-            gpus=bool(body.get("gpus", False)),
-            resources=body.get("resources"),
-            image=body.get("image", "robocli-sim-jazzy"),
-            config_path=str(assembly_path),
-            task_suite=task_suite,
-            task_id=task_id,
-            substrate=str(paths.substrate_root(venv)),
-            venv=str(venv),
-            code_root=str(paths.code_root()),
-            log_path=trial_dir / "bridge.log",
-            moveit_log=str(trial_dir / "moveit.log"),
-            network=network,
-            static_peer=sandbox_name,
-            peers_xml=FASTDDS_PEERS_XML.format(peer=sandbox_name),
-            ros_domain=ros_domain,
-        )
-        machine = MachineClient(proc, sim_name)
-        machine.wait_ready()
         r = machine.rpc({"cmd": "reset", "init_state_id": seed})
         if not r.get("ok"):
             raise RuntimeError(f"reset failed: {r}")
