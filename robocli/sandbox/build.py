@@ -45,8 +45,11 @@ def _docker_build(dockerfile: Path, context: Path, tag: str,
 
 def build(preinstall: str = "", ros_distro: str = "jazzy",
           robot_uid: int | None = None,
-          tag: str = "robocli-sandbox") -> tuple[str, str]:
-    """Build the sandbox image; returns (tag, digest)."""
+          tag: str = "robocli-sandbox",
+          labels: dict[str, str] | None = None) -> tuple[str, str]:
+    """Build the sandbox image; returns (tag, digest). ``labels`` are
+    stamped on the image alongside the preinstall hash (the caller adds
+    one per agent, so doctor can check each selected agent)."""
     # Contract: PREINSTALL is a single-line command chain without double
     # quotes (the one quoting hazard of string-valued build args).
     if '"' in preinstall or "\n" in preinstall.strip():
@@ -56,7 +59,8 @@ def build(preinstall: str = "", ros_distro: str = "jazzy",
     uid = os.getuid() if robot_uid is None else robot_uid
     # The image says what was baked into it: doctor compares this label
     # with the install chain the selected agents would emit today.
-    labels = {"robocli.preinstall_sha256": hashlib.sha256(preinstall.encode()).hexdigest()}
+    labels = {"robocli.preinstall_sha256": hashlib.sha256(preinstall.encode()).hexdigest(),
+              **(labels or {})}
     return tag, _docker_build(
         _HERE / "sandbox.Dockerfile", _HERE, tag,
         {"ROS_DISTRO": ros_distro, "ROBOT_UID": str(uid),

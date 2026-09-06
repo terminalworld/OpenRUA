@@ -103,20 +103,44 @@ def check_user_entries(ctx: Context) -> list[CheckResult]:
     return out
 
 
+def _agents_in_image(image: str, ctx: Context, kind: str) -> tuple[str, str]:
+    """(severity, detail) for the agents an image should carry. Each
+    agent's label is compared with its manifest; an image built before
+    per-agent labels existed falls back to the aggregate label of the
+    selected set."""
+    missing, stale, ok = [], [], []
+    for a in ctx.agents:
+        have = image_label(image, f"robocli.agent.{a.name}.{kind}_sha256")
+        if have:
+            (ok if have == agents.fact_sha256(a, kind) else stale).append(a.name)
+        else:
+            missing.append(a.name)
+    if not missing:
+        if stale:
+            return "warning", f"{', '.join(stale)}: the manifest changed since the image was built"
+        return "ok", ""
+    aggregate = image_label(image, "robocli.preinstall_sha256" if kind == "install"
+                            else "robocli.whitelist_sha256")
+    if not aggregate:
+        return "ok", "unlabelled: built before labels existed"
+    want = _sha(agents.preinstall(ctx.agents) if kind == "install"
+                else "\n".join(agents.whitelist(ctx.agents)))
+    if aggregate == want:
+        return "ok", ""
+    what = "agent install" if kind == "install" else "whitelist"
+    return "warning", (f"its {what} differs from what the selected agents need "
+                       f"({', '.join(missing)} not labelled on it)")
+
+
 def check_proxy_image(ctx: Context) -> list[CheckResult]:
     image = "robocli-proxy"
     names = " ".join(f"--agent {a.name}" for a in ctx.agents)
     build = f"robocli build proxy {names}"
     if docker_inspect("image", image, "{{.Id}}") is None:
         return [CheckResult("proxy-image", f"proxy image {image} missing", "error", hint=build)]
-    want = _sha("\n".join(agents.whitelist(ctx.agents)))
-    have = image_label(image, "robocli.whitelist_sha256")
-    if have and have != want:
-        return [CheckResult("proxy-image", f"proxy image {image} present",
-                            "warning", detail="its whitelist differs from what the selected "
-                            "agents need", hint=build)]
-    return [CheckResult("proxy-image", f"proxy image {image} present",
-                        detail="" if have else "unlabelled: built before labels existed")]
+    severity, detail = _agents_in_image(image, ctx, "whitelist")
+    return [CheckResult("proxy-image", f"proxy image {image} present", severity,
+                        detail=detail, hint=build if severity != "ok" else "")]
 
 
 def check_robot_images(ctx: Context) -> list[CheckResult]:
@@ -124,12 +148,13 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
         return []
     backend = ctx.cfg["machine"].get("backend", {})
     out: list[CheckResult] = []
-    sim = backend.get("image", "robocli-sim-jazzy")
-    if docker_inspect("image", sim, "{{.Id}}") is None:
-        out.append(CheckResult("robot-image", f"robot image {sim} missing", "error",
-                               hint="robocli build robot"))
-    else:
-        out.append(CheckResult("robot-image", f"robot image {sim} present"))
+    if backend.get("kind") == "sim":
+        sim = backend.get("image", "robocli-sim-jazzy")
+        if docker_inspect("image", sim, "{{.Id}}") is None:
+            out.append(CheckResult("robot-image", f"robot image {sim} missing", "error",
+                                   hint="robocli build robot"))
+        else:
+            out.append(CheckResult("robot-image", f"robot image {sim} present"))
     sandbox = backend.get("sandbox_image", "robocli-sandbox")
     names = " ".join(f"--agent {a.name}" for a in ctx.agents)
     build = f"robocli build sandbox --tag {sandbox} {names}"
@@ -137,15 +162,9 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
         out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} missing", "error",
                                hint=build))
     else:
-        want = _sha(agents.preinstall(ctx.agents))
-        have = image_label(sandbox, "robocli.preinstall_sha256")
-        if have and have != want:
-            out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} present", "warning",
-                                   detail="its agent install differs from what the selected "
-                                   "agents need", hint=build))
-        else:
-            out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} present",
-                                   detail="" if have else "unlabelled: built before labels existed"))
+        severity, detail = _agents_in_image(sandbox, ctx, "install")
+        out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} present", severity,
+                               detail=detail, hint=build if severity != "ok" else ""))
     return out
 
 

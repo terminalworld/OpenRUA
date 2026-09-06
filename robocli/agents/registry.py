@@ -156,6 +156,15 @@ def available(home: Path | None = None) -> list[Listed]:
     return out
 
 
+def fact_sha256(agent, kind: str) -> str:
+    """The hash of one agent's baked-in fact: its install line
+    (``install``) or its whitelist (``whitelist``). Takes an Agent or a
+    Manifest."""
+    import hashlib
+    text = agent.install if kind == "install" else "\n".join(agent.whitelist)
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
 def preinstall(agents) -> str:
     """One shell chain installing every agent's CLI (the sandbox image's
     PREINSTALL slot). Takes Agents or Manifests; nothing to install
