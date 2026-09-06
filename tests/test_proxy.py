@@ -38,8 +38,7 @@ def test_proxy_imports_no_layer():
                 else [node.module] if isinstance(node, ast.ImportFrom) and node.module else []
             for m in mods:
                 assert not any(m.startswith(f"robocli.{layer}") for layer in
-                               ("bridge", "precheck", "record",
-                                "sandbox", "agents")), \
+                               ("robot.sim.bridge", "runner", "sandbox", "agents")), \
                     f"{py.name} imports {m}"
 
 
@@ -75,8 +74,8 @@ def test_up_is_idempotent_ensure_and_down_removes():
                                   text=True).stdout.strip()
 
 
-def test_conductor_consumes_the_proxy_package():
-    conductor = (PKG.parent / "bench" / "run.py").read_text()
+def test_runner_consumes_the_proxy_package():
+    conductor = (PKG.parent / "runner" / "trial.py").read_text()
     assert "robocli.proxy" in conductor
     assert "def ensure_proxy" not in conductor  # the split home is gone
 

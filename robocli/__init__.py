@@ -12,10 +12,10 @@ tests/test_layering.py):
                   container (native CLI/rclpy inside)
 - ``proxy``       the gatehouse: one shared whitelist wall to the internet
 - ``agents``      the occupants: adapters + launcher + opening prompt
-- ``precheck.py`` the examiner's gate: every manual promise verified
-                  before the agent boards; red = trial refused
-- ``record.py``   the examiner's ledger: what trial files say, secret
-                  scrubbing, evidence extraction (sole runs/ writer)
+- ``runner``      running trials: bring-up, preflight (every manual
+                  promise verified before the agent starts; red = trial
+                  refused), the operator, the verdict, the record (sole
+                  runs/ writer), the lock
 
 robocli.robot.sim.bridge is container-side (rclpy); host code never
 imports it and reaches it only over DDS (the agent) or its stdio line

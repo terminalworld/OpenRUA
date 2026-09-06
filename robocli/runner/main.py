@@ -1,0 +1,141 @@
+"""``robocli run``: a task set on a robot, one trial per (task, seed).
+
+``robocli run --config <benchmark> --run-id <label> --task-suite S
+--task-ids 0,1 --seeds 0,1,2 --operator agent``
+"""
+
+from __future__ import annotations
+
+import argparse
+from pathlib import Path
+
+from robocli import agents
+from robocli.config import (apply_suite_overrides, load_config, normalize_arms,
+                            resolve_wall_clock_min)
+from robocli.config import paths
+from robocli.runner import lock as triallock
+from robocli.runner import record
+from robocli.runner.bringup import simulator_venv
+from robocli.runner.operators import OPERATORS
+from robocli.runner.trial import run_trial
+from robocli.sandbox import workspace
+
+# Run data lands under the caller's working directory by default
+# (--runs-root overrides); the package never writes into itself.
+RUNS_ROOT = Path("runs")
+
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--config", required=True,
+                    help="benchmark config (benchmarks/<name>.yaml)")
+    ap.add_argument("--robot", default=None,
+                    help="robot profile name or path; overrides the "
+                    "config's robot: line")
+    ap.add_argument("--run-id", required=True)
+    ap.add_argument("--task-suite", required=True)
+    ap.add_argument("--task-ids", default="0")
+    ap.add_argument("--seeds", default="0")
+    ap.add_argument("--operator", default="none", choices=sorted(OPERATORS))
+    ap.add_argument(
+        "--script", default=None,
+        help="command-sequence file for --operator script (canonical "
+        "source: a trial's commands.sh condensate); runs in the sandbox "
+        "on the native surface, open-loop best-effort",
+    )
+    ap.add_argument(
+        "--wall-clock-min", type=float, default=None,
+        help="override of the config's protocol.active_wall_clock_minutes "
+        "(audit 2026-08-14 F4: the config is the default's single source; "
+        "a forgotten flag must not silently shrink the protocol cap)",
+    )
+    ap.add_argument(
+        "--ros-domain", type=int, default=0,
+        help="ROS_DOMAIN_ID for this run's containers; concurrent runs "
+        "MUST use distinct domains (same DDS network would cross-talk)",
+    )
+    ap.add_argument(
+        "--credentials-dir", default=None,
+        help="agent login-profile override (account pool sets this; "
+        "default falls back to cfg agent.credentials_dir, then the "
+        "adapter's default)",
+    )
+    ap.add_argument(
+        "--token-file", default=None,
+        help="file holding <token_env>=<token> for the sandbox CLI (the "
+        "account pool sets this); given, the sandbox authenticates with "
+        "that token and no credentials file is mounted",
+    )
+    ap.add_argument(
+        "--runs-root", default=None,
+        help="where run data lands (default: ./runs)",
+    )
+    ap.add_argument(
+        "--home", default=None,
+        help="the user directory (default: ~/.robocli); robot and benchmark "
+        "names, simulators and login profiles are looked up under it",
+    )
+    ap.add_argument(
+        "--account-alias", default=None,
+        help="non-secret label of the credentials profile, recorded in the "
+        "trial result for per-account accounting",
+    )
+    args = ap.parse_args()
+    if args.token_file:
+        # See --token-file: the launcher runs with cwd=trial_dir, so a
+        # relative path would resolve to nothing by the time docker reads it.
+        args.token_file = str(Path(args.token_file).expanduser().resolve())
+    args.task_ids = [int(x) for x in str(args.task_ids).split(",")]
+    args.seeds = [int(x) for x in str(args.seeds).split(",")]
+
+    home = paths.home(args.home)
+    cfg_path = paths.find("benchmarks", args.config, home).resolve()
+    cfg = load_config(cfg_path, args.robot, home)
+    if args.wall_clock_min is None:
+        args.wall_clock_min = resolve_wall_clock_min(cfg)
+    # The per-suite view, computed exactly once (see config-view section
+    # above); everyone downstream consumes the resulting artifact.
+    apply_suite_overrides(cfg, args.task_suite)
+    normalize_arms(cfg)
+    runs_root = Path(args.runs_root).expanduser() if args.runs_root else RUNS_ROOT
+    run_dir = runs_root.resolve() / cfg["task"]["benchmark"] / args.run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    agent = agents.get(cfg.get("agent", {}).get("name"), home)
+    prov = {**record.provenance(
+        cfg_path, cfg, args, agent=agent,
+        template_hash=workspace.template_hash(cfg),
+        prompt=agents.PROMPT, resume_prompt=agents.RESUME_PROMPT,
+        code_root=paths.code_root(),
+        simulator_venv=simulator_venv(cfg["machine"].get("backend", {}), home),
+    ), "config": cfg}
+    record.write_run_config(run_dir, prov)
+
+    op = OPERATORS[args.operator]
+    for task_id in args.task_ids:
+        for seed in args.seeds:
+            try:
+                rec = run_trial(
+                    cfg, cfg_path, run_dir, args.task_suite, task_id, seed, op,
+                    args.wall_clock_min, ros_domain=args.ros_domain,
+                    credentials_dir=args.credentials_dir,
+                    account_alias=args.account_alias, script=args.script,
+                    token_file=args.token_file, home=home,
+                )
+            except triallock.TrialLocked as e:
+                # Not a failure of this trial: someone else is doing it.
+                # Say so and leave their work alone (SystemExit belongs to
+                # the entry point; the library raised).
+                raise SystemExit(f"[trial] {e}")
+            trial_dir = (run_dir / "trials" / f"{args.task_suite}-{task_id}"
+                         / f"seed{seed}")
+            record.write_trial_provenance(trial_dir, prov)
+            print(
+                f"[{args.task_suite}:{task_id} seed{seed}] "
+                f"success={rec['success']} term={rec['termination']} "
+                f"wall={rec['wall_seconds']}s"
+            )
+
+
+if __name__ == "__main__":
+    main()

@@ -1,4 +1,4 @@
-"""Precheck generation contract: the gate is GENERATED from the assembly
+"""Preflight generation contract: the gate is GENERATED from the assembly
 config, so every promised capability must mint its check (and an absent
 capability its negative check). A regression that silently drops a check
 would otherwise pass every trial unnoticed.
@@ -6,9 +6,9 @@ would otherwise pass every trial unnoticed.
 
 from __future__ import annotations
 
-from robocli.bench.run import load_config
+from robocli.config import load_config
 
-from robocli.bench.precheck import build_checks
+from robocli.runner.preflight import build_checks
 
 
 class _Agent:
@@ -24,7 +24,7 @@ def _names(cfg):
     # Deep copy first: normalize mutates, and the fixtures are shared.
     import copy
 
-    from robocli.bench.run import normalize_arms
+    from robocli.config import normalize_arms
     view = normalize_arms(copy.deepcopy(cfg))
     return {name: snippet for name, snippet in build_checks(view, _Agent())}
 
@@ -102,8 +102,8 @@ def test_twoarm_view_mints_per_arm_checks():
 
     import yaml
 
-    from robocli.bench.precheck import build_checks
-    from robocli.bench.run import apply_suite_overrides, normalize_arms
+    from robocli.runner.preflight import build_checks
+    from robocli.config import apply_suite_overrides, normalize_arms
 
     class _A:
         def credentials_check(self):
@@ -131,7 +131,7 @@ def test_flow_checks_carry_the_raised_ceiling():
     # under a 7-way load spike; the per-check ceiling was raised 30->60.
     # Guard against a silent revert (a lower ceiling would re-open the race
     # without changing any test that only counts check NAMES).
-    from robocli.bench.precheck import _CHECK_TIMEOUT_S
+    from robocli.runner.preflight import _CHECK_TIMEOUT_S
     assert _CHECK_TIMEOUT_S >= 60
     checks = _names(_ARM_CFG)
     for flow in ("joint_states_flow", "tf_flow"):
@@ -145,9 +145,9 @@ def test_aggregate_budget_scales_with_the_ceiling():
     # of a readable red-check list).
     import copy
 
-    from robocli.bench import precheck
-    from robocli.bench.run import normalize_arms
+    from robocli.runner import preflight as preflight
+    from robocli.config import normalize_arms
     view = normalize_arms(copy.deepcopy(_ARM_CFG))
-    n = len(precheck.build_checks(view, _Agent()))
-    expected = n * precheck._CHECK_TIMEOUT_S + 60.0
+    n = len(preflight.build_checks(view, _Agent()))
+    expected = n * preflight._CHECK_TIMEOUT_S + 60.0
     assert expected >= n * 60  # ceiling is at least 60 per check

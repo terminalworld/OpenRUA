@@ -52,7 +52,7 @@ def template_hash(cfg: dict) -> str:
     h = hashlib.sha256()
     for p in sorted(root.rglob("*")):
         # Byte trash (interpreter caches) must never move the method
-        # artifact's hash: importing a tool (precheck smoke) would
+        # artifact's hash: importing a tool (preflight smoke) would
         # otherwise mutate provenance.
         if "__pycache__" in p.parts:
             continue

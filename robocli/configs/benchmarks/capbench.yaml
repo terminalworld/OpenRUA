@@ -74,7 +74,7 @@ suite_overrides:
   # single-arm fields are replaced by an explicit machine.arms list;
   # run.normalize_arms passes it through untouched. No MoveIt on these
   # legs (single-arm URDF only) — the manual promises no planner, the
-  # precheck therefore mints no planner check.
+  # preflight therefore mints no planner check.
   capbench_twoarm_lift: &twoarm_machine
     machine:
       planning: null

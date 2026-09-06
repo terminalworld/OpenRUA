@@ -15,7 +15,7 @@ contract from `pyproject.toml`.
 
 ## Adding things
 
-- **A robot**: a profile under `robocli/robots/<name>.yaml`
+- **A robot**: a profile under `robocli/configs/robots/<name>.yaml`
   (docs/your-own-robot.md). `robocli doctor <name>` must load it;
   `tests/test_config.py` validates every bundled profile.
 - **An agent**: a manifest under `robocli/configs/agents/<name>.yaml`
@@ -24,7 +24,7 @@ contract from `pyproject.toml`.
   bundled agents run through it in `tests/test_agents.py`. Nothing
   outside those two directories may name the agent (the boundary
   test lists the banned tokens).
-- **A benchmark**: a config under `robocli/benchmarks/<name>.yaml` and,
+- **A benchmark**: a config under `robocli/configs/benchmarks/<name>.yaml` and,
   if it needs a new simulator, a loader under
   `robocli/robot/sim/bridge/environments/`.
 - **A config key**: add it to `robocli/config/schema.py` with a default and a

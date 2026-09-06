@@ -6,7 +6,7 @@ import yaml
 
 from robocli import config
 from robocli.config import paths
-from robocli.bench.run import apply_suite_overrides, load_config, load_robot, normalize_arms
+from robocli.config import apply_suite_overrides, load_config, load_robot, normalize_arms
 
 BUNDLED = [e.name for e in paths.available("benchmarks")]
 

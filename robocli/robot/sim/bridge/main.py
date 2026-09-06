@@ -117,7 +117,7 @@ def main() -> None:
 
     # The line opens ONLY when the whole robot stands (env + graph +
     # planning stack): the caller's first answered question is the
-    # completeness signal, and the precheck can never race a
+    # completeness signal, and the preflight can never race a
     # still-warming MoveIt.
     ControlChannel(
         {**monitor.handlers(), "shutdown": _shutdown},

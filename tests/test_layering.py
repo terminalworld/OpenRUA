@@ -3,7 +3,7 @@
 Inside the bridge, environments, ros and rpc never see each other
 (env, worker and cfg flow as parameters); main.py is the only module
 allowed to import all three; nothing host-side imports the bridge
-(container process, rclpy); precheck and record are leaves (handles and
+(container process, rclpy); preflight and record are leaves (handles and
 paths are handed in).
 Parsed from the AST; no import-linter dependency.
 """
@@ -16,8 +16,8 @@ from pathlib import Path
 PKG = Path(__file__).resolve().parents[1] / "robocli"
 
 _BRIDGE = {"robocli.robot.sim.bridge"}
-_HOST = {"robocli.bench.precheck", "robocli.bench.record", "robocli.sandbox",
-         "robocli.proxy", "robocli.agents", "robocli.bench.run"}
+_HOST = {"robocli.runner.preflight", "robocli.runner.record", "robocli.sandbox",
+         "robocli.proxy", "robocli.agents", "robocli.runner"}
 # The bridge is self-contained: nothing from robocli outside itself (the
 # resolved config arrives as data), including the robot package's own
 # host side.
@@ -26,7 +26,7 @@ _ROBOT_HOST = {"robocli.robot.base", "robocli.robot.real", "robocli.robot.sim.bu
 _TOP = {"robocli.cli", "robocli.doctor", "robocli.testing"}
 _HOST_LEAVES = {"robocli.config", "robocli.errors"}
 _BRIDGE_BAN = _HOST | _ROBOT_HOST | _TOP | _HOST_LEAVES
-_LAYERS = _BRIDGE | {"robocli.bench.precheck", "robocli.bench.record",
+_LAYERS = _BRIDGE | {"robocli.runner.preflight", "robocli.runner.record",
                      "robocli.sandbox"}
 FORBIDDEN = {
     # inside the bridge: the three parts never see each other; main may
@@ -49,18 +49,18 @@ FORBIDDEN = {
     "robot/real": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
     # host side: nobody imports the bridge (container-only; rclpy); only
     # the runner conducts with the robot package
-    "bench/run.py": _BRIDGE | _TOP,
-    "sandbox": {"robocli.robot", "robocli.bench.precheck", "robocli.bench.record",
+    "runner/main.py": _BRIDGE | _TOP,
+    "sandbox": {"robocli.robot", "robocli.runner.preflight", "robocli.runner.record",
                 "robocli.config"} | _TOP,
-    "bench/precheck.py": {"robocli.robot", "robocli.sandbox", "robocli.proxy",
-                    "robocli.agents", "robocli.bench.run", "robocli.config"} | _TOP,
-    "bench/record.py": {"robocli.robot", "robocli.sandbox", "robocli.proxy",
-                  "robocli.agents", "robocli.bench.run", "robocli.config"} | _TOP,
+    "runner/preflight.py": {"robocli.robot", "robocli.sandbox", "robocli.proxy",
+                    "robocli.agents", "robocli.runner", "robocli.config"} | _TOP,
+    "runner/record.py": {"robocli.robot", "robocli.sandbox", "robocli.proxy",
+                  "robocli.agents", "robocli.runner", "robocli.config"} | _TOP,
     "proxy": {"robocli.robot", "robocli.config"} | _LAYERS | _TOP,
     "agents": {"robocli.robot", "robocli.plugins"} | _LAYERS | _TOP,
     # hooks modules see the contract and nothing else of robocli
     "plugins": _HOST_LEAVES | _BRIDGE | _TOP | {
-        "robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.bench",
+        "robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.runner",
         "robocli.agents.registry", "robocli.agents.launcher",
         "robocli.agents.credentials", "robocli.agents.prompts"},
     # the shared leaves are leaves

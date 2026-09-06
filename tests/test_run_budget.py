@@ -7,19 +7,19 @@ import pytest
 
 
 def test_new_key_is_read():
-    from robocli.bench.run import resolve_wall_clock_min
+    from robocli.config import resolve_wall_clock_min
     assert resolve_wall_clock_min(
         {"protocol": {"active_wall_clock_minutes": 240}}) == 240.0
 
 
 def test_missing_key_falls_back():
-    from robocli.bench.run import DEFAULT_WALL_CLOCK_MIN, resolve_wall_clock_min
+    from robocli.config import DEFAULT_WALL_CLOCK_MIN, resolve_wall_clock_min
     assert resolve_wall_clock_min({"protocol": {}}) == DEFAULT_WALL_CLOCK_MIN
     assert resolve_wall_clock_min({}) == DEFAULT_WALL_CLOCK_MIN
 
 
 def test_legacy_key_fails_loudly_with_the_fix():
-    from robocli.bench.run import resolve_wall_clock_min
+    from robocli.config import resolve_wall_clock_min
     with pytest.raises(ValueError) as e:
         resolve_wall_clock_min({"protocol": {"wall_clock_minutes": 240}})
     assert "active_wall_clock_minutes" in str(e.value)
