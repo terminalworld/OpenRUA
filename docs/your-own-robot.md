@@ -1,8 +1,16 @@
+---
+summary: Describe your robot in one YAML profile and bring it up
+read_when:
+  - You have a ROS 2 robot (real or simulated) that is not one of the bundled profiles
+  - You want to know what the agent's machine.yaml is generated from
+---
+
 # Use your own robot
 
-A robot is a YAML profile. The shipped ones under `robots/` are
+A robot is a YAML profile. The bundled ones (`robocli robots`) are
 simulated; a real robot's profile is the same file minus the simulator
-body.
+body. Put yours in `~/.robocli/robots/<name>.yaml` and it is found by
+name, or pass its path.
 
 ## What the agent reads
 
@@ -36,14 +44,18 @@ machine:
   workspace_template: workspace
 ```
 
-Every port you list becomes a promise: `precheck` verifies it is
-served before an agent boards, and the manual describes it to the
-agent. List only what the robot actually serves.
+Every key is checked against the schema (`robocli config schema`
+prints all of them with their meaning); a misspelled key is an error,
+not a silent no-op. Every port you list becomes a promise: `precheck`
+verifies it is served before an agent boards, and the manual describes
+it to the agent. List only what the robot actually serves.
 
 ## Bringing it up
 
 ```bash
-robocli up --robot ./ur5e.yaml --ros-domain 7
+cp ur5e.yaml ~/.robocli/robots/
+robocli doctor ur5e                # images, login, and that the profile loads
+robocli up ur5e --ros-domain 7     # or: robocli up ./ur5e.yaml
 ```
 
 The sandbox joins the robot's DDS domain. The robot's ROS 2 graph must
@@ -56,5 +68,5 @@ robocli agent "move the arm to the home pose and open the gripper"
 ```
 
 Real-robot support is being brought up profile by profile; the
-simulated profiles are the reference for what a complete `machine:`
-section looks like.
+simulated profiles (`robocli/robots/`) are the reference for what a
+complete `machine:` section looks like.

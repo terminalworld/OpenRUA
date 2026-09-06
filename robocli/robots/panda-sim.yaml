@@ -1,8 +1,8 @@
 # Franka Emika Panda on a tabletop (robosuite / MuJoCo, LIBERO-PRO scenes).
-# The default simulated robot. Loaded by `robocli up --robot panda-sim`;
+# The default simulated robot. Loaded by `robocli up panda-sim`;
 # benchmarks/libero_pro.yaml names it under `robot:`.
 
-# The scene `robocli up --robot panda-sim` loads when no benchmark is named.
+# The scene `robocli up panda-sim` loads when no benchmark is named.
 world:
   benchmark: libero_pro
   task_suite: libero_goal_task

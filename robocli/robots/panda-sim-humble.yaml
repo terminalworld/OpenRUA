@@ -1,7 +1,7 @@
 # Franka Emika Panda on a tabletop (robosuite / MuJoCo, CaP-Bench scenes),
 # ROS 2 Humble body. Named by benchmarks/capbench.yaml under `robot:`.
 
-# The scene `robocli up --robot panda-sim-humble` loads when no benchmark is named.
+# The scene `robocli up panda-sim-humble` loads when no benchmark is named.
 world:
   benchmark: capbench
   task_suite: capbench

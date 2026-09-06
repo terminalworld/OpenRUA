@@ -1,6 +1,6 @@
 """The conductor: robocli-run lives here; every trial's when/where/who.
 
-``robocli run --config benchmarks/<b>.yaml --run-id <label> --task-suite S
+``robocli run --config <benchmark> --run-id <label> --task-suite S
 --task-ids 0,1 --seeds 0,1,2 --operator agent``
 
 One file, layered by function: the machine remote control (boot the sim

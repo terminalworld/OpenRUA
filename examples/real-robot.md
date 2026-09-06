@@ -4,7 +4,7 @@
    frames, gripper and ports your robot serves.
 2. Make the robot's ROS 2 graph reachable from the host running
    RoboCLI (same LAN, same `ROS_DOMAIN_ID`).
-3. `robocli up --robot ./my-robot.yaml --ros-domain <id>`
+3. `robocli up ./my-robot.yaml --ros-domain <id>`
 4. `robocli agent "..."`
 
 The precheck runs the same checks as in simulation: the ports you
