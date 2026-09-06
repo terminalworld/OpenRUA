@@ -133,8 +133,8 @@ the workspace it left behind. Building the simulator simulators:
 
 ```
 robocli/
-  cli.py        robocli robots | benchmarks | agents | build | up | agent | down | run | config | doctor
-  doctor.py     structured checks: docker, images, simulator, login
+  cli/          robocli robots | benchmarks | agents | build | up | agent | down | run | config | doctor
+  doctor/       structured checks: docker, images, simulator, login
   config/       the schema every file is checked against, the loader, where things live
   errors.py     errors with a fix and an exit code
   testing.py    the adapter conformance test

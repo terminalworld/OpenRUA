@@ -67,7 +67,8 @@ FORBIDDEN = {
     "config": _HOST | {"robocli.robot"} | _TOP,
     "errors.py": _HOST | {"robocli.robot", "robocli.config"} | _TOP,
     # doctor sits with cli above the units; nothing below imports it
-    "doctor.py": _BRIDGE | {"robocli.testing"},
+    "doctor": _BRIDGE | {"robocli.testing"},
+    "cli": _BRIDGE | {"robocli.testing"},
 }
 
 
