@@ -29,6 +29,11 @@ def test_every_suite_view_still_fits_the_schema(name, tmp_path):
         config.validate(config.Assembly, view, f"{name}:{suite}")
 
 
+def test_explicit_robot_argument_replaces_the_named_one(tmp_path):
+    cfg = load_config("libero_pro", robot="panda-omron-sim", home=tmp_path)
+    assert "robot" not in cfg and cfg["machine"]["robot"]["model"].startswith("Franka Emika Panda on Omron")
+
+
 def test_null_in_an_override_deletes_the_key(tmp_path):
     cfg = load_config("capbench", home=tmp_path)
     view = apply_suite_overrides(dict(yaml.safe_load(yaml.safe_dump(cfg))), "capbench_wipe")

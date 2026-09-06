@@ -23,7 +23,7 @@ accounts (``resume_on_quota_wall``) default off.
 
 The models validate; consumers keep reading plain dicts (``dump()``),
 so the container side never imports pydantic. Leaf module: imports
-nothing from robocli.
+only robocli.errors.
 """
 
 from __future__ import annotations
@@ -34,10 +34,7 @@ from typing import Any, Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-
-class ConfigError(ValueError):
-    """A config file that does not fit the schema. The message names the
-    file and every offending key path."""
+from robocli.errors import ConfigError  # noqa: F401  re-exported: config.ConfigError
 
 
 class Strict(BaseModel):
@@ -311,7 +308,8 @@ def validate(model: type[BaseModel], data: Any, source: str | Path) -> BaseModel
             loc = ".".join(str(x) for x in err["loc"]) or "<root>"
             lines.append(f"  {loc}: {err['msg']}")
         raise ConfigError(f"{source}: does not fit the {model.__name__} schema\n"
-                          + "\n".join(lines)) from None
+                          + "\n".join(lines),
+                          hint="robocli config schema prints every key and its meaning") from None
 
 
 def dump(model: BaseModel) -> dict:

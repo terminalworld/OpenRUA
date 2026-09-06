@@ -31,12 +31,13 @@ from pathlib import Path
 
 import yaml
 
-from robocli import __version__, agents, config, paths
+from robocli import __version__, agents, doctor, paths
+from robocli.errors import RoboCLIError, UsageError, NotFound
 from robocli.bench import record
-from robocli.bench.run import (MachineClient, apply_suite_overrides,
-                               ensure_internal_network, load_config,
-                               load_robot, normalize_arms, resolve_body_files,
-                               substrate_venv, FASTDDS_PEERS_XML)
+from robocli.bench.run import (MachineClient, apply_suite_overrides, compose,
+                               ensure_internal_network, normalize_arms,
+                               resolve_body_files, substrate_venv,
+                               FASTDDS_PEERS_XML)
 from robocli.proxy.up import ensure as ensure_proxy
 from robocli.robot.down import down as robot_down
 from robocli.robot.up import up as robot_up
@@ -64,29 +65,9 @@ def _save_state(name: str, home: Path, **facts) -> None:
 def _load_state(name: str, home: Path) -> dict:
     p = _state_path(name, home)
     if not p.is_file():
-        raise SystemExit(
-            f"no live robot named {name!r} (nothing at {p}); "
-            f"start one with: robocli up --robot <profile> --name {name}")
+        raise NotFound(f"no live robot named {name!r} (nothing at {p})",
+                       hint=f"robocli up <robot> --name {name}")
     return yaml.safe_load(p.read_text())
-
-
-def compose(robot: str | None, bench: str | None,
-            home: Path | None = None) -> tuple[dict, str, int]:
-    """robot profile + benchmark config -> one assembled config, plus the
-    (task_suite, task_id) to load. Without --bench the profile's
-    ``world:`` says which scene to load."""
-    if not robot and not bench:
-        raise SystemExit("name a robot (--robot) or a benchmark (--bench)")
-    world = {}
-    if robot:
-        world = load_robot(robot, home).get("world", {})
-    bench = bench or world.get("benchmark")
-    if not bench:
-        raise SystemExit(f"robot {robot!r} names no world: and no --bench given")
-    cfg = load_config(bench, robot, home)
-    suite = world.get("task_suite") or cfg["task"]["suites"][0]
-    task_id = int(world.get("task_id", 0))
-    return cfg, suite, task_id
 
 
 # ------------------------------------------------------------------- verbs
@@ -219,41 +200,14 @@ def cmd_down(args) -> int:
 def cmd_config(args) -> int:
     if args.what == "schema":
         import json
+        from robocli import config
         print(json.dumps(config.Assembly.model_json_schema(), indent=2))
     return 0
 
 
 def cmd_doctor(args) -> int:
-    ok = True
-
-    def check(label: str, good: bool, fix: str = "") -> None:
-        nonlocal ok
-        ok &= good
-        print(f"  [{'ok' if good else '!!'}] {label}" + ("" if good else f"\n       fix: {fix}"))
-
-    print("robocli doctor")
-    check("docker on PATH", shutil.which("docker") is not None,
-          "install Docker Engine: https://docs.docker.com/engine/install/")
-    cfg, _, _ = compose(args.robot, None, args.home)
-    body = cfg["machine"].get("body", {})
-    for label, image in (("robot image", body.get("image")),
-                         ("sandbox image", body.get("sandbox_image")),
-                         ("proxy image", "robocli-proxy")):
-        present = subprocess.run(["docker", "image", "inspect", image],
-                                 capture_output=True).returncode == 0
-        check(f"{label} {image}", present, f"robocli build {label.split()[0]}")
-    venv = substrate_venv(body, args.home)
-    check(f"substrate venv {venv}", venv.is_dir(),
-          f"build it under {paths.substrates_dir(args.home)} (docs/simulation.md) "
-          "or point machine.body.substrate.venv at it")
-    adapter = agents.get(cfg.get("agent", {}).get("cli"), args.home)
-    if adapter.credentials is not None:
-        creds = Path(cfg.get("agent", {}).get("credentials_dir")
-                     or paths.credentials_dir(args.home) / adapter.name).expanduser()
-        check(f"{adapter.name} login at {creds}",
-              (creds / adapter.credentials.filename).exists(),
-              adapter.login_hint(creds))
-    return 0 if ok else 1
+    report = doctor.run(robot=args.robot, clis=args.cli, home=args.home)
+    return doctor.main_report(report, as_json=True if args.json else None)
 
 
 # --------------------------------------------------------------------- main
@@ -305,8 +259,14 @@ def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
                    help="schema: print the assembled config's JSON schema")
     p.set_defaults(fn=cmd_config)
 
-    p = sub.add_parser("doctor", help="check the install")
-    p.add_argument("--robot", default="panda-sim")
+    p = sub.add_parser("doctor", help="check the install: docker, images, substrate, login")
+    p.add_argument("robot", nargs="?", default=None,
+                   help="also check this robot's images and substrate")
+    p.add_argument("--cli", action="append", default=None,
+                   help="agent(s) the images must carry (default: the robot's config, "
+                   "else the bundled default)")
+    p.add_argument("--json", action="store_true",
+                   help="machine-readable report (also the default when stdout is not a terminal)")
     p.set_defaults(fn=cmd_doctor)
     return ap
 
@@ -335,9 +295,13 @@ def main() -> int:
         return 0
     try:
         return args.fn(args) or 0
-    except (config.ConfigError, FileNotFoundError) as e:
-        print(f"error: {e}", file=sys.stderr)
-        return 78 if isinstance(e, config.ConfigError) else 66
+    except RoboCLIError as e:
+        # The one place an error becomes a message and a status: what is
+        # wrong, how to fix it, and a sysexits code scripts can branch on.
+        print(f"error: {e.message}", file=sys.stderr)
+        if e.hint:
+            print(f"hint: {e.hint}", file=sys.stderr)
+        return e.exit_code
 
 
 if __name__ == "__main__":

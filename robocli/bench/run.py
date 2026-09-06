@@ -35,6 +35,7 @@ from pathlib import Path
 import yaml
 
 from robocli import agents, config, paths
+from robocli.errors import NotFound, UsageError
 from robocli.bench import record
 from robocli.bench import triallock
 from robocli.bench.precheck import run_precheck
@@ -186,7 +187,8 @@ def load_config(path: Path | str, robot: str | None = None,
     bench = config.validate(config.Benchmark, config.load_yaml(p), p)
     user = config.load_user_config(paths.config_path(home))
     cfg = config.dump(bench)
-    robot = robot or cfg.pop("robot", None) or user.robot
+    named = cfg.pop("robot", None)          # always popped: the argument wins
+    robot = robot or named or user.robot
     if robot:
         cfg["machine"] = load_robot(robot, home)["machine"]
     if "machine" not in cfg:
@@ -201,6 +203,27 @@ def substrate_venv(body: dict, home: Path | None = None) -> Path:
     """The simulator venv named by machine.body.substrate.venv (see
     paths.substrate_venv for how relative names resolve)."""
     return paths.substrate_venv(body["substrate"]["venv"], home)
+
+
+def compose(robot: str | None, bench: str | None,
+            home: Path | None = None) -> tuple[dict, str, int]:
+    """robot profile + benchmark config -> one assembled config, plus the
+    (task_suite, task_id) to load. Without --bench the profile's
+    ``world:`` says which scene to load."""
+    if not robot and not bench:
+        raise UsageError("name a robot or a benchmark (--bench)",
+                         hint="robocli robots / robocli benchmarks list them")
+    world = {}
+    if robot:
+        world = load_robot(robot, home).get("world", {})
+    bench = bench or world.get("benchmark")
+    if not bench:
+        raise UsageError(f"robot {robot!r} names no world: and no --bench given",
+                         hint="pass --bench <benchmark> or add world: to the profile")
+    cfg = load_config(bench, robot, home)
+    suite = world.get("task_suite") or cfg["task"]["suites"][0]
+    task_id = int(world.get("task_id", 0))
+    return cfg, suite, task_id
 
 
 def resolve_body_files(cfg: dict, dest: Path, home: Path | None = None) -> None:
@@ -220,8 +243,7 @@ def resolve_body_files(cfg: dict, dest: Path, home: Path | None = None) -> None:
     src = next((c for c in candidates if c.is_file()), None)
     if src is None:
         looked = ", ".join(str(c) for c in candidates)
-        raise FileNotFoundError(
-            f"machine.controller_config {spec!r} not found (looked at: {looked})")
+        raise NotFound(f"machine.controller_config {spec!r} not found (looked at: {looked})")
     dst = dest / src.name
     shutil.copyfile(src, dst)
     machine["controller_config"] = str(dst.resolve())

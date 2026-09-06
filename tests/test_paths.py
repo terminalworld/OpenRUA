@@ -49,8 +49,8 @@ def test_user_file_with_a_bundled_name_is_flagged_not_used(tmp_path):
 def test_missing_name_says_what_exists_and_where_to_add(tmp_path):
     with pytest.raises(FileNotFoundError) as e:
         paths.find("robots", "nope", tmp_path)
-    msg = str(e.value)
-    assert "panda-sim" in msg and str(tmp_path / "robots") in msg
+    assert "panda-sim" in str(e.value)
+    assert str(tmp_path / "robots") in e.value.hint      # where to add your own
     with pytest.raises(FileNotFoundError):
         paths.find("robots", str(tmp_path / "gone.yaml"))
 

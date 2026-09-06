@@ -19,7 +19,7 @@ CLI entry point reads ``ROBOCLI_HOME`` and ``--home`` once and passes the
 result down. Nothing here reads the environment. A third source, pip
 entry points, would slot in after the user directory; not implemented.
 
-Stdlib-only leaf: every host-side unit may import this. Nothing in
+Leaf (imports only robocli.errors): every host-side unit may import this. Nothing in
 ``robocli.robot.onboard`` does; the container reads resolved absolute
 paths from the assembly file.
 """
@@ -29,6 +29,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
+
+from robocli.errors import NotFound
 
 DEFAULT_HOME = "~/.robocli"
 CONFIG_FILENAME = "config.yaml"
@@ -133,7 +135,7 @@ def find(kind: str, name_or_path: str | Path, home_dir: Path | None = None) -> P
     if "/" in s or Path(s).suffix:
         p = Path(s).expanduser()
         if not p.is_file():
-            raise FileNotFoundError(f"{kind[:-1]} file not found: {p}")
+            raise NotFound(f"{kind[:-1]} file not found: {p}")
         return p
     suffix = KINDS[kind]
     for base in (bundled(kind), user_dir(kind, home_dir)):
@@ -141,9 +143,9 @@ def find(kind: str, name_or_path: str | Path, home_dir: Path | None = None) -> P
         if p.is_file():
             return p
     names = ", ".join(e.name for e in available(kind, home_dir)) or "(none)"
-    raise FileNotFoundError(
-        f"no {kind[:-1]} named {s!r} (available: {names}); "
-        f"add one under {user_dir(kind, home_dir)}/ or pass a path")
+    raise NotFound(f"no {kind[:-1]} named {s!r} (available: {names})",
+                   hint=f"robocli {kind} lists them; add your own under "
+                   f"{user_dir(kind, home_dir)}/ or pass a path")
 
 
 def substrate_venv(spec: str | Path, home_dir: Path | None = None) -> Path:
