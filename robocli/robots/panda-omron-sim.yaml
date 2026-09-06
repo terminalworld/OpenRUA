@@ -1,7 +1,7 @@
 # Franka Panda on an Omron holonomic mobile base (RoboCasa365 kitchens),
 # ROS 2 Humble body. Named by benchmarks/robocasa365.yaml under `robot:`.
 
-# The scene `robocli up --robot panda-omron-sim` loads when no benchmark is named.
+# The scene `robocli up panda-omron-sim` loads when no benchmark is named.
 world:
   benchmark: robocasa365
   task_suite: robocasa365

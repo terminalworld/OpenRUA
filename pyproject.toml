@@ -70,6 +70,12 @@ testpaths = ["tests"]
 #               host-side, never robocli.robot.onboard
 #   cli         the front door (robocli up | down | agent | run | ...);
 #               forwards to the verbs above
+#   paths, errors, config, testing
+#               leaves shared by the host side: where things live, the
+#               error family, the config schema, the adapter conformance
+#               test. Onboard imports none of them (resolved paths and
+#               validated dicts reach it as data). doctor sits with cli
+#               above the units: no unit imports it.
 #
 # Cross-layer communication otherwise: (1) configs at startup (robots/,
 # benchmarks/), (2) the DDS / subprocess boundary at runtime, (3) files
@@ -124,3 +130,21 @@ name = "leaves import no layer (agents, proxy)"
 type = "forbidden"
 source_modules = ["robocli.agents", "robocli.proxy"]
 forbidden_modules = ["robocli.bench", "robocli.sandbox", "robocli.cli"]
+
+[[tool.importlinter.contracts]]
+name = "onboard never sees the host-side leaves (paths, config, errors, doctor, testing)"
+type = "forbidden"
+source_modules = ["robocli.robot.onboard"]
+forbidden_modules = ["robocli.paths", "robocli.config", "robocli.errors", "robocli.doctor", "robocli.testing"]
+
+[[tool.importlinter.contracts]]
+name = "no unit imports the front door layer (cli, doctor, testing)"
+type = "forbidden"
+source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.bench", "robocli.config", "robocli.paths", "robocli.errors"]
+forbidden_modules = ["robocli.cli", "robocli.doctor", "robocli.testing"]
+
+[[tool.importlinter.contracts]]
+name = "the schema is the conductor's: units read validated dicts, never config"
+type = "forbidden"
+source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.bench.precheck", "robocli.bench.record"]
+forbidden_modules = ["robocli.config"]

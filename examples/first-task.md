@@ -1,8 +1,8 @@
 # First task in simulation
 
 ```bash
-robocli doctor                       # Docker, images, substrate, login
-robocli up --robot panda-sim         # terminal 1: stays up
+robocli doctor panda-sim             # Docker, images, substrate, login
+robocli up panda-sim                 # terminal 1: stays up
 robocli agent "put the bowl on the plate"    # terminal 2
 ```
 
@@ -21,4 +21,4 @@ gripper close, another snapshot to confirm. All of it is ROS 2; the
 tools are thin conveniences the agent may ignore.
 
 `Ctrl-C` in terminal 1 powers the robot off. The workspace the agent
-left behind stays under `workspaces/robocli/`.
+left behind stays under `~/.robocli/workspaces/robocli/`.

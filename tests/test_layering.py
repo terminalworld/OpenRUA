@@ -22,7 +22,9 @@ _HOST = {"robocli.bench.precheck", "robocli.bench.record", "robocli.sandbox",
 # package's own ground-side verbs.
 _GROUND_VERBS = {"robocli.robot.build", "robocli.robot.up",
                  "robocli.robot.down"}
-_ONBOARD_BAN = _HOST | _GROUND_VERBS
+_TOP = {"robocli.cli", "robocli.doctor", "robocli.testing"}
+_HOST_LEAVES = {"robocli.paths", "robocli.config", "robocli.errors"}
+_ONBOARD_BAN = _HOST | _GROUND_VERBS | _TOP | _HOST_LEAVES
 _LAYERS = _ONBOARD | {"robocli.bench.precheck", "robocli.bench.record",
                       "robocli.sandbox"}
 FORBIDDEN = {
@@ -42,14 +44,21 @@ FORBIDDEN = {
     "robot/down.py": _HOST | {"robocli.robot.onboard"},
     # host side: nobody imports onboard (container-only; rclpy); only
     # main conducts with the ground verbs
-    "bench/run.py": _ONBOARD,
-    "sandbox": {"robocli.robot", "robocli.bench.precheck", "robocli.bench.record"},
+    "bench/run.py": _ONBOARD | _TOP,
+    "sandbox": {"robocli.robot", "robocli.bench.precheck", "robocli.bench.record",
+                "robocli.config"} | _TOP,
     "bench/precheck.py": {"robocli.robot", "robocli.sandbox", "robocli.proxy",
-                    "robocli.agents", "robocli.bench.run"},
+                    "robocli.agents", "robocli.bench.run", "robocli.config"} | _TOP,
     "bench/record.py": {"robocli.robot", "robocli.sandbox", "robocli.proxy",
-                  "robocli.agents", "robocli.bench.run"},
-    "proxy": {"robocli.robot"} | _LAYERS,
-    "agents": {"robocli.robot"} | _LAYERS,
+                  "robocli.agents", "robocli.bench.run", "robocli.config"} | _TOP,
+    "proxy": {"robocli.robot", "robocli.config"} | _LAYERS | _TOP,
+    "agents": {"robocli.robot", "robocli.config"} | _LAYERS | _TOP,
+    # the shared leaves are leaves
+    "paths.py": _HOST | {"robocli.robot", "robocli.config"} | _TOP,
+    "errors.py": _HOST | {"robocli.robot", "robocli.config", "robocli.paths"} | _TOP,
+    "config.py": _HOST | {"robocli.robot", "robocli.paths"} | _TOP,
+    # doctor sits with cli above the units; nothing below imports it
+    "doctor.py": _ONBOARD | {"robocli.testing"},
 }
 
 

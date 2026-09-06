@@ -30,7 +30,7 @@ ROS 2.
 ```bash
 pip install robocli
 robocli build robot && robocli build sandbox && robocli build proxy   # once
-robocli up --robot panda-sim          # a simulated Franka Panda, ROS 2 graph live
+robocli up panda-sim                  # a simulated Franka Panda, ROS 2 graph live
 ```
 
 In a second terminal:
@@ -64,14 +64,17 @@ substrate, an agent login).
 - **The sandbox is a plain Ubuntu + ROS 2 container** with the agent
   installed, a workspace mounted, and a whitelist proxy as its only
   way out (the model API; nothing else).
-- **A robot is a profile** under [`robots/`](robots): what it is
-  (`machine:`) and, for simulated ones, which body image and scene to
-  boot. A real robot needs only the `machine:` facts and a reachable
-  ROS 2 graph.
-- **A benchmark is a task set** under [`benchmarks/`](benchmarks):
+- **A robot is a profile** ([`robocli/robots/`](robocli/robots), or
+  your own under `~/.robocli/robots/`): what it is (`machine:`) and,
+  for simulated ones, which body image and scene to boot. A real robot
+  needs only the `machine:` facts and a reachable ROS 2 graph.
+- **A benchmark is a task set** ([`robocli/benchmarks/`](robocli/benchmarks)):
   which suites and init states to load, how a trial runs and stops.
   `robocli run` conducts trials, checks the manual's promises before
   the agent boards, and records every trial with full provenance.
+- **Everything is checked against one schema** (`robocli config
+  schema`): a misspelled key in any file is an error, never a silent
+  no-op. Your defaults live in `~/.robocli/config.yaml`.
 
 ## Supported robots
 
@@ -82,7 +85,7 @@ substrate, an agent login).
 | `panda-omron-sim` | Panda on an Omron mobile base | simulated (RoboCasa, ROS 2 Humble) | RoboCasa365 |
 | *your robot* | any ROS 2 arm or mobile manipulator | real | see [docs/your-own-robot.md](docs/your-own-robot.md) |
 
-`robocli robots` prints this list from the profiles on disk.
+`robocli robots` prints this list from the profiles on disk, yours included.
 
 ## Supported agents
 
@@ -91,16 +94,18 @@ substrate, an agent login).
 | [Claude Code](https://claude.com/claude-code) | supported (`--cli claude-code`) |
 | [Codex](https://github.com/openai/codex) | planned |
 
-An agent is one file under [`robocli/agents/`](robocli/agents): how to
-install it in the sandbox, how to launch it, what its transcript looks
-like. See [docs/agents.md](docs/agents.md).
+An agent is one small class: how to install its CLI in the sandbox,
+which domains it talks to, how to launch it; everything else is
+optional. Drop yours in `~/.robocli/agents/` or send a pull request;
+`robocli agents` lists what is available and what each can do. See
+[docs/agents.md](docs/agents.md).
 
 ## Use your own robot
 
 Write a profile with your robot's facts and point `up` at it:
 
 ```bash
-robocli up --robot ./my-ur5.yaml
+robocli up ./my-ur5.yaml          # or copy it to ~/.robocli/robots/ and: robocli up my-ur5
 ```
 
 The profile's `machine:` section is what the agent's `machine.yaml`
@@ -114,7 +119,7 @@ The simulated bodies run the community benchmark scenes unchanged;
 their original success predicates score the trial in place.
 
 ```bash
-robocli run --config benchmarks/libero_pro.yaml --run-id demo \
+robocli run --config libero_pro --run-id demo \
             --task-suite libero_goal_task --task-ids 0,1 --seeds 0 --operator agent
 ```
 
@@ -128,21 +133,27 @@ the workspace it left behind. Building the simulator substrates:
 
 ```
 robocli/
-  cli.py        robocli up | agent | down | run | build | doctor | robots
+  cli.py        robocli robots | benchmarks | agents | build | up | agent | down | run | config | doctor
+  doctor.py     structured checks: docker, images, substrate, login
+  paths.py      where things live: bundled data, ~/.robocli, the lookup order
+  config.py     the schema every profile and config is checked against
+  errors.py     errors with a fix and an exit code
+  testing.py    the adapter conformance test
   robot/        the machine: ground verbs (build/up/down) + onboard/ (sim body software)
   sandbox/      the agent's terminal + workspace/ (the docs and tools the agent sees)
-  agents/       one adapter per coding agent
+  agents/       the adapter contract (base.py) + one adapter per coding agent
   proxy/        the whitelist wall
   bench/        run · precheck · record: task sets, the gate, the ledger
-robots/         one profile per robot
-benchmarks/     one config per task set
-tests/          unit tests + the layering contract (test_layering.py)
+  robots/       one profile per robot
+  benchmarks/   one config per task set
+tests/          unit tests + the layering contract + the agent boundary
 ```
 
 Who may import whom is written down twice and enforced by CI:
 [`pyproject.toml`](pyproject.toml) (import-linter) and
 [`tests/test_layering.py`](tests/test_layering.py). The prose version
-is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); how to add a robot,
+an agent or a config key is in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Paper
 
