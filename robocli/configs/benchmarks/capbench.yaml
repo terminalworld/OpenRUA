@@ -1,4 +1,4 @@
-# CaP-Bench assembly config — second mainline leg (P7). Same bridge code;
+# CaP-Bench benchmark config — second mainline leg (P7). Same bridge code;
 # tasks/predicates/protocol swap to CaP-X's core robosuite tasks, built
 # through cap-x's OWN env factories (task identity byte-identical to their
 # published numbers; see envs._create_capbench_env).
@@ -47,7 +47,7 @@ protocol:                # CaP-X paper protocol
     mode: paused
 
 agent:                   # same frontier combo + workspace template as LIBERO leg
-  cli: claude-code       # agent adapter (robocli/agents) — all agent-specific
+  name: claude-code      # agent (robocli/agents) — all agent-specific
                          # knowledge (launch/auth/transcript/quota) lives there
   model: claude-opus-5
   options:

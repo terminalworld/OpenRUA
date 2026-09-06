@@ -20,7 +20,7 @@ class _Agent:
 
 
 def _names(cfg):
-    # The gate reads the normalized assembly view, like the conductor.
+    # The gate reads the normalized resolved config, like the conductor.
     # Deep copy first: normalize mutates, and the fixtures are shared.
     import copy
 
@@ -82,7 +82,7 @@ def test_unpromised_capabilities_mint_no_check():
 
 
 def test_real_configs_generate_a_full_gate():
-    # The shipped assembly configs must all mint the baseline plus their
+    # The shipped resolved configs must all mint the baseline plus their
     # own promised capabilities (drift guard between configs and gate).
     from pathlib import Path
 

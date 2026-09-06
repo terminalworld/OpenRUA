@@ -120,7 +120,7 @@ def _annotate(text: str) -> str:
 
 
 def write_machine_manifest(cfg: dict, out: Path) -> None:
-    """Generate the workspace machine.yaml from the assembly config.
+    """Generate the workspace machine.yaml from the resolved config.
 
     The manifest is a curated index of the ROS graph; typed port entries
     grouped by capability kind (open lists: a dual-arm robot is two
@@ -195,10 +195,10 @@ def main() -> int:  # standalone: seed a workspace / print the hash
     import argparse
 
     ap = argparse.ArgumentParser(
-        description="Seed an agent workspace from an assembly config "
+        description="Seed an agent workspace from an resolved config "
                     "(or print the template hash).")
     ap.add_argument("--config", required=True,
-                    help="RESOLVED assembly yaml path (the suite view)")
+                    help="resolved config yaml path (the suite view)")
     ap.add_argument("--dest", default=None,
                     help="workspace dir to seed; omit to only print the hash")
     args = ap.parse_args()

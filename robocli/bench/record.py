@@ -169,13 +169,13 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
 
     # The leg's ACTUAL image (audit 2026-08-14 F9: a hardcoded jazzy name
     # recorded a digest the humble legs never ran).
-    body = cfg.get("machine", {}).get("body", {})
-    image = body.get("image", "robocli-sim-jazzy")
+    backend = cfg.get("machine", {}).get("backend", {})
+    image = backend.get("image", "robocli-sim-jazzy")
     # All three containers a trial runs in: the agent's toolchain
     # (sandbox) and the wall (proxy) are experiment conditions as much
     # as the sim body (completeness ruling 2026-08-18: record
     # generously; the RUNBOOK reconciles builds against these).
-    sandbox_image = body.get("sandbox_image", "robocli-sandbox")
+    sandbox_image = backend.get("sandbox_image", "robocli-sandbox")
     # The benchmark content itself (tasks, predicates, the vendored
     # forks) lives in the simulator checkout; its commit is as much a
     # link in the reproduction chain as our own. The checkout root is
@@ -214,7 +214,7 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
         # Render device disclosure: physics is CPU either way (results
         # comparable across devices); recorded so nobody has to dig it
         # out of bridge.log.
-        "gpu_render": bool(body.get("gpus", False)),
+        "gpu_render": bool(backend.get("gpus", False)),
         # Relative to where the run was started when it lives there
         # (ruling 2026-08-17: records keep no absolute paths they can
         # avoid); a bundled config records its package path.
@@ -241,13 +241,13 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
     }
 
 
-def write_assembly(trial_dir: Path, cfg: dict) -> Path:
+def write_config(trial_dir: Path, cfg: dict) -> Path:
     """The trial's resolved suite view, computed ONCE by the conductor
     and written here as the artifact every consumer reads (manual
     seeding, body bringup, the machine itself). One computation, one
     file, zero chance of same-code-different-arguments drift (ruling
     2026-08-16)."""
-    path = trial_dir / "assembly.yaml"
+    path = trial_dir / "config.yaml"
     path.write_text(yaml.safe_dump(cfg, sort_keys=False))
     return path
 

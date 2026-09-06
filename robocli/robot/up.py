@@ -10,7 +10,7 @@ endpoint exists for the agent to find, and caller death = EOF = the
 robot powers itself off, no orphans).
 
 Consumes DATA only: ``config_path`` is the trial's ALREADY-RESOLVED
-assembly file and ``peers_xml`` the rendered DDS peers profile -- both
+resolved config file and ``peers_xml`` the rendered DDS peers profile -- both
 computed once by the conductor and handed in (ruling 2026-08-16).
 """
 
@@ -46,7 +46,7 @@ def up(
     code (``code_root``, so the simulator venv imports the same package),
     uv's interpreter store (the venv python is a symlink into it), the
     simulator checkout (venv + simulator), and the directory holding the
-    assembly file (the body's config and any file it names by path).
+    resolved config file (the body's config and any file it names by path).
     """
     # The simulator venvs' python is a symlink into uv's interpreter
     # store; mount it read-only at the same path. Derived from the
@@ -56,7 +56,7 @@ def up(
     if static_peer and not peers_xml:
         raise ValueError(
             "static_peer needs the rendered peers profile too; the "
-            "conductor renders it (assembly.FASTDDS_PEERS_XML) and "
+            "conductor renders it (run.FASTDDS_PEERS_XML) and "
             "passes peers_xml")
     peer_env = (
         ["-e", f"ROS_STATIC_PEERS={static_peer}"] if static_peer else []
@@ -161,7 +161,7 @@ def main() -> int:
     ap.add_argument("--name", required=True, help="body container name")
     ap.add_argument("--image", required=True)
     ap.add_argument("--config", required=True,
-                    help="RESOLVED assembly yaml (the trial's suite view)")
+                    help="resolved config yaml (the trial's suite view)")
     ap.add_argument("--task-suite", required=True)
     ap.add_argument("--task-id", type=int, required=True)
     ap.add_argument("--simulator", required=True,

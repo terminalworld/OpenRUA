@@ -16,7 +16,7 @@ def arm_specs(machine: dict) -> list[dict]:
     if not arms:
         raise KeyError(
             "machine.arms missing: the bridge boots from the RESOLVED "
-            "assembly view (robocli run writes it via normalize_arms); "
+            "resolved config (robocli run writes it via normalize_arms); "
             "re-run the trial through `python -m robocli run`")
     return arms
 

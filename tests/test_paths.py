@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from robocli import paths
+from robocli.config import paths
 
 
 def test_home_defaults_and_overrides(tmp_path):

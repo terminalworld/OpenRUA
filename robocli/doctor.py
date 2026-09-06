@@ -27,7 +27,8 @@ from typing import Callable
 
 import yaml
 
-from robocli import agents, config, paths
+from robocli import agents, config
+from robocli.config import paths
 
 SEVERITIES = ("ok", "warning", "error")
 MARK = {"ok": "ok", "warning": "??", "error": "!!"}
@@ -154,7 +155,7 @@ def check_user_entries(ctx: Context) -> list[CheckResult]:
 
 def check_proxy_image(ctx: Context) -> list[CheckResult]:
     image = "robocli-proxy"
-    names = " ".join(f"--cli {a.name}" for a in ctx.agents)
+    names = " ".join(f"--agent {a.name}" for a in ctx.agents)
     build = (f'robocli build proxy --whitelist "$(python -m robocli.agents whitelist {names})"')
     if docker_inspect("image", image, "{{.Id}}") is None:
         return [CheckResult("proxy-image", f"proxy image {image} missing", "error", hint=build)]
@@ -171,16 +172,16 @@ def check_proxy_image(ctx: Context) -> list[CheckResult]:
 def check_robot_images(ctx: Context) -> list[CheckResult]:
     if ctx.cfg is None:
         return []
-    body = ctx.cfg["machine"].get("body", {})
+    backend = ctx.cfg["machine"].get("backend", {})
     out: list[CheckResult] = []
-    sim = body.get("image", "robocli-sim-jazzy")
+    sim = backend.get("image", "robocli-sim-jazzy")
     if docker_inspect("image", sim, "{{.Id}}") is None:
         out.append(CheckResult("robot-image", f"robot image {sim} missing", "error",
                                hint="robocli build robot"))
     else:
         out.append(CheckResult("robot-image", f"robot image {sim} present"))
-    sandbox = body.get("sandbox_image", "robocli-sandbox")
-    names = " ".join(f"--cli {a.name}" for a in ctx.agents)
+    sandbox = backend.get("sandbox_image", "robocli-sandbox")
+    names = " ".join(f"--agent {a.name}" for a in ctx.agents)
     build = (f'robocli build sandbox --tag {sandbox} --preinstall '
              f'"$(python -m robocli.agents preinstall {names})"')
     if docker_inspect("image", sandbox, "{{.Id}}") is None:
@@ -202,15 +203,15 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
 def check_simulator(ctx: Context) -> list[CheckResult]:
     if ctx.cfg is None:
         return []
-    body = ctx.cfg["machine"].get("body", {})
-    if not body.get("simulator"):
-        return [CheckResult("simulator", "no simulator simulator (real robot)")]
-    venv = paths.simulator_venv(body["simulator"]["venv"], ctx.home)
+    backend = ctx.cfg["machine"].get("backend", {})
+    if backend.get("kind") != "sim":
+        return [CheckResult("simulator", "real robot: no simulator")]
+    venv = paths.simulator_venv(backend["simulator"]["venv"], ctx.home)
     if venv.is_dir():
         return [CheckResult("simulator", f"simulator venv {venv}")]
     return [CheckResult("simulator", f"simulator venv {venv} missing", "error",
                         hint=f"build it under {paths.simulators_dir(ctx.home)} (docs/simulation.md) "
-                        "or point machine.body.simulator.venv at it")]
+                        "or point machine.backend.simulator.venv at it")]
 
 
 def check_login(ctx: Context) -> list[CheckResult]:
@@ -239,7 +240,7 @@ CHECKS: tuple[Callable[[Context], list[CheckResult]], ...] = (
 
 # ---------------------------------------------------------------- the run
 
-def run(robot: str | None = None, clis: list[str] | None = None,
+def run(robot: str | None = None, agent_names: list[str] | None = None,
         home: Path | None = None, checks=CHECKS) -> Report:
     home = paths.home(home)
     cfg = None
@@ -251,8 +252,8 @@ def run(robot: str | None = None, clis: list[str] | None = None,
         except Exception as exc:  # noqa: BLE001
             report.checks.append(CheckResult("robot-profile", f"robot {robot}: {exc}", "error",
                                              hint="robocli robots lists the profiles"))
-    names = clis or [(cfg or {}).get("agent", {}).get("cli")
-                     or config.load_user_config(paths.package_config_path()).agent.cli]
+    names = agent_names or [(cfg or {}).get("agent", {}).get("name")
+                     or config.load_user_config(paths.package_config_path()).agent.name]
     chosen: list[agents.Agent] = []
     for n in names:
         try:

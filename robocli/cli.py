@@ -33,7 +33,8 @@ from pathlib import Path
 
 import yaml
 
-from robocli import __version__, agents, doctor, paths
+from robocli import __version__, agents, doctor
+from robocli.config import paths
 from robocli.errors import NotFound, RoboCLIError, UnavailableError
 from robocli.bench import record
 from robocli.bench.run import (apply_suite_overrides, bring_up, compose,
@@ -149,7 +150,7 @@ def cmd_up(args) -> int:
     workdir.mkdir(parents=True)
     network = ensure_internal_network()
     proxy_url = ensure_proxy(network)
-    adapter = agents.get(args.cli or cfg.get("agent", {}).get("cli"), args.home)
+    adapter = agents.get(args.agent or cfg.get("agent", {}).get("cli"), args.home)
     creds_home = Path(cfg.get("agent", {}).get("credentials_dir")
                       or paths.credentials_dir(args.home) / adapter.name).expanduser()
     cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter)
@@ -176,7 +177,7 @@ def cmd_up(args) -> int:
         raise UnavailableError(f"[up] robot failed to reset: {e}",
                                hint=f"read {workdir / 'robot.log'}") from e
     _save_state(args.name, args.home, sim=sim_name, sandbox=sandbox_name,
-                network=network, proxy=proxy_url, cli=adapter.name,
+                network=network, proxy=proxy_url, agent=adapter.name,
                 model=cfg.get("agent", {}).get("model") or adapter.default_model,
                 options={**adapter.default_options,
                          **cfg.get("agent", {}).get("options", {})},
@@ -205,7 +206,7 @@ def cmd_up(args) -> int:
 
 def cmd_agent(args) -> int:
     st = _load_state(args.name, args.home)
-    adapter = agents.get(args.cli or st["cli"], args.home)
+    adapter = agents.get(args.agent or st["agent"], args.home)
     argv = adapter.interactive_argv(
         st["sandbox"], args.model or st["model"], st["proxy"],
         options=st.get("options"), prompt=args.prompt)
@@ -229,12 +230,12 @@ def cmd_config(args) -> int:
     if args.what == "schema":
         import json
         from robocli import config
-        print(json.dumps(config.Assembly.model_json_schema(), indent=2))
+        print(json.dumps(config.ResolvedConfig.model_json_schema(), indent=2))
     return 0
 
 
 def cmd_doctor(args) -> int:
-    report = doctor.run(robot=args.robot, clis=args.cli, home=args.home)
+    report = doctor.run(robot=args.robot, agent_names=args.agent, home=args.home)
     return doctor.main_report(report, as_json=True if args.json else None)
 
 
@@ -284,7 +285,7 @@ def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
     p.add_argument("--init-state", type=int, default=0, help="episode seed / init state")
     p.add_argument("--name", default=DEFAULT_NAME,
                    help=f"handle for this robot, for agent/down (default: {DEFAULT_NAME})")
-    p.add_argument("--cli", default=None, help="agent adapter to seat (default: the config's)")
+    p.add_argument("--agent", default=None, help="agent adapter to seat (default: the config's)")
     p.add_argument("--workspace", default=None,
                    help="working directory (default: <home>/workspaces/<name>)")
     p.add_argument("--ros-domain", type=int, default=0,
@@ -296,7 +297,7 @@ def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
                        "live robot's terminal (docker exec into its sandbox).")
     p.add_argument("prompt", nargs="?", default=None, help="opening message")
     p.add_argument("--name", default=DEFAULT_NAME, help=f"the robot's handle (default: {DEFAULT_NAME})")
-    p.add_argument("--cli", default=None, help="agent adapter (default: the one `up` seated)")
+    p.add_argument("--agent", default=None, help="agent adapter (default: the one `up` seated)")
     p.add_argument("--model", default=None, help="model (default: the one `up` recorded)")
     p.set_defaults(fn=cmd_agent)
 
@@ -315,7 +316,7 @@ def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
     p = sub.add_parser("doctor", help="check the install: docker, images, simulator, login")
     p.add_argument("robot", nargs="?", default=None,
                    help="also check this robot's images and simulator")
-    p.add_argument("--cli", action="append", default=None,
+    p.add_argument("--agent", action="append", default=None,
                    help="agent(s) the images must carry (default: the robot's config, "
                    "else the bundled default)")
     add_json(p)

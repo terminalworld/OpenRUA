@@ -91,7 +91,7 @@ simulator, an agent login).
 
 | Agent | Status |
 |---|---|
-| [Claude Code](https://claude.com/claude-code) | supported (`--cli claude-code`) |
+| [Claude Code](https://claude.com/claude-code) | supported (`--agent claude-code`) |
 | [Codex](https://github.com/openai/codex) | planned |
 
 An agent is one small class: how to install its CLI in the sandbox,
@@ -135,8 +135,7 @@ the workspace it left behind. Building the simulator simulators:
 robocli/
   cli.py        robocli robots | benchmarks | agents | build | up | agent | down | run | config | doctor
   doctor.py     structured checks: docker, images, simulator, login
-  paths.py      where things live: bundled data, ~/.robocli, the lookup order
-  config.py     the schema every profile and config is checked against
+  config/       the schema every file is checked against, the loader, where things live
   errors.py     errors with a fix and an exit code
   testing.py    the adapter conformance test
   robot/        the machine: ground verbs (build/up/down) + onboard/ (sim body software)

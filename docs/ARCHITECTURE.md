@@ -29,14 +29,14 @@ Shared leaves, importable by every host-side unit and by nothing in
 
 | Leaf | Owns |
 |---|---|
-| `robocli/paths.py` | where things live: the user directory (`~/.robocli`), the bundled data (`robocli/robots/`, `robocli/benchmarks/`, `robocli/agents/`), the lookup order (bundled, then user, then a path), simulator and workspace locations. |
-| `robocli/config.py` | the schema (pydantic): robot profile, benchmark config, user config, the assembled per-trial config; defaults and a description per key; unknown keys are errors. |
+| `robocli/config/paths.py` | where things live: the user directory (`~/.robocli`), the bundled data (`robocli/robots/`, `robocli/benchmarks/`, `robocli/agents/`), the lookup order (bundled, then user, then a path), simulator and workspace locations. |
+| `robocli/config/schema.py` | the schema (pydantic): robot profile, benchmark config, user config, the assembled per-trial config; defaults and a description per key; unknown keys are errors. |
 | `robocli/errors.py` | the error family: message, hint, sysexits code. The CLI entry point is the one place an error becomes text. |
 | `robocli/testing.py` | `check_agent`, the adapter conformance test third parties run. |
 
 Data, not code, is what crosses unit boundaries: a robot profile and a
 benchmark config are validated and assembled once into one config,
-written to disk (`assembly.yaml`), and read by every party (the sandbox
+written to disk (`config.yaml`), and read by every party (the sandbox
 seeds the manual from it, the body boots from it, the precheck derives
 its checks from it). At runtime the units talk over DDS, stdio, and
 files under `runs/`.
@@ -62,7 +62,7 @@ robocli/robots/, robocli/benchmarks/, robocli/agents/   bundled, ship in the whe
   import each other; `boot.py` wires them with parameters.
 - `onboard/` imports nothing from robocli outside itself, the shared
   leaves included: it is bake-ready for an image and reads resolved
-  absolute paths and validated dicts from the assembly file.
+  absolute paths and validated dicts from the resolved config file.
 - The ground verbs consume data only: no shared leaf, never onboard.
 - `sandbox` imports no other layer: what the agent experiences knows
   nothing about scoring.

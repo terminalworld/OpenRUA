@@ -4,7 +4,7 @@ From outside, the occupant package is ONE self-contained unit; the
 verbs below are its whole command surface (adapters are never invoked
 by module path). ``preinstall`` and ``whitelist`` emit build-time facts
 for the sandbox/proxy images' generic slots, for one or several agents
-(``--cli`` repeats; the union is emitted).
+(``--agent`` repeats; the union is emitted).
 """
 
 from __future__ import annotations
@@ -30,10 +30,11 @@ def _usage() -> str:
 
 
 def _emit(verb: str, argv: list[str]) -> int:
-    from robocli import agents, paths
+    from robocli import agents
+    from robocli.config import paths
     ap = argparse.ArgumentParser(
         prog=f"python -m robocli.agents {verb}", description=_VERBS[verb])
-    ap.add_argument("--cli", action="append", default=None,
+    ap.add_argument("--agent", action="append", default=None,
                     help="adapter name; repeat for several (required except for list)")
     ap.add_argument("--home", default=None, type=paths.home,
                     help="user directory holding agents/ (default: ~/.robocli)")
@@ -45,9 +46,9 @@ def _emit(verb: str, argv: list[str]) -> int:
             else:
                 print(f"{a.name:<16} {a.source:<8} {' '.join(sorted(a.agent.capabilities))}")
         return 0
-    if not args.cli:
-        ap.error("--cli NAME is required (robocli agents lists them)")
-    chosen = [agents.get(c, args.home) for c in args.cli]
+    if not args.agent:
+        ap.error("--agent NAME is required (robocli agents lists them)")
+    chosen = [agents.get(c, args.home) for c in args.agent]
     if verb == "preinstall":
         print(agents.preinstall(chosen))
     else:

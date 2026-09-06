@@ -5,10 +5,10 @@ CLI in the sandbox container as the ``robot`` user in /workspace; all
 native tools operate in-sandbox and containment is the container wall
 itself. Invoked by the evaluator as a subprocess (never imported;
 architecture contract). Everything agent-specific (binary, flags, auth
-env, transcript format) comes from the adapter selected by ``--cli``.
+env, transcript format) comes from the adapter selected by ``--agent``.
 
 ``python -m robocli.agents.launcher --sandbox <container> --task
-"<sentence>" --transcript <path> [--prompt-file <path>] [--cli <name>]
+"<sentence>" --transcript <path> [--prompt-file <path>] [--agent <name>]
 [--model ...] [--option k=v ...] [--max-turns N] [--proxy http://host:port]
 [--session-id <uuid>] [--resume] [--token-file <path>]``
 
@@ -51,7 +51,7 @@ def main() -> int:
                     help="override prompt template with a {task} "
                     "placeholder (default: agents.PROMPT)")
     ap.add_argument("--transcript", required=True)
-    ap.add_argument("--cli", default=None,
+    ap.add_argument("--agent", default=None,
                     help="agent adapter name (default: robocli.agents default)")
     ap.add_argument("--model", default=None,
                     help="model id (default: the adapter's default_model)")
@@ -76,7 +76,7 @@ def main() -> int:
     if args.resume and not args.session_id:
         ap.error("--resume needs the --session-id of the session to continue")
 
-    agent = agents.get(args.cli, args.home)
+    agent = agents.get(args.agent, args.home)
     options = {}
     for item in args.option:
         if "=" not in item:

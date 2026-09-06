@@ -65,7 +65,7 @@ def harness(tmp_path, monkeypatch):
             return type("P", (), {"returncode": 0})()
 
         monkeypatch.setattr(R.subprocess, "run", fake_run)
-        cfg = {"agent": {"cli": "claude-code", "model": "m"},
+        cfg = {"agent": {"name": "claude-code", "model": "m"},
                # suspension is off by default in the code; these cases are
                # about what happens when a campaign turns it on
                "protocol": {"max_turns": 100, "resume_on_quota_wall": True,

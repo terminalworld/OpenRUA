@@ -61,7 +61,7 @@ class Agent:
     """Base adapter. Subclass it, set the attributes, implement ``launch_argv``."""
 
     # ---- required ---------------------------------------------------
-    name: str = ""                      # adapter name (``agent.cli`` in configs)
+    name: str = ""                      # agent name (``agent.name`` in configs)
     default_model: str = ""             # model when the config names none
 
     # ---- declared facts, all with defaults --------------------------

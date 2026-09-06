@@ -9,7 +9,7 @@ identity keeps the benchmark's own predicates in the sim process
 (robot.onboard); this module only verifies the apparatus.
 
 Three assertion sources (design discussion 2026-08-12):
-1. machine.yaml is GENERATED from the assembly config; checks are
+1. machine.yaml is GENERATED from the resolved config; checks are
    generated from the same config, so manifest and gate cannot drift;
    absent capabilities get NEGATIVE checks (the wipe gripper lesson).
 2. Prose-doc claims are extracted by hand into named checks (finite

@@ -120,7 +120,7 @@ def test_provenance_pins_the_whole_chain(tmp_path):
         wall_clock_min, ros_domain = 30, 44
 
     code_root = Path(__file__).resolve().parents[1]
-    cfg_path = tmp_path / "assembly.yaml"
+    cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text("machine: {}\n")
     # a simulator is a git checkout holding the simulator venv; stand one up
     simulator = tmp_path / "simulators" / "cap-x"
@@ -130,7 +130,8 @@ def test_provenance_pins_the_whole_chain(tmp_path):
     subprocess.run(["git", "-C", str(simulator), "-c", "user.name=t",
                     "-c", "user.email=t@t", "commit", "-q", "--allow-empty",
                     "-m", "x"], check=True)
-    cfg = {"machine": {"body": {
+    cfg = {"machine": {"backend": {
+        "kind": "sim",
         "image": "robocli-definitely-missing",
         "simulator": {"venv": str(simulator / ".venv-libero")},
         "gpus": False}}}

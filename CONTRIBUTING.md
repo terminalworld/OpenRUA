@@ -26,7 +26,7 @@ contract from `pyproject.toml`.
 - **A benchmark**: a config under `robocli/benchmarks/<name>.yaml` and,
   if it needs a new simulator, a loader under
   `robocli/robot/onboard/environment/`.
-- **A config key**: add it to `robocli/config.py` with a default and a
+- **A config key**: add it to `robocli/config/schema.py` with a default and a
   description; unknown keys are errors everywhere, so the schema is
   the single place a key exists.
 
@@ -54,7 +54,7 @@ contract from `pyproject.toml`.
   variables (the one exception is `ROBOCLI_HOME`, read once at the
   CLI entry point).
 - Knowledge lives in one place: an agent fact in its adapter, a path
-  rule in `paths.py`, a config key in `config.py`.
+  rule in `config/paths.py`, a config key in `config/schema.py`.
 - Fail loud with the fix in the message; never return a dead artifact
   silently.
 - Comments and docstrings: plain words, no dashes as punctuation.

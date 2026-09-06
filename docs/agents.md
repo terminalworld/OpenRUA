@@ -87,13 +87,13 @@ def test_conforms():
 
 ## Using an agent
 
-- Configs: `agent.cli: my-agent`, `agent.model`, `agent.options`
+- Configs: `agent.name: my-agent`, `agent.model`, `agent.options`
   (over the adapter's `default_options`), `agent.credentials_dir`.
   The same keys in `~/.robocli/config.yaml` are your defaults.
 - Images: `robocli build sandbox --preinstall "$(python -m robocli.agents
-  preinstall --cli my-agent)"` and `robocli build proxy --whitelist
-  "$(python -m robocli.agents whitelist --cli my-agent)"`. Several
-  `--cli` bake several agents into one image; the images carry a label
+  preinstall --agent my-agent)"` and `robocli build proxy --whitelist
+  "$(python -m robocli.agents whitelist --agent my-agent)"`. Several
+  `--agent` bake several agents into one image; the images carry a label
   with the hash of what went in, and `robocli doctor` compares it with
   what the selected agents would emit today.
 - Login, two ways. A profile directory (`~/.robocli/credentials/<name>/`

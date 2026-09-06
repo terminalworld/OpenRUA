@@ -1,7 +1,7 @@
 """Harness: the machine's cockpit factory. One contract, three verbs.
 
     Input : a reachable ROS 2 machine (network / domain / peer) + its
-            assembly config (+ a seat-image choice).
+            resolved config (+ a seat-image choice).
     Output: ONE LIVE SANDBOX CONTAINER; a workspace generated for this
             machine, in which a human or an agent operates the robot
             through its native CLI / rclpy. Nothing else.
