@@ -127,3 +127,16 @@ def test_conforms():
 the stream-json transcript, profile-directory or token login, quota and
 transcript accounting, shell/write/edit replay. It is the reference
 implementation for all of the above.
+
+`codex` (`configs/agents/codex.yaml`, `plugins/agents/codex.py`): Codex,
+headless `codex exec --json` with approvals and the CLI's own sandbox
+switched off (the container is the sandbox) and web search disabled;
+login through a `CODEX_HOME` profile directory (`CODEX_HOME=<dir> codex
+login`) or an API key by file; token usage from the transcript; shell
+commands replayed (its file-change events carry no content). The CLI
+has no turn budget flag, so `protocol.max_turns` is carried by the
+runner across segments but not enforced inside a segment.
+
+Images carry one label per agent baked in (the hash of its install line
+or whitelist); `robocli doctor` reads them, so one sandbox image can
+carry several agents and doctor still says which manifest changed.

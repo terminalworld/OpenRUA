@@ -93,7 +93,7 @@ checkout, an agent login).
 | Agent | Status |
 |---|---|
 | [Claude Code](https://claude.com/claude-code) | supported (`--agent claude-code`) |
-| [Codex](https://github.com/openai/codex) | planned |
+| [Codex](https://github.com/openai/codex) | supported (`--agent codex`) |
 
 An agent is a manifest (how to install its CLI in the sandbox, which
 hosts it talks to, how it logs in) and a small hooks class (how to
@@ -131,7 +131,8 @@ robocli run --config libero_pro --run-id demo \
 Every trial writes `result.json` (verdict, preflight, termination,
 token accounting), `provenance.json` (code and simulator commits, image
 digests, config and prompt hashes), the agent's full transcript, and
-the workspace it left behind. Building the simulator checkouts:
+the workspace it left behind; the run directory keeps a `SUMMARY.md`
+regenerated from those files after every trial. Building the simulator checkouts:
 [docs/simulation.md](docs/simulation.md).
 
 ## Architecture

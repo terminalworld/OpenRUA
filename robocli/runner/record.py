@@ -257,6 +257,66 @@ def write_run_config(run_dir: Path, prov: dict) -> None:
         (run_dir / "config.json").write_text(json.dumps(prov, indent=2))
 
 
+def write_run_summary(run_dir: Path) -> Path | None:
+    """``SUMMARY.md`` for a run, regenerated from the artifacts under it
+    (the run's config.json and every trial's result.json), so it is
+    always a faithful view and never a second record. Written atomically:
+    concurrent single-trial runners share a run directory."""
+    cfg_file = run_dir / "config.json"
+    if not cfg_file.is_file():
+        return None
+    prov = json.loads(cfg_file.read_text())
+    rows = []
+    for result in sorted(run_dir.glob("trials/*/seed*/result.json")):
+        try:
+            r = json.loads(result.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        meta = r.get("operator_meta") or {}
+        rows.append({
+            "suite": r.get("task_suite", result.parents[1].name.rsplit("-", 1)[0]),
+            "task": r.get("task_id"), "seed": r.get("init_state_id"),
+            "success": r.get("success"), "termination": r.get("termination"),
+            "wall_s": r.get("wall_seconds"), "turns": meta.get("num_turns"),
+            "anomaly": r.get("anomaly"),
+        })
+    scored = [x for x in rows if x["success"] is not None]
+    successes = sum(1 for x in scored if x["success"])
+    agent = prov.get("agent_cli", {})
+    cfg = prov.get("config", {})
+    lines = [f"# {run_dir.name}", "",
+             f"- benchmark: {cfg.get('task', {}).get('benchmark', '?')}",
+             f"- config: `{prov.get('config_file', '?')}` (sha256 {str(prov.get('config_sha256', ''))[:12]})",
+             f"- agent: {agent.get('name', '?')} {agent.get('version', '')}, model "
+             f"{cfg.get('agent', {}).get('model', '?')}, operator {prov.get('operator', '?')}",
+             f"- code: robocli {prov.get('robocli_version', '?')} @ "
+             f"{str(prov.get('robocli_commit', ''))[:12]}"
+             f"{' (dirty)' if prov.get('git_dirty') else ''}; "
+             f"simulator @ {str(prov.get('simulator_commit', ''))[:12]}",
+             f"- images: robot {str(prov.get('sim_image_digest', ''))[:19]}, sandbox "
+             f"{str(prov.get('sandbox_image_digest', ''))[:19]}, proxy "
+             f"{str(prov.get('proxy_image_digest', ''))[:19]}",
+             f"- trials: {len(rows)} recorded; "
+             + (f"{successes}/{len(scored)} succeeded" if scored else "no automatic verdict")
+             + f"; {sum(1 for x in rows if x['anomaly'])} anomalies", "",
+             "| suite | task | seed | success | termination | wall s | turns |",
+             "|---|---|---|---|---|---|---|"]
+    for x in rows:
+        success = {True: "yes", False: "no", None: "n/a"}[x["success"]]
+        lines.append(f"| {x['suite']} | {x['task']} | {x['seed']} | {success} | "
+                     f"{x['termination']} | {x['wall_s']} | {x['turns'] if x['turns'] is not None else ''} |")
+    anomalies = [x for x in rows if x["anomaly"]]
+    if anomalies:
+        lines += ["", "## Anomalies", ""]
+        lines += [f"- {x['suite']} task {x['task']} seed {x['seed']}: {x['anomaly']}"
+                  for x in anomalies]
+    out = run_dir / "SUMMARY.md"
+    tmp = run_dir / ".SUMMARY.md.tmp"
+    tmp.write_text("\n".join(lines) + "\n")
+    tmp.replace(out)
+    return out
+
+
 def archive_prior_attempt(trial_dir: Path) -> Path | None:
     """Move any existing trial artifacts into attempts/attempt-NNNN before
     a rerun writes new ones. Evidence is never overwritten: the top level
