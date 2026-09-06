@@ -24,6 +24,7 @@ dependencies = [
     # Simulator deps (robosuite / LIBERO / RoboCasa) live in the substrate venvs.
     "numpy",
     "pyyaml",
+    "pydantic>=2",
 ]
 
 [project.optional-dependencies]

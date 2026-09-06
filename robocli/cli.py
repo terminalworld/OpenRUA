@@ -31,7 +31,7 @@ from pathlib import Path
 
 import yaml
 
-from robocli import __version__, agents, paths
+from robocli import __version__, agents, config, paths
 from robocli.bench import record
 from robocli.bench.run import (MachineClient, apply_suite_overrides,
                                ensure_internal_network, load_config,
@@ -209,6 +209,13 @@ def cmd_down(args) -> int:
     return 0
 
 
+def cmd_config(args) -> int:
+    if args.what == "schema":
+        import json
+        print(json.dumps(config.Assembly.model_json_schema(), indent=2))
+    return 0
+
+
 def cmd_doctor(args) -> int:
     ok = True
 
@@ -285,13 +292,18 @@ def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
 
     sub.add_parser("run", help="run a task set (robocli run --help)")
 
+    p = sub.add_parser("config", help="the configuration schema")
+    p.add_argument("what", choices=("schema",),
+                   help="schema: print the assembled config's JSON schema")
+    p.set_defaults(fn=cmd_config)
+
     p = sub.add_parser("doctor", help="check the install")
     p.add_argument("--robot", default="panda-sim")
     p.set_defaults(fn=cmd_doctor)
     return ap
 
 
-VERBS = ("robots", "build", "up", "agent", "down", "run", "doctor")
+VERBS = ("robots", "build", "up", "agent", "down", "run", "config", "doctor")
 # Verbs that forward their whole argv to another front door (argparse
 # would otherwise eat their --help).
 FORWARDED = {"run": "robocli.bench.run"}
@@ -313,7 +325,11 @@ def main() -> int:
     if not args.verb:
         ap.print_help()
         return 0
-    return args.fn(args) or 0
+    try:
+        return args.fn(args) or 0
+    except (config.ConfigError, FileNotFoundError) as e:
+        print(f"error: {e}", file=sys.stderr)
+        return 78 if isinstance(e, config.ConfigError) else 66
 
 
 if __name__ == "__main__":

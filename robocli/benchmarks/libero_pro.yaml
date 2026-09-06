@@ -29,7 +29,7 @@ protocol:                # tier A (locked)
   # recoverable. NOTE (2026-08-22): this key is read by NO code -- the
   # env horizon comes from protocol.horizon, which is absent here and
   # therefore defaults to 10**9. It is documentation, not a control.
-  capx_horizon_steps: 8000
+  # capx_horizon_steps: 8000  (their number; not a control, see above)
   max_turns: 500         # generous ceiling (post-hoc budget ruling 2026-08-12)
                          # smoke successes were finishing at 99-101 turns —
                          # a near-miss failure wastes the whole trial's
@@ -58,11 +58,9 @@ agent:                   # the single frontier combo (locked 2026-08-07)
   cli: claude-code       # agent adapter (robocli/agents) — all agent-specific
                          # knowledge (launch/auth/transcript/quota) lives there
   model: claude-opus-5
-  effort: high           # reasoning effort, PINNED (opus-5 default; pinned vs
+  options:
+    effort: high           # reasoning effort, PINNED (opus-5 default; pinned vs
                          # CLI-default drift; stamped into each trial's meta)
-  credentials_dir: ~/.robocli-claude  # dedicated sandbox token family
-                         # (shared single-file mount; NEVER copied — OAuth
-                         # rotation, see plan incident ledger 2026-08-08)
   # prompt: inline agents.PROMPT (ruling 2026-08-15), sha256 pinned in
   #                        config.json; closed-book + one-line workspace
   #                        notice. Ablation variants get their own

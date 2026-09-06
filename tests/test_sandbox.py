@@ -219,8 +219,7 @@ def test_manifest_two_arms_two_of_everything(tmp_path):
 
     from robocli.bench.run import apply_suite_overrides, normalize_arms
     from robocli.sandbox.workspace import write_machine_manifest
-    cfg = _yaml.safe_load((REPO / "robocli" / "benchmarks" /
-                           "capbench.yaml").read_text())
+    cfg = load_config(REPO / "robocli" / "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_twoarm_lift")
     normalize_arms(cfg)
     out = tmp_path / "machine.yaml"

@@ -29,13 +29,13 @@ def test_run_spelling_is_the_conductor():
 
 # --------------------------------------------- suite view resolution
 
-def test_suite_overrides_deep_merge_and_null_delete():
-    from robocli.bench.run import apply_suite_overrides
-    cfg = {"machine": {"ports": {"twist": "/t", "gripper": "/g"},
-                       "gripper": {"open_m": 0.04}, "robot": {"model": "A"}},
-           "suite_overrides": {"wipe": {"machine": {
-               "ports": {"gripper": None}, "gripper": None,
-               "robot": {"model": "B"}}}}}
+def test_suite_overrides_deep_merge_and_null_delete(tmp_path):
+    from robocli.bench.run import apply_suite_overrides, load_config
+    cfg = load_config("libero_pro", home=tmp_path)
+    cfg["machine"]["ports"].update({"twist": "/t", "gripper": "/g"})
+    cfg["suite_overrides"] = {"wipe": {"machine": {
+        "ports": {"gripper": None}, "gripper": None,
+        "robot": {"model": "B"}}}}
     apply_suite_overrides(cfg, "wipe")
     m = cfg["machine"]
     assert "gripper" not in m["ports"] and "gripper" not in m

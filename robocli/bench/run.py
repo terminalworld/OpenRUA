@@ -34,7 +34,7 @@ from pathlib import Path
 
 import yaml
 
-from robocli import agents, paths
+from robocli import agents, config, paths
 from robocli.bench import record
 from robocli.bench import triallock
 from robocli.bench.precheck import run_precheck
@@ -96,6 +96,13 @@ def apply_suite_overrides(cfg: dict, task_suite: str) -> dict:
     ov = (cfg.get("suite_overrides") or {}).get(task_suite)
     if ov:
         merge(cfg, ov)
+        # The override is authored as raw yaml; the merged view must still
+        # fit the schema (a misspelled key in an override is the same
+        # mistake as one in the profile).
+        checked = config.dump(config.validate(
+            config.Assembly, cfg, f"suite_overrides.{task_suite}"))
+        cfg.clear()
+        cfg.update(checked)
     return cfg
 
 
@@ -161,24 +168,33 @@ RUNS_ROOT = Path("runs")
 
 def load_robot(robot: str, home: Path | None = None) -> dict:
     """A robot profile by name (bundled, then ``<home>/robots/``) or by
-    path. Returns the parsed file (its ``machine:`` section is the robot)."""
-    return yaml.safe_load(paths.find("robots", robot, home).read_text())
+    path, validated (config.RobotProfile). Returns it as a dict: its
+    ``machine:`` section is the robot, ``world:`` the default scene."""
+    p = paths.find("robots", robot, home)
+    return config.dump(config.validate(config.RobotProfile, config.load_yaml(p), p))
 
 
 def load_config(path: Path | str, robot: str | None = None,
                 home: Path | None = None) -> dict:
-    """A benchmark config (name or path) with its robot resolved:
-    ``robot: <name>`` in the file (or the argument, which wins) pulls in
-    that profile's ``machine:`` section. A file carrying its own
-    ``machine:`` is taken as is (a fully assembled config)."""
-    cfg = yaml.safe_load(paths.find("benchmarks", path, home).read_text())
-    named = cfg.pop("robot", None)
-    robot = robot or named
+    """A benchmark config (name or path), validated and assembled:
+    ``robot: <name>`` in the file (or the argument, which wins; or the
+    user's default) pulls in that profile's ``machine:`` section; a file
+    carrying its own ``machine:`` is taken as is. The user's
+    ``~/.robocli/config.yaml`` supplies agent defaults under the file's
+    own. Returns the assembled dict (config.Assembly, validated)."""
+    p = paths.find("benchmarks", path, home)
+    bench = config.validate(config.Benchmark, config.load_yaml(p), p)
+    user = config.load_user_config(paths.config_path(home))
+    cfg = config.dump(bench)
+    robot = robot or cfg.pop("robot", None) or user.robot
     if robot:
         cfg["machine"] = load_robot(robot, home)["machine"]
     if "machine" not in cfg:
-        raise KeyError(f"{path}: no machine: section and no robot: name")
-    return cfg
+        raise config.ConfigError(
+            f"{p}: names no robot (robot: <name>, --robot, or robot: in "
+            f"{paths.config_path(home)}) and carries no machine: section")
+    cfg["agent"] = config.layer_agent(user, cfg.get("agent", {}))
+    return config.dump(config.validate(config.Assembly, cfg, p))
 
 
 def substrate_venv(body: dict, home: Path | None = None) -> Path:
@@ -353,12 +369,13 @@ def agent_operator(ctx: dict) -> dict:
     # Reasoning effort is a load-bearing experimental parameter that does not
     # appear in the transcript; pin it from the config (default: the adapter's
     # explicit DEFAULT_EFFORT, never the CLI's implicit default) and record it.
-    effort = agent_cfg.get("effort", agent.DEFAULT_EFFORT)
+    options = agent_cfg.get("options", {})
+    effort = options.get("effort", agent.DEFAULT_EFFORT)
     # Same reasoning for the compaction threshold (ruling 2026-08-20): pinned
     # at the window ceiling, so a compaction happens only when the context
     # genuinely will not fit, and a resumed trial compacts where an
     # uninterrupted one would have.
-    autocompact = agent_cfg.get("autocompact", agent.DEFAULT_AUTOCOMPACT)
+    autocompact = options.get("autocompact", agent.DEFAULT_AUTOCOMPACT)
     # Naming the session up front is what makes a suspended trial resumable
     # without scraping an id back out of a half-written transcript.
     session_id = str(uuid.uuid4())
