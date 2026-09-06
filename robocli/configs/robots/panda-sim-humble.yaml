@@ -1,5 +1,5 @@
 # Franka Emika Panda on a tabletop (robosuite / MuJoCo, CaP-Bench scenes),
-# ROS 2 Humble body. Named by benchmarks/capbench.yaml under `robot:`.
+# ROS 2 Humble. configs/benchmarks/capbench.yaml names it under `robot:`.
 
 # The scene `robocli up panda-sim-humble` loads when no benchmark is named.
 world:
@@ -10,39 +10,38 @@ world:
 machine:
   backend:
     kind: sim
-    image: robocli-sim-humble   # runner reads this key
-    sandbox_image: robocli-sandbox-humble  # sandbox distro == robot distro: cross-
-                                # distro moveit_msgs broke service responses
-                                # (Fast CDR, 2026-08-11 canary)
+    image: robocli-sim-humble
+    sandbox_image: robocli-sandbox-humble  # sandbox distro == robot distro:
+                                # cross-distro moveit_msgs break service
+                                # responses (Fast CDR)
     simulator:
-      venv: cap-x/.venv-capbench  # py3.10 == Humble;
-                             # DEDICATED venv (2026-08-10 incident: never touch
-                             # the pilot's .venv-libero)
+      venv: cap-x/.venv-capbench  # py3.10 == Humble; a venv of its own,
+                                  # separate from .venv-libero
       container: sim-humble
 
   workspace_template: workspace
 
-  controller: JOINT_POSITION   # their low-level uses panda_joint_ctrl.json —
-                               # same joint-space shape as the LIBERO leg
+  controller: JOINT_POSITION   # their low level uses panda_joint_ctrl.json,
+                               # the same joint-space shape as LIBERO
   controller_kp_scale: 1       # their JSON already carries tuned gains
-                               # (kp=1500, input_type absolute); the x10 that
-                               # LIBERO's stock kp=50 needed does NOT apply
+                               # (kp=1500, input_type absolute); the x10
+                               # LIBERO's stock kp=50 needs does not apply
 
   cameras:
     resolution: [640, 480]
     list: null             # publish every camera the scene defines
     rate_hz: 2
     render_mode: on_demand  # render a camera only while subscribed
-                            # (agent-indistinguishable; 'always' = debug
-                            # parity mode; 2026-08-13 ruling)
+                            # (indistinguishable to the agent; 'always'
+                            # renders regardless, for debugging)
 
   control:               # graph-side actuation behavior (named apart from
-                         # the gripper/arm FACTS below, which feed the manual)
+                         # the gripper/arm facts below, which feed machine.yaml)
     gripper:
       open_threshold_m: 0.02
       settle_steps: 10
 
-  ports:                 # identical franka_ros2-shaped surface (same robot)
+  ports:                 # the same franka_ros2-shaped surface (same robot)
     twist: /servo_node/delta_twist_cmds
     trajectory: /panda_arm_controller/follow_joint_trajectory
     gripper: /franka_gripper/gripper_action
@@ -52,7 +51,7 @@ machine:
     robot0_: panda_
     gripper0_: panda_
 
-  # Machine-manifest facts — same Panda as the LIBERO leg.
+  # The facts machine.yaml is generated from: the same Panda as LIBERO.
   robot:
     model: Franka Emika Panda
     description: 7-joint robot arm with a parallel-jaw gripper
@@ -67,14 +66,13 @@ machine:
             stops_at: [open, closed]}
   planning: {moveit: true, move_action: /move_action,
              ik_service: /compute_ik, group: panda_arm,
-             planning_frame: panda_link0}  # model frame; IK
-                             # frame_id must be EMPTY (audit A1)
+             planning_frame: panda_link0}  # model frame; the IK request's
+                             # frame_id must be empty
 
   tf:
     hand: false
 
-# Per-suite machine differences (merged by run.apply_suite_overrides on
-# the trial's resolved config; null deletes a key). Wipe's Panda mounts a
-# rigid 0-DoF wiping pad, not the parallel-jaw gripper — the 2026-08-11
-# canary: the unconditional gripper action column tripped robosuite's
-# action-dim assert on every step (arm never moved, 3 trials).
+# Per-suite machine differences live in the benchmark config's
+# suite_overrides (merged by apply_suite_overrides on the trial's resolved
+# config; null deletes a key): the wipe task's Panda mounts a rigid 0-DoF
+# wiping pad, not the parallel-jaw gripper, so its gripper keys are nulled.

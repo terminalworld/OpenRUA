@@ -50,7 +50,7 @@ class Worker:
         return self._q.qsize()
 
     def run_pending(self, timeout: float = 0.1) -> None:
-        """Execute one pending job (sim thread's main loop body)."""
+        """Execute one pending job (the sim thread's main loop)."""
         try:
             fn, fut, waited = self._q.get(timeout=timeout)
         except queue.Empty:
@@ -60,9 +60,8 @@ class Worker:
         except BaseException as exc:  # noqa: BLE001; deliver to submitter
             fut.set_exception(exc)
             if not waited:
-                # Nobody will read this Future (audit 2026-08-14 F8: the
-                # wipe canary's per-step assert died in silence exactly
-                # here); surface it in bridge.log instead of vanishing.
+                # Nobody will read this Future; surface the error in
+                # bridge.log instead of letting it vanish.
                 self.dropped_errors += 1
                 import sys
                 print(f"[worker] fire-and-forget job failed "

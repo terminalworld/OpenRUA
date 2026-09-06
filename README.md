@@ -22,8 +22,8 @@ ROS 2 robot already *is* a terminal: `ros2 topic`, `ros2 action`,
 `rclpy`. RoboCLI puts the two together and adds nothing in between. No
 robot API for the agent, no skill library, no planner: the agent gets a
 shell on the robot, the robot's own command line and client library,
-and a short manual. Everything the agent does from there is ordinary
-ROS 2.
+and a short description of the machine. Everything the agent does from
+there is ordinary ROS 2.
 
 ## Quick start
 
@@ -44,7 +44,7 @@ Claude Code opens in `/workspace` on the robot's terminal. It reads
 `FollowJointTrajectory` goal, and checks the result, exactly as it
 would on a real machine. `robocli doctor` tells you what is missing
 before the first `up` (Docker, the three images, the simulator
-simulator, an agent login).
+checkout, an agent login).
 
 ## How it works
 
@@ -65,20 +65,21 @@ simulator, an agent login).
   installed, a workspace mounted, and a whitelist proxy as its only
   way out (the model API; nothing else).
 - **A robot is a profile** ([`robocli/configs/robots/`](robocli/configs/robots), or
-  your own under `~/.robocli/robots/`): what it is (`machine:`) and,
-  for simulated ones, which body image and scene to boot. A real robot
-  needs only the `machine:` facts and a reachable ROS 2 graph.
+  your own under `~/.robocli/robots/`): what it is (`machine:`) and how
+  it is provided (`machine.backend`: a simulator image and scene, or a
+  real robot's launch command and how to reach its graph).
 - **A benchmark is a task set** ([`robocli/configs/benchmarks/`](robocli/configs/benchmarks)):
   which suites and init states to load, how a trial runs and stops.
-  `robocli run` conducts trials, checks the manual's promises before
-  the agent boards, and records every trial with full provenance.
+  `robocli run` runs trials, checks every promise the workspace docs
+  make before the agent starts, and records each trial with full
+  provenance.
 - **Everything is checked against one schema** (`robocli config
   schema`): a misspelled key in any file is an error, never a silent
   no-op. Your defaults live in `~/.robocli/config.yaml`.
 
 ## Supported robots
 
-| Profile | Robot | Body | Scenes |
+| Profile | Robot | Backend | Scenes |
 |---|---|---|---|
 | `panda-sim` | Franka Emika Panda | simulated (robosuite / MuJoCo, ROS 2 Jazzy) | LIBERO-PRO |
 | `panda-sim-humble` | Franka Emika Panda | simulated (robosuite / MuJoCo, ROS 2 Humble) | CaP-Bench |
@@ -94,9 +95,11 @@ simulator, an agent login).
 | [Claude Code](https://claude.com/claude-code) | supported (`--agent claude-code`) |
 | [Codex](https://github.com/openai/codex) | planned |
 
-An agent is one small class: how to install its CLI in the sandbox,
-which domains it talks to, how to launch it; everything else is
-optional. Drop yours in `~/.robocli/agents/` or send a pull request;
+An agent is a manifest (how to install its CLI in the sandbox, which
+hosts it talks to, how it logs in) and a small hooks class (how to
+launch it); everything else is optional. Drop yours in
+`~/.robocli/agents/` and `~/.robocli/plugins/agents/` or send a pull
+request;
 `robocli agents` lists what is available and what each can do. See
 [docs/agents.md](docs/agents.md).
 
@@ -108,14 +111,14 @@ Write a profile with your robot's facts and point `up` at it:
 robocli up ./my-ur5.yaml          # or copy it to ~/.robocli/robots/ and: robocli up my-ur5
 ```
 
-The profile's `machine:` section is what the agent's `machine.yaml`
-manual is generated from: model, joint names and limits, frames,
+The profile's `machine:` section is what the agent's `machine.yaml` is
+generated from: model, joint names and limits, frames,
 gripper, and the ports (`trajectory`, `gripper`, `twist`, `wrench`) the
 robot serves. Details in [docs/your-own-robot.md](docs/your-own-robot.md).
 
 ## Simulation and benchmarks
 
-The simulated bodies run the community benchmark scenes unchanged;
+The simulated robots run the community benchmark scenes unchanged;
 their original success predicates score the trial in place.
 
 ```bash
@@ -126,7 +129,7 @@ robocli run --config libero_pro --run-id demo \
 Every trial writes `result.json` (verdict, preflight, termination,
 token accounting), `provenance.json` (code and simulator commits, image
 digests, config and prompt hashes), the agent's full transcript, and
-the workspace it left behind. Building the simulator simulators:
+the workspace it left behind. Building the simulator checkouts:
 [docs/simulation.md](docs/simulation.md).
 
 ## Architecture
@@ -136,21 +139,21 @@ robocli/
   cli/          robocli robots | benchmarks | agents | build | up | agent | down | run | config | doctor
   doctor/       structured checks: docker, images, simulator, login
   config/       the schema every file is checked against, the loader, where things live
+  configs/      bundled robots/, benchmarks/, agents/ (manifests), config.yaml (defaults)
+  plugins/      agents/: the hooks module behind each agent manifest
   errors.py     errors with a fix and an exit code
-  testing.py    the adapter conformance test
+  testing.py    the agent conformance test
   robot/        the machine: sim/ (container + bridge/, the robot's own software), real/
   sandbox/      the agent's terminal + workspace/ (the docs and tools the agent sees)
-  agents/       the adapter contract (base.py) + one adapter per coding agent
-  proxy/        the whitelist wall
+  agents/       the agent contract (base.py), the registry, the launcher, the prompts
+  proxy/        the whitelist proxy
   runner/       run: bring-up, preflight, the operator, the verdict, the record
-  robots/       one profile per robot
-  benchmarks/   one config per task set
-tests/          unit tests + the layering contract + the agent boundary
+tests/          one directory per unit + architecture/ (the layering contract)
 ```
 
 Who may import whom is written down twice and enforced by CI:
 [`pyproject.toml`](pyproject.toml) (import-linter) and
-[`tests/test_layering.py`](tests/test_layering.py). The prose version
+[`tests/architecture/test_layering.py`](tests/architecture/test_layering.py). The prose version
 is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); how to add a robot,
 an agent or a config key is in [CONTRIBUTING.md](CONTRIBUTING.md).
 

@@ -1,6 +1,6 @@
-"""The trial as a sequence of segments (ruling 2026-08-20).
+"""The trial as a sequence of segments.
 
-Suspension is a config switch, OFF in the code: a quota wall comes from
+Suspension is a config switch, off in the code: a quota wall comes from
 running at scale on subscription accounts, not from the method, and a
 single-trial reproduction never meets one. These cases turn it on except
 where they say otherwise.
@@ -96,7 +96,7 @@ def test_wall_suspends_and_the_same_session_resumes(harness):
 
 
 def test_turn_budget_is_carried_not_restarted(harness):
-    # The CLI restarts --max-turns on every resume (measured 2026-08-20), so
+    # The CLI restarts --max-turns on every resume, so
     # a loop that passed the full budget again would hand a resumed trial
     # more turns than an uninterrupted one ever gets.
     harness([[INIT, WALL, _result(30, "error_during_execution")],
@@ -115,7 +115,7 @@ def test_suspension_is_not_charged_to_the_wall_clock(harness):
 
 
 def test_finished_trial_is_not_re_suspended_by_the_sticky_verdict(harness):
-    # Regression: the audit's quota verdict is sticky across the whole file,
+    # Regression: scan_transcript's quota verdict is sticky across the whole file,
     # so reading IT here would see segment 1's rejection again after segment
     # 2 finished, and keep suspending a completed trial until it ran out of
     # suspensions and the work was thrown away.
@@ -125,9 +125,9 @@ def test_finished_trial_is_not_re_suspended_by_the_sticky_verdict(harness):
     assert len(harness.slept) == 1
 
 
-def test_wall_beyond_the_wait_bound_gives_up_for_the_master(harness):
+def test_wall_beyond_the_wait_bound_gives_up_for_the_caller(harness):
     # A weekly wall must not park the lane for days: give up as quota-limited
-    # exactly as before resume existed, and let the master requeue.
+    # exactly as before resume existed, and let the caller requeue.
     meta = harness([[INIT, WALL, _result(1, "error_during_execution")]],
                    wait_min=60 * 24 * 7, max_quota_wait_minutes=360)
     assert meta["termination"] == "quota_limit"
@@ -182,7 +182,7 @@ WALL_NO_RESET = {"type": "result", "subtype": "error_during_execution",
 
 
 def test_wall_without_a_reset_time_is_not_counted_as_resolved(harness):
-    # The 2026-08-09 weekly shape carries an error phrase and no resetsAt.
+    # A weekly limit carries an error phrase and no resetsAt.
     # The loop cannot wait for a time it was not given, so it stops -- but
     # the trial ended AT a wall, and calling that resolved would slip a
     # truncated trial into the denominator.
@@ -220,7 +220,7 @@ def test_segments_carry_absolute_bounds(harness):
 def test_unreadable_reset_time_ends_the_trial_instead_of_crashing(harness):
     # A reset time we cannot read is a reset time we cannot wait for. The
     # trial stops; the wall is still in the transcript and still unresolved,
-    # so the audit voids it and the master requeues -- the old path.
+    # so post-hoc classification voids it and the caller requeues: the old path.
     bad = {"type": "rate_limit_event",
            "rate_limit_info": {"status": "rejected", "rateLimitType": "five_hour",
                                "resetsAt": "soon-ish"}}
@@ -232,7 +232,7 @@ def test_unreadable_reset_time_ends_the_trial_instead_of_crashing(harness):
 
 def test_switched_off_a_wall_ends_the_trial_as_it_always_did(harness):
     # The default. Byte-for-byte the pre-suspension path: one segment, no
-    # waiting, the wall left unresolved for the audit to void.
+    # waiting, the wall left unresolved for post-hoc classification to void.
     meta = harness([[INIT, WALL, _result(1, "error_during_execution")],
                     [INIT, _result(2)]],
                    resume_on_quota_wall=False)

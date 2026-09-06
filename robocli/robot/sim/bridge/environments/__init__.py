@@ -1,7 +1,7 @@
 """Environment: everything serving the simulated world's env object.
 
 Two kinds of service live here: the per-benchmark loaders (the env's
-birth and semantics: build, initial state, original predicate, task
+construction and semantics: build, initial state, original predicate, task
 sentence) and the worker (the env's access discipline: one owner thread,
 everyone else queues). Consumers receive env and Worker as a pair from
 main.py; nothing here knows the sibling packages.

@@ -5,8 +5,8 @@ The task_suite string IS the env name (their registry, e.g.
 factory is robocasa.utils.env_utils.create_env, but it hardcodes the
 default composite controller (OSC_POSE arm). We replicate its split
 mapping + env kwargs VERBATIM and swap only controller_configs to our
-JOINT_POSITION composite (same position as the LIBERO-leg OSC
-rejection: OSC null-space bias fights joint-space FJT goals). Tasks,
+JOINT_POSITION composite (as on LIBERO: OSC null-space bias fights
+joint-space trajectory goals). Tasks,
 scenes, predicates, split semantics stay theirs.
 """
 
@@ -43,8 +43,8 @@ class RoboCasaLoader:
         else:
             raise ValueError(f"unknown robocasa split: {split}")
 
-        # Absolute: the conductor resolved and copied it next to the
-        # assembly (run.resolve_body_files); the body never looks around.
+        # Absolute: the runner resolved and copied it next to the config
+        # (bringup.resolve_robot_files); the bridge never looks around.
         with open(cfg["machine"]["controller_config"]) as f:
             controller_config = _json.load(f)
 
@@ -88,12 +88,8 @@ class RoboCasaLoader:
     # in (kitchen.py EXCLUDE_LAYOUTS/EXCLUDE_STYLES). We only seed the rng
     # and reset -- byte for byte their gym wrapper's reset(seed=...).
     #
-    # We considered spending the ten rollouts one per target kitchen
-    # (stratified) and dropped it 2026-09-05: their own fifty draws are
-    # i.i.d. too and cover the ten kitchens unevenly, so stratifying would
-    # buy variance reduction at the cost of no longer measuring the same
-    # sampling their numbers come from. The reduced draw count (10, not 50)
-    # is the only protocol deviation; the draw itself is theirs.
+    # Drawing fewer rollouts than their fifty is the only protocol
+    # deviation; the draw itself is theirs.
 
     def init_state(self, ctx: dict, seed: int):
         """Seed -> env.rng -> reset (their gym wrapper's semantics)."""

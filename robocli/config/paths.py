@@ -97,7 +97,7 @@ def state_dir(home_dir: Path | None = None) -> Path:
 def code_root() -> Path:
     """The directory holding the installed ``robocli`` package: the git
     checkout under an editable install, site-packages under a wheel.
-    Bind-mounted into the simulated body so its venv can import the same
+    Bind-mounted into the simulated robot so its venv can import the same
     code; also where provenance looks for a git commit."""
     return Path(str(resources.files("robocli"))).resolve().parent
 

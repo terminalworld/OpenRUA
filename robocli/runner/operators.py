@@ -26,10 +26,10 @@ def script_operator(ctx: dict) -> dict:
     """Run a caller-supplied command sequence in the sandbox.
 
     Surface-only by construction: the file is copied into the sandbox
-    and executed by bash as the seat user with ROS sourced, exactly the
-    shell the agent gets; no control-channel verb is touched. Wall-clock
-    cap enforced here like the agent's. The world answers or not; the
-    verdict comes from the ordinary blind ask afterwards."""
+    and executed by bash as the sandbox user with ROS sourced, the same
+    shell the agent gets; no control-line verb is touched. The wall-clock
+    cap is enforced here like the agent's; the verdict comes from the
+    ordinary blind ask afterwards."""
     path = ctx.get("script")
     if not path:
         raise ValueError("--operator script requires --script <file>")

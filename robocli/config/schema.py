@@ -180,7 +180,7 @@ class TrajectoryControl(Strict):
 
 
 class Control(Strict):
-    """Graph-side actuation behaviour (apart from the facts below, which feed the manual)."""
+    """Graph-side actuation behaviour (the facts below feed machine.yaml)."""
     gripper: GripperControl = Field(default_factory=GripperControl)
     trajectory: TrajectoryControl = Field(default_factory=TrajectoryControl)
 
@@ -247,7 +247,7 @@ class Base(Strict):
 
 class ArmSpec(Strict):
     """One arm of a multi-arm machine (machine.arms); single-arm profiles
-    are normalised into this shape by the conductor."""
+    are normalised into this shape by the loader."""
     label: str = ""
     joints: list[str] = Field(default_factory=list)
     limits_rad: list[tuple[float, float]] = Field(default_factory=list)

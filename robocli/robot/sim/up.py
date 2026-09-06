@@ -1,17 +1,16 @@
-"""Bring up the simulated robot: build the body, power it on. HOST-SIDE.
+"""Start the simulated robot's container. Host side.
 
-The one place that knows how a simulated robot's body is made: the
-image, the mounts, the render-thread cap, and the in-body boot command.
-Returns the three pipes (stdin/stdout wired as PIPE on the returned
-Popen; stderr streaming into ``log_path``) -- the caller's ONLY ongoing
-relationship with the robot is conversation on those pipes (the private
-truth line rides stdin/stdout: a pipe only the parent holds; no network
-endpoint exists for the agent to find, and caller death = EOF = the
-robot powers itself off, no orphans).
+The one place that knows how a simulated robot is started: the image,
+the mounts, the render-thread cap, and the bridge command inside the
+container. Returns a ``BridgeClient`` over the process's stdin/stdout
+(stderr streams into ``log_path``): the caller's only ongoing
+relationship with the robot is that line. The pipe is held by the
+parent alone, so no network endpoint exists for the agent to find, and
+when the parent exits the bridge sees EOF and shuts itself down.
 
-Consumes DATA only: ``config_path`` is the trial's ALREADY-RESOLVED
-resolved config file and ``peers_xml`` the rendered DDS peers profile -- both
-computed once by the conductor and handed in (ruling 2026-08-16).
+Consumes data only: ``config_path`` is the trial's resolved config file
+and ``peers_xml`` the rendered DDS peers profile, both computed once by
+the runner and handed in.
 """
 
 from __future__ import annotations
@@ -49,7 +48,7 @@ def up(
     code (``code_root``, so the simulator venv imports the same package),
     uv's interpreter store (the venv python is a symlink into it), the
     simulator checkout (venv + simulator), and the directory holding the
-    resolved config file (the body's config and any file it names by path).
+    resolved config file (the robot's config and any file it names by path).
     """
     # The simulator venvs' python is a symlink into uv's interpreter
     # store; mount it read-only at the same path. Derived from the
@@ -59,7 +58,7 @@ def up(
     if static_peer and not peers_xml:
         raise ValueError(
             "static_peer needs the rendered peers profile too; the "
-            "conductor renders it (run.FASTDDS_PEERS_XML) and "
+            "runner renders it (bringup.FASTDDS_PEERS_XML) and "
             "passes peers_xml")
     peer_env = (
         ["-e", f"ROS_STATIC_PEERS={static_peer}"] if static_peer else []
@@ -76,13 +75,11 @@ def up(
         ["--gpus", "all", "-e", "NVIDIA_DRIVER_CAPABILITIES=graphics,utility"]
         if gpus else []
     )
-    # Software-render thread cap, derived from THIS host (never
-    # hardcoded; runs move across machines): one sim's llvmpipe may
-    # use at most a quarter of the cores, clamped to [4, 16]. With
-    # 2-4 concurrent sims nothing thrashes and the host keeps
-    # headroom (2026-08-12 overload incident). No-op under GPU
-    # rendering; exactly the fallback it guards. Override with
-    # resources.render_threads: <int> | "off".
+    # Software-render thread cap, derived from this host (runs move
+    # across machines): one sim's llvmpipe may use at most a quarter of
+    # the cores, clamped to [4, 16], so a few concurrent sims do not
+    # thrash and the host keeps headroom. No effect under GPU rendering.
+    # Override with resources.render_threads: <int> | "off".
     import os as _os
 
     rt = (resources or {}).get("render_threads", "auto")
@@ -94,8 +91,8 @@ def up(
     peers_setup = ""
     if peers_xml:
         # ROS_STATIC_PEERS exists only from Iron on; Humble's Fast DDS
-        # ignores it (2026-08-11); the profile file is the portable form.
-        # Injected alongside the env var (harmless where the var works).
+        # ignores it; the profile file is the portable form. Injected
+        # alongside the env var (harmless where the var works).
         peers_setup = (
             f"cat > /tmp/fastdds-peers.xml <<'PEERS_EOF'\n{peers_xml}PEERS_EOF\n"
             "export FASTRTPS_DEFAULT_PROFILES_FILE=/tmp/fastdds-peers.xml\n"
@@ -125,9 +122,9 @@ exec {venv}/bin/python -m robocli.robot.sim.bridge.main \
         ],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        # stderr streams to the log FROM BIRTH; a boot death cry must
-        # never be lost (the batch-1 incident cost a blind 300s x 60
-        # because it was devnulled). One file, whole life: bridge.log.
+        # stderr streams to the log from the first instant, so a boot
+        # failure's message is never lost. One file, whole life:
+        # bridge.log.
         stderr=(open(log_path, "w") if log_path is not None
                 else subprocess.DEVNULL),
         text=True,
@@ -149,20 +146,20 @@ def _mounts(*dirs: str) -> list[str]:
 
 
 def main() -> int:
-    """Standalone: boot one body and wire THIS terminal onto its line.
+    """Standalone: start one robot and wire this terminal onto its line.
 
     Type one JSON question per line ({"cmd": "success"}, {"cmd": "reset",
     "init_state_id": 0}, ...); answers come back one per line. Exiting
-    (Ctrl-D) is pipe EOF: the robot powers itself off. Debug door only;
-    trials always go through the conductor."""
+    (Ctrl-D) is pipe EOF: the bridge shuts itself down. For debugging;
+    trials go through the runner."""
     import argparse
     import sys
     import threading
 
     ap = argparse.ArgumentParser(
-        description="boot a simulated robot; the terminal becomes its "
-                    "control line (Ctrl-D powers it off)")
-    ap.add_argument("--name", required=True, help="body container name")
+        description="start a simulated robot; the terminal becomes its "
+                    "control line (Ctrl-D shuts it down)")
+    ap.add_argument("--name", required=True, help="robot container name")
     ap.add_argument("--image", required=True)
     ap.add_argument("--config", required=True,
                     help="resolved config yaml (the trial's suite view)")
@@ -200,7 +197,7 @@ def main() -> int:
 
     t = threading.Thread(target=pump_answers, daemon=True)
     t.start()
-    print(f"body {args.name} booting; ask it JSON, one per line "
+    print(f"robot {args.name} starting; ask it JSON, one per line "
           "(Ctrl-D = power off)", file=sys.stderr)
     try:
         for line in sys.stdin:

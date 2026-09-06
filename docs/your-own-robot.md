@@ -8,9 +8,10 @@ read_when:
 # Use your own robot
 
 A robot is a YAML profile. The bundled ones (`robocli robots`) are
-simulated; a real robot's profile is the same file minus the simulator
-body. Put yours in `~/.robocli/robots/<name>.yaml` and it is found by
-name, or pass its path.
+simulated; a real robot's profile is the same file with a `real`
+backend instead of a simulator. Put yours in
+`~/.robocli/robots/<name>.yaml` and it is found by name, or pass its
+path.
 
 ## What the agent reads
 
@@ -20,6 +21,11 @@ the facts:
 
 ```yaml
 machine:
+  backend:
+    kind: real
+    launch: ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur5e robot_ip:=192.168.1.20   # optional; omit if the graph is already up
+    discovery:
+      network: host          # the sandbox joins the host network; or static_peers: [...] / discovery_server: host:port
   robot:
     model: Universal Robots UR5e
     description: 6-joint arm with a Robotiq 2F-85 gripper
@@ -47,8 +53,8 @@ machine:
 Every key is checked against the schema (`robocli config schema`
 prints all of them with their meaning); a misspelled key is an error,
 not a silent no-op. Every port you list becomes a promise: `preflight`
-verifies it is served before an agent boards, and the manual describes
-it to the agent. List only what the robot actually serves.
+verifies it is served before the agent starts, and the workspace docs
+describe it to the agent. List only what the robot actually serves.
 
 ## Bringing it up
 
@@ -58,10 +64,9 @@ robocli doctor ur5e                # images, login, and that the profile loads
 robocli up ur5e --ros-domain 7     # or: robocli up ./ur5e.yaml
 ```
 
-The sandbox joins the robot's DDS domain. The robot's ROS 2 graph must
-be reachable from the host running RoboCLI (same network, or a DDS
-discovery server / static peers, which the sandbox `up` accepts as
-`--static-peer`). Then, as always:
+The sandbox reaches the robot's ROS 2 graph the way `backend.discovery`
+says: the host network, static peers, or a Fast DDS discovery server.
+Then, as always:
 
 ```bash
 robocli agent "move the arm to the home pose and open the gripper"

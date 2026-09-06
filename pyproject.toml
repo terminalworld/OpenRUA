@@ -60,26 +60,28 @@ testpaths = ["tests"]
 #               container with the workspace docs seeded; imports no
 #               other layer (what the agent experiences knows nothing
 #               about scoring)
-#   proxy       the network wall; zero-layer leaf
-#   agents      the occupants: one adapter per coding agent + launcher +
-#               opening prompt; zero-layer leaf
+#   proxy       the whitelist proxy; imports no other unit
+#   agents      the agent contract, the registry (manifests under
+#               configs/agents, hooks under plugins/agents), the launcher,
+#               the prompts; imports config and errors only
 #   runner      running trials: main, bringup, trial, operators, session,
-#               preflight (every manual promise verified before the agent
-#               starts), record (sole writer under runs/), lock.
+#               preflight (every promise the workspace docs make, verified
+#               before the agent starts), record (sole writer under runs/),
+#               lock.
 #               preflight, record and lock are leaves; the rest imports
 #               every host-side unit, never robocli.robot.sim.bridge
-#   cli         the front door (robocli up | down | agent | run | ...);
-#               forwards to the verbs above
-#   paths, errors, config, testing
-#               leaves shared by the host side: where things live, the
-#               error family, the config schema, the adapter conformance
-#               test. Onboard imports none of them (resolved paths and
+#   cli         the command line (robocli up | down | agent | run | ...);
+#               one module per verb, composing the units above
+#   config, errors, testing
+#               leaves shared by the host side: the schema, the loader and
+#               where things live; the error family; the agent conformance
+#               test. The bridge imports none of them (resolved paths and
 #               validated dicts reach it as data). doctor sits with cli
 #               above the units: no unit imports it.
 #
-# Cross-layer communication otherwise: (1) configs at startup (robots/,
-# benchmarks/), (2) the DDS / subprocess boundary at runtime, (3) files
-# under runs/.
+# Cross-layer communication otherwise: (1) configs at startup
+# (configs/robots, configs/benchmarks), (2) the DDS / subprocess boundary
+# at runtime, (3) files under runs/.
 # ---------------------------------------------------------------------------
 [tool.importlinter]
 root_package = "robocli"
@@ -91,7 +93,7 @@ source_modules = ["robocli.cli", "robocli.runner", "robocli.sandbox", "robocli.p
 forbidden_modules = ["robocli.robot.sim.bridge"]
 
 [[tool.importlinter.contracts]]
-name = "only the conductor brings up bodies"
+name = "only the runner brings robots up"
 type = "forbidden"
 source_modules = ["robocli.runner.preflight", "robocli.runner.record", "robocli.sandbox", "robocli.proxy", "robocli.agents"]
 forbidden_modules = ["robocli.robot"]
@@ -114,7 +116,7 @@ type = "independence"
 modules = ["robocli.robot.sim.bridge.environments", "robocli.robot.sim.bridge.ros", "robocli.robot.sim.bridge.rpc"]
 
 [[tool.importlinter.contracts]]
-name = "sandbox imports no layer (the cockpit is blind to scoring)"
+name = "sandbox imports no other unit (what the agent experiences knows nothing about scoring)"
 type = "forbidden"
 source_modules = ["robocli.sandbox"]
 forbidden_modules = ["robocli.runner", "robocli.cli"]
@@ -138,7 +140,7 @@ source_modules = ["robocli.robot.sim.bridge"]
 forbidden_modules = ["robocli.config", "robocli.errors", "robocli.doctor", "robocli.testing"]
 
 [[tool.importlinter.contracts]]
-name = "no unit imports the front door layer (cli, doctor, testing)"
+name = "no unit imports the top layer (cli, doctor, testing)"
 type = "forbidden"
 source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.runner", "robocli.config", "robocli.errors"]
 forbidden_modules = ["robocli.cli", "robocli.doctor", "robocli.testing"]
@@ -150,7 +152,7 @@ source_modules = ["robocli.plugins"]
 forbidden_modules = ["robocli.agents.registry", "robocli.agents.launcher", "robocli.agents.credentials", "robocli.agents.prompts", "robocli.config", "robocli.errors", "robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.runner", "robocli.cli", "robocli.doctor", "robocli.testing"]
 
 [[tool.importlinter.contracts]]
-name = "the schema is the conductor's: units read validated dicts, never config"
+name = "units read validated dicts, never the config schema"
 type = "forbidden"
 source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.runner.preflight", "robocli.runner.record"]
 forbidden_modules = ["robocli.config"]

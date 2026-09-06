@@ -1,8 +1,7 @@
-# The internet wall: the ONLY path from the sandbox to the outside world.
+# The proxy: the only path from the sandbox to the outside world.
 # tinyproxy, default-deny; the whitelist is a generic build arg (one
-# regex per line). Empty (the default) = deny everything; the pure
-# cockpit talks to nobody. Callers whose occupant needs an API pass its
-# domain regexes as the value.
+# regex per line). Empty (the default) = deny everything. Callers whose
+# agent needs an API pass its host regexes as the value.
 FROM alpine:3.20
 RUN apk add --no-cache tinyproxy
 COPY tinyproxy.conf /etc/tinyproxy/tinyproxy.conf

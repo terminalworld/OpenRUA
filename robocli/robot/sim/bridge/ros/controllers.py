@@ -57,10 +57,10 @@ class _ArmUnit:
         self.qadrs = np.array([owner._jmap[n][0] for n in joints])
         self.hand_body = spec.get("hand_body", f"robot{index}_right_hand")
         self._hand_id = None  # lazy (needs mujoco model)
-        # Wipe-class assemblies mount a 0-DoF tool (no gripper): sizing
-        # from the robot's own action dim, never assumed from the config
-        # (2026-08-11 wipe canary: a blind gripper column tripped
-        # robosuite's action-dim assert on every step).
+        # Some robots mount a 0-DoF tool (no gripper): the action is
+        # sized from the robot's own action dim, never assumed from the
+        # config (a blind gripper column trips robosuite's action-dim
+        # assert on every step).
         rdim = getattr(self.robot, "action_dim", None)
         if rdim is None:  # robosuite <= 1.4: single robot owns the env dim
             rdim = int(getattr(owner._raw, "action_dim", len(joints) + 1))
@@ -120,7 +120,7 @@ class CommandPorts:
         self._multi = len(self._arms) > 1
         self.apply_tuning()
 
-        # Mobile-base composite (robocasa leg): actions are assembled per
+        # Mobile-base composite: actions are assembled per
         # part via the robot's own create_action_vector; base velocities
         # apply for exactly the tick that carries them (paused-clock
         # analog of a real base's command watchdog). Single-arm only.
@@ -129,16 +129,15 @@ class CommandPorts:
         self._mobile = bool(parts) and "base" in parts
         if self._mobile and self._multi:
             raise ValueError("mobile base + multiple arms is not a "
-                             "supported assembly")
+                             "supported combination")
         self._base_vel = np.zeros(3)  # vx, vy, wz (JOINT_VELOCITY base)
-        # Base command policy (design-decisions 2026-08-12):
-        #   "queue"  (mainline): one message = one tick, deterministic;
-        #            bounded by _BASE_QUEUE_MAX as a flood fuse; the
-        #            2026-08-12 composite canaries flooded thousands of
-        #            ticks of "displacement debt" and crushed the sim.
-        #   "latest" (real-robot semantics): a new message REPLACES the
-        #            pending setpoint (velocity knob, not a queued debt);
-        #            reserved for the free-clock/real-robot legs.
+        # Base command policy:
+        #   "queue"  (default): one message = one tick, deterministic;
+        #            bounded by _BASE_QUEUE_MAX so a flood of messages
+        #            cannot queue thousands of ticks of displacement.
+        #   "latest" (real-robot semantics): a new message replaces the
+        #            pending setpoint (a velocity setting, not a queued
+        #            debt); for free-running clocks.
         import threading as _threading
 
         self._base_policy = str(

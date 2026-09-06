@@ -1,5 +1,5 @@
 # Franka Panda on an Omron holonomic mobile base (RoboCasa365 kitchens),
-# ROS 2 Humble body. Named by benchmarks/robocasa365.yaml under `robot:`.
+# ROS 2 Humble. configs/benchmarks/robocasa365.yaml names it under `robot:`.
 
 # The scene `robocli up panda-omron-sim` loads when no benchmark is named.
 world:
@@ -10,37 +10,36 @@ world:
 machine:
   backend:
     kind: sim
-    image: robocli-sim-humble    # py3.10 == Humble, same image as capbench leg
-    sandbox_image: robocli-sandbox-humble  # sandbox distro == robot distro (see capbench.yaml)
-    gpus: false                  # set true on a GPU host (nvidia-container-
-                                 # toolkit required): EGL rendering moves to
-                                 # the GPU (~214 -> ~10 ms/frame on whole-room
-                                 # scenes); physics stays CPU — results remain
-                                 # comparable across render devices. Key is
-                                 # honored by every leg's config.
+    image: robocli-sim-humble    # py3.10 == Humble, the same image as capbench
+    sandbox_image: robocli-sandbox-humble  # sandbox distro == robot distro
+    gpus: false                  # true on a GPU host (nvidia-container-toolkit
+                                 # required): EGL rendering moves to the GPU
+                                 # (~214 -> ~10 ms/frame on whole-room
+                                 # scenes); physics stays CPU, so results
+                                 # stay comparable across render devices
     simulator:
-      venv: robocasa365/.venv-robocasa   # DEDICATED venv
+      venv: robocasa365/.venv-robocasa   # a venv of its own
       container: sim-humble
 
   workspace_template: workspace
 
   controller: JOINT_POSITION
-  controller_config: controllers/pandaomron_joint_ctrl.json  # under robots/ (bundled, then ~/.robocli/robots/), or a path
+  controller_config: controllers/pandaomron_joint_ctrl.json  # under configs/robots/ (bundled, then ~/.robocli/robots/), or a path
   controller_kp_scale: 1       # gains live in the JSON (kp=1500 arm, their
                                # defaults for torso/base)
 
   cameras:
     resolution: [640, 480]
-    # Their canonical eval cameras; the scene defines many more — narrow to
-    # keep render cost sane on whole-room scenes (llvmpipe budget).
+    # Their canonical eval cameras; the scene defines many more, narrowed
+    # to keep render cost sane on whole-room scenes under software rendering.
     list: [robot0_agentview_left, robot0_agentview_right, robot0_eye_in_hand]
     rate_hz: 2
     render_mode: on_demand  # render a camera only while subscribed
-                            # (agent-indistinguishable; 'always' = debug
-                            # parity mode; 2026-08-13 ruling)
+                            # (indistinguishable to the agent; 'always'
+                            # renders regardless, for debugging)
 
   control:               # graph-side actuation behavior (named apart from
-                         # the gripper/arm FACTS below, which feed the manual)
+                         # the gripper/arm facts below, which feed machine.yaml)
     gripper:
       open_threshold_m: 0.02
       settle_steps: 10
@@ -57,7 +56,7 @@ machine:
     robot0_: panda_
     gripper0_: panda_
 
-  # Machine-manifest facts.
+  # The facts machine.yaml is generated from.
   robot:
     model: Franka Emika Panda on Omron mobile base (PandaOmron)
     description: 7-joint arm with parallel-jaw gripper on a holonomic
@@ -71,24 +70,24 @@ machine:
                  [-2.90, 2.90]]
   gripper: {open_m: 0.04, closed_m: 0.0, max_effort: 30.0,
             stops_at: [open, closed]}
-  base:                      # NEW capability kind: mobile base
+  base:                      # a mobile base
     type: holonomic          # omnidirectional: vx, vy, wz all actuated
     body: mobilebase0_base   # the body that actually rides the base
-                             # (verified: robot0_base is a static dummy)
+                             # (robot0_base is a static dummy)
     frame: base_footprint
     effective_speed_note: unit vx tracks ~0.056 m/s effective
       (velocity ramp restarts per message)
     cmd_vel: /cmd_vel
     odom: /odom
-    # Measured (2026-08-11): unit vx tracks ~0.056 m/s effective under
-    # 1-msg-=-1-tick paused-clock streaming (their velocity ramp restarts
-    # per goal). Surfaced to the agent via workspace docs, not tuned away.
+    # Measured: unit vx tracks ~0.056 m/s effective under one-message-one-
+    # tick paused-clock streaming (their velocity ramp restarts per goal).
+    # Surfaced to the agent through the workspace docs, not tuned away.
   planning: {moveit: true, move_action: /move_action,
              ik_service: /compute_ik, group: panda_arm,
-             planning_frame: panda_link0}  # model frame; IK
-                             # frame_id must be EMPTY (audit A1)
+             planning_frame: panda_link0}  # model frame; the IK request's
+                             # frame_id must be empty
 
   tf:
     hand: false
-    base_body: robot0_link0    # arm root rides the mobile base (robot0_base
-                               # is a static dummy on PandaOmron)
+    base_body: robot0_link0    # the arm root rides the mobile base
+                               # (robot0_base is a static dummy on PandaOmron)

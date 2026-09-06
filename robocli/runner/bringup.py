@@ -22,8 +22,8 @@ from robocli.sandbox.up import up as sandbox_up
 
 # ROS_STATIC_PEERS exists only from Iron on; Humble's Fast DDS ignores
 # it. The portable equivalent is a Fast DDS initial-peers profile; DNS
-# names resolve inside it, so container names work as-is. BOTH sides of
-# a multicast-less network get a rendered copy (sim container and
+# names resolve inside it, so container names work as-is. Both sides of
+# a multicast-less network get a rendered copy (robot container and
 # sandbox).
 FASTDDS_PEERS_XML = """<?xml version="1.0" encoding="UTF-8" ?>
 <profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
@@ -50,21 +50,20 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
              task_suite: str, task_id: int, network: str, proxy_url: str,
              mounts: tuple[str, ...], ros_domain: int, robot_log: Path,
              home: Path | None = None) -> tuple[Path, robot.Handle]:
-    """Resolve, sandbox, robot, in that order, from one resolved config.
+    """Write the config, start the sandbox, then the robot.
 
-    Sandbox first: the body's ROS_STATIC_PEERS must resolve the sandbox's
-    name at participant creation (mutual unicast discovery). The resolved
-    config is written ONCE as ``dest/config.yaml`` and every party reads
-    that same file: the manual seeding, the body's boot, the machine
-    itself (ruling 2026-08-16). Files the body opens by path are copied
-    next to it first (resolve_body_files).
+    Sandbox first: the robot's ROS_STATIC_PEERS must resolve the
+    sandbox's name at participant creation (mutual unicast discovery).
+    The resolved config is written once as ``dest/config.yaml`` and every
+    party reads that same file; files the robot opens by path are copied
+    next to it first (resolve_robot_files).
 
-    Returns the assembly path and the machine's control line, ready
-    (``wait_ready`` done). If the body fails to come up, the sandbox this
-    call started is torn down before the error propagates: the caller
-    never inherits half a bring-up.
+    Returns the config path and the robot's handle, ready (``wait_ready``
+    done). If the robot fails to come up, the sandbox this call started
+    is torn down before the error propagates: the caller never inherits
+    half a bring-up.
     """
-    resolve_body_files(cfg, dest, home)
+    resolve_robot_files(cfg, dest, home)
     config_path = record.write_config(dest, cfg)
     backend = cfg.get("machine", {}).get("backend", {})
     sandbox_up(
@@ -109,12 +108,12 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     return config_path, machine
 
 
-def resolve_body_files(cfg: dict, dest: Path, home: Path | None = None) -> None:
-    """Files the body reads by path (today: ``machine.controller_config``)
-    are copied next to the assembly and named there by absolute path, so
-    the container sees them through the one mount it has on that
-    directory and the assembly stays self-contained. Names resolve
-    bundled (``robocli/robots/``), then ``<home>/robots/``, then as a
+def resolve_robot_files(cfg: dict, dest: Path, home: Path | None = None) -> None:
+    """Files the robot reads by path (``machine.controller_config``) are
+    copied next to the config and named there by absolute path, so the
+    container sees them through the one mount it has on that directory
+    and the config stays self-contained. Names resolve bundled
+    (``robocli/configs/robots/``), then ``<home>/robots/``, then as a
     path."""
     machine = cfg.get("machine", {})
     spec = machine.get("controller_config")

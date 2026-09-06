@@ -10,7 +10,7 @@
                     agent) and the table ``robocli run --operator`` reads
 - ``session.py``    the agent operator: a headless agent run as one or
                     more segments of a single session
-- ``preflight.py``  every promise the workspace manual makes, checked from
+- ``preflight.py``  every promise the workspace docs make, checked from
                     the sandbox before the agent starts
 - ``record.py``     what a trial writes under ``runs/`` (the only writer)
 - ``lock.py``       one writer per trial directory

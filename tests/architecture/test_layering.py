@@ -13,7 +13,7 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-PKG = Path(__file__).resolve().parents[1] / "robocli"
+PKG = Path(__file__).resolve().parents[2] / "robocli"
 
 _BRIDGE = {"robocli.robot.sim.bridge"}
 _HOST = {"robocli.runner.preflight", "robocli.runner.record", "robocli.sandbox",

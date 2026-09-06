@@ -132,11 +132,10 @@ def compose(robot: str | None, bench: str | None,
 def apply_suite_overrides(cfg: dict, task_suite: str) -> dict:
     """Deep-merge ``cfg["suite_overrides"][task_suite]`` into cfg, in place.
 
-    ``None`` deletes a key; a suite whose robot mounts no gripper (wipe's
-    0-DoF pad, 2026-08-11 canary) nulls ``machine.ports.gripper`` and
-    ``machine.gripper`` so machine and manifest agree. Every consumer
-    reads the RESULT (the trial's config.yaml artifact); only the
-    conductor runs this.
+    ``None`` deletes a key: a suite whose robot mounts no gripper nulls
+    ``machine.ports.gripper`` and ``machine.gripper`` so the robot and
+    machine.yaml agree. Every consumer reads the result (the trial's
+    config.yaml); only the runner runs this.
     """
     def merge(dst: dict, src: dict) -> None:
         for k, v in src.items():
@@ -189,27 +188,26 @@ def normalize_arms(cfg: dict) -> dict:
     return cfg
 
 
-# One shared fallback when a config omits protocol.active_wall_clock_minutes
-# (diff-review 2026-08-14 F-H: divergent 30/45 fallbacks were the same
-# trap F18 removed for prompts). All real configs set the key explicitly.
+# One shared fallback when a config omits protocol.active_wall_clock_minutes.
+# The bundled configs set the key explicitly.
 DEFAULT_WALL_CLOCK_MIN = 30.0
 
-# Renamed from protocol.wall_clock_minutes on 2026-08-20, when the budget
-# stopped counting time a trial spends suspended at a quota wall. A config
-# still carrying the old key is REFUSED rather than read as if nothing
-# changed: silently accepting it would run the new active-time semantics
-# under a name that promised total time.
+# The budget used to be protocol.wall_clock_minutes, before it stopped
+# counting time a trial spends suspended at a quota wall. A config still
+# carrying the old key is refused rather than read as if nothing changed:
+# accepting it would run active-time semantics under a name that
+# promised total time.
 LEGACY_WALL_CLOCK_KEY = "wall_clock_minutes"
 
 
 def resolve_wall_clock_min(cfg: dict) -> float:
-    """The trial's ACTIVE wall-clock budget in minutes, from the config."""
+    """The trial's active wall-clock budget in minutes, from the config."""
     protocol = cfg.get("protocol", {})
     if LEGACY_WALL_CLOCK_KEY in protocol:
         raise ValueError(
             f"config uses protocol.{LEGACY_WALL_CLOCK_KEY}, which was renamed "
-            "to protocol.active_wall_clock_minutes on 2026-08-20 (the budget "
-            "no longer counts time suspended at a quota wall). Fix it with:\n"
+            "to protocol.active_wall_clock_minutes (the budget counts active "
+            "time only, not time suspended at a quota wall). Fix it with:\n"
             f"  sed -i 's/{LEGACY_WALL_CLOCK_KEY}:/active_wall_clock_minutes:/' "
             "<config.yaml>")
     return float(protocol.get("active_wall_clock_minutes",

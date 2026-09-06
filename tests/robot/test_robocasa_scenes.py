@@ -44,7 +44,7 @@ def test_the_seed_is_the_whole_state():
 def test_no_split_has_its_scene_pinned(split):
     # Pinning a (layout, style) would both change the sampling their
     # numbers come from and risk forcing a kitchen this task excludes
-    # (2026-09-04: that killed every composite task).
+    # (that kills every composite task).
     env = FakeEnv()
     ctx = {"split": split}
     LOADER.reset(env, ctx, LOADER.init_state(ctx, 3))

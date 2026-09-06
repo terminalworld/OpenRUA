@@ -2,8 +2,8 @@
 
     python3 -m robocli.proxy.down [--name robocli-proxy]
 
-Teardown/testing only; campaigns leave the wall standing (killing a
-live wall cuts every in-flight session through it).
+Teardown and testing only; campaigns leave the proxy standing (killing
+a live proxy cuts every in-flight session through it).
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ import sys
 
 
 def down(name: str = "robocli-proxy") -> bool:
-    """Remove the wall container; True if it existed."""
+    """Remove the proxy container; True if it existed."""
     return subprocess.run(["docker", "rm", "-f", name],
                           capture_output=True).returncode == 0
 

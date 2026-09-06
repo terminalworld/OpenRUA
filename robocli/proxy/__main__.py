@@ -1,4 +1,4 @@
-"""The package's front door: ``python -m robocli.proxy <verb> ...``.
+"""``python -m robocli.proxy <verb> ...``: the package's command line.
 
 From outside, the package is ONE self-contained unit; verbs are its
 interface and the files behind them are implementation detail. Each
@@ -11,7 +11,7 @@ from __future__ import annotations
 import sys
 
 _VERBS = {
-    "build": ("robocli.proxy.build", "whitelist -> wall image"),
+    "build": ("robocli.proxy.build", "whitelist -> proxy image"),
     "up": ("robocli.proxy.up", "idempotent ensure -> proxy url"),
     "down": ("robocli.proxy.down", "name -> removed (teardown only)"),
 }

@@ -12,12 +12,12 @@ from pathlib import Path
 
 import pytest
 import yaml
-from conftest import requires_image
+from tests.conftest import requires_image
 
 from robocli.sandbox import build as hbuild
 from robocli.sandbox import workspace
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 LIBERO_CFG = REPO / "robocli" / "configs" / "benchmarks" / "libero_pro.yaml"
 PKG = Path(workspace.__file__).resolve().parent
 
@@ -43,7 +43,7 @@ def test_seed_copies_template_and_generates_manifest(tmp_path):
 
 def test_manifest_omits_gripper_for_gripperless_machine(tmp_path):
     # The wipe-suite shape: a machine whose config lists no gripper must
-    # not promise one in machine.yaml (manual/machine agreement). The
+    # not promise one in machine.yaml. The
     # deletion happens BEFORE normalize, like a real suite override.
     from robocli.config import normalize_arms
     cfg = load_config(LIBERO_CFG)
@@ -64,9 +64,8 @@ def test_seed_is_noop_without_template(tmp_path):
 
 
 def test_template_hash_is_deterministic_and_content_sensitive(tmp_path):
-    # Template edits are LEGAL pre-campaign (ruling 2026-08-13: skin
-    # changes archive a new hash; provenance keeps the old/new line
-    # auditable), so no historical hash is pinned here. What must hold:
+    # A template edit records a new hash (provenance keeps the old and
+    # new apart), so no historical hash is pinned here. What must hold:
     # the hash is deterministic, and any byte change moves it.
     h1, h2 = workspace.template_hash(_cfg()), workspace.template_hash(_cfg())
     assert h1 == h2 and len(h1) == 64
@@ -85,9 +84,9 @@ def test_template_hash_is_deterministic_and_content_sensitive(tmp_path):
 # --------------------------------------------------------------- recipes
 
 def test_recipes_have_generic_slots_and_zero_agent_tokens():
-    seat = (PKG / "sandbox.Dockerfile").read_text()
-    assert 'ARG PREINSTALL=""' in seat  # optional, empty = pure cockpit
-    low = seat.lower()
+    dockerfile = (PKG / "sandbox.Dockerfile").read_text()
+    assert 'ARG PREINSTALL=""' in dockerfile  # optional, empty = the bare terminal
+    low = dockerfile.lower()
     assert "claude" not in low and "anthropic" not in low \
         and "agent_install" not in low
 
@@ -112,7 +111,7 @@ def test_up_refuses_missing_image(tmp_path):
 # --------------------------------------------------------------- package
 
 def test_harness_imports_no_layer():
-    # belt to test_layering's braces: fresh package stays a pure house
+    # belt to test_layering's braces: the package imports no other unit
     import ast
     for py in PKG.glob("*.py"):
         tree = ast.parse(py.read_text())
@@ -170,7 +169,7 @@ def test_up_surfaces_docker_stderr_on_bad_network(tmp_path):
 
 def test_up_refuses_a_corpse(tmp_path):
     # alpine has no bash: docker accepts the run, the container dies at
-    # birth; up must refuse to hand back the name.
+    # once; up must refuse to hand back the name.
     import subprocess
     from robocli.sandbox import up as hup
     subprocess.run(["docker", "pull", "-q", "alpine:3.20"],
@@ -179,7 +178,7 @@ def test_up_refuses_a_corpse(tmp_path):
         hup.up(config=LIBERO_CFG, workspace=tmp_path / "ws",
                image="alpine:3.20", network="robocli-internal",
                name="sandbox-corpse-test")
-    # Either guard may catch it (docker refuses at exec, or the birth
+    # Either guard may catch it (docker refuses at exec, or the liveness
     # check finds an exited container); both are instructive errors.
     assert "docker run failed" in str(e.value) or "docker logs" in str(e.value)
     subprocess.run(["docker", "rm", "-f", "sandbox-corpse-test"],
@@ -199,7 +198,7 @@ def test_package_front_door():
 
 
 def test_manifest_drive_never_clobbers_the_ros_type():
-    # M2 regression (2026-08-15): robocasa's machine.base.type "holonomic"
+    # Regression: robocasa's machine.base.type "holonomic"
     # overwrote the ROS message type column; config extras must land in
     # "drive" and the typed column must win.
     import yaml as _yaml
@@ -237,7 +236,7 @@ def test_manifest_two_arms_two_of_everything(tmp_path):
     assert traj[0]["joints"][0].startswith("left")
     wrench = [s for s in man["sensors"] if s["kind"] == "wrench"]
     assert len(wrench) == 2
-    assert not man.get("planning")   # manual promises no planner
+    assert not man.get("planning")   # machine.yaml promises no planner
 
 
 # --------------------------------------------- manifest explains itself
@@ -247,7 +246,7 @@ def test_manifest_two_arms_two_of_everything(tmp_path):
 # is a PER-MACHINE fact (multi-finger hands pass the action through
 # untouched), so it lives on the manifest, not in the generic docs, and
 # the docs must not promise the force-limited behaviour they used to
-# (2026-08-21; scan of the handover failures).
+# (seen in the handover failures).
 
 def test_gripper_entry_declares_the_binary_stops(tmp_path):
     out = tmp_path / "machine.yaml"

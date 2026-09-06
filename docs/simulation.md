@@ -6,13 +6,13 @@ read_when:
   - You want GPU rendering
 ---
 
-# Simulation simulators
+# Simulators
 
-The simulated bodies run the benchmarks' own simulators (robosuite /
-MuJoCo, LIBERO-PRO, CaP-Bench, RoboCasa). Those live in a *simulator*:
-a checkout plus a Python venv, mounted into the robot container at
-`up`. Simulators are large (tens of GB with assets) and are built
-locally under the user directory:
+The simulated robots run the benchmarks' own simulators (robosuite /
+MuJoCo, LIBERO-PRO, CaP-Bench, RoboCasa). Each is a checkout plus a
+Python venv, mounted into the robot container at `up`. They are large
+(tens of GB with assets) and are built locally under the user
+directory:
 
 ```
 ~/.robocli/simulators/
@@ -23,7 +23,7 @@ locally under the user directory:
 Each robot profile names its venv under `machine.backend.simulator.venv`,
 relative to that directory (`cap-x/.venv-libero`); an absolute path or
 `~` works too if you keep simulators elsewhere. The venv must have
-`robocli` installed (the body boots with `python -m
+`robocli` installed (the container starts the bridge with `python -m
 robocli.robot.sim.bridge.main` from it).
 
 Build recipes for each simulator are being written up here; until

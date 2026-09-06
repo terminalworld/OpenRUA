@@ -3,7 +3,7 @@
 The private stdio line's survival rules: report-not-die on handler
 errors, request-id echo, and EVERY exit path ending in on_eof (the
 no-orphans guarantee) -- including the answer pipe breaking mid-rpc
-(fix 2026-08-17: a hard-killed runner must not strand the sim).
+(a hard-killed runner must not strand the sim).
 """
 
 from __future__ import annotations
@@ -70,7 +70,7 @@ def test_unknown_cmd_reports_not_dies():
 
 def test_broken_answer_pipe_still_reaches_on_eof():
     # Runner hard-killed mid-rpc: writing the answer raises. The loop
-    # must break to the SAME shutdown path, never strand the body.
+    # must break to the SAME shutdown path, never strand the sim.
     out = _Out(fail_after=0)
     answers, eof = _run(
         [json.dumps({"cmd": "ok"}), json.dumps({"cmd": "ok"})],

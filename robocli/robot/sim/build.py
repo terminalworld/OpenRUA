@@ -1,14 +1,14 @@
 """Build the simulated robot's image from Dockerfile.<distro>.
 
-Explicit and low-frequency (blueprint / distro changes only); ``up``
+Explicit and low-frequency (Dockerfile / distro changes only); ``up``
 never builds. Docker's layer cache makes an unchanged re-build a cheap
 no-op returning the same digest.
 
     python3 -m robocli.robot.sim.build [--distro jazzy] [--tag ...]
 
 Value output: ``<tag> <digest>`` (one line). The image self-describes
-(labels: blueprint sha256 + build time), so a running body can always
-be traced back to the exact blueprint that made it.
+(labels: Dockerfile sha256 and build time), so a running container can
+be traced back to the exact Dockerfile that made it.
 """
 
 from __future__ import annotations
@@ -28,12 +28,12 @@ def build(distro: str = "jazzy", tag: str | None = None) -> tuple[str, str]:
     dockerfile = _HERE / f"Dockerfile.{distro}"
     if not dockerfile.exists():
         have = sorted(p.name for p in _HERE.glob("Dockerfile.*"))
-        raise RuntimeError(f"no blueprint for distro '{distro}' (have {have})")
+        raise RuntimeError(f"no Dockerfile for distro '{distro}' (have {have})")
     tag = tag or f"robocli-sim-{distro}"
     cmd = [
         "docker", "build", "-f", str(dockerfile), "-t", tag,
         "--label",
-        f"robocli.blueprint_sha256="
+        f"robocli.dockerfile_sha256="
         f"{hashlib.sha256(dockerfile.read_bytes()).hexdigest()}",
         "--label",
         f"robocli.built_utc={datetime.now(timezone.utc).isoformat()}",

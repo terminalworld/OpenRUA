@@ -81,11 +81,9 @@ def generate_launch_description():
                 package="moveit_ros_move_group",
                 executable="move_group",
                 output="log",
-                # A machine's driver daemon restarts when it crashes
-                # (systemd semantics). 2026-08-12 GatherVegetables: a
-                # silent singleton move_group death at minute 7 cost the
-                # agent 127min of hand-rolled kinematics and got booked
-                # as an agent failure.
+                # A robot's driver daemon restarts when it crashes
+                # (systemd semantics); a silent move_group death would
+                # otherwise be booked as an agent failure.
                 respawn=True,
                 respawn_delay=2.0,
                 parameters=[moveit_config.to_dict(), controllers, sim_time],

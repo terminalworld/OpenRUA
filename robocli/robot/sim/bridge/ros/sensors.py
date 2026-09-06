@@ -83,7 +83,7 @@ class SensorPublishers:
             if arm.get("ports", {}).get("wrench")
         ]
 
-        # Mobile base (robocasa leg): odometry from the base body's sim
+        # Mobile base: odometry from the base body's sim
         # pose; the paused-clock analog of wheel odometry (drift-free; a
         # disclosed simulation simplification, same tier as joint_states).
         odom_port = machine.get("ports", {}).get("odom")
@@ -117,7 +117,7 @@ class SensorPublishers:
         # from a always-streaming device; subscribing IS how anyone
         # looks, and the next timer tick (<= one period) delivers; real
         # cameras have the same connect latency. Saves llvmpipe whole-
-        # room renders nobody is watching (2026-08-13, Zhaoyang).
+        # room renders nobody is watching.
         self._render_mode = str(cam_cfg.get("render_mode", "on_demand"))
         rate = float(cam_cfg.get("rate_hz", 2.0))
         if self._cams and rate > 0:
@@ -148,8 +148,8 @@ class SensorPublishers:
             js.effort.append(float(qfrc[dadr]))
 
         # Arm-root TF source per arm: "robot0_base" on fixed-base
-        # assemblies; on mobile ones that body is a static dummy; the
-        # true arm root (robot0_link0) rides the base (robocasa leg sets
+        # robots; on mobile ones that body is a static dummy and the
+        # true arm root (robot0_link0) rides the base (the profile sets
         # tf.base_body, which normalize_arms folds into the arm spec).
         for arm in self._arm_specs:
             tfs.append(self._tf_from_body(
@@ -279,7 +279,7 @@ class SensorPublishers:
         self._pending_cams = False
         # Commands outrank observation: on whole-room scenes a render
         # cycle costs ~0.2s x cameras (llvmpipe) and can starve command
-        # consumption into backlog (2026-08-12 composite canaries). If
+        # consumption into backlog. If
         # jobs are waiting, skip this cycle; the camera timer retries at
         # the next period; effective frame rate degrades under load
         # instead of the robot's responsiveness.
