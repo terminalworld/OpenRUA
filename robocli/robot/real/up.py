@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from robocli.robot.base import Handle
-from robocli.robot.real.down import down, remember
+from robocli.robot.real.down import container_name, down, remember
 
 
 class RealHandle(Handle):
@@ -42,16 +42,28 @@ class RealHandle(Handle):
         down(self.name)
 
 
+def launch_argv(name: str, launch: str, image: str | None) -> list[str]:
+    """The process that runs the launch command: on the host, or inside
+    ``image`` on the host network so the driver's ROS release need not
+    match the sandbox's."""
+    if image:
+        return ["docker", "run", "--rm", "--network", "host",
+                "--name", container_name(name), image, "bash", "-lc", launch]
+    return ["bash", "-lc", launch]
+
+
 def up(name: str, launch: str | None, log_path: Path | None = None,
-       probe_argv: list[str] | None = None) -> RealHandle:
-    """Start ``launch`` (a shell command) if given, its output streaming
-    into ``log_path``; return the handle. ``probe_argv`` is what
+       probe_argv: list[str] | None = None, image: str | None = None) -> RealHandle:
+    """Start ``launch`` if given (on the host, or in ``image``), its output
+    streaming into ``log_path``; return the handle. ``probe_argv`` is what
     ``wait_ready`` polls."""
     proc = None
     if launch:
+        if image:
+            subprocess.run(["docker", "rm", "-f", container_name(name)], capture_output=True)
         proc = subprocess.Popen(
-            ["bash", "-lc", launch], stdin=subprocess.DEVNULL,
+            launch_argv(name, launch, image), stdin=subprocess.DEVNULL,
             stdout=(open(log_path, "w") if log_path else subprocess.DEVNULL),
             stderr=subprocess.STDOUT, start_new_session=True)
-        remember(name, proc)
+        remember(name, proc, container=container_name(name) if image else None)
     return RealHandle(name, proc, probe_argv)

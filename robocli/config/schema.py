@@ -149,7 +149,16 @@ class RealBackend(Strict):
     kind: Literal["real"]
     launch: str | None = Field(default=None, description="command that brings the "
                                "robot's ROS 2 graph up; null = already running")
+    image: str | None = Field(default=None, description="docker image the launch "
+                              "command runs in, on the host network (a vendor driver "
+                              "pinned to its own ROS release); null = run it on the host")
     discovery: Discovery
+
+    @model_validator(mode="after")
+    def _image_needs_launch(self):
+        if self.image and not self.launch:
+            raise ValueError("backend.image needs a launch command to run in it")
+        return self
     sandbox_image: str = Field(default="robocli-sandbox", description="agent terminal image "
                                "(same ROS distro as the robot)")
 
