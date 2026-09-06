@@ -13,6 +13,7 @@ from robocli import agents
 from robocli.config import (apply_suite_overrides, load_config, normalize_arms,
                             resolve_wall_clock_min)
 from robocli.config import paths
+from robocli.errors import UsageError
 from robocli.runner import lock as triallock
 from robocli.runner import record
 from robocli.runner.bringup import simulator_venv
@@ -39,6 +40,11 @@ def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> Non
     ap.add_argument("--task-ids", default="0")
     ap.add_argument("--seeds", default="0")
     ap.add_argument("--operator", default="none", choices=sorted(OPERATORS))
+    ap.add_argument(
+        "--task", default=None,
+        help="task sentence for a real robot (no bridge to ask); a simulated "
+        "robot's task comes from the benchmark and this is ignored",
+    )
     ap.add_argument(
         "--script", default=None,
         help="command-sequence file for --operator script (canonical "
@@ -95,6 +101,9 @@ def run(args: argparse.Namespace) -> int:
     home = paths.home(args.home)
     cfg_path = paths.find("benchmarks", args.config, home).resolve()
     cfg = load_config(cfg_path, args.robot, home)
+    if cfg["machine"]["backend"].get("kind") != "sim" and not args.task:
+        raise UsageError("a real robot has no benchmark task to ask for",
+                         hint="pass --task \"<what the agent should do>\"")
     if args.wall_clock_min is None:
         args.wall_clock_min = resolve_wall_clock_min(cfg)
     # The per-suite view, computed exactly once; everyone downstream
@@ -123,7 +132,7 @@ def run(args: argparse.Namespace) -> int:
                     args.wall_clock_min, ros_domain=args.ros_domain,
                     credentials_dir=args.credentials_dir,
                     account_alias=args.account_alias, script=args.script,
-                    token_file=args.token_file, home=home,
+                    token_file=args.token_file, home=home, task=args.task,
                 )
             except triallock.TrialLocked as e:
                 # Not a failure of this trial: someone else is doing it.
