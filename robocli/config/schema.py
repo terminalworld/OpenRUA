@@ -323,12 +323,22 @@ class Benchmark(Strict):
         "null deletes a key")
 
 
+class SandboxConfig(Strict):
+    """How this machine starts the sandbox container. A machine fact, so
+    it lives in the defaults files, never in a benchmark config."""
+    run_args: list[str] = Field(
+        default_factory=list,
+        description="flags appended to the sandbox's docker run, verbatim "
+        "(rootless podman needs --userns=keep-id; see docs/podman.md)")
+
+
 class ResolvedConfig(Strict):
     """The resolved config every party reads (``<trial>/config.yaml``)."""
     task: Task
     protocol: Protocol = Field(default_factory=Protocol)
     agent: AgentConfig = Field(default_factory=AgentConfig)
     machine: Machine
+    sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     suite_overrides: dict[str, dict[str, Any]] = Field(default_factory=dict)
 
 
@@ -336,6 +346,7 @@ class UserConfig(Strict):
     """A defaults file: the package's configs/config.yaml or ~/.robocli/config.yaml."""
     agent: AgentOverrides = Field(default_factory=AgentOverrides)
     robot: str | None = Field(default=None, description="robot when a command names none")
+    sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
 
 
 # ---------------------------------------------------------------- agents

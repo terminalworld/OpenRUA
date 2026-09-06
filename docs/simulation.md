@@ -32,4 +32,6 @@ it looked.
 
 Rendering is EGL; with no GPU it falls back to llvmpipe (slow but
 correct, and what the reported runs used). `machine.backend.gpus: true`
-injects the NVIDIA driver when the host has nvidia-container-toolkit.
+injects the NVIDIA driver when the host has nvidia-container-toolkit
+(under podman the same flag resolves through CDI: `nvidia-ctk cdi
+generate` once, see docs/podman.md).

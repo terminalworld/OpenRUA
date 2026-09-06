@@ -105,6 +105,20 @@ def test_user_config_layers_under_the_benchmark(tmp_path):
     assert load_config(b, home=tmp_path)["machine"]["robot"]["model"] == "Franka Emika Panda"
 
 
+def test_sandbox_run_args_come_from_the_defaults_file_only(tmp_path):
+    assert load_config("libero_pro", home=tmp_path)["sandbox"] == {"run_args": []}
+    (tmp_path / "config.yaml").write_text("sandbox:\n  run_args: ['--userns=keep-id']\n")
+    cfg = load_config("libero_pro", home=tmp_path)
+    assert cfg["sandbox"]["run_args"] == ["--userns=keep-id"]
+    # a machine fact has no place in a benchmark config
+    b = tmp_path / "b.yaml"
+    b.write_text("task: {benchmark: libero_pro, suites: [libero_goal_task]}\n"
+                 "robot: panda-sim\nsandbox: {run_args: ['--userns=keep-id']}\n")
+    with pytest.raises(config.ConfigError) as e:
+        load_config(b, home=tmp_path)
+    assert "sandbox" in str(e.value)
+
+
 def test_user_config_unknown_key_is_an_error(tmp_path):
     (tmp_path / "config.yaml").write_text("agnet: {model: x}\n")
     with pytest.raises(config.ConfigError) as e:

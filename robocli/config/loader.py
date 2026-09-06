@@ -74,6 +74,15 @@ def layer_agent(bench_agent: dict, *defaults: UserConfig) -> dict:
     return out
 
 
+def layer_sandbox(*defaults: UserConfig) -> dict:
+    """The sandbox section comes from the defaults files only (a machine
+    fact); the highest layer that wrote a key supplies it."""
+    out: dict = {}
+    for d in defaults:
+        out.update(d.sandbox.model_dump(exclude_unset=True))
+    return out
+
+
 def load_robot(robot: str, home: Path | None = None) -> dict:
     """A robot profile by name (bundled, then ``<home>/robots/``) or by
     path, validated (RobotProfile). Returns it as a dict: its
@@ -105,6 +114,7 @@ def load_config(path: Path | str, robot: str | None = None,
             f"{p}: names no robot (robot: <name>, --robot, or robot: in "
             f"{paths.config_path(home)}) and carries no machine: section")
     cfg["agent"] = layer_agent(cfg.get("agent", {}), defaults, user)
+    cfg["sandbox"] = layer_sandbox(defaults, user)
     return dump(validate(ResolvedConfig, cfg, p))
 
 
