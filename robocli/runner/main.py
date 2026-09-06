@@ -113,7 +113,8 @@ def run(args: argparse.Namespace) -> int:
     runs_root = Path(args.runs_root).expanduser() if args.runs_root else RUNS_ROOT
     run_dir = runs_root.resolve() / cfg["task"]["benchmark"] / args.run_id
     run_dir.mkdir(parents=True, exist_ok=True)
-    agent = agents.get(cfg.get("agent", {}).get("name"), home)
+    agent = agents.get(cfg.get("agent", {}).get("name"), home,
+                       version=cfg.get("agent", {}).get("version"))
     prov = {**record.provenance(
         cfg_path, cfg, args, agent=agent,
         template_hash=workspace.template_hash(cfg),

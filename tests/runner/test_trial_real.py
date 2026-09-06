@@ -30,6 +30,7 @@ def _harness(monkeypatch, tmp_path):
     monkeypatch.setattr(trial, "run_preflight",
                         lambda cfg, sandbox, agent: {"ok": True, "checks": [("x", True)], "failed": []})
     monkeypatch.setattr(trial.record, "finalize_trial", lambda *a, **k: None)
+    monkeypatch.setattr(trial, "_sandbox_version", lambda sandbox, agent: "9.9.9")
     token = tmp_path / "token.env"
     token.write_text("T=abcdefghijklmnopqrstuvwxyz0123456789\n")
     cfg = {"agent": {"name": "claude-code"}, "protocol": {},

@@ -4,13 +4,12 @@
 name: claude-code
 default_model: claude-opus-5
 binary: claude
-# The CLI version baked into the sandbox image and checked inside it, so a
-# trial records which agent version produced it.
-version: "2.1.226"
 # Root shell that installs the CLI into the sandbox image (build time only:
 # the running sandbox has no internet). NodeSource 20.x because the distro
 # node is v18 on 24.04 but v12 on 22.04; one source for every distro.
-# {version} is replaced with the version above.
+# {version} is replaced with a pin when one is given (robocli build sandbox
+# --agent claude-code@2.1.226, or agent.version in a config); without a
+# pin the current release is installed and no version check is minted.
 install: >-
   apt-get update
   && apt-get install -y --no-install-recommends curl ca-certificates

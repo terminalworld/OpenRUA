@@ -87,6 +87,9 @@ class AgentConfig(Strict):
     name: str | None = Field(default=None, description="agent name (robocli agents lists "
                              "them); the package default lives in configs/config.yaml")
     model: str | None = Field(default=None, description="model id; default: the adapter's")
+    version: str | None = Field(default=None, description="pin the agent CLI version: the "
+                                "sandbox image must carry it and preflight checks it; "
+                                "default: whatever the image has")
     credentials_dir: str | None = Field(
         default=None, description="login profile directory; default: "
         "~/.robocli/credentials/<agent name>")
@@ -100,6 +103,7 @@ class AgentOverrides(Strict):
     what the file wrote is layered in."""
     name: str | None = None
     model: str | None = None
+    version: str | None = None
     credentials_dir: str | None = None
     options: dict[str, Any] | None = None
 
@@ -350,8 +354,9 @@ class AgentManifest(Strict):
     name: str
     default_model: str
     binary: str | None = Field(default=None, description="executable name inside the sandbox")
-    version: str | None = Field(default=None, description="the CLI version the install "
-                                "line pins; {version} in install is replaced with it")
+    version: str | None = Field(default=None, description="a CLI version this manifest "
+                                "pins; usually null: pins come from name@version at build "
+                                "time or agent.version in a config")
     install: str = Field(default="", description="shell that installs the agent in the "
                          "sandbox image")
     whitelist: list[str] = Field(default_factory=list, description="regexes of the hosts "

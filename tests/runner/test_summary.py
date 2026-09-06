@@ -18,14 +18,14 @@ def test_summary_lists_trials_and_totals(tmp_path):
     assert write_run_summary(run) is None          # nothing recorded yet
     (run / "config.json").write_text(json.dumps({
         "config_file": "benchmarks/libero_pro.yaml", "config_sha256": "abc123def456ff",
-        "agent_cli": {"name": "claude-code", "version": "2.1.226"}, "operator": "agent",
+        "agent_cli": {"name": "claude-code", "version_pin": None}, "operator": "agent",
         "robocli_version": "0.1.0", "robocli_commit": "0123456789abcdef", "git_dirty": False,
         "simulator_commit": "fedcba9876543210", "sim_image_digest": "sha256:aaaa",
         "sandbox_image_digest": "sha256:bbbb", "proxy_image_digest": "sha256:cccc",
         "config": {"task": {"benchmark": "libero_pro"}, "agent": {}}}))
     _trial(run, "libero_goal_task", 0, 0, success=True, termination="self_finished",
            wall_seconds=100.5, operator_meta={"num_turns": 42, "model": "claude-opus-5"},
-           anomaly=None)
+           agent_version="2.1.226 (Claude Code)", anomaly=None)
     _trial(run, "libero_goal_task", 0, 1, success=False, termination="anomaly",
            wall_seconds=3.0, operator_meta={}, anomaly="RuntimeError: preflight failed: tf_flow")
     _trial(run, "libero_goal_task", 1, 0, success=None, termination="operator_done",
@@ -37,5 +37,5 @@ def test_summary_lists_trials_and_totals(tmp_path):
     assert "| libero_goal_task | 0 | 0 | yes | self_finished | 100.5 | 42 |" in text
     assert "| libero_goal_task | 1 | 0 | n/a | operator_done | 50.0 |  |" in text
     assert "preflight failed: tf_flow" in text
-    assert "claude-code 2.1.226" in text and "claude-opus-5" in text
+    assert "claude-code 2.1.226 (Claude Code)" in text and "claude-opus-5" in text
     assert not (run / ".SUMMARY.md.tmp").exists()

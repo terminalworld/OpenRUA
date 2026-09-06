@@ -38,7 +38,7 @@ def agent_operator(ctx: dict) -> dict:
 
     cfg = ctx["cfg"]
     agent_cfg = cfg.get("agent", {})
-    agent = agents.get(agent_cfg.get("name"), ctx.get("home"))
+    agent = agents.get(agent_cfg.get("name"), ctx.get("home"), version=agent_cfg.get("version"))
     model = agent_cfg.get("model") or agent.default_model
     # Agent knobs (reasoning effort, compaction threshold, tool timeouts)
     # are experimental parameters that do not appear in the transcript:

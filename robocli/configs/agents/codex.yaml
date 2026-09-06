@@ -4,10 +4,10 @@
 name: codex
 default_model: gpt-5.6-sol
 binary: codex
-# The CLI version installed in the sandbox image and checked inside it.
-version: "0.153.4"
 # Root shell that installs the CLI into the sandbox image (build time only).
-# {version} is replaced with the version above.
+# {version} is replaced with a pin when one is given (robocli build sandbox
+# --agent codex@0.153.4, or agent.version in a config); without a pin the
+# current release is installed and no version check is minted.
 install: >-
   apt-get update
   && apt-get install -y --no-install-recommends curl ca-certificates

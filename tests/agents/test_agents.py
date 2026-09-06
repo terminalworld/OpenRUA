@@ -34,19 +34,27 @@ def test_configs_carry_no_stale_prompt_key():
 
 # -------------------------------------------------------------- adapters
 
-def test_install_line_and_sandbox_check_carry_the_manifest_version():
-    a = agents.get("claude-code")
-    assert a.version and a.version in a.install and "{version}" not in a.install
-    name, cmd = a.sandbox_cli_check()
-    assert name == "sandbox_cli_matches_pin" and a.version in cmd
+def test_pins_come_from_the_caller_not_the_manifest():
+    latest = agents.get("claude-code")
+    assert latest.version is None and "{version}" not in latest.install
+    assert "claude-code@" not in latest.install          # the current release
+    assert latest.sandbox_cli_check() is None            # nothing to check against
+    pinned = agents.get("claude-code@2.1.226")
+    assert pinned.version == "2.1.226" and "claude-code@2.1.226" in pinned.install
+    name, cmd = pinned.sandbox_cli_check()
+    assert name == "sandbox_cli_matches_pin" and "2.1.226" in cmd
+    assert agents.get("claude-code", version="2.1.100").version == "2.1.100"
+    assert agents.split_pin("codex@0.153.4") == ("codex", "0.153.4")
 
 
 def test_preflight_includes_version_checks():
     from robocli.runner.preflight import build_checks
     cfg = load_config(LIBERO_CFG)
-    names = [n for n, _ in build_checks(cfg, agents.get("claude-code"))]
+    names = [n for n, _ in build_checks(cfg, agents.get("claude-code@2.1.226"))]
     assert "sandbox_cli_matches_pin" in names
     assert "credentials_readable" in names
+    # without a pin there is nothing to check the sandbox CLI against
+    assert "sandbox_cli_matches_pin" not in [n for n, _ in build_checks(cfg, agents.get("claude-code"))]
 
 
 # -------------------------------------------------- credentials pipeline

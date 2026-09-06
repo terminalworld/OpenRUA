@@ -13,5 +13,5 @@ from robocli.agents.credentials import prepare_profile  # noqa: F401
 from robocli.agents.prompts import PROMPT, RESUME_PROMPT  # noqa: F401
 from robocli.agents.registry import (  # noqa: F401
     Listed, Manifest, available, fact_sha256, get, manifest, manifests, preinstall,
-    whitelist,
+    split_pin, whitelist,
 )
