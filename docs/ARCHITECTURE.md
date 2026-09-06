@@ -16,7 +16,7 @@ is visible to the agent.
 
 | Unit | Role | Front door |
 |---|---|---|
-| `robocli/robot/` | the machine. Ground side (`build`, `up`, `down`) runs on the host and is all a real robot needs. `onboard/` is the simulated robot's own software: `environment/` (the simulator), `ros_graph/` (joints, arms, sensors, clock, controllers, MoveIt), `monitor/` (the control line), `boot.py`. | `python -m robocli.robot` |
+| `robocli/robot/` | the machine, provided by a backend (`up()` dispatches on `machine.backend.kind`). `sim/`: image build, container up/down, the host-side client, and `bridge/`, the simulated robot's own software (`environments/`, `ros/`, `rpc.py`, `main.py`). `real/`: an optional launch command and a handle that waits for the graph. | `python -m robocli.robot.sim.build` |
 | `robocli/sandbox/` | the agent's terminal: an Ubuntu + ROS 2 container with the agent installed and `workspace/` seeded (README, `machine.yaml`, four docs, a few tools). | `python -m robocli.sandbox` |
 | `robocli/proxy/` | the wall: a whitelist HTTP proxy, the sandbox's only route out. | `python -m robocli.proxy` |
 | `robocli/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, hooks under `plugins/agents/`, bundled then `~/.robocli/`), the launcher, credentials staging, the prompts. | `python -m robocli.agents` |
@@ -25,7 +25,7 @@ is visible to the agent.
 | `robocli/doctor.py` | is this machine ready: structured checks over docker, images (their labels against the selected agents), simulator, login, the user directory. | `robocli doctor` |
 
 Shared leaves, importable by every host-side unit and by nothing in
-`onboard/`:
+the bridge:
 
 | Leaf | Owns |
 |---|---|
@@ -56,14 +56,16 @@ robocli/configs/{robots,benchmarks,agents}/, robocli/plugins/agents/   bundled, 
 
 ## The layering contract
 
-- Nothing host-side imports `robocli.robot.onboard` (it lives in the
+- Nothing host-side imports `robocli.robot.sim.bridge` (it lives in the
   container, with rclpy).
-- Inside `onboard/`, `environment`, `ros_graph` and `monitor` never
-  import each other; `boot.py` wires them with parameters.
-- `onboard/` imports nothing from robocli outside itself, the shared
-  leaves included: it is bake-ready for an image and reads resolved
-  absolute paths and validated dicts from the resolved config file.
-- The ground verbs consume data only: no shared leaf, never onboard.
+- Inside the bridge, `environments/`, `ros/` and `rpc.py` never import
+  each other; `main.py` wires them with parameters.
+- The bridge imports nothing from robocli outside itself, the shared
+  leaves included: it can be installed on its own inside the container
+  and reads absolute paths and validated dicts from the resolved config
+  file.
+- The robot's host side consumes data only: no shared leaf, never the
+  bridge.
 - `sandbox` imports no other layer: what the agent experiences knows
   nothing about scoring.
 - `precheck` and `record` are leaves; handles and paths are handed in.

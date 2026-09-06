@@ -1,31 +1,66 @@
-"""The robot: the machine the agent operates.
+"""The robot: the machine the agent operates, provided by a backend.
 
-Same shape as the sibling units (sandbox, proxy): birth verbs and the
-blueprint at the package top, plus one sealed capsule the others don't
-need. HOST-SIDE at the top, ROBOT-SIDE inside ``onboard/``:
+- ``base.py``   the contract: ``Handle`` (wait_ready, rpc, shutdown)
+- ``sim/``      a simulated robot: image build, container up/down, the
+                host-side client, and ``bridge/`` (the robot's own
+                software, runs inside the container)
+- ``real/``     a real robot: an optional launch command and a handle
+                that waits for the ROS 2 graph
 
-- ``build.py``  blueprint (sim-<distro>.Dockerfile) -> body image,
-                self-describing labels; ``up`` never builds.
-- ``up.py``     image + per-trial parameters -> live body whose first
-                process is onboard's boot; returns the three pipes.
-- ``down.py``   the e-stop (conversation-dead teardown only).
-- ``onboard/``  the simulated robot's own software, runs inside the
-                container: world (environment), surface (ros_graph),
-                measurement (monitor), and boot. Imports NOTHING from
-                the rest of robocli (machine-enforced), so it bakes
-                into the body image as a self-contained package at
-                release.
-
-When the physical backend arrives, its ground verbs (connect /
-vendor-launch wiring / disconnect) join the package top -- a real robot
-needs ONLY ground verbs, because its onboard software ships from the
-vendor (franka_ros2 + MoveIt publish the same graph shape onboard/
-mirrors verbatim). That asymmetry is the paper's thesis in tree form:
-no adapter code exists for real hardware because none is needed.
-
-Host code may import the top verbs (main conducts with up/down); nobody
-host-side imports onboard -- the agent reaches the robot over DDS, the
-examiner over the stdio pipes ``up`` handed to the conductor. Everything
-host-side here consumes DATA handed in by the conductor (the resolved
-per-trial config, the rendered DDS peers profile).
+``up()`` and ``down()`` dispatch on ``backend["kind"]``. This package
+imports ``robocli.errors`` and nothing else from robocli; every value it
+needs (the resolved config path, the simulator venv, the rendered peers
+profile) arrives as a parameter.
 """
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from robocli.errors import ConfigError
+from robocli.robot.base import Handle  # noqa: F401  re-exported
+
+KINDS = ("sim", "real")
+
+
+def up(backend: dict, *, name: str, config_path: str, task_suite: str,
+       task_id: int, log_path: Path, network: str | None = None,
+       ros_domain: int = 0, static_peer: str | None = None,
+       peers_xml: str | None = None, venv: str | None = None,
+       code_root: str | None = None, moveit_log: str | None = None,
+       probe_argv: list[str] | None = None) -> Handle:
+    """Bring the robot up and return its handle (not yet waited for).
+
+    ``venv`` and ``code_root`` are the simulated backend's (the resolved
+    simulator venv and the directory holding this package); ``probe_argv``
+    is the real backend's (a command that succeeds once the graph is
+    visible). The other keyword arguments apply to both."""
+    kind = backend.get("kind")
+    if kind == "sim":
+        from robocli.robot.sim.up import up as sim_up
+        if not venv or not code_root:
+            raise ValueError("a simulated robot needs venv and code_root")
+        return sim_up(
+            name=name, image=backend.get("image", "robocli-sim-jazzy"),
+            config_path=config_path, task_suite=task_suite, task_id=task_id,
+            simulator=str(Path(venv).parent), venv=venv, code_root=code_root,
+            log_path=log_path, moveit_log=moveit_log, network=network,
+            static_peer=static_peer, peers_xml=peers_xml, ros_domain=ros_domain,
+            gpus=bool(backend.get("gpus", False)), resources=backend.get("resources"))
+    if kind == "real":
+        from robocli.robot.real.up import up as real_up
+        return real_up(name=name, launch=backend.get("launch"), log_path=log_path,
+                       probe_argv=probe_argv)
+    raise ConfigError(f"machine.backend.kind must be one of {KINDS}, got {kind!r}")
+
+
+def down(name: str, kind: str = "sim") -> None:
+    """Force the robot down from outside, when its handle is gone or dead."""
+    if kind == "sim":
+        from robocli.robot.sim.down import down as sim_down
+        sim_down(name)
+    elif kind == "real":
+        from robocli.robot.real.down import down as real_down
+        real_down(name)
+    else:
+        raise ConfigError(f"machine.backend.kind must be one of {KINDS}, got {kind!r}")

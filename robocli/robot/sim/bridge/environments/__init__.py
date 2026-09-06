@@ -2,9 +2,9 @@
 
 Two kinds of service live here: the per-benchmark loaders (the env's
 birth and semantics: build, initial state, original predicate, task
-sentence) and simthread (the env's access discipline: one owner thread,
-everyone else queues). Consumers receive env and SimJobRunner as a pair
-from boot; nothing here knows the sibling packages.
+sentence) and the worker (the env's access discipline: one owner thread,
+everyone else queues). Consumers receive env and Worker as a pair from
+main.py; nothing here knows the sibling packages.
 
 Adding a benchmark = adding one module here implementing every name in
 ``LOADER_INTERFACE`` (test-enforced) and registering it in ``get()``.
@@ -16,9 +16,9 @@ protocol, ``task_info`` reads their task sentence. The state returned by
 ``init_state`` is opaque to everyone but the same loader's ``reset``.
 
 Zero ROS imports; simulator imports live inside ``create`` (the registry
-imports cheaply anywhere). Zero knowledge of the sibling ros_graph and
-monitor packages: the env and the loader travel onward as parameters
-(boot.py passes them).
+imports cheaply anywhere). Zero knowledge of the sibling ros package and
+rpc module: the env and the loader travel onward as parameters (main.py
+passes them).
 """
 
 from __future__ import annotations

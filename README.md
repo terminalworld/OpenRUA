@@ -138,7 +138,7 @@ robocli/
   config/       the schema every file is checked against, the loader, where things live
   errors.py     errors with a fix and an exit code
   testing.py    the adapter conformance test
-  robot/        the machine: ground verbs (build/up/down) + onboard/ (sim body software)
+  robot/        the machine: sim/ (container + bridge/, the robot's own software), real/
   sandbox/      the agent's terminal + workspace/ (the docs and tools the agent sees)
   agents/       the adapter contract (base.py) + one adapter per coding agent
   proxy/        the whitelist wall

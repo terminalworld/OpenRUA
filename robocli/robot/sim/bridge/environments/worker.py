@@ -23,7 +23,7 @@ from concurrent.futures import Future
 from typing import Any, Callable
 
 
-class SimJobRunner:
+class Worker:
     def __init__(self) -> None:
         self._q: queue.SimpleQueue = queue.SimpleQueue()
         self._owner: threading.Thread | None = None
@@ -65,7 +65,7 @@ class SimJobRunner:
                 # here); surface it in bridge.log instead of vanishing.
                 self.dropped_errors += 1
                 import sys
-                print(f"[simthread] fire-and-forget job failed "
+                print(f"[worker] fire-and-forget job failed "
                       f"({self.dropped_errors} total): "
                       f"{type(exc).__name__}: {exc}",
                       file=sys.stderr, flush=True)

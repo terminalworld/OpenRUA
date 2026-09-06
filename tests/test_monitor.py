@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from robocli.robot.onboard.environment.simthread import SimJobRunner
-from robocli.robot.onboard.monitor.monitor import Monitor
+from robocli.robot.sim.bridge.environments.worker import Worker
+from robocli.robot.sim.bridge.rpc import Monitor
 
 
 class _Env:
@@ -47,7 +47,7 @@ class _Loader:
 
 
 def _monitor(script):
-    sim = SimJobRunner()
+    sim = Worker()
     sim.bind_current_thread()
     env = _Env()
     return env, Monitor(env, {}, _Loader(script), sim, environ={})
