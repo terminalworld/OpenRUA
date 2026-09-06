@@ -4,7 +4,7 @@
     robocli build <robot|sandbox|proxy> build one of the three images
     robocli up --robot panda-sim        a live robot (real or simulated) with
                                         a sandbox terminal on its ROS 2 graph
-    robocli agent [--cli claude-code]   open a coding agent on that terminal
+    robocli agent [--cli <name>]        open a coding agent on that terminal
     robocli down                        power everything off
     robocli run --config benchmarks/... run a task set (robocli.bench.run)
     robocli doctor                      check docker, images, substrate, login
@@ -129,9 +129,9 @@ def cmd_up(args) -> int:
     assembly = record.write_assembly(workdir, cfg)
     network = ensure_internal_network()
     proxy_url = ensure_proxy(network)
-    adapter = agents.get(args.cli or cfg.get("agent", {}).get("cli"))
+    adapter = agents.get(args.cli or cfg.get("agent", {}).get("cli"), args.home)
     creds_home = Path(cfg.get("agent", {}).get("credentials_dir")
-                      or paths.credentials_dir(args.home) / adapter.NAME).expanduser()
+                      or paths.credentials_dir(args.home) / adapter.name).expanduser()
     cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter)
     body = cfg["machine"].get("body", {})
     print(f"[up] sandbox {sandbox_name}", flush=True)
@@ -167,8 +167,10 @@ def cmd_up(args) -> int:
         raise SystemExit(f"[up] robot failed to come up: {e}\n"
                          f"      log: {workdir / 'robot.log'}")
     _save_state(args.name, args.home, sim=sim_name, sandbox=sandbox_name,
-                network=network, proxy=proxy_url, cli=adapter.NAME,
-                model=cfg.get("agent", {}).get("model", adapter.DEFAULT_MODEL),
+                network=network, proxy=proxy_url, cli=adapter.name,
+                model=cfg.get("agent", {}).get("model") or adapter.default_model,
+                options={**adapter.default_options,
+                         **cfg.get("agent", {}).get("options", {})},
                 workspace=str(workdir / "workspace"), task=task)
     print(f"""
 [up] ready.
@@ -194,10 +196,15 @@ def cmd_up(args) -> int:
 
 def cmd_agent(args) -> int:
     st = _load_state(args.name, args.home)
-    adapter = agents.get(args.cli or st["cli"])
+    adapter = agents.get(args.cli or st["cli"], args.home)
     argv = adapter.interactive_argv(
         st["sandbox"], args.model or st["model"], st["proxy"],
-        prompt=args.prompt)
+        options=st.get("options"), prompt=args.prompt)
+    if argv is None:
+        raise SystemExit(
+            f"{adapter.name} has no interactive mode; open a shell on the "
+            f"terminal instead:\n  docker exec -it -u robot -w /workspace "
+            f"{st['sandbox']} bash")
     os.execvp(argv[0], argv)
 
 
@@ -239,12 +246,13 @@ def cmd_doctor(args) -> int:
     check(f"substrate venv {venv}", venv.is_dir(),
           f"build it under {paths.substrates_dir(args.home)} (docs/simulation.md) "
           "or point machine.body.substrate.venv at it")
-    adapter = agents.get(cfg.get("agent", {}).get("cli"))
-    creds = Path(cfg.get("agent", {}).get("credentials_dir")
-                 or paths.credentials_dir(args.home) / adapter.NAME).expanduser()
-    check(f"{adapter.NAME} login at {creds}",
-          (creds / adapter.CREDENTIALS_FILENAME).exists(),
-          adapter.login_hint(creds))
+    adapter = agents.get(cfg.get("agent", {}).get("cli"), args.home)
+    if adapter.credentials is not None:
+        creds = Path(cfg.get("agent", {}).get("credentials_dir")
+                     or paths.credentials_dir(args.home) / adapter.name).expanduser()
+        check(f"{adapter.name} login at {creds}",
+              (creds / adapter.credentials.filename).exists(),
+              adapter.login_hint(creds))
     return 0 if ok else 1
 
 

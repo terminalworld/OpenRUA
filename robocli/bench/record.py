@@ -98,12 +98,12 @@ def _write_as_command(path: str, content: str) -> str:
             f"cat > {q} <<'{m}'\n{content}{nl}{m}")
 
 
-def _edit_as_command(inp: dict) -> str:
+def _edit_as_command(op: dict) -> str:
     payload = repr(json.dumps({
-        "file_path": inp.get("file_path", ""),
-        "old_string": inp.get("old_string", ""),
-        "new_string": inp.get("new_string", ""),
-        "replace_all": bool(inp.get("replace_all")),
+        "file_path": op.get("path", ""),
+        "old_string": op.get("old", ""),
+        "new_string": op.get("new", ""),
+        "replace_all": bool(op.get("replace_all")),
     }))
     m = _heredoc_marker(payload)
     return (f"python3 - <<'{m}'\n"
@@ -133,20 +133,18 @@ def extract_commands(transcript: Path, out: Path, agent) -> None:
     if not transcript.exists():
         return
     lines = ["#!/usr/bin/env bash",
-             "# auto-extracted from transcript.jsonl "
-             "(Bash + Write/Edit condensate)", ""]
+             f"# auto-extracted from {transcript.name} "
+             "(shell + write/edit condensate)", ""]
     for op in agent.replay_ops(transcript):
-        tool, inp = op.get("tool"), op.get("input", {})
-        if tool == "Write":
-            lines.append(_write_as_command(
-                inp.get("file_path", ""), inp.get("content", "")))
-        elif tool == "Edit":
-            lines.append(_edit_as_command(inp))
+        kind = op.get("kind")
+        if kind == "write":
+            lines.append(_write_as_command(op.get("path", ""), op.get("content", "")))
+        elif kind == "edit":
+            lines.append(_edit_as_command(op))
+        elif kind == "shell" and op.get("command"):
+            lines.append(op["command"])
         else:
-            cmd = inp.get("command", "")
-            if not cmd:
-                continue
-            lines.append(cmd)
+            continue
         lines.append("")
     out.write_text("\n".join(lines))
 
@@ -232,7 +230,9 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
             hashlib.sha256(resume_prompt.encode()).hexdigest()
             if resume_prompt is not None else None,
         "workspace_template_sha256": template_hash,
-        "agent_cli": {"name": agent.NAME, "version": sh(agent.VERSION_ARGV)},
+        "agent_cli": {"name": agent.name,
+                      "version": sh(list(agent.version_argv)) if agent.version_argv
+                      else "unavailable"},
         "operator": args.operator,
         "task_suite": args.task_suite,
         "task_ids": args.task_ids,

@@ -54,11 +54,11 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
         # regression for the 2026-08-12 /bin/sh hole.
         ("shell_sh_provisioned", "sh -c 'command -v ros2'"),
         # Agent auth mounted readably (uid-mismatch regression; the check
-        # command is agent knowledge; the adapter owns the auth layout).
-        agent.credentials_check(),
-        # Sandbox CLI == adapter pin (schema-drift vaccine, 2026-08-12
-        # logout wave; replaces the RUNBOOK's human version check).
-        agent.sandbox_cli_check(),
+        # command is agent knowledge; the adapter owns the auth layout) and
+        # sandbox CLI == adapter pin (schema-drift vaccine, 2026-08-12
+        # logout wave). Either is None for an adapter without that
+        # arrangement, and a None check is simply not minted.
+        *(c for c in (agent.credentials_check(), agent.sandbox_cli_check()) if c),
         # Polls until /clock is registered rather than asking once. The
         # timeout is the ceiling for every other probe here because they
         # block until their first message; `topic list | grep` returns

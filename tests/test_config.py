@@ -15,7 +15,7 @@ def test_every_bundled_benchmark_assembles(name, tmp_path):
     cfg = load_config(name, home=tmp_path)
     assert set(cfg) >= {"task", "protocol", "agent", "machine"}
     assert "robot" not in cfg                       # resolved into machine:
-    assert cfg["agent"]["cli"] == "claude-code"
+    assert cfg["agent"]["cli"] == "claude-code"   # the bundled configs name it
     assert cfg["agent"]["options"] == {"effort": "high"}
     assert "credentials_dir" not in cfg["agent"]    # default is per agent, under home
 
