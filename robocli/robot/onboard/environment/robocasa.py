@@ -43,9 +43,9 @@ class RoboCasaLoader:
         else:
             raise ValueError(f"unknown robocasa split: {split}")
 
-        ctrl_path = (_P(__file__).resolve().parents[4]
-                     / cfg["machine"]["controller_config"])
-        with open(ctrl_path) as f:
+        # Absolute: the conductor resolved and copied it next to the
+        # assembly (run.resolve_body_files); the body never looks around.
+        with open(cfg["machine"]["controller_config"]) as f:
             controller_config = _json.load(f)
 
         cam_cfg = cfg.get("machine", {}).get("cameras", {})

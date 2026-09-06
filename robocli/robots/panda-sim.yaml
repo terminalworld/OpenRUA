@@ -18,7 +18,7 @@ machine:
     image: robocli-sim-jazzy
     sandbox_image: robocli-sandbox
     substrate:
-      venv: substrates/cap-x/.venv-libero   # py3.12
+      venv: cap-x/.venv-libero   # py3.12
       container: sim-jazzy
 
   workspace_template: workspace  # skin layer sole carrier

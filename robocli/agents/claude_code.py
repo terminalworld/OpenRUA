@@ -78,7 +78,7 @@ PINNED_CLI_VERSION = "2.1.226"
 TOKEN_ENV = "CLAUDE_CODE_OAUTH_TOKEN"
 # Dedicated sandbox login profile: its own token family, isolated from the
 # operator's personal ~/.claude (an OAuth fork would kill the original).
-DEFAULT_CREDENTIALS_DIR = "~/.robocli-claude"
+DEFAULT_CREDENTIALS_DIR = "~/.robocli/credentials/claude-code"
 CREDENTIALS_FILENAME = ".credentials.json"
 CONFIG_ENV = "CLAUDE_CONFIG_DIR"
 VERSION_ARGV = ["claude", "--version"]

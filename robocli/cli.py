@@ -31,12 +31,12 @@ from pathlib import Path
 
 import yaml
 
-from robocli import agents
+from robocli import __version__, agents, paths
 from robocli.bench import record
-from robocli.bench.run import (REPO_ROOT, MachineClient, apply_suite_overrides,
+from robocli.bench.run import (MachineClient, apply_suite_overrides,
                                ensure_internal_network, load_config,
-                               load_robot, normalize_arms, substrate_venv,
-                               FASTDDS_PEERS_XML)
+                               load_robot, normalize_arms, resolve_body_files,
+                               substrate_venv, FASTDDS_PEERS_XML)
 from robocli.proxy.up import ensure as ensure_proxy
 from robocli.robot.down import down as robot_down
 from robocli.robot.up import up as robot_up
@@ -44,7 +44,6 @@ from robocli.sandbox.down import down as sandbox_down
 from robocli.sandbox.up import up as sandbox_up
 
 DEFAULT_NAME = "robocli"
-STATE_DIR = Path("~/.robocli").expanduser()
 
 
 # ----------------------------------------------------------------- helpers
@@ -53,17 +52,17 @@ def _names(name: str) -> tuple[str, str]:
     return f"{name}-sim", f"{name}-sandbox"
 
 
-def _state_path(name: str) -> Path:
-    return STATE_DIR / f"{name}.yaml"
+def _state_path(name: str, home: Path) -> Path:
+    return paths.state_dir(home) / f"{name}.yaml"
 
 
-def _save_state(name: str, **facts) -> None:
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    _state_path(name).write_text(yaml.safe_dump(facts, sort_keys=False))
+def _save_state(name: str, home: Path, **facts) -> None:
+    paths.state_dir(home).mkdir(parents=True, exist_ok=True)
+    _state_path(name, home).write_text(yaml.safe_dump(facts, sort_keys=False))
 
 
-def _load_state(name: str) -> dict:
-    p = _state_path(name)
+def _load_state(name: str, home: Path) -> dict:
+    p = _state_path(name, home)
     if not p.is_file():
         raise SystemExit(
             f"no live robot named {name!r} (nothing at {p}); "
@@ -71,7 +70,8 @@ def _load_state(name: str) -> dict:
     return yaml.safe_load(p.read_text())
 
 
-def compose(robot: str | None, bench: str | None) -> tuple[dict, str, int]:
+def compose(robot: str | None, bench: str | None,
+            home: Path | None = None) -> tuple[dict, str, int]:
     """robot profile + benchmark config -> one assembled config, plus the
     (task_suite, task_id) to load. Without --bench the profile's
     ``world:`` says which scene to load."""
@@ -79,14 +79,11 @@ def compose(robot: str | None, bench: str | None) -> tuple[dict, str, int]:
         raise SystemExit("name a robot (--robot) or a benchmark (--bench)")
     world = {}
     if robot:
-        world = load_robot(robot).get("world", {})
+        world = load_robot(robot, home).get("world", {})
     bench = bench or world.get("benchmark")
     if not bench:
         raise SystemExit(f"robot {robot!r} names no world: and no --bench given")
-    bench_path = Path(bench)
-    if not bench_path.suffix:
-        bench_path = REPO_ROOT / "benchmarks" / f"{bench}.yaml"
-    cfg = load_config(bench_path, robot)
+    cfg = load_config(bench, robot, home)
     suite = world.get("task_suite") or cfg["task"]["suites"][0]
     task_id = int(world.get("task_id", 0))
     return cfg, suite, task_id
@@ -95,11 +92,19 @@ def compose(robot: str | None, bench: str | None) -> tuple[dict, str, int]:
 # ------------------------------------------------------------------- verbs
 
 def cmd_robots(args) -> int:
-    for p in sorted((REPO_ROOT / "robots").glob("*.yaml")):
-        d = yaml.safe_load(p.read_text())
-        m = d.get("machine", {})
-        r = m.get("robot", {})
-        print(f"{p.stem:<20} {r.get('model', '?'):<28} {r.get('description', '')}")
+    """Bundled profiles, then the user's (``<home>/robots/``); a user
+    file shadowed by a bundled name is pointed out, not used."""
+    for e in paths.available("robots", args.home):
+        try:
+            r = yaml.safe_load(e.path.read_text()).get("machine", {}).get("robot", {})
+            desc = f"{r.get('model', '?'):<28} {r.get('description', '')}"
+        except Exception as exc:  # noqa: BLE001  a bad user file must not hide the rest
+            desc = f"(unreadable: {exc})"
+        tag = "" if e.source == "bundled" else "  [user]"
+        print(f"{e.name:<20} {desc}{tag}")
+        if e.shadowed_by:
+            print(f"{'':<20} note: {e.shadowed_by} has the same name and is ignored; "
+                  f"rename it to use it")
     return 0
 
 
@@ -110,22 +115,23 @@ def cmd_build(args) -> int:
 
 
 def cmd_up(args) -> int:
-    cfg, suite, task_id = compose(args.robot, args.bench)
+    cfg, suite, task_id = compose(args.robot, args.bench, args.home)
     suite = args.task_suite or suite
     task_id = args.task_id if args.task_id is not None else task_id
     apply_suite_overrides(cfg, suite)
     normalize_arms(cfg)
     sim_name, sandbox_name = _names(args.name)
-    workdir = Path(args.workspace or f"workspaces/{args.name}").resolve()
+    workdir = Path(args.workspace or paths.workspaces_dir(args.home) / args.name).resolve()
     if workdir.exists():
         shutil.rmtree(workdir)  # a fresh workspace every time (seeding merges)
     workdir.mkdir(parents=True)
+    resolve_body_files(cfg, workdir, args.home)
     assembly = record.write_assembly(workdir, cfg)
     network = ensure_internal_network()
     proxy_url = ensure_proxy(network)
     adapter = agents.get(args.cli or cfg.get("agent", {}).get("cli"))
-    creds_home = Path(cfg.get("agent", {}).get(
-        "credentials_dir", adapter.DEFAULT_CREDENTIALS_DIR)).expanduser()
+    creds_home = Path(cfg.get("agent", {}).get("credentials_dir")
+                      or paths.credentials_dir(args.home) / adapter.NAME).expanduser()
     cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter)
     body = cfg["machine"].get("body", {})
     print(f"[up] sandbox {sandbox_name}", flush=True)
@@ -137,12 +143,12 @@ def cmd_up(args) -> int:
                name=sandbox_name,
                mounts=adapter.sandbox_mounts(cfg_dir, creds_file))
     print(f"[up] robot {sim_name} (booting; MoveIt takes a minute)", flush=True)
-    venv = substrate_venv(body)
+    venv = substrate_venv(body, args.home)
     proc = robot_up(
         name=sim_name, image=body.get("image", "robocli-sim-jazzy"),
         config_path=str(assembly), task_suite=suite, task_id=task_id,
-        substrate=str(venv).rsplit("/.venv", 1)[0], venv=str(venv),
-        repo_root=str(REPO_ROOT), log_path=workdir / "robot.log",
+        substrate=str(paths.substrate_root(venv)), venv=str(venv),
+        code_root=str(paths.code_root()), log_path=workdir / "robot.log",
         moveit_log=str(workdir / "moveit.log"), network=network,
         static_peer=sandbox_name,
         peers_xml=FASTDDS_PEERS_XML.format(peer=sandbox_name),
@@ -160,7 +166,7 @@ def cmd_up(args) -> int:
         machine.shutdown()
         raise SystemExit(f"[up] robot failed to come up: {e}\n"
                          f"      log: {workdir / 'robot.log'}")
-    _save_state(args.name, sim=sim_name, sandbox=sandbox_name,
+    _save_state(args.name, args.home, sim=sim_name, sandbox=sandbox_name,
                 network=network, proxy=proxy_url, cli=adapter.NAME,
                 model=cfg.get("agent", {}).get("model", adapter.DEFAULT_MODEL),
                 workspace=str(workdir / "workspace"), task=task)
@@ -181,13 +187,13 @@ def cmd_up(args) -> int:
         print("\n[down] powering off", flush=True)
         sandbox_down(sandbox_name)
         machine.shutdown()
-        _state_path(args.name).unlink(missing_ok=True)
+        _state_path(args.name, args.home).unlink(missing_ok=True)
         shutil.rmtree(cfg_dir, ignore_errors=True)
     return 0
 
 
 def cmd_agent(args) -> int:
-    st = _load_state(args.name)
+    st = _load_state(args.name, args.home)
     adapter = agents.get(args.cli or st["cli"])
     argv = adapter.interactive_argv(
         st["sandbox"], args.model or st["model"], st["proxy"],
@@ -199,7 +205,7 @@ def cmd_down(args) -> int:
     sim_name, sandbox_name = _names(args.name)
     sandbox_down(sandbox_name)
     robot_down(sim_name)
-    _state_path(args.name).unlink(missing_ok=True)
+    _state_path(args.name, args.home).unlink(missing_ok=True)
     return 0
 
 
@@ -214,7 +220,7 @@ def cmd_doctor(args) -> int:
     print("robocli doctor")
     check("docker on PATH", shutil.which("docker") is not None,
           "install Docker Engine: https://docs.docker.com/engine/install/")
-    cfg, _, _ = compose(args.robot, None)
+    cfg, _, _ = compose(args.robot, None, args.home)
     body = cfg["machine"].get("body", {})
     for label, image in (("robot image", body.get("image")),
                          ("sandbox image", body.get("sandbox_image")),
@@ -222,11 +228,13 @@ def cmd_doctor(args) -> int:
         present = subprocess.run(["docker", "image", "inspect", image],
                                  capture_output=True).returncode == 0
         check(f"{label} {image}", present, f"robocli build {label.split()[0]}")
-    venv = substrate_venv(body)
-    check(f"substrate venv {venv}", venv.is_dir(), "see docs/simulation.md")
+    venv = substrate_venv(body, args.home)
+    check(f"substrate venv {venv}", venv.is_dir(),
+          f"build it under {paths.substrates_dir(args.home)} (docs/simulation.md) "
+          "or point machine.body.substrate.venv at it")
     adapter = agents.get(cfg.get("agent", {}).get("cli"))
-    creds = Path(cfg.get("agent", {}).get(
-        "credentials_dir", adapter.DEFAULT_CREDENTIALS_DIR)).expanduser()
+    creds = Path(cfg.get("agent", {}).get("credentials_dir")
+                 or paths.credentials_dir(args.home) / adapter.NAME).expanduser()
     check(f"{adapter.NAME} login at {creds}",
           (creds / adapter.CREDENTIALS_FILENAME).exists(),
           adapter.login_hint(creds))
@@ -235,8 +243,12 @@ def cmd_doctor(args) -> int:
 
 # --------------------------------------------------------------------- main
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(prog="robocli", description=__doc__.split("\n\n")[0])
+    ap.add_argument("--version", action="version", version=f"robocli {__version__}")
+    ap.add_argument("--home", default=default_home, type=paths.home,
+                    help="the user directory: your robots/, benchmarks/, agents/, "
+                    "credentials/, substrates/ (default: $ROBOCLI_HOME or ~/.robocli)")
     sub = ap.add_subparsers(dest="verb", metavar="<verb>")
 
     p = sub.add_parser("robots", help="list the shipped robot profiles")
@@ -255,7 +267,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--init-state", type=int, default=0)
     p.add_argument("--name", default=DEFAULT_NAME, help="handle for this robot")
     p.add_argument("--cli", default=None, help="agent adapter to seat")
-    p.add_argument("--workspace", default=None, help="default workspaces/<name>")
+    p.add_argument("--workspace", default=None,
+                   help="working directory (default: <home>/workspaces/<name>)")
     p.add_argument("--ros-domain", type=int, default=0)
     p.set_defaults(fn=cmd_up)
 
@@ -285,7 +298,9 @@ FORWARDED = {"run": "robocli.bench.run"}
 
 
 def main() -> int:
-    ap = build_parser()
+    # The one place the environment is read: ROBOCLI_HOME seeds --home's
+    # default; from here on the user directory travels as a parameter.
+    ap = build_parser(default_home=os.environ.get("ROBOCLI_HOME") or None)
     argv = sys.argv[1:]
     if argv and not argv[0].startswith("-") and argv[0] not in VERBS:
         print(f"unknown verb {argv[0]!r}\n", file=sys.stderr)

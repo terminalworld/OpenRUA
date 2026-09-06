@@ -152,7 +152,7 @@ def extract_commands(transcript: Path, out: Path, agent) -> None:
 
 
 def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
-               prompt: str, repo_root: Path,
+               prompt: str, code_root: Path, substrate_venv: Path | None = None,
                resume_prompt: str | None = None) -> dict:
     """The frozen reproduction record. ``prompt`` is the SAME string the
     launcher formats (F18: one source; the conductor passes agents.PROMPT;
@@ -181,17 +181,19 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
     # The benchmark content itself (tasks, predicates, the vendored
     # forks) lives in the substrate checkout; its commit is as much a
     # link in the reproduction chain as our own. The checkout root is
-    # the directory holding the substrate venv (config carries the venv,
-    # repo-relative).
-    venv = (body.get("substrate", {}) or {}).get("venv", "")
-    venv_path = Path(venv) if Path(venv).is_absolute() else repo_root / venv
-    substrate = str(venv_path.parent) if venv else ""
+    # the directory holding the substrate venv (resolved by the caller).
+    substrate = str(substrate_venv.parent) if substrate_venv else ""
     import os
     import platform
+    from robocli import __version__ as robocli_version
     return {
         "created_utc": datetime.now(timezone.utc).isoformat(),
-        "robocli_commit": sh(["git", "-C", str(repo_root), "rev-parse", "HEAD"]),
-        "git_dirty": bool(sh(["git", "-C", str(repo_root), "status", "--porcelain"])),
+        "robocli_version": robocli_version,
+        # A git commit when the code runs from a checkout (editable
+        # install); "unavailable" from a wheel, where the version above
+        # is the pin.
+        "robocli_commit": sh(["git", "-C", str(code_root), "rev-parse", "HEAD"]),
+        "git_dirty": bool(sh(["git", "-C", str(code_root), "status", "--porcelain"])),
         "substrate_commit": (
             sh(["git", "-C", substrate, "rev-parse", "HEAD"])
             if substrate else "unavailable"),
@@ -215,11 +217,11 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
         # comparable across devices); recorded so nobody has to dig it
         # out of bridge.log.
         "gpu_render": bool(body.get("gpus", False)),
-        # Repo-relative (ruling 2026-08-17: records keep no absolute
-        # paths either; the repo root at execution time is implied by
-        # the checkout the commit hash pins).
-        "config_file": str(cfg_path.relative_to(repo_root)
-                           if cfg_path.is_relative_to(repo_root)
+        # Relative to where the run was started when it lives there
+        # (ruling 2026-08-17: records keep no absolute paths they can
+        # avoid); a bundled config records its package path.
+        "config_file": str(cfg_path.relative_to(Path.cwd())
+                           if cfg_path.is_relative_to(Path.cwd())
                            else cfg_path),
         "config_sha256": hashlib.sha256(cfg_path.read_bytes()).hexdigest(),
         "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),

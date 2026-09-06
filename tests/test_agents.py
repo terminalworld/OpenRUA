@@ -13,7 +13,7 @@ import yaml
 from robocli import agents
 
 REPO = Path(__file__).resolve().parents[1]
-LIBERO_CFG = REPO / "benchmarks" / "libero_pro.yaml"
+LIBERO_CFG = REPO / "robocli" / "benchmarks" / "libero_pro.yaml"
 
 
 # ---------------------------------------------------------------- prompt
@@ -28,7 +28,7 @@ def test_prompt_has_only_task_placeholder():
 def test_configs_carry_no_stale_prompt_key():
     # Inline ruling 2026-08-15: the prompt lives in agents.PROMPT; a
     # config naming a prompt file would be silently ignored, so ban it.
-    for cfg_file in (REPO / "benchmarks").glob("*.yaml"):
+    for cfg_file in (REPO / "robocli" / "benchmarks").glob("*.yaml"):
         cfg = yaml.safe_load(cfg_file.read_text())
         assert "prompt" not in cfg.get("agent", {}), cfg_file.name
 

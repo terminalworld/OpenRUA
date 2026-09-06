@@ -34,7 +34,7 @@ from pathlib import Path
 
 import yaml
 
-from robocli import agents
+from robocli import agents, paths
 from robocli.bench import record
 from robocli.bench import triallock
 from robocli.bench.precheck import run_precheck
@@ -154,45 +154,61 @@ def resolve_wall_clock_min(cfg: dict) -> float:
     return float(protocol.get("active_wall_clock_minutes",
                               DEFAULT_WALL_CLOCK_MIN))
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
 # Run data lands under the caller's working directory by default
 # (--runs-root overrides); the package never writes into itself.
 RUNS_ROOT = Path("runs")
 
 
-def load_robot(robot: str) -> dict:
-    """A robot profile: a path, or a name under robots/. Returns the
-    parsed file (its ``machine:`` section is the robot)."""
-    p = Path(robot).expanduser()
-    if not p.suffix:
-        p = REPO_ROOT / "robots" / f"{robot}.yaml"
-    if not p.is_file():
-        have = sorted(x.stem for x in (REPO_ROOT / "robots").glob("*.yaml"))
-        raise FileNotFoundError(
-            f"robot profile not found: {p} (shipped: {', '.join(have)})")
-    return yaml.safe_load(p.read_text())
+def load_robot(robot: str, home: Path | None = None) -> dict:
+    """A robot profile by name (bundled, then ``<home>/robots/``) or by
+    path. Returns the parsed file (its ``machine:`` section is the robot)."""
+    return yaml.safe_load(paths.find("robots", robot, home).read_text())
 
 
-def load_config(path: Path | str, robot: str | None = None) -> dict:
-    """A benchmark config with its robot resolved: ``robot: <name>`` in
-    the file (or the argument, which wins) pulls in that profile's
-    ``machine:`` section. A file carrying its own ``machine:`` is taken
-    as is (a fully assembled config)."""
-    cfg = yaml.safe_load(Path(path).expanduser().read_text())
+def load_config(path: Path | str, robot: str | None = None,
+                home: Path | None = None) -> dict:
+    """A benchmark config (name or path) with its robot resolved:
+    ``robot: <name>`` in the file (or the argument, which wins) pulls in
+    that profile's ``machine:`` section. A file carrying its own
+    ``machine:`` is taken as is (a fully assembled config)."""
+    cfg = yaml.safe_load(paths.find("benchmarks", path, home).read_text())
     named = cfg.pop("robot", None)
     robot = robot or named
     if robot:
-        cfg["machine"] = load_robot(robot)["machine"]
+        cfg["machine"] = load_robot(robot, home)["machine"]
     if "machine" not in cfg:
         raise KeyError(f"{path}: no machine: section and no robot: name")
     return cfg
 
 
-def substrate_venv(body: dict) -> Path:
-    """The simulator venv named by machine.body.substrate.venv: absolute,
-    ~-expanded, or relative to the repo root (substrates/ by convention)."""
-    p = Path(body["substrate"]["venv"]).expanduser()
-    return p if p.is_absolute() else REPO_ROOT / p
+def substrate_venv(body: dict, home: Path | None = None) -> Path:
+    """The simulator venv named by machine.body.substrate.venv (see
+    paths.substrate_venv for how relative names resolve)."""
+    return paths.substrate_venv(body["substrate"]["venv"], home)
+
+
+def resolve_body_files(cfg: dict, dest: Path, home: Path | None = None) -> None:
+    """Files the body reads by path (today: ``machine.controller_config``)
+    are copied next to the assembly and named there by absolute path, so
+    the container sees them through the one mount it has on that
+    directory and the assembly stays self-contained. Names resolve
+    bundled (``robocli/robots/``), then ``<home>/robots/``, then as a
+    path."""
+    machine = cfg.get("machine", {})
+    spec = machine.get("controller_config")
+    if not spec:
+        return
+    p = Path(spec).expanduser()
+    candidates = [p] if p.is_absolute() else [
+        paths.bundled("robots") / p, paths.user_dir("robots", home) / p, p]
+    src = next((c for c in candidates if c.is_file()), None)
+    if src is None:
+        looked = ", ".join(str(c) for c in candidates)
+        raise FileNotFoundError(
+            f"machine.controller_config {spec!r} not found (looked at: {looked})")
+    dst = dest / src.name
+    shutil.copyfile(src, dst)
+    machine["controller_config"] = str(dst.resolve())
 
 
 # =====================================================================
@@ -631,7 +647,7 @@ OPERATORS = {
 # =====================================================================
 
 def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
-              wall_cap_min, ros_domain=0, credentials_dir=None,
+              wall_cap_min, ros_domain=0, credentials_dir=None, home=None,
               account_alias=None, script=None, token_file=None):
     trial_dir = run_dir / "trials" / f"{task_suite}-{task_id}" / f"seed{seed}"
     trial_dir.mkdir(parents=True, exist_ok=True)
@@ -694,8 +710,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     agent = agents.get(cfg.get("agent", {}).get("cli"))
     creds_home = Path(
         credentials_dir
-        or cfg.get("agent", {}).get("credentials_dir",
-                                    agent.DEFAULT_CREDENTIALS_DIR)
+        or cfg.get("agent", {}).get("credentials_dir")
+        or paths.credentials_dir(home) / agent.NAME
     ).expanduser()
     # A token file is the sandbox's whole auth story, so the login profile
     # is no longer required to carry credentials (see agents.prepare_profile).
@@ -724,6 +740,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         # all read the SAME file (ruling 2026-08-16; kills the
         # same-code-different-arguments drift class). Peers profiles are
         # rendered here too; the two ups just paste them.
+        resolve_body_files(cfg, trial_dir, home)
         assembly_path = record.write_assembly(trial_dir, cfg)
         sandbox_up(
             config=assembly_path,
@@ -738,6 +755,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         )
         sandbox_live = True
         body = cfg.get("machine", {}).get("body", {})
+        venv = substrate_venv(body, home)
         proc = sim_up(
             name=sim_name,
             gpus=bool(body.get("gpus", False)),
@@ -746,9 +764,9 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             config_path=str(assembly_path),
             task_suite=task_suite,
             task_id=task_id,
-            substrate=str(substrate_venv(body)).rsplit("/.venv", 1)[0],
-            venv=str(substrate_venv(body)),
-            repo_root=str(REPO_ROOT),
+            substrate=str(paths.substrate_root(venv)),
+            venv=str(venv),
+            code_root=str(paths.code_root()),
             log_path=trial_dir / "bridge.log",
             moveit_log=str(trial_dir / "moveit.log"),
             network=network,
@@ -959,6 +977,11 @@ def main() -> None:
         help="where run data lands (default: ./runs)",
     )
     ap.add_argument(
+        "--home", default=None,
+        help="the user directory (default: ~/.robocli); robot and benchmark "
+        "names, substrates and login profiles are looked up under it",
+    )
+    ap.add_argument(
         "--account-alias", default=None,
         help="non-secret label of the credentials profile, recorded in the "
         "trial result for per-account accounting",
@@ -971,8 +994,9 @@ def main() -> None:
     args.task_ids = [int(x) for x in str(args.task_ids).split(",")]
     args.seeds = [int(x) for x in str(args.seeds).split(",")]
 
-    cfg_path = Path(args.config).resolve()
-    cfg = load_config(cfg_path, args.robot)
+    home = paths.home(args.home)
+    cfg_path = paths.find("benchmarks", args.config, home).resolve()
+    cfg = load_config(cfg_path, args.robot, home)
     if args.wall_clock_min is None:
         args.wall_clock_min = resolve_wall_clock_min(cfg)
     # The per-suite view, computed exactly once (see config-view section
@@ -987,7 +1011,8 @@ def main() -> None:
         cfg_path, cfg, args, agent=agent,
         template_hash=workspace.template_hash(cfg),
         prompt=agents.PROMPT, resume_prompt=agents.RESUME_PROMPT,
-        repo_root=REPO_ROOT,
+        code_root=paths.code_root(),
+        substrate_venv=substrate_venv(cfg["machine"].get("body", {}), home),
     ), "assembly": cfg}
     record.write_run_config(run_dir, prov)
 
@@ -1000,7 +1025,7 @@ def main() -> None:
                     args.wall_clock_min, ros_domain=args.ros_domain,
                     credentials_dir=args.credentials_dir,
                     account_alias=args.account_alias, script=args.script,
-                    token_file=args.token_file,
+                    token_file=args.token_file, home=home,
                 )
             except triallock.TrialLocked as e:
                 # Not a failure of this trial: someone else is doing it.

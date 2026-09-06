@@ -27,7 +27,7 @@ def up(
     task_suite: str,
     task_id: int,
     substrate: str,
-    repo_root: str,
+    code_root: str,
     venv: str | None = None,
     uv_dir: str | None = None,
     log_path: Path | None = None,
@@ -40,7 +40,14 @@ def up(
     resources: dict | None = None,
     peers_xml: str | None = None,
 ) -> subprocess.Popen:
-    """docker-run the body with onboard's boot as its first process."""
+    """docker-run the body with onboard's boot as its first process.
+
+    Four host directories are mounted at their own paths: the robocli
+    code (``code_root``, so the substrate venv imports the same package),
+    uv's interpreter store (the venv python is a symlink into it), the
+    substrate checkout (venv + simulator), and the directory holding the
+    assembly file (the body's config and any file it names by path).
+    """
     # The substrate venvs' python is a symlink into uv's interpreter
     # store; mount it read-only at the same path. Derived from the
     # CURRENT user's home, never hardcoded (runs move across machines
@@ -109,7 +116,7 @@ exec {venv}/bin/python -m robocli.robot.onboard.boot \
         [
             "docker", "run", "-i", "--rm", "--name", name,
             *net, *gpu_args, *peer_env, *(extra_env or []),
-            "-v", f"{repo_root}:{repo_root}",
+            *_mounts(code_root, substrate, str(Path(config_path).resolve().parent)),
             "-v", f"{uv_dir}:{uv_dir}:ro",
             image, "bash", "-c", inner,
         ],
@@ -122,6 +129,19 @@ exec {venv}/bin/python -m robocli.robot.onboard.boot \
                 else subprocess.DEVNULL),
         text=True,
     )
+
+
+def _mounts(*dirs: str) -> list[str]:
+    """``-v d:d`` for each distinct directory, outermost first (docker
+    accepts nested mounts; the order only keeps the command readable)."""
+    seen: list[str] = []
+    for d in sorted(str(Path(d).resolve()) for d in dirs):
+        if d not in seen:
+            seen.append(d)
+    out: list[str] = []
+    for d in seen:
+        out += ["-v", f"{d}:{d}"]
+    return out
 
 
 def main() -> int:
@@ -148,7 +168,9 @@ def main() -> int:
                     help="substrate checkout root (the dir holding .venv-*)")
     ap.add_argument("--venv", default=None,
                     help="substrate venv path (default <substrate>/.venv-libero)")
-    ap.add_argument("--repo-root", required=True)
+    ap.add_argument("--code-root", required=True,
+                    help="directory holding the robocli package (mounted "
+                    "so the substrate venv imports the same code)")
     ap.add_argument("--log", default=None,
                     help="bridge.log path (default: stderr discarded)")
     ap.add_argument("--moveit-log", default=None)
