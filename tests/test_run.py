@@ -17,7 +17,7 @@ def test_package_front_door_lists_run():
 def test_front_door_rejects_unknown_verb():
     h = subprocess.run([sys.executable, "-m", "robocli", "walk"],
                        capture_output=True, text=True)
-    assert h.returncode == 2 and "unknown verb" in h.stderr
+    assert h.returncode == 2 and "invalid choice" in h.stderr
 
 
 def test_run_spelling_is_the_conductor():

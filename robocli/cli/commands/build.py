@@ -1,0 +1,86 @@
+"""``robocli build robot | sandbox | proxy``: the three images.
+
+The sandbox and proxy images are agent-parameterised: the install line
+and the whitelist come from the manifests of the agents named with
+``--agent`` (default: the configured default agent), so a manifest is
+the only place an agent's install and hosts are written down.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+from robocli import agents, config
+from robocli.config import paths
+
+
+def default_agent(home: Path | None) -> str:
+    """The agent name the defaults files resolve to: the user's file over
+    the package's."""
+    layered = config.layer_agent(
+        {}, config.load_user_config(paths.package_config_path()),
+        config.load_user_config(paths.config_path(home)))
+    return layered["name"]
+
+
+def manifests_for(names: list[str] | None, home: Path | None) -> list[agents.Manifest]:
+    return [agents.manifest(n, home) for n in (names or [default_agent(home)])]
+
+
+def preinstall_for(names: list[str] | None, home: Path | None) -> str:
+    return agents.preinstall(manifests_for(names, home))
+
+
+def whitelist_for(names: list[str] | None, home: Path | None) -> str:
+    return "\n".join(agents.whitelist(manifests_for(names, home)))
+
+
+def run(args) -> int:
+    if args.unit == "robot":
+        from robocli.robot.sim.build import build
+        tag, digest = build(distro=args.distro, tag=args.tag)
+    elif args.unit == "sandbox":
+        from robocli.sandbox.build import build
+        preinstall = (args.preinstall if args.preinstall is not None
+                      else preinstall_for(args.agent, args.home))
+        tag, digest = build(preinstall=preinstall, ros_distro=args.ros_distro,
+                            robot_uid=args.robot_uid, tag=args.tag)
+    else:
+        from robocli.proxy.build import build
+        whitelist = (args.whitelist if args.whitelist is not None
+                     else whitelist_for(args.agent, args.home))
+        tag, digest = build(whitelist=whitelist, tag=args.tag, port=args.port)
+    print(f"{tag} {digest}")
+    return 0
+
+
+def add_parser(sub) -> None:
+    p = sub.add_parser("build", help="build the robot / sandbox / proxy image",
+                       description="Build one of the three images. The sandbox and "
+                       "proxy images take their install line and whitelist from the "
+                       "manifests of the agents named with --agent.")
+    units = p.add_subparsers(dest="unit", metavar="<unit>", required=True)
+
+    r = units.add_parser("robot", help="the simulated robot image (Dockerfile.<distro>)")
+    r.add_argument("--distro", default="jazzy", help="ROS 2 distro: jazzy | humble")
+    r.add_argument("--tag", default=None, help="image tag (default: robocli-sim-<distro>)")
+
+    s = units.add_parser("sandbox", help="the agent terminal image")
+    s.add_argument("--agent", action="append", default=None,
+                   help="agent(s) to install; repeatable (default: the configured default)")
+    s.add_argument("--preinstall", default=None,
+                   help="install line to bake instead of the agents' manifests")
+    s.add_argument("--ros-distro", default="jazzy", help="ROS 2 distro: jazzy | humble")
+    s.add_argument("--robot-uid", type=int, default=None,
+                   help="container uid (default: the current user)")
+    s.add_argument("--tag", default="robocli-sandbox")
+
+    x = units.add_parser("proxy", help="the whitelist proxy image")
+    x.add_argument("--agent", action="append", default=None,
+                   help="agent(s) whose hosts to allow; repeatable (default: the "
+                   "configured default)")
+    x.add_argument("--whitelist", default=None,
+                   help="regexes, one per line, instead of the agents' manifests")
+    x.add_argument("--tag", default="robocli-proxy")
+    x.add_argument("--port", type=int, default=8888, help="listen port, baked in and labelled")
+    p.set_defaults(fn=run)

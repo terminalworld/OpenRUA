@@ -104,12 +104,11 @@ def test_conforms():
   (over the manifest's `default_options`), `agent.credentials_dir`.
   The same keys in `~/.robocli/config.yaml` are your defaults; the
   package default agent is in `robocli/configs/config.yaml`.
-- Images: `robocli build sandbox --preinstall "$(python -m robocli.agents
-  preinstall --agent my-agent)"` and `robocli build proxy --whitelist
-  "$(python -m robocli.agents whitelist --agent my-agent)"`. Several
-  `--agent` bake several agents into one image; the images carry a label
-  with the hash of what went in, and `robocli doctor` compares it with
-  what the selected agents' manifests say today.
+- Images: `robocli build sandbox --agent my-agent` and `robocli build
+  proxy --agent my-agent` take the install line and the whitelist from
+  the manifest. Several `--agent` bake several agents into one image;
+  the images carry a label with the hash of what went in, and `robocli
+  doctor` compares it with what the selected agents' manifests say today.
 - Login, two ways. A profile directory (`~/.robocli/credentials/<name>/`
   by default, or `agent.credentials_dir`): log in once on the host with
   that directory as the CLI's config dir; `login_hint` prints the

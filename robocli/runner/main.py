@@ -26,8 +26,9 @@ RUNS_ROOT = Path("runs")
 
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
+def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> None:
+    """The ``robocli run`` arguments, on any parser (the cli passes its
+    own subparser and supplies ``--home`` itself)."""
     ap.add_argument("--config", required=True,
                     help="benchmark config (benchmarks/<name>.yaml)")
     ap.add_argument("--robot", default=None,
@@ -71,17 +72,21 @@ def main() -> None:
         "--runs-root", default=None,
         help="where run data lands (default: ./runs)",
     )
-    ap.add_argument(
-        "--home", default=None,
-        help="the user directory (default: ~/.robocli); robot and benchmark "
-        "names, simulators and login profiles are looked up under it",
-    )
+    if include_home:
+        ap.add_argument(
+            "--home", default=None,
+            help="the user directory (default: ~/.robocli); robot and benchmark "
+            "names, simulators and login profiles are looked up under it",
+        )
     ap.add_argument(
         "--account-alias", default=None,
         help="non-secret label of the credentials profile, recorded in the "
         "trial result for per-account accounting",
     )
-    args = ap.parse_args()
+
+
+def run(args: argparse.Namespace) -> int:
+    """Run the task set described by parsed arguments; returns the exit status."""
     if args.token_file:
         # See --token-file: the launcher runs with cwd=trial_dir, so a
         # relative path would resolve to nothing by the time docker reads it.
@@ -135,7 +140,14 @@ def main() -> None:
                 f"success={rec['success']} term={rec['termination']} "
                 f"wall={rec['wall_seconds']}s"
             )
+    return 0
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(prog="robocli run", description=__doc__.split("\n\n")[0])
+    add_arguments(ap)
+    return run(ap.parse_args())
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -19,10 +19,10 @@ is visible to the agent.
 | `robocli/robot/` | the machine, provided by a backend (`up()` dispatches on `machine.backend.kind`). `sim/`: image build, container up/down, the host-side client, and `bridge/`, the simulated robot's own software (`environments/`, `ros/`, `rpc.py`, `main.py`). `real/`: an optional launch command and a handle that waits for the graph. | `python -m robocli.robot.sim.build` |
 | `robocli/sandbox/` | the agent's terminal: an Ubuntu + ROS 2 container with the agent installed and `workspace/` seeded (README, `machine.yaml`, four docs, a few tools). | `python -m robocli.sandbox` |
 | `robocli/proxy/` | the wall: a whitelist HTTP proxy, the sandbox's only route out. | `python -m robocli.proxy` |
-| `robocli/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, hooks under `plugins/agents/`, bundled then `~/.robocli/`), the launcher, credentials staging, the prompts. | `python -m robocli.agents` |
+| `robocli/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, hooks under `plugins/agents/`, bundled then `~/.robocli/`), the launcher, credentials staging, the prompts. | `python -m robocli.agents launch` |
 | `robocli/runner/` | running trials: `main.py` (`robocli run`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the manual makes, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `robocli run` |
-| `robocli/cli.py` | the front door: `robocli robots / benchmarks / agents / build / up / agent / down / run / config / doctor`. | `robocli` |
-| `robocli/doctor.py` | is this machine ready: structured checks over docker, images (their labels against the selected agents), simulator, login, the user directory. | `robocli doctor` |
+| `robocli/cli/` | the command line: one module per verb under `commands/` (`robots / benchmarks / agents / build / up / agent / down / run / config / doctor`), `output.py`, `state.py`. | `robocli` |
+| `robocli/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, login, the user directory), `report.py`. | `robocli doctor` |
 
 Shared leaves, importable by every host-side unit and by nothing in
 the bridge:

@@ -225,25 +225,27 @@ def test_no_direct_hooks_imports_outside_the_registry():
     assert not offenders, offenders
 
 
-def test_front_door_emits_build_facts(tmp_path):
+def test_build_takes_install_and_whitelist_from_the_manifests(tmp_path):
+    from robocli.cli.commands.build import (default_agent, preinstall_for,
+                                            whitelist_for)
+    a = agents.get("claude-code")
+    assert default_agent(tmp_path) == "claude-code"      # the package default
+    assert preinstall_for(None, tmp_path) == a.install
+    assert whitelist_for(["claude-code"], tmp_path).splitlines() == list(a.whitelist)
+    # several --agent: the union, each line once
+    assert whitelist_for(["claude-code", "claude-code"], tmp_path).splitlines() == \
+        list(a.whitelist)
+    # the user's defaults file picks the default agent
+    (tmp_path / "config.yaml").write_text("agent: {name: claude-code}\n")
+    assert default_agent(tmp_path) == "claude-code"
+
+
+def test_agents_module_exposes_launch_only():
     import subprocess
     import sys
-    env_cmd = [sys.executable, "-m", "robocli.agents"]
-    pre = subprocess.run([*env_cmd, "preinstall", "--agent", "claude-code"],
-                         capture_output=True, text=True)
-    wl = subprocess.run([*env_cmd, "whitelist", "--agent", "claude-code"],
-                        capture_output=True, text=True)
-    a = agents.get("claude-code")
-    # the build verbs name their agents; there is no implicit default here
-    bare = subprocess.run([*env_cmd, "whitelist"], capture_output=True, text=True)
-    assert bare.returncode != 0 and "--agent" in bare.stderr
-    assert pre.returncode == 0 and pre.stdout.strip() == a.install
-    assert wl.returncode == 0
-    assert wl.stdout.strip().splitlines() == list(a.whitelist)
-    # several --agent: the union, each line once
-    wl2 = subprocess.run([*env_cmd, "whitelist", "--agent", "claude-code",
-                          "--agent", "claude-code"], capture_output=True, text=True)
-    assert wl2.stdout.strip().splitlines() == list(a.whitelist)
+    r = subprocess.run([sys.executable, "-m", "robocli.agents", "whitelist"],
+                       capture_output=True, text=True)
+    assert r.returncode == 2 and "launch" in r.stderr
 
 
 # ----------------------------------------------------------- addons slot

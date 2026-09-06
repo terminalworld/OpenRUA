@@ -1,74 +1,24 @@
-"""``robocli doctor``: is this machine ready to bring a robot up?
-
-Every check is a function returning ``CheckResult`` rows (``id``,
-``label``, ``severity``, ``detail``, ``hint``); the runner collects
-them in order, isolating a check that itself crashes as an error row.
-One report renders two ways with no divergence: lines with a mark per
-row and the fix under every error, or JSON (``--json``, or whenever
-stdout is not a terminal) for scripts. The exit status is 1 exactly
-when an error row exists; warnings never fail. Nothing here changes
-the machine.
+"""The checks: each takes the resolved context and returns rows; order = report order.
 
 Checks read the artifacts, not the code: the sandbox and proxy images
 carry a label with the hash of what was baked in, and doctor compares
-it with what the selected agents would emit today.
+it with what the selected agents' manifests say today. Nothing here
+changes the machine; a check that itself crashes becomes an error row.
 """
 
 from __future__ import annotations
 
 import hashlib
-import json
 import shutil
 import subprocess
-import sys
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 import yaml
 
 from robocli import agents, config
 from robocli.config import paths
-
-SEVERITIES = ("ok", "warning", "error")
-MARK = {"ok": "ok", "warning": "??", "error": "!!"}
-
-
-@dataclass
-class CheckResult:
-    id: str
-    label: str
-    severity: str = "ok"
-    detail: str = ""
-    hint: str = ""
-
-
-@dataclass
-class Report:
-    checks: list[CheckResult] = field(default_factory=list)
-
-    @property
-    def summary(self) -> dict[str, int]:
-        return {s: sum(1 for c in self.checks if c.severity == s) for s in SEVERITIES}
-
-    @property
-    def ok(self) -> bool:
-        return self.summary["error"] == 0
-
-    def to_json(self) -> str:
-        return json.dumps({"ok": self.ok, "summary": self.summary,
-                           "checks": [asdict(c) for c in self.checks]}, indent=2)
-
-    def render(self) -> str:
-        lines = ["robocli doctor"]
-        for c in self.checks:
-            detail = f"  ({c.detail})" if c.detail else ""
-            lines.append(f"  [{MARK[c.severity]}] {c.label}{detail}")
-            if c.severity == "error" and c.hint:
-                lines.append(f"       fix: {c.hint}")
-        s = self.summary
-        lines.append(f"{s['ok']} ok, {s['warning']} warnings, {s['error']} errors")
-        return "\n".join(lines)
+from robocli.doctor.report import CheckResult, Report
 
 
 # ------------------------------------------------------------ docker access
@@ -156,7 +106,7 @@ def check_user_entries(ctx: Context) -> list[CheckResult]:
 def check_proxy_image(ctx: Context) -> list[CheckResult]:
     image = "robocli-proxy"
     names = " ".join(f"--agent {a.name}" for a in ctx.agents)
-    build = (f'robocli build proxy --whitelist "$(python -m robocli.agents whitelist {names})"')
+    build = f"robocli build proxy {names}"
     if docker_inspect("image", image, "{{.Id}}") is None:
         return [CheckResult("proxy-image", f"proxy image {image} missing", "error", hint=build)]
     want = _sha("\n".join(agents.whitelist(ctx.agents)))
@@ -182,8 +132,7 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
         out.append(CheckResult("robot-image", f"robot image {sim} present"))
     sandbox = backend.get("sandbox_image", "robocli-sandbox")
     names = " ".join(f"--agent {a.name}" for a in ctx.agents)
-    build = (f'robocli build sandbox --tag {sandbox} --preinstall '
-             f'"$(python -m robocli.agents preinstall {names})"')
+    build = f"robocli build sandbox --tag {sandbox} {names}"
     if docker_inspect("image", sandbox, "{{.Id}}") is None:
         out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} missing", "error",
                                hint=build))
@@ -269,13 +218,3 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
             report.checks.append(CheckResult(check.__name__, f"{check.__name__} crashed",
                                              "error", detail=repr(exc)))
     return report
-
-
-def main_report(report: Report, as_json: bool | None = None) -> int:
-    """Print the report the right way for the reader and return the
-    exit status: ``--json`` forces JSON, and so does a non-terminal
-    stdout; errors, not warnings, make it 1."""
-    if as_json is None:
-        as_json = not sys.stdout.isatty()
-    print(report.to_json() if as_json else report.render())
-    return 0 if report.ok else 1
