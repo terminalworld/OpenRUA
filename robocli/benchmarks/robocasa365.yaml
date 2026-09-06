@@ -114,9 +114,9 @@ agent:                       # same frontier combo + workspace template
   cli: claude-code       # agent adapter (robocli/agents) — all agent-specific
                          # knowledge (launch/auth/transcript/quota) lives there
   model: claude-opus-5
-  effort: high           # reasoning effort, PINNED (opus-5 default; pinned vs
+  options:
+    effort: high           # reasoning effort, PINNED (opus-5 default; pinned vs
                          # CLI-default drift; stamped into each trial's meta)
-  credentials_dir: ~/.robocli-claude
 
 robot: panda-omron-sim          # robots/panda-omron-sim.yaml supplies the machine: section
 

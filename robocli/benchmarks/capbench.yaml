@@ -50,11 +50,11 @@ agent:                   # same frontier combo + workspace template as LIBERO le
   cli: claude-code       # agent adapter (robocli/agents) — all agent-specific
                          # knowledge (launch/auth/transcript/quota) lives there
   model: claude-opus-5
-  effort: high           # reasoning effort, PINNED (opus-5's own default; pinned
+  options:
+    effort: high           # reasoning effort, PINNED (opus-5's own default; pinned
                          # so a CLI default change can't drift it mid-campaign;
                          # 2026-08-19). Load-bearing + absent from transcript, so
                          # it is carried here and stamped into each trial's meta.
-  credentials_dir: ~/.robocli-claude
 
 robot: panda-sim-humble          # robots/panda-sim-humble.yaml supplies the machine: section
 
