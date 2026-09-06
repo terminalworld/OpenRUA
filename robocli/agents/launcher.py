@@ -9,8 +9,8 @@ env, transcript format) comes from the adapter selected by ``--cli``.
 
 ``python -m robocli.agents.launcher --sandbox <container> --task
 "<sentence>" --transcript <path> [--prompt-file <path>] [--cli <name>]
-[--model ...] [--max-turns N] [--proxy http://host:port]
-[--session-id <uuid>] [--resume] [--autocompact <auto|tokens>]``
+[--model ...] [--option k=v ...] [--max-turns N] [--proxy http://host:port]
+[--session-id <uuid>] [--resume] [--token-file <path>]``
 
 A trial suspended at a quota wall resumes by re-running this launcher with
 ``--resume`` and the same ``--session-id``: the agent is shown the
@@ -53,15 +53,15 @@ def main() -> int:
     ap.add_argument("--transcript", required=True)
     ap.add_argument("--cli", default=None,
                     help="agent adapter name (default: robocli.agents default)")
-    ap.add_argument("--model", default=None)
-    ap.add_argument("--effort", default=None,
-                    help="reasoning effort level (default: adapter's "
-                    "DEFAULT_EFFORT)")
+    ap.add_argument("--model", default=None,
+                    help="model id (default: the adapter's default_model)")
+    ap.add_argument("--option", action="append", default=[], metavar="KEY=VALUE",
+                    help="adapter knob (repeatable; the adapter's "
+                    "default_options apply underneath)")
+    ap.add_argument("--home", default=None,
+                    help="user directory holding agents/ (default: ~/.robocli)")
     ap.add_argument("--max-turns", type=int, default=100)
     ap.add_argument("--proxy", default=DEFAULT_PROXY)
-    ap.add_argument("--autocompact", default=None,
-                    help="context-compaction threshold (default: the "
-                    "adapter's DEFAULT_AUTOCOMPACT)")
     ap.add_argument("--session-id", default=None,
                     help="name the session up front so it can be resumed")
     ap.add_argument("--token-file", default=None,
@@ -76,7 +76,13 @@ def main() -> int:
     if args.resume and not args.session_id:
         ap.error("--resume needs the --session-id of the session to continue")
 
-    agent = agents.get(args.cli)
+    agent = agents.get(args.cli, args.home)
+    options = {}
+    for item in args.option:
+        if "=" not in item:
+            ap.error(f"--option expects KEY=VALUE, got {item!r}")
+        k, v = item.split("=", 1)
+        options[k] = v
     if args.resume:
         prompt = agents.RESUME_PROMPT
     else:
@@ -86,11 +92,10 @@ def main() -> int:
     cmd = agent.launch_argv(
         sandbox=args.sandbox,
         prompt=prompt,
-        model=args.model or agent.DEFAULT_MODEL,
+        model=args.model or agent.default_model,
         max_turns=args.max_turns,
         proxy=args.proxy,
-        effort=args.effort or agent.DEFAULT_EFFORT,
-        autocompact=args.autocompact or agent.DEFAULT_AUTOCOMPACT,
+        options=options,
         session_id=args.session_id,
         resume=args.resume,
         token_file=args.token_file,

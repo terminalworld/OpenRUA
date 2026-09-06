@@ -364,18 +364,14 @@ def agent_operator(ctx: dict) -> dict:
 
     cfg = ctx["cfg"]
     agent_cfg = cfg.get("agent", {})
-    agent = agents.get(agent_cfg.get("cli"))
-    model = agent_cfg.get("model", agent.DEFAULT_MODEL)
-    # Reasoning effort is a load-bearing experimental parameter that does not
-    # appear in the transcript; pin it from the config (default: the adapter's
-    # explicit DEFAULT_EFFORT, never the CLI's implicit default) and record it.
-    options = agent_cfg.get("options", {})
-    effort = options.get("effort", agent.DEFAULT_EFFORT)
-    # Same reasoning for the compaction threshold (ruling 2026-08-20): pinned
-    # at the window ceiling, so a compaction happens only when the context
-    # genuinely will not fit, and a resumed trial compacts where an
-    # uninterrupted one would have.
-    autocompact = options.get("autocompact", agent.DEFAULT_AUTOCOMPACT)
+    agent = agents.get(agent_cfg.get("cli"), ctx.get("home"))
+    model = agent_cfg.get("model") or agent.default_model
+    # Adapter knobs (reasoning effort, compaction threshold, tool
+    # timeouts, whatever the CLI exposes) are load-bearing experimental parameters that do not
+    # appear in the transcript: the merged set is pinned here from the
+    # adapter's defaults and the config, passed to the launcher explicitly,
+    # and recorded in the trial's meta (2026-08-19, 2026-08-20).
+    options = {**agent.default_options, **agent_cfg.get("options", {})}
     # Naming the session up front is what makes a suspended trial resumable
     # without scraping an id back out of a half-written transcript.
     session_id = str(uuid.uuid4())
@@ -387,18 +383,17 @@ def agent_operator(ctx: dict) -> dict:
         "--sandbox", ctx["sandbox"],
         "--task", ctx["task_language"],
         "--transcript", str(transcript),
-        "--cli", agent.NAME,
+        "--cli", agent.name,
         "--model", model,
-        "--effort", effort,
-        "--autocompact", autocompact,
+        *(x for k, v in options.items() for x in ("--option", f"{k}={v}")),
+        *(["--home", str(ctx["home"])] if ctx.get("home") else []),
         "--session-id", session_id,
         "--proxy", ctx.get("proxy", "http://robocli-proxy:8888"),
         *(["--token-file", str(ctx["token_file"])] if ctx.get("token_file")
           else []),
     ]
-    meta: dict = {"operator": "agent", "cli": agent.NAME, "model": model,
-                  "effort": effort, "autocompact": autocompact,
-                  "session_id": session_id}
+    meta: dict = {"operator": "agent", "cli": agent.name, "model": model,
+                  "options": options, "session_id": session_id}
     # The launcher runs with cwd=trial_dir: RELATIVE PYTHONPATH entries
     # (a natural way to invoke the master) would silently break `-m
     # robocli.agents.launcher` there (2026-08-14 rehearsal: 6/6 trials
@@ -724,11 +719,11 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     proxy_url = ensure_proxy(network)
     if account_alias:
         rec["account_alias"] = account_alias
-    agent = agents.get(cfg.get("agent", {}).get("cli"))
+    agent = agents.get(cfg.get("agent", {}).get("cli"), home)
     creds_home = Path(
         credentials_dir
         or cfg.get("agent", {}).get("credentials_dir")
-        or paths.credentials_dir(home) / agent.NAME
+        or paths.credentials_dir(home) / agent.name
     ).expanduser()
     # A token file is the sandbox's whole auth story, so the login profile
     # is no longer required to carry credentials (see agents.prepare_profile).
@@ -880,6 +875,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
                     "proxy": proxy_url,
                     "script": script,
                     "token_file": token_file,
+                    "home": home,
                 }
             )
         finally:
@@ -985,7 +981,7 @@ def main() -> None:
     )
     ap.add_argument(
         "--token-file", default=None,
-        help="file holding <TOKEN_ENV>=<token> for the sandbox CLI (the "
+        help="file holding <token_env>=<token> for the sandbox CLI (the "
         "account pool sets this); given, the sandbox authenticates with "
         "that token and no credentials file is mounted",
     )
@@ -1023,7 +1019,7 @@ def main() -> None:
     runs_root = Path(args.runs_root).expanduser() if args.runs_root else RUNS_ROOT
     run_dir = runs_root.resolve() / cfg["task"]["benchmark"] / args.run_id
     run_dir.mkdir(parents=True, exist_ok=True)
-    agent = agents.get(cfg.get("agent", {}).get("cli"))
+    agent = agents.get(cfg.get("agent", {}).get("cli"), home)
     prov = {**record.provenance(
         cfg_path, cfg, args, agent=agent,
         template_hash=workspace.template_hash(cfg),

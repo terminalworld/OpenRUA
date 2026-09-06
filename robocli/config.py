@@ -90,14 +90,15 @@ class Protocol(Strict):
 # ----------------------------------------------------------------- agent
 
 class AgentConfig(Strict):
-    cli: str = Field(default="claude-code", description="agent adapter name (robocli agents)")
+    cli: str | None = Field(default=None, description="agent adapter name (robocli agents "
+                            "lists them); default: the bundled default adapter")
     model: str | None = Field(default=None, description="model id; default: the adapter's")
     credentials_dir: str | None = Field(
         default=None, description="login profile directory; default: "
         "~/.robocli/credentials/<cli>")
     options: dict[str, Any] = Field(
         default_factory=dict, description="adapter-specific knobs passed through as "
-        "given (claude-code: effort, autocompact)")
+        "given, over the adapter's default_options")
 
 
 class AgentOverrides(Strict):

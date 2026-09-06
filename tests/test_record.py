@@ -111,8 +111,8 @@ def test_provenance_pins_the_whole_chain(tmp_path):
     from robocli.bench.record import provenance
 
     class _Agent:
-        NAME = "stub"
-        VERSION_ARGV = ["echo", "9.9.9"]
+        name = "stub"
+        version_argv = ("echo", "9.9.9")
 
     class _Args:
         operator, task_suite = "none", "suite"

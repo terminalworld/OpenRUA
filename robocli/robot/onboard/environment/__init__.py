@@ -27,7 +27,7 @@ from .capbench import CapBenchLoader
 from .libero import LiberoLoader
 from .robocasa import RoboCasaLoader
 
-# The plug shape every loader implements (mirrors agents.ADAPTER_INTERFACE).
+# The plug shape every loader implements (a duck-typed contract, like agents.Agent).
 LOADER_INTERFACE = (
     "BENCHMARKS",   # config names this loader answers to
     "create",       # cfg, task_suite, task_id -> (env, ctx)

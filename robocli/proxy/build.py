@@ -10,6 +10,7 @@ Value output: ``<tag> <digest>`` (one line). Empty whitelist (default)
 from __future__ import annotations
 
 import argparse
+import hashlib
 import subprocess
 import sys
 from pathlib import Path
@@ -22,10 +23,14 @@ _HERE = Path(__file__).resolve().parent
 def build(whitelist: str = "", tag: str = "robocli-proxy",
           port: int = 8888) -> tuple[str, str]:
     """Build the wall image; returns (tag, digest)."""
+    # The image says which whitelist it enforces: doctor compares this
+    # label with what the selected agents would emit today.
+    digest_in = hashlib.sha256(whitelist.encode()).hexdigest()
     r = subprocess.run(
         ["docker", "build", "-f", str(_HERE / "proxy.Dockerfile"),
          "-t", tag, "--build-arg", f"WHITELIST={whitelist}",
-         "--build-arg", f"PORT={port}", str(_HERE)],
+         "--build-arg", f"PORT={port}",
+         "--label", f"robocli.whitelist_sha256={digest_in}", str(_HERE)],
         capture_output=True, text=True)
     if r.returncode != 0:
         raise ProxyError(f"docker build {tag} failed:\n{r.stderr[-2000:]}")

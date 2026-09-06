@@ -1,69 +1,140 @@
 """Agents: the occupant package (adapters + launcher + opening prompt).
 
-The harness claim is "agent-agnostic by construction": any CLI-driven
-coding agent plugs in with no per-model adaptation. Structurally that
-means every fact about a *particular* agent (launch command, auth
-layout, transcript format, quota wording) lives in exactly one adapter
-module here, and every consumer (launcher, operators, runner,
-precheck, demo replay, orchestration audit/trim/batch) touches
-only this interface. The boundary test
-(orchestration/test_agent_boundary.py) enforces the seam: agent tokens
-outside this package fail CI.
+The harness is agent-agnostic by construction: every fact about a
+particular coding agent lives in one adapter (a ``base.Agent``
+subclass), and every consumer reaches it through ``get()``. Adding an
+agent is one module exposing ``AGENT``: bundled here, or in the user
+directory (``~/.robocli/agents/<name>.py``), looked up in that order.
+A third source, pip entry points (group ``robocli.agents``), would come
+after the user directory; not implemented.
 
-Adding an agent = adding one module here implementing every name in
-ADAPTER_INTERFACE (the plug shape; test-enforced) and registering it in
-``get()`` + ADAPTERS. Nothing else changes.
-
-Selection: configs carry ``agent.cli`` (default ``claude-code``);
-recorded per trial in ``operator_meta.cli`` so post-hoc tools
-(audit/trim/demo) resolve the same adapter the trial actually ran.
+Selection: configs carry ``agent.cli`` (default ``claude-code``),
+recorded per trial in ``operator_meta.cli`` so post-hoc tools resolve
+the adapter the trial actually ran.
 """
 
 from __future__ import annotations
 
-DEFAULT_CLI = "claude-code"
-ADAPTERS = (DEFAULT_CLI,)
-
-# The plug shape: every registered adapter must implement ALL of these
-# (machine-enforced by tests/test_agents.py). This list IS the package's
-# outward contract; consumers touch adapters only through get() and only
-# these names. Optional extras (e.g. PINNED_CLI_VERSION) are read via
-# getattr by their consumers.
-ADAPTER_INTERFACE = (
-    # identity and defaults
-    "NAME", "DEFAULT_MODEL", "DEFAULT_EFFORT", "DEFAULT_CREDENTIALS_DIR",
-    "CREDENTIALS_FILENAME", "CONFIG_ENV", "VERSION_ARGV",
-    # launch
-    "launch_argv",
-    # build-time emitters (seat install, wall whitelist)
-    "sandbox_install", "proxy_filter_lines",
-    # auth and precheck checks
-    "sandbox_mounts", "credentials_check", "login_hint",
-    "sandbox_cli_check", "token_hint",
-    # quota
-    "quota_probe_argv", "quota_window_open", "matches_quota_anomaly",
-    "read_rate_limits",
-    # transcript accounting
-    "read_final", "scan_transcript", "quota_since",
-    "assistant_turns_before",
-    # action extraction
-    "bash_commands", "replay_ops",
-)
-
-
-def get(cli: str | None = None):
-    """Resolve an adapter module by its ``agent.cli`` name."""
-    cli = cli or DEFAULT_CLI
-    if cli == DEFAULT_CLI:
-        from . import claude_code
-        return claude_code
-    raise KeyError(f"unknown agent cli {cli!r} (available: {DEFAULT_CLI})")
-
-
+import importlib
+import importlib.util
+import logging
 import shutil as _shutil
 import subprocess as _subprocess
+import sys
 import tempfile as _tempfile
+from dataclasses import dataclass
 from pathlib import Path as _Path
+
+from robocli import paths
+from robocli.agents.base import HOOKS, Agent, Credentials  # noqa: F401  re-exported
+
+DEFAULT_CLI = "claude-code"
+_log = logging.getLogger(__name__)
+
+# Modules in this package that are not adapters.
+_NOT_ADAPTERS = {"base", "launcher"}
+
+
+def _module_name(name: str) -> str:
+    return name.replace("-", "_")
+
+
+def _load_user_module(path: _Path):
+    """Import one user-directory adapter file under a private module
+    name, so two users' files (or a user's and ours) never collide.
+    A failure is logged and re-raised; the half-initialised module is
+    removed so a retry starts clean."""
+    modname = f"_robocli_user_agent_{path.stem}"
+    if modname in sys.modules:
+        return sys.modules[modname]
+    spec = importlib.util.spec_from_file_location(modname, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[modname] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception:
+        sys.modules.pop(modname, None)
+        raise
+    return module
+
+
+def _agent_of(module, source: str) -> Agent:
+    agent = getattr(module, "AGENT", None)
+    if not isinstance(agent, Agent):
+        raise TypeError(f"{source} exposes no AGENT (an robocli.agents.Agent instance)")
+    return agent
+
+
+def get(cli: str | None = None, home: _Path | None = None) -> Agent:
+    """Resolve an adapter by its ``agent.cli`` name: bundled first, then
+    ``<home>/agents/<name>.py``. Unknown names list what exists."""
+    cli = cli or DEFAULT_CLI
+    mod = _module_name(cli)
+    if mod not in _NOT_ADAPTERS:
+        try:
+            return _agent_of(importlib.import_module(f"robocli.agents.{mod}"),
+                             f"robocli.agents.{mod}")
+        except ModuleNotFoundError as e:
+            if e.name != f"robocli.agents.{mod}":
+                raise
+    for candidate in (paths.agents_dir(home) / f"{cli}.py",
+                      paths.agents_dir(home) / f"{mod}.py"):
+        if candidate.is_file():
+            return _agent_of(_load_user_module(candidate), str(candidate))
+    names = ", ".join(e.name for e in available(home))
+    raise KeyError(f"unknown agent cli {cli!r} (available: {names}); "
+                   f"add one under {paths.agents_dir(home)}/ exposing AGENT")
+
+
+@dataclass(frozen=True)
+class Listed:
+    name: str
+    source: str            # "bundled" | "user"
+    path: _Path
+    agent: Agent | None    # None when the module failed to load
+    error: str | None = None
+    shadowed_by: _Path | None = None
+
+
+def available(home: _Path | None = None) -> list[Listed]:
+    """Every adapter, bundled then user, each loaded in isolation: a
+    broken user file is listed with its error and hides nothing else."""
+    out: list[Listed] = []
+    for e in paths.available("agents", home):
+        if e.source == "bundled" and e.name in _NOT_ADAPTERS:
+            continue
+        try:
+            if e.source == "bundled":
+                agent = _agent_of(importlib.import_module(f"robocli.agents.{e.name}"),
+                                  str(e.path))
+            else:
+                agent = _agent_of(_load_user_module(e.path), str(e.path))
+            out.append(Listed(agent.name, e.source, e.path, agent,
+                              shadowed_by=e.shadowed_by))
+        except Exception as exc:  # noqa: BLE001  one bad adapter must not hide the rest
+            _log.warning("agent adapter %s failed to load: %s", e.path, exc)
+            out.append(Listed(e.name, e.source, e.path, None, error=str(exc),
+                              shadowed_by=e.shadowed_by))
+    return out
+
+
+def preinstall(agents: list[Agent]) -> str:
+    """One shell chain installing every agent's CLI (the sandbox image's
+    PREINSTALL slot). Adapters with nothing to install contribute nothing."""
+    return " && ".join(a.install for a in agents if a.install)
+
+
+def whitelist(agents: list[Agent]) -> tuple[str, ...]:
+    """The union of the agents' proxy whitelists, first occurrence order."""
+    seen: list[str] = []
+    for a in agents:
+        for line in a.whitelist:
+            if line not in seen:
+                seen.append(line)
+    return tuple(seen)
+
 
 # THE opening prompt, inline by ruling 2026-08-15: it is stable skin, a
 # separate document earns nothing. Single source shared by the launcher
@@ -92,7 +163,7 @@ The workspace contains starter docs and tools you can use.
 RESUME_PROMPT = "Continue where you left off."
 
 
-def prepare_profile(creds_home: _Path, adapter,
+def prepare_profile(creds_home: _Path, adapter: Agent,
                     require_credentials: bool = True
                     ) -> tuple[_Path, _Path | None]:
     """Stage the occupant's luggage: auth profile for one sandbox entry.
@@ -108,22 +179,24 @@ def prepare_profile(creds_home: _Path, adapter,
     - ``require_credentials=False`` is the minted-token arrangement
       (2026-09-02): the sandbox carries its own token, so no credentials
       file is needed or wanted, and the second element comes back None.
-      Passing a login profile that happens to hold credentials does not
-      change that; nothing gets mounted either way.
 
-    Returns (profile_copy_dir, shared_file_or_None); the caller owns
-    deleting the copy dir.
+    An adapter without a profile-directory login gets an empty copy dir
+    and None. Returns (profile_copy_dir, shared_file_or_None); the caller
+    owns deleting the copy dir.
     """
-    creds_file = creds_home / adapter.CREDENTIALS_FILENAME
+    cfg_dir = _Path(_tempfile.mkdtemp(prefix="robocli-agentcfg-"))
+    creds = adapter.credentials
+    if creds is None:
+        return cfg_dir, None
+    creds_file: _Path | None = creds_home / creds.filename
     if not require_credentials:
         creds_file = None
     elif not creds_file.exists():
         raise RuntimeError(
             f"credentials missing: {adapter.login_hint(creds_home)}")
-    cfg_dir = _Path(_tempfile.mkdtemp(prefix="robocli-agentcfg-"))
     for pattern in ("*.json", ".*.json"):
         for f in creds_home.glob(pattern):
-            if f.name != adapter.CREDENTIALS_FILENAME:
+            if f.name != creds.filename:
                 _shutil.copy2(f, cfg_dir / f.name)
     _subprocess.run(["chmod", "-R", "777", str(cfg_dir)])
     return cfg_dir, creds_file

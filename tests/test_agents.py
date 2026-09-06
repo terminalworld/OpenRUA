@@ -36,10 +36,11 @@ def test_configs_carry_no_stale_prompt_key():
 # -------------------------------------------------------------- adapters
 
 def test_adapter_install_snippet_carries_the_pin():
+    from robocli.agents.claude_code import CLI_VERSION
     a = agents.get("claude-code")
-    assert a.PINNED_CLI_VERSION in a.sandbox_install()
+    assert CLI_VERSION in a.install
     name, cmd = a.sandbox_cli_check()
-    assert name == "sandbox_cli_matches_pin" and a.PINNED_CLI_VERSION in cmd
+    assert name == "sandbox_cli_matches_pin" and CLI_VERSION in cmd
 
 
 def test_precheck_includes_version_checks():
@@ -68,13 +69,13 @@ def test_prepare_profile_copies_profile_but_never_the_credentials(tmp_path):
     # path for bind-mounting), never copied into the per-entry dir.
     import shutil
     a = agents.get("claude-code")
-    (tmp_path / a.CREDENTIALS_FILENAME).write_text("{}")
+    (tmp_path / a.credentials.filename).write_text("{}")
     (tmp_path / "settings.json").write_text("{}")
     cfg_dir, shared = agents.prepare_profile(tmp_path, a)
     try:
-        assert shared == tmp_path / a.CREDENTIALS_FILENAME
+        assert shared == tmp_path / a.credentials.filename
         assert (cfg_dir / "settings.json").exists()
-        assert not (cfg_dir / a.CREDENTIALS_FILENAME).exists()
+        assert not (cfg_dir / a.credentials.filename).exists()
     finally:
         shutil.rmtree(cfg_dir, ignore_errors=True)
 
@@ -90,7 +91,7 @@ def test_sandbox_mounts_are_bare_specs_landing_in_the_config_dir(tmp_path):
         assert Path(src).is_absolute() and dst.startswith("/")
         dsts.append(dst)
     profile_dst, creds_dst = dsts
-    assert creds_dst == f"{profile_dst}/{a.CREDENTIALS_FILENAME}"
+    assert creds_dst == f"{profile_dst}/{a.credentials.filename}"
 
 
 def test_launch_argv_threads_proxy_and_profile_env():
@@ -101,23 +102,23 @@ def test_launch_argv_threads_proxy_and_profile_env():
                          max_turns=3, proxy="http://wall:9999")
     assert "HTTPS_PROXY=http://wall:9999" in argv
     assert "HTTP_PROXY=http://wall:9999" in argv
-    env = [x for x in argv if x.startswith(a.CONFIG_ENV + "=")]
+    env = [x for x in argv if x.startswith(a.credentials.config_env + "=")]
     assert len(env) == 1
     _, cfg_dst = a.sandbox_mounts(Path("/x"), Path("/y"))[0].rsplit(":", 1)
-    assert env[0] == f"{a.CONFIG_ENV}={cfg_dst}"
+    assert env[0] == f"{a.credentials.config_env}={cfg_dst}"
 
 
 def test_launch_argv_pins_effort_explicitly():
     # Reasoning effort must be an EXPLICIT flag, never the CLI's implicit
     # default (a CLI update could silently shift it mid-campaign). Default =
-    # the adapter's documented DEFAULT_EFFORT; an explicit value overrides.
+    # the adapter's default_options; agent.options in a config overrides.
     a = agents.get("claude-code")
-    assert a.DEFAULT_EFFORT == "high"
+    assert a.default_options["effort"] == "high"
     argv = a.launch_argv(sandbox="box", prompt="p", model="m",
                          max_turns=3, proxy="http://w:9")
     assert argv[argv.index("--effort") + 1] == "high"
     argv2 = a.launch_argv(sandbox="box", prompt="p", model="m",
-                          max_turns=3, proxy="http://w:9", effort="max")
+                          max_turns=3, proxy="http://w:9", options={"effort": "max"})
     assert argv2[argv2.index("--effort") + 1] == "max"
 
 
@@ -140,12 +141,63 @@ def test_launcher_default_proxy_matches_proxy_package_defaults():
 # three package-level names (PROMPT, prepare_profile, get), the adapter
 # plug shape, and a fence against bypassing get().
 
-def test_every_adapter_implements_the_plug_shape():
-    for name in agents.ADAPTERS:
-        adapter = agents.get(name)
-        missing = [n for n in agents.ADAPTER_INTERFACE
-                   if not hasattr(adapter, n)]
-        assert not missing, f"{name}: missing {missing}"
+def test_every_bundled_adapter_conforms():
+    from robocli.testing import check_agent
+    listed = agents.available()
+    assert [a.name for a in listed] == ["claude-code"]
+    for a in listed:
+        assert a.agent is not None, a.error
+        check_agent(a.agent)
+        assert agents.get(a.name) is a.agent or agents.get(a.name).name == a.name
+
+
+def test_capabilities_are_the_overridden_hooks():
+    a = agents.get("claude-code")
+    assert {"interactive_argv", "read_final", "quota_since", "replay_ops"} <= a.capabilities
+    # a bare adapter has none, and every hook keeps its documented default
+    class Bare(agents.Agent):
+        name, default_model = "bare", "m"
+
+        def launch_argv(self, sandbox, prompt, model, max_turns, proxy, **_):
+            return ["docker", "exec", sandbox, "bare", prompt]
+    b = Bare()
+    assert b.capabilities == frozenset()
+    assert b.interactive_argv("s", "m", "p") is None and b.read_final(Path("/x")) == {}
+    assert b.sandbox_mounts(Path("/c"), Path("/f")) == () and b.credentials_check() is None
+    from robocli.testing import check_agent
+    check_agent(b)
+
+
+def test_agent_requires_name_and_model_and_refuses_unknown_attributes():
+    import pytest
+    with pytest.raises(TypeError, match="name and default_model"):
+        agents.Agent()
+    with pytest.raises(TypeError, match="no attribute"):
+        agents.Agent(name="x", default_model="m", colour="red")
+
+
+def test_user_directory_adapter_is_found_and_a_broken_one_is_isolated(tmp_path):
+    import pytest
+    d = tmp_path / "agents"
+    d.mkdir()
+    (d / "my-agent.py").write_text(
+        "from robocli.agents import Agent\n"
+        "class My(Agent):\n"
+        "    name = 'my-agent'\n    default_model = 'm1'\n"
+        "    def launch_argv(self, sandbox, prompt, model, max_turns, proxy, **_):\n"
+        "        return ['docker', 'exec', sandbox, 'my', prompt]\n"
+        "AGENT = My()\n")
+    (d / "broken.py").write_text("raise RuntimeError('boom')\n")
+    (d / "noagent.py").write_text("x = 1\n")
+    got = agents.get("my-agent", tmp_path)
+    assert got.name == "my-agent" and got.default_model == "m1"
+    listed = {a.name: a for a in agents.available(tmp_path)}
+    assert listed["claude-code"].source == "bundled"
+    assert listed["my-agent"].source == "user" and listed["my-agent"].agent is not None
+    assert listed["broken"].agent is None and "boom" in listed["broken"].error
+    assert listed["noagent"].agent is None and "AGENT" in listed["noagent"].error
+    with pytest.raises(KeyError, match="my-agent"):
+        agents.get("nope", tmp_path)
 
 
 def test_no_direct_adapter_imports_outside_the_package():
@@ -173,9 +225,13 @@ def test_front_door_emits_build_facts(tmp_path):
     wl = subprocess.run([*env_cmd, "whitelist"], capture_output=True,
                         text=True)
     a = agents.get(agents.DEFAULT_CLI)
-    assert pre.returncode == 0 and pre.stdout.strip() == a.sandbox_install()
+    assert pre.returncode == 0 and pre.stdout.strip() == a.install
     assert wl.returncode == 0
-    assert wl.stdout.strip().splitlines() == list(a.proxy_filter_lines())
+    assert wl.stdout.strip().splitlines() == list(a.whitelist)
+    # several --cli: the union, each line once
+    wl2 = subprocess.run([*env_cmd, "whitelist", "--cli", "claude-code",
+                          "--cli", "claude-code"], capture_output=True, text=True)
+    assert wl2.stdout.strip().splitlines() == list(a.whitelist)
 
 
 # ----------------------------------------------------------- addons slot
@@ -189,7 +245,7 @@ def test_addons_absent_by_design():
 
 def test_read_final_extracts_turns_usage_and_cost(tmp_path):
     import json
-    from robocli.agents import claude_code as cc
+    cc = agents.get("claude-code")
     t = tmp_path / "transcript.jsonl"
     t.write_text(json.dumps({"type": "assistant"}) + "\n" + json.dumps({
         "type": "result", "num_turns": 7, "subtype": "success",
@@ -213,7 +269,7 @@ def test_read_final_survives_trailing_system_records(tmp_path):
     # record; the token/cost account must still be found.
     import json
 
-    from robocli.agents.claude_code import read_final
+    read_final = agents.get("claude-code").read_final
     t = tmp_path / "transcript.jsonl"
     lines = [
         {"type": "assistant", "message": {}},
@@ -233,7 +289,7 @@ def test_read_rate_limits_normalizes_and_dates_each_reading(tmp_path):
     # (ruling 2026-08-20): no extra request, no credentials, no polling.
     import json
 
-    from robocli.agents.claude_code import read_rate_limits
+    read_rate_limits = agents.get("claude-code").read_rate_limits
     t = tmp_path / "transcript.jsonl"
     t.write_text("\n".join(json.dumps(d) for d in [
         # an event before any clock appears: dated by the first one that does
@@ -258,7 +314,7 @@ def test_read_rate_limits_normalizes_and_dates_each_reading(tmp_path):
 
 
 def test_read_rate_limits_is_empty_not_fake_when_nothing_reported(tmp_path):
-    from robocli.agents.claude_code import read_rate_limits
+    read_rate_limits = agents.get("claude-code").read_rate_limits
     t = tmp_path / "transcript.jsonl"
     t.write_text('{"type": "assistant", "timestamp": "2026-08-20T07:44:43Z"}')
     assert read_rate_limits(t) == []
@@ -276,7 +332,7 @@ def test_read_final_sums_across_resume_segments(tmp_path):
     # A trial suspended at a quota wall and resumed writes one result record
     # per segment into the same transcript; the totals must span them, or
     # every resumed trial silently under-reports its turns and its spend.
-    from robocli.agents.claude_code import read_final
+    read_final = agents.get("claude-code").read_final
     t = tmp_path / "transcript.jsonl"
     t.write_text("\n".join([
         _result(num_turns=4, subtype="error_max_turns", duration_ms=1000,
@@ -303,7 +359,7 @@ def test_read_final_sums_across_resume_segments(tmp_path):
 
 def test_read_final_missing_field_stays_missing(tmp_path):
     # A field no segment reported must read as absent, not as a fake 0.
-    from robocli.agents.claude_code import read_final
+    read_final = agents.get("claude-code").read_final
     t = tmp_path / "transcript.jsonl"
     t.write_text(_result(num_turns=None))
     assert read_final(t)["num_turns"] is None
@@ -313,7 +369,7 @@ def test_launch_argv_names_the_session_then_resumes_it():
     # --session-id creates the named session; --resume continues it. They are
     # not interchangeable, and sending both phases the same flag would either
     # start a fresh session (losing the work) or fail to find one.
-    from robocli.agents.claude_code import launch_argv
+    launch_argv = agents.get("claude-code").launch_argv
     kw = dict(sandbox="rc-x-sandbox", prompt="P", model="m", max_turns=5,
               proxy="http://p")
     start = launch_argv(**kw, session_id="SID")
@@ -329,10 +385,10 @@ def test_launch_argv_names_the_session_then_resumes_it():
 def test_launch_argv_pins_autocompact():
     # Left to the CLI default the threshold could drift on an upgrade, and a
     # resumed trial could compact where an uninterrupted one would not have.
-    from robocli.agents.claude_code import DEFAULT_AUTOCOMPACT, launch_argv
-    argv = launch_argv(sandbox="s", prompt="P", model="m", max_turns=1,
-                       proxy="http://p")
-    assert argv[argv.index("--autocompact") + 1] == DEFAULT_AUTOCOMPACT
+    a = agents.get("claude-code")
+    argv = a.launch_argv(sandbox="s", prompt="P", model="m", max_turns=1,
+                         proxy="http://p")
+    assert argv[argv.index("--autocompact") + 1] == a.default_options["autocompact"]
 
 
 def test_resume_prompt_cannot_carry_the_task():
@@ -347,7 +403,7 @@ def test_resume_prompt_cannot_carry_the_task():
 def test_read_final_survives_a_damaged_usage_field(tmp_path):
     # read_final promises {} on an unreadable transcript, so a damaged
     # numeric field must not raise on the way to producing totals.
-    from robocli.agents.claude_code import read_final
+    read_final = agents.get("claude-code").read_final
     t = tmp_path / "transcript.jsonl"
     t.write_text(_result(num_turns="lots",
                          usage={"output_tokens": "many", "input_tokens": 5}))
@@ -364,10 +420,11 @@ def test_launch_argv_raises_the_bash_timeouts_above_the_cli_defaults():
     a = agents.get("claude-code")
     argv = a.launch_argv(sandbox="box", prompt="p", model="m",
                          max_turns=3, proxy="http://w:9")
-    assert f"BASH_DEFAULT_TIMEOUT_MS={a.DEFAULT_BASH_TIMEOUT_MS}" in argv
-    assert f"BASH_MAX_TIMEOUT_MS={a.MAX_BASH_TIMEOUT_MS}" in argv
-    assert a.DEFAULT_BASH_TIMEOUT_MS > 120_000
-    assert a.MAX_BASH_TIMEOUT_MS > a.DEFAULT_BASH_TIMEOUT_MS
+    o = a.default_options
+    assert f"BASH_DEFAULT_TIMEOUT_MS={o['bash_timeout_ms']}" in argv
+    assert f"BASH_MAX_TIMEOUT_MS={o['bash_max_timeout_ms']}" in argv
+    assert o["bash_timeout_ms"] > 120_000
+    assert o["bash_max_timeout_ms"] > o["bash_timeout_ms"]
 
 
 def test_sandbox_ships_urdf_kinematics_parsers():
@@ -401,7 +458,7 @@ def test_launch_argv_hands_the_token_over_by_file_never_by_value():
     assert "--env-file" in argv
     assert argv[argv.index("--env-file") + 1] == "/secrets/.env_tw"
     assert argv.index("--env-file") < argv.index("box")  # before the container
-    assert not any(x.startswith(a.TOKEN_ENV + "=") for x in argv)
+    assert not any(x.startswith(a.token_env + "=") for x in argv)
 
 
 def test_launch_argv_without_a_token_asks_docker_for_no_env_file():
@@ -418,7 +475,7 @@ def test_sandbox_mounts_carry_no_credentials_when_a_token_authenticates(tmp_path
     a = agents.get("claude-code")
     specs = a.sandbox_mounts(tmp_path / "cfg")
     assert len(specs) == 1
-    assert a.CREDENTIALS_FILENAME not in specs[0]
+    assert a.credentials.filename not in specs[0]
 
 
 def test_prepare_profile_needs_no_credentials_when_a_token_authenticates(tmp_path):
@@ -440,7 +497,46 @@ def test_env_file_values_are_treated_as_secrets(tmp_path):
     from robocli.bench import record
     a = agents.get("claude-code")
     f = tmp_path / ".env_tw"
-    f.write_text(f"# a comment\n{a.TOKEN_ENV}=sk-ant-oat01-{'x' * 90}\n")
+    f.write_text(f"# a comment\n{a.token_env}=sk-ant-oat01-{'x' * 90}\n")
     found = record.secret_strings_from_env_file(f)
     assert found == [f"sk-ant-oat01-{'x' * 90}"]
     assert record.secret_strings_from_env_file(tmp_path / "absent") == []
+
+
+# ------------------------------------------------------- replay operations
+
+def test_replay_ops_are_adapter_neutral_shapes(tmp_path):
+    # record.extract_commands speaks shell/write/edit, never Claude's tool
+    # names; the adapter does the translation, once, here.
+    import json
+    a = agents.get("claude-code")
+    t = tmp_path / "transcript.jsonl"
+    t.write_text("\n".join(json.dumps(d) for d in [
+        {"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "1", "name": "Write",
+             "input": {"file_path": "/tmp/a.py", "content": "print(1)"}}]}},
+        {"type": "user", "timestamp": "2026-08-20T07:44:43Z", "message": {"content": [
+            {"type": "tool_result", "tool_use_id": "1", "content": "ok"}]}},
+        {"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "2", "name": "Bash", "input": {"command": "ls"}},
+            {"type": "tool_use", "id": "3", "name": "Read", "input": {"file_path": "x"}}]}},
+    ]))
+    ops = a.replay_ops(t)
+    assert [o["kind"] for o in ops] == ["write", "shell"]
+    assert ops[0]["path"] == "/tmp/a.py" and ops[0]["output"] == "ok"
+    assert ops[1]["command"] == "ls"
+    from robocli.bench import record
+    out = tmp_path / "commands.sh"
+    record.extract_commands(t, out, a)
+    body = out.read_text()
+    assert "ls" in body and "/tmp/a.py" in body and "Write" not in body
+
+
+def test_transcript_evidence_names_the_actual_file(tmp_path):
+    import json
+    a = agents.get("claude-code")
+    t = tmp_path / "segment-2.jsonl"
+    t.write_text(json.dumps({"type": "rate_limit_event",
+                             "rate_limit_info": {"status": "rejected",
+                                                 "rateLimitType": "five_hour"}}))
+    assert a.quota_since(t)["evidence"].startswith("segment-2.jsonl:1:")

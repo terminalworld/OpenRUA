@@ -15,6 +15,7 @@ package (robocli.proxy); the seat and the gatehouse build separately.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import subprocess
 import sys
@@ -26,10 +27,13 @@ _HERE = Path(__file__).resolve().parent
 
 
 def _docker_build(dockerfile: Path, context: Path, tag: str,
-                  build_args: dict[str, str]) -> str:
+                  build_args: dict[str, str],
+                  labels: dict[str, str] | None = None) -> str:
     cmd = ["docker", "build", "-f", str(dockerfile), "-t", tag]
     for k, v in build_args.items():
         cmd += ["--build-arg", f"{k}={v}"]
+    for k, v in (labels or {}).items():
+        cmd += ["--label", f"{k}={v}"]
     cmd.append(str(context))
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:
@@ -50,10 +54,13 @@ def build(preinstall: str = "", ros_distro: str = "jazzy",
             "--preinstall must be a single-line command chain without "
             "double quotes")
     uid = os.getuid() if robot_uid is None else robot_uid
+    # The image says what was baked into it: doctor compares this label
+    # with the install chain the selected agents would emit today.
+    labels = {"robocli.preinstall_sha256": hashlib.sha256(preinstall.encode()).hexdigest()}
     return tag, _docker_build(
         _HERE / "sandbox.Dockerfile", _HERE, tag,
         {"ROS_DISTRO": ros_distro, "ROBOT_UID": str(uid),
-         "PREINSTALL": preinstall})
+         "PREINSTALL": preinstall}, labels)
 
 
 def main() -> int:
