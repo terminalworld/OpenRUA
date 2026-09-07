@@ -199,6 +199,7 @@ class Canvas:
         self._pictures: dict = {}
         self._left: tuple = (None, None)   # (key, image)
         self._right: tuple = (None, None)
+        self._scrollback: tuple = (None, None)
 
     @property
     def cols(self) -> int:
@@ -222,8 +223,9 @@ class Canvas:
             if len(self._pictures) > 8:
                 self._pictures.clear()
             path = self.frames_dir / f"{frame['step']:06d}_{cam}.jpg"
-            self._pictures[key] = (self.pil.Image.open(path).resize(size)
-                                   if path.is_file() else None)
+            self._pictures[key] = (
+                self.pil.Image.open(path).resize(size, self.pil.Image.BILINEAR)
+                if path.is_file() else None)
         return self._pictures[key]
 
     def paint(self, frame: dict | None, cursor: bool = False):
@@ -241,16 +243,29 @@ class Canvas:
         return canvas
 
     def _paint_terminal(self, cursor: bool):
+        """The scrollback above the last line is painted once per
+        distinct content (typing changes only the last line) and the
+        last line drawn over a copy."""
         st = self.style
-        image = self.pil.Image.new("RGB", (self.term_w, st.height), st.background)
-        draw = self.pil.ImageDraw.Draw(image)
-        y = MARGIN
         view = self.terminal.visible()
-        for text, color in view:
+        above, last = view[:-1], view[-1:]
+        key = tuple(above)
+        if self._scrollback[0] != key:
+            image = self.pil.Image.new("RGB", (self.term_w, st.height), st.background)
+            draw = self.pil.ImageDraw.Draw(image)
+            y = MARGIN
+            for text, color in above:
+                draw.text((MARGIN, y), text, font=self.font, fill=color)
+                y += self.line_h
+            self._scrollback = (key, image)
+        image = self._scrollback[1].copy()
+        draw = self.pil.ImageDraw.Draw(image)
+        y = MARGIN + len(above) * self.line_h
+        for text, color in last:
             draw.text((MARGIN, y), text, font=self.font, fill=color)
             y += self.line_h
-        if cursor and view:
-            w = draw.textlength(view[-1][0], font=self.font)
+        if cursor and last:
+            w = draw.textlength(last[-1][0], font=self.font)
             draw.rectangle([MARGIN + 2 + w, y - self.line_h,
                             MARGIN + 2 + w + st.font_size * 0.6, y - 3], fill=st.text)
         return image
