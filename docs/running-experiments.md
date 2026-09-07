@@ -59,6 +59,12 @@ same trial moves the previous attempt under `attempts/` and never
 overwrites it. Two runs never share a directory: name a new
 `--run-id` when the task set changes.
 
+While an attempt runs, its trial directory carries a claim (`.running`:
+process, host, container stem, start time); a second `robocli run` on
+the same trial refuses to start while the claim is live, and takes over
+a stale one. `robocli ps` lists every claim under the runs root with
+its state; check it before restarting anything that launches trials.
+
 ## result.json
 
 | field | meaning |

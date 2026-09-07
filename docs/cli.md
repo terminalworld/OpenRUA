@@ -25,6 +25,8 @@ positional arguments:
     agent       open a coding agent on the robot's terminal
     down        power a robot and its terminal off
     run         run a task set: one trial per task and seed
+    ps          list the attempts running under a runs root (--all: stale
+                claims too)
     demo        render a recorded trial as a video (terminal + cameras)
     probe       draft a robot profile from a live ROS 2 graph
     config      the configuration schema
@@ -272,6 +274,27 @@ options:
   --account-alias ACCOUNT_ALIAS
                         non-secret label of the credentials profile, recorded
                         in the trial result for per-account accounting
+```
+
+## robocli ps
+
+```
+usage: robocli ps [-h] [--all] [--runs-root RUNS_ROOT] [--json]
+
+Every trial directory that carries an attempt's claim: the process, when it
+started, whether it is still working (process alive, or its containers
+running), and its container name stem. Check this before restarting anything
+that launches trials; a live attempt is run over if a second writer starts on
+its directory. A stale claim is a crashed attempt and is taken over by the
+next run.
+
+options:
+  -h, --help            show this help message and exit
+  --all, -a             also list stale claims (crashed attempts, and claims
+                        archived under attempts/)
+  --runs-root RUNS_ROOT
+                        where runs live (default: runs, as for robocli run)
+  --json                machine-readable output
 ```
 
 ## robocli demo

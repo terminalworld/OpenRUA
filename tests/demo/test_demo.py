@@ -121,6 +121,30 @@ def test_a_real_robot_refuses_to_record():
 
 def test_unknown_camera_is_named():
     with pytest.raises(Exception, match="not recorded"):
-        demo._pick(("nope",), ["agentview"])
-    assert demo._pick((), ["a", "b", "c"]) == ("a", "b")
-    assert demo._pick(("b",), ["a", "b"]) == ("b", None)
+        demo.pick_cameras(("nope",), ["agentview"])
+    assert demo.pick_cameras((), ["a", "b", "c"]) == ("a", "b")
+    assert demo.pick_cameras(("b",), ["a", "b"]) == ("b", None)
+
+
+def test_shell_keeps_state_and_gives_each_op_an_empty_stdin(monkeypatch):
+    """One persistent shell: cd carries over; a command that reads stdin
+    gets nothing and cannot swallow the operations queued behind it."""
+    import subprocess
+    from robocli.runner import operators
+
+    real_popen = subprocess.Popen
+    monkeypatch.setattr(operators.subprocess, "Popen",
+                        lambda argv, **kw: real_popen(["bash"], **kw))
+    sh = operators.Shell("ignored")
+    try:
+        assert sh.run("cd /tmp && X=42", 5)[1] is True
+        out, ok = sh.run("pwd; echo $X", 5)
+        assert ok and out.split() == ["/tmp", "42"]
+        out, ok = sh.run("cat", 5)  # reads stdin: must not hang or eat the next op
+        assert ok and out == ""
+        out, ok = sh.run("echo after", 5)
+        assert ok and out.strip() == "after"
+        out, ok = sh.run("cat <<'EOF'\nheredoc still works\nEOF", 5)
+        assert ok and out.strip() == "heredoc still works"
+    finally:
+        sh.close()

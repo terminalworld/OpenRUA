@@ -43,6 +43,20 @@ def holder(trial_dir: Path) -> dict | None:
         return {"pid": None, "stem": None, "unreadable": True}
 
 
+def holders(root: Path) -> list[dict]:
+    """Every claim under ``root``, live or stale, as ``holder()`` reports
+    it plus ``trial`` (the directory, relative to root) and ``live``.
+    This is what a person checks before restarting anything that
+    launches trials: a stale claim is a crashed attempt, a live one is
+    an attempt that will be run over if a second writer starts."""
+    rows = []
+    for path in sorted(Path(root).rglob(LOCK_NAME)):
+        info = holder(path.parent) or {}
+        rows.append({"trial": str(path.parent.relative_to(root)), **info,
+                     "live": is_live(info)})
+    return rows
+
+
 def is_live(info: dict) -> bool:
     """Whether a lock's holder is still working. Live if its process is
     alive, or if any of its containers are still up (a container name is
@@ -113,13 +127,22 @@ def running_containers(stem: str) -> list[str]:
 
 
 def _pid_alive(pid: int) -> bool:
+    """Whether the process a claim names is still that process. Pids are
+    reused, and a claim can outlive its writer by days, so an existing
+    pid is only the holder if its command line is a robocli one; when the
+    command line cannot be read the claim is trusted, since treating an
+    unknown process as dead would let a second writer in."""
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
         return False
     except PermissionError:
-        return True          # someone else's process, but alive
-    return True
+        pass                 # someone else's process, but alive
+    try:
+        cmdline = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return True
+    return b"robocli" in cmdline
 
 
 class TrialLocked(RuntimeError):
