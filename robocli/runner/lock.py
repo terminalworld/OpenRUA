@@ -62,7 +62,7 @@ def is_live(info: dict) -> bool:
     alive, or if any of its containers are still up (a container name is
     attempt-unique, so it cannot be mistaken for a later attempt's)."""
     pid = info.get("pid")
-    if pid and _pid_alive(int(pid)) and info.get("host") == socket.gethostname():
+    if pid and info.get("host") == socket.gethostname() and _pid_alive(int(pid), info.get("since")):
         return True
     stem = info.get("stem")
     return bool(stem) and bool(running_containers(stem))
@@ -126,23 +126,35 @@ def running_containers(stem: str) -> list[str]:
     return [n for n in out.stdout.split() if n]
 
 
-def _pid_alive(pid: int) -> bool:
-    """Whether the process a claim names is still that process. Pids are
-    reused, and a claim can outlive its writer by days, so an existing
-    pid is only the holder if its command line is a robocli one; when the
-    command line cannot be read the claim is trusted, since treating an
-    unknown process as dead would let a second writer in."""
+def _pid_alive(pid: int, since: float | None = None) -> bool:
+    """Whether the process a claim names is still the one that wrote it.
+    Pids are reused and a claim can outlive its writer by days, so an
+    existing pid holds the claim only if it started before the claim was
+    written. Where that cannot be told (no /proc, no ``since``) the claim
+    is trusted: treating an unknown process as dead would be the one
+    mistake that lets a second writer in."""
     try:
         os.kill(pid, 0)
     except ProcessLookupError:
         return False
     except PermissionError:
         pass                 # someone else's process, but alive
-    try:
-        cmdline = Path(f"/proc/{pid}/cmdline").read_bytes()
-    except OSError:
+    started = _process_start(pid)
+    if since is None or started is None:
         return True
-    return b"robocli" in cmdline
+    return started <= since
+
+
+def _process_start(pid: int) -> float | None:
+    """Unix time the process started, from /proc (None elsewhere)."""
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text()
+        boot = next(int(l.split()[1]) for l in Path("/proc/stat").read_text().splitlines()
+                    if l.startswith("btime "))
+    except (OSError, StopIteration, ValueError):
+        return None
+    ticks = int(stat.rsplit(")", 1)[1].split()[19])
+    return boot + ticks / os.sysconf("SC_CLK_TCK")
 
 
 class TrialLocked(RuntimeError):

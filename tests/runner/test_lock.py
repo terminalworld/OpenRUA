@@ -43,8 +43,9 @@ def test_a_reused_pid_does_not_keep_a_claim_alive(tmp_path):
     other = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
     try:
         (trial / lock.LOCK_NAME).write_text(json.dumps(
-            {"pid": other.pid, "host": os.uname().nodename, "stem": "rc-reused-000000"}))
-        assert lock.is_live(lock.holder(trial)) is False   # alive, but not a robocli process
+            {"pid": other.pid, "host": os.uname().nodename, "stem": "rc-reused-000000",
+             "since": time.time() - 3600}))                # claimed an hour before it was born
+        assert lock.is_live(lock.holder(trial)) is False
         taken = lock.acquire(trial, "rc-x-4")
         assert taken is not None
         taken.release()
