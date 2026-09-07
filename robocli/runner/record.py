@@ -20,6 +20,7 @@ import shlex
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Iterable
 
 import yaml
 
@@ -331,13 +332,16 @@ def write_run_summary(run_dir: Path) -> Path | None:
     return out
 
 
-def archive_prior_attempt(trial_dir: Path) -> Path | None:
+def archive_prior_attempt(trial_dir: Path, keep: Iterable[Path] = ()) -> Path | None:
     """Move any existing trial artifacts into attempts/attempt-NNNN before
     a rerun writes new ones. Evidence is never overwritten: the top level
-    is always the latest attempt, superseded ones move down."""
+    is always the latest attempt, superseded ones move down. ``keep``
+    names entries that belong to the attempt about to run rather than
+    to a previous one (its claim on the directory); they stay in place."""
     if not trial_dir.exists():
         return None
-    entries = [p for p in trial_dir.iterdir() if p.name != "attempts"]
+    kept = {Path(k).name for k in keep} | {"attempts"}
+    entries = [p for p in trial_dir.iterdir() if p.name not in kept]
     if not any(p.name in ("result.json", "transcript.jsonl") for p in entries):
         return None
     attempts = trial_dir / "attempts"

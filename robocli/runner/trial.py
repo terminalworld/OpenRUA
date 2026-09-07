@@ -72,7 +72,9 @@ def claim(trial_dir: Path, stem: str):
     """Take the trial directory for this attempt, moving a previous
     attempt's artifacts aside. Claim first: a second writer's opening
     act would otherwise pull a running attempt's transcript out from
-    under it. Returns the lock to release when the attempt ends."""
+    under it. The claim itself is handed to the archive so it is not
+    moved aside with the evidence. Returns the lock to release when the
+    attempt ends."""
     held = lock.acquire(trial_dir, stem)
     if held is None:
         info = lock.holder(trial_dir) or {}
@@ -80,7 +82,7 @@ def claim(trial_dir: Path, stem: str):
             f"{trial_dir}: a live attempt already owns this trial "
             f"(pid {info.get('pid')} on {info.get('host')}); refusing to "
             "write alongside it")
-    record.archive_prior_attempt(trial_dir)
+    record.archive_prior_attempt(trial_dir, keep=[held.path])
     return held
 
 
