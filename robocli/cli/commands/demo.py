@@ -9,7 +9,8 @@ from robocli import demo
 
 def run(args) -> int:
     style = demo.Style(fps=args.fps, font_size=args.font_size, speed=args.speed,
-                       typing=not args.no_typing)
+                       typing=not args.no_typing, quality=args.quality,
+                       gif_width=args.gif_width, gif_fps=args.gif_fps)
     if args.size:
         w, h = args.size.lower().split("x")
         style.width, style.height = int(w), int(h)
@@ -43,9 +44,14 @@ def add_parser(sub) -> None:
                    "in ops.jsonl (default all; a README clip wants the last few)")
     p.add_argument("--size", default=None, metavar="WxH", help="video size (default 1280x720)")
     p.add_argument("--fps", type=int, default=20, help="frames per second (default 20)")
+    p.add_argument("--quality", type=int, default=18, metavar="CRF",
+                   help="x264 constant rate factor, 0 lossless to 51 worst (default 18, "
+                   "visually lossless; 23 halves the file again)")
     p.add_argument("--speed", type=float, default=1.0,
                    help="sim steps per video frame (default 1: real-time robot motion)")
     p.add_argument("--font-size", type=int, default=13, help="terminal font size (default 13)")
+    p.add_argument("--gif-width", type=int, default=640, help="gif width in pixels (default 640)")
+    p.add_argument("--gif-fps", type=int, default=8, help="gif frames per second (default 8)")
     p.add_argument("--no-typing", action="store_true",
                    help="show each command at once instead of typing it out")
     p.set_defaults(fn=run)

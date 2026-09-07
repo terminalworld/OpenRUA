@@ -38,10 +38,13 @@ CAMERA_TOP = 90
 @dataclass
 class Style:
     """Everything about how the video looks. Sizes in pixels, times in
-    seconds; ``speed`` plays that many sim steps per video frame."""
+    seconds; ``speed`` plays that many sim steps per video frame;
+    ``quality`` is x264's constant rate factor (0 lossless, 51 worst;
+    18 is visually lossless, 23 the encoder's default)."""
     width: int = 1280
     height: int = 720
     fps: int = 20
+    quality: int = 18
     font_size: int = 13
     speed: float = 1.0
     typing: bool = True
@@ -315,11 +318,11 @@ class _Encoder:
 
     def __init__(self, out: Path, style: Style, gif: bool, imageio, np):
         self.out, self.style, self.np = out, style, np
-        # x264 on every core with its fast preset: the encoder is the
-        # largest share of a frame's cost once painting is cached.
+        # x264 at the style's constant rate factor, fast preset, all cores.
         self.writer = imageio.get_writer(str(out), fps=style.fps, codec="libx264",
-                                         quality=8, macro_block_size=None,
-                                         ffmpeg_params=["-preset", "veryfast",
+                                         quality=None, macro_block_size=None,
+                                         ffmpeg_params=["-crf", str(style.quality),
+                                                        "-preset", "veryfast",
                                                         "-threads", "0"])
         self.gif_frames: list = [] if gif else None
         self.gif_every = max(1, round(style.fps / style.gif_fps))

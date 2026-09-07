@@ -293,8 +293,9 @@ options:
 
 ```
 usage: robocli demo [-h] [--out OUT] [--gif] [--cameras CAMERAS]
-                    [--ops START:END] [--size WxH] [--fps FPS] [--speed SPEED]
-                    [--font-size FONT_SIZE] [--no-typing]
+                    [--ops START:END] [--size WxH] [--fps FPS] [--quality CRF]
+                    [--speed SPEED] [--font-size FONT_SIZE]
+                    [--gif-width GIF_WIDTH] [--gif-fps GIF_FPS] [--no-typing]
                     trial
 
 Compose demo.mp4 from a trial that ran with --record: the commands typed on
@@ -316,10 +317,16 @@ options:
                         wants the last few)
   --size WxH            video size (default 1280x720)
   --fps FPS             frames per second (default 20)
+  --quality CRF         x264 constant rate factor, 0 lossless to 51 worst
+                        (default 18, visually lossless; 23 halves the file
+                        again)
   --speed SPEED         sim steps per video frame (default 1: real-time robot
                         motion)
   --font-size FONT_SIZE
                         terminal font size (default 13)
+  --gif-width GIF_WIDTH
+                        gif width in pixels (default 640)
+  --gif-fps GIF_FPS     gif frames per second (default 8)
   --no-typing           show each command at once instead of typing it out
 ```
 
