@@ -8,7 +8,6 @@
             "output_max": 1.0,
             "output_min": -1.0,
             "kd": 400,
-            "kv": 200,
             "kp": 1500,
             "kp_limits": [0, 1400],
             "interpolation": null,
