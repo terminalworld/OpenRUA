@@ -26,9 +26,14 @@ relative to that directory (`cap-x/.venv-libero`); an absolute path or
 `robocli` installed (the container starts the bridge with `python -m
 robocli.robot.sim.bridge.main` from it).
 
-Build recipes for each simulator are being written up here; until
-then `robocli doctor <robot>` reports which venv is missing and where
-it looked.
+A checkout is the benchmark's own repository at a known commit, and
+the venv is one the robot container can run: its Python matches the
+image's ROS distro (3.12 for Jazzy, 3.10 for Humble), it is made with
+`uv` (the container mounts uv's interpreter store), the benchmark's
+packages are installed in it, and so is `robocli-harness`. The exact
+commits, patches and locks the reported runs used ship with the
+paper's experiment repository as one setup script. `robocli doctor
+<robot>` reports which venv is missing and where it looked.
 
 Rendering is EGL; with no GPU it falls back to llvmpipe (slow but
 correct, and what the reported runs used). `machine.backend.gpus: true`
