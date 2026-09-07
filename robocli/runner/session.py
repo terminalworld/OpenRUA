@@ -32,26 +32,11 @@ from pathlib import Path
 from robocli import agents
 
 
-def agent_operator(ctx: dict) -> dict:
-    """Run the agent on the trial; returns the metadata recorded under
-    ``operator_meta`` (termination, turns, segments, quota facts)."""
-
-    cfg = ctx["cfg"]
-    agent_cfg = cfg.get("agent", {})
-    agent = agents.get(agent_cfg.get("name"), ctx.get("home"), version=agent_cfg.get("version"))
-    model = agent_cfg.get("model") or agent.default_model
-    # Agent knobs (reasoning effort, compaction threshold, tool timeouts)
-    # are experimental parameters that do not appear in the transcript:
-    # the merged set is pinned here from the manifest's defaults and the
-    # config, passed to the launcher explicitly, and recorded.
-    options = {**agent.default_options, **agent_cfg.get("options", {})}
-    # Naming the session up front is what makes a suspended trial
-    # resumable without scraping an id out of a half-written transcript.
-    session_id = str(uuid.uuid4())
-    trial_dir: Path = ctx["trial_dir"]
-    transcript = trial_dir / "transcript.jsonl"
-    max_turns = int(cfg.get("protocol", {}).get("max_turns", 100))
-    base = [
+def launcher_command(ctx: dict, agent, model: str, options: dict,
+                     session_id: str, transcript: Path) -> list[str]:
+    """The launcher invocation for this trial, without the per-segment
+    turn budget and resume flag."""
+    return [
         sys.executable, "-m", "robocli.agents.launcher",
         "--sandbox", ctx["sandbox"],
         "--task", ctx["task_language"],
@@ -65,122 +50,78 @@ def agent_operator(ctx: dict) -> dict:
         *(["--token-file", str(ctx["token_file"])] if ctx.get("token_file")
           else []),
     ]
-    meta: dict = {"operator": "agent", "agent": agent.name, "model": model,
-                  "options": options, "session_id": session_id}
-    # The launcher runs with cwd=trial_dir, where relative PYTHONPATH
-    # entries would no longer resolve: absolutize them against this
-    # process's cwd.
+
+
+def launcher_env() -> dict:
+    """The launcher runs with cwd=trial_dir, where relative PYTHONPATH
+    entries would no longer resolve: absolutize them against this
+    process's cwd."""
     env = dict(os.environ)
     if env.get("PYTHONPATH"):
         env["PYTHONPATH"] = os.pathsep.join(
             str(Path(p).resolve()) for p in env["PYTHONPATH"].split(os.pathsep) if p)
+    return env
 
-    # Waiting out a wall is bounded on both axes: a wall further away
-    # than max_quota_wait_minutes, or one that keeps reappearing past
-    # max_suspensions, ends the trial as quota-limited for the caller to
-    # requeue.
-    protocol = cfg.get("protocol", {})
-    resume_on_wall = bool(protocol.get("resume_on_quota_wall", False))
-    meta["resume_on_quota_wall"] = resume_on_wall
-    max_wait_s = float(protocol.get("max_quota_wait_minutes", 360)) * 60
-    max_suspensions = int(protocol.get("max_suspensions", 4))
-    budget_s = ctx["active_wall_clock_min"] * 60
-    active_s = 0.0
-    suspended_s = 0.0
-    turns_used = 0
-    segments: list[dict] = []
-    resumed = False
-    last_quota: dict = {}
-    while True:
-        remaining_s = budget_s - active_s
-        remaining_turns = max_turns - turns_used
-        if remaining_s <= 0:
-            meta["termination"] = "wall_clock_cap"
-            break
-        if remaining_turns < 1:
-            meta["termination"] = "max_turns"
-            break
-        cmd = base + ["--max-turns", str(remaining_turns)]
-        if resumed:
-            cmd.append("--resume")
-        # Where this segment starts in the transcript. The runner owns
-        # this boundary rather than inferring it from record shapes. The
-        # first segment starts at 0 because the launcher truncates for
-        # it; trial directories are reused across retries, so reading the
-        # length here would carry a dead attempt's line count into a
-        # fresh file and scan past its end.
-        mark = _line_count(transcript) if resumed else 0
-        t0 = time.time()
-        try:
-            proc = subprocess.run(
-                cmd, cwd=trial_dir, timeout=remaining_s, env=env,
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-            )
-            meta["termination"] = "self_finished"
-            meta["launcher_returncode"] = proc.returncode
-            timed_out = False
-        except subprocess.TimeoutExpired:
-            meta["termination"] = "wall_clock_cap"
-            timed_out = True
-        t1 = time.time()
-        spent = t1 - t0
-        active_s += spent
-        # Absolute bounds, not just a duration: post-hoc budget judging
-        # asks how much active time had passed when a success latched,
-        # and only per-segment timestamps can answer that for a
-        # suspended trial.
-        segments.append({"started_unix": round(t0, 1),
-                         "ended_unix": round(t1, 1),
-                         "active_s": round(spent, 1),
-                         "turn_budget": remaining_turns,
-                         "resumed": resumed})
-        fin_so_far = agent.read_final(transcript)
-        if fin_so_far.get("num_turns") is not None:
-            turns_used = fin_so_far["num_turns"]
-        if timed_out:
-            break
-        # A quota rejection is the one reason to wait rather than
-        # finish; success, max turns and a dead CLI all end the trial.
-        # Read this segment only: a whole-file verdict would re-suspend a
-        # trial that already finished.
-        last_quota = agent.quota_since(transcript, mark) or {}
-        resets_at = last_quota.get("resets_at")
-        if not resets_at:
-            break
-        if not resume_on_wall:
-            # The wall is in the transcript and unresolved; post-hoc
-            # classification voids the attempt and the caller requeues it.
-            break
-        # Both containers must still be standing: the sandbox holds the
-        # session to resume, the robot holds the world it was working
-        # on. (The stall watchdog can itself kill the sandbox when the
-        # sim wedges; this catches that too.)
-        missing = [n for n in (ctx["sandbox"], ctx.get("sim"))
-                   if n and not _container_running(n)]
-        if missing:
-            meta["termination"] = "sandbox_lost"
-            meta["lost_containers"] = missing
-            break
-        try:
-            wait_s = max(0.0, float(resets_at) - time.time())
-        except (TypeError, ValueError):
-            # A reset time that cannot be read cannot be waited for; the
-            # wall stays in the transcript and the caller requeues.
-            meta["quota_gave_up_on"] = "unreadable-reset-time"
-            break
-        if wait_s > max_wait_s or len(segments) > max_suspensions:
-            why = ("wait" if wait_s > max_wait_s else "suspensions")
-            meta["termination"] = "quota_limit"
-            meta["quota_gave_up_on"] = why
-            print(f"[trial] quota wall beyond the {why} bound; giving up "
-                  "for the caller to requeue", flush=True)
-            break
-        print(f"[trial] quota wall; suspending {round(wait_s / 60)}min "
-              f"until the window reopens", flush=True)
-        time.sleep(wait_s)
-        suspended_s += wait_s
-        resumed = True
 
+def run_segment(cmd: list[str], trial_dir: Path, env: dict, timeout_s: float,
+                meta: dict) -> tuple[float, float, bool]:
+    """One launcher run under the remaining active time. Returns
+    ``(started, ended, timed_out)`` as unix times; the termination it
+    implies is written into ``meta`` (a later segment may overwrite)."""
+    t0 = time.time()
+    try:
+        proc = subprocess.run(
+            cmd, cwd=trial_dir, timeout=timeout_s, env=env,
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        meta["termination"] = "self_finished"
+        meta["launcher_returncode"] = proc.returncode
+        timed_out = False
+    except subprocess.TimeoutExpired:
+        meta["termination"] = "wall_clock_cap"
+        timed_out = True
+    return t0, time.time(), timed_out
+
+
+def wait_for_window(resets_at, ctx: dict, meta: dict, max_wait_s: float,
+                    segments: int, max_suspensions: int) -> float | None:
+    """How long to suspend before resuming after a quota wall, or None
+    when the trial ends here instead (``meta`` says why). Both
+    containers must still be standing: the sandbox holds the session to
+    resume, the robot holds the world it was working on. (The stall
+    watchdog can itself kill the sandbox when the sim wedges; this
+    catches that too.) Waiting is bounded on both axes: a wall further
+    away than ``max_wait_s``, or one that keeps reappearing past
+    ``max_suspensions``, ends the trial as quota-limited for the caller
+    to requeue."""
+    missing = [n for n in (ctx["sandbox"], ctx.get("sim"))
+               if n and not _container_running(n)]
+    if missing:
+        meta["termination"] = "sandbox_lost"
+        meta["lost_containers"] = missing
+        return None
+    try:
+        wait_s = max(0.0, float(resets_at) - time.time())
+    except (TypeError, ValueError):
+        # A reset time that cannot be read cannot be waited for; the
+        # wall stays in the transcript and the caller requeues.
+        meta["quota_gave_up_on"] = "unreadable-reset-time"
+        return None
+    if wait_s > max_wait_s or segments > max_suspensions:
+        why = "wait" if wait_s > max_wait_s else "suspensions"
+        meta["termination"] = "quota_limit"
+        meta["quota_gave_up_on"] = why
+        print(f"[trial] quota wall beyond the {why} bound; giving up "
+              "for the caller to requeue", flush=True)
+        return None
+    print(f"[trial] quota wall; suspending {round(wait_s / 60)}min "
+          f"until the window reopens", flush=True)
+    return wait_s
+
+
+def summarize(meta: dict, segments: list[dict], last_quota: dict, active_s: float,
+              suspended_s: float, transcript: Path, agent) -> None:
+    """Totals and verdicts over all segments, into ``meta``."""
     meta["segments"] = len(segments)
     meta["resumes"] = max(0, len(segments) - 1)
     # Whether a quota wall was waited out rather than fatal. A transcript
@@ -214,6 +155,99 @@ def agent_operator(ctx: dict) -> dict:
                 meta[k] = fin[k]
         if fin.get("hit_max_turns"):
             meta["termination"] = "max_turns"
+
+
+def agent_operator(ctx: dict) -> dict:
+    """Run the agent on the trial; returns the metadata recorded under
+    ``operator_meta`` (termination, turns, segments, quota facts).
+
+    The agent runs in segments: one launcher run per segment, a new
+    segment only after a quota wall was waited out. Both budgets (active
+    wall clock, turns) are spent across segments, never per segment."""
+    cfg = ctx["cfg"]
+    agent_cfg = cfg.get("agent", {})
+    agent = agents.get(agent_cfg.get("name"), ctx.get("home"), version=agent_cfg.get("version"))
+    model = agent_cfg.get("model") or agent.default_model
+    # Agent knobs (reasoning effort, compaction threshold, tool timeouts)
+    # are experimental parameters that do not appear in the transcript:
+    # the merged set is pinned here from the manifest's defaults and the
+    # config, passed to the launcher explicitly, and recorded.
+    options = {**agent.default_options, **agent_cfg.get("options", {})}
+    # Naming the session up front is what makes a suspended trial
+    # resumable without scraping an id out of a half-written transcript.
+    session_id = str(uuid.uuid4())
+    trial_dir: Path = ctx["trial_dir"]
+    transcript = trial_dir / "transcript.jsonl"
+    protocol = cfg.get("protocol", {})
+    max_turns = int(protocol.get("max_turns", 100))
+    base = launcher_command(ctx, agent, model, options, session_id, transcript)
+    env = launcher_env()
+    meta: dict = {"operator": "agent", "agent": agent.name, "model": model,
+                  "options": options, "session_id": session_id}
+    resume_on_wall = bool(protocol.get("resume_on_quota_wall", False))
+    meta["resume_on_quota_wall"] = resume_on_wall
+    max_wait_s = float(protocol.get("max_quota_wait_minutes", 360)) * 60
+    max_suspensions = int(protocol.get("max_suspensions", 4))
+    budget_s = ctx["active_wall_clock_min"] * 60
+    active_s = 0.0
+    suspended_s = 0.0
+    turns_used = 0
+    segments: list[dict] = []
+    resumed = False
+    last_quota: dict = {}
+    while True:
+        remaining_s = budget_s - active_s
+        remaining_turns = max_turns - turns_used
+        if remaining_s <= 0:
+            meta["termination"] = "wall_clock_cap"
+            break
+        if remaining_turns < 1:
+            meta["termination"] = "max_turns"
+            break
+        cmd = base + ["--max-turns", str(remaining_turns)] + (["--resume"] if resumed else [])
+        # Where this segment starts in the transcript. The runner owns
+        # this boundary rather than inferring it from record shapes. The
+        # first segment starts at 0 because the launcher truncates for
+        # it; trial directories are reused across retries, so reading the
+        # length here would carry a dead attempt's line count into a
+        # fresh file and scan past its end.
+        mark = _line_count(transcript) if resumed else 0
+        t0, t1, timed_out = run_segment(cmd, trial_dir, env, remaining_s, meta)
+        active_s += t1 - t0
+        # Absolute bounds, not just a duration: post-hoc budget judging
+        # asks how much active time had passed when a success latched,
+        # and only per-segment timestamps can answer that for a
+        # suspended trial.
+        segments.append({"started_unix": round(t0, 1),
+                         "ended_unix": round(t1, 1),
+                         "active_s": round(t1 - t0, 1),
+                         "turn_budget": remaining_turns,
+                         "resumed": resumed})
+        fin_so_far = agent.read_final(transcript)
+        if fin_so_far.get("num_turns") is not None:
+            turns_used = fin_so_far["num_turns"]
+        if timed_out:
+            break
+        # A quota rejection is the one reason to wait rather than
+        # finish; success, max turns and a dead CLI all end the trial.
+        # Read this segment only: a whole-file verdict would re-suspend a
+        # trial that already finished.
+        last_quota = agent.quota_since(transcript, mark) or {}
+        resets_at = last_quota.get("resets_at")
+        if not resets_at:
+            break
+        if not resume_on_wall:
+            # The wall is in the transcript and unresolved; post-hoc
+            # classification voids the attempt and the caller requeues it.
+            break
+        wait_s = wait_for_window(resets_at, ctx, meta, max_wait_s,
+                                 len(segments), max_suspensions)
+        if wait_s is None:
+            break
+        time.sleep(wait_s)
+        suspended_s += wait_s
+        resumed = True
+    summarize(meta, segments, last_quota, active_s, suspended_s, transcript, agent)
     return meta
 
 

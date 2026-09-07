@@ -78,11 +78,20 @@ def sandbox_reachability(backend: dict, network: str, robot_name: str,
     return out
 
 
+def start_episode(machine: robot.Handle, init_state_id: int) -> dict:
+    """Reset a simulated robot to an initial state and ask its bridge
+    what the task is. Returns the bridge's task_info answer (``language``
+    and whatever else the loader records about this episode's world)."""
+    r = machine.rpc({"cmd": "reset", "init_state_id": init_state_id})
+    if not r.get("ok"):
+        raise RuntimeError(f"reset failed: {r}")
+    return machine.rpc({"cmd": "task_info"})
+
+
 def graph_probe(sandbox_name: str) -> list[str]:
     """A command that exits 0 once the sandbox sees at least one ROS 2
     node: what a real robot's handle waits for."""
-    return ["docker", "exec", sandbox_name, "bash", "-lc",
-            "source /opt/ros/${ROS_DISTRO:-jazzy}/setup.bash && "
+    return ["docker", "exec", sandbox_name, "bash", "-c",
             "ros2 node list 2>/dev/null | grep -q ."]
 
 

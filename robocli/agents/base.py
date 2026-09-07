@@ -104,6 +104,21 @@ class Agent:
         raise NotImplementedError(f"{self.name}: launch_argv is required")
 
     # ---- generic behaviour derived from the declarations ------------
+    @staticmethod
+    def exec_argv(sandbox: str, env: list[str] = (), token_file: str | None = None,
+                  interactive: bool = False) -> list[str]:
+        """The ``docker exec`` prefix every hook shares: the ``robot`` user
+        in /workspace, ``env`` as ``-e`` pairs already rendered, the
+        token file handed to the process by ``--env-file``, a terminal
+        when ``interactive``. Append the agent's own command."""
+        return [
+            "docker", "exec", *(["-it"] if interactive else []),
+            "-u", "robot", "-w", "/workspace",
+            *(["--env-file", token_file] if token_file else []),
+            *env,
+            sandbox,
+        ]
+
     def sandbox_mounts(self, config_dir: Path,
                        credentials_file: Path | None = None) -> tuple[str, ...]:
         """SRC:DST mounts for the sandbox: the per-sandbox profile copy
