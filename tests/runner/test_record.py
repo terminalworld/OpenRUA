@@ -137,7 +137,7 @@ def test_provenance_pins_the_whole_chain(tmp_path):
         "simulator": {"venv": str(simulator / ".venv-libero")},
         "gpus": False}}}
     prov = provenance(cfg_path, cfg, _Args(), _Agent(), "tplhash",
-                      "prompt text", code_root,
+                      "prompt text", code_root, proxy_image="robocli-proxy",
                       simulator_venv=simulator / ".venv-libero")
     assert prov["robocli_version"]
     assert len(prov["robocli_commit"]) == 40
