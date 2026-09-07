@@ -8,6 +8,7 @@ so the cut lives outside the robot's own software.
 
 from __future__ import annotations
 
+import argparse
 import subprocess
 
 
@@ -16,7 +17,6 @@ def down(name: str) -> None:
 
 
 def main() -> int:  # standalone: remove one robot container by name
-    import argparse
 
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--name", required=True, help="robot container name")

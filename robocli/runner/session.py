@@ -22,6 +22,8 @@ than an uninterrupted one, the safe direction for comparability.
 
 from __future__ import annotations
 
+import os
+import sys
 import subprocess
 import time
 import uuid
@@ -33,8 +35,6 @@ from robocli import agents
 def agent_operator(ctx: dict) -> dict:
     """Run the agent on the trial; returns the metadata recorded under
     ``operator_meta`` (termination, turns, segments, quota facts)."""
-    import os
-    import sys
 
     cfg = ctx["cfg"]
     agent_cfg = cfg.get("agent", {})

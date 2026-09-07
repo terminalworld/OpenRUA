@@ -9,6 +9,8 @@ runner's call.
 
 from __future__ import annotations
 
+import argparse
+import re
 import hashlib
 import shutil
 from pathlib import Path
@@ -103,8 +105,6 @@ _FIELD_NOTES = {
 
 def _annotate(text: str) -> str:
     """Append the key's definition as a YAML comment on its line."""
-    import re
-
     out = []
     for line in text.splitlines():
         m = re.match(r"^(\s*(?:- )?)([A-Za-z_]+):(\s|$)", line)
@@ -191,8 +191,6 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
 
 
 def main() -> int:  # standalone: seed a workspace / print the hash
-    import argparse
-
     ap = argparse.ArgumentParser(
         description="Seed an agent workspace from an resolved config "
                     "(or print the template hash).")

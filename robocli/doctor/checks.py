@@ -9,6 +9,7 @@ changes the machine; a check that itself crashes becomes an error row.
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 import subprocess
 from dataclasses import dataclass
@@ -17,7 +18,7 @@ from pathlib import Path
 import yaml
 
 from robocli import agents, config
-from robocli.config import paths
+from robocli.config import compose, paths
 from robocli.doctor.report import CheckResult, Report
 
 
@@ -102,7 +103,6 @@ def check_home(ctx: Context) -> list[CheckResult]:
     if not h.exists():
         return [CheckResult("home", f"user directory {h}", "ok",
                             detail="not created yet; made on first use")]
-    import os
     if not os.access(h, os.W_OK):
         return [CheckResult("home", f"user directory {h} is not writable", "error",
                             hint=f"chmod u+w {h}")]
@@ -250,7 +250,6 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
     cfg = None
     report = Report()
     if robot:
-        from robocli.config import compose
         try:
             cfg, _, _ = compose(robot, None, home)
         except Exception as exc:  # noqa: BLE001

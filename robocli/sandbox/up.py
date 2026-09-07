@@ -41,18 +41,8 @@ from . import workspace as _workspace
 DEFAULT_IMAGE = "robocli-sandbox"
 
 
-def up(config: Path, workspace: Path,
-       image: str | None = None, network: str = "host",
-       static_peer: str | None = None, ros_domain: int = 0,
-       internet: str = "none", name: str | None = None,
-       mounts: tuple[str, ...] = (), env: tuple[str, ...] = (),
-       seed_workspace: bool = True, peers_xml: str | None = None) -> str:
-    """Create the live sandbox; returns its container name.
-
-    Give every container a fresh workspace dir: seeding merges into an
-    existing dir, and stale files from a previous session would leak
-    into the new one.
-    """
+def load(config: Path) -> dict:
+    """The resolved config file as a dict, with instructive errors."""
     config = Path(config)
     if not config.is_file():
         raise SandboxError(f"config not found: {config}")
@@ -62,8 +52,24 @@ def up(config: Path, workspace: Path,
         raise SandboxError(f"config is not valid yaml: {config}: {e}")
     if not isinstance(cfg, dict):
         raise SandboxError(f"config is empty or not a mapping: {config}")
-    # The config arrives already resolved to the trial's suite view;
-    # this package applies no overrides of its own.
+    return cfg
+
+
+def up(cfg: dict, workspace: Path, *,
+       image: str = DEFAULT_IMAGE, network: str = "host",
+       static_peer: str | None = None, ros_domain: int = 0,
+       internet: str = "none", name: str | None = None,
+       mounts: tuple[str, ...] = (), env: tuple[str, ...] = (),
+       run_args: tuple[str, ...] = (),
+       seed_workspace: bool = True, peers_xml: str | None = None) -> str:
+    """Create the live sandbox; returns its container name.
+
+    ``cfg`` is the resolved config (it seeds the workspace); everything
+    about the container itself arrives as a parameter. Give every
+    container a fresh workspace dir: seeding merges into an existing
+    dir, and stale files from a previous session would leak into the
+    new one.
+    """
     # `--network` is the robot's net (DDS reachability); `--internet`
     # is the outside world. Orthogonal.
     if internet != "none" and not (internet == "open"
@@ -79,8 +85,6 @@ def up(config: Path, workspace: Path,
         # Set at creation: a person entering the sandbox has the same
         # network access as an agent.
         proxy_env = ["-e", f"HTTPS_PROXY={url}", "-e", f"HTTP_PROXY={url}"]
-    image = image or cfg.get("machine", {}).get("backend", {}).get(
-        "sandbox_image", DEFAULT_IMAGE)
     if subprocess.run(["docker", "image", "inspect", image],
                       capture_output=True).returncode != 0:
         raise SandboxError(
@@ -115,10 +119,9 @@ def up(config: Path, workspace: Path,
     for e in env:
         extra += ["-e", e]
 
-    # sandbox.run_args: this machine's own flags for the sandbox
-    # container (rootless podman's --userns=keep-id), passed through as
-    # written; the config layering put them there from the defaults file.
-    extra += list(cfg.get("sandbox", {}).get("run_args", []))
+    # run_args: this machine's own flags for the sandbox container
+    # (rootless podman's --userns=keep-id), passed through as written.
+    extra += list(run_args)
 
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     r = subprocess.run(
@@ -198,8 +201,11 @@ def main() -> int:
                     "seeding; replay/custom workspaces)")
     args = ap.parse_args()
     try:
-        name = up(config=args.config, workspace=args.workspace,
-                  image=args.image,
+        cfg = load(args.config)
+        name = up(cfg, args.workspace,
+                  image=args.image or cfg.get("machine", {}).get("backend", {}).get(
+                      "sandbox_image", DEFAULT_IMAGE),
+                  run_args=tuple(cfg.get("sandbox", {}).get("run_args", [])),
                   network=args.network, static_peer=args.static_peer,
                   ros_domain=args.ros_domain, internet=args.internet,
                   name=args.name,

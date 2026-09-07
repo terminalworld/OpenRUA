@@ -1,7 +1,7 @@
 """Per-arm machine view + multi-arm action math (numpy only, no ROS).
 
 The bridge's command side loops ``machine.arms`` (materialized once by
-run.normalize_arms into the assembly); this module holds the pure parts
+normalize_arms into the resolved config); this module holds the pure parts
 so they stay unit-testable outside a ROS environment.
 """
 
@@ -11,7 +11,7 @@ import numpy as np
 
 
 def arm_specs(machine: dict) -> list[dict]:
-    """The normalized per-arm list; loud when the assembly predates it."""
+    """The normalized per-arm list; loud when the config predates it."""
     arms = machine.get("arms")
     if not arms:
         raise KeyError(

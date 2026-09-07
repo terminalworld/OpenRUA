@@ -14,6 +14,7 @@ from robocli.errors import UsageError
 from robocli.robot.real.probe import draft_profile, read_graph
 from robocli.runner.bringup import sandbox_reachability
 from robocli.sandbox.down import down as sandbox_down
+from robocli.sandbox.up import DEFAULT_IMAGE as DEFAULT_SANDBOX_IMAGE
 from robocli.sandbox.up import up as sandbox_up
 
 
@@ -51,10 +52,9 @@ def run(args) -> int:
     reach["internet"] = "none"
     name = f"robocli-probe-{uuid.uuid4().hex[:6]}"
     with tempfile.TemporaryDirectory(prefix="robocli-probe-") as tmp:
-        cfg = Path(tmp) / "config.yaml"
-        cfg.write_text(yaml.safe_dump({"machine": {"workspace_template": None}}))
-        sandbox_up(config=cfg, workspace=Path(tmp) / "ws", image=args.image,
-                   ros_domain=args.ros_domain, name=name, seed_workspace=False, **reach)
+        sandbox_up({"machine": {"workspace_template": None}}, Path(tmp) / "ws",
+                   image=args.image or DEFAULT_SANDBOX_IMAGE, ros_domain=args.ros_domain,
+                   name=name, seed_workspace=False, **reach)
         try:
             print(draft_profile(read_graph(_exec_in(name)), discovery), end="")
         finally:

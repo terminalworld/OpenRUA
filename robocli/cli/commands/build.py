@@ -12,6 +12,9 @@ from pathlib import Path
 
 from robocli import agents, config
 from robocli.config import paths
+from robocli.proxy.build import build as build_proxy
+from robocli.robot.sim.build import build as build_robot
+from robocli.sandbox.build import build as build_sandbox
 
 
 def default_agent(home: Path | None) -> str:
@@ -45,22 +48,19 @@ def agent_labels(manifests: list[agents.Manifest], kind: str) -> dict[str, str]:
 
 def run(args) -> int:
     if args.unit == "robot":
-        from robocli.robot.sim.build import build
-        tag, digest = build(distro=args.distro, tag=args.tag)
+        tag, digest = build_robot(distro=args.distro, tag=args.tag)
     elif args.unit == "sandbox":
-        from robocli.sandbox.build import build
         chosen = manifests_for(args.agent, args.home)
         preinstall = (args.preinstall if args.preinstall is not None
                       else agents.preinstall(chosen))
-        tag, digest = build(preinstall=preinstall, ros_distro=args.ros_distro,
+        tag, digest = build_sandbox(preinstall=preinstall, ros_distro=args.ros_distro,
                             robot_uid=args.robot_uid, tag=args.tag,
                             labels=agent_labels(chosen, "install"))
     else:
-        from robocli.proxy.build import build
         chosen = manifests_for(args.agent, args.home)
         whitelist = (args.whitelist if args.whitelist is not None
                      else "\n".join(agents.whitelist(chosen)))
-        tag, digest = build(whitelist=whitelist, tag=args.tag, port=args.port,
+        tag, digest = build_proxy(whitelist=whitelist, tag=args.tag, port=args.port,
                             labels=agent_labels(chosen, "whitelist"))
     print(f"{tag} {digest}")
     return 0

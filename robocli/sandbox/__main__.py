@@ -10,6 +10,7 @@ forwards.
 from __future__ import annotations
 
 import sys
+import importlib
 
 _VERBS = {
     "build": ("robocli.sandbox.build", "Dockerfile + PREINSTALL -> sandbox image"),
@@ -40,7 +41,6 @@ def main() -> int:
         return 2
     module = _VERBS[verb][0]
     sys.argv = [f"python -m {module}", *args[1:]]
-    import importlib
     return importlib.import_module(module).main()
 
 
