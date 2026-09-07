@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import sys
 
+from robocli.agents import launcher
+
 
 def main() -> int:
     args = sys.argv[1:]
@@ -19,7 +21,6 @@ def main() -> int:
         print(f"unknown verb {args[0]!r}; the only verb is launch", file=sys.stderr)
         return 2
     sys.argv = ["python -m robocli.agents launch", *args[1:]]
-    from robocli.agents import launcher
     return launcher.main()
 
 

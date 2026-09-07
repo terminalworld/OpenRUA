@@ -103,8 +103,7 @@ def test_build_rejects_double_quotes_and_multiline():
 def test_up_refuses_missing_image(tmp_path):
     from robocli.sandbox import up as hup
     with pytest.raises(Exception) as e:
-        hup.up(config=LIBERO_CFG, workspace=tmp_path / "ws",
-               image="robocli-definitely-missing-image")
+        hup.up(_cfg(), tmp_path / "ws", image="robocli-definitely-missing-image")
     assert "up never builds" in str(e.value)
 
 
@@ -127,8 +126,7 @@ def test_harness_imports_no_layer():
 def test_up_rejects_bad_internet_value(tmp_path):
     from robocli.sandbox import up as hup
     with pytest.raises(Exception) as e:
-        hup.up(config=LIBERO_CFG, workspace=tmp_path / "ws",
-               internet="all-open")
+        hup.up(_cfg(), tmp_path / "ws", internet="all-open")
     assert "--internet" in str(e.value)
 
 
@@ -137,23 +135,19 @@ def test_up_rejects_bad_internet_value(tmp_path):
 @requires_image("robocli-sandbox")
 def test_up_instructive_errors(tmp_path):
     from robocli.sandbox import up as hup
-    # missing config
+    # missing config file (the command line loads it)
     with pytest.raises(Exception) as e:
-        hup.up(config=tmp_path / "nope.yaml", workspace=tmp_path / "ws")
+        hup.load(tmp_path / "nope.yaml")
     assert "config not found" in str(e.value)
     # bad template name in an otherwise good config
     cfg = _cfg()
     cfg["machine"]["workspace_template"] = "no_such_template"
-    bad = tmp_path / "bad.yaml"
-    import yaml as _y
-    bad.write_text(_y.safe_dump(cfg))
     with pytest.raises(Exception) as e:
-        hup.up(config=bad, workspace=tmp_path / "ws")
+        hup.up(cfg, tmp_path / "ws")
     assert "no_such_template" in str(e.value)
     # proxy posture without a url
     with pytest.raises(Exception) as e:
-        hup.up(config=LIBERO_CFG, workspace=tmp_path / "ws",
-               internet="proxy:")
+        hup.up(_cfg(), tmp_path / "ws", internet="proxy:")
     assert "needs a url" in str(e.value)
 
 
@@ -161,8 +155,7 @@ def test_up_instructive_errors(tmp_path):
 def test_up_surfaces_docker_stderr_on_bad_network(tmp_path):
     from robocli.sandbox import up as hup
     with pytest.raises(Exception) as e:
-        hup.up(config=LIBERO_CFG, workspace=tmp_path / "ws",
-               network="robocli-definitely-missing-net")
+        hup.up(_cfg(), tmp_path / "ws", network="robocli-definitely-missing-net")
     assert "docker run failed" in str(e.value) \
         and "robocli-definitely-missing-net" in str(e.value)
 
@@ -175,9 +168,8 @@ def test_up_refuses_a_corpse(tmp_path):
     subprocess.run(["docker", "pull", "-q", "alpine:3.20"],
                    capture_output=True)
     with pytest.raises(Exception) as e:
-        hup.up(config=LIBERO_CFG, workspace=tmp_path / "ws",
-               image="alpine:3.20", network="robocli-internal",
-               name="sandbox-corpse-test")
+        hup.up(_cfg(), tmp_path / "ws", image="alpine:3.20",
+               network="robocli-internal", name="sandbox-corpse-test")
     # Either guard may catch it (docker refuses at exec, or the liveness
     # check finds an exited container); both are instructive errors.
     assert "docker run failed" in str(e.value) or "docker logs" in str(e.value)

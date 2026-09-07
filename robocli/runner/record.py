@@ -14,11 +14,16 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import platform
+import shlex
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
 import yaml
+
+from robocli import __version__ as robocli_version
 
 
 def secret_strings(creds_dir: Path) -> list[str]:
@@ -87,7 +92,6 @@ def _heredoc_marker(content: str) -> str:
 
 
 def _write_as_command(path: str, content: str) -> str:
-    import shlex
     q = shlex.quote(path)
     m = _heredoc_marker(content)
     nl = "" if (not content or content.endswith("\n")) else "\n"
@@ -172,9 +176,6 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
     # link in the reproduction chain as our own. The checkout root is
     # the directory holding the simulator venv (resolved by the caller).
     simulator = str(simulator_venv.parent) if simulator_venv else ""
-    import os
-    import platform
-    from robocli import __version__ as robocli_version
     return {
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "robocli_version": robocli_version,

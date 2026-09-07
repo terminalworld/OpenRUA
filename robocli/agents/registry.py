@@ -10,6 +10,7 @@ points, would come after the user directory; not implemented.
 
 from __future__ import annotations
 
+import hashlib
 import importlib
 import importlib.util
 import logging
@@ -176,7 +177,6 @@ def fact_sha256(agent, kind: str) -> str:
     """The hash of one agent's baked-in fact: its install line
     (``install``) or its whitelist (``whitelist``). Takes an Agent or a
     Manifest."""
-    import hashlib
     text = agent.install if kind == "install" else "\n".join(agent.whitelist)
     return hashlib.sha256(text.encode()).hexdigest()
 

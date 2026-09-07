@@ -10,6 +10,7 @@ oracle-retry.
 
 from __future__ import annotations
 
+import traceback
 import hashlib
 import shutil
 import subprocess
@@ -22,7 +23,7 @@ from pathlib import Path
 from robocli import agents
 from robocli.config import paths
 from robocli.proxy.up import ensure as ensure_proxy
-from robocli.runner import lock as triallock
+from robocli.runner import lock
 from robocli.runner import record
 from robocli.runner.bringup import bring_up, ensure_internal_network
 from robocli.runner.preflight import run_preflight
@@ -71,10 +72,10 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     # Claim the directory before touching it: the archive step below
     # moves every existing artifact aside, so a second writer's opening
     # act would pull a running attempt's transcript out from under it.
-    lock = triallock.acquire(trial_dir, stem)
-    if lock is None:
-        info = triallock.holder(trial_dir) or {}
-        raise triallock.TrialLocked(
+    held = lock.acquire(trial_dir, stem)
+    if held is None:
+        info = lock.holder(trial_dir) or {}
+        raise lock.TrialLocked(
             f"{trial_dir}: a live attempt already owns this trial "
             f"(pid {info.get('pid')} on {info.get('host')}); refusing to "
             "write alongside it")
@@ -264,7 +265,6 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         rec["anomaly"] = f"{type(exc).__name__}: {exc}"
         # The one-liner names the failure; the stack finds it. Host-side
         # errors have no bridge.log to fall back on.
-        import traceback
         rec["anomaly_traceback"] = traceback.format_exc()
     finally:
         if machine is not None:
@@ -276,7 +276,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         secrets += record.secret_strings(creds_home)
         shutil.rmtree(cfg_dir, ignore_errors=True)
         record.finalize_trial(trial_dir, agent, secrets)
-        lock.release()
+        held.release()
     # wall_seconds spans the whole harness (boot, preflight, operator,
     # teardown). The wall cap is enforced only on the operator and its
     # verdict already sits in rec["termination"]; it is never rewritten

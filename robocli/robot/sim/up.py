@@ -15,7 +15,11 @@ the runner and handed in.
 
 from __future__ import annotations
 
+import argparse
+import os
 import subprocess
+import sys
+import threading
 from pathlib import Path
 
 from robocli.robot.sim.client import BridgeClient
@@ -52,7 +56,7 @@ def up(
     """
     # The simulator venvs' python is a symlink into uv's interpreter
     # store; mount it read-only at the same path. Derived from the
-    # CURRENT user's home, never hardcoded (runs move across machines
+    # current user's home, never hardcoded (runs move across machines
     # and accounts).
     uv_dir = uv_dir or str(Path("~/.local/share/uv").expanduser())
     if static_peer and not peers_xml:
@@ -60,12 +64,20 @@ def up(
             "static_peer needs the rendered peers profile too; the "
             "runner renders it (bringup.peers_profile) and "
             "passes peers_xml")
-    peer_env = (
-        ["-e", f"ROS_STATIC_PEERS={static_peer}"] if static_peer else []
-    )
+    config_dir = Path(config_path).resolve().parent
     # Concurrent trials share one docker network; DDS domains keep
     # their graphs from cross-talking.
-    peer_env += ["-e", f"ROS_DOMAIN_ID={ros_domain}"]
+    env = ["-e", f"ROS_DOMAIN_ID={ros_domain}"]
+    if static_peer:
+        env += ["-e", f"ROS_STATIC_PEERS={static_peer}"]
+    if peers_xml:
+        # ROS_STATIC_PEERS exists only from Iron on; Humble's Fast DDS
+        # ignores it; the profile file is the portable form. Written
+        # next to the config, which the container sees through the same
+        # mount, and named to Fast DDS by its environment variable.
+        peers_file = config_dir / "fastdds-peers.xml"
+        peers_file.write_text(peers_xml)
+        env += ["-e", f"FASTRTPS_DEFAULT_PROFILES_FILE={peers_file}"]
     net = ["--network", network] if network else []
     # GPU rendering (host needs nvidia-container-toolkit): MUJOCO_GL
     # stays "egl" either way; with the driver injected, EGL picks the
@@ -80,45 +92,30 @@ def up(
     # the cores, clamped to [4, 16], so a few concurrent sims do not
     # thrash and the host keeps headroom. No effect under GPU rendering.
     # Override with resources.render_threads: <int> | "off".
-    import os as _os
-
     rt = (resources or {}).get("render_threads", "auto")
     if rt == "auto":
-        rt = max(4, min(16, (_os.cpu_count() or 8) // 4))
+        rt = max(4, min(16, (os.cpu_count() or 8) // 4))
     if rt != "off":
-        peer_env += ["-e", f"LP_NUM_THREADS={int(rt)}"]
+        env += ["-e", f"LP_NUM_THREADS={int(rt)}"]
     venv = venv or f"{simulator}/.venv-libero"
-    peers_setup = ""
-    if peers_xml:
-        # ROS_STATIC_PEERS exists only from Iron on; Humble's Fast DDS
-        # ignores it; the profile file is the portable form. Injected
-        # alongside the env var (harmless where the var works).
-        peers_setup = (
-            f"cat > /tmp/fastdds-peers.xml <<'PEERS_EOF'\n{peers_xml}PEERS_EOF\n"
-            "export FASTRTPS_DEFAULT_PROFILES_FILE=/tmp/fastdds-peers.xml\n"
-        )
-    moveit_arg = f" --moveit-log {moveit_log}" if moveit_log else ""
-    inner = f"""
-{peers_setup}mkdir -p /root/.libero
-cat > /root/.libero/config.yaml <<EOF
-assets: {simulator}/capx/third_party/LIBERO-PRO/libero/libero/assets
-bddl_files: {simulator}/capx/third_party/LIBERO-PRO/libero/libero/bddl_files
-benchmark_root: {simulator}/capx/third_party/LIBERO-PRO/libero/libero
-datasets: {simulator}/capx/third_party/LIBERO-PRO/libero/datasets
-init_states: {simulator}/capx/third_party/LIBERO-PRO/libero/libero/init_files
-EOF
-source /opt/ros/${{ROS_DISTRO:-jazzy}}/setup.bash
-exec {venv}/bin/python -m robocli.robot.sim.bridge.main \
-  --config {config_path} --task-suite {task_suite} --task-id {task_id}{moveit_arg}
-"""
+    # The image's entrypoint (ros_entrypoint.sh, from the ros base
+    # image) sources ROS and execs this command. The bridge writes its
+    # own simulator settings; nothing about the simulator's layout
+    # lives here.
+    bridge = [
+        f"{venv}/bin/python", "-m", "robocli.robot.sim.bridge.main",
+        "--config", str(config_path),
+        "--task-suite", task_suite, "--task-id", str(task_id),
+        *(["--moveit-log", moveit_log] if moveit_log else []),
+    ]
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     proc = subprocess.Popen(
         [
             "docker", "run", "-i", "--rm", "--name", name,
-            *net, *gpu_args, *peer_env, *(extra_env or []),
-            *_mounts(code_root, simulator, str(Path(config_path).resolve().parent)),
+            *net, *gpu_args, *env, *(extra_env or []),
+            *_mounts(code_root, simulator, str(config_dir)),
             "-v", f"{uv_dir}:{uv_dir}:ro",
-            image, "bash", "-c", inner,
+            image, *bridge,
         ],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
@@ -152,10 +149,6 @@ def main() -> int:
     "init_state_id": 0}, ...); answers come back one per line. Exiting
     (Ctrl-D) is pipe EOF: the bridge shuts itself down. For debugging;
     trials go through the runner."""
-    import argparse
-    import sys
-    import threading
-
     ap = argparse.ArgumentParser(
         description="start a simulated robot; the terminal becomes its "
                     "control line (Ctrl-D shuts it down)")

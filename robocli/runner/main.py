@@ -14,7 +14,7 @@ from robocli.config import (apply_suite_overrides, load_config, normalize_arms,
                             resolve_wall_clock_min)
 from robocli.config import paths
 from robocli.errors import UsageError
-from robocli.runner import lock as triallock
+from robocli.runner import lock
 from robocli.runner import record
 from robocli.runner.bringup import simulator_venv
 from robocli.runner.operators import OPERATORS
@@ -135,7 +135,7 @@ def run(args: argparse.Namespace) -> int:
                     account_alias=args.account_alias, script=args.script,
                     token_file=args.token_file, home=home, task=args.task,
                 )
-            except triallock.TrialLocked as e:
+            except lock.TrialLocked as e:
                 # Not a failure of this trial: someone else is doing it.
                 raise SystemExit(f"[trial] {e}")
             trial_dir = (run_dir / "trials" / f"{args.task_suite}-{task_id}"

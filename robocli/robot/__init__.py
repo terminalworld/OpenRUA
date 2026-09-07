@@ -19,6 +19,10 @@ from pathlib import Path
 
 from robocli.errors import ConfigError
 from robocli.robot.base import Handle  # noqa: F401  re-exported
+from robocli.robot.real.down import down as real_down
+from robocli.robot.real.up import up as real_up
+from robocli.robot.sim.down import down as sim_down
+from robocli.robot.sim.up import up as sim_up
 
 KINDS = ("sim", "real")
 
@@ -37,7 +41,6 @@ def up(backend: dict, *, name: str, config_path: str, task_suite: str,
     visible). The other keyword arguments apply to both."""
     kind = backend.get("kind")
     if kind == "sim":
-        from robocli.robot.sim.up import up as sim_up
         if not venv or not code_root:
             raise ValueError("a simulated robot needs venv and code_root")
         return sim_up(
@@ -48,7 +51,6 @@ def up(backend: dict, *, name: str, config_path: str, task_suite: str,
             static_peer=static_peer, peers_xml=peers_xml, ros_domain=ros_domain,
             gpus=bool(backend.get("gpus", False)), resources=backend.get("resources"))
     if kind == "real":
-        from robocli.robot.real.up import up as real_up
         return real_up(name=name, launch=backend.get("launch"), log_path=log_path,
                        probe_argv=probe_argv, image=backend.get("image"))
     raise ConfigError(f"machine.backend.kind must be one of {KINDS}, got {kind!r}")
@@ -57,10 +59,8 @@ def up(backend: dict, *, name: str, config_path: str, task_suite: str,
 def down(name: str, kind: str = "sim") -> None:
     """Force the robot down from outside, when its handle is gone or dead."""
     if kind == "sim":
-        from robocli.robot.sim.down import down as sim_down
         sim_down(name)
     elif kind == "real":
-        from robocli.robot.real.down import down as real_down
         real_down(name)
     else:
         raise ConfigError(f"machine.backend.kind must be one of {KINDS}, got {kind!r}")

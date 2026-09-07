@@ -7,14 +7,40 @@ flattens the package; ``from libero import ...``, not
 
 from __future__ import annotations
 
+import importlib.util
 import os
 import re
+from pathlib import Path
+
+import yaml
+
+
+def write_libero_settings() -> Path:
+    """LIBERO reads ``~/.libero/config.yaml`` at import and, when the
+    file is missing, asks on stdin where to keep datasets. Write the
+    package's own default paths first so the import never blocks. The
+    paths derive from the installed package (the fork's ``libero``
+    top-level package is the inner ``libero/libero`` directory), not
+    from any checkout layout."""
+    root = Path(importlib.util.find_spec("libero").origin).parent
+    settings_dir = Path(os.environ.get("LIBERO_CONFIG_PATH", "~/.libero")).expanduser()
+    settings_dir.mkdir(parents=True, exist_ok=True)
+    path = settings_dir / "config.yaml"
+    path.write_text(yaml.safe_dump({
+        "benchmark_root": str(root),
+        "bddl_files": str(root / "bddl_files"),
+        "init_states": str(root / "init_files"),
+        "datasets": str(root.parent / "datasets"),
+        "assets": str(root / "assets"),
+    }))
+    return path
 
 
 class LiberoLoader:
     BENCHMARKS = ("libero_pro", "libero")
 
     def create(self, cfg: dict, task_suite: str, task_id: int):
+        write_libero_settings()
         from libero import benchmark, get_libero_path
         from libero.envs import OffScreenRenderEnv
 
@@ -26,7 +52,7 @@ class LiberoLoader:
             bddl_file_name=os.path.join(
                 get_libero_path("bddl_files"), task.problem_folder, task.bddl_file
             ),
-            # JOINT_POSITION is our assembly's base action space (real-robot
+            # JOINT_POSITION is the config's base action space (real-robot
             # shape: both graph ports sit above a joint layer; FJT tracks
             # joints natively, twist runs differential IK like moveit_servo).
             # OSC was rejected after measurement: its null-space bias fights
