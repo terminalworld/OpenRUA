@@ -26,6 +26,7 @@ import socket
 import subprocess
 import time
 from pathlib import Path
+from typing import Iterable
 
 LOCK_NAME = ".running"
 
@@ -49,23 +50,30 @@ def holders(root: Path) -> list[dict]:
     This is what a person checks before restarting anything that
     launches trials: a stale claim is a crashed attempt, a live one is
     an attempt that will be run over if a second writer starts."""
+    running = running_containers()       # one question to docker for all rows
     rows = []
     for path in sorted(Path(root).rglob(LOCK_NAME)):
         info = holder(path.parent) or {}
         rows.append({"trial": str(path.parent.relative_to(root)), **info,
-                     "live": is_live(info)})
+                     "live": is_live(info, running)})
     return rows
 
 
-def is_live(info: dict) -> bool:
+def is_live(info: dict, running: Iterable[str] | None = None) -> bool:
     """Whether a lock's holder is still working. Live if its process is
     alive, or if any of its containers are still up (a container name is
-    attempt-unique, so it cannot be mistaken for a later attempt's)."""
+    attempt-unique, so it cannot be mistaken for a later attempt's).
+    ``running`` is the machine's running container names when the caller
+    already holds them; otherwise docker is asked for this stem."""
     pid = info.get("pid")
     if pid and info.get("host") == socket.gethostname() and _pid_alive(int(pid), info.get("since")):
         return True
     stem = info.get("stem")
-    return bool(stem) and bool(running_containers(stem))
+    if not stem:
+        return False
+    if running is None:
+        return bool(running_containers(stem))
+    return any(n.startswith(stem) for n in running)
 
 
 def acquire(trial_dir: Path, stem: str) -> "Lock | None":
@@ -111,11 +119,12 @@ class Lock:
             pass
 
 
-def running_containers(stem: str) -> list[str]:
+def running_containers(stem: str = "") -> list[str]:
     """Running containers belonging to one attempt (or to one trial key,
-    given its prefix). Empty when docker cannot answer -- the caller pairs
-    this with a process check, and treating an unreachable daemon as proof
-    of death would be the one mistake that lets two writers in."""
+    given its prefix; every container when no stem is given). Empty when
+    docker cannot answer -- the caller pairs this with a process check,
+    and treating an unreachable daemon as proof of death would be the
+    one mistake that lets two writers in."""
     try:
         out = subprocess.run(
             ["docker", "ps", "--format", "{{.Names}}",
