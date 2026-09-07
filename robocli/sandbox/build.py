@@ -6,7 +6,7 @@ cheap no-op returning the same digest.
 
     python3 -m robocli.sandbox.build \
         [--preinstall "<one-line install chain>"] \
-        [--ros-distro jazzy] [--robot-uid N] [--tag robocli-sandbox]
+        [--distro jazzy] [--robot-uid N] [--tag robocli-sandbox-<distro>]
 
 Value output: ``<tag> <digest>`` (one line). The proxy image is the
 proxy package's own build.
@@ -43,11 +43,13 @@ def _docker_build(dockerfile: Path, context: Path, tag: str,
         capture_output=True, text=True, check=True).stdout.strip()
 
 
-def build(preinstall: str = "", ros_distro: str = "jazzy",
+def build(preinstall: str = "", distro: str = "jazzy",
           robot_uid: int | None = None,
-          tag: str = "robocli-sandbox",
+          tag: str | None = None,
           labels: dict[str, str] | None = None) -> tuple[str, str]:
-    """Build the sandbox image; returns (tag, digest). ``labels`` are
+    """Build the sandbox image for a ROS 2 distro; returns (tag, digest).
+    The tag defaults to robocli-sandbox-<distro>, the name a profile's
+    ros_distro resolves to. ``labels`` are
     stamped on the image alongside the preinstall hash (the caller adds
     one per agent, so doctor can check each selected agent)."""
     # Contract: PREINSTALL is a single-line command chain without double
@@ -61,9 +63,10 @@ def build(preinstall: str = "", ros_distro: str = "jazzy",
     # with the install chain the selected agents would emit today.
     labels = {"robocli.preinstall_sha256": hashlib.sha256(preinstall.encode()).hexdigest(),
               **(labels or {})}
+    tag = tag or f"robocli-sandbox-{distro}"
     return tag, _docker_build(
         _HERE / "sandbox.Dockerfile", _HERE, tag,
-        {"ROS_DISTRO": ros_distro, "ROBOT_UID": str(uid),
+        {"ROS_DISTRO": distro, "ROBOT_UID": str(uid),
          "PREINSTALL": preinstall}, labels)
 
 
@@ -72,14 +75,14 @@ def main() -> int:
     ap.add_argument("--preinstall", default="",
                     help="one-line install command chain baked into the "
                     "image (empty = the bare terminal)")
-    ap.add_argument("--ros-distro", default="jazzy")
+    ap.add_argument("--distro", default="jazzy", help="ROS 2 distro: jazzy | humble")
     ap.add_argument("--robot-uid", type=int, default=None,
                     help="container uid (default: current user)")
-    ap.add_argument("--tag", default="robocli-sandbox")
+    ap.add_argument("--tag", default=None, help="image tag (default: robocli-sandbox-<distro>)")
     args = ap.parse_args()
     try:
         tag, digest = build(preinstall=args.preinstall,
-                            ros_distro=args.ros_distro,
+                            distro=args.distro,
                             robot_uid=args.robot_uid, tag=args.tag)
     except SandboxError as e:
         raise SystemExit(str(e))

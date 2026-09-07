@@ -169,8 +169,8 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
     # (sandbox) and the proxy are experiment conditions as much as the
     # robot image.
     backend = cfg.get("machine", {}).get("backend", {})
-    image = backend.get("image", "robocli-sim-jazzy")
-    sandbox_image = backend.get("sandbox_image", "robocli-sandbox")
+    image = backend.get("image") or ""
+    sandbox_image = backend.get("sandbox_image") or ""
     # The benchmark content itself (tasks, predicates, the vendored
     # forks) lives in the simulator checkout; its commit is as much a
     # link in the reproduction chain as our own. The checkout root is

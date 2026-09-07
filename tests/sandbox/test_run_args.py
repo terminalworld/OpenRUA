@@ -17,9 +17,10 @@ def test_run_args_are_appended_to_docker_run(tmp_path, monkeypatch):
 
     monkeypatch.setattr(hup.subprocess, "run", fake_run)
     monkeypatch.setattr(hup, "seed_workspace", lambda *a, **k: None, raising=False)
-    hup.up(cfg, tmp_path / "ws", name="t", seed_workspace=False,
+    hup.up(cfg, tmp_path / "ws", image=cfg["machine"]["backend"]["sandbox_image"],
+           name="t", seed_workspace=False,
            run_args=("--userns=keep-id", "--pids-limit=0"))
     run = next(c for c in calls if c[:2] == ["docker", "run"])
     i = run.index("--userns=keep-id")
     assert run[i + 1] == "--pids-limit=0"
-    assert run[i + 2] == "robocli-sandbox" and run[i + 3] == "bash"   # then the image
+    assert run[i + 2] == "robocli-sandbox-jazzy" and run[i + 3] == "bash"   # then the image

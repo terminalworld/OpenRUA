@@ -10,10 +10,7 @@ world:
 machine:
   backend:
     kind: sim
-    image: robocli-sim-humble
-    sandbox_image: robocli-sandbox-humble  # sandbox distro == robot distro:
-                                # cross-distro moveit_msgs break service
-                                # responses (Fast CDR)
+    ros_distro: humble   # names the robot and sandbox images (robocli-sim-humble, robocli-sandbox-humble)
     simulator:
       venv: cap-x/.venv-capbench  # py3.10 == Humble; a venv of its own,
                                   # separate from .venv-libero

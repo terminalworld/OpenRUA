@@ -118,16 +118,41 @@ class Simulator(Strict):
                                   "(sim-jazzy | sim-humble); documentation")
 
 
+Distro = Literal["jazzy", "humble"]
+
+
+def sim_image(distro: str) -> str:
+    """The simulated robot image for a ROS 2 distro; robocli build robot
+    tags it so."""
+    return f"robocli-sim-{distro}"
+
+
+def sandbox_image(distro: str) -> str:
+    """The agent terminal image for a ROS 2 distro; robocli build sandbox
+    tags it so. The sandbox runs the robot's distro: cross-distro
+    message definitions break service responses."""
+    return f"robocli-sandbox-{distro}"
+
+
 class SimBackend(Strict):
     """A simulated robot: a container running the bridge over a simulator venv."""
     kind: Literal["sim"] = Field(description="a simulated robot")
-    image: str = Field(default="robocli-sim-jazzy", description="simulated robot image")
-    sandbox_image: str = Field(default="robocli-sandbox", description="agent terminal image "
-                               "(same ROS distro as the robot)")
+    ros_distro: Distro = Field(default="jazzy", description="the ROS 2 distro the robot "
+                               "runs; the robot and sandbox images are named after it")
+    image: str | None = Field(default=None, description="simulated robot image; default: "
+                              "robocli-sim-<ros_distro>")
+    sandbox_image: str | None = Field(default=None, description="agent terminal image; "
+                                      "default: robocli-sandbox-<ros_distro>")
     gpus: bool = Field(default=False, description="render on the GPU (needs nvidia toolkit)")
     resources: dict[str, Any] | None = Field(
         default=None, description="render_threads: int | off | auto")
     simulator: Simulator = Field(description="the simulator venv the bridge runs in")
+
+    @model_validator(mode="after")
+    def _derive_images(self):
+        self.image = self.image or sim_image(self.ros_distro)
+        self.sandbox_image = self.sandbox_image or sandbox_image(self.ros_distro)
+        return self
 
 
 class Discovery(Strict):
@@ -152,6 +177,8 @@ class Discovery(Strict):
 class RealBackend(Strict):
     """A real robot: its ROS 2 graph is already there or a launch command starts it."""
     kind: Literal["real"] = Field(description="a real robot")
+    ros_distro: Distro = Field(default="jazzy", description="the ROS 2 distro the robot "
+                               "runs; the sandbox image is named after it")
     launch: str | None = Field(default=None, description="command that brings the "
                                "robot's ROS 2 graph up; null = already running")
     image: str | None = Field(default=None, description="docker image the launch "
@@ -159,13 +186,15 @@ class RealBackend(Strict):
                               "pinned to its own ROS release); null = run it on the host")
     discovery: Discovery = Field(description="how the sandbox reaches the graph")
 
+    sandbox_image: str | None = Field(default=None, description="agent terminal image; "
+                                      "default: robocli-sandbox-<ros_distro>")
+
     @model_validator(mode="after")
-    def _image_needs_launch(self):
+    def _derive(self):
         if self.image and not self.launch:
             raise ValueError("backend.image needs a launch command to run in it")
+        self.sandbox_image = self.sandbox_image or sandbox_image(self.ros_distro)
         return self
-    sandbox_image: str = Field(default="robocli-sandbox", description="agent terminal image "
-                               "(same ROS distro as the robot)")
 
 
 Backend = Annotated[SimBackend | RealBackend, Field(discriminator="kind")]

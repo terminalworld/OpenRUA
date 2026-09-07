@@ -14,7 +14,7 @@ from robocli.errors import UsageError
 from robocli.robot.real.probe import draft_profile, read_graph
 from robocli.runner.bringup import sandbox_reachability
 from robocli.sandbox.down import down as sandbox_down
-from robocli.sandbox.up import DEFAULT_IMAGE as DEFAULT_SANDBOX_IMAGE
+from robocli.config.schema import sandbox_image
 from robocli.sandbox.up import up as sandbox_up
 
 
@@ -52,7 +52,7 @@ def run(args) -> int:
     name = f"robocli-probe-{uuid.uuid4().hex[:6]}"
     with tempfile.TemporaryDirectory(prefix="robocli-probe-") as tmp:
         sandbox_up({"machine": {"workspace_template": None}}, Path(tmp) / "ws",
-                   image=args.image or DEFAULT_SANDBOX_IMAGE, ros_domain=args.ros_domain,
+                   image=args.image or sandbox_image(args.distro), ros_domain=args.ros_domain,
                    name=name, seed_workspace=False, **reach)
         try:
             print(draft_profile(read_graph(_exec_in(name)), discovery), end="")
@@ -73,8 +73,10 @@ def add_parser(sub) -> None:
     p.add_argument("--discovery-server", default=None, metavar="HOST:PORT",
                    help="reach the graph through a Fast DDS discovery server")
     p.add_argument("--ros-domain", type=int, default=0, help="ROS_DOMAIN_ID of the graph")
+    p.add_argument("--distro", default="jazzy",
+                   help="the robot's ROS 2 distro: jazzy | humble (picks the sandbox image)")
     p.add_argument("--image", default=None,
-                   help="sandbox image to probe from (default: robocli-sandbox)")
+                   help="sandbox image to probe from (default: robocli-sandbox-<distro>)")
     p.add_argument("--name", default=None,
                    help="probe from a robot already up under this handle instead")
     p.set_defaults(fn=run)

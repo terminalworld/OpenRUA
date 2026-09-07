@@ -91,6 +91,7 @@ def draft_profile(graph: dict, discovery: dict) -> str:
     y.append("machine:")
     y.append("  backend:")
     y.append("    kind: real")
+    y.append("    ros_distro: jazzy   # TODO: the distro the robot runs; the sandbox image follows from it")
     y.append("    # launch: <command that starts the driver>   # TODO if the graph is not already up")
     y.append("    discovery:")
     for k, v in discovery.items():

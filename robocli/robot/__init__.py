@@ -44,7 +44,7 @@ def up(backend: dict, *, name: str, config_path: str, task_suite: str,
         if not venv or not code_root:
             raise ValueError("a simulated robot needs venv and code_root")
         return sim_up(
-            name=name, image=backend.get("image", "robocli-sim-jazzy"),
+            name=name, image=backend["image"],
             config_path=config_path, task_suite=task_suite, task_id=task_id,
             simulator=str(Path(venv).parent), venv=venv, code_root=code_root,
             log_path=log_path, moveit_log=moveit_log, network=network,

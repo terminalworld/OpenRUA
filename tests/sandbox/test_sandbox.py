@@ -126,13 +126,13 @@ def test_harness_imports_no_layer():
 def test_up_rejects_bad_internet_value(tmp_path):
     from robocli.sandbox import up as hup
     with pytest.raises(Exception) as e:
-        hup.up(_cfg(), tmp_path / "ws", internet="all-open")
+        hup.up(_cfg(), tmp_path / "ws", image="robocli-sandbox-jazzy", internet="all-open")
     assert "--internet" in str(e.value)
 
 
 # ------------------------------------------------- robustness (live docker)
 
-@requires_image("robocli-sandbox")
+@requires_image("robocli-sandbox-jazzy")
 def test_up_instructive_errors(tmp_path):
     from robocli.sandbox import up as hup
     # missing config file (the command line loads it)
@@ -143,19 +143,20 @@ def test_up_instructive_errors(tmp_path):
     cfg = _cfg()
     cfg["machine"]["workspace_template"] = "no_such_template"
     with pytest.raises(Exception) as e:
-        hup.up(cfg, tmp_path / "ws")
+        hup.up(cfg, tmp_path / "ws", image="robocli-sandbox-jazzy")
     assert "no_such_template" in str(e.value)
     # proxy posture without a url
     with pytest.raises(Exception) as e:
-        hup.up(_cfg(), tmp_path / "ws", internet="proxy:")
+        hup.up(_cfg(), tmp_path / "ws", image="robocli-sandbox-jazzy", internet="proxy:")
     assert "needs a url" in str(e.value)
 
 
-@requires_image("robocli-sandbox")
+@requires_image("robocli-sandbox-jazzy")
 def test_up_surfaces_docker_stderr_on_bad_network(tmp_path):
     from robocli.sandbox import up as hup
     with pytest.raises(Exception) as e:
-        hup.up(_cfg(), tmp_path / "ws", network="robocli-definitely-missing-net")
+        hup.up(_cfg(), tmp_path / "ws", image="robocli-sandbox-jazzy",
+               network="robocli-definitely-missing-net")
     assert "docker run failed" in str(e.value) \
         and "robocli-definitely-missing-net" in str(e.value)
 

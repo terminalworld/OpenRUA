@@ -26,7 +26,7 @@ def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
     monkeypatch.setattr(doctor.checks, "docker_inspect", _fake_docker({
         "robocli-proxy": {"robocli.whitelist_sha256": want_wl},
         "robocli-sim-jazzy": {},
-        "robocli-sandbox": {"robocli.preinstall_sha256": want_pi}}))
+        "robocli-sandbox-jazzy": {"robocli.preinstall_sha256": want_pi}}))
     monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
     (tmp_path / "simulators" / "cap-x" / ".venv-libero").mkdir(parents=True)
     creds = paths.credentials_dir(tmp_path) / a.name
@@ -65,14 +65,14 @@ def test_docker_engine_reports_no_userns_row(tmp_path, monkeypatch):
 def test_missing_pieces_are_errors_with_a_fix_and_stale_labels_are_warnings(tmp_path, monkeypatch):
     monkeypatch.setattr(doctor.checks, "docker_inspect", _fake_docker({
         "robocli-proxy": {"robocli.whitelist_sha256": "stale"},
-        "robocli-sandbox": {"robocli.preinstall_sha256": "stale"}}))
+        "robocli-sandbox-jazzy": {"robocli.preinstall_sha256": "stale"}}))
     monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: None)
     r = doctor.run(robot="panda-sim", home=tmp_path)
     by = {c.id: c for c in r.checks}
     assert by["docker"].severity == "error" and "docs.docker.com" in by["docker"].hint
-    assert by["robot-image"].severity == "error" and by["robot-image"].hint == "robocli build robot"
+    assert by["robot-image"].severity == "error" and by["robot-image"].hint == "robocli build robot --distro jazzy"
     assert by["proxy-image"].severity == "warning" and "build proxy --agent" in by["proxy-image"].hint
-    assert by["sandbox-image"].severity == "warning" and "build sandbox --tag" in by["sandbox-image"].hint
+    assert by["sandbox-image"].severity == "warning" and "build sandbox --distro jazzy" in by["sandbox-image"].hint
     assert by["simulator"].severity == "error" and str(tmp_path / "simulators") in by["simulator"].hint
     assert by["login-claude-code"].severity == "error"
     assert "claude login" in by["login-claude-code"].hint

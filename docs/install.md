@@ -36,13 +36,15 @@ API). Build them once; `build` never runs on its own.
 
 ```bash
 robocli build robot                      # --distro jazzy (default) | humble
-robocli build sandbox                    # --agent claude-code (default); --agent codex; repeatable
+robocli build sandbox                    # --distro likewise; --agent claude-code (default), --agent codex, repeatable
 robocli build proxy                      # the whitelist comes from the same manifests
 ```
 
-The sandbox runs the robot's ROS distro; for a Humble robot build the
-sandbox with `--ros-distro humble --tag robocli-sandbox-humble` and
-name that tag in the robot profile. The sandbox and proxy images take
+Images are named after the ROS 2 distro (`robocli-sim-jazzy`,
+`robocli-sandbox-humble`), and a robot profile names its distro once
+as `ros_distro`; the robot and sandbox images follow from it, so a
+Humble robot needs `build robot --distro humble` and `build sandbox
+--distro humble` and nothing else. The sandbox and proxy images take
 the agent's install line and host whitelist from its manifest and
 carry a label per agent with the hash of what went in, which is how
 `doctor` later knows whether an image is stale.
@@ -99,5 +101,5 @@ error is present, and on a pipe the report is JSON.
 pip install -U git+https://github.com/terminalworld/RoboCLI   # then rebuild the sandbox if an agent manifest changed
 pip uninstall robocli-harness
 rm -r ~/.robocli                                              # profiles, logins, simulators, workspaces
-docker rmi robocli-sim-jazzy robocli-sandbox robocli-proxy
+docker rmi robocli-sim-jazzy robocli-sandbox-jazzy robocli-proxy
 ```
