@@ -97,7 +97,7 @@ error is present, and on a pipe the report is JSON.
 
 ```bash
 pip install -U git+https://github.com/terminalworld/RoboCLI   # then rebuild the sandbox if an agent manifest changed
-pip uninstall robocli
+pip uninstall robocli-harness
 rm -r ~/.robocli                                              # profiles, logins, simulators, workspaces
 docker rmi robocli-sim-jazzy robocli-sandbox robocli-proxy
 ```

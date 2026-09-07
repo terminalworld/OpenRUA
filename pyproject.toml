@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "robocli"
+name = "robocli-harness"   # the import and the command stay robocli
 version = "0.1.0"
 description = "Connect Claude Code and Codex directly to any robot, natively: the agent works on the robot's own ROS 2 command line."
 readme = "README.md"
