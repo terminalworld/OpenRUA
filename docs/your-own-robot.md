@@ -30,7 +30,8 @@ profile: joint names and limits, base and hand frames, the ports it
 recognised, cameras, and whether MoveIt is up. Lines marked `TODO` need
 you: the model name, a one-line description, the planning group, and
 which of the found ports to keep. Delete any port the robot does not
-actually serve.
+actually serve. A robot that is already up under RoboCLI can be
+probed from its own sandbox: `robocli probe --name robocli`.
 
 ## What the agent reads
 
@@ -76,6 +77,13 @@ not a silent no-op. Every port you list becomes a promise: `preflight`
 verifies it is served before the agent starts, and the workspace docs
 describe it to the agent. List only what the robot actually serves.
 
+Two shapes the example does not show: a machine with several arms
+lists them under `arms:` (one entry each with its own joints, limits,
+gripper and ports) instead of `arm:`/`gripper:`/`ports:`, and a mobile
+manipulator adds `base:` (its `cmd_vel` and `odom` topics) so the
+workspace docs describe driving as well as reaching. Every key and its
+meaning is in [config.md](config.md#machine).
+
 ## Bringing it up
 
 ```bash
@@ -100,3 +108,12 @@ network is not on an internal docker network, so the proxy is the route
 the agent is told to use, not a wall it cannot get around. For a scored
 campaign, simulation keeps that isolation; on hardware the point of the
 sandbox is the same toolchain and the same workspace, not containment.
+
+## A simulated robot of your own
+
+The same profile with a `sim` backend names a simulator venv and the
+images to run; the bundled `panda-sim`, `panda-sim-humble` and
+`panda-omron-sim` are the templates, and [simulation.md](simulation.md)
+says where the venvs live. Adding a benchmark the bridge does not know
+is a loader under `robot/sim/bridge/environments/`, described in
+[architecture.md](architecture.md).
