@@ -1,3 +1,9 @@
+---
+summary: The first-task flow on a real ROS 2 arm, in three commands
+read_when:
+  - You have a robot profile and want the shortest path to an agent on the hardware
+---
+
 # A real robot
 
 1. With the robot's ROS 2 stack running, draft a profile from its graph
