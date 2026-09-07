@@ -18,7 +18,7 @@ Layering, lowest first: the defaults declared here, the package's
 ``configs/config.yaml``, the user file, the benchmark config,
 command-line flags. Unknown keys are errors at every
 level: a misspelled key must fail the load, never silently do nothing.
-Defaults are the values the paper's own runs use (RoboCLI-Dev configs);
+Defaults are the values the paper's own runs use;
 protocol switches that only matter when running at scale on subscription
 accounts (``resume_on_quota_wall``) default off.
 

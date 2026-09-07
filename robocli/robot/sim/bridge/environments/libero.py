@@ -1,7 +1,6 @@
 """LIBERO / LIBERO-PRO loader: their fork's factory, their predicates.
 
-Fork-style imports throughout (see notes/09 gotchas: the LIBERO-PRO fork
-flattens the package; ``from libero import ...``, not
+Fork-style imports throughout (the LIBERO-PRO fork flattens the package; ``from libero import ...``, not
 ``from libero.libero import ...``).
 """
 
