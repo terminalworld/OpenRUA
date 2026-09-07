@@ -15,13 +15,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from robocli.proxy import ProxyError
+from robocli.proxy import ProxyError, IMAGE, PORT
 
 _HERE = Path(__file__).resolve().parent
 
 
-def build(whitelist: str = "", tag: str = "robocli-proxy",
-          port: int = 8888, labels: dict[str, str] | None = None) -> tuple[str, str]:
+def build(whitelist: str = "", tag: str = IMAGE,
+          port: int = PORT, labels: dict[str, str] | None = None) -> tuple[str, str]:
     """Build the proxy image; returns (tag, digest). ``labels`` are stamped
     alongside the whitelist hash (one per agent, for doctor)."""
     # The image says which whitelist it enforces: doctor compares this
@@ -47,8 +47,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--whitelist", default="",
                     help="one regex per line (empty = deny all internet access)")
-    ap.add_argument("--tag", default="robocli-proxy")
-    ap.add_argument("--port", type=int, default=8888,
+    ap.add_argument("--tag", default=IMAGE)
+    ap.add_argument("--port", type=int, default=PORT,
                     help="listen port, baked into the image and stamped "
                     "as a label `up` reads back")
     args = ap.parse_args()

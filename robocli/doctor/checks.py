@@ -17,7 +17,7 @@ from pathlib import Path
 
 import yaml
 
-from robocli import agents, config
+from robocli import agents, config, proxy
 from robocli.config import compose, paths
 from robocli.doctor.report import CheckResult, Report
 
@@ -169,7 +169,7 @@ def _agents_in_image(image: str, ctx: Context, kind: str) -> tuple[str, str]:
 
 
 def check_proxy_image(ctx: Context) -> list[CheckResult]:
-    image = "robocli-proxy"
+    image = proxy.IMAGE
     names = " ".join(f"--agent {a.name}" for a in ctx.agents)
     build = f"robocli build proxy {names}"
     if docker_inspect("image", image, "{{.Id}}") is None:

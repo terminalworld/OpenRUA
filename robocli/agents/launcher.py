@@ -38,7 +38,6 @@ from robocli import agents
 # got from proxy ensure. Must stay consistent with the proxy package's
 # defaults (leaves cannot import each other; tests/test_agents.py guards
 # the pair against drift).
-DEFAULT_PROXY = "http://robocli-proxy:8888"
 
 
 def main() -> int:
@@ -59,7 +58,7 @@ def main() -> int:
     ap.add_argument("--home", default=None,
                     help="user directory holding agents/ (default: ~/.robocli)")
     ap.add_argument("--max-turns", type=int, default=100)
-    ap.add_argument("--proxy", default=DEFAULT_PROXY)
+    ap.add_argument("--proxy", required=True, help="the proxy URL the sandbox reaches its model API through")
     ap.add_argument("--session-id", default=None,
                     help="name the session up front so it can be resumed")
     ap.add_argument("--token-file", default=None,

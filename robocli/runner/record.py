@@ -150,7 +150,8 @@ def extract_commands(transcript: Path, out: Path, agent) -> None:
 
 
 def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
-               prompt: str, code_root: Path, simulator_venv: Path | None = None,
+               prompt: str, code_root: Path, proxy_image: str,
+               simulator_venv: Path | None = None,
                resume_prompt: str | None = None) -> dict:
     """The reproduction record. ``prompt`` is the same string the launcher
     formats (one source: the runner passes agents.PROMPT); ``resume_prompt``
@@ -201,7 +202,7 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
             ["docker", "image", "inspect", "--format", "{{.Id}}", sandbox_image]
         ),
         "proxy_image_digest": sh(
-            ["docker", "image", "inspect", "--format", "{{.Id}}", "robocli-proxy"]
+            ["docker", "image", "inspect", "--format", "{{.Id}}", proxy_image]
         ),
         # Render device: physics is CPU either way, so results are
         # comparable across devices; recorded so nobody digs it out of

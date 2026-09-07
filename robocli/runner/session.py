@@ -46,7 +46,7 @@ def launcher_command(ctx: dict, agent, model: str, options: dict,
         *(x for k, v in options.items() for x in ("--option", f"{k}={v}")),
         *(["--home", str(ctx["home"])] if ctx.get("home") else []),
         "--session-id", session_id,
-        "--proxy", ctx.get("proxy", "http://robocli-proxy:8888"),
+        "--proxy", ctx["proxy"],
         *(["--token-file", str(ctx["token_file"])] if ctx.get("token_file")
           else []),
     ]

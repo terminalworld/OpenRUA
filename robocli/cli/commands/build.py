@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from robocli import agents, config
+from robocli import agents, config, proxy
 from robocli.config import paths
 from robocli.proxy.build import build as build_proxy
 from robocli.robot.sim.build import build as build_robot
@@ -95,6 +95,6 @@ def add_parser(sub) -> None:
                    "configured default)")
     x.add_argument("--whitelist", default=None,
                    help="regexes, one per line, instead of the agents' manifests")
-    x.add_argument("--tag", default="robocli-proxy")
-    x.add_argument("--port", type=int, default=8888, help="listen port, baked in and labelled")
+    x.add_argument("--tag", default=proxy.IMAGE)
+    x.add_argument("--port", type=int, default=proxy.PORT, help="listen port, baked in and labelled")
     p.set_defaults(fn=run)

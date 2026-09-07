@@ -13,7 +13,7 @@ import subprocess
 import sys
 
 
-def down(name: str = "robocli-proxy") -> bool:
+def down(name: str = NAME) -> bool:
     """Remove the proxy container; True if it existed."""
     return subprocess.run(["docker", "rm", "-f", name],
                           capture_output=True).returncode == 0
@@ -21,7 +21,7 @@ def down(name: str = "robocli-proxy") -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--name", default="robocli-proxy")
+    ap.add_argument("--name", default=NAME)
     args = ap.parse_args()
     return 0 if down(args.name) else 1
 
