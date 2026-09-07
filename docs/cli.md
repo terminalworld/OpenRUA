@@ -302,7 +302,7 @@ options:
 ```
 usage: robocli demo [-h] [--out OUT] [--gif] [--cameras CAMERAS]
                     [--ops START:END] [--size WxH] [--fps FPS] [--speed SPEED]
-                    [--font-size FONT_SIZE]
+                    [--font-size FONT_SIZE] [--no-typing]
                     trial
 
 Compose demo.mp4 from a trial that ran with --record: the commands typed on
@@ -328,6 +328,7 @@ options:
                         motion)
   --font-size FONT_SIZE
                         terminal font size (default 13)
+  --no-typing           show each command at once instead of typing it out
 ```
 
 ## robocli probe

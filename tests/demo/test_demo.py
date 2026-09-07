@@ -60,14 +60,14 @@ def test_extraction_marks_every_operation(tmp_path):
     assert rows[0]["t0"] == 1.0 and rows[0]["t1"] == 2.0
 
 
-def test_beats_take_the_frames_written_while_the_op_ran():
+def test_timeline_orders_command_motion_output():
     index = [{"step": 0, "t": 0.0, "files": []}, {"step": 1, "t": 10.5, "files": []},
-             {"step": 2, "t": 11.0, "files": []}, {"step": 3, "t": 30.0, "files": []}]
+             {"step": 2, "t": 11.0, "files": []}, {"step": 3, "t": 12.0, "files": []}]
     ops = [{"i": 0, "command": "ls", "t0": 1.0, "t1": 2.0},
            {"i": 1, "command": "python3 move.py", "t0": 10.0, "t1": 12.0}]
-    b = demo.beats(index, ops)
-    assert [f["step"] for f in b[0]["frames"]] == []
-    assert [f["step"] for f in b[1]["frames"]] == [1, 2]
+    kinds = [(k, p.get("step", p.get("i"))) for _, k, p in demo.timeline(index, ops)]
+    assert kinds == [("frame", 0), ("command", 0), ("output", 0), ("command", 1),
+                     ("frame", 1), ("frame", 2), ("frame", 3), ("output", 1)]
 
 
 def _trial(tmp_path: Path) -> Path:
