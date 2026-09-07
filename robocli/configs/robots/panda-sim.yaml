@@ -31,6 +31,7 @@ machine:
     resolution: [640, 480]
     list: null           # null = publish every camera the scene defines
     rate_hz: 2           # wall-clock render/publish rate (pull-style; never steps)
+    record: [agentview, robot0_eye_in_hand]  # --record default: main view, inset
 
   control:               # graph-side actuation behavior (named apart from
                          # the gripper/arm facts below, which feed machine.yaml)

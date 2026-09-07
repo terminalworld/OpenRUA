@@ -52,6 +52,14 @@ def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> Non
         "on the native surface, open-loop best-effort",
     )
     ap.add_argument(
+        "--record", nargs="?", const="", default=None, metavar="CAMERAS",
+        help="record the simulated robot's cameras every sim step into the "
+        "trial's frames/ (what `robocli demo` renders); a comma-separated "
+        "camera list, or none for the profile's cameras.record. Rendering "
+        "costs wall clock on whole-room scenes: record a replay "
+        "(--operator script), not the experiment",
+    )
+    ap.add_argument(
         "--wall-clock-min", type=float, default=None,
         help="override of the config's protocol.active_wall_clock_minutes "
         "(the config is the default's single source)",
@@ -97,6 +105,9 @@ def run(args: argparse.Namespace) -> int:
         args.token_file = str(Path(args.token_file).expanduser().resolve())
     args.task_ids = [int(x) for x in str(args.task_ids).split(",")]
     args.seeds = [int(x) for x in str(args.seeds).split(",")]
+    # None: no recording; (): the profile's cameras.record; names: those.
+    record_cameras = (None if args.record is None
+                      else tuple(c.strip() for c in args.record.split(",") if c.strip()))
 
     home = paths.home(args.home)
     cfg_path = paths.find("benchmarks", args.config, home).resolve()
@@ -104,6 +115,13 @@ def run(args: argparse.Namespace) -> int:
     if cfg["machine"]["backend"].get("kind") != "sim" and not args.task:
         raise UsageError("a real robot has no benchmark task to ask for",
                          hint="pass --task \"<what the agent should do>\"")
+    if record_cameras is not None and cfg["machine"]["backend"].get("kind") != "sim":
+        raise UsageError("a real robot has no renderer to record from",
+                         hint="drop --record")
+    if record_cameras == () and not cfg["machine"].get("cameras", {}).get("record"):
+        raise UsageError("--record needs camera names: the robot profile sets no "
+                         "cameras.record", hint="pass --record <main>,<inset> or add "
+                         "cameras.record to the profile")
     if args.wall_clock_min is None:
         args.wall_clock_min = resolve_wall_clock_min(cfg)
     # The per-suite view, computed exactly once; everyone downstream
@@ -134,6 +152,7 @@ def run(args: argparse.Namespace) -> int:
                     credentials_dir=args.credentials_dir,
                     account_alias=args.account_alias, script=args.script,
                     token_file=args.token_file, home=home, task=args.task,
+                    record_cameras=record_cameras,
                 )
             except lock.TrialLocked as e:
                 # Not a failure of this trial: someone else is doing it.

@@ -3,7 +3,7 @@
 Registration order is the ``--help`` order.
 """
 
-from robocli.cli.commands import (agent, build, config, doctor, down, list, probe, run,
-                                  up)
+from robocli.cli.commands import (agent, build, config, demo, doctor, down, list, probe,
+                                  run, up)
 
-COMMANDS = (list, build, up, agent, down, run, probe, config, doctor)
+COMMANDS = (list, build, up, agent, down, run, demo, probe, config, doctor)

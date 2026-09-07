@@ -66,6 +66,8 @@ FORBIDDEN = {
     # the shared leaves are leaves
     "config": _HOST | {"robocli.robot"} | _TOP,
     "errors.py": _HOST | {"robocli.robot", "robocli.config"} | _TOP,
+    # demo renders a trial's files; it sees errors and nothing else
+    "demo": _HOST | _BRIDGE | _TOP | {"robocli.robot", "robocli.config"},
     # doctor sits with cli above the units; nothing below imports it
     "doctor": _BRIDGE | {"robocli.testing"},
     "cli": _BRIDGE | {"robocli.testing"},

@@ -135,13 +135,19 @@ the workspace it left behind; the run directory keeps a `SUMMARY.md`
 regenerated from those files after every trial. Building the simulator checkouts:
 [docs/simulation.md](docs/simulation.md).
 
+A trial replays from its own `commands.sh`, and a replay with
+`--record` renders as a video, terminal on the left, cameras on the
+right (`robocli demo <trial>`; see
+[running-experiments.md](docs/running-experiments.md#making-a-demo-video)).
+
 ## Architecture
 
 Six units, one direction of dependency: `robot/` (the machine, simulated
 or real), `sandbox/` (the agent's terminal and workspace), `proxy/`
 (the only route out), `agents/` (the agent contract, registry and
 launcher), `runner/` (bring-up, preflight, operator, verdict, record),
-`cli/`. Who may import whom is enforced by CI (import-linter and
+`cli/`; beside them `demo/` renders a recorded trial's files into a
+video. Who may import whom is enforced by CI (import-linter and
 `tests/architecture/`). The prose is [docs/architecture.md](docs/architecture.md).
 
 ## Documentation
@@ -154,7 +160,7 @@ launcher), `runner/` (bring-up, preflight, operator, verdict, record),
 | [examples/real-robot.md](examples/real-robot.md) | the same flow on a real ROS 2 arm |
 | [docs/simulation.md](docs/simulation.md) | the simulator checkouts and GPU rendering |
 | [docs/podman.md](docs/podman.md) | machines without Docker |
-| [docs/running-experiments.md](docs/running-experiments.md) | `robocli run`, the `runs/` layout, every record field |
+| [docs/running-experiments.md](docs/running-experiments.md) | `robocli run`, the `runs/` layout, every record field, replays and demo videos |
 | [docs/cli.md](docs/cli.md) | every verb and flag, exit codes (generated) |
 | [docs/config.md](docs/config.md) | every config key (generated) |
 | [docs/agents.md](docs/agents.md) | adding a coding agent |

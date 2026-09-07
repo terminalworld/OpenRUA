@@ -116,6 +116,7 @@ A simulated robot: a container running the bridge over a simulator venv.
 | `names` | list[str] \| null | None | camera names; null = every camera the scene defines |
 | `rate_hz` | float | 2.0 | wall-clock publish rate |
 | `render_mode` | 'on_demand' \| 'always' | 'on_demand' | render a camera only while subscribed, or always |
+| `record` | list[str] \| null | None | the cameras `robocli run --record` captures when none are named: the first is a demo's main view, the second its inset |
 
 ## Control
 

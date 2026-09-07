@@ -21,7 +21,8 @@ is visible to the agent.
 | `robocli/proxy/` | a whitelist HTTP proxy, the sandbox's only route out. | `python -m robocli.proxy` |
 | `robocli/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, hooks under `plugins/agents/`, bundled then `~/.robocli/`), the launcher, credentials staging, the prompts. | `python -m robocli.agents launch` |
 | `robocli/runner/` | running trials: `main.py` (`robocli run`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `robocli run` |
-| `robocli/cli/` | the command line: one module per verb under `commands/` (`robots / benchmarks / agents / build / up / agent / down / run / probe / config / doctor`), `output.py`, `state.py`. | `robocli` |
+| `robocli/demo/` | a video from a recorded trial's files (`frames/`, `ops.jsonl`): `compose.py` renders the terminal beside the cameras. Reads files, imports `errors` only; its libraries are the `demo` extra. | `robocli demo` |
+| `robocli/cli/` | the command line: one module per verb under `commands/` (`robots / benchmarks / agents / build / up / agent / down / run / demo / probe / config / doctor`), `output.py`, `state.py`. | `robocli` |
 | `robocli/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, login, the user directory), `report.py`. | `robocli doctor` |
 
 Shared leaves, importable by every host-side unit and by nothing in
@@ -73,6 +74,9 @@ robocli/configs/{robots,benchmarks,agents}/, robocli/plugins/agents/   bundled, 
 - The schema (`config`) is read by the runner, the cli and the agents
   registry; the other units read validated dicts and never import it.
 - Only the runner (`runner/bringup.py`, used by `robocli run` and `robocli up`) brings robots up.
+- `demo` reads a trial directory and imports `errors` only; recording
+  itself is the bridge's (a `Recording` handed to its monitor) and is
+  switched on by `robocli run --record`, never by the demo unit.
 - `cli`, `doctor` and `testing` sit above the units; no unit imports them.
 
 The contract is stated in `pyproject.toml` (import-linter) and again in

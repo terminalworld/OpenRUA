@@ -36,6 +36,7 @@ machine:
     render_mode: on_demand  # render a camera only while subscribed
                             # (indistinguishable to the agent; 'always'
                             # renders regardless, for debugging)
+    record: [robot0_agentview_left, robot0_eye_in_hand]  # --record default: main view, inset
 
   control:               # graph-side actuation behavior (named apart from
                          # the gripper/arm facts below, which feed machine.yaml)
