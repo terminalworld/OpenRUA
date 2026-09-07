@@ -8,7 +8,8 @@ from robocli import demo
 
 
 def run(args) -> int:
-    style = demo.Style(fps=args.fps, font_size=args.font_size, speed=args.speed)
+    style = demo.Style(fps=args.fps, font_size=args.font_size, speed=args.speed,
+                       typing=not args.no_typing)
     if args.size:
         w, h = args.size.lower().split("x")
         style.width, style.height = int(w), int(h)
@@ -45,4 +46,6 @@ def add_parser(sub) -> None:
     p.add_argument("--speed", type=float, default=1.0,
                    help="sim steps per video frame (default 1: real-time robot motion)")
     p.add_argument("--font-size", type=int, default=13, help="terminal font size (default 13)")
+    p.add_argument("--no-typing", action="store_true",
+                   help="show each command at once instead of typing it out")
     p.set_defaults(fn=run)

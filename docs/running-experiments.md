@@ -46,7 +46,7 @@ verdict is recorded as not applicable, and nothing is reset.
     provenance.json           code, simulator, images, prompt, engine
     result.json               verdict, preflight, termination, accounting
     transcript.jsonl          the agent's full session (operator agent)
-    commands.sh               the agent's shell, write and edit operations, in order
+    commands.sh               what ran: the agent's shell, write and edit operations, or the replayed file
     ops.jsonl                 the same operations with output heads and wall times
     frames/                   every sim step's camera frames (--record only)
     bridge.log, moveit.log    the robot's own logs
@@ -144,8 +144,11 @@ robocli demo runs/libero_pro/demo/trials/libero_goal_task-3/seed0 --gif
 profile's `cameras.record` (or the names you give it) under the
 trial's `frames/`; `robocli demo` composes them with `ops.jsonl` into
 `demo.mp4`, the commands typed on the left and the cameras on the
-right, one sim step per video frame, and `--gif` adds a smaller
-`demo.gif` for a README. Rendering needs the `demo` extra: `pip install
+right, both on the trial's own clock (a command, the motion it caused,
+its output), one sim step per video frame, and `--gif` adds a smaller
+`demo.gif` for a README. `--ops START:END` renders a slice of the
+operations and `--speed` plays several steps per frame, which is how a
+clip gets short enough for a README. Rendering needs the `demo` extra: `pip install
 'robocli-harness[demo]'`.
 
 `--record` works on a live agent run too, but rendering every step

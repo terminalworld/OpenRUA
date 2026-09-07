@@ -118,7 +118,11 @@ def script_operator(ctx: dict) -> dict:
     path = ctx.get("script")
     if not path:
         raise ValueError("--operator script requires --script <file>")
-    ops = blocks(Path(path).read_text())
+    script = Path(path).read_text()
+    # The trial's own copy of what ran, as an agent trial has one
+    # extracted from its transcript.
+    (ctx["trial_dir"] / "commands.sh").write_text(script)
+    ops = blocks(script)
     meta: dict = {"operator": "script", "script": str(path), "ops": len(ops)}
     deadline = time.monotonic() + ctx["active_wall_clock_min"] * 60
     shell = Shell(ctx["sandbox"])

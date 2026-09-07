@@ -1,15 +1,20 @@
 """Compose ``demo.mp4`` (and ``demo.gif``) from a trial's frames and
 timed operations.
 
-Timeline: one beat per operation. A beat types the command, prints the
-head of its output, then plays the frames the robot wrote while that
-operation ran (matched by wall time: under the paused clock nothing
-moves between operations), one sim step per video frame. An operation
-that moved nothing holds briefly. The task sentence sits above the
+Two tracks on one clock. The terminal track has two events per
+operation, the command at ``t0`` and its output at ``t1``
+(``ops.jsonl``); the camera track has one event per recorded sim step
+(``frames/index.jsonl``). The video walks the merged timeline: a camera
+event is one video frame (``speed`` sim steps per frame), a command
+event types the line, an output event appends its head, and an idle
+stretch between events is compressed to a short hold. Under a paused
+clock this yields command, motion, output in turn; under a free-running
+clock the two tracks simply interleave. The task sentence sits above the
 camera; the verdict closes the video.
 
-``load`` and ``beats`` are pure file logic; ``Canvas`` paints one frame
-of the layout; ``render`` walks the beats and feeds the encoder.
+``load`` and ``timeline`` are pure file logic; ``Canvas`` paints one
+frame of the layout, repainting only the panel whose state changed;
+``render`` walks the timeline and feeds the encoder.
 """
 
 from __future__ import annotations
@@ -39,6 +44,7 @@ class Style:
     fps: int = 20
     font_size: int = 13
     speed: float = 1.0
+    typing: bool = True
     typing_chars_per_s: float = 80.0
     typing_max_s: float = 2.5
     output_lines: int = 8
@@ -95,15 +101,22 @@ def _jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
 
-def beats(index: list[dict], ops: list[dict]) -> list[dict]:
-    """Each operation with the frame records written while it ran."""
-    out = []
+def timeline(index: list[dict], ops: list[dict]) -> list[tuple]:
+    """The merged event stream, ``(t, kind, payload)`` in wall order:
+    ``command`` and ``output`` from the operations, ``frame`` from the
+    index. At equal times a command precedes the frames its operation
+    produced and an output follows them."""
+    order = {"command": 0, "frame": 1, "output": 2}
+    events: list[tuple] = []
     for op in ops:
-        t0, t1 = op.get("t0"), op.get("t1")
-        mine = [f for f in index
-                if t0 is not None and t1 is not None and t0 <= f["t"] <= t1]
-        out.append({**op, "frames": mine})
-    return out
+        if op.get("t0") is not None:
+            events.append((op["t0"], "command", op))
+        if op.get("t1") is not None:
+            events.append((op["t1"], "output", op))
+    for f in index:
+        events.append((f["t"], "frame", f))
+    events.sort(key=lambda e: (e[0], order[e[1]]))
+    return events
 
 
 def camera_names(index: list[dict]) -> list[str]:
@@ -138,6 +151,7 @@ class Terminal:
     def __init__(self, cols: int, rows: int):
         self.cols, self.rows = cols, rows
         self.lines: list[tuple[str, tuple]] = []
+        self.version = 0  # bumps on every change; the painter's cache key
 
     def add(self, text: str, color: tuple) -> None:
         for raw in text.split("\n"):
@@ -146,12 +160,14 @@ class Terminal:
                 raw = raw[self.cols:]
             self.lines.append((raw, color))
         self.lines = self.lines[-400:]
+        self.version += 1
 
     def mark(self) -> int:
         return len(self.lines)
 
     def reset(self, mark: int) -> None:
         del self.lines[mark:]
+        self.version += 1
 
     def visible(self) -> list[tuple[str, tuple]]:
         return self.lines[-self.rows:]
@@ -159,8 +175,10 @@ class Terminal:
 
 class Canvas:
     """One frame of the layout: terminal on the left, task sentence and
-    main camera on the right, inset bottom-right. Holds the fonts, the
-    terminal scrollback and a small cache of resized camera images."""
+    main camera on the right, inset bottom-right. Each side is painted
+    into its own panel image and repainted only when its state changed
+    (the terminal's version, the camera's step), whichever side that
+    is; a frame is the two panels pasted together."""
 
     def __init__(self, style: Style, frames_dir: Path, task: str,
                  main_cam: str, inset_cam: str | None, pil):
@@ -179,6 +197,8 @@ class Canvas:
         inset_w = self.camera_box[2] * 3 // 10
         self.inset_size = (inset_w, inset_w * 3 // 4)
         self._pictures: dict = {}
+        self._left: tuple = (None, None)   # (key, image)
+        self._right: tuple = (None, None)
 
     @property
     def cols(self) -> int:
@@ -209,10 +229,21 @@ class Canvas:
     def paint(self, frame: dict | None, cursor: bool = False):
         """The whole frame as a PIL image."""
         st = self.style
-        Image, ImageDraw = self.pil.Image, self.pil.ImageDraw
-        canvas = Image.new("RGB", (st.width, st.height), st.background)
-        draw = ImageDraw.Draw(canvas)
-        # terminal
+        left_key = (self.terminal.version, cursor)
+        if self._left[0] != left_key:
+            self._left = (left_key, self._paint_terminal(cursor))
+        right_key = frame["step"] if frame is not None else None
+        if self._right[0] != right_key:
+            self._right = (right_key, self._paint_panel(frame))
+        canvas = self.pil.Image.new("RGB", (st.width, st.height), st.background)
+        canvas.paste(self._left[1], (0, 0))
+        canvas.paste(self._right[1], (self.term_w, 0))
+        return canvas
+
+    def _paint_terminal(self, cursor: bool):
+        st = self.style
+        image = self.pil.Image.new("RGB", (self.term_w, st.height), st.background)
+        draw = self.pil.ImageDraw.Draw(image)
         y = MARGIN
         view = self.terminal.visible()
         for text, color in view:
@@ -222,24 +253,31 @@ class Canvas:
             w = draw.textlength(view[-1][0], font=self.font)
             draw.rectangle([MARGIN + 2 + w, y - self.line_h,
                             MARGIN + 2 + w + st.font_size * 0.6, y - 3], fill=st.text)
-        # panel: task sentence, main camera, inset
-        draw.rectangle([self.term_w, 0, st.width, st.height], fill=st.panel)
+        return image
+
+    def _paint_panel(self, frame: dict | None):
+        """Task sentence, main camera, inset; coordinates relative to the
+        panel's own left edge."""
+        st = self.style
+        image = self.pil.Image.new("RGB", (st.width - self.term_w, st.height), st.panel)
+        draw = self.pil.ImageDraw.Draw(image)
         y = 14
         for line in self.title:
-            draw.text((self.term_w + 16, y), line, font=self.title_font, fill=st.title)
+            draw.text((16, y), line, font=self.title_font, fill=st.title)
             y += self.line_h + 4
         x0, y0, w, h = self.camera_box
+        x0 -= self.term_w
         main = self.picture(frame, self.main_cam, (w, h))
         if main is not None:
-            canvas.paste(main, (x0, y0))
+            image.paste(main, (x0, y0))
         inset = self.picture(frame, self.inset_cam, self.inset_size)
         if inset is not None:
-            ix, iy = (st.width - 2 * MARGIN - self.inset_size[0],
+            ix, iy = (image.width - 2 * MARGIN - self.inset_size[0],
                       st.height - 2 * MARGIN - self.inset_size[1])
-            canvas.paste(inset, (ix, iy))
+            image.paste(inset, (ix, iy))
             draw.rectangle([ix, iy, ix + self.inset_size[0], iy + self.inset_size[1]],
                            outline=st.text)
-        return canvas
+        return image
 
 
 def _wrap(text: str, cols: int) -> list[str]:
@@ -320,35 +358,52 @@ def render(trial: Path, out: Path | None = None, *, cameras: tuple[str, ...] = (
     first_t = ops[0].get("t0")
     before = [f for f in index if first_t is None or f["t"] < first_t]
     frame = before[-1] if before else (index[0] if index else None)
+    events = [e for e in timeline(index, ops)
+              if first_t is None or e[0] >= first_t or e[1] != "frame"]
+    since = None  # frames since the last rendered camera event, for speed
 
     def emit(n: int, cursor: bool = False) -> None:
         for _ in range(n):
             encoder.add(canvas.paint(frame, cursor))
 
-    stride = max(1, int(round(style.speed)))
-    for beat in beats(index, ops):
-        shown = beat["command"]
-        if len(shown) > 3 * canvas.cols:
-            shown = shown[: 3 * canvas.cols - 3] + "..."
-        n_type = max(4, int(style.fps * min(len(shown) / style.typing_chars_per_s,
-                                            style.typing_max_s)))
-        mark = term.mark()
-        for k in range(n_type):
+    def type_command(text: str) -> None:
+        shown = text if len(text) <= 3 * canvas.cols else text[: 3 * canvas.cols - 3] + "..."
+        if style.typing:
+            n = max(4, int(style.fps * min(len(shown) / style.typing_chars_per_s,
+                                           style.typing_max_s)))
+            mark = term.mark()
+            for k in range(n):
+                term.reset(mark)
+                term.add("$ " + shown[: max(1, int(len(shown) * (k + 1) / n))], style.accent)
+                emit(1, cursor=True)
             term.reset(mark)
-            term.add("$ " + shown[: max(1, int(len(shown) * (k + 1) / n_type))], style.accent)
-            emit(1, cursor=True)
-        term.reset(mark)
         term.add("$ " + shown, style.accent)
-        lines = [ln for ln in beat.get("output", "").splitlines() if ln.strip()]
+
+    def show_output(text: str) -> None:
+        lines = [ln for ln in text.splitlines() if ln.strip()]
         if lines[: style.output_lines]:
             term.add("\n".join(lines[: style.output_lines]), style.dim)
         if len(lines) > style.output_lines:
             term.add(f"... ({len(lines) - style.output_lines} more lines)", style.dim)
-        motion = beat["frames"][::stride]
-        for frame in motion:
-            emit(1)
-        if not motion:
+
+    stride = max(1, int(round(style.speed)))
+    prev_t = None
+    for t, kind, payload in events:
+        # An idle stretch (nothing recorded on either track) plays as one
+        # short hold, not at its wall length.
+        if prev_t is not None and kind != "frame" and t - prev_t > style.hold_s:
             emit(int(style.fps * style.hold_s))
+        prev_t = t
+        if kind == "frame":
+            since = 0 if since is None else since + 1
+            if since % stride == 0:
+                frame = payload
+                emit(1)
+        elif kind == "command":
+            type_command(payload["command"])
+        else:
+            show_output(payload.get("output", ""))
+    emit(int(style.fps * style.hold_s))
 
     verdict = "TASK SUCCESS" if result.get("success") else "REPLAY END"
     term.add("", style.text)
