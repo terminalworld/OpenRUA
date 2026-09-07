@@ -1,7 +1,6 @@
 ---
-summary: How coding agents plug into RoboCLI and how to add your own
+summary: What the harness needs from a coding agent, and how to add your own
 read_when:
-  - You want to run a coding agent other than the bundled one
   - You are adding an agent
   - You want to know what the harness needs from an agent and what it does without
 ---
@@ -20,7 +19,8 @@ the agent through `robocli.agents.get(name)`:
   command, interactive command, transcript parsing, quota handling,
   replay), a subclass of `robocli.agents.Agent` exposing `HOOKS`.
 
-A test (`tests/test_agent_boundary.py`) fails the build if agent-specific
+Selecting, pinning and logging an agent in is in [install.md](install.md).
+A test (`tests/agents/test_agent_boundary.py`) fails the build if agent-specific
 knowledge appears anywhere else.
 
 ## The manifest
@@ -97,35 +97,6 @@ from robocli.testing import check_manifest
 def test_conforms():
     check_manifest("~/.robocli/agents/my-agent.yaml")
 ```
-
-## Using an agent
-
-- Configs: `agent.name: my-agent`, `agent.model`, `agent.options`
-  (over the manifest's `default_options`), `agent.credentials_dir`.
-  The same keys in `~/.robocli/config.yaml` are your defaults; the
-  package default agent is in `robocli/configs/config.yaml`.
-- Images: `robocli build sandbox --agent my-agent` and `robocli build
-  proxy --agent my-agent` take the install line and the whitelist from
-  the manifest. Several `--agent` bake several agents into one image;
-  the images carry a label per agent with the hash of what went in, and
-  `robocli doctor` compares it with what the selected agents' manifests
-  say today.
-- Versions: a manifest pins nothing, so `robocli build sandbox` installs
-  the agent's current release. To pin, say so where you build and where
-  you run: `robocli build sandbox --agent my-agent@1.2.3` and
-  `agent.version: 1.2.3` in the config (or `~/.robocli/config.yaml`).
-  With a pin, preflight checks the sandbox CLI against it; either way
-  every trial records the version the sandbox reported.
-- Login, two ways. A profile directory (`~/.robocli/credentials/<name>/`
-  by default, or `agent.credentials_dir`): log in once on the host with
-  that directory as the CLI's config dir; `login_hint` prints the
-  command, and the credentials file is bind-mounted into every sandbox
-  as one shared file. Or a token: `robocli run --token-file <path>`
-  points at a `KEY=value` file that docker hands to the agent process
-  only; `token_hint` says how to mint one. The token is scrubbed from
-  the trial record like any other secret.
-- Post-hoc: every trial's `operator_meta.agent` names the agent that
-  ran, so post-hoc tools resolve the same one.
 
 ## Bundled
 

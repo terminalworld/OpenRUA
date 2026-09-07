@@ -8,7 +8,7 @@ Real or simulated, on the robot's own ROS 2 command line.
 
 [![CI](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
-[![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy-22314E)](docs/ARCHITECTURE.md)
+[![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy-22314E)](docs/architecture.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
 <!-- demo GIF: Claude Code in a terminal — `ros2 topic list`, a camera
@@ -44,8 +44,7 @@ Claude Code opens in `/workspace` on the robot's terminal. It reads
 `FollowJointTrajectory` goal, and checks the result, exactly as it
 would on a real machine. `robocli doctor` tells you what is missing
 before the first `up` (Docker, the three images, the simulator
-checkout, an agent login). Machines without Docker can run everything
-under rootless Podman ([docs/podman.md](docs/podman.md)).
+checkout, an agent login); the details are in [docs/install.md](docs/install.md).
 
 ## How it works
 
@@ -138,28 +137,29 @@ regenerated from those files after every trial. Building the simulator checkouts
 
 ## Architecture
 
-```
-robocli/
-  cli/          robocli robots | benchmarks | agents | build | up | agent | down | run | config | doctor
-  doctor/       structured checks: docker, images, simulator, login
-  config/       the schema every file is checked against, the loader, where things live
-  configs/      bundled robots/, benchmarks/, agents/ (manifests), config.yaml (defaults)
-  plugins/      agents/: the hooks module behind each agent manifest
-  errors.py     errors with a fix and an exit code
-  testing.py    the agent conformance test
-  robot/        the machine: sim/ (container + bridge/, the robot's own software), real/
-  sandbox/      the agent's terminal + workspace/ (the docs and tools the agent sees)
-  agents/       the agent contract (base.py), the registry, the launcher, the prompts
-  proxy/        the whitelist proxy
-  runner/       run: bring-up, preflight, the operator, the verdict, the record
-tests/          one directory per unit + architecture/ (the layering contract)
-```
+Six units, one direction of dependency: `robot/` (the machine, simulated
+or real), `sandbox/` (the agent's terminal and workspace), `proxy/`
+(the only route out), `agents/` (the agent contract, registry and
+launcher), `runner/` (bring-up, preflight, operator, verdict, record),
+`cli/`. Who may import whom is enforced by CI (import-linter and
+`tests/architecture/`). The prose is [docs/architecture.md](docs/architecture.md).
 
-Who may import whom is written down twice and enforced by CI:
-[`pyproject.toml`](pyproject.toml) (import-linter) and
-[`tests/architecture/test_layering.py`](tests/architecture/test_layering.py). The prose version
-is [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md); how to add a robot,
-an agent or a config key is in [CONTRIBUTING.md](CONTRIBUTING.md).
+## Documentation
+
+| page | read when |
+|---|---|
+| [docs/install.md](docs/install.md) | setting a machine up: images, logins, doctor |
+| [examples/first-task.md](examples/first-task.md) | your first task on the simulated Panda |
+| [docs/your-own-robot.md](docs/your-own-robot.md) | describing your robot in one profile |
+| [examples/real-robot.md](examples/real-robot.md) | the same flow on a real ROS 2 arm |
+| [docs/simulation.md](docs/simulation.md) | the simulator checkouts and GPU rendering |
+| [docs/podman.md](docs/podman.md) | machines without Docker |
+| [docs/running-experiments.md](docs/running-experiments.md) | `robocli run`, the `runs/` layout, every record field |
+| [docs/cli.md](docs/cli.md) | every verb and flag, exit codes (generated) |
+| [docs/config.md](docs/config.md) | every config key (generated) |
+| [docs/agents.md](docs/agents.md) | adding a coding agent |
+| [docs/architecture.md](docs/architecture.md) | the units and the layering contract |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | conventions for code, names and docs |
 
 ## Paper
 

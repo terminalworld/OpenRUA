@@ -72,6 +72,17 @@ per unit (`tests/<unit>/`).
 - A docstring says what the unit does for its caller; a comment says
   why a line is the way it is when the code alone cannot.
 
+## Docs
+
+`docs/` is flat; the README's Documentation table lists every page in
+reading order, users first, contributors last. Each page starts with
+front matter: a one-line `summary` and a `read_when` list, so a reader
+knows in two lines whether the page is for them. `docs/cli.md` and
+`docs/config.md` are generated (`python scripts/render_docs.py`; CI
+runs `--check`), so a verb's help text and a schema field's
+`description` are the only places to write them. Worked examples live
+in `examples/`.
+
 ## Style
 
 - Every file runs on its own with parameters in and values or files
