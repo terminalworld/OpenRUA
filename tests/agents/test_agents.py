@@ -128,18 +128,18 @@ def test_launch_argv_pins_effort_explicitly():
     assert argv2[argv2.index("--effort") + 1] == "max"
 
 
-def test_launcher_default_proxy_matches_proxy_package_defaults():
-    # Leaves cannot import each other, so the launcher's hand-run default
-    # URL is a copy; this guard keeps it honest against the real sources
-    # (proxy ensure's default container name + build's default port).
-    import inspect
-
-    from robocli.agents.launcher import DEFAULT_PROXY
-    from robocli.proxy import build as pbuild
-    from robocli.proxy import up as pup
-    name = inspect.signature(pup.ensure).parameters["name"].default
-    port = inspect.signature(pbuild.build).parameters["port"].default
-    assert DEFAULT_PROXY == f"http://{name}:{port}"
+def test_launcher_takes_the_proxy_url_from_the_runner():
+    # No fallback URL in the launcher: the runner hands the proxy URL in,
+    # and the proxy package is the one place its name and port live.
+    import argparse
+    from robocli.agents import launcher
+    from robocli import proxy
+    assert "DEFAULT_PROXY" not in vars(launcher)
+    assert (proxy.NAME, proxy.PORT) == ("robocli-proxy", 8888)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--proxy", required=True)
+    with __import__("pytest").raises(SystemExit):
+        ap.parse_args([])
 
 
 # ------------------------------------------------------------ four doors

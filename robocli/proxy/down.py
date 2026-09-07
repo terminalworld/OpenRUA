@@ -12,6 +12,8 @@ import argparse
 import subprocess
 import sys
 
+from robocli.proxy import NAME
+
 
 def down(name: str = NAME) -> bool:
     """Remove the proxy container; True if it existed."""
