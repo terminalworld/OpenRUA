@@ -88,11 +88,11 @@ class Lock:
     """Released by the runner that took it, and by nobody else."""
 
     def __init__(self, path: Path):
-        self._path = path
+        self.path = path
 
     def release(self) -> None:
         try:
-            self._path.unlink()
+            self.path.unlink()
         except FileNotFoundError:
             pass
 

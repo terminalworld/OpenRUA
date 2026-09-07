@@ -107,6 +107,31 @@ def test_archive_prior_attempt_moves_evidence_down(tmp_path):
     assert archive_prior_attempt(trial) == trial / "attempts" / "attempt-0002"
 
 
+def test_archive_prior_attempt_keeps_what_it_is_told(tmp_path):
+    from robocli.runner.record import archive_prior_attempt
+    trial = tmp_path / "seed0"
+    trial.mkdir()
+    (trial / "result.json").write_text("{}")
+    (trial / ".claim").write_text("mine")
+    dest = archive_prior_attempt(trial, keep=[trial / ".claim"])
+    assert (trial / ".claim").read_text() == "mine"
+    assert not (dest / ".claim").exists()
+    assert (dest / "result.json").exists()
+
+
+def test_claim_keeps_its_lock_while_archiving(tmp_path):
+    from robocli.runner import lock
+    from robocli.runner.trial import claim
+    trial = tmp_path / "seed0"
+    trial.mkdir()
+    (trial / "result.json").write_text("{}")
+    held = claim(trial, "rc-x")
+    assert (trial / "attempts" / "attempt-0001" / "result.json").exists()
+    assert lock.holder(trial)["stem"] == "rc-x"  # still claimed while running
+    held.release()
+    assert lock.holder(trial) is None
+
+
 def test_provenance_pins_the_whole_chain(tmp_path):
     from robocli.runner.record import provenance
 
