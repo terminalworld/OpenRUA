@@ -51,3 +51,18 @@ def test_a_reused_pid_does_not_keep_a_claim_alive(tmp_path):
         taken.release()
     finally:
         other.kill()
+
+
+def test_holders_asks_docker_once_for_all_claims(tmp_path, monkeypatch):
+    calls = []
+    monkeypatch.setattr(lock, "running_containers",
+                        lambda stem="": calls.append(stem) or ["rc-up-000000-sim"])
+    for i in range(3):
+        d = tmp_path / f"seed{i}"
+        d.mkdir()
+        (d / lock.LOCK_NAME).write_text(json.dumps(
+            {"pid": 2 ** 22 + 7, "host": os.uname().nodename,
+             "stem": "rc-up-000000" if i == 0 else f"rc-down-{i:06d}"}))
+    rows = lock.holders(tmp_path)
+    assert calls == [""]
+    assert [r["live"] for r in rows] == [True, False, False]
