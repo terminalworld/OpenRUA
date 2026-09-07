@@ -145,7 +145,7 @@ class ClaudeCode(Agent):
         the opening one, which is then as old as the whole trial.
 
         Faithful and unreduced: picking the latest, or the latest per window,
-        is the consumer's policy (orchestration/quota_ledger.py). Rejections
+        is the consumer's policy (an accounting tool over many trials). Rejections
         are classification evidence and belong to scan_transcript(); this
         function reports them too, so history stays complete.
         """

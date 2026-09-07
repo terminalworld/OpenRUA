@@ -1,6 +1,6 @@
 """Clock semantics: paused (mainline) vs free-running (sub-experiment).
 
-Same code, two switches (notes/03, notes/11). Mainline = paused:
+Same code, two switches. Mainline = paused:
 sim time advances only when a command triggers a step; ``/clock``
 publishes sim time and every node on the graph runs with
 ``use_sim_time:=true``. Observation never advances the world; the
