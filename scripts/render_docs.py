@@ -140,7 +140,10 @@ def render_config() -> str:
         out.append(f"| `{where}` | [{model.__name__}](#{model.__name__.lower()}) |\n")
         collect(model)
     for model in seen:
-        doc = (model.__doc__ or "").strip().replace("\n", " ")
+        # Whitespace collapsed: Python 3.13 dedents docstrings at compile
+        # time and older versions do not; the page must not depend on
+        # which interpreter rendered it.
+        doc = " ".join((model.__doc__ or "").split())
         out.append(f"\n## {model.__name__}\n\n")
         if doc:
             out.append(doc + "\n\n")
