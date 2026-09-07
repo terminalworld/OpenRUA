@@ -53,8 +53,14 @@ def render_cli() -> str:
     from robocli.errors import EXIT_CODES
 
     ap = build_parser()
-    out = [CLI_HEAD, "```\n" + ap.format_help().rstrip() + "\n```\n"]
     verbs = next(a for a in ap._actions if isinstance(a, argparse._SubParsersAction))
+    # The verb table is laid out here, not by argparse: its column
+    # widths differ between Python versions and the page must not.
+    out = [CLI_HEAD, f"```\n{ap.format_usage().rstrip()}\n```\n\n| verb | does |\n|---|---|\n"]
+    for action in verbs._choices_actions:
+        out.append(f"| `{action.dest}` | {action.help} |\n")
+    out.append("\nGlobal options: `--home` (the user directory, default `$ROBOCLI_HOME` "
+               "or `~/.robocli`), `--version`.\n")
     for name, sub in verbs.choices.items():
         out.append(f"\n## robocli {name}\n\n```\n{sub.format_help().rstrip()}\n```\n")
         nested = [a for a in sub._actions if isinstance(a, argparse._SubParsersAction)]

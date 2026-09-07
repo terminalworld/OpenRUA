@@ -300,8 +300,12 @@ class _Encoder:
 
     def __init__(self, out: Path, style: Style, gif: bool, imageio, np):
         self.out, self.style, self.np = out, style, np
+        # x264 on every core with its fast preset: the encoder is the
+        # largest share of a frame's cost once painting is cached.
         self.writer = imageio.get_writer(str(out), fps=style.fps, codec="libx264",
-                                         quality=8, macro_block_size=None)
+                                         quality=8, macro_block_size=None,
+                                         ffmpeg_params=["-preset", "veryfast",
+                                                        "-threads", "0"])
         self.gif_frames: list = [] if gif else None
         self.gif_every = max(1, round(style.fps / style.gif_fps))
         self.count = 0

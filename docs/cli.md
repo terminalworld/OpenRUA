@@ -12,33 +12,25 @@ Generated from the parsers by `scripts/render_docs.py`; edit the
 
 ```
 usage: robocli [-h] [--version] [--home HOME] <verb> ...
-
-The command line: ``robocli <verb> ...``.
-
-positional arguments:
-  <verb>
-    robots      list the robots: bundled, then ~/.robocli/robots/
-    benchmarks  list the benchmarks: bundled, then ~/.robocli/benchmarks/
-    agents      list the agents: bundled, then ~/.robocli/agents/
-    build       build the robot / sandbox / proxy image
-    up          bring a robot up with a sandbox terminal on it
-    agent       open a coding agent on the robot's terminal
-    down        power a robot and its terminal off
-    run         run a task set: one trial per task and seed
-    ps          list the attempts running under a runs root (--all: stale
-                claims too)
-    demo        render a recorded trial as a video (terminal + cameras)
-    probe       draft a robot profile from a live ROS 2 graph
-    config      the configuration schema
-    doctor      check the install: docker, images, simulator, login
-
-options:
-  -h, --help    show this help message and exit
-  --version     show program's version number and exit
-  --home HOME   the user directory: your robots/, benchmarks/, agents/,
-                credentials/, simulators/ (default: $ROBOCLI_HOME or
-                ~/.robocli)
 ```
+
+| verb | does |
+|---|---|
+| `robots` | list the robots: bundled, then ~/.robocli/robots/ |
+| `benchmarks` | list the benchmarks: bundled, then ~/.robocli/benchmarks/ |
+| `agents` | list the agents: bundled, then ~/.robocli/agents/ |
+| `build` | build the robot / sandbox / proxy image |
+| `up` | bring a robot up with a sandbox terminal on it |
+| `agent` | open a coding agent on the robot's terminal |
+| `down` | power a robot and its terminal off |
+| `run` | run a task set: one trial per task and seed |
+| `ps` | list the attempts running under a runs root (--all: stale claims too) |
+| `demo` | render a recorded trial as a video (terminal + cameras) |
+| `probe` | draft a robot profile from a live ROS 2 graph |
+| `config` | the configuration schema |
+| `doctor` | check the install: docker, images, simulator, login |
+
+Global options: `--home` (the user directory, default `$ROBOCLI_HOME` or `~/.robocli`), `--version`.
 
 ## robocli robots
 
