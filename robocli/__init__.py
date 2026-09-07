@@ -26,6 +26,6 @@ imports it and reaches it only over DDS (the agent) or its stdio line
 from importlib.metadata import PackageNotFoundError, version as _version
 
 try:
-    __version__ = _version("robocli")
+    __version__ = _version("robocli-harness")
 except PackageNotFoundError:  # a checkout that was never installed
     __version__ = "0+unknown"
