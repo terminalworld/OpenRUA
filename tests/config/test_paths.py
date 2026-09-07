@@ -9,7 +9,7 @@ from robocli.config import paths
 def test_home_defaults_and_overrides(tmp_path):
     assert paths.home() == Path("~/.robocli").expanduser()
     assert paths.home(tmp_path) == tmp_path
-    assert paths.robots_dir(tmp_path) == tmp_path / "robots"
+    assert paths.user_dir("robots", tmp_path) == tmp_path / "robots"
     assert paths.credentials_dir(tmp_path) == tmp_path / "credentials"
     assert paths.config_path(tmp_path) == tmp_path / "config.yaml"
 
