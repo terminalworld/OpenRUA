@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from robocli import agents
+from robocli import agents, proxy
 from robocli.config import (apply_suite_overrides, load_config, normalize_arms,
                             resolve_wall_clock_min)
 from robocli.config import paths
@@ -119,7 +119,7 @@ def run(args: argparse.Namespace) -> int:
         cfg_path, cfg, args, agent=agent,
         template_hash=workspace.template_hash(cfg),
         prompt=agents.PROMPT, resume_prompt=agents.RESUME_PROMPT,
-        code_root=paths.code_root(),
+        code_root=paths.code_root(), proxy_image=proxy.IMAGE,
         simulator_venv=simulator_venv(cfg["machine"].get("backend", {}), home),
     ), "config": cfg}
     record.write_run_config(run_dir, prov)

@@ -16,6 +16,7 @@ from pathlib import Path
 from robocli import robot
 from robocli.config import paths
 from robocli.errors import NotFound
+from robocli import proxy
 from robocli.proxy.up import url_from_network as proxy_url_from_network
 from robocli.runner import record
 from robocli.sandbox.down import down as sandbox_down
@@ -49,7 +50,7 @@ def peers_profile(peers: list[str]) -> str:
 
 
 def sandbox_reachability(backend: dict, network: str, robot_name: str,
-                         proxy_url: str, proxy_name: str = "robocli-proxy") -> dict:
+                         proxy_url: str, proxy_name: str = proxy.NAME) -> dict:
     """How the sandbox reaches the robot's graph and the proxy, as
     ``sandbox.up`` keyword arguments.
 

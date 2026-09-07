@@ -25,6 +25,10 @@ and imports no other unit.
 
 from robocli.errors import UnavailableError
 
+NAME = "robocli-proxy"    # the standing container
+IMAGE = "robocli-proxy"   # the image robocli build proxy produces
+PORT = 8888               # tinyproxy's listen port, also stamped on the image as a label
+
 
 class ProxyError(UnavailableError):
     """Failure of a proxy verb (see SandboxError: libraries raise

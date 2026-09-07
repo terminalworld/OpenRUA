@@ -22,7 +22,7 @@ import subprocess
 import sys
 import time
 
-from robocli.proxy import ProxyError
+from robocli.proxy import ProxyError, IMAGE, NAME
 
 
 def _running(name: str) -> str:
@@ -59,8 +59,8 @@ def _port(name: str) -> str:
     return out
 
 
-def ensure(network: str, name: str = "robocli-proxy",
-           image: str = "robocli-proxy") -> str:
+def ensure(network: str, name: str = NAME,
+           image: str = IMAGE) -> str:
     """Ensure the proxy serves ``network``; returns its URL.
 
     - a stopped proxy (host reboot, crash) is revived with ``docker
@@ -119,8 +119,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--network", required=True,
                     help="internal docker network the proxy serves")
-    ap.add_argument("--name", default="robocli-proxy")
-    ap.add_argument("--image", default="robocli-proxy")
+    ap.add_argument("--name", default=NAME)
+    ap.add_argument("--image", default=IMAGE)
     args = ap.parse_args()
     try:
         print(ensure(network=args.network, name=args.name, image=args.image))
