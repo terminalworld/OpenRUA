@@ -18,7 +18,7 @@ from robocli.config import apply_suite_overrides, compose, normalize_arms
 from robocli.config import paths
 from robocli.errors import UnavailableError
 from robocli.proxy.up import ensure as ensure_proxy
-from robocli.runner.bringup import bring_up, ensure_internal_network
+from robocli.runner.bringup import bring_up, ensure_internal_network, start_episode
 from robocli.sandbox.down import down as sandbox_down
 
 
@@ -53,10 +53,7 @@ def run(args) -> int:
                                hint=f"read {workdir / 'robot.log'}") from e
     try:
         if cfg["machine"]["backend"]["kind"] == "sim":
-            r = machine.rpc({"cmd": "reset", "init_state_id": args.init_state})
-            if not r.get("ok"):
-                raise RuntimeError(f"reset failed: {r}")
-            task = machine.rpc({"cmd": "task_info"}).get("language", "")
+            task = start_episode(machine, args.init_state).get("language", "")
         else:
             task = args.task or ""
     except Exception as e:  # noqa: BLE001

@@ -33,8 +33,7 @@ def _discovery(args) -> dict:
 def _exec_in(sandbox: str):
     def run(cmd: str) -> str:
         r = subprocess.run(
-            ["docker", "exec", sandbox, "bash", "-lc",
-             "source /opt/ros/${ROS_DISTRO:-jazzy}/setup.bash && " + cmd],
+            ["docker", "exec", sandbox, "bash", "-c", cmd],
             capture_output=True, text=True, timeout=120)
         return r.stdout
     return run

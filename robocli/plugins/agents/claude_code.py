@@ -61,11 +61,7 @@ class ClaudeCode(Agent):
         if session_id:
             session = ["--resume", session_id] if resume else ["--session-id", session_id]
         return [
-            "docker", "exec",
-            "-u", "robot", "-w", "/workspace",
-            *(["--env-file", token_file] if token_file else []),
-            *self._env(proxy, opts),
-            sandbox,
+            *self.exec_argv(sandbox, self._env(proxy, opts), token_file),
             "claude",
             *session,
             "-p", prompt,
@@ -86,10 +82,7 @@ class ClaudeCode(Agent):
         prompt becomes the opening message."""
         opts = self._opts(options)
         return [
-            "docker", "exec", "-it",
-            "-u", "robot", "-w", "/workspace",
-            *self._env(proxy, opts),
-            sandbox,
+            *self.exec_argv(sandbox, self._env(proxy, opts), interactive=True),
             "claude", "--model", model, "--effort", str(opts["effort"]),
             *([prompt] if prompt else []),
         ]

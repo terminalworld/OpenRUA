@@ -51,11 +51,7 @@ class Codex(Agent):
         opts = self._opts(options)
         verb = ["exec", "resume", "--last"] if resume else ["exec"]
         return [
-            "docker", "exec",
-            "-u", "robot", "-w", "/workspace",
-            *(["--env-file", token_file] if token_file else []),
-            *self._env(proxy),
-            sandbox,
+            *self.exec_argv(sandbox, self._env(proxy), token_file),
             "codex", *verb,
             "--json",
             "--skip-git-repo-check",
@@ -71,10 +67,7 @@ class Codex(Agent):
                          prompt: str | None = None, **_: Any) -> list[str]:
         opts = self._opts(options)
         return [
-            "docker", "exec", "-it",
-            "-u", "robot", "-w", "/workspace",
-            *self._env(proxy),
-            sandbox,
+            *self.exec_argv(sandbox, self._env(proxy), interactive=True),
             "codex", "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox",
             "-C", "/workspace", "--model", model, *self._config_flags(opts),
             *([prompt] if prompt else []),

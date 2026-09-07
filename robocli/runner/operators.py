@@ -43,9 +43,8 @@ def script_operator(ctx: dict) -> dict:
     meta: dict = {"operator": "script", "script": str(path)}
     try:
         r = subprocess.run(
-            ["docker", "exec", name, "bash", "-c",
-             "source /opt/ros/${ROS_DISTRO:-jazzy}/setup.bash 2>/dev/null; "
-             "cd /workspace && bash /tmp/operator-script.sh"],
+            ["docker", "exec", "-w", "/workspace", name,
+             "bash", "/tmp/operator-script.sh"],
             timeout=ctx["active_wall_clock_min"] * 60,
             capture_output=True, text=True,
         )
