@@ -185,15 +185,16 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
     backend = ctx.cfg["machine"].get("backend", {})
     out: list[CheckResult] = []
     if backend.get("kind") == "sim":
-        sim = backend.get("image", "robocli-sim-jazzy")
+        sim = backend["image"]
         if docker_inspect("image", sim, "{{.Id}}") is None:
             out.append(CheckResult("robot-image", f"robot image {sim} missing", "error",
-                                   hint="robocli build robot"))
+                                   hint=f"robocli build robot --distro {backend['ros_distro']}"))
         else:
             out.append(CheckResult("robot-image", f"robot image {sim} present"))
-    sandbox = backend.get("sandbox_image", "robocli-sandbox")
+    sandbox = backend["sandbox_image"]
     names = " ".join(f"--agent {a.name}" for a in ctx.agents)
-    build = f"robocli build sandbox --tag {sandbox} {names}"
+    tag = "" if sandbox == config.schema.sandbox_image(backend["ros_distro"]) else f" --tag {sandbox}"
+    build = f"robocli build sandbox --distro {backend['ros_distro']}{tag} {names}"
     if docker_inspect("image", sandbox, "{{.Id}}") is None:
         out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} missing", "error",
                                hint=build))

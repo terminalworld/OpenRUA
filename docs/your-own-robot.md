@@ -43,6 +43,7 @@ the facts:
 machine:
   backend:
     kind: real
+    ros_distro: humble       # what the robot runs; the sandbox image follows (robocli-sandbox-humble)
     launch: ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur5e robot_ip:=192.168.1.20   # optional; omit if the graph is already up
     image: null              # or a docker image the launch command runs in (host network), for a driver on another ROS release
     discovery:
@@ -111,8 +112,8 @@ sandbox is the same toolchain and the same workspace, not containment.
 
 ## A simulated robot of your own
 
-The same profile with a `sim` backend names a simulator venv and the
-images to run; the bundled `panda-sim`, `panda-sim-humble` and
+The same profile with a `sim` backend names a simulator venv and its
+`ros_distro` (the robot and sandbox images follow from it); the bundled `panda-sim`, `panda-sim-humble` and
 `panda-omron-sim` are the templates, and [simulation.md](simulation.md)
 says where the venvs live. Adding a benchmark the bridge does not know
 is a loader under `robot/sim/bridge/environments/`, described in

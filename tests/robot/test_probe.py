@@ -26,7 +26,7 @@ def test_draft_reads_ports_joints_and_frames_from_the_graph():
     graph = read_graph(_fake_run)
     text = draft_profile(graph, {"network": "host"})
     d = yaml.safe_load(text)["machine"]
-    assert d["backend"] == {"kind": "real", "discovery": {"network": "host"}}
+    assert d["backend"] == {"kind": "real", "ros_distro": "jazzy", "discovery": {"network": "host"}}
     assert d["arm"]["joints"] == ["shoulder_pan_joint", "elbow_joint"]
     assert d["arm"]["limits_rad"] == [[-6.28, 6.28], [-3.14, 3.14]]
     assert d["gripper"]["open_m"] == 0.085 and d["gripper"]["closed_m"] == 0.0

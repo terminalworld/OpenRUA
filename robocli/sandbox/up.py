@@ -1,7 +1,7 @@
 """Verb ``up``: a reachable machine + its config -> one live sandbox.
 
     python3 -m robocli.sandbox.up --config <config.yaml> \
-        --workspace <dir> [--task-suite S] [--image robocli-sandbox] \
+        --workspace <dir> [--task-suite S] [--image robocli-sandbox-jazzy] \
         [--network host|<docker-net>] [--static-peer <hostname>] \
         [--ros-domain N] [--internet none|proxy:<url>|open] \
         [--name <container>] [--mount SRC:DST ...] [--env K=V ...]
@@ -38,9 +38,6 @@ from robocli.sandbox import SandboxError
 
 from . import workspace as _workspace
 
-DEFAULT_IMAGE = "robocli-sandbox"
-
-
 def load(config: Path) -> dict:
     """The resolved config file as a dict, with instructive errors."""
     config = Path(config)
@@ -55,8 +52,7 @@ def load(config: Path) -> dict:
     return cfg
 
 
-def up(cfg: dict, workspace: Path, *,
-       image: str = DEFAULT_IMAGE, network: str = "host",
+def up(cfg: dict, workspace: Path, *, image: str, network: str = "host",
        static_peer: str | None = None, ros_domain: int = 0,
        internet: str = "none", name: str | None = None,
        mounts: tuple[str, ...] = (), env: tuple[str, ...] = (),
@@ -176,8 +172,7 @@ def main() -> int:
     ap.add_argument("--workspace", required=True, type=Path,
                     help="host dir to seed and mount at /workspace")
     ap.add_argument("--image", default=None,
-                    help="sandbox image (default: config machine.backend.sandbox_image, "
-                    f"then {DEFAULT_IMAGE!r})")
+                    help="sandbox image (default: the config's machine.backend.sandbox_image)")
     ap.add_argument("--network", default="host",
                     help="'host' (real machine, multicast) or a docker "
                     "network name")
@@ -202,9 +197,11 @@ def main() -> int:
     args = ap.parse_args()
     try:
         cfg = load(args.config)
-        name = up(cfg, args.workspace,
-                  image=args.image or cfg.get("machine", {}).get("backend", {}).get(
-                      "sandbox_image", DEFAULT_IMAGE),
+        image = args.image or cfg.get("machine", {}).get("backend", {}).get("sandbox_image")
+        if not image:
+            raise SandboxError("no sandbox image: pass --image or a resolved config "
+                               "with machine.backend.sandbox_image")
+        name = up(cfg, args.workspace, image=image,
                   run_args=tuple(cfg.get("sandbox", {}).get("run_args", [])),
                   network=args.network, static_peer=args.static_peer,
                   ros_domain=args.ros_domain, internet=args.internet,

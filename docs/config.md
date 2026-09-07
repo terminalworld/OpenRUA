@@ -71,10 +71,11 @@ A real robot: its ROS 2 graph is already there or a launch command starts it.
 | key | type | default | meaning |
 |---|---|---|---|
 | `kind` | 'real' | **required** | a real robot |
+| `ros_distro` | 'jazzy' \| 'humble' | 'jazzy' | the ROS 2 distro the robot runs; the sandbox image is named after it |
 | `launch` | str \| null | None | command that brings the robot's ROS 2 graph up; null = already running |
 | `image` | str \| null | None | docker image the launch command runs in, on the host network (a vendor driver pinned to its own ROS release); null = run it on the host |
 | `discovery` | [Discovery](#discovery) | **required** | how the sandbox reaches the graph |
-| `sandbox_image` | str | 'robocli-sandbox' | agent terminal image (same ROS distro as the robot) |
+| `sandbox_image` | str \| null | None | agent terminal image; default: robocli-sandbox-<ros_distro> |
 
 ## Discovery
 
@@ -93,8 +94,9 @@ A simulated robot: a container running the bridge over a simulator venv.
 | key | type | default | meaning |
 |---|---|---|---|
 | `kind` | 'sim' | **required** | a simulated robot |
-| `image` | str | 'robocli-sim-jazzy' | simulated robot image |
-| `sandbox_image` | str | 'robocli-sandbox' | agent terminal image (same ROS distro as the robot) |
+| `ros_distro` | 'jazzy' \| 'humble' | 'jazzy' | the ROS 2 distro the robot runs; the robot and sandbox images are named after it |
+| `image` | str \| null | None | simulated robot image; default: robocli-sim-<ros_distro> |
+| `sandbox_image` | str \| null | None | agent terminal image; default: robocli-sandbox-<ros_distro> |
 | `gpus` | bool | False | render on the GPU (needs nvidia toolkit) |
 | `resources` | dict[str, Any] \| null | None | render_threads: int \| off \| auto |
 | `simulator` | [Simulator](#simulator) | **required** | the simulator venv the bridge runs in |

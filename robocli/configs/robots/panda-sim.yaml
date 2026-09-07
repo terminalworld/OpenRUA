@@ -11,11 +11,7 @@ world:
 machine:
   backend:                  # how the robot is provided
     kind: sim
-    # Spelled out rather than left to the code's default, so the profile
-    # says which images it runs and the record carries the digests of
-    # the images that actually ran.
-    image: robocli-sim-jazzy
-    sandbox_image: robocli-sandbox
+    ros_distro: jazzy   # names the robot and sandbox images (robocli-sim-jazzy, robocli-sandbox-jazzy)
     simulator:
       venv: cap-x/.venv-libero   # py3.12
       container: sim-jazzy

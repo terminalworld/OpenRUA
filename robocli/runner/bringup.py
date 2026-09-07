@@ -19,7 +19,6 @@ from robocli.errors import NotFound
 from robocli.proxy.up import url_from_network as proxy_url_from_network
 from robocli.runner import record
 from robocli.sandbox.down import down as sandbox_down
-from robocli.sandbox.up import DEFAULT_IMAGE as DEFAULT_SANDBOX_IMAGE
 from robocli.sandbox.up import up as sandbox_up
 
 # ROS_STATIC_PEERS exists only from Iron on; Humble's Fast DDS ignores
@@ -125,7 +124,7 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     sandbox_up(
         cfg,
         dest / "workspace",
-        image=backend.get("sandbox_image", DEFAULT_SANDBOX_IMAGE),
+        image=backend["sandbox_image"],
         run_args=tuple(cfg.get("sandbox", {}).get("run_args", [])),
         ros_domain=ros_domain,
         name=sandbox_name,

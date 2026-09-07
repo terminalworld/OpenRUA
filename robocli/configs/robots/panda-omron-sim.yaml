@@ -10,8 +10,7 @@ world:
 machine:
   backend:
     kind: sim
-    image: robocli-sim-humble    # py3.10 == Humble, the same image as capbench
-    sandbox_image: robocli-sandbox-humble  # sandbox distro == robot distro
+    ros_distro: humble   # names the robot and sandbox images (robocli-sim-humble, robocli-sandbox-humble)
     gpus: false                  # true on a GPU host (nvidia-container-toolkit
                                  # required): EGL rendering moves to the GPU
                                  # (~214 -> ~10 ms/frame on whole-room

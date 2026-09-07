@@ -112,9 +112,8 @@ options:
 
 ```
 usage: robocli build sandbox [-h] [--agent NAME[@VERSION]]
-                             [--preinstall PREINSTALL]
-                             [--ros-distro ROS_DISTRO] [--robot-uid ROBOT_UID]
-                             [--tag TAG]
+                             [--preinstall PREINSTALL] [--distro DISTRO]
+                             [--robot-uid ROBOT_UID] [--tag TAG]
 
 options:
   -h, --help            show this help message and exit
@@ -124,11 +123,11 @@ options:
                         configured default)
   --preinstall PREINSTALL
                         install line to bake instead of the agents' manifests
-  --ros-distro ROS_DISTRO
-                        ROS 2 distro: jazzy | humble
+  --distro DISTRO       ROS 2 distro: jazzy | humble (the robot's; profiles
+                        name it as ros_distro)
   --robot-uid ROBOT_UID
                         container uid (default: the current user)
-  --tag TAG
+  --tag TAG             image tag (default: robocli-sandbox-<distro>)
 ```
 
 ### robocli build proxy
@@ -273,7 +272,7 @@ options:
 ```
 usage: robocli probe [-h] [--host] [--static-peers ADDR[,ADDR]]
                      [--discovery-server HOST:PORT] [--ros-domain ROS_DOMAIN]
-                     [--image IMAGE] [--name NAME]
+                     [--distro DISTRO] [--image IMAGE] [--name NAME]
 
 Start a throwaway sandbox that can see the robot's graph (or reuse a live
 robot's), read its topics, actions, services and /robot_description, and print
@@ -289,7 +288,10 @@ options:
                         reach the graph through a Fast DDS discovery server
   --ros-domain ROS_DOMAIN
                         ROS_DOMAIN_ID of the graph
-  --image IMAGE         sandbox image to probe from (default: robocli-sandbox)
+  --distro DISTRO       the robot's ROS 2 distro: jazzy | humble (picks the
+                        sandbox image)
+  --image IMAGE         sandbox image to probe from (default: robocli-
+                        sandbox-<distro>)
   --name NAME           probe from a robot already up under this handle
                         instead
 ```

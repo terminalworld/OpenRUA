@@ -53,7 +53,7 @@ def run(args) -> int:
         chosen = manifests_for(args.agent, args.home)
         preinstall = (args.preinstall if args.preinstall is not None
                       else agents.preinstall(chosen))
-        tag, digest = build_sandbox(preinstall=preinstall, ros_distro=args.ros_distro,
+        tag, digest = build_sandbox(preinstall=preinstall, distro=args.distro,
                             robot_uid=args.robot_uid, tag=args.tag,
                             labels=agent_labels(chosen, "install"))
     else:
@@ -83,10 +83,11 @@ def add_parser(sub) -> None:
                    "otherwise the current release (default: the configured default)")
     s.add_argument("--preinstall", default=None,
                    help="install line to bake instead of the agents' manifests")
-    s.add_argument("--ros-distro", default="jazzy", help="ROS 2 distro: jazzy | humble")
+    s.add_argument("--distro", default="jazzy", help="ROS 2 distro: jazzy | humble "
+                   "(the robot's; profiles name it as ros_distro)")
     s.add_argument("--robot-uid", type=int, default=None,
                    help="container uid (default: the current user)")
-    s.add_argument("--tag", default="robocli-sandbox")
+    s.add_argument("--tag", default=None, help="image tag (default: robocli-sandbox-<distro>)")
 
     x = units.add_parser("proxy", help="the whitelist proxy image")
     x.add_argument("--agent", action="append", default=None,
