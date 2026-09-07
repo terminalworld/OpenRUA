@@ -216,6 +216,7 @@ class Agent:
     def replay_ops(self, transcript: Path) -> list[dict]:
         """The agent's world-facing operations in order, each one of
         ``{kind: "shell", command}``, ``{kind: "write", path, content}`` or
-        ``{kind: "edit", path, old, new, replace_all}``, plus ``output``
-        and ``duration_s``. Default: [] (no replay)."""
+        ``{kind: "edit", path, old, new, replace_all}``, plus ``output``,
+        ``duration_s`` and the wall times ``t0``/``t1`` (unix seconds,
+        None when the transcript has none). Default: [] (no replay)."""
         return []

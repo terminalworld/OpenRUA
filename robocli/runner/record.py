@@ -119,12 +119,32 @@ def _edit_as_command(op: dict) -> str:
             f"{m}")
 
 
+OP_MARKER = "# robocli op "
+OUTPUT_HEAD = 4000  # characters of an operation's output kept in ops.jsonl
+
+
+def as_command(op: dict) -> str | None:
+    """One operation as the shell that performs it: a shell command
+    verbatim, a write or an edit as a here-doc. None for anything
+    without a world effect."""
+    kind = op.get("kind")
+    if kind == "write":
+        return _write_as_command(op.get("path", ""), op.get("content", ""))
+    if kind == "edit":
+        return _edit_as_command(op)
+    if kind == "shell" and op.get("command"):
+        return op["command"]
+    return None
+
+
 def extract_commands(transcript: Path, out: Path, agent) -> None:
     """The agent's world-facing operations in order, every detour
     included: shell commands verbatim, writes and edits as shell
     here-docs (agents keep scripts in the sandbox's /tmp, which is not
     in the archived workspace); reads are not extracted (no world
-    effect; they stay in the transcript).
+    effect; they stay in the transcript). A ``# robocli op N`` line
+    opens each operation, which is how ``--operator script`` replays
+    the file one operation at a time.
 
     Evidence first; the same file feeds ``--operator script`` for
     open-loop replay. The agent ran closed-loop, so an identical outcome
@@ -136,18 +156,32 @@ def extract_commands(transcript: Path, out: Path, agent) -> None:
     lines = ["#!/usr/bin/env bash",
              f"# auto-extracted from {transcript.name} "
              "(shell + write/edit condensate)", ""]
-    for op in agent.replay_ops(transcript):
-        kind = op.get("kind")
-        if kind == "write":
-            lines.append(_write_as_command(op.get("path", ""), op.get("content", "")))
-        elif kind == "edit":
-            lines.append(_edit_as_command(op))
-        elif kind == "shell" and op.get("command"):
-            lines.append(op["command"])
-        else:
+    for i, op in enumerate(agent.replay_ops(transcript)):
+        cmd = as_command(op)
+        if cmd is None:
             continue
-        lines.append("")
+        lines += [f"{OP_MARKER}{i}", cmd, ""]
     out.write_text("\n".join(lines))
+
+
+def write_ops(trial_dir: Path, ops: Iterable[dict]) -> Path:
+    """``ops.jsonl``: the timed operation stream a demo is rendered from.
+    One line per operation: ``i``, ``kind``, the shell text (``command``),
+    the output's head and the wall times ``t0``/``t1`` at which it ran.
+    From a transcript the times are the agent's; from a script replay
+    the operator's own."""
+    path = trial_dir / "ops.jsonl"
+    with path.open("w") as f:
+        for i, op in enumerate(ops):
+            cmd = as_command(op)
+            if cmd is None:
+                continue
+            f.write(json.dumps({
+                "i": i, "kind": op.get("kind"), "command": cmd,
+                "output": str(op.get("output", ""))[:OUTPUT_HEAD],
+                "t0": op.get("t0"), "t1": op.get("t1"),
+            }) + "\n")
+    return path
 
 
 def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
@@ -209,6 +243,11 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
         # comparable across devices; recorded so nobody digs it out of
         # bridge.log.
         "gpu_render": bool(backend.get("gpus", False)),
+        # Camera recording renders every step and costs wall clock, so a
+        # recorded trial says so: None = off, [] = the profile's
+        # cameras.record, else the names given.
+        "record": (None if getattr(args, "record", None) is None
+                   else [c for c in str(args.record).split(",") if c.strip()]),
         # Whatever answers to `docker` on this host (Docker Engine or a
         # podman with its docker-compatible command); one string as the
         # engine prints it, plus the flags the sandbox container took.
@@ -356,8 +395,12 @@ def archive_prior_attempt(trial_dir: Path, keep: Iterable[Path] = ()) -> Path | 
 
 def finalize_trial(trial_dir: Path, agent, secrets: list[str]) -> None:
     """After a trial: scrub secrets from everything the agent or the sim
-    could have echoed, then extract the replay script."""
+    could have echoed, then extract the replay script and the timed
+    operation stream from the transcript (an operator that wrote
+    ``ops.jsonl`` itself has no transcript)."""
     transcript = trial_dir / "transcript.jsonl"
     scrub_file(transcript, secrets)
     scrub_file(trial_dir / "bridge.log", secrets)
-    extract_commands(transcript, trial_dir / "commands.sh", agent)
+    if transcript.exists():
+        extract_commands(transcript, trial_dir / "commands.sh", agent)
+        write_ops(trial_dir, agent.replay_ops(transcript))

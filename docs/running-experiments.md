@@ -3,7 +3,7 @@ summary: Running a task set with robocli run, what lands under runs/, and what e
 read_when:
   - You want to reproduce or extend the paper's numbers
   - You are reading a result.json or provenance.json
-  - You want to replay a trial or run it without an agent
+  - You want to replay a trial, run it without an agent, or make a demo video of it
 ---
 
 # Running experiments
@@ -30,7 +30,7 @@ Three operators:
 |---|---|---|
 | `agent` | the coding agent from the config | the experiment |
 | `none` | nothing; bring-up, preflight and teardown only | checking a machine, no quota spent |
-| `script` | a command sequence from `--script`, replayed open-loop | replaying a trial's `commands.sh` |
+| `script` | a command file from `--script`, one operation at a time in one shell, open-loop | replaying a trial's `commands.sh` |
 
 A real robot has no scoring side: pass `--task "<sentence>"`, the
 verdict is recorded as not applicable, and nothing is reset.
@@ -47,6 +47,8 @@ verdict is recorded as not applicable, and nothing is reset.
     result.json               verdict, preflight, termination, accounting
     transcript.jsonl          the agent's full session (operator agent)
     commands.sh               the agent's shell, write and edit operations, in order
+    ops.jsonl                 the same operations with output heads and wall times
+    frames/                   every sim step's camera frames (--record only)
     bridge.log, moveit.log    the robot's own logs
     workspace/                what the agent left in /workspace
     attempts/                 earlier attempts of the same trial, moved aside
@@ -91,8 +93,8 @@ was waited out), `active_seconds`, `suspended_seconds`,
 `simulator_commit` (with `simulator_dirty`), the three image digests,
 `config_file` and `config_sha256`, the prompt's hash and the workspace
 template's hash, `agent_cli` (name and version pin), `container_engine`
-and `sandbox_run_args`, `gpu_render`, `host`, `ros_domain`, and the run's
-task ids and seeds. Two trials with equal hashes and digests ran the
+and `sandbox_run_args`, `gpu_render`, `record` (the cameras recorded,
+or null), `host`, `ros_domain`, and the run's task ids and seeds. Two trials with equal hashes and digests ran the
 same experiment.
 
 ## Budgets and quota walls
@@ -113,5 +115,34 @@ robocli run --config libero_pro --run-id replay --task-suite libero_goal_task \
             --script runs/libero_pro/demo/trials/libero_goal_task-3/seed0/commands.sh
 ```
 
-The agent ran closed-loop, so an identical outcome under a paused
-clock and a seeded reset is likely, never guaranteed.
+`commands.sh` opens every operation with a `# robocli op N` line, and
+the script operator runs them one at a time in a single sandbox shell,
+the way the agent did, timing each one into `ops.jsonl`. The agent ran
+closed-loop, so an identical outcome under a paused clock and a seeded
+reset is likely, never guaranteed. A hand-written command file works
+the same way: without markers it is one operation.
+
+## Making a demo video
+
+A demo is a replay with the cameras recorded, then rendered:
+
+```bash
+robocli run --config libero_pro --run-id demo --task-suite libero_goal_task \
+            --task-ids 3 --seeds 0 --operator script \
+            --script runs/libero_pro/main/trials/libero_goal_task-3/seed0/commands.sh \
+            --record
+robocli demo runs/libero_pro/demo/trials/libero_goal_task-3/seed0 --gif
+```
+
+`--record` makes the robot write every sim step's frames for the
+profile's `cameras.record` (or the names you give it) under the
+trial's `frames/`; `robocli demo` composes them with `ops.jsonl` into
+`demo.mp4`, the commands typed on the left and the cameras on the
+right, one sim step per video frame, and `--gif` adds a smaller
+`demo.gif` for a README. Rendering needs the `demo` extra: `pip install
+'robocli-harness[demo]'`.
+
+`--record` works on a live agent run too, but rendering every step
+costs wall clock on whole-room scenes, which the agent's budget would
+pay for; record the replay, not the experiment. Frames are a
+simulator's: a real robot has none to record.

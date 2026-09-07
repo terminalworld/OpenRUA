@@ -22,6 +22,24 @@ import threading
 import time
 
 
+def recording(cfg: dict, directory: str | None, cameras: str | None):
+    """The monitor's Recording from the arguments, or None. Camera names
+    come from the flag, else the profile's ``cameras.record``; the
+    resolution is the profile's."""
+    if not directory:
+        return None
+    from .rpc import Recording
+
+    cam_cfg = cfg.get("machine", {}).get("cameras", {})
+    names = ([c.strip() for c in cameras.split(",") if c.strip()] if cameras
+             else list(cam_cfg.get("record") or []))
+    if not names:
+        raise ValueError("--record needs camera names: pass --record-cameras "
+                         "or set machine.cameras.record in the robot profile")
+    w, h = cam_cfg.get("resolution", [640, 480])
+    return Recording(directory, [(n, int(w), int(h)) for n in names])
+
+
 def main() -> None:
     # Reserve the real stdout for the control channel, then route fd 1 to
     # stderr; simulator libraries print to stdout (LIBERO does) and would
@@ -39,7 +57,7 @@ def main() -> None:
     from . import environments
     from .environments.worker import Worker
     from .ros.node import GraphNode
-    from .rpc import ControlChannel, Monitor
+    from .rpc import ControlChannel, Monitor, Recording
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
@@ -49,6 +67,12 @@ def main() -> None:
                     help="host-visible path for the planning stack's log "
                     "(a mid-trial move_group death must be diagnosable "
                     "afterwards)")
+    ap.add_argument("--record", default=None, metavar="DIR",
+                    help="write every sim step's camera frames under DIR "
+                    "(off when absent)")
+    ap.add_argument("--record-cameras", default=None,
+                    help="comma-separated camera names for --record "
+                    "(default: the config's machine.cameras.record)")
     args = ap.parse_args()
 
     with open(args.config) as f:
@@ -68,7 +92,8 @@ def main() -> None:
     node = GraphNode(env, cfg, sim)
     # The graph re-aligns itself whenever the world is restored under it;
     # simulation only fires the slot, this wiring is the whole coupling.
-    monitor = Monitor(env, task_ctx, loader, sim, on_reset=node.refresh)
+    monitor = Monitor(env, task_ctx, loader, sim, on_reset=node.refresh,
+                      record=recording(cfg, args.record, args.record_cameras))
 
     stop = {"flag": False}
 

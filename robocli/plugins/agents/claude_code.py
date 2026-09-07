@@ -366,7 +366,8 @@ class ClaudeCode(Agent):
                     if isinstance(b, dict) and b.get("type") == "tool_use" \
                             and b.get("name") in _REPLAY_TOOLS:
                         order.append({"id": b.get("id"), "tool": b["name"],
-                                      "input": b.get("input", {})})
+                                      "input": b.get("input", {}),
+                                      "ts": _ts(rec.get("timestamp"))})
         seen: dict = {}
         deduped: list[dict] = []
         for op in order:
@@ -386,6 +387,7 @@ class ClaudeCode(Agent):
             if norm is None:
                 continue
             ops.append({**norm, "output": res.get("text", ""),
+                        "t0": op.get("ts"), "t1": ts,
                         "duration_s": max(1.0, min(dur, 600.0)) if dur else 30.0})
         return ops
 

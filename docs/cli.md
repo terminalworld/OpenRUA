@@ -25,6 +25,7 @@ positional arguments:
     agent       open a coding agent on the robot's terminal
     down        power a robot and its terminal off
     run         run a task set: one trial per task and seed
+    demo        render a recorded trial as a video (terminal + cameras)
     probe       draft a robot profile from a live ROS 2 graph
     config      the configuration schema
     doctor      check the install: docker, images, simulator, login
@@ -220,7 +221,7 @@ options:
 usage: robocli run [-h] --config CONFIG [--robot ROBOT] --run-id RUN_ID
                    --task-suite TASK_SUITE [--task-ids TASK_IDS]
                    [--seeds SEEDS] [--operator {agent,none,script}]
-                   [--task TASK] [--script SCRIPT]
+                   [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
                    [--wall-clock-min WALL_CLOCK_MIN] [--ros-domain ROS_DOMAIN]
                    [--credentials-dir CREDENTIALS_DIR]
                    [--token-file TOKEN_FILE] [--runs-root RUNS_ROOT]
@@ -244,6 +245,12 @@ options:
   --script SCRIPT       command-sequence file for --operator script (canonical
                         source: a trial's commands.sh condensate); runs in the
                         sandbox on the native surface, open-loop best-effort
+  --record [CAMERAS]    record the simulated robot's cameras every sim step
+                        into the trial's frames/ (what `robocli demo`
+                        renders); a comma-separated camera list, or none for
+                        the profile's cameras.record. Rendering costs wall
+                        clock on whole-room scenes: record a replay
+                        (--operator script), not the experiment
   --wall-clock-min WALL_CLOCK_MIN
                         override of the config's
                         protocol.active_wall_clock_minutes (the config is the
@@ -265,6 +272,39 @@ options:
   --account-alias ACCOUNT_ALIAS
                         non-secret label of the credentials profile, recorded
                         in the trial result for per-account accounting
+```
+
+## robocli demo
+
+```
+usage: robocli demo [-h] [--out OUT] [--gif] [--cameras CAMERAS]
+                    [--ops START:END] [--size WxH] [--fps FPS] [--speed SPEED]
+                    [--font-size FONT_SIZE]
+                    trial
+
+Compose demo.mp4 from a trial that ran with --record: the commands typed on
+the left, the robot's cameras on the right, one sim step per frame. Needs the
+demo extra (pip install 'robocli-harness[demo]').
+
+positional arguments:
+  trial                 a trial directory under runs/ that ran with --record
+
+options:
+  -h, --help            show this help message and exit
+  --out OUT             output file (default: <trial>/demo.mp4)
+  --gif                 also write demo.gif next to it (640 px wide, 8 fps;
+                        keep it short with --ops and --speed)
+  --cameras CAMERAS     main view and inset by name (default: the first two
+                        recorded)
+  --ops START:END       only the operations with index in [START, END) as
+                        numbered in ops.jsonl (default all; a README clip
+                        wants the last few)
+  --size WxH            video size (default 1280x720)
+  --fps FPS             frames per second (default 20)
+  --speed SPEED         sim steps per video frame (default 1: real-time robot
+                        motion)
+  --font-size FONT_SIZE
+                        terminal font size (default 13)
 ```
 
 ## robocli probe

@@ -50,7 +50,7 @@ def _monitor(script):
     sim = Worker()
     sim.bind_current_thread()
     env = _Env()
-    return env, Monitor(env, {}, _Loader(script), sim, environ={})
+    return env, Monitor(env, {}, _Loader(script), sim)
 
 
 def test_latch_survives_state_degradation():

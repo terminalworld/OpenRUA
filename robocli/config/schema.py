@@ -210,6 +210,9 @@ class Cameras(Strict):
     rate_hz: float = Field(default=2.0, description="wall-clock publish rate")
     render_mode: Literal["on_demand", "always"] = Field(
         default="on_demand", description="render a camera only while subscribed, or always")
+    record: list[str] | None = Field(
+        default=None, description="the cameras `robocli run --record` captures when none "
+        "are named: the first is a demo's main view, the second its inset")
 
 
 class GripperControl(Strict):

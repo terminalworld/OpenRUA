@@ -104,7 +104,8 @@ def simulator_venv(backend: dict, home: Path | None = None) -> Path:
 def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
              task_suite: str, task_id: int, network: str, proxy_url: str,
              mounts: tuple[str, ...], ros_domain: int, robot_log: Path,
-             home: Path | None = None) -> tuple[Path, robot.Handle]:
+             home: Path | None = None,
+             record_cameras: tuple[str, ...] | None = None) -> tuple[Path, robot.Handle]:
     """Write the config, start the sandbox, then the robot.
 
     Sandbox first: the robot's ROS_STATIC_PEERS must resolve the
@@ -116,7 +117,9 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     Returns the config path and the robot's handle, ready (``wait_ready``
     done). If the robot fails to come up, the sandbox this call started
     is torn down before the error propagates: the caller never inherits
-    half a bring-up.
+    half a bring-up. ``record_cameras`` (camera names; empty = the
+    profile's ``cameras.record``) makes the robot write its frames to
+    ``dest/frames``; None records nothing.
     """
     resolve_robot_files(cfg, dest, home)
     config_path = record.write_config(dest, cfg)
@@ -153,6 +156,8 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             peers_xml=peers_profile([sandbox_name]),
             ros_domain=ros_domain,
             probe_argv=graph_probe(sandbox_name),
+            record=str(dest / "frames") if record_cameras is not None else None,
+            record_cameras=record_cameras or (),
         )
         machine.wait_ready()
     except BaseException:

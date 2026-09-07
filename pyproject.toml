@@ -28,7 +28,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "import-linter"]
+demo = ["pillow", "numpy", "imageio", "imageio-ffmpeg"]
+dev = ["pytest", "import-linter", "pillow", "numpy", "imageio", "imageio-ffmpeg"]
 
 [project.urls]
 Homepage = "https://github.com/terminalworld/RoboCLI"
@@ -142,8 +143,14 @@ forbidden_modules = ["robocli.config", "robocli.errors", "robocli.doctor", "robo
 [[tool.importlinter.contracts]]
 name = "no unit imports the top layer (cli, doctor, testing)"
 type = "forbidden"
-source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.runner", "robocli.config", "robocli.errors"]
+source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.runner", "robocli.config", "robocli.errors", "robocli.demo"]
 forbidden_modules = ["robocli.cli", "robocli.doctor", "robocli.testing"]
+
+[[tool.importlinter.contracts]]
+name = "demo reads a trial's files and imports errors only"
+type = "forbidden"
+source_modules = ["robocli.demo"]
+forbidden_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.runner", "robocli.config", "robocli.cli", "robocli.doctor", "robocli.testing"]
 
 [[tool.importlinter.contracts]]
 name = "hooks modules import the agent contract only"

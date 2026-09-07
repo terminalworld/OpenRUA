@@ -27,13 +27,40 @@ is restored (the ROS graph re-aligns itself there).
 from __future__ import annotations
 
 import json
-import os
 import sys
 import threading
 import time
 from typing import Callable
 
 import numpy as np
+
+
+class Recording:
+    """Where and what the monitor records: a directory and the cameras
+    (name, width, height). ``frames/<step>_<camera>.jpg`` per camera and
+    one ``index.jsonl`` line per step with its wall time, which is what
+    a later rendering aligns against the timed command stream."""
+
+    def __init__(self, directory: str, cameras: list[tuple[str, int, int]]):
+        import os
+
+        self.directory = directory
+        self.cameras = cameras
+        os.makedirs(directory, exist_ok=True)
+        self._index = open(os.path.join(directory, "index.jsonl"), "a")
+
+    def frame(self, step: int, sim) -> None:
+        from PIL import Image
+
+        files = []
+        for cam, w, h in self.cameras:
+            px = sim.render(width=w, height=h, camera_name=cam)[::-1]
+            name = f"{step:06d}_{cam}.jpg"
+            Image.fromarray(px).save(f"{self.directory}/{name}", quality=85)
+            files.append(name)
+        self._index.write(json.dumps({"step": step, "t": time.time(),
+                                      "files": files}) + "\n")
+        self._index.flush()
 
 
 class ControlChannel:
@@ -85,12 +112,17 @@ class ControlChannel:
 
 class Monitor:
     def __init__(self, env, task_ctx: dict, loader, sim,
-                 on_reset=None, environ=None):
+                 on_reset=None, record: "Recording | None" = None):
         self._env = env
         self._ctx = task_ctx
         self._loader = loader  # the environment package's plug (parameter)
         self._sim = sim  # Worker: all env access goes through it
         self.on_reset = on_reset or (lambda: None)
+        # Camera recording, off unless a Recording is handed in: then
+        # every sim step (and the opening state after a reset) writes
+        # the named cameras as JPEGs plus one index line. Evaluation
+        # runs pass None and take this branch zero times.
+        self._record = record
 
         self._latched = False
         self._at_step = None
@@ -98,37 +130,18 @@ class Monitor:
         self._at_wall = None
         self._steps = 0
 
-        # Offline demo-replay recording (demo/): when ROBOCLI_RECORD_DIR
-        # is set, every sim step renders the requested cameras to JPEGs.
-        # Never set by experiment configs; evaluation runs take this
-        # branch zero times (env var absent).
-        env_vars = os.environ if environ is None else environ
-        self._rec_dir = env_vars.get("ROBOCLI_RECORD_DIR")
-        self._rec_cams = []
-        if self._rec_dir:
-            os.makedirs(self._rec_dir, exist_ok=True)
-            for spec in env_vars.get(
-                    "ROBOCLI_RECORD_CAMERAS", "agentview:640x480").split(","):
-                cam, _, wh = spec.strip().partition(":")
-                w, h = (wh or "640x480").split("x")
-                self._rec_cams.append((cam, int(w), int(h)))
-
         self._inner_step = env.step
         env.step = self._latching_step
 
     # ------------------------------------------------------------- stepping
     def _record_frame(self) -> None:
-        from PIL import Image
         raw = self._env.env if hasattr(self._env, "env") else self._env
-        for cam, w, h in self._rec_cams:
-            px = raw.sim.render(width=w, height=h, camera_name=cam)[::-1]
-            Image.fromarray(px).save(
-                f"{self._rec_dir}/{self._steps:06d}_{cam}.jpg", quality=85)
+        self._record.frame(self._steps, raw.sim)
 
     def _latching_step(self, action, **kwargs):  # kwargs: cap-x fork's
         r = self._inner_step(action, **kwargs)  # skip_render_images etc.
         self._steps += 1
-        if self._rec_dir:
+        if self._record is not None:
             self._record_frame()
         if not self._latched and self._loader.success(self._env):
             self._latched = True
@@ -155,7 +168,7 @@ class Monitor:
             # success_at.step mean "steps since reset" uniformly across
             # benchmarks.
             self._steps = 0
-            if self._rec_dir:
+            if self._record is not None:
                 self._record_frame()  # opening frame before any motion
             self.on_reset()
 
@@ -187,7 +200,8 @@ class Monitor:
         return self._sim.submit(
             lambda: self._loader.task_info(self._env, self._ctx))
 
-    def steps(self, _req: dict) -> dict:  # demo-replay sync anchor
+    def steps(self, _req: dict) -> dict:
+        """Steps since reset and the latch, for step-economy statistics."""
         return {"steps": self._steps, "success_latched": bool(self._latched)}
 
     # ------------------------------------------------------ debug truth reads

@@ -174,11 +174,15 @@ def score(rec: dict, machine) -> None:
 
 def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
               wall_cap_min, ros_domain=0, credentials_dir=None, home=None,
-              account_alias=None, script=None, token_file=None, task=None):
+              account_alias=None, script=None, token_file=None, task=None,
+              record_cameras=None):
     """One trial: claim the directory, bring the robot and sandbox up,
     start the episode, preflight, operate, score, write the record.
     ``task`` is the task sentence for a robot with no truth side (a real
-    robot); a simulated robot's task comes from its bridge."""
+    robot); a simulated robot's task comes from its bridge.
+    ``record_cameras`` (None, or a tuple of camera names, empty for the
+    profile's default) makes the robot write every step's frames under
+    the trial."""
     scored = cfg.get("machine", {}).get("backend", {}).get("kind") == "sim"
     trial_dir = run_dir / "trials" / f"{task_suite}-{task_id}" / f"seed{seed}"
     trial_dir.mkdir(parents=True, exist_ok=True)
@@ -235,7 +239,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         config_path, machine = bring_up(
             cfg, trial_dir, sim_name, sandbox_name, task_suite, task_id,
             network, proxy_url, agent.sandbox_mounts(cfg_dir, creds_file),
-            ros_domain, robot_log=trial_dir / "bridge.log", home=home)
+            ros_domain, robot_log=trial_dir / "bridge.log", home=home,
+            record_cameras=record_cameras)
         sandbox_live = True
         # The CLI version that actually ran: read inside the sandbox.
         rec["agent_version"] = _sandbox_version(sandbox_name, agent)

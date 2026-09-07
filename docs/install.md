@@ -25,7 +25,9 @@ robocli --version
 ```
 
 The command is `robocli`; `robocli --help` lists the verbs and
-[cli.md](cli.md) has every flag.
+[cli.md](cli.md) has every flag. Rendering demo videos (`robocli
+demo`) needs the `demo` extra: `pip install
+'robocli-harness[demo] @ git+https://github.com/terminalworld/RoboCLI'`.
 
 ## The three images
 
