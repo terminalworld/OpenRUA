@@ -247,7 +247,7 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
         # recorded trial says so: None = off, [] = the profile's
         # cameras.record, else the names given.
         "record": (None if getattr(args, "record", None) is None
-                   else [c for c in str(args.record).split(",") if c.strip()]),
+                   else list(args.record)),
         # Whatever answers to `docker` on this host (Docker Engine or a
         # podman with its docker-compatible command); one string as the
         # engine prints it, plus the flags the sandbox container took.

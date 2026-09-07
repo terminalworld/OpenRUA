@@ -106,8 +106,10 @@ def run(args: argparse.Namespace) -> int:
     args.task_ids = [int(x) for x in str(args.task_ids).split(",")]
     args.seeds = [int(x) for x in str(args.seeds).split(",")]
     # None: no recording; (): the profile's cameras.record; names: those.
-    record_cameras = (None if args.record is None
-                      else tuple(c.strip() for c in args.record.split(",") if c.strip()))
+    # Parsed once, here; provenance records the same value.
+    args.record = (None if args.record is None
+                   else tuple(c.strip() for c in args.record.split(",") if c.strip()))
+    record_cameras = args.record
 
     home = paths.home(args.home)
     cfg_path = paths.find("benchmarks", args.config, home).resolve()

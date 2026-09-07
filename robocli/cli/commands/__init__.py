@@ -4,6 +4,6 @@ Registration order is the ``--help`` order.
 """
 
 from robocli.cli.commands import (agent, build, config, demo, doctor, down, list, probe,
-                                  run, up)
+                                  ps, run, up)
 
-COMMANDS = (list, build, up, agent, down, run, demo, probe, config, doctor)
+COMMANDS = (list, build, up, agent, down, run, ps, demo, probe, config, doctor)

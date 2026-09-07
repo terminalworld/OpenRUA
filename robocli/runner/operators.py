@@ -71,7 +71,10 @@ class Shell:
         the shell is unusable afterwards."""
         self._n += 1
         sentinel = f"__robocli_op_done_{self._n}__"
-        self._proc.stdin.write(f"{command}\necho {sentinel}\n")
+        # Braces keep the operation in this shell (cd and variables
+        # persist); the redirection gives it an empty stdin, so a command
+        # that reads input cannot swallow the operations queued behind it.
+        self._proc.stdin.write(f"{{\n{command}\n}} </dev/null\necho {sentinel}\n")
         self._proc.stdin.flush()
         lines: list[str] = []
         deadline = time.monotonic() + timeout_s
