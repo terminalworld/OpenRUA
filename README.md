@@ -28,7 +28,7 @@ there is ordinary ROS 2.
 ## Quick start
 
 ```bash
-pip install robocli
+pip install git+https://github.com/terminalworld/RoboCLI
 robocli build robot && robocli build sandbox && robocli build proxy   # once
 robocli up panda-sim                  # a simulated Franka Panda, ROS 2 graph live
 ```
