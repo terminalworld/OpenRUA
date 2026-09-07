@@ -58,16 +58,7 @@ def package_config_path() -> Path:
     return Path(str(resources.files("robocli"))) / "configs" / CONFIG_FILENAME
 
 
-def robots_dir(home_dir: Path | None = None) -> Path:
-    return home(home_dir) / "robots"
 
-
-def benchmarks_dir(home_dir: Path | None = None) -> Path:
-    return home(home_dir) / "benchmarks"
-
-
-def agents_dir(home_dir: Path | None = None) -> Path:
-    return home(home_dir) / "agents"
 
 
 def plugins_dir(home_dir: Path | None = None) -> Path:
