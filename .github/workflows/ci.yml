@@ -17,3 +17,4 @@ jobs:
       - run: pip install -e '.[dev]'
       - run: lint-imports
       - run: pytest -q
+      - run: python scripts/render_docs.py --check

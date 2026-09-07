@@ -47,7 +47,7 @@ testpaths = ["tests"]
 # ---------------------------------------------------------------------------
 # Architecture contract (machine-enforced by tests/test_layering.py; the
 # import-linter config below states the same rules). Prose version:
-# docs/ARCHITECTURE.md.
+# docs/architecture.md.
 #
 #   robot       the machine the agent operates, provided by a backend
 #               (sim/ or real/; up() dispatches on backend.kind). The
