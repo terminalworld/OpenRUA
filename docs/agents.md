@@ -48,8 +48,10 @@ knowledge appears anywhere else.
 ## The hooks module
 
 A subclass of `robocli.agents.Agent` (`robocli/agents/base.py`). One
-method is required, `launch_argv`: the `docker exec` command that runs
-the agent headless on a task inside the sandbox, transcript on stdout.
+method is required, `launch_argv`: the command that runs the agent
+headless on a task inside the sandbox, transcript on stdout;
+`self.exec_argv(sandbox, env, token_file)` gives the `docker exec`
+prefix every agent shares.
 Every other hook has a documented default, and a consumer that finds the
 default does without: `interactive_argv` (`robocli agent`),
 `sandbox_cli_check`, `login_hint`, `token_hint`, the quota hooks
@@ -76,8 +78,7 @@ from robocli.agents import Agent
 
 class MyAgent(Agent):
     def launch_argv(self, sandbox, prompt, model, max_turns, proxy, **_):
-        return ["docker", "exec", "-u", "robot", "-w", "/workspace",
-                "-e", f"HTTPS_PROXY={proxy}", sandbox,
+        return [*self.exec_argv(sandbox, ["-e", f"HTTPS_PROXY={proxy}"]),
                 "my-agent", "--model", model, "--max-turns", str(max_turns), prompt]
 
 HOOKS = MyAgent
