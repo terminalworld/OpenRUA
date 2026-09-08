@@ -16,8 +16,8 @@ def arm_specs(machine: dict) -> list[dict]:
     if not arms:
         raise KeyError(
             "machine.arms missing: the bridge boots from the RESOLVED "
-            "resolved config (openrua run writes it via normalize_arms); "
-            "re-run the trial through `python -m openrua run`")
+            "resolved config (openrua bench writes it via normalize_arms); "
+            "re-run the trial through `python -m openrua bench`")
     return arms
 
 

@@ -116,7 +116,7 @@ A simulated robot: a container running the bridge over a simulator venv.
 | `names` | list[str] \| null | None | camera names; null = every camera the scene defines |
 | `rate_hz` | float | 2.0 | wall-clock publish rate |
 | `render_mode` | 'on_demand' \| 'always' | 'on_demand' | render a camera only while subscribed, or always |
-| `record` | list[str] \| null | None | the cameras `openrua run --record` captures when none are named: the first is a demo's main view, the second its inset |
+| `record` | list[str] \| null | None | the cameras `openrua bench --record` captures when none are named: the first is a demo's main view, the second its inset |
 
 ## Control
 
@@ -261,7 +261,7 @@ A benchmarks/<name>.yaml as written: names its robot or carries a machine.
 | key | type | default | meaning |
 |---|---|---|---|
 | `benchmark` | str | **required** | loader name: libero_pro \| capbench \| robocasa365 |
-| `suites` | list[str] | **required** | task suites this benchmark runs; openrua run picks one with --task-suite |
+| `suites` | list[str] | **required** | task suites this benchmark runs; openrua bench picks one with --task-suite |
 | `init_states` | str \| null | None | how episodes start (documentation of the loader's behaviour): benchmark-files \| seeded-reset |
 | `split` | str | 'target' | robocasa: object/layout split |
 | `task_language` | dict[str, str] | {} | capbench: task name -> instruction |

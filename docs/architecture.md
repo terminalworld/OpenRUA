@@ -20,7 +20,7 @@ is visible to the agent.
 | `openrua/sandbox/` | the agent's terminal: an Ubuntu + ROS 2 container with the agent installed and `workspace/` seeded (README, `machine.yaml`, four docs, a few tools). | `python -m openrua.sandbox` |
 | `openrua/proxy/` | a whitelist HTTP proxy, the sandbox's only route out. | `python -m openrua.proxy` |
 | `openrua/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, hooks under `plugins/agents/`, bundled then `~/.openrua/`), the launcher, credentials staging, the prompts. | `python -m openrua.agents launch` |
-| `openrua/runner/` | running trials: `main.py` (`openrua run`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua run` |
+| `openrua/runner/` | running trials: `main.py` (`openrua bench`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua bench` |
 | `openrua/demo/` | a video from a recorded trial's files (`frames/`, `ops.jsonl`): `compose.py` renders the terminal beside the cameras. Reads files, imports `errors` only; its libraries are the `demo` extra. | `openrua demo` |
 | `openrua/cli/` | the command line: one module per verb under `commands/` (`robots / benchmarks / agents / build / up / agent / down / run / demo / probe / config / doctor`), `output.py`, `state.py`. | `openrua` |
 | `openrua/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, login, the user directory), `report.py`. | `openrua doctor` |
@@ -51,7 +51,7 @@ openrua/configs/{robots,benchmarks,agents}/, openrua/plugins/agents/   bundled, 
   robots/ benchmarks/ agents/ plugins/agents/            yours, looked up after the bundled ones
   credentials/<agent>/                                   login profiles
   simulators/<name>/.venv-*                              simulator checkouts
-  workspaces/<name>/  state/<name>.yaml                  what `openrua up` keeps
+  workspaces/<name>/  state/<name>.yaml                  what `openrua up` / `run` keep
 ./runs/                                                 trial data (--runs-root)
 ```
 
@@ -73,10 +73,10 @@ openrua/configs/{robots,benchmarks,agents}/, openrua/plugins/agents/   bundled, 
 - `agents` and `proxy` are leaves (they may use `paths` and `errors`).
 - The schema (`config`) is read by the runner, the cli and the agents
   registry; the other units read validated dicts and never import it.
-- Only the runner (`runner/bringup.py`, used by `openrua run` and `openrua up`) brings robots up.
+- Only the runner (`runner/bringup.py`, used by `openrua bench`, `openrua run` and `openrua up`) brings robots up.
 - `demo` reads a trial directory and imports `errors` only; recording
   itself is the bridge's (a `Recording` handed to its monitor) and is
-  switched on by `openrua run --record`, never by the demo unit.
+  switched on by `openrua bench --record`, never by the demo unit.
 - `cli`, `doctor` and `testing` sit above the units; no unit imports them.
 
 The contract is stated in `pyproject.toml` (import-linter) and again in

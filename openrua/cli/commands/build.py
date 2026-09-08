@@ -47,31 +47,44 @@ def agent_labels(manifests: list[agents.Manifest], kind: str) -> dict[str, str]:
 
 
 def run(args) -> int:
-    if args.unit == "robot":
-        tag, digest = build_robot(distro=args.distro, tag=args.tag)
+    if args.unit is None:
+        # bare `openrua build`: the three images with their defaults
+        built = [build_robot(distro="jazzy", tag=None),
+                 _sandbox(None, None, "jazzy", None, None, args.home),
+                 _proxy(None, None, proxy.IMAGE, proxy.PORT, args.home)]
+    elif args.unit == "robot":
+        built = [build_robot(distro=args.distro, tag=args.tag)]
     elif args.unit == "sandbox":
-        chosen = manifests_for(args.agent, args.home)
-        preinstall = (args.preinstall if args.preinstall is not None
-                      else agents.preinstall(chosen))
-        tag, digest = build_sandbox(preinstall=preinstall, distro=args.distro,
-                            robot_uid=args.robot_uid, tag=args.tag,
-                            labels=agent_labels(chosen, "install"))
+        built = [_sandbox(args.agent, args.preinstall, args.distro, args.robot_uid,
+                          args.tag, args.home)]
     else:
-        chosen = manifests_for(args.agent, args.home)
-        whitelist = (args.whitelist if args.whitelist is not None
-                     else "\n".join(agents.whitelist(chosen)))
-        tag, digest = build_proxy(whitelist=whitelist, tag=args.tag, port=args.port,
-                            labels=agent_labels(chosen, "whitelist"))
-    print(f"{tag} {digest}")
+        built = [_proxy(args.agent, args.whitelist, args.tag, args.port, args.home)]
+    for tag, digest in built:
+        print(f"{tag} {digest}")
     return 0
 
 
+def _sandbox(agent, preinstall, distro, robot_uid, tag, home):
+    chosen = manifests_for(agent, home)
+    preinstall = preinstall if preinstall is not None else agents.preinstall(chosen)
+    return build_sandbox(preinstall=preinstall, distro=distro, robot_uid=robot_uid,
+                         tag=tag, labels=agent_labels(chosen, "install"))
+
+
+def _proxy(agent, whitelist, tag, port, home):
+    chosen = manifests_for(agent, home)
+    whitelist = whitelist if whitelist is not None else "\n".join(agents.whitelist(chosen))
+    return build_proxy(whitelist=whitelist, tag=tag, port=port,
+                       labels=agent_labels(chosen, "whitelist"))
+
+
 def add_parser(sub) -> None:
-    p = sub.add_parser("build", help="build the robot / sandbox / proxy image",
-                       description="Build one of the three images. The sandbox and "
-                       "proxy images take their install line and whitelist from the "
-                       "manifests of the agents named with --agent.")
-    units = p.add_subparsers(dest="unit", metavar="<unit>", required=True)
+    p = sub.add_parser("build", help="build the robot, sandbox and proxy images",
+                       description="Build the three images (bare `openrua build`: all "
+                       "of them with their defaults), or one of them with its options. "
+                       "The sandbox and proxy images take their install line and "
+                       "whitelist from the manifests of the agents named with --agent.")
+    units = p.add_subparsers(dest="unit", metavar="[<unit>]", required=False)
 
     r = units.add_parser("robot", help="the simulated robot image (Dockerfile.<distro>)")
     r.add_argument("--distro", default="jazzy", help="ROS 2 distro: jazzy | humble")

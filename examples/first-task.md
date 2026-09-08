@@ -11,15 +11,25 @@ Twenty minutes: a simulated Franka Panda with a live ROS 2 graph, your
 coding agent on its terminal, one task. [Install](../docs/install.md)
 first; `openrua doctor panda-sim` must be green.
 
-## 1. Bring the robot up
+## 1. One command
+
+```bash
+openrua run panda-sim "open the middle drawer of the cabinet"
+```
+
+The robot container boots its scene and MoveIt (about a minute), the
+sandbox is created with the workspace seeded, and the agent opens on
+it with the sentence as its opening message. When you leave the agent
+the robot powers off. The rest of this page walks the same session in
+its two-terminal form, which keeps the robot up between sessions.
+
+## 1a. Bring the robot up
 
 ```bash
 openrua up panda-sim
 ```
 
-The robot container boots its scene and MoveIt (about a minute), the
-sandbox is created with the workspace seeded, and the command stays in
-the foreground:
+The command stays in the foreground:
 
 ```
 [up] ready.
@@ -36,7 +46,7 @@ the foreground:
 `--task-suite` and `--task-id` pick another scene from the benchmark;
 `--init-state` another initial layout of the same scene.
 
-## 2. Hand the agent the task
+## 1b. Hand the agent the task
 
 In a second terminal:
 
@@ -50,7 +60,7 @@ This opens the agent `up` was configured with (Claude Code by default,
 injected: no tool list, no API, no planner. The agent's only route to
 the internet is the proxy to its model API.
 
-## 3. What the agent sees
+## 2. What the agent sees
 
 ```
 /workspace
@@ -71,7 +81,7 @@ disagrees with the graph the agent is looking at; preflight checked
 every claim in it before the agent started. The tools are ordinary
 `rclpy` scripts the agent may read, copy or ignore.
 
-## 4. What a session looks like
+## 3. What a session looks like
 
 The first commands of a real session (Codex, from a trial's
 `commands.sh`):
@@ -94,7 +104,7 @@ docker exec -it -u robot -w /workspace openrua-sandbox bash
 ros2 topic echo /joint_states --once
 ```
 
-## 5. Stop
+## 4. Stop
 
 `Ctrl-C` in the first terminal powers the robot off and removes both
 containers. The workspace the agent left behind, snapshots and scripts
@@ -105,5 +115,5 @@ included, stays under `~/.openrua/workspaces/openrua/`.
 - [your-own-robot.md](../docs/your-own-robot.md): the same flow on your
   robot, from a profile drafted off its live graph.
 - [running-experiments.md](../docs/running-experiments.md): the scored
-  version, `openrua run`, with the benchmark's own predicate deciding
+  version, `openrua bench`, with the benchmark's own predicate deciding
   success and every trial recorded.

@@ -19,11 +19,12 @@ usage: openrua [-h] [--version] [--home HOME] <verb> ...
 | `robots` | list the robots: bundled, then ~/.openrua/robots/ |
 | `benchmarks` | list the benchmarks: bundled, then ~/.openrua/benchmarks/ |
 | `agents` | list the agents: bundled, then ~/.openrua/agents/ |
-| `build` | build the robot / sandbox / proxy image |
+| `build` | build the robot, sandbox and proxy images |
+| `run` | bring a robot up, open the agent on it, power off after |
 | `up` | bring a robot up with a sandbox terminal on it |
 | `agent` | open a coding agent on the robot's terminal |
 | `down` | power a robot and its terminal off |
-| `run` | run a task set: one trial per task and seed |
+| `bench` | run a benchmark: one trial per task and seed |
 | `ps` | list the attempts running under a runs root (--all: stale claims too) |
 | `demo` | render a recorded trial as a video (terminal + cameras) |
 | `probe` | draft a robot profile from a live ROS 2 graph |
@@ -77,13 +78,15 @@ options:
 ## openrua build
 
 ```
-usage: openrua build [-h] <unit> ...
+usage: openrua build [-h] [<unit>] ...
 
-Build one of the three images. The sandbox and proxy images take their install
-line and whitelist from the manifests of the agents named with --agent.
+Build the three images (bare `openrua build`: all of them with their
+defaults), or one of them with its options. The sandbox and proxy images take
+their install line and whitelist from the manifests of the agents named with
+--agent.
 
 positional arguments:
-  <unit>
+  [<unit>]
     robot     the simulated robot image (Dockerfile.<distro>)
     sandbox   the agent terminal image
     proxy     the whitelist proxy image
@@ -142,6 +145,47 @@ options:
   --port PORT           listen port, baked in and labelled
 ```
 
+## openrua run
+
+```
+usage: openrua run [-h] [--model MODEL] [--bench BENCH]
+                   [--task-suite TASK_SUITE] [--task-id TASK_ID]
+                   [--init-state INIT_STATE] [--task TASK] [--name NAME]
+                   [--agent AGENT] [--workspace WORKSPACE]
+                   [--ros-domain ROS_DOMAIN]
+                   [robot] [prompt]
+
+Bring a robot up, open the coding agent on its terminal with PROMPT as the
+opening message, and power the robot off when the agent exits. Same steps as
+up, agent, down.
+
+positional arguments:
+  robot                 robot profile: a name (openrua robots) or a path;
+                        default: --bench's robot, else the user config's
+                        default
+  prompt                opening message for the agent
+
+options:
+  -h, --help            show this help message and exit
+  --model MODEL         model (default: the config's)
+  --bench BENCH         benchmark to take the scene from (default: the
+                        profile's world:)
+  --task-suite TASK_SUITE
+                        scene suite (default: the profile's)
+  --task-id TASK_ID     scene index (default: the profile's)
+  --init-state INIT_STATE
+                        episode seed / init state (simulated robots)
+  --task TASK           task sentence to show the agent (real robots; a
+                        simulated robot's comes from the scene)
+  --name NAME           handle for this robot, for agent/down (default:
+                        openrua)
+  --agent AGENT         agent to open (default: the config's)
+  --workspace WORKSPACE
+                        working directory (default: <home>/workspaces/<name>)
+  --ros-domain ROS_DOMAIN
+                        ROS_DOMAIN_ID; concurrent robots need distinct ones
+```
+
 ## openrua up
 
 ```
@@ -153,7 +197,8 @@ usage: openrua up [-h] [--bench BENCH] [--task-suite TASK_SUITE]
 
 Bring a robot up (simulated: boot its container; real: join its graph) with a
 sandbox terminal on it, then stay in the foreground; Ctrl-C powers it off.
-Open a second terminal for `openrua agent`.
+Open a second terminal for `openrua agent`, or use `openrua run` to do all of
+it in one.
 
 positional arguments:
   robot                 robot profile: a name (openrua robots) or a path;
@@ -169,7 +214,7 @@ options:
   --task-id TASK_ID     scene index (default: the profile's)
   --init-state INIT_STATE
                         episode seed / init state (simulated robots)
-  --task TASK           task sentence to show `openrua agent` (real robots; a
+  --task TASK           task sentence to show the agent (real robots; a
                         simulated robot's comes from the scene)
   --name NAME           handle for this robot, for agent/down (default:
                         openrua)
@@ -209,19 +254,20 @@ options:
   --name NAME  the robot's handle (default: openrua)
 ```
 
-## openrua run
+## openrua bench
 
 ```
-usage: openrua run [-h] --config CONFIG [--robot ROBOT] --run-id RUN_ID
-                   --task-suite TASK_SUITE [--task-ids TASK_IDS]
-                   [--seeds SEEDS] [--operator {agent,none,script}]
-                   [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
-                   [--wall-clock-min WALL_CLOCK_MIN] [--ros-domain ROS_DOMAIN]
-                   [--credentials-dir CREDENTIALS_DIR]
-                   [--token-file TOKEN_FILE] [--runs-root RUNS_ROOT]
-                   [--account-alias ACCOUNT_ALIAS]
+usage: openrua bench [-h] --config CONFIG [--robot ROBOT] --run-id RUN_ID
+                     --task-suite TASK_SUITE [--task-ids TASK_IDS]
+                     [--seeds SEEDS] [--operator {agent,none,script}]
+                     [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
+                     [--wall-clock-min WALL_CLOCK_MIN]
+                     [--ros-domain ROS_DOMAIN]
+                     [--credentials-dir CREDENTIALS_DIR]
+                     [--token-file TOKEN_FILE] [--runs-root RUNS_ROOT]
+                     [--account-alias ACCOUNT_ALIAS]
 
-``openrua run``: a task set on a robot, one trial per (task, seed).
+``openrua bench``: a task set on a robot, one trial per (task, seed).
 
 options:
   -h, --help            show this help message and exit
@@ -285,7 +331,7 @@ options:
   --all, -a             also list stale claims (crashed attempts, and claims
                         archived under attempts/)
   --runs-root RUNS_ROOT
-                        where runs live (default: runs, as for openrua run)
+                        where runs live (default: runs, as for openrua bench)
   --json                machine-readable output
 ```
 

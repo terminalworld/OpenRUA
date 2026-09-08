@@ -1,12 +1,13 @@
 """The command line: ``openrua <verb> ...``.
 
     openrua robots | benchmarks | agents   what is available (bundled + yours)
-    openrua build <robot|sandbox|proxy>    build one of the three images
+    openrua build [robot|sandbox|proxy]    the three images (or one of them)
+    openrua run panda-sim "pick up ..."    a robot up, the agent on it, off after
     openrua up panda-sim                   a live robot (real or simulated) with
                                            a sandbox terminal on its ROS 2 graph
     openrua agent                          open a coding agent on that terminal
     openrua down                           power everything off
-    openrua run --config libero_pro ...    run a task set
+    openrua bench --config libero_pro ...  run a benchmark
     openrua demo <trial>                   a video of a recorded trial
     openrua probe --host                   draft a profile from a live graph
     openrua config schema                  every config key and its meaning

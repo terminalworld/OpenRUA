@@ -28,12 +28,12 @@ lists the topics, reads the docs in its workspace, writes a script with
 
 OpenRUA gives you one command for three things:
 
-- **Play in simulation.** `openrua up panda-sim` brings up a Franka
+- **Play in simulation.** `openrua run panda-sim` brings up a Franka
   Panda in MuJoCo; the agent drives it the same way it would a real one.
 - **Put an agent on your robot.** Draft a profile from the robot's live
-  graph, finish the `TODO` lines, `openrua up <name>`. See
+  graph, finish the `TODO` lines, `openrua run <name>`. See
   [docs/your-own-robot.md](docs/your-own-robot.md).
-- **Run experiments.** `openrua run` plays a benchmark across tasks and
+- **Run experiments.** `openrua bench` plays a benchmark across tasks and
   seeds with a fresh sandbox per trial and archives every command the
   agent ran. See [docs/running-experiments.md](docs/running-experiments.md).
 
@@ -47,17 +47,18 @@ OpenRUA gives you one command for three things:
 
 ```bash
 pip install git+https://github.com/terminalworld/OpenRUA
-openrua build robot && openrua build sandbox && openrua build proxy   # once
-openrua up panda-sim                  # a simulated Franka Panda, ROS 2 graph live
+openrua build                                    # the three images, once
+openrua run panda-sim "pick up the bowl and place it on the plate"
 ```
 
-In a second terminal:
+`run` brings the simulated Franka Panda up with its ROS 2 graph, opens
+Claude Code on its terminal with the sentence as the opening message,
+and powers the robot off when you leave the agent. The same three steps
+as separate commands, for a robot that should stay up between sessions:
+`openrua up panda-sim`, then `openrua agent "..."` in a second terminal,
+then `openrua down`.
 
-```bash
-openrua agent "pick up the bowl and place it on the plate"
-```
-
-`openrua doctor` tells you what is missing before the first `up`
+`openrua doctor` tells you what is missing before the first `run`
 (Docker, the three images, the simulator checkout, an agent login); the
 details are in [docs/install.md](docs/install.md).
 
@@ -85,7 +86,7 @@ details are in [docs/install.md](docs/install.md).
   real robot's launch command and how to reach its graph).
 - **A benchmark is a task set** ([`openrua/configs/benchmarks/`](openrua/configs/benchmarks)):
   which suites and init states to load, how a trial runs and stops.
-  `openrua run` runs trials, checks every promise the workspace docs
+  `openrua bench` runs trials, checks every promise the workspace docs
   make before the agent starts, and records each trial with full
   provenance.
 - **Everything is checked against one schema** (`openrua config
@@ -139,7 +140,7 @@ The simulated robots run the community benchmark scenes unchanged;
 their original success predicates score the trial in place.
 
 ```bash
-openrua run --config libero_pro --run-id demo \
+openrua bench --config libero_pro --run-id demo \
             --task-suite libero_goal_task --task-ids 0,1 --seeds 0 --operator agent
 ```
 
@@ -175,7 +176,7 @@ video. Who may import whom is enforced by CI (import-linter and
 | [examples/real-robot.md](examples/real-robot.md) | the same flow on a real ROS&nbsp;2 arm |
 | [docs/simulation.md](docs/simulation.md) | the simulator checkouts and GPU rendering |
 | [docs/podman.md](docs/podman.md) | machines without Docker |
-| [docs/running-experiments.md](docs/running-experiments.md) | `openrua run`, the `runs/` layout, every record field, replays and demo videos |
+| [docs/running-experiments.md](docs/running-experiments.md) | `openrua bench`, the `runs/` layout, every record field, replays and demo videos |
 | [docs/cli.md](docs/cli.md) | every verb and flag, exit codes (generated) |
 | [docs/config.md](docs/config.md) | every config key (generated) |
 | [docs/agents.md](docs/agents.md) | adding a coding agent |
