@@ -1,5 +1,5 @@
 ---
-summary: Running a task set with openrua run, what lands under runs/, and what every record field means
+summary: Running a task set with openrua bench, what lands under runs/, and what every record field means
 read_when:
   - You want to reproduce or extend reported results
   - You are reading a result.json or provenance.json
@@ -11,7 +11,7 @@ read_when:
 ## One command, one run
 
 ```bash
-openrua run --config libero_pro --run-id demo \
+openrua bench --config libero_pro --run-id demo \
             --task-suite libero_goal_task --task-ids 0-9 --seeds 0-4 \
             --operator agent
 ```
@@ -60,7 +60,7 @@ overwrites it. Two runs never share a directory: name a new
 `--run-id` when the task set changes.
 
 While an attempt runs, its trial directory carries a claim (`.running`:
-process, host, container stem, start time); a second `openrua run` on
+process, host, container stem, start time); a second `openrua bench` on
 the same trial refuses to start while the claim is live, and takes over
 a stale one. `openrua ps` lists every claim under the runs root with
 its state; check it before restarting anything that launches trials.
@@ -116,7 +116,7 @@ artifacts, never by the runner.
 ## Replaying a trial
 
 ```bash
-openrua run --config libero_pro --run-id replay --task-suite libero_goal_task \
+openrua bench --config libero_pro --run-id replay --task-suite libero_goal_task \
             --task-ids 3 --seeds 0 --operator script \
             --script runs/libero_pro/demo/trials/libero_goal_task-3/seed0/commands.sh
 ```
@@ -133,7 +133,7 @@ the same way: without markers it is one operation.
 A demo is a replay with the cameras recorded, then rendered:
 
 ```bash
-openrua run --config libero_pro --run-id demo --task-suite libero_goal_task \
+openrua bench --config libero_pro --run-id demo --task-suite libero_goal_task \
             --task-ids 3 --seeds 0 --operator script \
             --script runs/libero_pro/main/trials/libero_goal_task-3/seed0/commands.sh \
             --record

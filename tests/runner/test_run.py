@@ -21,8 +21,8 @@ def test_front_door_rejects_unknown_verb():
 
 
 def test_run_spelling_is_the_conductor():
-    # python -m openrua run --help must reach run.py's own argparse.
-    h = subprocess.run([sys.executable, "-m", "openrua", "run", "--help"],
+    # python -m openrua bench --help must reach run.py's own argparse.
+    h = subprocess.run([sys.executable, "-m", "openrua", "bench", "--help"],
                        capture_output=True, text=True)
     assert h.returncode == 0 and "--config" in h.stdout
 

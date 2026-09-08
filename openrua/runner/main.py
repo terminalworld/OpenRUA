@@ -1,6 +1,6 @@
-"""``openrua run``: a task set on a robot, one trial per (task, seed).
+"""``openrua bench``: a task set on a robot, one trial per (task, seed).
 
-``openrua run --config <benchmark> --run-id <label> --task-suite S
+``openrua bench --config <benchmark> --run-id <label> --task-suite S
 --task-ids 0,1 --seeds 0,1,2 --operator agent``
 """
 
@@ -28,7 +28,7 @@ RUNS_ROOT = Path("runs")
 
 
 def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> None:
-    """The ``openrua run`` arguments, on any parser (the cli passes its
+    """The ``openrua bench`` arguments, on any parser (the cli passes its
     own subparser and supplies ``--home`` itself)."""
     ap.add_argument("--config", required=True,
                     help="benchmark config (benchmarks/<name>.yaml)")
@@ -172,7 +172,7 @@ def run(args: argparse.Namespace) -> int:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(prog="openrua run", description=__doc__.split("\n\n")[0])
+    ap = argparse.ArgumentParser(prog="openrua bench", description=__doc__.split("\n\n")[0])
     add_arguments(ap)
     return run(ap.parse_args())
 

@@ -68,7 +68,7 @@ class Style:
 
 def load(trial: Path) -> tuple[list[dict], list[dict], dict]:
     """The trial's frames index, its timed operations and its result.
-    Frames come from ``openrua run --record``; a trial without them is
+    Frames come from ``openrua bench --record``; a trial without them is
     refused with the replay command that produces them."""
     trial = Path(trial)
     index = trial / "frames" / "index.jsonl"
@@ -91,10 +91,10 @@ def replay_hint(trial: Path) -> str:
         prov = json.loads((trial / "provenance.json").read_text())
         r = json.loads((trial / "result.json").read_text())
     except (OSError, json.JSONDecodeError):
-        return ("replay it with: openrua run ... --operator script "
+        return ("replay it with: openrua bench ... --operator script "
                 "--script <trial>/commands.sh --record")
     run_id = trial.parents[2].name if len(trial.parents) > 2 else "demo"
-    return (f"openrua run --config {prov.get('config_file', '<benchmark>')} "
+    return (f"openrua bench --config {prov.get('config_file', '<benchmark>')} "
             f"--run-id {run_id}-demo --task-suite {r.get('task_suite')} "
             f"--task-ids {r.get('task_id')} --seeds {r.get('init_state_id')} "
             f"--operator script --script {trial / 'commands.sh'} --record")

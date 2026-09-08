@@ -37,8 +37,9 @@ the proxy (the sandbox's only route out, limited to the agent's model
 API). Build them once; `build` never runs on its own.
 
 ```bash
-openrua build robot                      # --distro jazzy (default) | humble
-openrua build sandbox                    # --distro likewise; --agent claude-code (default), --agent codex, repeatable
+openrua build                            # all three with their defaults (Jazzy, Claude Code)
+openrua build robot --distro humble      # or one at a time: --distro jazzy (default) | humble
+openrua build sandbox --agent codex      # --distro likewise; --agent claude-code (default), repeatable
 openrua build proxy                      # the whitelist comes from the same manifests
 ```
 
@@ -70,7 +71,7 @@ CODEX_HOME=~/.openrua/credentials/codex codex login
 ```
 
 `openrua doctor` prints the command for whichever agent it finds
-logged out. The other route is a token by file: `openrua run
+logged out. The other route is a token by file: `openrua bench
 --token-file <path>` names a one-line `KEY=value` file (for Claude Code
 a `claude setup-token` value as `CLAUDE_CODE_OAUTH_TOKEN`, for Codex an
 `OPENAI_API_KEY`) that docker hands to the agent process only. The

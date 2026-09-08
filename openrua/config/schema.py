@@ -43,7 +43,7 @@ class Strict(BaseModel):
 class Task(Strict):
     benchmark: str = Field(description="loader name: libero_pro | capbench | robocasa365")
     suites: list[str] = Field(description="task suites this benchmark runs; "
-                              "openrua run picks one with --task-suite")
+                              "openrua bench picks one with --task-suite")
     init_states: str | None = Field(
         default=None, description="how episodes start (documentation of the "
         "loader's behaviour): benchmark-files | seeded-reset")
@@ -211,7 +211,7 @@ class Cameras(Strict):
     render_mode: Literal["on_demand", "always"] = Field(
         default="on_demand", description="render a camera only while subscribed, or always")
     record: list[str] | None = Field(
-        default=None, description="the cameras `openrua run --record` captures when none "
+        default=None, description="the cameras `openrua bench --record` captures when none "
         "are named: the first is a demo's main view, the second its inset")
 
 

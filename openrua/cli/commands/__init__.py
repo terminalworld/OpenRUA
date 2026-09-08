@@ -3,7 +3,7 @@
 Registration order is the ``--help`` order.
 """
 
-from openrua.cli.commands import (agent, build, config, demo, doctor, down, list, probe,
-                                  ps, run, up)
+from openrua.cli.commands import (agent, bench, build, config, demo, doctor, down, list,
+                                  probe, ps, run, up)
 
-COMMANDS = (list, build, up, agent, down, run, ps, demo, probe, config, doctor)
+COMMANDS = (list, build, run, up, agent, down, bench, ps, demo, probe, config, doctor)

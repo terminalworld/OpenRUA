@@ -2,14 +2,17 @@
 
 Stays in the foreground: the robot holds its control line to this
 process and powers itself off when the process ends. Open a second
-terminal for ``openrua agent``.
+terminal for ``openrua agent``, or use ``openrua run`` for the
+one-command form (up, agent, down).
 """
 
 from __future__ import annotations
 
 import shutil
 import signal
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Callable
 
 from openrua import agents
 from openrua.cli import state
@@ -22,7 +25,35 @@ from openrua.runner.bringup import bring_up, ensure_internal_network, start_epis
 from openrua.sandbox.down import down as sandbox_down
 
 
-def run(args) -> int:
+@dataclass
+class Session:
+    """A robot that is up, with the sandbox terminal on it, and the one
+    call that powers both off."""
+
+    name: str
+    sim: str
+    sandbox: str
+    suite: str | None
+    task_id: int | None
+    task: str
+    power_off: Callable[[], None]
+
+    def banner(self) -> str:
+        return f"""
+[up] ready.
+     robot     {self.sim}   (ROS 2 graph live; scene: {self.suite} #{self.task_id})
+     terminal  {self.sandbox}
+     task      {self.task or '(none)'}
+
+     openrua agent --name {self.name}            # your coding agent, on the robot
+     docker exec -it -u robot -w /workspace {self.sandbox} bash   # or you
+
+     Ctrl-C here powers the robot off."""
+
+
+def open_session(args) -> Session:
+    """Bring the robot and its sandbox up and record them under
+    ``args.name``; the returned session's ``power_off`` takes them down."""
     cfg, suite, task_id = compose(args.robot, args.bench, args.home)
     suite = args.task_suite or suite
     task_id = args.task_id if args.task_id is not None else task_id
@@ -51,6 +82,14 @@ def run(args) -> int:
         shutil.rmtree(cfg_dir, ignore_errors=True)
         raise UnavailableError(f"[up] robot failed to come up: {e}",
                                hint=f"read {workdir / 'robot.log'}") from e
+
+    def power_off() -> None:
+        print("\n[down] powering off", flush=True)
+        sandbox_down(sandbox_name)
+        machine.shutdown()
+        state.forget(args.name, args.home)
+        shutil.rmtree(cfg_dir, ignore_errors=True)
+
     try:
         if cfg["machine"]["backend"]["kind"] == "sim":
             task = start_episode(machine, args.init_state).get("language", "")
@@ -63,43 +102,28 @@ def run(args) -> int:
         raise UnavailableError(f"[up] robot failed to reset: {e}",
                                hint=f"read {workdir / 'robot.log'}") from e
     state.save(args.name, args.home, sim=sim_name, sandbox=sandbox_name,
-                backend=cfg["machine"]["backend"]["kind"],
-                network=network, proxy=proxy_url, agent=adapter.name,
-                model=cfg.get("agent", {}).get("model") or adapter.default_model,
-                options={**adapter.default_options,
-                         **cfg.get("agent", {}).get("options", {})},
-                workspace=str(workdir / "workspace"), task=task)
-    print(f"""
-[up] ready.
-     robot     {sim_name}   (ROS 2 graph live; scene: {suite} #{task_id})
-     terminal  {sandbox_name}
-     task      {task or '(none)'}
+               backend=cfg["machine"]["backend"]["kind"],
+               network=network, proxy=proxy_url, agent=adapter.name,
+               model=cfg.get("agent", {}).get("model") or adapter.default_model,
+               options={**adapter.default_options,
+                        **cfg.get("agent", {}).get("options", {})},
+               workspace=str(workdir / "workspace"), task=task)
+    return Session(args.name, sim_name, sandbox_name, suite, task_id, task, power_off)
 
-     openrua agent --name {args.name}            # your coding agent, on the robot
-     docker exec -it -u robot -w /workspace {sandbox_name} bash   # or you
 
-     Ctrl-C here powers the robot off.""", flush=True)
-    stop = signal.SIGINT
+def run(args) -> int:
+    session = open_session(args)
+    print(session.banner(), flush=True)
     try:
-        signal.sigwait([stop, signal.SIGTERM])
+        signal.sigwait([signal.SIGINT, signal.SIGTERM])
     finally:
-        print("\n[down] powering off", flush=True)
-        sandbox_down(sandbox_name)
-        machine.shutdown()
-        state.forget(args.name, args.home)
-        shutil.rmtree(cfg_dir, ignore_errors=True)
+        session.power_off()
     return 0
 
 
-def add_parser(sub) -> None:
-    p = sub.add_parser("up", help="bring a robot up with a sandbox terminal on it",
-                       description="Bring a robot up (simulated: boot its container; "
-                       "real: join its graph) with a sandbox terminal on it, then stay "
-                       "in the foreground; Ctrl-C powers it off. Open a second terminal "
-                       "for `openrua agent`.")
-    p.add_argument("robot", nargs="?", default=None,
-                   help="robot profile: a name (openrua robots) or a path; "
-                   "default: --bench's robot, else the user config's default")
+def add_options(p) -> None:
+    """The bring-up options ``up`` and ``run`` share (everything but the
+    robot positional)."""
     p.add_argument("--bench", default=None,
                    help="benchmark to take the scene from (default: the profile's world:)")
     p.add_argument("--task-suite", default=None, help="scene suite (default: the profile's)")
@@ -107,7 +131,7 @@ def add_parser(sub) -> None:
     p.add_argument("--init-state", type=int, default=0,
                    help="episode seed / init state (simulated robots)")
     p.add_argument("--task", default=None,
-                   help="task sentence to show `openrua agent` (real robots; a "
+                   help="task sentence to show the agent (real robots; a "
                    "simulated robot's comes from the scene)")
     p.add_argument("--name", default=DEFAULT_NAME,
                    help=f"handle for this robot, for agent/down (default: {DEFAULT_NAME})")
@@ -116,4 +140,16 @@ def add_parser(sub) -> None:
                    help="working directory (default: <home>/workspaces/<name>)")
     p.add_argument("--ros-domain", type=int, default=0,
                    help="ROS_DOMAIN_ID; concurrent robots need distinct ones")
+
+
+def add_parser(sub) -> None:
+    p = sub.add_parser("up", help="bring a robot up with a sandbox terminal on it",
+                       description="Bring a robot up (simulated: boot its container; "
+                       "real: join its graph) with a sandbox terminal on it, then stay "
+                       "in the foreground; Ctrl-C powers it off. Open a second terminal "
+                       "for `openrua agent`, or use `openrua run` to do all of it in one.")
+    p.add_argument("robot", nargs="?", default=None,
+                   help="robot profile: a name (openrua robots) or a path; "
+                   "default: --bench's robot, else the user config's default")
+    add_options(p)
     p.set_defaults(fn=run)

@@ -43,6 +43,6 @@ def add_parser(sub) -> None:
     p.add_argument("--all", "-a", action="store_true",
                    help="also list stale claims (crashed attempts, and claims archived under attempts/)")
     p.add_argument("--runs-root", default=None,
-                   help=f"where runs live (default: {RUNS_ROOT}, as for openrua run)")
+                   help=f"where runs live (default: {RUNS_ROOT}, as for openrua bench)")
     add_json(p)
     p.set_defaults(fn=run)

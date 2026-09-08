@@ -32,6 +32,6 @@ must be served, joint names must match the profile, TF and camera frames
 must flow. If a check fails, `up` refuses and says which promise the
 robot did not keep.
 
-`openrua run --config <benchmark> --robot ./my-robot.yaml --task "..."`
+`openrua bench --config <benchmark> --robot ./my-robot.yaml --task "..."`
 runs the same trial loop on hardware: no reset, no automatic verdict
 (`success: null`, `verdict: not_applicable`), everything else recorded.
