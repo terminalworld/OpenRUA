@@ -28,22 +28,40 @@ from openrua.sandbox.down import down as sandbox_down
 @dataclass
 class Session:
     """A robot that is up, with the sandbox terminal on it, and the one
-    call that powers both off."""
+    call that powers both off. The fields are what the user should see
+    named: which robot, where it runs, which scene, which agent."""
 
     name: str
     sim: str
     sandbox: str
+    robot: str            # the profile as named on the command line
+    robot_model: str      # machine.robot.model
+    backend: str          # "simulated (ROS 2 jazzy)" or "real"
+    benchmark: str | None
     suite: str | None
     task_id: int | None
-    task: str
+    task: str             # the scene's own task sentence, if any
+    agent: str
+    model: str
     power_off: Callable[[], None]
+
+    def scene(self) -> str:
+        where = f"{self.benchmark} / {self.suite} #{self.task_id}" if self.suite else "(none)"
+        return f'{where}: "{self.task}"' if self.task else where
+
+    def header(self, tag: str, prompt: str | None = None) -> str:
+        """What was picked, one line each, before the agent opens."""
+        agent = f"{self.agent} ({self.model})"
+        if prompt:
+            agent += f', opening message: "{prompt}"'
+        return (f"[{tag}] robot     {self.robot}: {self.robot_model}, {self.backend}\n"
+                f"[{tag}] scene     {self.scene()}\n"
+                f"[{tag}] agent     {agent}\n"
+                f"[{tag}] terminal  {self.sandbox}, on the robot's ROS 2 graph")
 
     def banner(self) -> str:
         return f"""
-[up] ready.
-     robot     {self.sim}   (ROS 2 graph live; scene: {self.suite} #{self.task_id})
-     terminal  {self.sandbox}
-     task      {self.task or '(none)'}
+{self.header("up")}
 
      openrua agent --name {self.name}            # your coding agent, on the robot
      docker exec -it -u robot -w /workspace {self.sandbox} bash   # or you
@@ -108,7 +126,19 @@ def open_session(args) -> Session:
                options={**adapter.default_options,
                         **cfg.get("agent", {}).get("options", {})},
                workspace=str(workdir / "workspace"), task=task)
-    return Session(args.name, sim_name, sandbox_name, suite, task_id, task, power_off)
+    backend = cfg["machine"]["backend"]
+    where = (f"simulated (ROS 2 {backend.get('ros_distro', '?')})" if backend["kind"] == "sim"
+             else "real")
+    robot = cfg["machine"].get("robot", {})
+    return Session(
+        name=args.name, sim=sim_name, sandbox=sandbox_name,
+        robot=args.robot or f"{args.bench}'s robot",
+        robot_model=robot.get("model", "?"), backend=where,
+        benchmark=args.bench or cfg.get("task", {}).get("benchmark"),
+        suite=suite, task_id=task_id, task=task,
+        agent=adapter.name,
+        model=cfg.get("agent", {}).get("model") or adapter.default_model,
+        power_off=power_off)
 
 
 def run(args) -> int:

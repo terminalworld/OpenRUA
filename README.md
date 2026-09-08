@@ -48,18 +48,23 @@ OpenRUA gives you one command for three things:
 ```bash
 pip install git+https://github.com/terminalworld/OpenRUA
 openrua build                                    # the three images, once
-openrua run panda-sim "pick up the bowl and place it on the plate"
+openrua run panda-sim --agent claude-code "pick up the bowl and place it on the plate"
 ```
 
-`run` brings the simulated Franka Panda up with its ROS 2 graph, opens
-Claude Code on its terminal with the sentence as the opening message,
-and powers the robot off when you leave the agent. The scene comes
-from the profile (`panda-sim` names a LIBERO kitchen: a bowl, a plate, a
-wine bottle, a drawer, a stove; `--task-suite` and `--task-id` pick
-another), the agent from your config (Claude Code unless
-`~/.openrua/config.yaml` or `--agent codex` says otherwise), and the
-sentence is the agent's opening message. The same three steps
-as separate commands, for a robot that should stay up between sessions:
+```
+[run] robot     panda-sim: Franka Emika Panda, simulated (ROS 2 jazzy)
+[run] scene     libero_pro / libero_goal_task #0: "open the bottom drawer of the cabinet"
+[run] agent     claude-code (claude-opus-5), opening message: "pick up the bowl and place it on the plate"
+[run] terminal  openrua-sandbox, on the robot's ROS 2 graph
+[run] the robot powers off when the agent exits
+```
+
+The robot profile names the scene (a LIBERO kitchen: a bowl, a plate, a
+wine bottle, a drawer, a stove; the sentence is yours, the scene's own
+task is shown for reference); `--agent codex` opens Codex instead;
+`--task-suite` and `--task-id` pick another scene; `openrua robots`,
+`openrua benchmarks` and `openrua agents` list the choices. To keep a
+robot up between sessions, do the same in three commands:
 `openrua up panda-sim`, then `openrua agent "..."` in a second terminal,
 then `openrua down`.
 

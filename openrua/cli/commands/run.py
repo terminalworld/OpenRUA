@@ -29,8 +29,8 @@ def run(args) -> int:
                 f"{adapter.name} has no interactive mode",
                 hint=f"bring the robot up with `openrua up` and open a shell on it: "
                      f"docker exec -it -u robot -w /workspace {st['sandbox']} bash")
-        print(f"[run] {adapter.name} on {st['sandbox']}; the robot powers off when it exits",
-              flush=True)
+        print(session.header("run", args.prompt), flush=True)
+        print("[run] the robot powers off when the agent exits", flush=True)
         return subprocess.call(argv)
     finally:
         session.power_off()
