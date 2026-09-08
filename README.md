@@ -53,7 +53,12 @@ openrua run panda-sim "pick up the bowl and place it on the plate"
 
 `run` brings the simulated Franka Panda up with its ROS 2 graph, opens
 Claude Code on its terminal with the sentence as the opening message,
-and powers the robot off when you leave the agent. The same three steps
+and powers the robot off when you leave the agent. The scene comes
+from the profile (`panda-sim` names a LIBERO kitchen: a bowl, a plate, a
+wine bottle, a drawer, a stove; `--task-suite` and `--task-id` pick
+another), the agent from your config (Claude Code unless
+`~/.openrua/config.yaml` or `--agent codex` says otherwise), and the
+sentence is the agent's opening message. The same three steps
 as separate commands, for a robot that should stay up between sessions:
 `openrua up panda-sim`, then `openrua agent "..."` in a second terminal,
 then `openrua down`.
