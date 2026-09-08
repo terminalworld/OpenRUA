@@ -1,13 +1,13 @@
 ---
-summary: Running RoboCLI under rootless Podman instead of Docker
+summary: Running OpenRUA under rootless Podman instead of Docker
 read_when:
   - Your machine has no Docker daemon or you cannot join the docker group
-  - robocli doctor reports rootless podman without --userns=keep-id
+  - openrua doctor reports rootless podman without --userns=keep-id
 ---
 
 # Podman
 
-RoboCLI drives its containers through the `docker` command line and
+OpenRUA drives its containers through the `docker` command line and
 uses nothing beyond what Podman implements too: `run`, `exec`, `ps`,
 `inspect`, `build`, user-defined networks with `--internal`, `--env-file`,
 `--restart`. Rootless Podman is the usual way to get containers on a
@@ -45,7 +45,7 @@ workspace. `--userns=keep-id` restores the mapping. Put it in your
 defaults file once:
 
 ```yaml
-# ~/.robocli/config.yaml
+# ~/.openrua/config.yaml
 sandbox:
   run_args: ["--userns=keep-id"]
 ```
@@ -53,7 +53,7 @@ sandbox:
 `sandbox.run_args` is appended verbatim to the sandbox's `docker run`
 and belongs to the machine, not to a benchmark config. The robot's own
 container runs as root and needs no flag: rootless root is you.
-`robocli doctor` checks both points and prints the lines above when
+`openrua doctor` checks both points and prints the lines above when
 they are missing; each trial's `provenance.json` records the engine
 string and the flags the sandbox took.
 

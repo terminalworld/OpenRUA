@@ -1,7 +1,7 @@
 ---
 summary: Bring the simulated Panda up, hand your coding agent a task, watch what it does
 read_when:
-  - You have installed RoboCLI and want to see it work once
+  - You have installed OpenRUA and want to see it work once
   - You want to know what the agent actually sees and types
 ---
 
@@ -9,12 +9,12 @@ read_when:
 
 Twenty minutes: a simulated Franka Panda with a live ROS 2 graph, your
 coding agent on its terminal, one task. [Install](../docs/install.md)
-first; `robocli doctor panda-sim` must be green.
+first; `openrua doctor panda-sim` must be green.
 
 ## 1. Bring the robot up
 
 ```bash
-robocli up panda-sim
+openrua up panda-sim
 ```
 
 The robot container boots its scene and MoveIt (about a minute), the
@@ -23,12 +23,12 @@ the foreground:
 
 ```
 [up] ready.
-     robot     robocli-sim   (ROS 2 graph live; scene: libero_goal_task #0)
-     terminal  robocli-sandbox
+     robot     openrua-sim   (ROS 2 graph live; scene: libero_goal_task #0)
+     terminal  openrua-sandbox
      task      open the middle drawer of the cabinet
 
-     robocli agent --name robocli            # your coding agent, on the robot
-     docker exec -it -u robot -w /workspace robocli-sandbox bash   # or you
+     openrua agent --name openrua            # your coding agent, on the robot
+     docker exec -it -u robot -w /workspace openrua-sandbox bash   # or you
 
      Ctrl-C here powers the robot off.
 ```
@@ -41,7 +41,7 @@ the foreground:
 In a second terminal:
 
 ```bash
-robocli agent "open the middle drawer of the cabinet"
+openrua agent "open the middle drawer of the cabinet"
 ```
 
 This opens the agent `up` was configured with (Claude Code by default,
@@ -90,7 +90,7 @@ From there it is ROS 2: a pixel-to-world lookup, an IK move or a
 check. To watch from the outside, open a shell in the same sandbox:
 
 ```bash
-docker exec -it -u robot -w /workspace robocli-sandbox bash
+docker exec -it -u robot -w /workspace openrua-sandbox bash
 ros2 topic echo /joint_states --once
 ```
 
@@ -98,12 +98,12 @@ ros2 topic echo /joint_states --once
 
 `Ctrl-C` in the first terminal powers the robot off and removes both
 containers. The workspace the agent left behind, snapshots and scripts
-included, stays under `~/.robocli/workspaces/robocli/`.
+included, stays under `~/.openrua/workspaces/openrua/`.
 
 ## Next
 
 - [your-own-robot.md](../docs/your-own-robot.md): the same flow on your
   robot, from a profile drafted off its live graph.
 - [running-experiments.md](../docs/running-experiments.md): the scored
-  version, `robocli run`, with the benchmark's own predicate deciding
+  version, `openrua run`, with the benchmark's own predicate deciding
   success and every trial recorded.

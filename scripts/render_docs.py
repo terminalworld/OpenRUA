@@ -17,10 +17,10 @@ from typing import Any, get_args, get_origin
 DOCS = Path(__file__).resolve().parents[1] / "docs"
 
 CLI_HEAD = """---
-summary: Every robocli verb, its arguments, and the exit codes
+summary: Every openrua verb, its arguments, and the exit codes
 read_when:
   - You want the exact flags of a verb without running --help
-  - A script needs to act on robocli's exit code
+  - A script needs to act on openrua's exit code
 ---
 
 # Command line
@@ -40,17 +40,17 @@ read_when:
 # Configuration
 
 Generated from the schema by `scripts/render_docs.py`; edit the
-`Field(description=...)` in `robocli/config/schema.py`, not this page.
-Unknown keys are errors everywhere. `robocli config schema` prints the
+`Field(description=...)` in `openrua/config/schema.py`, not this page.
+Unknown keys are errors everywhere. `openrua config schema` prints the
 same information as JSON Schema.
 
 """
 
 
 def render_cli() -> str:
-    sys.argv[0] = "robocli"  # argparse derives every prog from it
-    from robocli.cli import build_parser
-    from robocli.errors import EXIT_CODES
+    sys.argv[0] = "openrua"  # argparse derives every prog from it
+    from openrua.cli import build_parser
+    from openrua.errors import EXIT_CODES
 
     ap = build_parser()
     verbs = next(a for a in ap._actions if isinstance(a, argparse._SubParsersAction))
@@ -59,14 +59,14 @@ def render_cli() -> str:
     out = [CLI_HEAD, f"```\n{ap.format_usage().rstrip()}\n```\n\n| verb | does |\n|---|---|\n"]
     for action in verbs._choices_actions:
         out.append(f"| `{action.dest}` | {action.help} |\n")
-    out.append("\nGlobal options: `--home` (the user directory, default `$ROBOCLI_HOME` "
-               "or `~/.robocli`), `--version`.\n")
+    out.append("\nGlobal options: `--home` (the user directory, default `$OPENRUA_HOME` "
+               "or `~/.openrua`), `--version`.\n")
     for name, sub in verbs.choices.items():
-        out.append(f"\n## robocli {name}\n\n```\n{sub.format_help().rstrip()}\n```\n")
+        out.append(f"\n## openrua {name}\n\n```\n{sub.format_help().rstrip()}\n```\n")
         nested = [a for a in sub._actions if isinstance(a, argparse._SubParsersAction)]
         for group in nested:
             for unit, p in group.choices.items():
-                out.append(f"\n### robocli {name} {unit}\n\n```\n{p.format_help().rstrip()}\n```\n")
+                out.append(f"\n### openrua {name} {unit}\n\n```\n{p.format_help().rstrip()}\n```\n")
     out.append("\n## Exit codes\n\n| code | meaning |\n|---|---|\n")
     notes = {"ok": "done", "error": "any other failure", "usage": "bad arguments",
              "noinput": "a named robot, benchmark, agent or file does not exist",
@@ -117,13 +117,13 @@ def _default(field) -> str:
 def render_config() -> str:
     from pydantic import BaseModel
 
-    from robocli.config import schema
+    from openrua.config import schema
 
     roots = [
-        (schema.RobotProfile, "robots/<name>.yaml (bundled or ~/.robocli/robots/)"),
-        (schema.Benchmark, "benchmarks/<name>.yaml (bundled or ~/.robocli/benchmarks/)"),
-        (schema.UserConfig, "~/.robocli/config.yaml and the package's configs/config.yaml"),
-        (schema.AgentManifest, "agents/<name>.yaml (bundled or ~/.robocli/agents/)"),
+        (schema.RobotProfile, "robots/<name>.yaml (bundled or ~/.openrua/robots/)"),
+        (schema.Benchmark, "benchmarks/<name>.yaml (bundled or ~/.openrua/benchmarks/)"),
+        (schema.UserConfig, "~/.openrua/config.yaml and the package's configs/config.yaml"),
+        (schema.AgentManifest, "agents/<name>.yaml (bundled or ~/.openrua/agents/)"),
         (schema.ResolvedConfig, "<trial>/config.yaml, the resolved view every party reads"),
     ]
     seen: list[type[BaseModel]] = []

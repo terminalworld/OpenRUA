@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from robocli.robot.sim.bridge.ros.arms import arm_targets
+from openrua.robot.sim.bridge.ros.arms import arm_targets
 
 
 def test_absolute_mode_commanded_moves_others_hold():

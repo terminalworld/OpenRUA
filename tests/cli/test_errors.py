@@ -2,7 +2,7 @@
 import subprocess
 import sys
 
-from robocli import errors
+from openrua import errors
 
 
 def test_family_and_exit_codes():
@@ -14,18 +14,18 @@ def test_family_and_exit_codes():
     assert errors.UnavailableError("x").exit_code == 69
     assert errors.AuthError("x").exit_code == 77
     assert errors.UsageError("x").exit_code == 2
-    from robocli.sandbox import SandboxError
-    from robocli.proxy import ProxyError
+    from openrua.sandbox import SandboxError
+    from openrua.proxy import ProxyError
     assert issubclass(SandboxError, errors.UnavailableError)
     assert issubclass(ProxyError, errors.UnavailableError)
 
 
 def test_cli_prints_message_and_hint_and_exits_with_the_code(tmp_path):
-    r = subprocess.run([sys.executable, "-m", "robocli", "--home", str(tmp_path),
+    r = subprocess.run([sys.executable, "-m", "openrua", "--home", str(tmp_path),
                         "agent", "--name", "ghost"], capture_output=True, text=True)
     assert r.returncode == 66
     assert "error: no live robot named 'ghost'" in r.stderr
-    assert "hint: robocli up <robot> --name ghost" in r.stderr
-    r = subprocess.run([sys.executable, "-m", "robocli", "--home", str(tmp_path),
+    assert "hint: openrua up <robot> --name ghost" in r.stderr
+    r = subprocess.run([sys.executable, "-m", "openrua", "--home", str(tmp_path),
                         "doctor", "--json", "nope"], capture_output=True, text=True)
     assert r.returncode == 1 and '"robot-profile"' in r.stdout

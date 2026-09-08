@@ -2,8 +2,8 @@
 
 import json
 
-from robocli import agents
-from robocli.testing import check_manifest
+from openrua import agents
+from openrua.testing import check_manifest
 
 EVENTS = [
     {"type": "thread.started", "thread_id": "01a0789b-21d6-70d3-a99a-e32fb3ed541c"},

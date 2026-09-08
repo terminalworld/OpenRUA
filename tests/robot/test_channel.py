@@ -12,7 +12,7 @@ import io
 import json
 import sys
 
-from robocli.robot.sim.bridge.rpc import ControlChannel
+from openrua.robot.sim.bridge.rpc import ControlChannel
 
 
 class _Out:

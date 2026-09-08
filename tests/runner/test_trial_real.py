@@ -4,7 +4,7 @@ a not-applicable verdict, everything else as usual."""
 import json
 from pathlib import Path
 
-from robocli.runner import trial
+from openrua.runner import trial
 
 
 class _Handle:

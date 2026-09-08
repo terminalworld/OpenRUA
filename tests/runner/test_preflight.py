@@ -6,9 +6,9 @@ would otherwise pass every trial unnoticed.
 
 from __future__ import annotations
 
-from robocli.config import load_config
+from openrua.config import load_config
 
-from robocli.runner.preflight import build_checks
+from openrua.runner.preflight import build_checks
 
 
 class _Agent:
@@ -24,7 +24,7 @@ def _names(cfg):
     # Deep copy first: normalize mutates, and the fixtures are shared.
     import copy
 
-    from robocli.config import normalize_arms
+    from openrua.config import normalize_arms
     view = normalize_arms(copy.deepcopy(cfg))
     return {name: snippet for name, snippet in build_checks(view, _Agent())}
 
@@ -88,7 +88,7 @@ def test_real_configs_generate_a_full_gate():
 
     import yaml
     for bench in ("libero_pro", "capbench", "robocasa365"):
-        cfg = load_config(Path(__file__).resolve().parents[2] / "robocli" / "configs" /
+        cfg = load_config(Path(__file__).resolve().parents[2] / "openrua" / "configs" /
                           "benchmarks" / f"{bench}.yaml")
         checks = _names(cfg)
         for expected in ("clock_topic", "joint_states_flow",
@@ -102,8 +102,8 @@ def test_twoarm_view_mints_per_arm_checks():
 
     import yaml
 
-    from robocli.runner.preflight import build_checks
-    from robocli.config import apply_suite_overrides, normalize_arms
+    from openrua.runner.preflight import build_checks
+    from openrua.config import apply_suite_overrides, normalize_arms
 
     class _A:
         def credentials_check(self):
@@ -112,7 +112,7 @@ def test_twoarm_view_mints_per_arm_checks():
         def sandbox_cli_check(self):
             return ("sandbox_cli_matches_pin", "true")
 
-    cfg = load_config(Path(__file__).resolve().parents[2] / "robocli" / "configs" /
+    cfg = load_config(Path(__file__).resolve().parents[2] / "openrua" / "configs" /
                           "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_twoarm_lift")
     normalize_arms(cfg)
@@ -131,7 +131,7 @@ def test_flow_checks_carry_the_raised_ceiling():
     # publish under heavy host load; the per-check ceiling is 60 s.
     # Guard against a silent revert (a lower ceiling would re-open the race
     # without changing any test that only counts check NAMES).
-    from robocli.runner.preflight import _CHECK_TIMEOUT_S
+    from openrua.runner.preflight import _CHECK_TIMEOUT_S
     assert _CHECK_TIMEOUT_S >= 60
     checks = _names(_ARM_CFG)
     for flow in ("joint_states_flow", "tf_flow"):
@@ -145,8 +145,8 @@ def test_aggregate_budget_scales_with_the_ceiling():
     # of a readable red-check list).
     import copy
 
-    from robocli.runner import preflight as preflight
-    from robocli.config import normalize_arms
+    from openrua.runner import preflight as preflight
+    from openrua.config import normalize_arms
     view = normalize_arms(copy.deepcopy(_ARM_CFG))
     n = len(preflight.build_checks(view, _Agent()))
     expected = n * preflight._CHECK_TIMEOUT_S + 60.0

@@ -8,18 +8,18 @@ read_when:
 # Configuration
 
 Generated from the schema by `scripts/render_docs.py`; edit the
-`Field(description=...)` in `robocli/config/schema.py`, not this page.
-Unknown keys are errors everywhere. `robocli config schema` prints the
+`Field(description=...)` in `openrua/config/schema.py`, not this page.
+Unknown keys are errors everywhere. `openrua config schema` prints the
 same information as JSON Schema.
 
 ## Files
 
 | file | schema |
 |---|---|
-| `robots/<name>.yaml (bundled or ~/.robocli/robots/)` | [RobotProfile](#robotprofile) |
-| `benchmarks/<name>.yaml (bundled or ~/.robocli/benchmarks/)` | [Benchmark](#benchmark) |
-| `~/.robocli/config.yaml and the package's configs/config.yaml` | [UserConfig](#userconfig) |
-| `agents/<name>.yaml (bundled or ~/.robocli/agents/)` | [AgentManifest](#agentmanifest) |
+| `robots/<name>.yaml (bundled or ~/.openrua/robots/)` | [RobotProfile](#robotprofile) |
+| `benchmarks/<name>.yaml (bundled or ~/.openrua/benchmarks/)` | [Benchmark](#benchmark) |
+| `~/.openrua/config.yaml and the package's configs/config.yaml` | [UserConfig](#userconfig) |
+| `agents/<name>.yaml (bundled or ~/.openrua/agents/)` | [AgentManifest](#agentmanifest) |
 | `<trial>/config.yaml, the resolved view every party reads` | [ResolvedConfig](#resolvedconfig) |
 
 ## RobotProfile
@@ -28,12 +28,12 @@ A robots/<name>.yaml: the robot, and the scene ``up`` opens by default.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `world` | [World](#world) \| null | None | default scene for robocli up |
+| `world` | [World](#world) \| null | None | default scene for openrua up |
 | `machine` | [Machine](#machine) | **required** | the robot |
 
 ## World
 
-The scene ``robocli up <robot>`` loads when no benchmark is named.
+The scene ``openrua up <robot>`` loads when no benchmark is named.
 
 | key | type | default | meaning |
 |---|---|---|---|
@@ -48,7 +48,7 @@ The scene ``robocli up <robot>`` loads when no benchmark is named.
 | `backend` | [SimBackend](#simbackend) \| [RealBackend](#realbackend) | **required** | how the robot is provided: kind: sim \| real |
 | `workspace_template` | str \| null | 'workspace' | workspace tree seeded into the sandbox; null = none |
 | `controller` | str | 'JOINT_POSITION' | robosuite controller |
-| `controller_config` | str \| null | None | controller json: under robots/ (bundled, then ~/.robocli/robots/) or a path |
+| `controller_config` | str \| null | None | controller json: under robots/ (bundled, then ~/.openrua/robots/) or a path |
 | `controller_kp_scale` | float | 10.0 | multiplier on the simulator's joint position gains |
 | `cameras` | [Cameras](#cameras) |  | the cameras the graph publishes |
 | `control` | [Control](#control) |  | how goals are executed and judged |
@@ -75,7 +75,7 @@ A real robot: its ROS 2 graph is already there or a launch command starts it.
 | `launch` | str \| null | None | command that brings the robot's ROS 2 graph up; null = already running |
 | `image` | str \| null | None | docker image the launch command runs in, on the host network (a vendor driver pinned to its own ROS release); null = run it on the host |
 | `discovery` | [Discovery](#discovery) | **required** | how the sandbox reaches the graph |
-| `sandbox_image` | str \| null | None | agent terminal image; default: robocli-sandbox-<ros_distro> |
+| `sandbox_image` | str \| null | None | agent terminal image; default: openrua-sandbox-<ros_distro> |
 
 ## Discovery
 
@@ -95,8 +95,8 @@ A simulated robot: a container running the bridge over a simulator venv.
 |---|---|---|---|
 | `kind` | 'sim' | **required** | a simulated robot |
 | `ros_distro` | 'jazzy' \| 'humble' | 'jazzy' | the ROS 2 distro the robot runs; the robot and sandbox images are named after it |
-| `image` | str \| null | None | simulated robot image; default: robocli-sim-<ros_distro> |
-| `sandbox_image` | str \| null | None | agent terminal image; default: robocli-sandbox-<ros_distro> |
+| `image` | str \| null | None | simulated robot image; default: openrua-sim-<ros_distro> |
+| `sandbox_image` | str \| null | None | agent terminal image; default: openrua-sandbox-<ros_distro> |
 | `gpus` | bool | False | render on the GPU (needs nvidia toolkit) |
 | `resources` | dict[str, Any] \| null | None | render_threads: int \| off \| auto |
 | `simulator` | [Simulator](#simulator) | **required** | the simulator venv the bridge runs in |
@@ -105,7 +105,7 @@ A simulated robot: a container running the bridge over a simulator venv.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `venv` | str | **required** | simulator venv: absolute, ~, or relative to ~/.robocli/simulators/ |
+| `venv` | str | **required** | simulator venv: absolute, ~, or relative to ~/.openrua/simulators/ |
 | `container` | str \| null | None | which sim image family (sim-jazzy \| sim-humble); documentation |
 
 ## Cameras
@@ -116,7 +116,7 @@ A simulated robot: a container running the bridge over a simulator venv.
 | `names` | list[str] \| null | None | camera names; null = every camera the scene defines |
 | `rate_hz` | float | 2.0 | wall-clock publish rate |
 | `render_mode` | 'on_demand' \| 'always' | 'on_demand' | render a camera only while subscribed, or always |
-| `record` | list[str] \| null | None | the cameras `robocli run --record` captures when none are named: the first is a demo's main view, the second its inset |
+| `record` | list[str] \| null | None | the cameras `openrua run --record` captures when none are named: the first is a demo's main view, the second its inset |
 
 ## Control
 
@@ -261,7 +261,7 @@ A benchmarks/<name>.yaml as written: names its robot or carries a machine.
 | key | type | default | meaning |
 |---|---|---|---|
 | `benchmark` | str | **required** | loader name: libero_pro \| capbench \| robocasa365 |
-| `suites` | list[str] | **required** | task suites this benchmark runs; robocli run picks one with --task-suite |
+| `suites` | list[str] | **required** | task suites this benchmark runs; openrua run picks one with --task-suite |
 | `init_states` | str \| null | None | how episodes start (documentation of the loader's behaviour): benchmark-files \| seeded-reset |
 | `split` | str | 'target' | robocasa: object/layout split |
 | `task_language` | dict[str, str] | {} | capbench: task name -> instruction |
@@ -291,15 +291,15 @@ A benchmarks/<name>.yaml as written: names its robot or carries a machine.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `name` | str \| null | None | agent name (robocli agents lists them); the package default lives in configs/config.yaml |
+| `name` | str \| null | None | agent name (openrua agents lists them); the package default lives in configs/config.yaml |
 | `model` | str \| null | None | model id; default: the adapter's |
 | `version` | str \| null | None | pin the agent CLI version: the sandbox image must carry it and preflight checks it; default: whatever the image has |
-| `credentials_dir` | str \| null | None | login profile directory; default: ~/.robocli/credentials/<agent name> |
+| `credentials_dir` | str \| null | None | login profile directory; default: ~/.openrua/credentials/<agent name> |
 | `options` | dict[str, Any] | {} | adapter-specific knobs passed through as given, over the adapter's default_options |
 
 ## UserConfig
 
-A defaults file: the package's configs/config.yaml or ~/.robocli/config.yaml.
+A defaults file: the package's configs/config.yaml or ~/.openrua/config.yaml.
 
 | key | type | default | meaning |
 |---|---|---|---|
@@ -344,7 +344,7 @@ configs/agents/<name>.yaml: the facts about one coding agent, no code. The hooks
 | `version_argv` | list[str] \| null | None | command printing the agent's version |
 | `instruction_file` | str \| null | None | the file the agent reads instructions from, e.g. AGENTS.md |
 | `default_options` | dict[str, Any] | {} | knobs a config may override under agent.options |
-| `hooks` | str \| null | None | hooks module name under plugins/agents/ (bundled, then ~/.robocli/plugins/agents/) |
+| `hooks` | str \| null | None | hooks module name under plugins/agents/ (bundled, then ~/.openrua/plugins/agents/) |
 
 ## Credentials
 
@@ -352,7 +352,7 @@ Where an agent keeps its login and how the sandbox is told about it.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `dirname` | str | **required** | profile directory name under ~/.robocli/credentials/ |
+| `dirname` | str | **required** | profile directory name under ~/.openrua/credentials/ |
 | `filename` | str | **required** | the credentials file inside that directory |
 | `config_env` | str | **required** | environment variable naming the profile directory |
 | `mount_point` | str | **required** | where the profile is mounted inside the sandbox |

@@ -10,8 +10,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
-from robocli.robot.sim.bridge.environments.worker import Worker
-from robocli.robot.sim.bridge.rpc import Monitor
+from openrua.robot.sim.bridge.environments.worker import Worker
+from openrua.robot.sim.bridge.rpc import Monitor
 
 
 class _Env:

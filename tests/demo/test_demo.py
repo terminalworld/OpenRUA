@@ -12,10 +12,10 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from robocli.demo import compose as demo
-from robocli.robot.sim.bridge.rpc import Recording
-from robocli.runner import record
-from robocli.runner.operators import blocks
+from openrua.demo import compose as demo
+from openrua.robot.sim.bridge.rpc import Recording
+from openrua.runner import record
+from openrua.runner.operators import blocks
 
 
 class _Sim:
@@ -37,8 +37,8 @@ def test_recording_writes_frames_and_index(tmp_path):
 
 
 def test_blocks_split_on_markers_and_keep_heredocs():
-    script = ("#!/usr/bin/env bash\n# header\n\n# robocli op 0\nls\n\n"
-              "# robocli op 1\ncat > f <<'EOF'\n# robocli op 99 is content, no marker\nEOF\n")
+    script = ("#!/usr/bin/env bash\n# header\n\n# openrua op 0\nls\n\n"
+              "# openrua op 1\ncat > f <<'EOF'\n# openrua op 99 is content, no marker\nEOF\n")
     ops = blocks(script)
     assert len(ops) == 2
     assert ops[0].strip() == "ls"
@@ -104,7 +104,7 @@ def test_render_refuses_an_unrecorded_trial_with_the_replay_command(tmp_path):
     (trial / "result.json").write_text(json.dumps(
         {"task_suite": "s", "task_id": 3, "init_state_id": 1}))
     (trial / "provenance.json").write_text(json.dumps({"config_file": "libero_pro"}))
-    from robocli.errors import NotFound
+    from openrua.errors import NotFound
     with pytest.raises(NotFound) as e:
         demo.load(trial)
     assert "--operator script" in e.value.hint and "--record" in e.value.hint
@@ -112,8 +112,8 @@ def test_render_refuses_an_unrecorded_trial_with_the_replay_command(tmp_path):
 
 
 def test_a_real_robot_refuses_to_record():
-    from robocli import robot
-    from robocli.errors import ConfigError
+    from openrua import robot
+    from openrua.errors import ConfigError
     with pytest.raises(ConfigError, match="simulated"):
         robot.up({"kind": "real"}, name="x", config_path="c", task_suite="s",
                  task_id=0, log_path=Path("/dev/null"), record="/tmp/frames")
@@ -130,7 +130,7 @@ def test_shell_keeps_state_and_gives_each_op_an_empty_stdin(monkeypatch):
     """One persistent shell: cd carries over; a command that reads stdin
     gets nothing and cannot swallow the operations queued behind it."""
     import subprocess
-    from robocli.runner import operators
+    from openrua.runner import operators
 
     real_popen = subprocess.Popen
     monkeypatch.setattr(operators.subprocess, "Popen",

@@ -3,7 +3,7 @@
 ## Setting up
 
 ```bash
-git clone https://github.com/terminalworld/RoboCLI && cd RoboCLI
+git clone https://github.com/terminalworld/OpenRUA && cd OpenRUA
 python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest -q && .venv/bin/lint-imports
 ```
@@ -16,36 +16,36 @@ per unit (`tests/<unit>/`).
 
 ## Adding things
 
-- **A robot**: a profile under `robocli/configs/robots/<name>.yaml`
-  (docs/your-own-robot.md). `robocli doctor <name>` must load it;
+- **A robot**: a profile under `openrua/configs/robots/<name>.yaml`
+  (docs/your-own-robot.md). `openrua doctor <name>` must load it;
   `tests/config/test_config.py` validates every bundled profile.
-- **An agent**: a manifest under `robocli/configs/agents/<name>.yaml`
-  and a hooks module under `robocli/plugins/agents/<hooks>.py`
-  (docs/agents.md). `robocli.testing.check_manifest` must pass; the
+- **An agent**: a manifest under `openrua/configs/agents/<name>.yaml`
+  and a hooks module under `openrua/plugins/agents/<hooks>.py`
+  (docs/agents.md). `openrua.testing.check_manifest` must pass; the
   bundled agents run through it in `tests/agents/test_agents.py`. Nothing
   outside those two directories may name the agent (the boundary
   test lists the banned tokens).
-- **A benchmark**: a config under `robocli/configs/benchmarks/<name>.yaml` and,
+- **A benchmark**: a config under `openrua/configs/benchmarks/<name>.yaml` and,
   if it needs a new simulator, a loader under
-  `robocli/robot/sim/bridge/environments/`.
-- **A config key**: add it to `robocli/config/schema.py` with a default and a
+  `openrua/robot/sim/bridge/environments/`.
+- **A config key**: add it to `openrua/config/schema.py` with a default and a
   description; unknown keys are errors everywhere, so the schema is
   the single place a key exists.
 
 ## Command-line conventions
 
 - The main object is a positional argument; configuration is a flag:
-  `robocli up panda-sim --ros-domain 7`, `robocli doctor ur5e --json`.
+  `openrua up panda-sim --ros-domain 7`, `openrua doctor ur5e --json`.
   An optional filter, mode or setting stays a flag even when it is
   usually given.
 - Every argument has `help=`, and the help says where the default comes
-  from (`default: the profile's`, `default: ~/.robocli`).
-- Every command has both `help` (one line, in `robocli --help`) and
-  `description` (a sentence or two, in `robocli <verb> --help`).
+  from (`default: the profile's`, `default: ~/.openrua`).
+- Every command has both `help` (one line, in `openrua --help`) and
+  `description` (a sentence or two, in `openrua <verb> --help`).
   Registration order in `build_parser` is the `--help` order.
 - Listings take `--json`; `doctor` prints JSON whenever stdout is not
   a terminal.
-- Errors are `robocli.errors` subclasses raised from library code with
+- Errors are `openrua.errors` subclasses raised from library code with
   a `hint`; only the entry point prints and exits (sysexits codes).
   Never `SystemExit` from a library function.
 
@@ -87,7 +87,7 @@ in `examples/`.
 
 - Every file runs on its own with parameters in and values or files
   out; units talk through parameters and files, never environment
-  variables (the one exception is `ROBOCLI_HOME`, read once at the
+  variables (the one exception is `OPENRUA_HOME`, read once at the
   CLI entry point).
 - Knowledge lives in one place: an agent fact in its manifest or hooks
   module, a path rule in `config/paths.py`, a config key in

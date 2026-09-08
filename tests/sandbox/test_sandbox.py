@@ -6,7 +6,7 @@ standalone smoke in the phase log; here = everything testable dry.
 
 from __future__ import annotations
 
-from robocli.config import load_config
+from openrua.config import load_config
 
 from pathlib import Path
 
@@ -14,16 +14,16 @@ import pytest
 import yaml
 from tests.conftest import requires_image
 
-from robocli.sandbox import build as hbuild
-from robocli.sandbox import workspace
+from openrua.sandbox import build as hbuild
+from openrua.sandbox import workspace
 
 REPO = Path(__file__).resolve().parents[2]
-LIBERO_CFG = REPO / "robocli" / "configs" / "benchmarks" / "libero_pro.yaml"
+LIBERO_CFG = REPO / "openrua" / "configs" / "benchmarks" / "libero_pro.yaml"
 PKG = Path(workspace.__file__).resolve().parent
 
 
 def _cfg() -> dict:
-    from robocli.config import normalize_arms
+    from openrua.config import normalize_arms
     return normalize_arms(load_config(LIBERO_CFG))
 
 
@@ -45,7 +45,7 @@ def test_manifest_omits_gripper_for_gripperless_machine(tmp_path):
     # The wipe-suite shape: a machine whose config lists no gripper must
     # not promise one in machine.yaml. The
     # deletion happens BEFORE normalize, like a real suite override.
-    from robocli.config import normalize_arms
+    from openrua.config import normalize_arms
     cfg = load_config(LIBERO_CFG)
     del cfg["machine"]["ports"]["gripper"]
     normalize_arms(cfg)
@@ -101,9 +101,9 @@ def test_build_rejects_double_quotes_and_multiline():
 
 
 def test_up_refuses_missing_image(tmp_path):
-    from robocli.sandbox import up as hup
+    from openrua.sandbox import up as hup
     with pytest.raises(Exception) as e:
-        hup.up(_cfg(), tmp_path / "ws", image="robocli-definitely-missing-image")
+        hup.up(_cfg(), tmp_path / "ws", image="openrua-definitely-missing-image")
     assert "up never builds" in str(e.value)
 
 
@@ -118,23 +118,23 @@ def test_harness_imports_no_layer():
             mods = [a.name for a in node.names] if isinstance(node, ast.Import) \
                 else [node.module] if isinstance(node, ast.ImportFrom) and node.module else []
             for m in mods:
-                assert not any(m.startswith(f"robocli.{layer}")
+                assert not any(m.startswith(f"openrua.{layer}")
                                for layer in ("robot.sim.bridge", "runner")), \
                     f"{py.name} imports {m}"
 
 
 def test_up_rejects_bad_internet_value(tmp_path):
-    from robocli.sandbox import up as hup
+    from openrua.sandbox import up as hup
     with pytest.raises(Exception) as e:
-        hup.up(_cfg(), tmp_path / "ws", image="robocli-sandbox-jazzy", internet="all-open")
+        hup.up(_cfg(), tmp_path / "ws", image="openrua-sandbox-jazzy", internet="all-open")
     assert "--internet" in str(e.value)
 
 
 # ------------------------------------------------- robustness (live docker)
 
-@requires_image("robocli-sandbox-jazzy")
+@requires_image("openrua-sandbox-jazzy")
 def test_up_instructive_errors(tmp_path):
-    from robocli.sandbox import up as hup
+    from openrua.sandbox import up as hup
     # missing config file (the command line loads it)
     with pytest.raises(Exception) as e:
         hup.load(tmp_path / "nope.yaml")
@@ -143,34 +143,34 @@ def test_up_instructive_errors(tmp_path):
     cfg = _cfg()
     cfg["machine"]["workspace_template"] = "no_such_template"
     with pytest.raises(Exception) as e:
-        hup.up(cfg, tmp_path / "ws", image="robocli-sandbox-jazzy")
+        hup.up(cfg, tmp_path / "ws", image="openrua-sandbox-jazzy")
     assert "no_such_template" in str(e.value)
     # proxy posture without a url
     with pytest.raises(Exception) as e:
-        hup.up(_cfg(), tmp_path / "ws", image="robocli-sandbox-jazzy", internet="proxy:")
+        hup.up(_cfg(), tmp_path / "ws", image="openrua-sandbox-jazzy", internet="proxy:")
     assert "needs a url" in str(e.value)
 
 
-@requires_image("robocli-sandbox-jazzy")
+@requires_image("openrua-sandbox-jazzy")
 def test_up_surfaces_docker_stderr_on_bad_network(tmp_path):
-    from robocli.sandbox import up as hup
+    from openrua.sandbox import up as hup
     with pytest.raises(Exception) as e:
-        hup.up(_cfg(), tmp_path / "ws", image="robocli-sandbox-jazzy",
-               network="robocli-definitely-missing-net")
+        hup.up(_cfg(), tmp_path / "ws", image="openrua-sandbox-jazzy",
+               network="openrua-definitely-missing-net")
     assert "docker run failed" in str(e.value) \
-        and "robocli-definitely-missing-net" in str(e.value)
+        and "openrua-definitely-missing-net" in str(e.value)
 
 
 def test_up_refuses_a_corpse(tmp_path):
     # alpine has no bash: docker accepts the run, the container dies at
     # once; up must refuse to hand back the name.
     import subprocess
-    from robocli.sandbox import up as hup
+    from openrua.sandbox import up as hup
     subprocess.run(["docker", "pull", "-q", "alpine:3.20"],
                    capture_output=True)
     with pytest.raises(Exception) as e:
         hup.up(_cfg(), tmp_path / "ws", image="alpine:3.20",
-               network="robocli-internal", name="sandbox-corpse-test")
+               network="openrua-internal", name="sandbox-corpse-test")
     # Either guard may catch it (docker refuses at exec, or the liveness
     # check finds an exited container); both are instructive errors.
     assert "docker run failed" in str(e.value) or "docker logs" in str(e.value)
@@ -182,10 +182,10 @@ def test_package_front_door():
     # From outside, the package is ONE unit: name + verb + --help suffice;
     # internal file names are implementation detail.
     import subprocess, sys
-    h = subprocess.run([sys.executable, "-m", "robocli.sandbox", "--help"],
+    h = subprocess.run([sys.executable, "-m", "openrua.sandbox", "--help"],
                        capture_output=True, text=True)
     assert h.returncode == 0 and "up" in h.stdout and "build" in h.stdout
-    bad = subprocess.run([sys.executable, "-m", "robocli.sandbox", "nope"],
+    bad = subprocess.run([sys.executable, "-m", "openrua.sandbox", "nope"],
                          capture_output=True, text=True)
     assert bad.returncode == 2 and "unknown verb" in bad.stderr
 
@@ -196,7 +196,7 @@ def test_manifest_drive_never_clobbers_the_ros_type():
     # "drive" and the typed column must win.
     import yaml as _yaml
 
-    from robocli.sandbox.workspace import write_machine_manifest
+    from openrua.sandbox.workspace import write_machine_manifest
     cfg = {"machine": {"ports": {"base_twist": "/cmd_vel"},
                        "base": {"type": "holonomic", "frame": "base_link"}}}
     import tempfile
@@ -212,9 +212,9 @@ def test_manifest_drive_never_clobbers_the_ros_type():
 def test_manifest_two_arms_two_of_everything(tmp_path):
     import yaml as _yaml
 
-    from robocli.config import apply_suite_overrides, normalize_arms
-    from robocli.sandbox.workspace import write_machine_manifest
-    cfg = load_config(REPO / "robocli" / "configs" / "benchmarks" / "capbench.yaml")
+    from openrua.config import apply_suite_overrides, normalize_arms
+    from openrua.sandbox.workspace import write_machine_manifest
+    cfg = load_config(REPO / "openrua" / "configs" / "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_twoarm_lift")
     normalize_arms(cfg)
     out = tmp_path / "machine.yaml"
@@ -262,7 +262,7 @@ def test_manifest_defines_every_fact_key_it_carries(tmp_path):
                     if ln.lstrip().lstrip("- ").startswith(f"{key}:"))
         assert "#" in line, f"{key} carries a value but no definition"
     assert "newtons" in text and "NOT honoured" in text  # max_effort
-    assert yaml.safe_load(text)["schema"].startswith("robocli/")
+    assert yaml.safe_load(text)["schema"].startswith("openrua/")
 
 
 def test_action_doc_does_not_promise_a_force_limited_gripper():

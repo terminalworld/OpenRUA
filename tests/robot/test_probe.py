@@ -2,7 +2,7 @@
 
 import yaml
 
-from robocli.robot.real.probe import draft_profile, read_graph
+from openrua.robot.real.probe import draft_profile, read_graph
 
 URDF_FACTS = {"name": "ur5e", "root": "base_link",
               "joints": [{"name": "shoulder_pan_joint", "type": "revolute", "lower": -6.28, "upper": 6.28},

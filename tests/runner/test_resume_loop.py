@@ -15,7 +15,7 @@ import json
 
 import pytest
 
-from robocli.runner import session as R
+from openrua.runner import session as R
 
 WALL = {"type": "rate_limit_event",
         "rate_limit_info": {"status": "rejected", "rateLimitType": "five_hour",

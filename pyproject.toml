@@ -3,9 +3,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "robocli-harness"   # the import and the command stay robocli
+name = "openrua"
 version = "0.1.0"
-description = "Connect Claude Code and Codex directly to any robot, natively: the agent works on the robot's own ROS 2 command line."
+description = "Let your Claude Code or Codex control any robot, real or simulated, through the standard ROS 2 CLI and client library."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
@@ -32,15 +32,15 @@ demo = ["pillow", "numpy", "imageio", "imageio-ffmpeg"]
 dev = ["pytest", "import-linter", "pillow", "numpy", "imageio", "imageio-ffmpeg"]
 
 [project.urls]
-Homepage = "https://github.com/terminalworld/RoboCLI"
-Repository = "https://github.com/terminalworld/RoboCLI"
+Homepage = "https://github.com/terminalworld/OpenRUA"
+Repository = "https://github.com/terminalworld/OpenRUA"
 
 [project.scripts]
-robocli = "robocli.cli:main"
-robocli-bridge = "robocli.robot.sim.bridge.main:main"
+openrua = "openrua.cli:main"
+openrua-bridge = "openrua.robot.sim.bridge.main:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["robocli"]
+packages = ["openrua"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -70,8 +70,8 @@ testpaths = ["tests"]
 #               before the agent starts), record (sole writer under runs/),
 #               lock.
 #               preflight, record and lock are leaves; the rest imports
-#               every host-side unit, never robocli.robot.sim.bridge
-#   cli         the command line (robocli up | down | agent | run | ...);
+#               every host-side unit, never openrua.robot.sim.bridge
+#   cli         the command line (openrua up | down | agent | run | ...);
 #               one module per verb, composing the units above
 #   config, errors, testing
 #               leaves shared by the host side: the schema, the loader and
@@ -85,81 +85,81 @@ testpaths = ["tests"]
 # at runtime, (3) files under runs/.
 # ---------------------------------------------------------------------------
 [tool.importlinter]
-root_package = "robocli"
+root_package = "openrua"
 
 [[tool.importlinter.contracts]]
 name = "nobody host-side imports the bridge (container-only; DDS/stdio reach it)"
 type = "forbidden"
-source_modules = ["robocli.cli", "robocli.runner", "robocli.sandbox", "robocli.proxy", "robocli.agents"]
-forbidden_modules = ["robocli.robot.sim.bridge"]
+source_modules = ["openrua.cli", "openrua.runner", "openrua.sandbox", "openrua.proxy", "openrua.agents"]
+forbidden_modules = ["openrua.robot.sim.bridge"]
 
 [[tool.importlinter.contracts]]
 name = "only the runner brings robots up"
 type = "forbidden"
-source_modules = ["robocli.runner.preflight", "robocli.runner.record", "robocli.sandbox", "robocli.proxy", "robocli.agents"]
-forbidden_modules = ["robocli.robot"]
+source_modules = ["openrua.runner.preflight", "openrua.runner.record", "openrua.sandbox", "openrua.proxy", "openrua.agents"]
+forbidden_modules = ["openrua.robot"]
 
 [[tool.importlinter.contracts]]
-name = "the bridge is self-contained (nothing from robocli outside itself)"
+name = "the bridge is self-contained (nothing from openrua outside itself)"
 type = "forbidden"
-source_modules = ["robocli.robot.sim.bridge"]
-forbidden_modules = ["robocli.cli", "robocli.runner", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.robot.base", "robocli.robot.real", "robocli.robot.sim.build", "robocli.robot.sim.up", "robocli.robot.sim.down", "robocli.robot.sim.client"]
+source_modules = ["openrua.robot.sim.bridge"]
+forbidden_modules = ["openrua.cli", "openrua.runner", "openrua.sandbox", "openrua.proxy", "openrua.agents", "openrua.robot.base", "openrua.robot.real", "openrua.robot.sim.build", "openrua.robot.sim.up", "openrua.robot.sim.down", "openrua.robot.sim.client"]
 
 [[tool.importlinter.contracts]]
 name = "the robot host side consumes data only (no shared leaf, never the bridge, no host layer)"
 type = "forbidden"
-source_modules = ["robocli.robot.base", "robocli.robot.real", "robocli.robot.sim.build", "robocli.robot.sim.up", "robocli.robot.sim.down", "robocli.robot.sim.client"]
-forbidden_modules = ["robocli.cli", "robocli.runner", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.config", "robocli.robot.sim.bridge"]
+source_modules = ["openrua.robot.base", "openrua.robot.real", "openrua.robot.sim.build", "openrua.robot.sim.up", "openrua.robot.sim.down", "openrua.robot.sim.client"]
+forbidden_modules = ["openrua.cli", "openrua.runner", "openrua.sandbox", "openrua.proxy", "openrua.agents", "openrua.config", "openrua.robot.sim.bridge"]
 
 [[tool.importlinter.contracts]]
 name = "environments, ros, rpc never see each other (parameters only)"
 type = "independence"
-modules = ["robocli.robot.sim.bridge.environments", "robocli.robot.sim.bridge.ros", "robocli.robot.sim.bridge.rpc"]
+modules = ["openrua.robot.sim.bridge.environments", "openrua.robot.sim.bridge.ros", "openrua.robot.sim.bridge.rpc"]
 
 [[tool.importlinter.contracts]]
 name = "sandbox imports no other unit (what the agent experiences knows nothing about scoring)"
 type = "forbidden"
-source_modules = ["robocli.sandbox"]
-forbidden_modules = ["robocli.runner", "robocli.cli"]
+source_modules = ["openrua.sandbox"]
+forbidden_modules = ["openrua.runner", "openrua.cli"]
 
 [[tool.importlinter.contracts]]
 name = "preflight and record are leaves (handles and paths are handed in)"
 type = "forbidden"
-source_modules = ["robocli.runner.preflight", "robocli.runner.record"]
-forbidden_modules = ["robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.cli"]
+source_modules = ["openrua.runner.preflight", "openrua.runner.record"]
+forbidden_modules = ["openrua.sandbox", "openrua.proxy", "openrua.agents", "openrua.cli"]
 
 [[tool.importlinter.contracts]]
 name = "leaves import no layer (agents, proxy)"
 type = "forbidden"
-source_modules = ["robocli.agents", "robocli.proxy"]
-forbidden_modules = ["robocli.runner", "robocli.sandbox", "robocli.cli"]
+source_modules = ["openrua.agents", "openrua.proxy"]
+forbidden_modules = ["openrua.runner", "openrua.sandbox", "openrua.cli"]
 
 [[tool.importlinter.contracts]]
 name = "the bridge never sees the host-side leaves (config, errors, doctor, testing)"
 type = "forbidden"
-source_modules = ["robocli.robot.sim.bridge"]
-forbidden_modules = ["robocli.config", "robocli.errors", "robocli.doctor", "robocli.testing"]
+source_modules = ["openrua.robot.sim.bridge"]
+forbidden_modules = ["openrua.config", "openrua.errors", "openrua.doctor", "openrua.testing"]
 
 [[tool.importlinter.contracts]]
 name = "no unit imports the top layer (cli, doctor, testing)"
 type = "forbidden"
-source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.runner", "robocli.config", "robocli.errors", "robocli.demo"]
-forbidden_modules = ["robocli.cli", "robocli.doctor", "robocli.testing"]
+source_modules = ["openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.agents", "openrua.runner", "openrua.config", "openrua.errors", "openrua.demo"]
+forbidden_modules = ["openrua.cli", "openrua.doctor", "openrua.testing"]
 
 [[tool.importlinter.contracts]]
 name = "demo reads a trial's files and imports errors only"
 type = "forbidden"
-source_modules = ["robocli.demo"]
-forbidden_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.agents", "robocli.runner", "robocli.config", "robocli.cli", "robocli.doctor", "robocli.testing"]
+source_modules = ["openrua.demo"]
+forbidden_modules = ["openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.agents", "openrua.runner", "openrua.config", "openrua.cli", "openrua.doctor", "openrua.testing"]
 
 [[tool.importlinter.contracts]]
 name = "hooks modules import the agent contract only"
 type = "forbidden"
-source_modules = ["robocli.plugins"]
-forbidden_modules = ["robocli.agents.registry", "robocli.agents.launcher", "robocli.agents.credentials", "robocli.agents.prompts", "robocli.config", "robocli.errors", "robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.runner", "robocli.cli", "robocli.doctor", "robocli.testing"]
+source_modules = ["openrua.plugins"]
+forbidden_modules = ["openrua.agents.registry", "openrua.agents.launcher", "openrua.agents.credentials", "openrua.agents.prompts", "openrua.config", "openrua.errors", "openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.runner", "openrua.cli", "openrua.doctor", "openrua.testing"]
 
 [[tool.importlinter.contracts]]
 name = "units read validated dicts, never the config schema"
 type = "forbidden"
-source_modules = ["robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.runner.preflight", "robocli.runner.record"]
-forbidden_modules = ["robocli.config"]
+source_modules = ["openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.runner.preflight", "openrua.runner.record"]
+forbidden_modules = ["openrua.config"]

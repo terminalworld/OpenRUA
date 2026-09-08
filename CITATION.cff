@@ -1,10 +1,10 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
-title: RoboCLI
+title: OpenRUA
 authors:
   - family-names: Chu
     given-names: Zhaoyang
     affiliation: University College London
-repository-code: https://github.com/terminalworld/RoboCLI
+repository-code: https://github.com/terminalworld/OpenRUA
 license: Apache-2.0

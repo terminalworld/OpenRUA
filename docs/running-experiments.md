@@ -1,5 +1,5 @@
 ---
-summary: Running a task set with robocli run, what lands under runs/, and what every record field means
+summary: Running a task set with openrua run, what lands under runs/, and what every record field means
 read_when:
   - You want to reproduce or extend reported results
   - You are reading a result.json or provenance.json
@@ -11,15 +11,15 @@ read_when:
 ## One command, one run
 
 ```bash
-robocli run --config libero_pro --run-id demo \
+openrua run --config libero_pro --run-id demo \
             --task-suite libero_goal_task --task-ids 0-9 --seeds 0-4 \
             --operator agent
 ```
 
 A run is one benchmark config, one task suite, and a set of task ids
 and seeds; each (task, seed) pair is one trial, run in sequence. `--config`
-names a bundled benchmark (`robocli benchmarks`), a file under
-`~/.robocli/benchmarks/`, or a path. `--robot` overrides the config's
+names a bundled benchmark (`openrua benchmarks`), a file under
+`~/.openrua/benchmarks/`, or a path. `--robot` overrides the config's
 robot. Everything else about the protocol (wall clock, turn budget,
 cameras, control) is in the config, and the trial writes the resolved
 copy it ran with.
@@ -60,9 +60,9 @@ overwrites it. Two runs never share a directory: name a new
 `--run-id` when the task set changes.
 
 While an attempt runs, its trial directory carries a claim (`.running`:
-process, host, container stem, start time); a second `robocli run` on
+process, host, container stem, start time); a second `openrua run` on
 the same trial refuses to start while the claim is live, and takes over
-a stale one. `robocli ps` lists every claim under the runs root with
+a stale one. `openrua ps` lists every claim under the runs root with
 its state; check it before restarting anything that launches trials.
 
 ## result.json
@@ -95,7 +95,7 @@ was waited out), `active_seconds`, `suspended_seconds`,
 
 ## provenance.json
 
-`robocli_version` and `robocli_commit` (with `git_dirty`),
+`openrua_version` and `openrua_commit` (with `git_dirty`),
 `simulator_commit` (with `simulator_dirty`), the three image digests,
 `config_file` and `config_sha256`, the prompt's hash and the workspace
 template's hash, `agent_cli` (name and version pin), `container_engine`
@@ -116,12 +116,12 @@ artifacts, never by the runner.
 ## Replaying a trial
 
 ```bash
-robocli run --config libero_pro --run-id replay --task-suite libero_goal_task \
+openrua run --config libero_pro --run-id replay --task-suite libero_goal_task \
             --task-ids 3 --seeds 0 --operator script \
             --script runs/libero_pro/demo/trials/libero_goal_task-3/seed0/commands.sh
 ```
 
-`commands.sh` opens every operation with a `# robocli op N` line, and
+`commands.sh` opens every operation with a `# openrua op N` line, and
 the script operator runs them one at a time in a single sandbox shell,
 the way the agent did, timing each one into `ops.jsonl`. The agent ran
 closed-loop, so an identical outcome under a paused clock and a seeded
@@ -133,23 +133,23 @@ the same way: without markers it is one operation.
 A demo is a replay with the cameras recorded, then rendered:
 
 ```bash
-robocli run --config libero_pro --run-id demo --task-suite libero_goal_task \
+openrua run --config libero_pro --run-id demo --task-suite libero_goal_task \
             --task-ids 3 --seeds 0 --operator script \
             --script runs/libero_pro/main/trials/libero_goal_task-3/seed0/commands.sh \
             --record
-robocli demo runs/libero_pro/demo/trials/libero_goal_task-3/seed0 --gif
+openrua demo runs/libero_pro/demo/trials/libero_goal_task-3/seed0 --gif
 ```
 
 `--record` makes the robot write every sim step's frames for the
 profile's `cameras.record` (or the names you give it) under the
-trial's `frames/`; `robocli demo` composes them with `ops.jsonl` into
+trial's `frames/`; `openrua demo` composes them with `ops.jsonl` into
 `demo.mp4`, the commands typed on the left and the cameras on the
 right, both on the trial's own clock (a command, the motion it caused,
 its output), one sim step per video frame, and `--gif` adds a smaller
 `demo.gif` for a README. `--ops START:END` renders a slice of the
 operations and `--speed` plays several steps per frame, which is how a
 clip gets short enough for a README. Rendering needs the `demo` extra: `pip install
-'robocli-harness[demo]'`.
+'openrua[demo]'`.
 
 `--record` works on a live agent run too, but rendering every step
 costs wall clock on whole-room scenes, which the agent's budget would

@@ -1,13 +1,13 @@
-"""robocli ps: the claims under a runs root, as a table or JSON."""
+"""openrua ps: the claims under a runs root, as a table or JSON."""
 import json
 import subprocess
 import sys
 
-from robocli.runner import lock
+from openrua.runner import lock
 
 
 def _ps(*argv):
-    return subprocess.run([sys.executable, "-m", "robocli", "ps", *argv],
+    return subprocess.run([sys.executable, "-m", "openrua", "ps", *argv],
                           capture_output=True, text=True)
 
 

@@ -7,17 +7,17 @@ read_when:
 
 # Agents
 
-RoboCLI is agent-agnostic by construction: the robot, the sandbox, the
+OpenRUA is agent-agnostic by construction: the robot, the sandbox, the
 proxy and the trial runner never mention a particular agent. Everything
 about one coding agent lives in two files, and every consumer reaches
-the agent through `robocli.agents.get(name)`:
+the agent through `openrua.agents.get(name)`:
 
 - the manifest, `configs/agents/<name>.yaml`: the facts (name, default
   model, install line, proxy whitelist, login layout, token variable,
   version, default options), no code;
 - the hooks module, `plugins/agents/<hooks>.py`: the behaviour (launch
   command, interactive command, transcript parsing, quota handling,
-  replay), a subclass of `robocli.agents.Agent` exposing `HOOKS`.
+  replay), a subclass of `openrua.agents.Agent` exposing `HOOKS`.
 
 Selecting, pinning and logging an agent in is in [install.md](install.md).
 A test (`tests/agents/test_agent_boundary.py`) fails the build if agent-specific
@@ -25,7 +25,7 @@ knowledge appears anywhere else.
 
 ## The manifest
 
-`robocli/configs/agents/claude-code.yaml` is the reference. Keys:
+`openrua/configs/agents/claude-code.yaml` is the reference. Keys:
 
 | Key | Required | Meaning |
 |---|---|---|
@@ -42,29 +42,29 @@ knowledge appears anywhere else.
 | `instruction_file` | | the instructions file the CLI reads on its own |
 | `default_options` | | knobs a config may override under `agent.options` |
 
-`robocli config schema` prints the same list with descriptions
+`openrua config schema` prints the same list with descriptions
 (`AgentManifest`).
 
 ## The hooks module
 
-A subclass of `robocli.agents.Agent` (`robocli/agents/base.py`). One
+A subclass of `openrua.agents.Agent` (`openrua/agents/base.py`). One
 method is required, `launch_argv`: the command that runs the agent
 headless on a task inside the sandbox, transcript on stdout;
 `self.exec_argv(sandbox, env, token_file)` gives the `docker exec`
 prefix every agent shares.
 Every other hook has a documented default, and a consumer that finds the
-default does without: `interactive_argv` (`robocli agent`),
+default does without: `interactive_argv` (`openrua agent`),
 `sandbox_cli_check`, `login_hint`, `token_hint`, the quota hooks
 (`quota_probe_argv`, `quota_window_open`, `matches_quota_anomaly`,
 `read_rate_limits`, `quota_since`), the transcript hooks (`read_final`,
 `scan_transcript`, `assistant_turns_before`) and `replay_ops`. The
 manifest's fields are available on `self`. An agent's `capabilities` is
-the set of hooks its class overrides; `robocli agents` lists them.
+the set of hooks its class overrides; `openrua agents` lists them.
 
 ## The smallest agent
 
 ```yaml
-# ~/.robocli/agents/my-agent.yaml
+# ~/.openrua/agents/my-agent.yaml
 name: my-agent
 default_model: some-model
 install: pip install my-agent-cli
@@ -73,8 +73,8 @@ hooks: my_agent
 ```
 
 ```python
-# ~/.robocli/plugins/agents/my_agent.py
-from robocli.agents import Agent
+# ~/.openrua/plugins/agents/my_agent.py
+from openrua.agents import Agent
 
 class MyAgent(Agent):
     def launch_argv(self, sandbox, prompt, model, max_turns, proxy, **_):
@@ -85,18 +85,18 @@ HOOKS = MyAgent
 ```
 
 Both halves are looked up bundled first, then in the user directory. A
-user manifest carrying a bundled name is reported by `robocli doctor`
-and ignored. To ship an agent with RoboCLI, put the two files under
-`robocli/configs/agents/` and `robocli/plugins/agents/` and open a pull
+user manifest carrying a bundled name is reported by `openrua doctor`
+and ignored. To ship an agent with OpenRUA, put the two files under
+`openrua/configs/agents/` and `openrua/plugins/agents/` and open a pull
 request.
 
 Conformance, from your own tests:
 
 ```python
-from robocli.testing import check_manifest
+from openrua.testing import check_manifest
 
 def test_conforms():
-    check_manifest("~/.robocli/agents/my-agent.yaml")
+    check_manifest("~/.openrua/agents/my-agent.yaml")
 ```
 
 ## Bundled
@@ -117,5 +117,5 @@ has no turn budget flag, so `protocol.max_turns` is carried by the
 runner across segments but not enforced inside a segment.
 
 Images carry one label per agent baked in (the hash of its install line
-or whitelist); `robocli doctor` reads them, so one sandbox image can
+or whitelist); `openrua doctor` reads them, so one sandbox image can
 carry several agents and doctor still says which manifest changed.

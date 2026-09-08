@@ -3,16 +3,16 @@ the launcher, the transcript hooks."""
 
 from __future__ import annotations
 
-from robocli.config import load_config
+from openrua.config import load_config
 
 from pathlib import Path
 
 import yaml
 
-from robocli import agents
+from openrua import agents
 
 REPO = Path(__file__).resolve().parents[2]
-LIBERO_CFG = REPO / "robocli" / "configs" / "benchmarks" / "libero_pro.yaml"
+LIBERO_CFG = REPO / "openrua" / "configs" / "benchmarks" / "libero_pro.yaml"
 
 
 # ---------------------------------------------------------------- prompt
@@ -27,7 +27,7 @@ def test_prompt_has_only_task_placeholder():
 def test_configs_carry_no_stale_prompt_key():
     # The prompt lives in agents.PROMPT; a config naming a prompt file
     # would be silently ignored, so ban it.
-    for cfg_file in (REPO / "robocli" / "configs" / "benchmarks").glob("*.yaml"):
+    for cfg_file in (REPO / "openrua" / "configs" / "benchmarks").glob("*.yaml"):
         cfg = yaml.safe_load(cfg_file.read_text())
         assert "prompt" not in cfg.get("agent", {}), cfg_file.name
 
@@ -48,7 +48,7 @@ def test_pins_come_from_the_caller_not_the_manifest():
 
 
 def test_preflight_includes_version_checks():
-    from robocli.runner.preflight import build_checks
+    from openrua.runner.preflight import build_checks
     cfg = load_config(LIBERO_CFG)
     names = [n for n, _ in build_checks(cfg, agents.get("claude-code@2.1.226"))]
     assert "sandbox_cli_matches_pin" in names
@@ -132,10 +132,10 @@ def test_launcher_takes_the_proxy_url_from_the_runner():
     # No fallback URL in the launcher: the runner hands the proxy URL in,
     # and the proxy package is the one place its name and port live.
     import argparse
-    from robocli.agents import launcher
-    from robocli import proxy
+    from openrua.agents import launcher
+    from openrua import proxy
     assert "DEFAULT_PROXY" not in vars(launcher)
-    assert (proxy.NAME, proxy.PORT) == ("robocli-proxy", 8888)
+    assert (proxy.NAME, proxy.PORT) == ("openrua-proxy", 8888)
     ap = argparse.ArgumentParser()
     ap.add_argument("--proxy", required=True)
     with __import__("pytest").raises(SystemExit):
@@ -148,7 +148,7 @@ def test_launcher_takes_the_proxy_url_from_the_runner():
 # plug shape, and a fence against bypassing get().
 
 def test_every_bundled_agent_conforms():
-    from robocli.testing import check_agent
+    from openrua.testing import check_agent
     listed = agents.available()
     assert [a.name for a in listed] == ["claude-code", "codex"]
     for a in listed:
@@ -170,7 +170,7 @@ def test_capabilities_are_the_overridden_hooks():
     assert b.capabilities == frozenset()
     assert b.interactive_argv("s", "m", "p") is None and b.read_final(Path("/x")) == {}
     assert b.sandbox_mounts(Path("/c"), Path("/f")) == () and b.credentials_check() is None
-    from robocli.testing import check_agent
+    from openrua.testing import check_agent
     check_agent(b)
 
 
@@ -184,7 +184,7 @@ def test_agent_requires_name_and_model_and_refuses_unknown_attributes():
 
 def test_user_directory_agent_is_found_and_a_broken_one_is_isolated(tmp_path):
     import pytest
-    from robocli.errors import NotFound
+    from openrua.errors import NotFound
     manifests = tmp_path / "agents"
     hooks = tmp_path / "plugins" / "agents"
     manifests.mkdir()
@@ -192,7 +192,7 @@ def test_user_directory_agent_is_found_and_a_broken_one_is_isolated(tmp_path):
     (manifests / "my-agent.yaml").write_text(
         "name: my-agent\ndefault_model: m1\nhooks: my_hooks\n")
     (hooks / "my_hooks.py").write_text(
-        "from robocli.agents import Agent\n"
+        "from openrua.agents import Agent\n"
         "class My(Agent):\n"
         "    def launch_argv(self, sandbox, prompt, model, max_turns, proxy, **_):\n"
         "        return ['docker', 'exec', sandbox, 'my', prompt]\n"
@@ -211,7 +211,7 @@ def test_user_directory_agent_is_found_and_a_broken_one_is_isolated(tmp_path):
     with pytest.raises(NotFound, match="my-agent"):
         agents.get("nope", tmp_path)
     # a manifest without hooks composes to the bare contract; check_manifest says so
-    from robocli.testing import check_manifest
+    from openrua.testing import check_manifest
     (manifests / "facts-only.yaml").write_text("name: facts-only\ndefault_model: m\n")
     with pytest.raises(AssertionError, match="hooks"):
         check_manifest(manifests / "facts-only.yaml", tmp_path)
@@ -233,7 +233,7 @@ def test_no_direct_hooks_imports_outside_the_registry():
 
 
 def test_build_takes_install_and_whitelist_from_the_manifests(tmp_path):
-    from robocli.cli.commands.build import (default_agent, preinstall_for,
+    from openrua.cli.commands.build import (default_agent, preinstall_for,
                                             whitelist_for)
     a = agents.get("claude-code")
     assert default_agent(tmp_path) == "claude-code"      # the package default
@@ -250,7 +250,7 @@ def test_build_takes_install_and_whitelist_from_the_manifests(tmp_path):
 def test_agents_module_exposes_launch_only():
     import subprocess
     import sys
-    r = subprocess.run([sys.executable, "-m", "robocli.agents", "whitelist"],
+    r = subprocess.run([sys.executable, "-m", "openrua.agents", "whitelist"],
                        capture_output=True, text=True)
     assert r.returncode == 2 and "launch" in r.stderr
 
@@ -416,7 +416,7 @@ def test_resume_prompt_cannot_carry_the_task():
     # The resumed agent must be told nothing the session does not already
     # hold; a {task} placeholder here would hand it context an uninterrupted
     # trial never received.
-    from robocli import agents
+    from openrua import agents
     assert "{task}" not in agents.RESUME_PROMPT
     assert "{task}" in agents.PROMPT
 
@@ -453,7 +453,7 @@ def test_sandbox_ships_urdf_kinematics_parsers():
     # turn it into a chain, and the agent falls back to hand-written DH.
     # The image list and the machine doc must both carry the parsers.
     from pathlib import Path as _P
-    root = _P(__file__).resolve().parents[2] / "robocli" / "sandbox"
+    root = _P(__file__).resolve().parents[2] / "openrua" / "sandbox"
     dockerfile = (root / "sandbox.Dockerfile").read_text()
     doc = (root / "workspace" / "docs" / "10-machine.md").read_text()
     for pkg in ("python3-pykdl", "urdfdom-py"):
@@ -515,7 +515,7 @@ def test_prepare_profile_needs_no_credentials_when_a_token_authenticates(tmp_pat
 def test_env_file_values_are_treated_as_secrets(tmp_path):
     # The token must be scrubbed from the record like anything in the
     # credential JSONs: the agent can print its own environment.
-    from robocli.runner import record
+    from openrua.runner import record
     a = agents.get("claude-code")
     f = tmp_path / ".env_tw"
     f.write_text(f"# a comment\n{a.token_env}=sk-ant-oat01-{'x' * 90}\n")
@@ -546,7 +546,7 @@ def test_replay_ops_are_adapter_neutral_shapes(tmp_path):
     assert [o["kind"] for o in ops] == ["write", "shell"]
     assert ops[0]["path"] == "/tmp/a.py" and ops[0]["output"] == "ok"
     assert ops[1]["command"] == "ls"
-    from robocli.runner import record
+    from openrua.runner import record
     out = tmp_path / "commands.sh"
     record.extract_commands(t, out, a)
     body = out.read_text()

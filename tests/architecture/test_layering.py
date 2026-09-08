@@ -13,64 +13,64 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 
-PKG = Path(__file__).resolve().parents[2] / "robocli"
+PKG = Path(__file__).resolve().parents[2] / "openrua"
 
-_BRIDGE = {"robocli.robot.sim.bridge"}
-_HOST = {"robocli.runner.preflight", "robocli.runner.record", "robocli.sandbox",
-         "robocli.proxy", "robocli.agents", "robocli.runner"}
-# The bridge is self-contained: nothing from robocli outside itself (the
+_BRIDGE = {"openrua.robot.sim.bridge"}
+_HOST = {"openrua.runner.preflight", "openrua.runner.record", "openrua.sandbox",
+         "openrua.proxy", "openrua.agents", "openrua.runner"}
+# The bridge is self-contained: nothing from openrua outside itself (the
 # resolved config arrives as data), including the robot package's own
 # host side.
-_ROBOT_HOST = {"robocli.robot.base", "robocli.robot.real", "robocli.robot.sim.build",
-               "robocli.robot.sim.up", "robocli.robot.sim.down", "robocli.robot.sim.client"}
-_TOP = {"robocli.cli", "robocli.doctor", "robocli.testing"}
-_HOST_LEAVES = {"robocli.config", "robocli.errors"}
+_ROBOT_HOST = {"openrua.robot.base", "openrua.robot.real", "openrua.robot.sim.build",
+               "openrua.robot.sim.up", "openrua.robot.sim.down", "openrua.robot.sim.client"}
+_TOP = {"openrua.cli", "openrua.doctor", "openrua.testing"}
+_HOST_LEAVES = {"openrua.config", "openrua.errors"}
 _BRIDGE_BAN = _HOST | _ROBOT_HOST | _TOP | _HOST_LEAVES
-_LAYERS = _BRIDGE | {"robocli.runner.preflight", "robocli.runner.record",
-                     "robocli.sandbox"}
+_LAYERS = _BRIDGE | {"openrua.runner.preflight", "openrua.runner.record",
+                     "openrua.sandbox"}
 FORBIDDEN = {
     # inside the bridge: the three parts never see each other; main may
     # import all three; nothing imports outward
     "robot/sim/bridge/environments": _BRIDGE_BAN | {
-        "robocli.robot.sim.bridge.ros", "robocli.robot.sim.bridge.rpc"},
+        "openrua.robot.sim.bridge.ros", "openrua.robot.sim.bridge.rpc"},
     "robot/sim/bridge/ros": _BRIDGE_BAN | {
-        "robocli.robot.sim.bridge.environments", "robocli.robot.sim.bridge.rpc"},
+        "openrua.robot.sim.bridge.environments", "openrua.robot.sim.bridge.rpc"},
     "robot/sim/bridge/rpc.py": _BRIDGE_BAN | {
-        "robocli.robot.sim.bridge.environments", "robocli.robot.sim.bridge.ros"},
+        "openrua.robot.sim.bridge.environments", "openrua.robot.sim.bridge.ros"},
     "robot/sim/bridge/main.py": _BRIDGE_BAN,
     # the robot's host side consumes data handed in by the runner and
     # never sees the bridge, the config schema or the other units
-    "robot/__init__.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
-    "robot/base.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
-    "robot/sim/build.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
-    "robot/sim/up.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
-    "robot/sim/down.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
-    "robot/sim/client.py": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
-    "robot/real": _HOST | _BRIDGE | {"robocli.config"} | _TOP,
+    "robot/__init__.py": _HOST | _BRIDGE | {"openrua.config"} | _TOP,
+    "robot/base.py": _HOST | _BRIDGE | {"openrua.config"} | _TOP,
+    "robot/sim/build.py": _HOST | _BRIDGE | {"openrua.config"} | _TOP,
+    "robot/sim/up.py": _HOST | _BRIDGE | {"openrua.config"} | _TOP,
+    "robot/sim/down.py": _HOST | _BRIDGE | {"openrua.config"} | _TOP,
+    "robot/sim/client.py": _HOST | _BRIDGE | {"openrua.config"} | _TOP,
+    "robot/real": _HOST | _BRIDGE | {"openrua.config"} | _TOP,
     # host side: nobody imports the bridge (container-only; rclpy); only
     # the runner conducts with the robot package
     "runner/main.py": _BRIDGE | _TOP,
-    "sandbox": {"robocli.robot", "robocli.runner.preflight", "robocli.runner.record",
-                "robocli.config"} | _TOP,
-    "runner/preflight.py": {"robocli.robot", "robocli.sandbox", "robocli.proxy",
-                    "robocli.agents", "robocli.runner", "robocli.config"} | _TOP,
-    "runner/record.py": {"robocli.robot", "robocli.sandbox", "robocli.proxy",
-                  "robocli.agents", "robocli.runner", "robocli.config"} | _TOP,
-    "proxy": {"robocli.robot", "robocli.config"} | _LAYERS | _TOP,
-    "agents": {"robocli.robot", "robocli.plugins"} | _LAYERS | _TOP,
-    # hooks modules see the contract and nothing else of robocli
+    "sandbox": {"openrua.robot", "openrua.runner.preflight", "openrua.runner.record",
+                "openrua.config"} | _TOP,
+    "runner/preflight.py": {"openrua.robot", "openrua.sandbox", "openrua.proxy",
+                    "openrua.agents", "openrua.runner", "openrua.config"} | _TOP,
+    "runner/record.py": {"openrua.robot", "openrua.sandbox", "openrua.proxy",
+                  "openrua.agents", "openrua.runner", "openrua.config"} | _TOP,
+    "proxy": {"openrua.robot", "openrua.config"} | _LAYERS | _TOP,
+    "agents": {"openrua.robot", "openrua.plugins"} | _LAYERS | _TOP,
+    # hooks modules see the contract and nothing else of openrua
     "plugins": _HOST_LEAVES | _BRIDGE | _TOP | {
-        "robocli.robot", "robocli.sandbox", "robocli.proxy", "robocli.runner",
-        "robocli.agents.registry", "robocli.agents.launcher",
-        "robocli.agents.credentials", "robocli.agents.prompts"},
+        "openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.runner",
+        "openrua.agents.registry", "openrua.agents.launcher",
+        "openrua.agents.credentials", "openrua.agents.prompts"},
     # the shared leaves are leaves
-    "config": _HOST | {"robocli.robot"} | _TOP,
-    "errors.py": _HOST | {"robocli.robot", "robocli.config"} | _TOP,
+    "config": _HOST | {"openrua.robot"} | _TOP,
+    "errors.py": _HOST | {"openrua.robot", "openrua.config"} | _TOP,
     # demo renders a trial's files; it sees errors and nothing else
-    "demo": _HOST | _BRIDGE | _TOP | {"robocli.robot", "robocli.config"},
+    "demo": _HOST | _BRIDGE | _TOP | {"openrua.robot", "openrua.config"},
     # doctor sits with cli above the units; nothing below imports it
-    "doctor": _BRIDGE | {"robocli.testing"},
-    "cli": _BRIDGE | {"robocli.testing"},
+    "doctor": _BRIDGE | {"openrua.testing"},
+    "cli": _BRIDGE | {"openrua.testing"},
 }
 
 
