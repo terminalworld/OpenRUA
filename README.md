@@ -36,10 +36,10 @@ RoboCLI gives you one command for three things:
   seeds with a fresh sandbox per trial and archives every command the
   agent ran. See [docs/running-experiments.md](docs/running-experiments.md).
 
-RoboCLI turns your robot into a project your coding agent already knows
-how to work on: sensor streams become files in its workspace, motions
-become `ros2` commands and `rclpy` scripts, and everything it did is on
-record, in simulation or on the real machine.
+RoboCLI turns your robot into a coding project. Your agent explores it
+like a live codebase, pulls sensor streams into files it can read, runs
+commands and programs that move it, and leaves a record of everything
+it did, in simulation or on the real machine.
 
 ## Quick start
 
