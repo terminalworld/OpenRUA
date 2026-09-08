@@ -60,7 +60,7 @@ def test_bad_override_key_fails_loud(tmp_path):
     assert "machine.ports.twst" in str(e.value)
 
 
-def test_defaults_match_the_paper_runs():
+def test_defaults_match_the_reported_runs():
     p = config.Protocol()
     assert (p.max_turns, p.active_wall_clock_minutes, p.trials_per_task) == (500, 240, 10)
     assert p.resume_on_quota_wall is False          # scale-only switch, off by default
