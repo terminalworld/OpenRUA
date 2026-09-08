@@ -37,9 +37,8 @@ RoboCLI gives you one command for three things:
   agent ran. See [docs/running-experiments.md](docs/running-experiments.md).
 
 RoboCLI turns your robot into a coding project. Your agent explores it
-like a live codebase, pulls sensor streams into files it can read, runs
-commands and programs that move it, and keeps a replayable transcript
-of every command it ran.
+like a live codebase, pulls sensor streams into files it can read, and
+runs commands and programs that move it.
 
 ## Quick start
 
