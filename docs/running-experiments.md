@@ -1,7 +1,7 @@
 ---
 summary: Running a task set with robocli run, what lands under runs/, and what every record field means
 read_when:
-  - You want to reproduce or extend the paper's numbers
+  - You want to reproduce or extend reported results
   - You are reading a result.json or provenance.json
   - You want to replay a trial, run it without an agent, or make a demo video of it
 ---

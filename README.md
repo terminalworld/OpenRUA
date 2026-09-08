@@ -180,12 +180,6 @@ video. Who may import whom is enforced by CI (import-linter and
 | [docs/architecture.md](docs/architecture.md) | the units and the layering contract |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | conventions for code, names and docs |
 
-## Paper
-
-*RoboCLI: Operating Robots Through Their Native Command-Line Interface*
-(arXiv link to follow). If you use RoboCLI, please cite it; see
-[CITATION.cff](CITATION.cff).
-
 ## License
 
 Apache-2.0

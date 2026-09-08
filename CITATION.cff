@@ -1,9 +1,0 @@
-cff-version: 1.2.0
-message: "If you use RoboCLI, please cite the paper."
-title: "RoboCLI: Operating Robots Through Their Native Command-Line Interface"
-authors:
-  - family-names: Chu
-    given-names: Zhaoyang
-    affiliation: University College London
-license: Apache-2.0
-repository-code: https://github.com/terminalworld/RoboCLI
