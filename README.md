@@ -10,7 +10,7 @@
 [![CI](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![ROS 2](https://img.shields.io/badge/ROS%202-22314E?logo=ros&logoColor=white)](docs/architecture.md)
-[![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)<br>
 [![Stars](https://img.shields.io/github/stars/terminalworld/RoboCLI)](https://github.com/terminalworld/RoboCLI/stargazers)
 [![Forks](https://img.shields.io/github/forks/terminalworld/RoboCLI)](https://github.com/terminalworld/RoboCLI/forks)
 [![Watchers](https://img.shields.io/github/watchers/terminalworld/RoboCLI)](https://github.com/terminalworld/RoboCLI/watchers)
