@@ -24,12 +24,16 @@ class _Adapter:
 def _session(calls):
     def open_session(args):
         calls.append(("up", args.robot))
-        return up_cmd.Session("r", "sim", "box", "suite", 0, "task",
-                              power_off=lambda: calls.append(("down",)))
+        return up_cmd.Session(
+            name="r", sim="sim", sandbox="box", robot=args.robot or "?",
+            robot_model="Franka Emika Panda", backend="simulated (ROS 2 jazzy)",
+            benchmark="libero_pro", suite="libero_goal_task", task_id=0,
+            task="open the bottom drawer of the cabinet", agent="fake", model="m",
+            power_off=lambda: calls.append(("down",)))
     return open_session
 
 
-def test_run_brings_up_opens_the_agent_and_powers_off(monkeypatch, tmp_path):
+def test_run_brings_up_opens_the_agent_and_powers_off(monkeypatch, tmp_path, capsys):
     calls = []
     monkeypatch.setattr(run_cmd.up, "open_session", _session(calls))
     monkeypatch.setattr(run_cmd.state, "load", lambda name, home: {
@@ -39,6 +43,10 @@ def test_run_brings_up_opens_the_agent_and_powers_off(monkeypatch, tmp_path):
                         lambda argv: calls.append(("agent", argv)) or 3)
     args = build_parser().parse_args(["--home", str(tmp_path), "run", "panda-sim", "hello"])
     assert args.fn(args) == 3
+    out = capsys.readouterr().out
+    assert "[run] robot     panda-sim: Franka Emika Panda, simulated (ROS 2 jazzy)" in out
+    assert '[run] scene     libero_pro / libero_goal_task #0: "open the bottom drawer' in out
+    assert '[run] agent     fake (m), opening message: "hello"' in out
     assert calls == [("up", "panda-sim"), ("agent", ["agent-cli", "box", "m", "hello"]),
                      ("down",)]
 
