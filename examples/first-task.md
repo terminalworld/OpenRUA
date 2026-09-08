@@ -14,7 +14,7 @@ first; `openrua doctor panda-sim` must be green.
 ## 1. One command
 
 ```bash
-openrua run panda-sim "open the middle drawer of the cabinet"
+openrua run panda-sim "open the bottom drawer of the cabinet"
 ```
 
 The robot container boots its scene and MoveIt (about a minute), the
@@ -35,7 +35,7 @@ The command stays in the foreground:
 [up] ready.
      robot     openrua-sim   (ROS 2 graph live; scene: libero_goal_task #0)
      terminal  openrua-sandbox
-     task      open the middle drawer of the cabinet
+     task      open the bottom drawer of the cabinet
 
      openrua agent --name openrua            # your coding agent, on the robot
      docker exec -it -u robot -w /workspace openrua-sandbox bash   # or you
@@ -51,7 +51,7 @@ The command stays in the foreground:
 In a second terminal:
 
 ```bash
-openrua agent "open the middle drawer of the cabinet"
+openrua agent "open the bottom drawer of the cabinet"
 ```
 
 This opens the agent `up` was configured with (Claude Code by default,
