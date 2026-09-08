@@ -1,0 +1,43 @@
+# Codex (OpenAI): the facts OpenRUA needs about this agent. The behaviour
+# (launch command, transcript parsing) is the hooks module named at the
+# bottom. Facts read from codex-cli 0.145.0 --help and its JSONL output.
+name: codex
+default_model: gpt-5.6-sol
+binary: codex
+# Root shell that installs the CLI into the sandbox image (build time only).
+# {version} is replaced with a pin when one is given (openrua build sandbox
+# --agent codex@0.153.4, or agent.version in a config); without a pin the
+# current release is installed and no version check is minted.
+install: >-
+  apt-get update
+  && apt-get install -y --no-install-recommends curl ca-certificates
+  && curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+  && apt-get install -y --no-install-recommends nodejs
+  && npm install -g @openai/codex@{version}
+  && rm -rf /var/lib/apt/lists/*
+# Hosts the CLI must reach through the proxy: the API, the ChatGPT-login
+# backend and the auth service.
+whitelist:
+  - '^api\.openai\.com$'
+  - '^chatgpt\.com$'
+  - '^auth\.openai\.com$'
+# The CLI keeps its login in a directory named by CODEX_HOME; the sandbox
+# gets a login of its own (never a copy of the host's auth.json: its
+# refresh token rotates and a second copy invalidates the first).
+credentials:
+  dirname: codex
+  filename: auth.json
+  config_env: CODEX_HOME
+  mount_point: /codex-home
+# An API key, passed to the CLI by file; bills the API, not a subscription.
+token_env: OPENAI_API_KEY
+version_argv: [codex, --version]
+instruction_file: AGENTS.md
+# Knobs a config may override under agent.options:
+# - effort: reasoning effort (model_reasoning_effort)
+# - web_search: disabled | cached | live; disabled because server-side
+#   search cannot be routed through the proxy
+default_options:
+  effort: high
+  web_search: disabled
+hooks: codex

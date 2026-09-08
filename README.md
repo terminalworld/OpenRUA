@@ -1,41 +1,41 @@
 <div align="center">
 
-# RoboCLI
+# OpenRUA
 
 **Let Your Claude Code or Codex Control Any Robot, Real or Simulated**
 
 *Through the standard ROS 2 CLI and client library, without relying on any VLA model.*
 
-[![CI](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml)
+[![CI](https://github.com/terminalworld/OpenRUA/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/OpenRUA/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![ROS 2](https://img.shields.io/badge/ROS%202-22314E?logo=ros&logoColor=white)](docs/architecture.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)<br>
-[![Stars](https://img.shields.io/github/stars/terminalworld/RoboCLI)](https://github.com/terminalworld/RoboCLI/stargazers)
-[![Forks](https://img.shields.io/github/forks/terminalworld/RoboCLI)](https://github.com/terminalworld/RoboCLI/forks)
-[![Watchers](https://img.shields.io/github/watchers/terminalworld/RoboCLI)](https://github.com/terminalworld/RoboCLI/watchers)
+[![Stars](https://img.shields.io/github/stars/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/stargazers)
+[![Forks](https://img.shields.io/github/forks/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/forks)
+[![Watchers](https://img.shields.io/github/watchers/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/watchers)
 
 <!-- demo GIF: Claude Code in a terminal — `ros2 topic list`, a camera
      snapshot, a trajectory goal, the arm picking the object up -->
 
 </div>
 
-Type `robocli agent "pick up the bowl"` and Claude Code opens in a
+Type `openrua agent "pick up the bowl"` and Claude Code opens in a
 terminal on the robot's ROS 2 graph: it lists the topics, reads the docs
 in its workspace, writes a script with `rclpy`, runs it, and checks the
 camera.
 
-RoboCLI gives you one command for three things:
+OpenRUA gives you one command for three things:
 
-- **Play in simulation.** `robocli up panda-sim` brings up a Franka
+- **Play in simulation.** `openrua up panda-sim` brings up a Franka
   Panda in MuJoCo; the agent drives it the same way it would a real one.
 - **Put an agent on your robot.** Draft a profile from the robot's live
-  graph, finish the `TODO` lines, `robocli up <name>`. See
+  graph, finish the `TODO` lines, `openrua up <name>`. See
   [docs/your-own-robot.md](docs/your-own-robot.md).
-- **Run experiments.** `robocli run` plays a benchmark across tasks and
+- **Run experiments.** `openrua run` plays a benchmark across tasks and
   seeds with a fresh sandbox per trial and archives every command the
   agent ran. See [docs/running-experiments.md](docs/running-experiments.md).
 
-> RoboCLI turns your robot into a coding project: your agent explores it
+> OpenRUA turns your robot into a coding project: your agent explores it
 > like a live codebase, pulls sensor streams into files for reading, and
 > runs commands and programs to move it.
 >
@@ -44,18 +44,18 @@ RoboCLI gives you one command for three things:
 ## Quick start
 
 ```bash
-pip install git+https://github.com/terminalworld/RoboCLI
-robocli build robot && robocli build sandbox && robocli build proxy   # once
-robocli up panda-sim                  # a simulated Franka Panda, ROS 2 graph live
+pip install git+https://github.com/terminalworld/OpenRUA
+openrua build robot && openrua build sandbox && openrua build proxy   # once
+openrua up panda-sim                  # a simulated Franka Panda, ROS 2 graph live
 ```
 
 In a second terminal:
 
 ```bash
-robocli agent "pick up the bowl and place it on the plate"
+openrua agent "pick up the bowl and place it on the plate"
 ```
 
-`robocli doctor` tells you what is missing before the first `up`
+`openrua doctor` tells you what is missing before the first `up`
 (Docker, the three images, the simulator checkout, an agent login); the
 details are in [docs/install.md](docs/install.md).
 
@@ -64,7 +64,7 @@ details are in [docs/install.md](docs/install.md).
 ```
  your terminal                       the robot (real or simulated)
  ┌─────────────────────────┐        ┌──────────────────────────────┐
- │ robocli agent           │        │ ROS 2 graph                  │
+ │ openrua agent           │        │ ROS 2 graph                  │
  │  └─ Claude Code / Codex │  DDS   │  /joint_states  /tf  /camera │
  │      in a sandbox with  │◄──────►│  FollowJointTrajectory       │
  │      ros2 · rclpy · docs│        │  GripperCommand  MoveIt      │
@@ -73,22 +73,22 @@ details are in [docs/install.md](docs/install.md).
 
 - **The interface is the robot's own.** The agent sees the topics,
   actions and services the robot exposes, plus `machine.yaml` (joints,
-  limits, frames, ports) and four short docs. It never sees RoboCLI.
+  limits, frames, ports) and four short docs. It never sees OpenRUA.
 - **The sandbox is a plain Ubuntu + ROS 2 container** with the agent
   installed, a workspace mounted, and a whitelist proxy as its only
   way out (the model API; nothing else).
-- **A robot is a profile** ([`robocli/configs/robots/`](robocli/configs/robots), or
-  your own under `~/.robocli/robots/`): what it is (`machine:`) and how
+- **A robot is a profile** ([`openrua/configs/robots/`](openrua/configs/robots), or
+  your own under `~/.openrua/robots/`): what it is (`machine:`) and how
   it is provided (`machine.backend`: a simulator image and scene, or a
   real robot's launch command and how to reach its graph).
-- **A benchmark is a task set** ([`robocli/configs/benchmarks/`](robocli/configs/benchmarks)):
+- **A benchmark is a task set** ([`openrua/configs/benchmarks/`](openrua/configs/benchmarks)):
   which suites and init states to load, how a trial runs and stops.
-  `robocli run` runs trials, checks every promise the workspace docs
+  `openrua run` runs trials, checks every promise the workspace docs
   make before the agent starts, and records each trial with full
   provenance.
-- **Everything is checked against one schema** (`robocli config
+- **Everything is checked against one schema** (`openrua config
   schema`): a misspelled key in any file is an error, never a silent
-  no-op. Your defaults live in `~/.robocli/config.yaml`.
+  no-op. Your defaults live in `~/.openrua/config.yaml`.
 
 ## Supported robots
 
@@ -99,7 +99,7 @@ details are in [docs/install.md](docs/install.md).
 | `panda-omron-sim` | Panda on an Omron mobile base | simulated (RoboCasa, ROS 2 Humble) | RoboCasa365 |
 | *your robot* | any ROS 2 arm or mobile manipulator | real | see [docs/your-own-robot.md](docs/your-own-robot.md) |
 
-`robocli robots` prints this list from the profiles on disk, yours included.
+`openrua robots` prints this list from the profiles on disk, yours included.
 
 ## Supported agents
 
@@ -111,9 +111,9 @@ details are in [docs/install.md](docs/install.md).
 Bring your own agent. An agent is a manifest (how to install its CLI in the sandbox, which
 hosts it talks to, how it logs in) and a small hooks class (how to
 launch it); everything else is optional. Drop yours in
-`~/.robocli/agents/` and `~/.robocli/plugins/agents/` or send a pull
+`~/.openrua/agents/` and `~/.openrua/plugins/agents/` or send a pull
 request;
-`robocli agents` lists what is available and what each can do. See
+`openrua agents` lists what is available and what each can do. See
 [docs/agents.md](docs/agents.md).
 
 ## Use your own robot
@@ -122,8 +122,8 @@ Draft a profile from the robot's live graph, finish the `TODO` lines,
 and point `up` at it:
 
 ```bash
-robocli probe --host > my-ur5.yaml   # joints, limits, frames, ports, cameras from the graph
-robocli up ./my-ur5.yaml --task "..." # or copy it to ~/.robocli/robots/ and: robocli up my-ur5
+openrua probe --host > my-ur5.yaml   # joints, limits, frames, ports, cameras from the graph
+openrua up ./my-ur5.yaml --task "..." # or copy it to ~/.openrua/robots/ and: openrua up my-ur5
 ```
 
 The profile's `machine:` section is what the agent's `machine.yaml` is
@@ -137,7 +137,7 @@ The simulated robots run the community benchmark scenes unchanged;
 their original success predicates score the trial in place.
 
 ```bash
-robocli run --config libero_pro --run-id demo \
+openrua run --config libero_pro --run-id demo \
             --task-suite libero_goal_task --task-ids 0,1 --seeds 0 --operator agent
 ```
 
@@ -150,7 +150,7 @@ regenerated from those files after every trial. Building the simulator checkouts
 
 A trial replays from its own `commands.sh`, and a replay with
 `--record` renders as a video, terminal on the left, cameras on the
-right (`robocli demo <trial>`; see
+right (`openrua demo <trial>`; see
 [running-experiments.md](docs/running-experiments.md#making-a-demo-video)).
 
 ## Architecture
@@ -173,7 +173,7 @@ video. Who may import whom is enforced by CI (import-linter and
 | [examples/real-robot.md](examples/real-robot.md) | the same flow on a real ROS 2 arm |
 | [docs/simulation.md](docs/simulation.md) | the simulator checkouts and GPU rendering |
 | [docs/podman.md](docs/podman.md) | machines without Docker |
-| [docs/running-experiments.md](docs/running-experiments.md) | `robocli run`, the `runs/` layout, every record field, replays and demo videos |
+| [docs/running-experiments.md](docs/running-experiments.md) | `openrua run`, the `runs/` layout, every record field, replays and demo videos |
 | [docs/cli.md](docs/cli.md) | every verb and flag, exit codes (generated) |
 | [docs/config.md](docs/config.md) | every config key (generated) |
 | [docs/agents.md](docs/agents.md) | adding a coding agent |

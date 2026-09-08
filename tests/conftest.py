@@ -1,7 +1,7 @@
 """Shared test helpers.
 
 Some tests exercise live containers and need an image built on this
-machine (``robocli build sandbox`` / ``robocli build proxy``). They skip
+machine (``openrua build sandbox`` / ``openrua build proxy``). They skip
 where the image is absent, so the suite stays green on a checkout that
 has never built anything (CI included) and still runs the live checks
 wherever the images exist.

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import threading
 
-from robocli.robot.sim.bridge.environments.worker import Worker
+from openrua.robot.sim.bridge.environments.worker import Worker
 
 
 def _owner_loop(sim, stop):

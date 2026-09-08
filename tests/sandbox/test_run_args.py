@@ -2,8 +2,8 @@
 from pathlib import Path
 from types import SimpleNamespace
 
-from robocli.config import load_config
-from robocli.sandbox import up as hup
+from openrua.config import load_config
+from openrua.sandbox import up as hup
 
 
 def test_run_args_are_appended_to_docker_run(tmp_path, monkeypatch):
@@ -23,4 +23,4 @@ def test_run_args_are_appended_to_docker_run(tmp_path, monkeypatch):
     run = next(c for c in calls if c[:2] == ["docker", "run"])
     i = run.index("--userns=keep-id")
     assert run[i + 1] == "--pids-limit=0"
-    assert run[i + 2] == "robocli-sandbox-jazzy" and run[i + 3] == "bash"   # then the image
+    assert run[i + 2] == "openrua-sandbox-jazzy" and run[i + 3] == "bash"   # then the image

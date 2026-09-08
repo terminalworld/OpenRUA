@@ -1,0 +1,74 @@
+# Franka Emika Panda on a tabletop (robosuite / MuJoCo, LIBERO-PRO scenes).
+# The default simulated robot. Loaded by `openrua up panda-sim`;
+# configs/benchmarks/libero_pro.yaml names it under `robot:`.
+
+# The scene `openrua up panda-sim` loads when no benchmark is named.
+world:
+  benchmark: libero_pro
+  task_suite: libero_goal_task
+  task_id: 0
+
+machine:
+  backend:                  # how the robot is provided
+    kind: sim
+    ros_distro: jazzy   # names the robot and sandbox images (openrua-sim-jazzy, openrua-sandbox-jazzy)
+    simulator:
+      venv: cap-x/.venv-libero   # py3.12
+      container: sim-jazzy
+
+  workspace_template: workspace  # the tree seeded into the sandbox;
+                         # machine.yaml is generated from the facts and
+                         # ports below at seeding; the tree's sha256 is
+                         # recorded per trial
+
+  controller: JOINT_POSITION  # base action space (real-robot shape: both
+                              # ports above a joint layer; OSC's null-space
+                              # bias fights joint-space trajectory goals)
+  controller_kp_scale: 10     # stock kp=50 tracks ~15% of a 20 Hz setpoint;
+                              # measured gain: x10 -> 0.92, x20 overshoots
+
+  cameras:               # the scene's own cameras, unchanged
+    resolution: [640, 480]
+    list: null           # null = publish every camera the scene defines
+    rate_hz: 2           # wall-clock render/publish rate (pull-style; never steps)
+    record: [agentview, robot0_eye_in_hand]  # --record default: main view, inset
+
+  control:               # graph-side actuation behavior (named apart from
+                         # the gripper/arm facts below, which feed machine.yaml)
+    gripper:
+      open_threshold_m: 0.02 # GripperCommand position below this = close
+      settle_steps: 10       # control ticks a gripper goal advances the world
+
+  ports:                 # franka_ros2 / moveit_servo-shaped names
+    twist: /servo_node/delta_twist_cmds            # TwistStamped
+    trajectory: /panda_arm_controller/follow_joint_trajectory  # FollowJointTrajectory action
+    gripper: /franka_gripper/gripper_action        # GripperCommand action
+    wrench: /franka_robot_state_broadcaster/external_wrench    # WrenchStamped
+
+  joint_name_map:        # robosuite internal -> franka_ros2 published names
+    robot0_: panda_
+    gripper0_: panda_
+
+  # The facts machine.yaml is generated from (with ports: above) at
+  # seeding: one source, so the bridge and the docs cannot drift.
+  robot:
+    model: Franka Emika Panda
+    description: 7-joint robot arm with a parallel-jaw gripper
+  frames: {world: world, base: panda_link0, hand: panda_hand}
+  arm:
+    joints: [panda_joint1, panda_joint2, panda_joint3, panda_joint4,
+             panda_joint5, panda_joint6, panda_joint7]
+    limits_rad: [[-2.90, 2.90], [-1.76, 1.76], [-2.90, 2.90],
+                 [-3.07, -0.07], [-2.90, 2.90], [-0.02, 3.75],
+                 [-2.90, 2.90]]
+  gripper: {open_m: 0.04, closed_m: 0.0, max_effort: 30.0,
+            stops_at: [open, closed]}
+  hand: {tcp_offset_m: 0.1034}  # hand frame -> fingertip grasp point
+  planning: {moveit: true, move_action: /move_action,
+             ik_service: /compute_ik, group: panda_arm,
+             planning_frame: panda_link0}  # model frame; the IK request's
+                             # frame_id must be empty
+
+  tf:
+    hand: false          # robot_state_publisher (MoveIt stack) owns the
+                         # arm chain; the bridge keeps base + cameras

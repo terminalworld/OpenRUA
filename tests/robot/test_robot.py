@@ -10,9 +10,9 @@ from pathlib import Path
 
 import pytest
 
-from robocli import robot
+from openrua import robot
 
-PKG = Path(__file__).resolve().parents[2] / "robocli" / "robot"
+PKG = Path(__file__).resolve().parents[2] / "openrua" / "robot"
 
 
 def test_dockerfiles_ship_with_the_package():
@@ -21,7 +21,7 @@ def test_dockerfiles_ship_with_the_package():
 
 
 def test_up_dispatches_on_backend_kind(tmp_path):
-    from robocli.errors import ConfigError
+    from openrua.errors import ConfigError
     with pytest.raises(ConfigError, match="kind"):
         robot.up({"kind": "hover"}, name="x", config_path="c.yaml", task_suite="s",
                  task_id=0, log_path=tmp_path / "log")
@@ -48,7 +48,7 @@ def test_real_probe_failure_is_a_timeout(tmp_path):
 def test_sim_up_requires_rendered_peers_with_static_peer():
     # The runner renders the peers profile once and hands it in; a
     # static_peer without it would silently lose Humble DDS peering.
-    from robocli.robot.sim.up import up
+    from openrua.robot.sim.up import up
 
     with pytest.raises(ValueError, match="peers_xml"):
         up(name="x", image="img", config_path="c.yaml", task_suite="s",
@@ -56,7 +56,7 @@ def test_sim_up_requires_rendered_peers_with_static_peer():
 
 
 def test_real_launch_runs_in_the_driver_image_when_one_is_named():
-    from robocli.robot.real.up import launch_argv
+    from openrua.robot.real.up import launch_argv
     assert launch_argv("r", "ros2 launch x y.py", None) == ["bash", "-lc", "ros2 launch x y.py"]
     argv = launch_argv("r", "ros2 launch x y.py", "vendor/driver:foxy")
     assert argv[:2] == ["docker", "run"] and "--network" in argv and "host" in argv

@@ -1,8 +1,8 @@
 ---
-summary: Every robocli verb, its arguments, and the exit codes
+summary: Every openrua verb, its arguments, and the exit codes
 read_when:
   - You want the exact flags of a verb without running --help
-  - A script needs to act on robocli's exit code
+  - A script needs to act on openrua's exit code
 ---
 
 # Command line
@@ -11,14 +11,14 @@ Generated from the parsers by `scripts/render_docs.py`; edit the
 `add_parser` of a verb, not this page.
 
 ```
-usage: robocli [-h] [--version] [--home HOME] <verb> ...
+usage: openrua [-h] [--version] [--home HOME] <verb> ...
 ```
 
 | verb | does |
 |---|---|
-| `robots` | list the robots: bundled, then ~/.robocli/robots/ |
-| `benchmarks` | list the benchmarks: bundled, then ~/.robocli/benchmarks/ |
-| `agents` | list the agents: bundled, then ~/.robocli/agents/ |
+| `robots` | list the robots: bundled, then ~/.openrua/robots/ |
+| `benchmarks` | list the benchmarks: bundled, then ~/.openrua/benchmarks/ |
+| `agents` | list the agents: bundled, then ~/.openrua/agents/ |
 | `build` | build the robot / sandbox / proxy image |
 | `up` | bring a robot up with a sandbox terminal on it |
 | `agent` | open a coding agent on the robot's terminal |
@@ -30,14 +30,14 @@ usage: robocli [-h] [--version] [--home HOME] <verb> ...
 | `config` | the configuration schema |
 | `doctor` | check the install: docker, images, simulator, login |
 
-Global options: `--home` (the user directory, default `$ROBOCLI_HOME` or `~/.robocli`), `--version`.
+Global options: `--home` (the user directory, default `$OPENRUA_HOME` or `~/.openrua`), `--version`.
 
-## robocli robots
+## openrua robots
 
 ```
-usage: robocli robots [-h] [--json]
+usage: openrua robots [-h] [--json]
 
-Every robot RoboCLI can find: the bundled ones, then yours under
+Every robot OpenRUA can find: the bundled ones, then yours under
 <home>/robots/. A user file that carries a bundled name is reported and not
 used.
 
@@ -46,12 +46,12 @@ options:
   --json      machine-readable output
 ```
 
-## robocli benchmarks
+## openrua benchmarks
 
 ```
-usage: robocli benchmarks [-h] [--json]
+usage: openrua benchmarks [-h] [--json]
 
-Every benchmark RoboCLI can find: the bundled ones, then yours under
+Every benchmark OpenRUA can find: the bundled ones, then yours under
 <home>/benchmarks/. A user file that carries a bundled name is reported and
 not used.
 
@@ -60,12 +60,12 @@ options:
   --json      machine-readable output
 ```
 
-## robocli agents
+## openrua agents
 
 ```
-usage: robocli agents [-h] [--json]
+usage: openrua agents [-h] [--json]
 
-Every agent RoboCLI can find: the bundled ones, then yours under
+Every agent OpenRUA can find: the bundled ones, then yours under
 <home>/agents/. A user file that carries a bundled name is reported and not
 used.
 
@@ -74,10 +74,10 @@ options:
   --json      machine-readable output
 ```
 
-## robocli build
+## openrua build
 
 ```
-usage: robocli build [-h] <unit> ...
+usage: openrua build [-h] <unit> ...
 
 Build one of the three images. The sandbox and proxy images take their install
 line and whitelist from the manifests of the agents named with --agent.
@@ -92,21 +92,21 @@ options:
   -h, --help  show this help message and exit
 ```
 
-### robocli build robot
+### openrua build robot
 
 ```
-usage: robocli build robot [-h] [--distro DISTRO] [--tag TAG]
+usage: openrua build robot [-h] [--distro DISTRO] [--tag TAG]
 
 options:
   -h, --help       show this help message and exit
   --distro DISTRO  ROS 2 distro: jazzy | humble
-  --tag TAG        image tag (default: robocli-sim-<distro>)
+  --tag TAG        image tag (default: openrua-sim-<distro>)
 ```
 
-### robocli build sandbox
+### openrua build sandbox
 
 ```
-usage: robocli build sandbox [-h] [--agent NAME[@VERSION]]
+usage: openrua build sandbox [-h] [--agent NAME[@VERSION]]
                              [--preinstall PREINSTALL] [--distro DISTRO]
                              [--robot-uid ROBOT_UID] [--tag TAG]
 
@@ -122,13 +122,13 @@ options:
                         name it as ros_distro)
   --robot-uid ROBOT_UID
                         container uid (default: the current user)
-  --tag TAG             image tag (default: robocli-sandbox-<distro>)
+  --tag TAG             image tag (default: openrua-sandbox-<distro>)
 ```
 
-### robocli build proxy
+### openrua build proxy
 
 ```
-usage: robocli build proxy [-h] [--agent AGENT] [--whitelist WHITELIST]
+usage: openrua build proxy [-h] [--agent AGENT] [--whitelist WHITELIST]
                            [--tag TAG] [--port PORT]
 
 options:
@@ -142,10 +142,10 @@ options:
   --port PORT           listen port, baked in and labelled
 ```
 
-## robocli up
+## openrua up
 
 ```
-usage: robocli up [-h] [--bench BENCH] [--task-suite TASK_SUITE]
+usage: openrua up [-h] [--bench BENCH] [--task-suite TASK_SUITE]
                   [--task-id TASK_ID] [--init-state INIT_STATE] [--task TASK]
                   [--name NAME] [--agent AGENT] [--workspace WORKSPACE]
                   [--ros-domain ROS_DOMAIN]
@@ -153,10 +153,10 @@ usage: robocli up [-h] [--bench BENCH] [--task-suite TASK_SUITE]
 
 Bring a robot up (simulated: boot its container; real: join its graph) with a
 sandbox terminal on it, then stay in the foreground; Ctrl-C powers it off.
-Open a second terminal for `robocli agent`.
+Open a second terminal for `openrua agent`.
 
 positional arguments:
-  robot                 robot profile: a name (robocli robots) or a path;
+  robot                 robot profile: a name (openrua robots) or a path;
                         default: --bench's robot, else the user config's
                         default
 
@@ -169,10 +169,10 @@ options:
   --task-id TASK_ID     scene index (default: the profile's)
   --init-state INIT_STATE
                         episode seed / init state (simulated robots)
-  --task TASK           task sentence to show `robocli agent` (real robots; a
+  --task TASK           task sentence to show `openrua agent` (real robots; a
                         simulated robot's comes from the scene)
   --name NAME           handle for this robot, for agent/down (default:
-                        robocli)
+                        openrua)
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
                         working directory (default: <home>/workspaces/<name>)
@@ -180,10 +180,10 @@ options:
                         ROS_DOMAIN_ID; concurrent robots need distinct ones
 ```
 
-## robocli agent
+## openrua agent
 
 ```
-usage: robocli agent [-h] [--name NAME] [--agent AGENT] [--model MODEL]
+usage: openrua agent [-h] [--name NAME] [--agent AGENT] [--model MODEL]
                      [prompt]
 
 Open the configured coding agent interactively on a live robot's terminal
@@ -194,25 +194,25 @@ positional arguments:
 
 options:
   -h, --help     show this help message and exit
-  --name NAME    the robot's handle (default: robocli)
+  --name NAME    the robot's handle (default: openrua)
   --agent AGENT  agent (default: the one `up` opened)
   --model MODEL  model (default: the one `up` recorded)
 ```
 
-## robocli down
+## openrua down
 
 ```
-usage: robocli down [-h] [--name NAME]
+usage: openrua down [-h] [--name NAME]
 
 options:
   -h, --help   show this help message and exit
-  --name NAME  the robot's handle (default: robocli)
+  --name NAME  the robot's handle (default: openrua)
 ```
 
-## robocli run
+## openrua run
 
 ```
-usage: robocli run [-h] --config CONFIG [--robot ROBOT] --run-id RUN_ID
+usage: openrua run [-h] --config CONFIG [--robot ROBOT] --run-id RUN_ID
                    --task-suite TASK_SUITE [--task-ids TASK_IDS]
                    [--seeds SEEDS] [--operator {agent,none,script}]
                    [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
@@ -221,7 +221,7 @@ usage: robocli run [-h] --config CONFIG [--robot ROBOT] --run-id RUN_ID
                    [--token-file TOKEN_FILE] [--runs-root RUNS_ROOT]
                    [--account-alias ACCOUNT_ALIAS]
 
-``robocli run``: a task set on a robot, one trial per (task, seed).
+``openrua run``: a task set on a robot, one trial per (task, seed).
 
 options:
   -h, --help            show this help message and exit
@@ -240,7 +240,7 @@ options:
                         source: a trial's commands.sh condensate); runs in the
                         sandbox on the native surface, open-loop best-effort
   --record [CAMERAS]    record the simulated robot's cameras every sim step
-                        into the trial's frames/ (what `robocli demo`
+                        into the trial's frames/ (what `openrua demo`
                         renders); a comma-separated camera list, or none for
                         the profile's cameras.record. Rendering costs wall
                         clock on whole-room scenes: record a replay
@@ -256,7 +256,7 @@ options:
   --credentials-dir CREDENTIALS_DIR
                         agent login-profile override (default: the config's
                         agent.credentials_dir, then
-                        ~/.robocli/credentials/<agent>)
+                        ~/.openrua/credentials/<agent>)
   --token-file TOKEN_FILE
                         file holding <token_env>=<token> for the sandbox CLI;
                         given, the sandbox authenticates with that token and
@@ -268,10 +268,10 @@ options:
                         in the trial result for per-account accounting
 ```
 
-## robocli ps
+## openrua ps
 
 ```
-usage: robocli ps [-h] [--all] [--runs-root RUNS_ROOT] [--json]
+usage: openrua ps [-h] [--all] [--runs-root RUNS_ROOT] [--json]
 
 Every trial directory that carries an attempt's claim: the process, when it
 started, whether it is still working (process alive, or its containers
@@ -285,14 +285,14 @@ options:
   --all, -a             also list stale claims (crashed attempts, and claims
                         archived under attempts/)
   --runs-root RUNS_ROOT
-                        where runs live (default: runs, as for robocli run)
+                        where runs live (default: runs, as for openrua run)
   --json                machine-readable output
 ```
 
-## robocli demo
+## openrua demo
 
 ```
-usage: robocli demo [-h] [--out OUT] [--gif] [--cameras CAMERAS]
+usage: openrua demo [-h] [--out OUT] [--gif] [--cameras CAMERAS]
                     [--ops START:END] [--size WxH] [--fps FPS] [--quality CRF]
                     [--speed SPEED] [--font-size FONT_SIZE]
                     [--gif-width GIF_WIDTH] [--gif-fps GIF_FPS] [--no-typing]
@@ -300,7 +300,7 @@ usage: robocli demo [-h] [--out OUT] [--gif] [--cameras CAMERAS]
 
 Compose demo.mp4 from a trial that ran with --record: the commands typed on
 the left, the robot's cameras on the right, one sim step per frame. Needs the
-demo extra (pip install 'robocli-harness[demo]').
+demo extra (pip install 'openrua[demo]').
 
 positional arguments:
   trial                 a trial directory under runs/ that ran with --record
@@ -330,10 +330,10 @@ options:
   --no-typing           show each command at once instead of typing it out
 ```
 
-## robocli probe
+## openrua probe
 
 ```
-usage: robocli probe [-h] [--host] [--static-peers ADDR[,ADDR]]
+usage: openrua probe [-h] [--host] [--static-peers ADDR[,ADDR]]
                      [--discovery-server HOST:PORT] [--ros-domain ROS_DOMAIN]
                      [--distro DISTRO] [--image IMAGE] [--name NAME]
 
@@ -353,18 +353,18 @@ options:
                         ROS_DOMAIN_ID of the graph
   --distro DISTRO       the robot's ROS 2 distro: jazzy | humble (picks the
                         sandbox image)
-  --image IMAGE         sandbox image to probe from (default: robocli-
+  --image IMAGE         sandbox image to probe from (default: openrua-
                         sandbox-<distro>)
   --name NAME           probe from a robot already up under this handle
                         instead
 ```
 
-## robocli config
+## openrua config
 
 ```
-usage: robocli config [-h] {schema}
+usage: openrua config [-h] {schema}
 
-Configuration: `robocli config schema` prints the resolved config's JSON
+Configuration: `openrua config schema` prints the resolved config's JSON
 schema, every key with its meaning.
 
 positional arguments:
@@ -374,10 +374,10 @@ options:
   -h, --help  show this help message and exit
 ```
 
-## robocli doctor
+## openrua doctor
 
 ```
-usage: robocli doctor [-h] [--agent NAME[@VERSION]] [--json] [robot]
+usage: openrua doctor [-h] [--agent NAME[@VERSION]] [--json] [robot]
 
 positional arguments:
   robot                 also check this robot's images and simulator

@@ -1,8 +1,8 @@
 """Agent-knowledge boundary.
 
 Every fact about a specific coding agent lives in its manifest
-(``robocli/configs/agents/``) and its hooks module
-(``robocli/plugins/agents/``): launch command, auth layout, transcript
+(``openrua/configs/agents/``) and its hooks module
+(``openrua/plugins/agents/``): launch command, auth layout, transcript
 format, quota wording. This test walks every other file in the package
 and fails on any agent-specific token, so swapping the agent never means
 editing the harness: consumers touch only the ``Agent`` contract.
@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-PKG = Path(__file__).resolve().parents[2] / "robocli"
+PKG = Path(__file__).resolve().parents[2] / "openrua"
 HOOKS_DIR = PKG / "plugins" / "agents"
 
 # Case-insensitive substrings that mark agent-specific knowledge. The

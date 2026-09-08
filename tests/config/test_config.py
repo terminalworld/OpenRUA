@@ -4,9 +4,9 @@ from pathlib import Path
 import pytest
 import yaml
 
-from robocli import config
-from robocli.config import paths
-from robocli.config import apply_suite_overrides, load_config, load_robot, normalize_arms
+from openrua import config
+from openrua.config import paths
+from openrua.config import apply_suite_overrides, load_config, load_robot, normalize_arms
 
 BUNDLED = [e.name for e in paths.available("benchmarks")]
 
@@ -68,21 +68,21 @@ def test_defaults_match_the_reported_runs():
     m = config.Machine(backend={"kind": "sim", "simulator": {"venv": "x/.venv"}})
     assert m.controller == "JOINT_POSITION" and m.cameras.rate_hz == 2.0
     assert m.control.gripper.open_threshold_m == 0.02
-    assert m.backend.image == "robocli-sim-jazzy"
-    assert m.backend.sandbox_image == "robocli-sandbox-jazzy"
+    assert m.backend.image == "openrua-sim-jazzy"
+    assert m.backend.sandbox_image == "openrua-sandbox-jazzy"
     h = config.Machine(backend={"kind": "sim", "ros_distro": "humble",
                                 "simulator": {"venv": "x/.venv"}})
-    assert (h.backend.image, h.backend.sandbox_image) == ("robocli-sim-humble", "robocli-sandbox-humble")
+    assert (h.backend.image, h.backend.sandbox_image) == ("openrua-sim-humble", "openrua-sandbox-humble")
     o = config.Machine(backend={"kind": "sim", "ros_distro": "humble", "sandbox_image": "mine",
                                 "simulator": {"venv": "x/.venv"}})
-    assert (o.backend.image, o.backend.sandbox_image) == ("robocli-sim-humble", "mine")
+    assert (o.backend.image, o.backend.sandbox_image) == ("openrua-sim-humble", "mine")
 
 
 def test_backend_union_is_strict():
     real = {"kind": "real", "discovery": {"network": "host"}}
     m = config.Machine(backend=real)
     assert isinstance(m.backend, config.RealBackend) and m.backend.launch is None
-    assert m.backend.sandbox_image == "robocli-sandbox-jazzy"     # the robot's distro
+    assert m.backend.sandbox_image == "openrua-sandbox-jazzy"     # the robot's distro
     with pytest.raises(config.ConfigError) as e:      # a sim-only key on a real robot
         config.validate(config.Machine, {"backend": {**real, "image": "x"}}, "t")
     assert "image" in str(e.value)

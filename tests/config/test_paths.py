@@ -3,11 +3,11 @@ from pathlib import Path
 
 import pytest
 
-from robocli.config import paths
+from openrua.config import paths
 
 
 def test_home_defaults_and_overrides(tmp_path):
-    assert paths.home() == Path("~/.robocli").expanduser()
+    assert paths.home() == Path("~/.openrua").expanduser()
     assert paths.home(tmp_path) == tmp_path
     assert paths.user_dir("robots", tmp_path) == tmp_path / "robots"
     assert paths.credentials_dir(tmp_path) == tmp_path / "credentials"
@@ -63,7 +63,7 @@ def test_simulator_venv_relative_names_live_under_home(tmp_path):
 
 
 def test_code_root_holds_the_package():
-    assert (paths.code_root() / "robocli" / "__init__.py").is_file()
+    assert (paths.code_root() / "openrua" / "__init__.py").is_file()
 
 
 def test_unknown_kind_is_refused():

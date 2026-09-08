@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from robocli.robot.sim.bridge import environments as environment
+from openrua.robot.sim.bridge import environments as environment
 
 
 def test_every_loader_implements_the_plug_shape():

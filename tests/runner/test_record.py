@@ -16,8 +16,8 @@ from pathlib import Path
 
 import pytest
 
-from robocli import agents
-from robocli.runner.record import extract_commands
+from openrua import agents
+from openrua.runner.record import extract_commands
 
 
 def _tool_use(oid, name, inp):
@@ -26,7 +26,7 @@ def _tool_use(oid, name, inp):
 
 
 def _make_transcript(path: Path, target: Path) -> None:
-    tricky = "line with 'quotes' and $VARS\nEOF\nROBOCLI_EOF almost\n"
+    tricky = "line with 'quotes' and $VARS\nEOF\nOPENRUA_EOF almost\n"
     recs = [
         _tool_use("t1", "Bash", {"command": "echo probe-ran > probe.txt"}),
         _tool_use("t2", "Write", {"file_path": str(target),
@@ -58,11 +58,11 @@ def test_condensate_replays_bash_write_edit(tmp_path):
     assert (tmp_path / "probe.txt").read_text().strip() == "probe-ran"
     replayed = target.read_text()
     assert "$REPLACED" in replayed and "$VARS" not in replayed
-    assert "ROBOCLI_EOF almost" in replayed  # marker dodged the content
+    assert "OPENRUA_EOF almost" in replayed  # marker dodged the content
 
 
 def test_script_operator_requires_a_script():
-    from robocli.runner.operators import OPERATORS, script_operator
+    from openrua.runner.operators import OPERATORS, script_operator
 
     assert set(OPERATORS) == {"none", "script", "agent"}
     with pytest.raises(ValueError, match="--script"):
@@ -72,7 +72,7 @@ def test_script_operator_requires_a_script():
 # ----------------------------------------------- scrubbing and archiving
 
 def test_secret_strings_collects_only_long_values(tmp_path):
-    from robocli.runner.record import secret_strings
+    from openrua.runner.record import secret_strings
     (tmp_path / "creds.json").write_text(json.dumps({
         "accessToken": "tok-" + "a" * 30,
         "nested": {"refresh": ["tok-" + "b" * 30]},
@@ -84,7 +84,7 @@ def test_secret_strings_collects_only_long_values(tmp_path):
 
 
 def test_scrub_file_redacts_every_secret(tmp_path):
-    from robocli.runner.record import scrub_file
+    from openrua.runner.record import scrub_file
     f = tmp_path / "transcript.jsonl"
     f.write_text("saw tok-SECRETSECRETSECRETS twice: tok-SECRETSECRETSECRETS")
     scrub_file(f, ["tok-SECRETSECRETSECRETS"])
@@ -93,7 +93,7 @@ def test_scrub_file_redacts_every_secret(tmp_path):
 
 
 def test_archive_prior_attempt_moves_evidence_down(tmp_path):
-    from robocli.runner.record import archive_prior_attempt
+    from openrua.runner.record import archive_prior_attempt
     trial = tmp_path / "seed0"
     trial.mkdir()
     assert archive_prior_attempt(trial) is None  # nothing yet -> no-op
@@ -108,7 +108,7 @@ def test_archive_prior_attempt_moves_evidence_down(tmp_path):
 
 
 def test_archive_prior_attempt_keeps_what_it_is_told(tmp_path):
-    from robocli.runner.record import archive_prior_attempt
+    from openrua.runner.record import archive_prior_attempt
     trial = tmp_path / "seed0"
     trial.mkdir()
     (trial / "result.json").write_text("{}")
@@ -120,8 +120,8 @@ def test_archive_prior_attempt_keeps_what_it_is_told(tmp_path):
 
 
 def test_claim_keeps_its_lock_while_archiving(tmp_path):
-    from robocli.runner import lock
-    from robocli.runner.trial import claim
+    from openrua.runner import lock
+    from openrua.runner.trial import claim
     trial = tmp_path / "seed0"
     trial.mkdir()
     (trial / "result.json").write_text("{}")
@@ -133,7 +133,7 @@ def test_claim_keeps_its_lock_while_archiving(tmp_path):
 
 
 def test_provenance_pins_the_whole_chain(tmp_path):
-    from robocli.runner.record import provenance
+    from openrua.runner.record import provenance
 
     class _Agent:
         name = "stub"
@@ -158,14 +158,14 @@ def test_provenance_pins_the_whole_chain(tmp_path):
                     "-m", "x"], check=True)
     cfg = {"machine": {"backend": {
         "kind": "sim",
-        "image": "robocli-definitely-missing",
+        "image": "openrua-definitely-missing",
         "simulator": {"venv": str(simulator / ".venv-libero")},
         "gpus": False}}}
     prov = provenance(cfg_path, cfg, _Args(), _Agent(), "tplhash",
-                      "prompt text", code_root, proxy_image="robocli-proxy",
+                      "prompt text", code_root, proxy_image="openrua-proxy",
                       simulator_venv=simulator / ".venv-libero")
-    assert prov["robocli_version"]
-    assert len(prov["robocli_commit"]) == 40
+    assert prov["openrua_version"]
+    assert len(prov["openrua_commit"]) == 40
     assert len(prov["simulator_commit"]) == 40  # the cap-x checkout is git
     assert prov["host"]["hostname"] and prov["host"]["cpu_count"] >= 1
     assert prov["ros_domain"] == 44 and prov["gpu_render"] is False
@@ -176,7 +176,7 @@ def test_provenance_pins_the_whole_chain(tmp_path):
 
 
 def test_run_config_is_write_once(tmp_path):
-    from robocli.runner.record import write_run_config
+    from openrua.runner.record import write_run_config
     write_run_config(tmp_path, {"gen": 1})
     write_run_config(tmp_path, {"gen": 2})  # concurrent runner: no rewrite
     assert json.loads((tmp_path / "config.json").read_text()) == {"gen": 1}

@@ -1,8 +1,8 @@
-"""lock: one writer per trial directory; holders() is what robocli ps prints."""
+"""lock: one writer per trial directory; holders() is what openrua ps prints."""
 import json
 import os
 
-from robocli.runner import lock
+from openrua.runner import lock
 
 
 def test_acquire_refuses_a_live_holder_and_takes_over_a_dead_one(tmp_path):

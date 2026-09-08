@@ -7,10 +7,10 @@ read_when:
 
 # Use your own robot
 
-A robot is a YAML profile. The bundled ones (`robocli robots`) are
+A robot is a YAML profile. The bundled ones (`openrua robots`) are
 simulated; a real robot's profile is the same file with a `real`
 backend instead of a simulator. Put yours in
-`~/.robocli/robots/<name>.yaml` and it is found by name, or pass its
+`~/.openrua/robots/<name>.yaml` and it is found by name, or pass its
 path.
 
 ## Draft it from the graph
@@ -19,9 +19,9 @@ Most of the profile is already on the robot's ROS 2 graph. With the
 robot's stack running and reachable from this host:
 
 ```bash
-robocli probe --host > ur5e.yaml            # multicast on the host network
-robocli probe --static-peers 192.168.1.20 > ur5e.yaml
-robocli probe --discovery-server 192.168.1.20:11811 > ur5e.yaml
+openrua probe --host > ur5e.yaml            # multicast on the host network
+openrua probe --static-peers 192.168.1.20 > ur5e.yaml
+openrua probe --discovery-server 192.168.1.20:11811 > ur5e.yaml
 ```
 
 `probe` starts a throwaway sandbox that can see the graph, reads the
@@ -30,12 +30,12 @@ profile: joint names and limits, base and hand frames, the ports it
 recognised, cameras, and whether MoveIt is up. Lines marked `TODO` need
 you: the model name, a one-line description, the planning group, and
 which of the found ports to keep. Delete any port the robot does not
-actually serve. A robot that is already up under RoboCLI can be
-probed from its own sandbox: `robocli probe --name robocli`.
+actually serve. A robot that is already up under OpenRUA can be
+probed from its own sandbox: `openrua probe --name openrua`.
 
 ## What the agent reads
 
-`robocli up` generates the agent's `machine.yaml` from the profile's
+`openrua up` generates the agent's `machine.yaml` from the profile's
 `machine:` section. The agent's docs explain how to read it; you supply
 the facts:
 
@@ -43,7 +43,7 @@ the facts:
 machine:
   backend:
     kind: real
-    ros_distro: humble       # what the robot runs; the sandbox image follows (robocli-sandbox-humble)
+    ros_distro: humble       # what the robot runs; the sandbox image follows (openrua-sandbox-humble)
     launch: ros2 launch ur_robot_driver ur_control.launch.py ur_type:=ur5e robot_ip:=192.168.1.20   # optional; omit if the graph is already up
     image: null              # or a docker image the launch command runs in (host network), for a driver on another ROS release
     discovery:
@@ -72,7 +72,7 @@ machine:
   workspace_template: workspace
 ```
 
-Every key is checked against the schema (`robocli config schema`
+Every key is checked against the schema (`openrua config schema`
 prints all of them with their meaning); a misspelled key is an error,
 not a silent no-op. Every port you list becomes a promise: `preflight`
 verifies it is served before the agent starts, and the workspace docs
@@ -88,9 +88,9 @@ meaning is in [config.md](config.md#machine).
 ## Bringing it up
 
 ```bash
-cp ur5e.yaml ~/.robocli/robots/
-robocli doctor ur5e                # images, login, and that the profile loads
-robocli up ur5e --ros-domain 7 --task "move the arm to the home pose"
+cp ur5e.yaml ~/.openrua/robots/
+openrua doctor ur5e                # images, login, and that the profile loads
+openrua up ur5e --ros-domain 7 --task "move the arm to the home pose"
 ```
 
 The sandbox joins the host network and reaches the graph the way
@@ -101,7 +101,7 @@ not_applicable`; preflight, the agent, the transcript and the provenance
 are the same as in simulation. Then, as always:
 
 ```bash
-robocli agent "move the arm to the home pose and open the gripper"
+openrua agent "move the arm to the home pose and open the gripper"
 ```
 
 One difference from simulation to know about: a sandbox on the host

@@ -2,27 +2,27 @@
 
 from __future__ import annotations
 
-from robocli.config import load_config
+from openrua.config import load_config
 
 import subprocess
 import sys
 
 
 def test_package_front_door_lists_run():
-    h = subprocess.run([sys.executable, "-m", "robocli", "--help"],
+    h = subprocess.run([sys.executable, "-m", "openrua", "--help"],
                        capture_output=True, text=True)
     assert h.returncode == 0 and "run" in h.stdout
 
 
 def test_front_door_rejects_unknown_verb():
-    h = subprocess.run([sys.executable, "-m", "robocli", "walk"],
+    h = subprocess.run([sys.executable, "-m", "openrua", "walk"],
                        capture_output=True, text=True)
     assert h.returncode == 2 and "invalid choice" in h.stderr
 
 
 def test_run_spelling_is_the_conductor():
-    # python -m robocli run --help must reach run.py's own argparse.
-    h = subprocess.run([sys.executable, "-m", "robocli", "run", "--help"],
+    # python -m openrua run --help must reach run.py's own argparse.
+    h = subprocess.run([sys.executable, "-m", "openrua", "run", "--help"],
                        capture_output=True, text=True)
     assert h.returncode == 0 and "--config" in h.stdout
 
@@ -30,7 +30,7 @@ def test_run_spelling_is_the_conductor():
 # --------------------------------------------- suite view resolution
 
 def test_suite_overrides_deep_merge_and_null_delete(tmp_path):
-    from robocli.config import apply_suite_overrides, load_config
+    from openrua.config import apply_suite_overrides, load_config
     cfg = load_config("libero_pro", home=tmp_path)
     cfg["machine"]["ports"].update({"twist": "/t", "gripper": "/g"})
     cfg["suite_overrides"] = {"wipe": {"machine": {
@@ -44,7 +44,7 @@ def test_suite_overrides_deep_merge_and_null_delete(tmp_path):
 
 
 def test_unknown_suite_is_a_no_op():
-    from robocli.config import apply_suite_overrides
+    from openrua.config import apply_suite_overrides
     cfg = {"machine": {"ports": {"twist": "/t"}}}
     import copy
     assert apply_suite_overrides(copy.deepcopy(cfg), "nope") == cfg
@@ -58,9 +58,9 @@ def test_capbench_wipe_view_agrees_machine_and_manifest():
 
     import yaml
 
-    from robocli.runner.preflight import build_checks
-    from robocli.config import apply_suite_overrides
-    cfg = load_config(Path(__file__).resolve().parents[2] / "robocli" / "configs" /
+    from openrua.runner.preflight import build_checks
+    from openrua.config import apply_suite_overrides
+    cfg = load_config(Path(__file__).resolve().parents[2] / "openrua" / "configs" /
                           "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_wipe")
     assert not cfg["machine"]["ports"].get("gripper")
@@ -83,8 +83,8 @@ def test_normalize_arms_synthesizes_from_flat_fields():
 
     import yaml
 
-    from robocli.config import normalize_arms
-    cfg = load_config(Path(__file__).resolve().parents[2] / "robocli" / "configs" /
+    from openrua.config import normalize_arms
+    cfg = load_config(Path(__file__).resolve().parents[2] / "openrua" / "configs" /
                           "benchmarks" / "libero_pro.yaml")
     normalize_arms(cfg)
     arms = cfg["machine"]["arms"]
@@ -99,7 +99,7 @@ def test_normalize_arms_synthesizes_from_flat_fields():
 
 
 def test_normalize_arms_keeps_explicit_arms_untouched():
-    from robocli.config import normalize_arms
+    from openrua.config import normalize_arms
     explicit = [{"label": "left", "joints": ["j1"], "ports": {}},
                 {"label": "right", "joints": ["j2"], "ports": {}}]
     cfg = {"machine": {"arms": [dict(a) for a in explicit]}}
@@ -114,8 +114,8 @@ def test_twoarm_suite_view_resolves_two_arms():
 
     import yaml
 
-    from robocli.config import apply_suite_overrides, normalize_arms
-    cfg = load_config(Path(__file__).resolve().parents[2] / "robocli" / "configs" /
+    from openrua.config import apply_suite_overrides, normalize_arms
+    cfg = load_config(Path(__file__).resolve().parents[2] / "openrua" / "configs" /
                           "benchmarks" / "capbench.yaml")
     apply_suite_overrides(cfg, "capbench_twoarm_lift")
     normalize_arms(cfg)
@@ -137,6 +137,6 @@ def test_trial_record_stamps_the_workspace_template_hash():
     # every trial: after a mid-campaign template edit only a trial-level
     # stamp can still separate the two halves.
     import inspect
-    from robocli.runner import trial as T
+    from openrua.runner import trial as T
     src = inspect.getsource(T.run_trial)
     assert '"workspace_template_sha256": workspace.template_hash(cfg)' in src
