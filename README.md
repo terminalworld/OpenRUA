@@ -21,8 +21,8 @@
 
 A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html)
 uses a robot just as a computer-use agent uses a computer. OpenRUA is
-the open harness for one: type `openrua agent "pick up the bowl"` and
-Claude Code or Codex opens in a terminal on the robot's ROS&nbsp;2 graph,
+the open harness for one: type `openrua run panda-sim "pick up the bowl"`
+and Claude Code or Codex opens in a terminal on the robot's ROS&nbsp;2 graph,
 lists the topics, reads the docs in its workspace, writes a script with
 `rclpy`, runs it, and checks the camera.
 
