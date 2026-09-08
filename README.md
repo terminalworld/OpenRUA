@@ -95,14 +95,35 @@ details are in [docs/install.md](docs/install.md).
 
 ## Supported robots
 
-| Profile | Robot | Backend | Scenes |
-|---|---|---|---|
-| `panda-sim` | Franka Emika Panda | simulated (robosuite / MuJoCo, ROS&nbsp;2 Jazzy) | LIBERO-PRO |
-| `panda-sim-humble` | Franka Emika Panda | simulated (robosuite / MuJoCo, ROS&nbsp;2 Humble) | CaP-Bench |
-| `panda-omron-sim` | Panda on an Omron mobile base | simulated (RoboCasa, ROS&nbsp;2 Humble) | RoboCasa365 |
-| *your robot* | any ROS&nbsp;2 arm or mobile manipulator | real | see [docs/your-own-robot.md](docs/your-own-robot.md) |
+| Profile | Robot | Where it runs |
+|---|---|---|
+| `panda-sim` | Franka Emika Panda | simulation, ROS&nbsp;2 Jazzy |
+| `panda-sim-humble` | Franka Emika Panda | simulation, ROS&nbsp;2 Humble |
+| `panda-omron-sim` | Panda on an Omron mobile base | simulation, ROS&nbsp;2 Humble |
+| *your robot* | any ROS&nbsp;2 arm or mobile manipulator | real; see [docs/your-own-robot.md](docs/your-own-robot.md) |
 
 `openrua robots` prints this list from the profiles on disk, yours included.
+
+## Supported simulators
+
+| Simulator | Engine | Profiles |
+|---|---|---|
+| [robosuite](https://robosuite.ai) | MuJoCo | `panda-sim`, `panda-sim-humble` |
+| [RoboCasa](https://robocasa.ai) | robosuite / MuJoCo | `panda-omron-sim` |
+
+Simulators are checkouts under `~/.openrua/simulators/`, each with its
+own venv; see [docs/simulation.md](docs/simulation.md).
+
+## Supported benchmarks
+
+| Benchmark | Robot profile | Config |
+|---|---|---|
+| LIBERO-PRO | `panda-sim` | `--config libero_pro` |
+| CaP-Bench | `panda-sim-humble` | `--config capbench` |
+| RoboCasa365 | `panda-omron-sim` | `--config robocasa365` |
+
+`openrua benchmarks` prints this list from the configs on disk, yours
+included; `openrua bench` runs one.
 
 ## Supported agents
 
