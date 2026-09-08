@@ -2,9 +2,9 @@
 
 # RoboCLI
 
-**Connect Your Claude Code and Codex Directly to Any Robot, Real or Simulated**
+**Let Your Claude Code or Codex Control Any Robot, Real or Simulated**
 
-Through the standard ROS 2 CLI and client library, without relying on any VLA model.
+Through the standard ROS 2 CLI and client library, without relying on any VLA model. Start playing with one command :)
 
 [![CI](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
@@ -95,7 +95,7 @@ checkout, an agent login); the details are in [docs/install.md](docs/install.md)
 | [Claude Code](https://claude.com/claude-code) | supported (`--agent claude-code`) |
 | [Codex](https://github.com/openai/codex) | supported (`--agent codex`) |
 
-An agent is a manifest (how to install its CLI in the sandbox, which
+Bring your own agent. An agent is a manifest (how to install its CLI in the sandbox, which
 hosts it talks to, how it logs in) and a small hooks class (how to
 launch it); everything else is optional. Drop yours in
 `~/.robocli/agents/` and `~/.robocli/plugins/agents/` or send a pull
