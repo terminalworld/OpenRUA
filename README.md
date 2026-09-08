@@ -36,6 +36,9 @@ RoboCLI gives you one command for three things:
   seeds with a fresh sandbox per trial and archives every command the
   agent ran. See [docs/running-experiments.md](docs/running-experiments.md).
 
+Your coding agent reads what the robot publishes, writes the code, and
+moves the robot, right from the robot's own terminal.
+
 ## Quick start
 
 ```bash
