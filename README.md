@@ -4,7 +4,7 @@
 
 **Let Your Claude Code or Codex Control Any Robot, Real or Simulated**
 
-*Through the standard ROS 2 CLI and client library, without relying on any VLA model.*
+*Through the standard ROS&nbsp;2 CLI and client library, without relying on any VLA model.*
 
 [![CI](https://github.com/terminalworld/OpenRUA/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/OpenRUA/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
@@ -22,7 +22,7 @@
 A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html)
 uses a robot just as a computer-use agent uses a computer. OpenRUA is
 the open harness for one: type `openrua agent "pick up the bowl"` and
-Claude Code or Codex opens in a terminal on the robot's ROS 2 graph,
+Claude Code or Codex opens in a terminal on the robot's ROS&nbsp;2 graph,
 lists the topics, reads the docs in its workspace, writes a script with
 `rclpy`, runs it, and checks the camera.
 
@@ -76,7 +76,7 @@ details are in [docs/install.md](docs/install.md).
 - **The interface is the robot's own.** The agent sees the topics,
   actions and services the robot exposes, plus `machine.yaml` (joints,
   limits, frames, ports) and four short docs. It never sees OpenRUA.
-- **The sandbox is a plain Ubuntu + ROS 2 container** with the agent
+- **The sandbox is a plain Ubuntu + ROS&nbsp;2 container** with the agent
   installed, a workspace mounted, and a whitelist proxy as its only
   way out (the model API; nothing else).
 - **A robot is a profile** ([`openrua/configs/robots/`](openrua/configs/robots), or
@@ -96,10 +96,10 @@ details are in [docs/install.md](docs/install.md).
 
 | Profile | Robot | Backend | Scenes |
 |---|---|---|---|
-| `panda-sim` | Franka Emika Panda | simulated (robosuite / MuJoCo, ROS 2 Jazzy) | LIBERO-PRO |
-| `panda-sim-humble` | Franka Emika Panda | simulated (robosuite / MuJoCo, ROS 2 Humble) | CaP-Bench |
-| `panda-omron-sim` | Panda on an Omron mobile base | simulated (RoboCasa, ROS 2 Humble) | RoboCasa365 |
-| *your robot* | any ROS 2 arm or mobile manipulator | real | see [docs/your-own-robot.md](docs/your-own-robot.md) |
+| `panda-sim` | Franka Emika Panda | simulated (robosuite / MuJoCo, ROS&nbsp;2 Jazzy) | LIBERO-PRO |
+| `panda-sim-humble` | Franka Emika Panda | simulated (robosuite / MuJoCo, ROS&nbsp;2 Humble) | CaP-Bench |
+| `panda-omron-sim` | Panda on an Omron mobile base | simulated (RoboCasa, ROS&nbsp;2 Humble) | RoboCasa365 |
+| *your robot* | any ROS&nbsp;2 arm or mobile manipulator | real | see [docs/your-own-robot.md](docs/your-own-robot.md) |
 
 `openrua robots` prints this list from the profiles on disk, yours included.
 
@@ -172,7 +172,7 @@ video. Who may import whom is enforced by CI (import-linter and
 | [docs/install.md](docs/install.md) | setting a machine up: images, logins, doctor |
 | [examples/first-task.md](examples/first-task.md) | your first task on the simulated Panda |
 | [docs/your-own-robot.md](docs/your-own-robot.md) | describing your robot in one profile |
-| [examples/real-robot.md](examples/real-robot.md) | the same flow on a real ROS 2 arm |
+| [examples/real-robot.md](examples/real-robot.md) | the same flow on a real ROS&nbsp;2 arm |
 | [docs/simulation.md](docs/simulation.md) | the simulator checkouts and GPU rendering |
 | [docs/podman.md](docs/podman.md) | machines without Docker |
 | [docs/running-experiments.md](docs/running-experiments.md) | `openrua run`, the `runs/` layout, every record field, replays and demo videos |
