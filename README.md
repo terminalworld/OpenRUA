@@ -6,7 +6,6 @@
 
 Through the standard ROS 2 CLI and `rclpy`, without relying on any VLA model.
 
-
 [![CI](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![ROS 2](https://img.shields.io/badge/ROS%202-Humble%20%7C%20Jazzy-22314E)](docs/architecture.md)
