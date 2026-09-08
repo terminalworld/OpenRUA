@@ -39,6 +39,8 @@ RoboCLI gives you one command for three things:
 > RoboCLI turns your robot into a coding project: your agent explores it
 > like a live codebase, pulls sensor streams into files for reading, and
 > runs commands and programs to move it.
+>
+> *Play with your robot the way you code a project :)*
 
 ## Quick start
 
