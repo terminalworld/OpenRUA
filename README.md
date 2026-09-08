@@ -20,14 +20,21 @@
 
 </div>
 
-A coding agent already knows how to work in a terminal: list what is
-there, read the docs, write a script, run it, look at the result. A
-ROS 2 robot already *is* a terminal: `ros2 topic`, `ros2 action`,
-`rclpy`. RoboCLI puts the two together and adds nothing in between. No
-robot API for the agent, no skill library, no planner: the agent gets a
-shell on the robot, the robot's own command line and client library,
-and a short description of the machine. Everything the agent does from
-there is ordinary ROS 2.
+Type `robocli agent "pick up the bowl"` and Claude Code opens in a
+terminal on the robot's ROS 2 graph: it lists the topics, reads the docs
+in its workspace, writes a script with `rclpy`, runs it, and checks the
+camera.
+
+RoboCLI gives you one command for three things:
+
+- **Play in simulation.** `robocli up panda-sim` brings up a Franka
+  Panda in MuJoCo; the agent drives it the same way it would a real one.
+- **Put an agent on your robot.** Draft a profile from the robot's live
+  graph, finish the `TODO` lines, `robocli up <name>`. See
+  [docs/your-own-robot.md](docs/your-own-robot.md).
+- **Run experiments.** `robocli run` plays a benchmark across tasks and
+  seeds with a fresh sandbox per trial and archives every command the
+  agent ran. See [docs/running-experiments.md](docs/running-experiments.md).
 
 ## Quick start
 
@@ -43,12 +50,9 @@ In a second terminal:
 robocli agent "pick up the bowl and place it on the plate"
 ```
 
-Claude Code opens in `/workspace` on the robot's terminal. It reads
-`README.md` there, runs `ros2 topic list`, grabs a camera frame, sends a
-`FollowJointTrajectory` goal, and checks the result, exactly as it
-would on a real machine. `robocli doctor` tells you what is missing
-before the first `up` (Docker, the three images, the simulator
-checkout, an agent login); the details are in [docs/install.md](docs/install.md).
+`robocli doctor` tells you what is missing before the first `up`
+(Docker, the three images, the simulator checkout, an agent login); the
+details are in [docs/install.md](docs/install.md).
 
 ## How it works
 
