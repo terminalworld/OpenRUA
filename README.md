@@ -19,10 +19,12 @@
 
 </div>
 
-Type `openrua agent "pick up the bowl"` and Claude Code opens in a
-terminal on the robot's ROS 2 graph: it lists the topics, reads the docs
-in its workspace, writes a script with `rclpy`, runs it, and checks the
-camera.
+A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html)
+uses a robot just as a computer-use agent uses a computer. OpenRUA is
+the open harness for one: type `openrua agent "pick up the bowl"` and
+Claude Code or Codex opens in a terminal on the robot's ROS 2 graph,
+lists the topics, reads the docs in its workspace, writes a script with
+`rclpy`, runs it, and checks the camera.
 
 OpenRUA gives you one command for three things:
 
