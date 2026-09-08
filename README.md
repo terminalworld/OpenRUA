@@ -5,7 +5,7 @@
 **Let Your Claude Code or Codex Control Any Robot, Real or Simulated**
 
 *Through the standard ROS 2 CLI and client library, without relying on any VLA model.*<br>
-*Start playing with one command :)*
+*Start playing with one command.*
 
 [![CI](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
@@ -40,7 +40,7 @@ RoboCLI gives you one command for three things:
 > like a live codebase, pulls sensor streams into files for reading, and
 > runs commands and programs to move it.
 >
-> *Play with your robot the way you code a project :)*
+> *Play with your robot like you code a project :)*
 
 ## Quick start
 
