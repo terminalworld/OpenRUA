@@ -4,7 +4,8 @@
 
 **Connect Your Claude Code and Codex Directly to Any Robot, Real or Simulated**
 
-Through the robot's own ROS 2 command line and client library, without relying on any VLA model.
+Through the standard ROS 2 CLI and `rclpy`, without relying on any VLA model.
+
 
 [![CI](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
