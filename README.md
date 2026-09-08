@@ -4,8 +4,7 @@
 
 **Let Your Claude Code or Codex Control Any Robot, Real or Simulated**
 
-Through the standard ROS 2 CLI and client library, without relying on any VLA model.
-
+Through the standard ROS 2 CLI and client library, without relying on any VLA model.<br>
 *Start playing with one command :)*
 
 [![CI](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml)
