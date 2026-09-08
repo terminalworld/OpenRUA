@@ -126,7 +126,7 @@ and point `up` at it:
 
 ```bash
 openrua probe --host > my-ur5.yaml   # joints, limits, frames, ports, cameras from the graph
-openrua up ./my-ur5.yaml --task "..." # or copy it to ~/.openrua/robots/ and: openrua up my-ur5
+openrua run ./my-ur5.yaml "..."      # or copy it to ~/.openrua/robots/ and: openrua run my-ur5
 ```
 
 The profile's `machine:` section is what the agent's `machine.yaml` is
