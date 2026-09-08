@@ -2,9 +2,9 @@
 
 # RoboCLI
 
-**Connect Your Claude Code and Codex Directly to Any Robot, 100% Natively**
+**Connect Your Claude Code and Codex Directly to Any Robot, Real or Simulated**
 
-Real or simulated, on the robot's own ROS 2 command line.
+Through the robot's own ROS 2 command line and client library, without relying on any VLA model.
 
 [![CI](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
