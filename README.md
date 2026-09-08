@@ -6,7 +6,7 @@
 
 Through the standard ROS 2 CLI and client library, without relying on any VLA model.
 
-Start playing with one command :)
+*Start playing with one command :)*
 
 [![CI](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/RoboCLI/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
