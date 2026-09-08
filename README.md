@@ -67,7 +67,7 @@ details are in [docs/install.md](docs/install.md).
 ```
  your terminal                       the robot (real or simulated)
  ┌─────────────────────────┐        ┌──────────────────────────────┐
- │ openrua agent           │        │ ROS 2 graph                  │
+ │ openrua run             │        │ ROS 2 graph                  │
  │  └─ Claude Code / Codex │  DDS   │  /joint_states  /tf  /camera │
  │      in a sandbox with  │◄──────►│  FollowJointTrajectory       │
  │      ros2 · rclpy · docs│        │  GripperCommand  MoveIt      │
