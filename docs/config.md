@@ -393,6 +393,8 @@ A defaults file: the package's configs/config.yaml or ~/.openrua/config.yaml.
 |---|---|---|---|
 | `agent` | [AgentOverrides](#agentoverrides) |  | agent defaults; only the keys written are layered in |
 | `robot` | str \| null | None | robot when a command names none |
+| `simulator` | str \| null | None | simulator when a command names none (and the robot is a type) |
+| `benchmark` | str \| null | None | benchmark whose world openrua run / up load when --bench is not given; null = the simulator's native scene |
 | `sandbox` | [SandboxConfig](#sandboxconfig) |  | how this machine starts the sandbox |
 
 ## AgentOverrides

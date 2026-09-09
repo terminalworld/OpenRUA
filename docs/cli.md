@@ -29,7 +29,7 @@ usage: openrua [-h] [--version] [--home HOME] <verb> ...
 | `ps` | list the attempts running under a runs root (--all: stale claims too) |
 | `demo` | render a recorded trial as a video (terminal + cameras) |
 | `probe` | draft a robot profile from a live ROS 2 graph |
-| `config` | the configuration schema |
+| `config` | your defaults (robot, simulator, benchmark, agent) |
 | `doctor` | check the install: docker, images, simulator, login |
 
 Global options: `--home` (the user directory, default `$OPENRUA_HOME` or `~/.openrua`), `--version`.
@@ -431,16 +431,20 @@ options:
 ## openrua config
 
 ```
-usage: openrua config [-h] {schema}
+usage: openrua config [-h] {show,set,schema} [KEY VALUE ...]
 
-Configuration: `openrua config schema` prints the resolved config's JSON
-schema, every key with its meaning.
+Your defaults file, ~/.openrua/config.yaml: `config set robot panda simulator
+robosuite` writes keys into it (dotted paths such as agent.model), `config
+show` prints it, `config schema` prints the resolved config's JSON schema,
+every key with its meaning.
 
 positional arguments:
-  {schema}    what to show
+  {show,set,schema}  what to do
+  KEY VALUE          for set: key and value, repeatable (robot, simulator,
+                     benchmark, agent.name, agent.model, ...)
 
 options:
-  -h, --help  show this help message and exit
+  -h, --help         show this help message and exit
 ```
 
 ## openrua doctor

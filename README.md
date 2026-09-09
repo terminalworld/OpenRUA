@@ -21,16 +21,15 @@
 
 A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html)
 uses a robot just as a computer-use agent uses a computer. OpenRUA is
-the open harness for one: type `openrua run panda --sim robosuite --bench libero_pro "pick up the bowl"`
-and Claude Code or Codex opens in a terminal on the robot's ROS&nbsp;2 graph,
+the open harness for one: type `openrua run "pick up the red cube"` and
+Claude Code or Codex opens in a terminal on the robot's ROS&nbsp;2 graph,
 lists the topics, reads the docs in its workspace, writes a script with
 `rclpy`, runs it, and checks the camera.
 
 OpenRUA gives you one command for three things:
 
-- **Play in simulation.** `openrua run panda --sim robosuite` brings up
-  a Franka Panda in MuJoCo; the agent drives it the same way it would a
-  real one.
+- **Play in simulation.** `openrua run` brings up a Franka Panda in
+  MuJoCo; the agent drives it the same way it would a real one.
 - **Put an agent on your robot.** Draft its file from the robot's live
   graph, finish the `TODO` lines, `openrua run <name>`. See
   [docs/your-own-robot.md](docs/your-own-robot.md).
@@ -46,31 +45,33 @@ OpenRUA gives you one command for three things:
 
 ## Quick start
 
+Install, choose a robot and a simulator once, run:
+
 ```bash
 pip install git+https://github.com/terminalworld/OpenRUA
-openrua build                                    # the three images, once
-openrua run panda --sim robosuite --bench libero_pro --agent claude-code \
-    "pick up the bowl and place it on the plate"
+openrua build                                       # the three images, once
+openrua config set robot panda simulator robosuite  # your defaults, in ~/.openrua/config.yaml
+openrua run "pick up the red cube"
 ```
 
 ```
-[run] robot     panda: Franka Emika Panda, simulated by robosuite (ROS 2 jazzy)
-[run] scene     libero_pro / libero_goal_task #0: "open the bottom drawer of the cabinet"
-[run] agent     claude-code (claude-opus-5), opening message: "pick up the bowl and place it on the plate"
+[run] robot     panda: Franka Emika Panda, simulated by robosuite (ROS 2 humble)
+[run] scene     Lift (the simulator's own scene)
+[run] agent     claude-code (claude-opus-5), opening message: "pick up the red cube"
 [run] the robot powers off when the agent exits
 ```
 
-Three choices, one each: the robot (`panda`), the simulator that
-embodies it (`robosuite`), the benchmark whose world to load
-(`libero_pro`: a kitchen with a bowl, a plate, a wine bottle, a drawer,
-a stove; the sentence is yours, the scene's own task is shown for
-reference). Leave out `--bench` for the simulator's own scene (a table
-and a cube); `--agent codex` opens Codex; `--task-suite` and `--task-id`
-pick another scene; `openrua robots`, `openrua simulators`,
+`run` brings the robot up with its ROS&nbsp;2 graph, opens the agent on
+its terminal with the sentence as the opening message, and powers the
+robot off when you leave. The scene is robosuite's own: a table and a
+cube. `--bench libero_pro` loads a benchmark's world instead (a LIBERO
+kitchen: a bowl, a plate, a wine bottle, a drawer, a stove), `--agent
+codex` opens Codex, and any of the three can be given on the command
+line instead of set once: `openrua run panda --sim robosuite --bench
+libero_pro "pick up the bowl"`. `openrua robots`, `openrua simulators`,
 `openrua benchmarks` and `openrua agents` list the choices. To keep a
-robot up between sessions, do the same in three commands:
-`openrua up panda --sim robosuite --bench libero_pro`, then
-`openrua agent "..."` in a second terminal, then `openrua down`.
+robot up between sessions, do the same in three commands: `openrua up`,
+then `openrua agent "..."` in a second terminal, then `openrua down`.
 
 `openrua doctor` tells you what is missing before the first `run`
 (Docker, the three images, the simulator checkout, an agent login); the
