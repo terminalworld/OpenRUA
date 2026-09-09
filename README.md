@@ -63,19 +63,26 @@ openrua run "pick up the red cube"
 
 `run` brings the robot up with its ROS&nbsp;2 graph, opens the agent on
 its terminal with the sentence as the opening message, and powers the
-robot off when you leave. The scene is robosuite's own: a table and a
-cube. `--bench libero_pro` loads a benchmark's world instead (a LIBERO
-kitchen: a bowl, a plate, a wine bottle, a drawer, a stove), `--agent
-codex` opens Codex, and any of the three can be given on the command
-line instead of set once: `openrua run panda --sim robosuite --bench
-libero_pro "pick up the bowl"`. `openrua robots`, `openrua simulators`,
-`openrua benchmarks` and `openrua agents` list the choices. To keep a
-robot up between sessions, do the same in three commands: `openrua up`,
-then `openrua agent "..."` in a second terminal, then `openrua down`.
+robot off when you leave.
 
 `openrua doctor` tells you what is missing before the first `run`
 (Docker, the three images, the simulator checkout, an agent login); the
 details are in [docs/install.md](docs/install.md).
+
+## Choosing what to run
+
+- **The world.** Without `--bench` the scene is the simulator's own (robosuite: a
+  table and a cube). `--bench libero_pro` loads a benchmark's world instead, a
+  LIBERO kitchen with a bowl, a plate, a wine bottle, a drawer and a stove;
+  `--task-suite` and `--task-id` pick a scene inside it.
+- **The agent.** `--agent codex` opens Codex; `--model` picks the model.
+- **Once or every time.** Whatever `config set` stored can also be given on the
+  command line: `openrua run panda --sim robosuite --bench libero_pro "pick up the bowl"`.
+  `openrua robots`, `openrua simulators`, `openrua benchmarks` and
+  `openrua agents` list the choices.
+- **A robot that stays up.** The same three steps as separate commands:
+  `openrua up`, then `openrua agent "..."` in a second terminal, then
+  `openrua down`.
 
 ## How it works
 
