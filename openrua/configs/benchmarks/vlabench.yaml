@@ -1,0 +1,36 @@
+# VLABench (OpenMOSS/VLABench, arXiv 2502.09858): language-conditioned
+# manipulation with long-horizon reasoning on dm_control; every task
+# registered in the pinned checkout, seeded resets, the task's own
+# termination condition as success, the instruction stated per episode.
+
+entry_point: vlabench     # the bridge loader
+task:
+  benchmark: vlabench
+  suites: [tasks]         # openrua benchmarks vlabench lists them by id; sentences exist once a world does
+  init_states: seeded-reset
+
+protocol:
+  trials_per_task: 20
+  max_turns: 500
+  active_wall_clock_minutes: 240
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:
+  name: claude-code
+  model: claude-opus-5
+  options:
+    effort: high
+
+robot: panda              # configs/robots/panda.yaml (VLABench's "franka")
+simulator: vlabench       # configs/simulators/vlabench.yaml
+
+scenes:
+  default_suite: tasks
+  cameras:
+    resolution: [640, 480]
+    list: null            # every camera the task's scene defines
+    rate_hz: 2

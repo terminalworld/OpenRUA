@@ -1,0 +1,43 @@
+# VLABench's simulator: its dm_control environments on MuJoCo. Every
+# task is a registered class in its checkout, so there is no native
+# scene: name the benchmark. Rendering is MuJoCo's EGL path (llvmpipe
+# with no GPU, as the robosuite engine renders).
+
+engine: VLABench on dm_control (MuJoCo 3.2)
+entry_point: vlabench        # bridge engine over a VLABench dm_control env; MuJoCo reads shared with robosuite's
+
+install:
+  venv: vlabench/.venv       # relative to ~/.openrua/simulators/; py3.10 == Humble
+  ros_distro: humble
+  python: "3.10"
+  checkouts:
+    - path: vlabench/VLABench
+      repo: https://github.com/OpenMOSS/VLABench.git
+      commit: cf588fe60c0c7282174fe979f5913170cfe69017
+    - path: vlabench/rrt-algorithms
+      repo: https://github.com/motion-planning/rrt-algorithms.git
+      commit: e51d95ee489a225220d6ae2a764c4111f6ba7d85
+  requirements: vlabench/requirements.txt   # uv pip freeze of the venv the gate ran in
+  editable: [vlabench/rrt-algorithms, vlabench/VLABench]
+  shell: |                                 # 5 GB of objects and 1 GB of scenes from Google Drive, which drops long downloads: resume until whole
+    cd {root}/vlabench/VLABench/VLABench/assets
+    export VLABENCH_ROOT={root}/vlabench/VLABench/VLABench
+    fetch() { for i in $(seq 1 40); do {venv}/bin/gdown --continue "https://drive.google.com/uc?id=$1" -O "$2" && return 0; sleep 5; done; return 1; }
+    if [ ! -d obj ]; then fetch 1ldEMZua2OzXHJTYTCP0IGVU1aFYBCMu- obj.zip && unzip -qo obj.zip && rm -f obj.zip; fi
+    if [ ! -d scenes ]; then fetch 1KdReRkibJClBHHD32jz_wTkaBzhEJ9Kw scene.zip && unzip -qo scene.zip && rm -f scene.zip; fi
+
+native: null                 # a benchmark is required
+
+robots:
+  panda:
+    engine_model: franka     # VLABench's name for it
+    joint_name_map:          # the model prefixes the robot's names with its namespace
+      franka/: panda_        # franka/joint1 -> panda_joint1, franka/finger_joint1 -> panda_finger_joint1
+    control:
+      gripper:
+        open_threshold_m: 0.02
+        settle_steps: 10
+    tf:
+      hand: false
+      base_body: franka/link0
+      hand_body: franka/hand

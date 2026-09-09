@@ -118,7 +118,7 @@ it, come from the other two kinds of file.
 
 | Robot | Model | Embodied by |
 |---|---|---|
-| `panda` | Franka Emika Panda | `robosuite`, `maniskill`, `calvin` |
+| `panda` | Franka Emika Panda | `robosuite`, `maniskill`, `calvin`, `vlabench` |
 | `panda-omron` | Panda on an Omron mobile base | `robosuite` through `robocasa` / `robocasa365`'s assets |
 | `widowx` | Trossen WidowX 250S | `maniskill` (the Bridge dataset's arm, through `simpler`) |
 | `aloha-agilex` | AgileX Cobot Magic with two ARX X5 arms | `robotwin` |
@@ -134,6 +134,7 @@ it, come from the other two kinds of file.
 | `maniskill` | [ManiSkill](https://maniskill.ai) 3 on SAPIEN 3 (PhysX, CPU) | `panda`, `widowx` | `PickCube-v1`: a table, a cube and a goal marker |
 | `robotwin` | [RoboTwin 2.0](https://robotwin-platform.github.io)'s harness on SAPIEN 3 (PhysX, CPU) | `aloha-agilex` | none: name a benchmark |
 | `calvin` | [calvin_env](https://github.com/mees/calvin_env) on PyBullet (TinyRenderer, CPU) | `panda` | none: name the benchmark |
+| `vlabench` | [VLABench](https://github.com/OpenMOSS/VLABench)'s dm_control environments on MuJoCo 3.2 | `panda` | none: name the benchmark |
 
 A simulator file knows the engine and how it drives each robot it
 embodies; it knows no benchmark. Its install (a venv under
@@ -157,6 +158,7 @@ embodies; it knows no benchmark. Its install (a venv under
 | [MIKASA-Robo](https://github.com/CognitiveAISystems/MIKASA-Robo) (`mikasa`) | `panda` | `maniskill` | the 90 language-conditioned memory tasks (remember, shell game, intercept, ...), its own venv on ManiSkill 3.0.1 |
 | [RoboTwin 2.0](https://robotwin-platform.github.io) (`robotwin`) | `aloha-agilex` | `robotwin` | the fifty dual-arm tasks under the Easy protocol (`demo_clean`); the Hard protocol needs its 11 GB textures and is not declared |
 | [CALVIN](https://github.com/mees/calvin) (`calvin`) | `panda` | `calvin` | the 1000 five-subtask chains of the long-horizon evaluation on play table D, each with its fixed initial condition and the benchmark's task oracle, ROS&nbsp;2 Humble |
+| [VLABench](https://github.com/OpenMOSS/VLABench) (`vlabench`) | `panda` | `vlabench` | every task registered in the pinned checkout (5 GB of objects and scenes), seeded resets, the task's own termination as success, ROS&nbsp;2 Humble |
 
 A benchmark names its robot and simulator and brings its own world:
 `install:` (its venv and ROS distro) and `scenes:` (scene cameras, and

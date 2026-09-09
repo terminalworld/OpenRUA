@@ -148,8 +148,10 @@ class Monitor:
     def _record_frame(self) -> None:
         self._record.frame(self._steps, self._engine)
 
-    def _latching_step(self, action, **kwargs):  # kwargs: cap-x fork's
-        r = self._inner_step(action, **kwargs)  # skip_render_images etc.
+    def _latching_step(self, action=None, **kwargs):  # kwargs: cap-x fork's
+        # skip_render_images etc.; action=None: dm_control envs (VLABench)
+        # settle with a bare step() inside their own reset.
+        r = self._inner_step(action, **kwargs)
         self._steps += 1
         if self._record is not None:
             self._record_frame()
