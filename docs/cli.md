@@ -21,6 +21,7 @@ usage: openrua [-h] [--version] [--home HOME] <verb> ...
 | `benchmarks` | list the bundled benchmarks |
 | `agents` | list the bundled agents |
 | `build` | build the robot, sandbox and proxy images |
+| `install` | build a simulator install (checkouts and venv) |
 | `run` | bring a robot up, open the agent on it, power off after |
 | `up` | bring a robot up with a sandbox terminal on it |
 | `agent` | open a coding agent on the robot's terminal |
@@ -154,6 +155,26 @@ options:
                         manifests
   --tag TAG
   --port PORT           listen port, baked in and labelled
+```
+
+## openrua install
+
+```
+usage: openrua install [-h] [--sim SIM] [--bench BENCH] [--print]
+
+Build what a simulator file, and a benchmark's install: over it, declare:
+repositories at pinned commits, a venv at the declared Python with the
+requirements lock, editable checkouts, and the package itself. The script is
+printed, saved under <home>/simulators/ and run; rerunning is cheap. Needs uv
+and git.
+
+options:
+  -h, --help     show this help message and exit
+  --sim SIM      simulator to install (openrua simulators); default: the
+                 benchmark's, else the user config's
+  --bench BENCH  benchmark whose install to build (openrua benchmarks);
+                 default: the user config's default benchmark, if any
+  --print        print the script and stop
 ```
 
 ## openrua run

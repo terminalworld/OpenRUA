@@ -117,10 +117,54 @@ def load_robot(robot: str, home: Path | None = None) -> tuple[str, dict]:
 
 def load_simulator(sim: str, home: Path | None = None) -> dict:
     """A simulators/ file by bundled name or by path, validated
-    (SimulatorProfile)."""
+    (SimulatorProfile); the install's relative files made absolute."""
     del home
     p = paths.find("simulators", sim)
-    return dump(validate(SimulatorProfile, load_yaml(p), p))
+    s = dump(validate(SimulatorProfile, load_yaml(p), p))
+    _absolutize_install(s["install"], p)
+    return s
+
+
+def load_benchmark(bench: str) -> tuple[Path, dict]:
+    """A benchmarks/ file by bundled name or by path, validated
+    (Benchmark); returns the file and the dict, the install's relative
+    files made absolute."""
+    p = paths.find("benchmarks", bench)
+    b = dump(validate(Benchmark, load_yaml(p), p))
+    if b.get("install"):
+        _absolutize_install(b["install"], p)
+    return p, b
+
+
+def _absolutize_install(install: dict, declared_in: Path) -> None:
+    """Files an install section names relative to its own yaml
+    (``requirements``, a checkout's ``patch``) become absolute, and
+    ``{here}`` in ``shell`` becomes that directory, so the section can
+    be merged with another file's and rendered anywhere."""
+    here = Path(declared_in).expanduser().resolve().parent
+
+    def absolute(rel: str) -> str:
+        q = Path(rel).expanduser()
+        return str(q if q.is_absolute() else here / q)
+
+    if install.get("requirements"):
+        install["requirements"] = absolute(install["requirements"])
+    for c in install.get("checkouts") or []:
+        if c.get("patch"):
+            c["patch"] = absolute(c["patch"])
+    if install.get("shell"):
+        install["shell"] = install["shell"].replace("{here}", str(here))
+
+
+def install_for(sim: str, bench: str | None = None) -> dict:
+    """The install a simulator, and a benchmark over it, declare: the
+    simulator's section with the benchmark's written keys over it."""
+    install = copy.deepcopy(load_simulator(sim)["install"])
+    if bench:
+        _, b = load_benchmark(bench)
+        if b.get("install"):
+            install.update({k: v for k, v in b["install"].items() if v is not None})
+    return install
 
 
 def assemble(robot_type: dict, embodiments: list[dict], install: dict,
@@ -181,6 +225,7 @@ class Composed:
     robot: str
     simulator: str | None      # None for a real-robot instance
     benchmark: str | None      # None for an engine's native scene
+    install: dict | None = None  # the simulator's install with the benchmark's over it
 
 
 def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
@@ -201,13 +246,13 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
     bench = bench or user.benchmark or defaults.benchmark
     b = bench_path = None
     if bench:
-        bench_path = paths.find("benchmarks", bench)
-        b = dump(validate(Benchmark, load_yaml(bench_path), bench_path))
+        bench_path, b = load_benchmark(bench)
         robot = robot or b.get("robot") or user.robot
         sim = sim or b.get("simulator")
     else:
         robot = robot or user.robot or defaults.robot
     sim = sim or user.simulator or defaults.simulator
+    composed_install = None
     if b is not None and b.get("machine") and not robot:
         machine, simulator, robot = b["machine"], None, "(inline machine:)"
     else:
@@ -240,6 +285,7 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
             install = copy.deepcopy(s["install"])
             if b and b.get("install"):
                 install.update({k: v for k, v in b["install"].items() if v is not None})
+            composed_install = install
             cameras = ((b or {}).get("scenes", {}).get("cameras")
                        or (s.get("native") or {}).get("cameras"))
             if not b and not s.get("native"):
@@ -274,7 +320,8 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
     if suite not in cfg["task"]["suites"]:
         raise ConfigError(f"{source}: scenes.default_suite {suite!r} is not in task.suites")
     return Composed(cfg, suite, 0, robot, simulator,
-                    (b or {}).get("task", {}).get("benchmark") if b else None)
+                    (b or {}).get("task", {}).get("benchmark") if b else None,
+                    composed_install)
 
 
 def load_config(path: Path | str, robot: str | None = None,

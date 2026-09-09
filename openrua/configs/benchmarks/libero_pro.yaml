@@ -63,6 +63,21 @@ simulator: robosuite      # configs/simulators/robosuite.yaml; LIBERO ships its 
 install:                  # LIBERO's world: its robosuite 1.4 fork in the CaP-X checkout
   venv: cap-x/.venv-libero   # relative to ~/.openrua/simulators/; py3.12 == Jazzy
   ros_distro: jazzy       # names the robot and sandbox images (openrua-sim-jazzy, openrua-sandbox-jazzy)
+  python: "3.12"
+  checkouts:              # the same CaP-X checkout the simulator declares (install is idempotent)
+    - path: cap-x
+      repo: https://github.com/capgym/cap-x.git
+      commit: 53e9966d7a8e2fa7494676772bccc35280f5c0ed
+      submodules: [capx/third_party/sam3, capx/third_party/robosuite,
+                   capx/third_party/LIBERO-PRO, capx/third_party/libero_dependencies/robosuite]
+      patch: ../simulators/robosuite/capx-pyproject.patch
+  requirements: libero_pro/requirements.txt  # uv pip freeze of the venv the reported runs used
+  editable: [cap-x/capx/third_party/LIBERO-PRO, cap-x/capx/third_party/libero_dependencies/robosuite]
+  # The *_task / *_swap suites LIBERO-PRO generates but does not ship
+  # (bddl and init files, CC-BY like the benchmark); unpacked once.
+  shell: |
+    LIBERO={root}/cap-x/capx/third_party/LIBERO-PRO/libero/libero
+    [ -d "$LIBERO/bddl_files/libero_goal_task" ] || run tar xzf {here}/libero_pro/libero-pro-suites.tar.gz -C "$LIBERO"
 
 scenes:
   default_suite: libero_goal_task  # what `openrua run --bench libero_pro` loads (the

@@ -103,12 +103,12 @@ forbidden_modules = ["openrua.robot"]
 name = "the bridge is self-contained (nothing from openrua outside itself)"
 type = "forbidden"
 source_modules = ["openrua.robot.sim.bridge"]
-forbidden_modules = ["openrua.cli", "openrua.runner", "openrua.sandbox", "openrua.proxy", "openrua.agents", "openrua.robot.base", "openrua.robot.real", "openrua.robot.sim.build", "openrua.robot.sim.up", "openrua.robot.sim.down", "openrua.robot.sim.client"]
+forbidden_modules = ["openrua.cli", "openrua.runner", "openrua.sandbox", "openrua.proxy", "openrua.agents", "openrua.robot.base", "openrua.robot.real", "openrua.robot.sim.build", "openrua.robot.sim.install", "openrua.robot.sim.up", "openrua.robot.sim.down", "openrua.robot.sim.client"]
 
 [[tool.importlinter.contracts]]
 name = "the robot host side consumes data only (no shared leaf, never the bridge, no host layer)"
 type = "forbidden"
-source_modules = ["openrua.robot.base", "openrua.robot.real", "openrua.robot.sim.build", "openrua.robot.sim.up", "openrua.robot.sim.down", "openrua.robot.sim.client"]
+source_modules = ["openrua.robot.base", "openrua.robot.real", "openrua.robot.sim.build", "openrua.robot.sim.install", "openrua.robot.sim.up", "openrua.robot.sim.down", "openrua.robot.sim.client"]
 forbidden_modules = ["openrua.cli", "openrua.runner", "openrua.sandbox", "openrua.proxy", "openrua.agents", "openrua.config", "openrua.robot.sim.bridge"]
 
 [[tool.importlinter.contracts]]

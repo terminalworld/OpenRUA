@@ -8,6 +8,16 @@ engine: robosuite 1.5 on MuJoCo
 install:                     # the stock engine: robosuite 1.5.1 in the CaP-X checkout
   venv: cap-x/.venv-capbench # relative to ~/.openrua/simulators/; py3.10 == Humble
   ros_distro: humble         # names the robot and sandbox images (openrua-sim-humble, openrua-sandbox-humble)
+  python: "3.10"
+  checkouts:                 # openrua install --sim robosuite clones these at the pinned commits
+    - path: cap-x
+      repo: https://github.com/capgym/cap-x.git
+      commit: 53e9966d7a8e2fa7494676772bccc35280f5c0ed
+      submodules: [capx/third_party/sam3, capx/third_party/robosuite,
+                   capx/third_party/LIBERO-PRO, capx/third_party/libero_dependencies/robosuite]
+      patch: robosuite/capx-pyproject.patch   # CPU-only pyproject (no CUDA, verl, curobo)
+  requirements: robosuite/requirements.txt   # uv pip freeze of the venv the reported runs used
+  editable: [cap-x, cap-x/capx/third_party/robosuite]
 
 native:                      # `openrua run <robot> --sim robosuite` with no --bench
   entry_point: robosuite     # bridge loader: robosuite.make on the engine's own env

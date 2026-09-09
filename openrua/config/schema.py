@@ -435,13 +435,39 @@ class Embodiment(Strict):
                                     "embodiment adds")
 
 
+class Checkout(Strict):
+    """One repository ``openrua install`` clones at a pinned commit."""
+    path: str = Field(description="where it lands, relative to ~/.openrua/simulators/")
+    repo: str = Field(description="git URL")
+    commit: str = Field(description="the commit checked out (a full hash)")
+    submodules: list[str] = Field(default_factory=list, description="submodule paths to "
+                                  "initialise, relative to the checkout")
+    patch: str | None = Field(default=None, description="a patch applied to the checkout, "
+                              "relative to the file naming it; already-applied is fine")
+
+
 class Install(Strict):
-    """A simulator install: the venv the bridge runs in and the ROS distro
-    that goes with its Python."""
+    """A simulator install: the venv the bridge runs in, the ROS distro
+    that goes with its Python, and the recipe ``openrua install`` renders
+    to a script and runs to build it."""
     venv: str = Field(description="simulator venv: absolute, ~, or relative to "
                       "~/.openrua/simulators/")
     ros_distro: Distro = Field(default="jazzy", description="the ROS 2 distro the robot "
                                "runs; the robot and sandbox images are named after it")
+    python: str | None = Field(default=None, description="the venv's Python (3.12 goes "
+                               "with Jazzy, 3.10 with Humble); required to install")
+    checkouts: list[Checkout] = Field(default_factory=list, description="repositories "
+                                      "cloned at pinned commits")
+    requirements: str | None = Field(default=None, description="a pip requirements lock "
+                                     "installed into the venv, relative to the file "
+                                     "naming it")
+    editable: list[str] = Field(default_factory=list, description="checkouts installed "
+                                "editable with --no-deps (the lock has their "
+                                "dependencies), relative to ~/.openrua/simulators/")
+    shell: str | None = Field(default=None, description="shell run last, in the venv, "
+                              "for what the fields above cannot say (asset downloads); "
+                              "{root} = ~/.openrua/simulators, {venv} = the venv, "
+                              "{here} = the directory of the file naming it")
     container: str | None = Field(default=None, description="which sim image family "
                                   "(sim-jazzy | sim-humble); documentation")
     image: str | None = Field(default=None, description="simulated robot image; default: "
@@ -455,9 +481,15 @@ class Install(Strict):
 
 class InstallOverrides(Strict):
     """A benchmark's install section: same keys as Install, none required;
-    only what is written replaces the simulator's."""
+    only what is written replaces the simulator's, key by key. A
+    benchmark with a venv of its own writes the whole recipe."""
     venv: str | None = Field(default=None, description="see Install")
     ros_distro: Distro | None = Field(default=None, description="see Install")
+    python: str | None = Field(default=None, description="see Install")
+    checkouts: list[Checkout] | None = Field(default=None, description="see Install")
+    requirements: str | None = Field(default=None, description="see Install")
+    editable: list[str] | None = Field(default=None, description="see Install")
+    shell: str | None = Field(default=None, description="see Install")
     container: str | None = Field(default=None, description="see Install")
     image: str | None = Field(default=None, description="see Install")
     sandbox_image: str | None = Field(default=None, description="see Install")

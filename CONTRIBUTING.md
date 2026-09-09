@@ -31,9 +31,13 @@ per unit (`tests/<unit>/`).
   outside those two directories may name the agent (the boundary
   test lists the banned tokens).
 - **A benchmark**: a config under `openrua/configs/benchmarks/<name>.yaml`
-  naming its robot and simulator and bringing its world (`install:`,
-  `scenes:`), plus a loader under `openrua/robot/sim/bridge/environments/`
-  (how its scenes are built, reset and scored).
+  naming its robot and simulator, its loader (`entry_point`, a module
+  under `openrua/robot/sim/bridge/environments/` exposing `LOADER`: how
+  its scenes are built, reset and scored) and its world (`install:` with
+  pinned checkouts, a Python version and a requirements lock next to the
+  yaml, so `openrua install --bench <name>` builds it; `scenes:`).
+  `tests/config/test_install.py` checks every bundled declaration is
+  complete and its files ship.
 - **A config key**: add it to `openrua/config/schema.py` with a default and a
   description; unknown keys are errors everywhere, so the schema is
   the single place a key exists.

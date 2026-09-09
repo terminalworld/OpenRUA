@@ -28,7 +28,14 @@ def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
         "openrua-sim-jazzy": {},
         "openrua-sandbox-jazzy": {"openrua.preinstall_sha256": want_pi}}))
     monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
-    (tmp_path / "simulators" / "cap-x" / ".venv-libero").mkdir(parents=True)
+    venv = tmp_path / "simulators" / "cap-x" / ".venv-libero"
+    (venv / "bin").mkdir(parents=True)
+    (venv / "bin" / "python").write_text("")
+    from openrua import config
+    declared = config.install_for("robosuite", "libero_pro")
+    monkeypatch.setattr(doctor.checks, "_python_version", lambda v: declared["python"])
+    monkeypatch.setattr(doctor.checks, "_imports_openrua", lambda v: True)
+    monkeypatch.setattr(doctor.checks, "_git_head", lambda d: declared["checkouts"][0]["commit"])
     creds = paths.credentials_dir(tmp_path) / a.name
     creds.mkdir(parents=True)
     (creds / a.credentials.filename).write_text("{}")
@@ -116,3 +123,25 @@ def test_json_and_text_are_the_same_report(tmp_path, monkeypatch, capsys):
     assert text.startswith("openrua doctor") and "fix:" in text     # proxy image missing
     assert doctor.print_report(r, as_json=True) == 1
     assert json.loads(capsys.readouterr().out)["ok"] is False
+
+
+def test_simulator_check_reads_the_declaration(tmp_path, monkeypatch):
+    import subprocess
+    from openrua.doctor import checks
+    venv = tmp_path / "simulators" / "cap-x" / ".venv-libero"
+    (venv / "bin").mkdir(parents=True)
+    (venv / "bin" / "python").write_text("")
+    monkeypatch.setattr(checks, "_python_version", lambda v: "3.10")
+    monkeypatch.setattr(checks, "_imports_openrua", lambda v: False)
+    monkeypatch.setattr(checks, "_git_head", lambda d: "b" * 40 if d.name == "cap-x" else None)
+    cfg = {"machine": {"backend": {"kind": "sim", "simulator": {"venv": "cap-x/.venv-libero"}}}}
+    inst = {"python": "3.12", "checkouts": [{"path": "cap-x", "commit": "a" * 40},
+                                            {"path": "other", "commit": "c" * 40}]}
+    by = {c.id: c for c in checks.check_simulator(
+        checks.Context(home=tmp_path, agents=[], cfg=cfg, robot="panda", install=inst))}
+    assert by["simulator"].severity == "ok"
+    assert by["simulator-python"].severity == "error" and "3.12" in by["simulator-python"].label
+    assert by["simulator-package"].severity == "error"
+    assert by["checkout-cap-x"].severity == "warning" and "bbbbbbbbbbbb" in by["checkout-cap-x"].label
+    assert by["checkout-other"].severity == "error"
+    assert all("openrua install" in c.hint for c in by.values() if c.severity != "ok")
