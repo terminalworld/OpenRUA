@@ -115,6 +115,25 @@ simulator: robosuite      # configs/simulators/robosuite.yaml; RoboCasa builds o
 install:                  # RoboCasa's world: robosuite 1.5.2 plus the kitchens
   venv: robocasa365/.venv-robocasa   # a venv of its own
   ros_distro: humble
+  python: "3.10"
+  checkouts:
+    - path: robocasa365/robocasa
+      repo: https://github.com/robocasa/robocasa.git
+      commit: 921c9a5736a8d0ea5589657898aadcfa55a6a195
+    - path: robocasa365/robosuite
+      repo: https://github.com/ARISE-Initiative/robosuite.git
+      commit: 5ce6643f3092639d08f7b0f90ed1c6a84f50552c
+  requirements: robocasa365/requirements.txt  # uv pip freeze of the venv the reported runs used
+  editable: [robocasa365/robocasa, robocasa365/robosuite]
+  # The kitchen assets (~10G download, ~23G unpacked), from robocasa's own script.
+  shell: |
+    ASSETS={root}/robocasa365/robocasa/robocasa/models/assets
+    if [ -d "$ASSETS/objects/objaverse" ] && [ -d "$ASSETS/objects/lightwheel" ] && [ -d "$ASSETS/textures" ]; then
+      note "robocasa assets present"
+    else
+      note "downloading robocasa kitchen assets (~10G, extracts to ~23G)"
+      (cd {root}/robocasa365/robocasa && echo y | run {venv}/bin/python -m robocasa.scripts.download_kitchen_assets --type all)
+    fi
   gpus: false             # true on a GPU host (nvidia-container-toolkit
                           # required): EGL rendering moves to the GPU
                           # (~214 -> ~10 ms/frame on whole-room scenes);

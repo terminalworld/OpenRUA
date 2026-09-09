@@ -52,6 +52,7 @@ class Context:
     agents: list[agents.Agent]
     cfg: dict | None            # the robot's assembled config, when one was named
     robot: str | None
+    install: dict | None = None  # the simulator install the config declares
 
 
 def engine_version() -> str:
@@ -186,17 +187,73 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
 
 
 def check_simulator(ctx: Context) -> list[CheckResult]:
+    """The declared install is on disk: the venv at the declared Python,
+    the package importable from it, each checkout at its commit."""
     if ctx.cfg is None:
         return []
     backend = ctx.cfg["machine"].get("backend", {})
     if backend.get("kind") != "sim":
         return [CheckResult("simulator", "real robot: no simulator")]
     venv = paths.simulator_venv(backend["simulator"]["venv"], ctx.home)
-    if venv.is_dir():
-        return [CheckResult("simulator", f"simulator venv {venv}")]
-    return [CheckResult("simulator", f"simulator venv {venv} missing", "error",
-                        hint="openrua install --bench <benchmark> (or --sim <engine>) builds it "
-                        f"under {paths.simulators_dir(ctx.home)} (docs/simulation.md)")]
+    fix = "openrua install --bench <benchmark> (or --sim <engine>)"
+    if not (venv / "bin" / "python").is_file():
+        return [CheckResult("simulator", f"simulator venv {venv} missing", "error",
+                            hint=f"{fix} builds it under {paths.simulators_dir(ctx.home)} "
+                            "(docs/simulation.md)")]
+    out = [CheckResult("simulator", f"simulator venv {venv}")]
+    install = ctx.install or {}
+    want = install.get("python")
+    if want:
+        got = _python_version(venv)
+        if not got.startswith(str(want)):
+            out.append(CheckResult("simulator-python", f"{venv} runs Python {got}, the "
+                                   f"install declares {want}", "error",
+                                   hint=f"rm -r {venv}; then {fix}"))
+    if not _imports_openrua(venv):
+        out.append(CheckResult("simulator-package", f"{venv} cannot import openrua", "error",
+                               hint=f"{fix} installs it"))
+    for c in install.get("checkouts") or []:
+        d = paths.simulators_dir(ctx.home) / c["path"]
+        head = _git_head(d)
+        cid = f"checkout-{Path(c['path']).name}"
+        if head is None:
+            out.append(CheckResult(cid, f"checkout {d} missing", "error", hint=fix))
+        elif head != c["commit"]:
+            out.append(CheckResult(cid, f"checkout {d} is at {head[:12]}, the install "
+                                   f"declares {c['commit'][:12]}", "warning", hint=fix))
+        else:
+            out.append(CheckResult(cid, f"checkout {d} at {head[:12]}"))
+    return out
+
+
+def _python_version(venv: Path) -> str:
+    try:
+        r = subprocess.run([str(venv / "bin" / "python"), "-c",
+                            "import sys; print('%d.%d' % sys.version_info[:2])"],
+                           capture_output=True, text=True, timeout=30)
+        return r.stdout.strip() or "?"
+    except (OSError, subprocess.TimeoutExpired):
+        return "?"
+
+
+def _imports_openrua(venv: Path) -> bool:
+    try:
+        r = subprocess.run([str(venv / "bin" / "python"), "-c", "import openrua"],
+                           capture_output=True, text=True, timeout=60)
+        return r.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+
+
+def _git_head(d: Path) -> str | None:
+    if not (d / ".git").exists():
+        return None
+    try:
+        r = subprocess.run(["git", "-C", str(d), "rev-parse", "HEAD"],
+                           capture_output=True, text=True, timeout=30)
+        return r.stdout.strip() or None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
 
 
 def check_login(ctx: Context) -> list[CheckResult]:
@@ -229,11 +286,12 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
         home: Path | None = None, checks=CHECKS, sim: str | None = None,
         bench: str | None = None) -> Report:
     home = paths.home(home)
-    cfg = None
+    cfg = install = None
     report = Report()
     if robot or bench:
         try:
-            cfg = compose(robot, sim, bench, home).cfg
+            composed = compose(robot, sim, bench, home)
+            cfg, install = composed.cfg, composed.install
         except Exception as exc:  # noqa: BLE001
             what = " ".join(x for x in (robot, sim and f"--sim {sim}", bench and f"--bench {bench}") if x)
             report.checks.append(CheckResult("robot-profile", f"{what}: {exc}", "error",
@@ -249,7 +307,7 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
         except Exception as exc:  # noqa: BLE001
             report.checks.append(CheckResult(f"agent-{n}", f"agent {n}: {exc}", "error",
                                              hint="openrua agents lists the agents"))
-    ctx = Context(home=home, agents=chosen, cfg=cfg, robot=robot)
+    ctx = Context(home=home, agents=chosen, cfg=cfg, robot=robot, install=install)
     for check in checks:
         try:
             report.checks.extend(check(ctx))

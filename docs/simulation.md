@@ -26,31 +26,42 @@ robots, a robot knows neither.
   robosuite 1.5 under Humble; RoboCasa's assets bring the `panda-omron`
   body robosuite's own lack.
 
-## Where the installs live
+## Installing
 
 Each install is a checkout plus a Python venv, mounted into the robot
-container at `up`. They are large (tens of GB with assets) and are built
-locally under the user directory:
+container at `up`. What it is made of is declared in the simulator file
+(and a benchmark's `install:` over it): repositories at pinned commits
+(`checkouts`, with submodules and a patch), the venv's `python` (3.12
+goes with Jazzy, 3.10 with Humble), a `requirements` lock, checkouts
+installed `editable`, and a `shell` tail for what those cannot say
+(asset downloads). `openrua install` renders that to one bash script,
+prints it, saves it and runs it:
+
+```bash
+openrua install --bench libero_pro     # or --sim robosuite; no flags: your default benchmark
+```
+
+Every step checks before it acts, so rerunning is cheap, and the saved
+script (`~/.openrua/simulators/install-<name>.sh`) can be read or rerun
+by hand. It needs `uv` and `git` on the host. The installs are large
+(tens of GB with assets) and land under the user directory:
 
 ```
 ~/.openrua/simulators/
   cap-x/            LIBERO-PRO and CaP-Bench (.venv-libero, .venv-capbench); also robosuite's own scenes
   robocasa365/      RoboCasa365 (.venv-robocasa)
-  <engine>.yaml     your own simulator files, looked up after the bundled ones
+  install-*.sh      the rendered scripts
 ```
 
 `install.venv` is relative to that directory (`cap-x/.venv-libero`); an
 absolute path or `~` works too if you keep simulators elsewhere. The
-venv must have `openrua` installed (the container starts the bridge
-with `python -m openrua.robot.sim.bridge.main` from it).
-
-A checkout is the benchmark's own repository at a known commit, and
-the venv is one the robot container can run: its Python matches the
-image's ROS distro (3.12 for Jazzy, 3.10 for Humble), it is made with
-`uv` (the container mounts uv's interpreter store), the benchmark's
-packages are installed in it, and so is `openrua`. `openrua doctor
-<robot> --bench <benchmark>` (or `--sim <engine>`) reports which venv is
-missing and where it looked.
+venv has `openrua` installed by the script (the container starts the
+bridge with `python -m openrua.robot.sim.bridge.main` from it): an
+editable install of your checkout when the package runs from one, else
+the released package at the same version. `openrua doctor <robot>
+--bench <benchmark>` (or `--sim <engine>`) compares what is on disk with
+the declaration: the venv and its Python, the package in it, each
+checkout's commit.
 
 ## Rendering
 

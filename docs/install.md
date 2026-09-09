@@ -14,7 +14,7 @@ read_when:
 |---|---|
 | OS | Linux. Docker Engine, or rootless Podman providing the `docker` command ([podman.md](podman.md)) |
 | Python | 3.10 or newer on the host; ROS 2 itself lives in the containers |
-| Simulated robots | a simulator checkout and [uv](https://docs.astral.sh/uv/) for its venvs ([simulation.md](simulation.md)); a real robot needs neither |
+| Simulated robots | `git` and [uv](https://docs.astral.sh/uv/) on the host for `openrua install` ([simulation.md](simulation.md)); a real robot needs neither |
 | Agent | a Claude Code login (Claude subscription or API key) or a Codex login (ChatGPT subscription or OpenAI API key) |
 
 ## The package
@@ -77,6 +77,17 @@ a `claude setup-token` value as `CLAUDE_CODE_OAUTH_TOKEN`, for Codex an
 `OPENAI_API_KEY`) that docker hands to the agent process only. The
 token is scrubbed from the trial record like every other secret.
 
+## The simulator
+
+```bash
+openrua install --bench libero_pro     # or --sim robosuite; no flags: your default benchmark
+```
+
+Builds what the simulator file and the benchmark declare: the
+checkouts at their pinned commits and the venv the bridge runs in. The
+script it renders is printed and saved, and rerunning is cheap
+([simulation.md](simulation.md)).
+
 ## Your defaults
 
 `~/.openrua/config.yaml` holds what is true on this machine and nowhere
@@ -93,8 +104,9 @@ openrua doctor panda --bench libero_pro
 ```
 
 Read-only. One row per fact: the container engine, each image and
-whether its label still matches the manifests, the simulator venv the
-profile names, the agent login, the user directory. An error row
+whether its label still matches the manifests, the simulator install
+against its declaration (the venv and its Python, the package in it,
+each checkout's commit), the agent login, the user directory. An error row
 carries the command that fixes it; the exit code is 1 only when an
 error is present, and on a pipe the report is JSON.
 

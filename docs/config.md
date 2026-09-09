@@ -266,17 +266,34 @@ A simulators/<engine>.yaml: the engine, its install, its native scene, and how i
 
 ## Install
 
-A simulator install: the venv the bridge runs in and the ROS distro that goes with its Python.
+A simulator install: the venv the bridge runs in, the ROS distro that goes with its Python, and the recipe ``openrua install`` renders to a script and runs to build it.
 
 | key | type | default | meaning |
 |---|---|---|---|
 | `venv` | str | **required** | simulator venv: absolute, ~, or relative to ~/.openrua/simulators/ |
 | `ros_distro` | 'jazzy' \| 'humble' | 'jazzy' | the ROS 2 distro the robot runs; the robot and sandbox images are named after it |
+| `python` | str \| null | None | the venv's Python (3.12 goes with Jazzy, 3.10 with Humble); required to install |
+| `checkouts` | list[[Checkout](#checkout)] | [] | repositories cloned at pinned commits |
+| `requirements` | str \| null | None | a pip requirements lock installed into the venv, relative to the file naming it |
+| `editable` | list[str] | [] | checkouts installed editable with --no-deps (the lock has their dependencies), relative to ~/.openrua/simulators/ |
+| `shell` | str \| null | None | shell run last, in the venv, for what the fields above cannot say (asset downloads); {root} = ~/.openrua/simulators, {venv} = the venv, {here} = the directory of the file naming it |
 | `container` | str \| null | None | which sim image family (sim-jazzy \| sim-humble); documentation |
 | `image` | str \| null | None | simulated robot image; default: openrua-sim-<ros_distro> |
 | `sandbox_image` | str \| null | None | agent terminal image; default: openrua-sandbox-<ros_distro> |
 | `gpus` | bool | False | render on the GPU (needs nvidia toolkit) |
 | `resources` | dict[str, Any] \| null | None | render_threads: int \| off \| auto |
+
+## Checkout
+
+One repository ``openrua install`` clones at a pinned commit.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `path` | str | **required** | where it lands, relative to ~/.openrua/simulators/ |
+| `repo` | str | **required** | git URL |
+| `commit` | str | **required** | the commit checked out (a full hash) |
+| `submodules` | list[str] | [] | submodule paths to initialise, relative to the checkout |
+| `patch` | str \| null | None | a patch applied to the checkout, relative to the file naming it; already-applied is fine |
 
 ## NativeScene
 
@@ -365,12 +382,17 @@ A benchmarks/<name>.yaml as written.
 
 ## InstallOverrides
 
-A benchmark's install section: same keys as Install, none required; only what is written replaces the simulator's.
+A benchmark's install section: same keys as Install, none required; only what is written replaces the simulator's, key by key. A benchmark with a venv of its own writes the whole recipe.
 
 | key | type | default | meaning |
 |---|---|---|---|
 | `venv` | str \| null | None | see Install |
 | `ros_distro` | 'jazzy' \| 'humble' \| null | None | see Install |
+| `python` | str \| null | None | see Install |
+| `checkouts` | list[[Checkout](#checkout)] \| null | None | see Install |
+| `requirements` | str \| null | None | see Install |
+| `editable` | list[str] \| null | None | see Install |
+| `shell` | str \| null | None | see Install |
 | `container` | str \| null | None | see Install |
 | `image` | str \| null | None | see Install |
 | `sandbox_image` | str \| null | None | see Install |

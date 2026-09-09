@@ -49,8 +49,9 @@ Install, choose a robot and a simulator once, run:
 
 ```bash
 pip install git+https://github.com/terminalworld/OpenRUA
-openrua build                                       # the three images, once
 openrua config set --robot panda --sim robosuite --agent claude-code   # your defaults
+openrua build                                       # the three images, once
+openrua install --sim robosuite                     # the simulator's checkout and venv, once
 openrua run "pick up the red cube"
 ```
 
@@ -59,7 +60,7 @@ terminal with that sentence, and the robot powers off when you leave;
 `run` first prints which robot, scene and agent it picked.
 
 `openrua doctor` tells you what is missing before the first `run`
-(Docker, the three images, the simulator checkout, an agent login); the
+(Docker, the three images, the simulator install, an agent login); the
 details are in [docs/install.md](docs/install.md).
 
 ## Choosing what to run
