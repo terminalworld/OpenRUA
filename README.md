@@ -118,7 +118,7 @@ it, come from the other two kinds of file.
 | Robot | Model | Embodied by |
 |---|---|---|
 | `panda` | Franka Emika Panda | `robosuite` |
-| `panda-omron` | Panda on an Omron mobile base | `robosuite` through `robocasa365`'s assets |
+| `panda-omron` | Panda on an Omron mobile base | `robosuite` through `robocasa` / `robocasa365`'s assets |
 | *your robot* | any ROS&nbsp;2 arm or mobile manipulator, real | its own file; see [docs/your-own-robot.md](docs/your-own-robot.md) |
 
 `openrua robots` prints this list from the files on disk, yours included.
@@ -138,9 +138,14 @@ embodies; it knows no benchmark. Its install (a venv under
 
 | Benchmark | Robot | Simulator | Brings |
 |---|---|---|---|
-| LIBERO-PRO (`libero_pro`) | `panda` | `robosuite` | LIBERO's scenes on its own robosuite 1.4 fork, ROS&nbsp;2 Jazzy |
-| CaP-Bench (`capbench`) | `panda` | `robosuite` | CaP-X's tabletop scenes on robosuite 1.5, ROS&nbsp;2 Humble |
-| RoboCasa365 (`robocasa365`) | `panda-omron` | `robosuite` | [RoboCasa](https://robocasa.ai)'s kitchens and the Panda-Omron body, ROS&nbsp;2 Humble |
+| [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) (`libero`) | `panda` | `robosuite` | the four standard suites and LIBERO-90, on LIBERO's robosuite 1.4 fork, ROS&nbsp;2 Jazzy |
+| [LIBERO-PRO](https://github.com/Zxy-MLlab/LIBERO-PRO) (`libero_pro`) | `panda` | `robosuite` | LIBERO's scenes under five perturbation axes, same fork and venv as `libero` |
+| [LIBERO-Plus](https://github.com/sylvestf/LIBERO-plus) (`libero_plus`) | `panda` | `robosuite` | ~10,000 perturbed variants of the four suites, its own fork and assets |
+| [LIBERO-Mem](https://github.com/libero-mem/libero-mem) (`libero_mem`) | `panda` | `robosuite` | ten non-Markovian tasks with subgoal sequences, its own fork |
+| [RoboCerebra](https://github.com/qiuboxiang/RoboCerebra) (`robocerebra`) | `panda` | `robosuite` | long-horizon tabletop cases on its LIBERO fork, the `Ideal` protocol |
+| [CaP-Bench](https://github.com/capgym/cap-x) (`capbench`) | `panda` | `robosuite` | CaP-X's tabletop scenes on robosuite 1.5, ROS&nbsp;2 Humble |
+| [RoboCasa](https://robocasa.ai) (`robocasa`) | `panda-omron` | `robosuite` | the original release's 24 atomic kitchen tasks (v0.2 on robosuite 1.5.0), ROS&nbsp;2 Humble |
+| [RoboCasa365](https://robocasa.ai) (`robocasa365`) | `panda-omron` | `robosuite` | the 365-task release's kitchens and the Panda-Omron body, ROS&nbsp;2 Humble |
 
 A benchmark names its robot and simulator and brings its own world:
 `install:` (its venv and ROS distro) and `scenes:` (scene cameras, and

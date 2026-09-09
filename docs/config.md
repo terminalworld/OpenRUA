@@ -346,7 +346,8 @@ A benchmarks/<name>.yaml as written.
 | `loader` | str \| null | None | the loader the bridge imports, resolved by openrua from the benchmark's (or native scene's) entry_point: a module path or an absolute file path; not written by hand |
 | `suites` | list[str] | **required** | task suites this benchmark runs; openrua bench picks one with --task-suite |
 | `init_states` | str \| null | None | how episodes start (documentation of the loader's behaviour): benchmark-files \| seeded-reset |
-| `split` | str | 'target' | robocasa: object/layout split |
+| `split` | str | 'target' | robocasa: object/layout split (robocasa365: target \| pretrain \| all; robocasa: eval \| train \| all) |
+| `dataset_root` | str \| null | None | a benchmark dataset kept outside its checkout (robocerebra: the RoboCerebra_Bench directory); default: next to the checkout |
 | `task_language` | dict[str, str] | {} | capbench: task name -> instruction |
 
 ## Protocol

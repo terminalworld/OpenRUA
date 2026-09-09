@@ -57,7 +57,7 @@ def test_render_is_one_rerunnable_script(tmp_path):
     assert f'ROOT={tmp_path / "sims"}' in s and 'VENV="$ROOT/cap-x/.venv-x"' in s
     assert f'clone_at "$ROOT/cap-x" https://x/y.git {"a" * 40}' in s
     assert 'submodule update -q --init sub/one' in s and 'apply_patch "$ROOT/cap-x" /abs/p.patch' in s
-    assert '-r /abs/req.txt' in s and '--no-deps -e "$ROOT/cap-x"' in s
+    assert '-r /abs/req.txt' in s and 'editable_mode=compat -e "$ROOT/cap-x"' in s
     assert "openrua @ git+" in s                                    # not a checkout: the release
     assert 'echo "$ROOT" "$VENV"' in s
     (tmp_path / "pyproject.toml").write_text("[project]\nname='x'\n")

@@ -48,10 +48,18 @@ by hand. It needs `uv` and `git` on the host. The installs are large
 
 ```
 ~/.openrua/simulators/
-  cap-x/            LIBERO-PRO and CaP-Bench (.venv-libero, .venv-capbench); also robosuite's own scenes
+  cap-x/            LIBERO, LIBERO-PRO and CaP-Bench (.venv-libero, .venv-capbench); also robosuite's own scenes
+  libero-plus/      LIBERO-Plus (.venv; its fork and 6.4 GB of assets)
+  libero-mem/       LIBERO-Mem (.venv; its fork with its own robosuite and robomimic)
+  robocerebra/      RoboCerebra (.venv; its LIBERO fork and the RoboCerebra_Bench cases)
+  robocasa/         RoboCasa v0.2 on robosuite 1.5.0 (.venv; its kitchen assets)
   robocasa365/      RoboCasa365 (.venv-robocasa)
   install-*.sh      the rendered scripts
 ```
+
+Every LIBERO-family benchmark installs its fork as the `libero`
+package, so each fork gets a venv of its own; one loader serves them
+all (`entry_point: libero`).
 
 `install.venv` is relative to that directory (`cap-x/.venv-libero`); an
 absolute path or `~` works too if you keep simulators elsewhere. The

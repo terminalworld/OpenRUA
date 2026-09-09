@@ -33,7 +33,8 @@ def up(backend: dict, *, name: str, config_path: str, task_suite: str,
        peers_xml: str | None = None, venv: str | None = None,
        code_root: str | None = None, moveit_log: str | None = None,
        probe_argv: list[str] | None = None, record: str | None = None,
-       record_cameras: tuple[str, ...] = ()) -> Handle:
+       record_cameras: tuple[str, ...] = (),
+       mounts: tuple[str, ...] = ()) -> Handle:
     """Bring the robot up and return its handle (not yet waited for).
 
     ``venv`` and ``code_root`` are the simulated backend's (the resolved
@@ -41,6 +42,9 @@ def up(backend: dict, *, name: str, config_path: str, task_suite: str,
     is the real backend's (a command that succeeds once the graph is
     visible). ``record`` names a directory for the simulated robot's
     camera frames; a real robot has no renderer and refuses it. The
+    ``mounts`` are directories the simulated robot's container must see
+    besides the venv's own checkout (the simulators directory, where a
+    venv's editable installs may point into sibling checkouts). The
     other keyword arguments apply to both."""
     kind = backend.get("kind")
     if record and kind != "sim":
@@ -56,7 +60,7 @@ def up(backend: dict, *, name: str, config_path: str, task_suite: str,
             log_path=log_path, moveit_log=moveit_log, network=network,
             static_peer=static_peer, peers_xml=peers_xml, ros_domain=ros_domain,
             gpus=bool(backend.get("gpus", False)), resources=backend.get("resources"),
-            record=record, record_cameras=record_cameras)
+            record=record, record_cameras=record_cameras, mounts=mounts)
     if kind == "real":
         return real_up(name=name, launch=backend.get("launch"), log_path=log_path,
                        probe_argv=probe_argv, image=backend.get("image"))

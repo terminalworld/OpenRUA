@@ -1,0 +1,64 @@
+# RoboCerebra benchmark config (qiuboxiang/RoboCerebra, arXiv 2506.06677):
+# long-horizon tabletop tasks on their LIBERO fork, each case a scene (bddl),
+# an initial state (their demonstration's first frame) and a goal their
+# _check_success(monitor_dict) scores. The suite is the task type; the task
+# id indexes the cases (case1, case2, ...). The Ideal type is the static
+# protocol reproduced here; the other types add disturbances their
+# evaluator applies during an episode, which the bridge does not stage.
+
+entry_point: robocerebra
+task:
+  benchmark: robocerebra
+  suites: [Ideal, Memory_Execution, Memory_Exploration, Observation_Mismatching,
+           Random_Disturbance, Mix]   # 10 cases each
+  init_states: benchmark-files    # one per case (demo.hdf5); every seed restores it
+
+protocol:
+  trials_per_task: 1
+  max_turns: 500
+  active_wall_clock_minutes: 240
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:
+  name: claude-code
+  model: claude-opus-5
+  options:
+    effort: high
+
+robot: panda
+simulator: robosuite
+
+install:
+  venv: robocerebra/.venv
+  ros_distro: jazzy
+  python: "3.12"
+  checkouts:
+    - path: robocerebra/RoboCerebra
+      repo: https://github.com/qiuboxiang/RoboCerebra.git
+      commit: 2573426c13dfcd5e7d7831c15587b058aaa1c0c0
+    - path: cap-x             # LIBERO-PRO's robosuite 1.4 fork, the one that runs on Python 3.12
+      repo: https://github.com/capgym/cap-x.git
+      commit: 53e9966d7a8e2fa7494676772bccc35280f5c0ed
+      submodules: [capx/third_party/libero_dependencies/robosuite]
+  requirements: robocerebra/requirements.txt
+  editable: [robocerebra/RoboCerebra/LIBERO, cap-x/capx/third_party/libero_dependencies/robosuite]
+  # The benchmark cases (bddl, demo.hdf5, goal.json; ~0.4 GB) come from
+  # Hugging Face, next to the checkout (where the loader looks by default).
+  shell: |
+    BENCH={root}/robocerebra/RoboCerebra/RoboCerebra_Bench
+    [ -d "$BENCH/Ideal" ] || run {venv}/bin/hf download qiukingballball/RoboCerebraBench --repo-type dataset --local-dir "$BENCH"
+
+scenes:
+  default_suite: Ideal
+  cameras:
+    resolution: [640, 480]
+    list: null            # publish every camera the scene defines
+    rate_hz: 2
+    record: [agentview, robot0_eye_in_hand]
+  robots:
+    panda:
+      controller_kp_scale: 10  # robosuite 1.4: stock kp=50 tracks ~15% of a 20 Hz setpoint

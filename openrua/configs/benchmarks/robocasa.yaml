@@ -1,0 +1,87 @@
+# RoboCasa benchmark config (the original release, robocasa v0.2 on robosuite
+# 1.5.0, arXiv 2406.02523): 24 atomic kitchen tasks. Envs are built through
+# robosuite.make with the kwargs of their create_env verbatim (see
+# environments/robocasa.py); only controller_configs is swapped to the
+# JOINT_POSITION composite. The successor, RoboCasa365, is a separate
+# benchmark with its own venv: the two releases are not API-compatible.
+
+entry_point: robocasa
+task:
+  benchmark: robocasa
+  # Their SINGLE_STAGE_TASK_DATASETS minus NavigateKitchen (locomotion).
+  suites: [PnPCounterToCab, PnPCabToCounter, PnPCounterToSink, PnPSinkToCounter,
+           PnPCounterToMicrowave, PnPMicrowaveToCounter, PnPCounterToStove, PnPStoveToCounter,
+           OpenSingleDoor, CloseSingleDoor, OpenDoubleDoor, CloseDoubleDoor,
+           OpenDrawer, CloseDrawer, TurnOnSinkFaucet, TurnOffSinkFaucet, TurnSinkSpout,
+           TurnOnStove, TurnOffStove, CoffeeSetupMug, CoffeeServeMug, CoffeePressButton,
+           TurnOnMicrowave, TurnOffMicrowave]
+  init_states: seeded-reset       # the seed drives their rng: kitchen, style, objects, placements
+  split: eval                     # held-out object instances in their five evaluation scenes
+
+protocol:
+  trials_per_task: 10
+  max_turns: 500
+  active_wall_clock_minutes: 240
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:
+  name: claude-code
+  model: claude-opus-5
+  options:
+    effort: high
+
+robot: panda-omron
+simulator: robosuite
+
+install:
+  venv: robocasa/.venv
+  ros_distro: humble
+  python: "3.10"
+  checkouts:
+    - path: robocasa/robocasa
+      repo: https://github.com/robocasa/robocasa.git
+      commit: 756598a5be52e052339bb2d957426e39015c2afb   # v0.2
+    - path: robocasa/robosuite
+      repo: https://github.com/ARISE-Initiative/robosuite.git
+      commit: 1a8701b90c07c6595ace4af9935d7c5ebe1baed3   # v1.5.0
+  requirements: robocasa/requirements.txt
+  editable: [robocasa/robocasa, robocasa/robosuite]
+  # The kitchen assets, from their own script.
+  shell: |
+    RC={root}/robocasa/robocasa
+    (cd "$RC" && run {venv}/bin/python robocasa/scripts/setup_macros.py)
+    if [ ! -d "$RC/robocasa/models/assets/objects/objaverse" ]; then
+      note "downloading robocasa kitchen assets (their script)"
+      (cd "$RC" && echo y | run {venv}/bin/python robocasa/scripts/download_kitchen_assets.py)
+    fi
+
+scenes:
+  default_suite: PnPCounterToCab
+  cameras:
+    resolution: [640, 480]
+    list: [robot0_agentview_left, robot0_agentview_right, robot0_eye_in_hand]
+    rate_hz: 2
+    render_mode: on_demand
+    record: [robot0_agentview_left, robot0_eye_in_hand]
+  robots:
+    panda-omron:
+      engine_model: PandaOmron
+      controller: JOINT_POSITION
+      controller_config: controllers/pandaomron_joint_ctrl.json  # the body_parts form both robosuite 1.5.0 and 1.5.2 read
+      controller_kp_scale: 1
+      joint_name_map:
+        robot0_: panda_
+        gripper0_: panda_
+      control:
+        gripper:
+          open_threshold_m: 0.02
+          settle_steps: 10
+      tf:
+        hand: false
+        base_body: robot0_link0
+      base:
+        body: mobilebase0_base

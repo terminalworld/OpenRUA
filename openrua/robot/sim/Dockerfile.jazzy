@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-jazzy-control-msgs ros-jazzy-tf2-ros-py \
     ros-jazzy-moveit ros-jazzy-moveit-resources-panda-moveit-config \
     ros-jazzy-robot-state-publisher \
+    libmagickwand-6.q16-7t64 \
     && rm -rf /var/lib/apt/lists/*
 
 ENV MUJOCO_GL=egl PYOPENGL_PLATFORM=egl

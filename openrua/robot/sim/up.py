@@ -46,6 +46,7 @@ def up(
     peers_xml: str | None = None,
     record: str | None = None,
     record_cameras: tuple[str, ...] = (),
+    mounts: tuple[str, ...] = (),
 ) -> BridgeClient:
     """docker-run the container with the bridge as its first process.
     Returns the handle (not yet waited for).
@@ -120,7 +121,7 @@ def up(
         [
             "docker", "run", "-i", "--rm", "--name", name,
             *net, *gpu_args, *env, *(extra_env or []),
-            *_mounts(code_root, simulator, str(config_dir)),
+            *_mounts(code_root, simulator, str(config_dir), *mounts),
             "-v", f"{uv_dir}:{uv_dir}:ro",
             image, *bridge,
         ],
