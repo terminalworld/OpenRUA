@@ -37,7 +37,7 @@ def run(args) -> int:
     given = {flag: getattr(args, flag) for flag in KEYS if getattr(args, flag) is not None}
     if not given:
         raise UsageError("config set needs at least one flag",
-                         hint="openrua config set --robot panda --sim robosuite --agent claude-code")
+                         hint="openrua config set --robot panda --sim robosuite --agent <name>")
     data = (config.load_yaml(path) if path.is_file() else {}) or {}
     for flag, value in given.items():
         node = data
