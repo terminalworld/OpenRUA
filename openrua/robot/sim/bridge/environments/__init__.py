@@ -18,10 +18,10 @@ identity; zero reimplementation), ``init_state``/``reset`` speak their
 protocol, ``task_info`` reads their task sentence. The state returned by
 ``init_state`` is opaque to everyone but the same loader's ``reset``.
 
-One hook is optional: ``tasks(cfg, task_suite) -> [{task_id, language}]``,
-the suite's tasks and sentences without an env, which ``openrua
-benchmarks <name>`` prints (through ``catalog.py``, run in the
-simulator's venv). A loader without it lists the suite alone.
+``tasks`` answers without an env: the suite's task ids and sentences,
+which ``openrua benchmarks <name>`` prints (through ``catalog.py``, run
+in the simulator's venv); an empty sentence means the benchmark writes
+it at reset.
 
 Zero ROS imports; simulator imports live inside ``create`` (the registry
 imports cheaply anywhere). Zero knowledge of the sibling ros package and
@@ -43,6 +43,7 @@ LOADER_INTERFACE = (
     "reset",        # env, ctx, state -> None (restore the world)
     "success",      # env -> bool (the benchmark's ORIGINAL predicate)
     "task_info",    # env, ctx -> {language, name, [init_state]}
+    "tasks",        # cfg, task_suite -> [{task_id, language}] without an env (the catalog)
 )
 
 

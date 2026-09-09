@@ -3,9 +3,8 @@
 Run in the simulator's venv by ``openrua benchmarks <name>`` (host
 side, no container): the loader is the one party that knows how a
 benchmark enumerates its tasks, and its imports live in that venv.
-Writes ``{suite: [{task_id, language}, ...] | null}`` to ``--out`` (a
-file: a benchmark's imports may write anything to stdout and stderr);
-null means the loader has no ``tasks`` hook.
+Writes ``{suite: [{task_id, language}, ...]}`` to ``--out`` (a file: a
+benchmark's imports may write anything to stdout and stderr).
 
     python -m openrua.robot.sim.bridge.catalog --config <resolved.yaml> --out tasks.json [--task-suite S ...]
 """
@@ -22,8 +21,7 @@ from . import environments
 
 def catalog(cfg: dict, suites: list[str]) -> dict:
     loader = environments.load(cfg["task"]["loader"])
-    tasks = getattr(loader, "tasks", None)
-    return {s: (tasks(cfg, s) if tasks else None) for s in suites}
+    return {s: loader.tasks(cfg, s) for s in suites}
 
 
 def main() -> None:

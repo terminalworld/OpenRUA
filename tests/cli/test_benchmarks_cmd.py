@@ -18,11 +18,13 @@ def test_bare_listing_is_unchanged(capsys):
     assert "libero_pro" in capsys.readouterr().out
 
 
-def test_sentences_declared_in_the_config_need_no_simulator(tmp_path, capsys):
+def test_one_task_per_suite_and_the_seed_meaning(tmp_path, capsys, monkeypatch):
+    monkeypatch.setattr(listing, "benchmark_catalog", lambda cfg, home: (
+        {s: [{"task_id": 0, "language": f"do {s}"}] for s in cfg["task"]["suites"]}, ""))
     assert _run(["--home", str(tmp_path), "benchmarks", "capbench"]) == 0
     out = capsys.readouterr().out
     assert "capbench_lift        1 task: --task-ids 0" in out
-    assert "Pick up the red cube" in out
+    assert "do capbench_lift" in out
     assert "100 seeds per task" in out and "randomised reset" in out
 
 
@@ -47,10 +49,3 @@ def test_without_the_install_the_suites_still_list_and_the_note_says_how(tmp_pat
     out = capsys.readouterr().out
     assert "libero_goal_task\n" in out
     assert "openrua install --bench libero_pro" in out
-
-
-def test_a_loader_without_the_hook_is_said_so(tmp_path, capsys, monkeypatch):
-    monkeypatch.setattr(listing, "benchmark_catalog",
-                        lambda cfg, home: ({s: None for s in cfg["task"]["suites"]}, ""))
-    assert _run(["--home", str(tmp_path), "benchmarks", "robocerebra"]) == 0
-    assert "no tasks hook" in capsys.readouterr().out
