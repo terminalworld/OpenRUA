@@ -1,0 +1,34 @@
+# calvin_env (PyBullet): CALVIN's play table, the engine behind the calvin
+# benchmark. Its Panda and cameras are calvin_env's own classes over
+# PyBullet; rendering is PyBullet's TinyRenderer on the CPU (no EGL).
+# There is no native scene: name the benchmark.
+
+engine: calvin_env on PyBullet
+entry_point: calvin          # bridge engine over a calvin_env PlayTableSimEnv
+
+install:
+  venv: calvin/.venv         # relative to ~/.openrua/simulators/; py3.10 == Humble
+  ros_distro: humble
+  python: "3.10"
+  checkouts:
+    - path: calvin/calvin
+      repo: https://github.com/mees/calvin.git
+      commit: fa03f01f19c65920e18cf37398a9ce859274af76
+      submodules: [calvin_env]
+  requirements: calvin/requirements.txt   # uv pip freeze of the venv the gate ran in
+  editable: [calvin/calvin/calvin_env, calvin/calvin/calvin_models]   # calvin_models for its evaluation helpers only
+
+native: null                 # a benchmark is required
+
+robots:
+  panda:
+    joint_name_map:
+      panda_: panda_         # calvin_env's URDF already uses the franka_ros2 names
+    control:
+      gripper:
+        open_threshold_m: 0.02
+        settle_steps: 10
+    tf:
+      hand: false
+      base_body: panda_link0
+      hand_body: panda_hand
