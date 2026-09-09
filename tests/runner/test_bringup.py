@@ -72,8 +72,8 @@ def test_domains_in_use_reads_the_containers_on_the_network(monkeypatch):
         _info("b-sandbox", "2026-09-09T01:00:03.000000000Z", 2),
     ])
     used = bringup.domains_in_use("openrua-internal")
-    assert used == {0: ("2026-09-09T01:00:01.000000000Z", "a-sandbox"),
-                    2: ("2026-09-09T01:00:03.000000000Z", "b-sandbox")}
+    assert used == {0: ("2026-09-09T01:00:01.000000000", "a-sandbox"),
+                    2: ("2026-09-09T01:00:03.000000000", "b-sandbox")}
     assert bringup.free_domain(used) == 1
 
 
