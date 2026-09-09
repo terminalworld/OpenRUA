@@ -111,8 +111,10 @@ class ControlChannel:
 
 class Monitor:
     def __init__(self, env, task_ctx: dict, loader, engine, sim,
-                 on_reset=None, record: "Recording | None" = None):
+                 on_reset=None, record: "Recording | None" = None,
+                 hand_body: str = "robot0_right_hand"):
         self._env = env
+        self._hand_body = hand_body  # the debug hand verb's body (the first arm's)
         self._ctx = task_ctx
         self._loader = loader  # the environment package's plug (parameter)
         self._engine = engine  # the engine package's plug (parameter)
@@ -224,7 +226,7 @@ class Monitor:
                     break
                 except KeyError:  # try the next generation
                     continue
-            pos, _, _ = self._engine.body_pose("robot0_right_hand")
+            pos, _, _ = self._engine.body_pose(self._hand_body)
             return {"pos": [float(v) for v in pos], "grip": grip}
 
         return self._sim.submit(job)

@@ -14,7 +14,7 @@ def test_every_bundled_benchmark_declares_a_complete_install():
     for e in paths.available("benchmarks"):
         _, b = config.load_benchmark(e.name)
         inst = config.install_for(b["simulator"], e.name)
-        assert inst["python"] and inst["checkouts"] and inst["requirements"], e.name
+        assert inst["python"] and inst["requirements"], e.name  # checkouts may be none: a pip-only engine
         assert Path(inst["requirements"]).is_file(), e.name        # ships in the package
         for c in inst["checkouts"]:
             assert len(c["commit"]) == 40, (e.name, c)

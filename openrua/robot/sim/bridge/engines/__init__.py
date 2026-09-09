@@ -32,7 +32,7 @@ ENGINE_INTERFACE = (
     # the world
     "joints",        # -> [(joint name, qpos index, qvel index)] for every joint
     "time",          # -> simulated seconds
-    "qpos",          # -> the position array joints() indexes
+    "qpos",          # -> the position array joints() indexes (a view or a copy: read anew before use)
     "qvel",          # -> the velocity array joints() indexes
     "effort",        # -> actuator effort per velocity index
     "body_pose",     # name -> (pos[3], quat[w x y z], mat[3x3]); KeyError when absent

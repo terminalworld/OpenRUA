@@ -415,7 +415,7 @@ def normalize_arms(cfg: dict) -> dict:
         "gripper": m.get("gripper"),
         "ports": {k: ports[k] for k in
                   ("trajectory", "gripper", "twist", "wrench") if ports.get(k)},
-        "hand_body": "robot0_right_hand",
+        "hand_body": m.get("tf", {}).get("hand_body", "robot0_right_hand"),
         "tf_base_body": m.get("tf", {}).get("base_body", "robot0_base"),
         "base_frame": m.get("frames", {}).get("base", "panda_link0"),
         "hand_frame": m.get("frames", {}).get("hand", "panda_hand"),

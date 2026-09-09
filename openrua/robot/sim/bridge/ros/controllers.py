@@ -274,7 +274,7 @@ class CommandPorts:
         """Run on the sim thread. Returns the final max joint error (rad)."""
         import sys
 
-        qpos = self._engine.qpos()
+        qpos = self._engine.qpos  # read anew before every use: an engine may hand out copies
         print(
             f"[fjt{':' + arm.label if arm.label else ''}] "
             f"names={list(traj.joint_names)} pts={len(traj.points)}",
@@ -296,14 +296,14 @@ class CommandPorts:
         qs = np.array([p.positions for p in pts])
         if times[0] > 0:  # implicit start at current configuration
             times = np.concatenate([[0.0], times])
-            qs = np.vstack([qpos[qadrs], qs])
+            qs = np.vstack([qpos()[qadrs], qs])
 
         # Column order of the action = the arm's qadrs order; map goal joints.
         order = [int(np.where(arm.qadrs == a)[0][0]) for a in qadrs]
 
         def tick(q_target: np.ndarray) -> None:
             dq = np.zeros(len(arm.qadrs))
-            dq[order] = q_target - qpos[qadrs]
+            dq[order] = q_target - qpos()[qadrs]
             self._tick(arm, dq)
 
         t = self._control_dt
@@ -319,11 +319,11 @@ class CommandPorts:
         for _ in range(self._traj_settle):  # converge on the final point
             tick(qs[-1])
         self._on_step()
-        err_vec = qpos[qadrs] - qs[-1]
+        err_vec = qpos()[qadrs] - qs[-1]
         print(
             f"[fjt] times[0..2]={times[:3]} times[-3:]={times[-3:]}\n"
             f"[fjt] goal={np.round(qs[-1], 3)}\n"
-            f"[fjt] final={np.round(qpos[qadrs], 3)}\n"
+            f"[fjt] final={np.round(qpos()[qadrs], 3)}\n"
             f"[fjt] err={np.round(err_vec, 3)}",
             file=sys.stderr, flush=True,
         )
