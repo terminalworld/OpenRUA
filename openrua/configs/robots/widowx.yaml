@@ -1,0 +1,22 @@
+# Trossen WidowX 250S: what is true of the arm wherever it runs. The
+# Bridge dataset's arm (SimplerEnv's WidowX tasks). Ports follow the
+# interbotix_ros_manipulators ROS 2 driver (ros2_control names under the
+# robot's namespace); there is no force sensor, so no wrench port.
+
+robot:
+  model: Trossen WidowX 250S
+  description: 6-joint robot arm with a parallel-jaw gripper
+frames: {world: world, base: base_link, hand: ee_gripper_link}
+arm:
+  joints: [waist, shoulder, elbow, forearm_roll, wrist_angle, wrist_rotate]
+  limits_rad: [[-3.14, 3.14], [-1.88, 1.99], [-2.15, 1.61],
+               [-3.14, 3.14], [-1.75, 2.15], [-3.14, 3.14]]
+gripper: {open_m: 0.037, closed_m: 0.015, max_effort: 60.0,
+          stops_at: [open, closed]}
+hand: {tcp_offset_m: 0.0}   # the hand frame is the gripper's own tcp link
+ports:                       # interbotix ros2_control-shaped names
+  twist: /servo_node/delta_twist_cmds                    # TwistStamped
+  trajectory: /wx250s/arm_controller/follow_joint_trajectory  # FollowJointTrajectory action
+  gripper: /wx250s/gripper_controller/gripper_cmd         # GripperCommand action
+planning: {moveit: false}    # no MoveIt config ships for it; the ports are the interface
+workspace_template: workspace

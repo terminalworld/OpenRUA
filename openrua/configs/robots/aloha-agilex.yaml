@@ -1,0 +1,41 @@
+# RoboTwin's dual-arm embodiment "aloha-agilex": two ARX X5 arms on an
+# AgileX base, one articulation. Each arm has six joints and a parallel
+# gripper; the base is not driven. Ports follow ros2_control naming, one
+# controller per arm, under left_/right_ namespaces. The URDF declares no
+# joint limits; the ranges below are what the arms reach.
+
+robot:
+  model: AgileX Cobot Magic with two ARX X5 arms (RoboTwin "aloha-agilex")
+  description: dual 6-joint robot arms with parallel-jaw grippers on a fixed base
+frames: {world: world, base: base_link, hand: fl_link6}
+gripper: {open_m: 0.05, closed_m: 0.0, max_effort: 30.0, stops_at: [open, closed]}
+hand: {tcp_offset_m: 0.0}
+arms:
+  - label: left
+    joints: [fl_joint1, fl_joint2, fl_joint3, fl_joint4, fl_joint5, fl_joint6]
+    limits_rad: [[-3.14, 3.14], [-3.14, 3.14], [-3.14, 3.14],
+                 [-3.14, 3.14], [-3.14, 3.14], [-3.14, 3.14]]
+    gripper: {open_m: 0.05, closed_m: 0.0, max_effort: 30.0, stops_at: [open, closed]}
+    ports:
+      twist: /left_servo_node/delta_twist_cmds
+      trajectory: /left_arm_controller/follow_joint_trajectory
+      gripper: /left_gripper_controller/gripper_cmd
+    hand_body: fl_link6
+    tf_base_body: fl_base_link
+    base_frame: fl_base_link
+    hand_frame: fl_link6
+  - label: right
+    joints: [fr_joint1, fr_joint2, fr_joint3, fr_joint4, fr_joint5, fr_joint6]
+    limits_rad: [[-3.14, 3.14], [-3.14, 3.14], [-3.14, 3.14],
+                 [-3.14, 3.14], [-3.14, 3.14], [-3.14, 3.14]]
+    gripper: {open_m: 0.05, closed_m: 0.0, max_effort: 30.0, stops_at: [open, closed]}
+    ports:
+      twist: /right_servo_node/delta_twist_cmds
+      trajectory: /right_arm_controller/follow_joint_trajectory
+      gripper: /right_gripper_controller/gripper_cmd
+    hand_body: fr_link6
+    tf_base_body: fr_base_link
+    base_frame: fr_base_link
+    hand_frame: fr_link6
+planning: {moveit: false}
+workspace_template: workspace

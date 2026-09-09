@@ -41,8 +41,9 @@ ENGINE_INTERFACE = (
     # cameras
     "camera_names",  # -> [name] the scene defines
     "camera_pose",   # name -> (pos[3], mat[3x3]) in the ROS optical convention; KeyError when absent
+    "camera_size",   # name, width, height -> (width, height) it renders at when asked for that size
     "render",        # name, width, height, depth=False -> rgb[h,w,3] uint8 (and depth[h,w] float32 metric)
-    "intrinsics",    # name, width, height -> K[3x3]
+    "intrinsics",    # name, width, height -> K[3x3] for that size
     # actuation
     "control_dt",    # -> seconds one step advances the world
     "mobile",        # -> bool: the robot has a driven base

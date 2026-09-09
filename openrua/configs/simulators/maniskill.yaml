@@ -34,3 +34,15 @@ robots:
       hand: false
       base_body: panda_link0 # the arm's root link
       hand_body: panda_hand
+  widowx:
+    controller: pd_joint_pos # the Bridge real2sim agents get this mode from the simpler loader
+    joint_name_map:
+      "": ""                 # SAPIEN joint names (waist, shoulder, ...) are the published names
+    control:
+      gripper:
+        open_threshold_m: 0.026 # finger travel is 0.015 (closed) to 0.037 (open)
+        settle_steps: 10
+    tf:
+      hand: false
+      base_body: base_link
+      hand_body: ee_gripper_link

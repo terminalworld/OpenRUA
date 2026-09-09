@@ -19,7 +19,9 @@ robots, a robot knows neither.
   embodies (controller, gains, joint-name map). The bundled `robosuite`
   embodies `panda` and loads its `Lift` scene; `maniskill` (SAPIEN 3,
   PhysX on the CPU, Vulkan rendering through lavapipe when there is no
-  GPU) embodies `panda` and loads `PickCube-v1`.
+  GPU) embodies `panda` and `widowx` and loads `PickCube-v1`; `robotwin`
+  (RoboTwin's own harness on SAPIEN 3) embodies its dual-arm
+  `aloha-agilex` and has no native scene.
 - `benchmarks/<name>.yaml`: names its `robot:` and `simulator:` and
   brings its own world: `install:` (its venv and distro, over the
   simulator's) and `scenes:` (scene cameras, a default suite, and robot
@@ -56,7 +58,9 @@ by hand. It needs `uv` and `git` on the host. The installs are large
   robocerebra/      RoboCerebra (.venv; its LIBERO fork and the RoboCerebra_Bench cases)
   robocasa/         RoboCasa v0.2 on robosuite 1.5.0 (.venv; its kitchen assets)
   robocasa365/      RoboCasa365 (.venv-robocasa)
-  maniskill/        ManiSkill 3 (.venv; assets it downloads land in data/)
+  maniskill/        ManiSkill 3 and SimplerEnv's Bridge tasks (.venv; assets they download land in data/)
+  mikasa/           MIKASA-Robo (.venv; its checkout over ManiSkill 3.0.1, the YCB objects in data/)
+  robotwin/         RoboTwin 2.0 (.venv on SAPIEN 3.0.3; its checkout with 9 GB of objects and embodiments)
   install-*.sh      the rendered scripts
 ```
 

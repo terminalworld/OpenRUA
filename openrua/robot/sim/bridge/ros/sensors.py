@@ -50,6 +50,14 @@ def _mat_to_quat(m: np.ndarray) -> tuple[float, float, float, float]:
     return q[0], q[1], q[2], q[3]
 
 
+def _topic_token(name: str) -> str:
+    """A camera's topic namespace: its name, made a valid ROS 2 name token
+    (a scene may call a camera ``3rd_view_camera``; a token must not start
+    with a digit and holds only letters, digits and underscores)."""
+    token = "".join(c if c.isalnum() or c == "_" else "_" for c in name)
+    return token if token[:1].isalpha() or token[:1] == "_" else f"camera_{token}"
+
+
 class SensorPublishers:
     def __init__(self, node, engine, cfg: dict, sim=None):
         self._node = node
@@ -103,11 +111,15 @@ class SensorPublishers:
         if not isinstance(names, list):
             names = self._engine.camera_names()
         self._cams = {}
+        self._size = {}  # camera -> (w, h) it renders at; the config's unless the engine sizes it
         for name in names:
+            topic = _topic_token(name)
+            self._size[name] = tuple(int(v) for v in
+                                     self._engine.camera_size(name, self._cam_w, self._cam_h))
             self._cams[name] = {
-                "color": node.create_publisher(Image, f"/{name}/color/image_raw", 1),
-                "depth": node.create_publisher(Image, f"/{name}/depth/image_raw", 1),
-                "info": node.create_publisher(CameraInfo, f"/{name}/color/camera_info", 1),
+                "color": node.create_publisher(Image, f"/{topic}/color/image_raw", 1),
+                "depth": node.create_publisher(Image, f"/{topic}/depth/image_raw", 1),
+                "info": node.create_publisher(CameraInfo, f"/{topic}/color/camera_info", 1),
             }
         # on_demand (default): render a camera only while someone is
         # subscribed to its color/depth stream. Agent-indistinguishable
@@ -242,11 +254,12 @@ class SensorPublishers:
     def _publish_info_only(self, name: str, pubs: dict) -> None:
         """CameraInfo stays on air for unwatched cameras (tools read the
         intrinsics before deciding to subscribe); costs no render."""
-        k = self._engine.intrinsics(name, self._cam_w, self._cam_h)
+        w, h = self._size[name]
+        k = self._engine.intrinsics(name, w, h)
         info = CameraInfo()
         info.header.stamp = sim_time_msg(self._engine.time())
         info.header.frame_id = f"{name}_optical_frame"
-        info.height, info.width = self._cam_h, self._cam_w
+        info.height, info.width = h, w
         info.distortion_model = "plumb_bob"
         info.d = [0.0] * 5
         info.k = [float(v) for v in np.asarray(k).flatten()]
@@ -275,32 +288,33 @@ class SensorPublishers:
                 self._publish_info_only(name, pubs)
                 continue
             now = sim_time_msg(engine.time())
-            rgb, depth = engine.render(name, self._cam_w, self._cam_h, depth=True)
-            k = engine.intrinsics(name, self._cam_w, self._cam_h)
+            w, h = self._size[name]
+            rgb, depth = engine.render(name, w, h, depth=True)
+            k = engine.intrinsics(name, w, h)
 
             frame_id = f"{name}_optical_frame"
             img = Image()
             img.header.stamp = now
             img.header.frame_id = frame_id
-            img.height, img.width = self._cam_h, self._cam_w
+            img.height, img.width = h, w
             img.encoding = "rgb8"
-            img.step = self._cam_w * 3
+            img.step = w * 3
             img.data = rgb.astype(np.uint8).tobytes()
             pubs["color"].publish(img)
 
             dimg = Image()
             dimg.header.stamp = now
             dimg.header.frame_id = frame_id
-            dimg.height, dimg.width = self._cam_h, self._cam_w
+            dimg.height, dimg.width = h, w
             dimg.encoding = "32FC1"
-            dimg.step = self._cam_w * 4
+            dimg.step = w * 4
             dimg.data = depth.tobytes()
             pubs["depth"].publish(dimg)
 
             info = CameraInfo()
             info.header.stamp = now
             info.header.frame_id = frame_id
-            info.height, info.width = self._cam_h, self._cam_w
+            info.height, info.width = h, w
             info.distortion_model = "plumb_bob"
             info.d = [0.0] * 5
             info.k = [float(v) for v in np.asarray(k).flatten()]

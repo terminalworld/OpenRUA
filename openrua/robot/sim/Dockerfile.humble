@@ -9,7 +9,7 @@ FROM ros:humble
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.10-venv \
     libegl1 libgl1 libgles2 libglvnd0 libglx0 \
-    libgl1-mesa-dri libglx-mesa0 libegl-mesa0 \
+    libgl1-mesa-dri libvulkan1 mesa-vulkan-drivers libglx-mesa0 libegl-mesa0 \
     ros-humble-control-msgs ros-humble-tf2-ros-py \
     ros-humble-moveit ros-humble-moveit-resources-panda-moveit-config \
     ros-humble-robot-state-publisher \
