@@ -278,11 +278,10 @@ options:
 ## openrua bench
 
 ```
-usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
-                     --run-id RUN_ID --task-suite TASK_SUITE
-                     [--task-ids TASK_IDS] [--seeds SEEDS]
-                     [--operator {agent,none,script}] [--task TASK]
-                     [--script SCRIPT] [--record [CAMERAS]]
+usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM] --run-id
+                     RUN_ID --task-suite TASK_SUITE [--task-ids TASK_IDS]
+                     [--seeds SEEDS] [--operator {agent,none,script}]
+                     [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
                      [--wall-clock-min WALL_CLOCK_MIN]
                      [--ros-domain ROS_DOMAIN]
                      [--credentials-dir CREDENTIALS_DIR]
