@@ -123,9 +123,12 @@ def domains_in_use(network: str) -> dict[int, tuple[str, str]]:
         capture_output=True, text=True, timeout=30, check=True).stdout.split()
     if not names:
         return {}
-    infos = json.loads(subprocess.run(
-        ["docker", "inspect", *names],
-        capture_output=True, text=True, timeout=60, check=True).stdout)
+    r = subprocess.run(["docker", "inspect", *names],
+                       capture_output=True, text=True, timeout=60)
+    # A container that vanished between ps and inspect (a bring-up that
+    # lost its domain backing off) makes docker exit 1 while still
+    # printing the rest; the rest is what matters.
+    infos = json.loads(r.stdout) if r.stdout.strip() else []
     used: dict[int, tuple[str, str]] = {}
     for info in infos:
         env = dict(e.split("=", 1) for e in info["Config"].get("Env") or [] if "=" in e)

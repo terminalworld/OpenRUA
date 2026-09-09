@@ -45,8 +45,10 @@ def test_graph_probe_runs_inside_the_sandbox():
 
 # ---- ROS domain: chosen by the bring-up, verified after the first container
 
-def _docker(monkeypatch, network_names, inspect_infos):
-    """Stand in for the two docker calls domains_in_use makes."""
+def _docker(monkeypatch, network_names, inspect_infos, vanished: int = 0):
+    """Stand in for the two docker calls domains_in_use makes. ``vanished``
+    containers were listed by ps but are gone by inspect: docker then
+    exits 1 and prints the rest."""
     import json
     import subprocess
 
@@ -54,7 +56,9 @@ def _docker(monkeypatch, network_names, inspect_infos):
         if argv[:2] == ["docker", "ps"]:   # --filter network=<ours>
             return subprocess.CompletedProcess(argv, 0, "\n".join(network_names) + "\n", "")
         if argv[:2] == ["docker", "inspect"]:
-            return subprocess.CompletedProcess(argv, 0, json.dumps(inspect_infos), "")
+            return subprocess.CompletedProcess(
+                argv, 1 if vanished else 0, json.dumps(inspect_infos),
+                "Error: No such object: gone\n" * vanished)
         raise AssertionError(argv)
     monkeypatch.setattr(bringup.subprocess, "run", fake_run)
 
@@ -154,3 +158,10 @@ def test_started_at_orders_across_fraction_lengths():
     assert bringup._instant(a) < bringup._instant(b)
     assert bringup._instant("2026-09-09T15:23:59.9Z") > bringup._instant("2026-09-09T15:23:59.85Z")
     assert bringup._instant("2026-09-09T15:24:00+00:00") > bringup._instant("2026-09-09T15:23:59.999999999Z")
+
+
+def test_a_container_gone_between_ps_and_inspect_is_simply_absent(monkeypatch):
+    _docker(monkeypatch, ["a-sandbox", "gone-sandbox"],
+            [_info("a-sandbox", "2026-09-09T01:00:01.000000000Z", 0)], vanished=1)
+    assert bringup.domains_in_use("openrua-internal") == {
+        0: ("2026-09-09T01:00:01.000000000", "a-sandbox")}
