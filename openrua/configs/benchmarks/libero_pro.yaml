@@ -1,7 +1,8 @@
 # LIBERO-PRO benchmark config: the only place this benchmark's specifics live.
-# Four top-level sections: task (what runs), protocol (how trials run and
-# when they stop), agent (who operates), robot (which profile supplies
-# the machine: section).
+# Sections: task (what runs), protocol (how trials run and when they
+# stop), agent (who operates), robot + simulator (what it runs on),
+# install (the venv and distro this benchmark brings), scenes (what it
+# puts in the world).
 
 task:
   benchmark: libero_pro
@@ -55,4 +56,23 @@ agent:
                          # cannot drift it; stamped into each trial's meta
   # The opening prompt is agents.PROMPT; its sha256 is recorded per run.
 
-robot: panda-sim          # configs/robots/panda-sim.yaml supplies the machine: section
+robot: panda              # configs/robots/panda.yaml
+simulator: robosuite      # configs/simulators/robosuite.yaml; LIBERO ships its own fork of it
+
+install:                  # LIBERO's world: its robosuite 1.4 fork in the CaP-X checkout
+  venv: cap-x/.venv-libero   # relative to ~/.openrua/simulators/; py3.12 == Jazzy
+  ros_distro: jazzy       # names the robot and sandbox images (openrua-sim-jazzy, openrua-sandbox-jazzy)
+
+scenes:
+  default_suite: libero_goal_task  # what `openrua run --bench libero_pro` loads (the
+                                   # unperturbed goal suite; swap/spatial/object are the
+                                   # benchmark's other cells)
+  cameras:                # the scene's own cameras, unchanged
+    resolution: [640, 480]
+    list: null            # publish every camera the scene defines
+    rate_hz: 2            # wall-clock render/publish rate (pull-style; never steps)
+    record: [agentview, robot0_eye_in_hand]  # --record default: main view, inset
+  robots:
+    panda:
+      controller_kp_scale: 10  # LIBERO's robosuite 1.4: stock kp=50 tracks ~15% of a
+                               # 20 Hz setpoint; measured gain: x10 -> 0.92, x20 overshoots

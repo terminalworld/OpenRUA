@@ -2,7 +2,7 @@
 # tasks, predicates and protocol are CaP-X's core robosuite tasks, built
 # through cap-x's own env factories (task identity identical to their
 # published numbers; see environments/capbench.py).
-# Four top-level sections: task / protocol / agent / robot.
+# Sections: task / protocol / agent / robot + simulator / install / scenes.
 
 task:
   benchmark: capbench
@@ -48,7 +48,25 @@ agent:                   # same agent and workspace template as libero_pro
     effort: high         # reasoning effort, pinned so a CLI default change
                          # cannot drift it; stamped into each trial's meta
 
-robot: panda-sim-humble          # configs/robots/panda-sim-humble.yaml supplies the machine: section
+robot: panda              # configs/robots/panda.yaml
+simulator: robosuite      # configs/simulators/robosuite.yaml, whose install is this checkout
+
+install:                  # CaP-X's world: robosuite 1.5.1 plus their env classes
+  venv: cap-x/.venv-capbench  # py3.10 == Humble; a venv of its own, separate from .venv-libero
+  ros_distro: humble
+
+scenes:
+  cameras:
+    resolution: [640, 480]
+    list: null             # publish every camera the scene defines
+    rate_hz: 2
+    render_mode: on_demand  # render a camera only while subscribed
+                            # (indistinguishable to the agent; 'always'
+                            # renders regardless, for debugging)
+    record: [agentview, robot0_eye_in_hand]  # --record default: main view, inset
+  # Their controller json (panda_joint_ctrl.json, kp=1500 absolute) is
+  # what the loader passes; the engine's Panda embodiment already scales
+  # gains by 1, so nothing to adjust here.
 
 suite_overrides:
   capbench_wipe:

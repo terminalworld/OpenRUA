@@ -246,16 +246,19 @@ CHECKS: tuple[Callable[[Context], list[CheckResult]], ...] = (
 # ---------------------------------------------------------------- the run
 
 def run(robot: str | None = None, agent_names: list[str] | None = None,
-        home: Path | None = None, checks=CHECKS) -> Report:
+        home: Path | None = None, checks=CHECKS, sim: str | None = None,
+        bench: str | None = None) -> Report:
     home = paths.home(home)
     cfg = None
     report = Report()
-    if robot:
+    if robot or bench:
         try:
-            cfg, _, _ = compose(robot, None, home)
+            cfg = compose(robot, sim, bench, home).cfg
         except Exception as exc:  # noqa: BLE001
-            report.checks.append(CheckResult("robot-profile", f"robot {robot}: {exc}", "error",
-                                             hint="openrua robots lists the profiles"))
+            what = " ".join(x for x in (robot, sim and f"--sim {sim}", bench and f"--bench {bench}") if x)
+            report.checks.append(CheckResult("robot-profile", f"{what}: {exc}", "error",
+                                             hint="openrua robots / simulators / benchmarks "
+                                                  "list what there is"))
     names = agent_names or [(cfg or {}).get("agent", {}).get("name")
                      or config.load_user_config(paths.package_config_path()).agent.name]
     pin = (cfg or {}).get("agent", {}).get("version")

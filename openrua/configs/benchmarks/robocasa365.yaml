@@ -4,7 +4,7 @@
 # kwargs verbatim (see environments/robocasa.py); only controller_configs
 # is swapped to the JOINT_POSITION composite. Tasks, scenes, predicates
 # and split stay theirs.
-# Four top-level sections: task / protocol / agent / robot.
+# Sections: task / protocol / agent / robot + simulator / install / scenes.
 
 task:
   benchmark: robocasa365
@@ -108,4 +108,49 @@ agent:                       # same agent and workspace template as libero_pro
     effort: high         # reasoning effort, pinned so a CLI default change
                          # cannot drift it; stamped into each trial's meta
 
-robot: panda-omron-sim          # configs/robots/panda-omron-sim.yaml supplies the machine: section
+robot: panda-omron        # configs/robots/panda-omron.yaml
+simulator: robosuite      # configs/simulators/robosuite.yaml; RoboCasa builds on it
+
+install:                  # RoboCasa's world: robosuite 1.5.2 plus the kitchens
+  venv: robocasa365/.venv-robocasa   # a venv of its own
+  ros_distro: humble
+  gpus: false             # true on a GPU host (nvidia-container-toolkit
+                          # required): EGL rendering moves to the GPU
+                          # (~214 -> ~10 ms/frame on whole-room scenes);
+                          # physics stays CPU, so results stay comparable
+
+scenes:
+  cameras:
+    resolution: [640, 480]
+    # Their canonical eval cameras; the scene defines many more, narrowed
+    # to keep render cost sane on whole-room scenes under software rendering.
+    list: [robot0_agentview_left, robot0_agentview_right, robot0_eye_in_hand]
+    rate_hz: 2
+    render_mode: on_demand
+    record: [robot0_agentview_left, robot0_eye_in_hand]  # --record default: main view, inset
+  robots:
+    panda-omron:            # RoboCasa's assets bring this body; robosuite's own do not
+      engine_model: PandaOmron
+      controller: JOINT_POSITION
+      controller_config: controllers/pandaomron_joint_ctrl.json  # under configs/robots/ (bundled, then ~/.openrua/robots/), or a path
+      controller_kp_scale: 1  # gains live in the JSON (kp=1500 arm, their
+                              # defaults for torso/base)
+      joint_name_map:
+        robot0_: panda_
+        gripper0_: panda_
+      control:
+        gripper:
+          open_threshold_m: 0.02
+          settle_steps: 10
+      tf:
+        hand: false
+        base_body: robot0_link0    # the arm root rides the mobile base
+                                   # (robot0_base is a static dummy on PandaOmron)
+      base:
+        body: mobilebase0_base     # the body that actually rides the base
+                                   # (robot0_base is a static dummy)
+        effective_speed_note: unit vx tracks ~0.056 m/s effective
+          (velocity ramp restarts per message)
+        # Measured: unit vx tracks ~0.056 m/s effective under one-message-one-
+        # tick paused-clock streaming (their velocity ramp restarts per goal).
+        # Surfaced to the agent through the workspace docs, not tuned away.

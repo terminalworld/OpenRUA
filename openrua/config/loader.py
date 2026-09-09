@@ -4,14 +4,18 @@ Every file is validated against its schema model; unknown keys are
 errors. Consumers read plain dicts (``dump()``): defaults filled in,
 absent optionals left out.
 
-``load_config`` assembles a benchmark config with its robot profile and
-the defaults files; ``compose`` does the same from a robot profile's
-``world:`` when no benchmark is named; ``apply_suite_overrides`` and
-``normalize_arms`` derive the per-suite view a trial actually runs.
+``compose`` assembles one resolved config from a robot (type or
+instance), a simulator and, when named, a benchmark, plus the defaults
+files; ``load_config`` is the benchmark-first entry the runner uses;
+``assemble`` folds robot type, embodiments and install into the
+``machine:`` dict every downstream unit reads. ``apply_suite_overrides``
+and ``normalize_arms`` derive the per-suite view a trial actually runs.
 """
 
 from __future__ import annotations
 
+import copy
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +23,8 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from openrua.config import paths
-from openrua.config.schema import Benchmark, ResolvedConfig, RobotProfile, UserConfig
+from openrua.config.schema import (Benchmark, Machine, ResolvedConfig, RobotInstance,
+                                   RobotType, SimulatorProfile, UserConfig)
 from openrua.errors import ConfigError, UsageError
 
 
@@ -83,60 +88,192 @@ def layer_sandbox(*defaults: UserConfig) -> dict:
     return out
 
 
-def load_robot(robot: str, home: Path | None = None) -> dict:
-    """A robot profile by name (bundled, then ``<home>/robots/``) or by
-    path, validated (RobotProfile). Returns it as a dict: its
-    ``machine:`` section is the robot, ``world:`` the default scene."""
+def _merge(dst: dict, src: dict) -> dict:
+    """Deep merge ``src`` into ``dst`` in place; None deletes a key."""
+    for k, v in src.items():
+        if v is None:
+            dst.pop(k, None)
+        elif isinstance(v, dict) and isinstance(dst.get(k), dict):
+            _merge(dst[k], v)
+        else:
+            dst[k] = copy.deepcopy(v)
+    return dst
+
+
+def load_robot(robot: str, home: Path | None = None) -> tuple[str, dict]:
+    """A robots/ file by name (bundled, then ``<home>/robots/``) or by
+    path. Returns ``("type", facts)`` for a robot type or
+    ``("instance", {"type": ..., "machine": ...})`` for a particular
+    (usually real) robot; a file with a ``machine:`` section is an
+    instance."""
     p = paths.find("robots", robot, home)
-    return dump(validate(RobotProfile, load_yaml(p), p))
+    data = load_yaml(p) or {}
+    if "machine" in data:
+        # Only the keys the file wrote, so an instance over a type replaces
+        # exactly what it says (defaults are filled in after the merge).
+        inst = validate(RobotInstance, data, p)
+        return "instance", inst.model_dump(exclude_unset=True, by_alias=True)
+    return "type", dump(validate(RobotType, data, p))
+
+
+def load_simulator(sim: str, home: Path | None = None) -> dict:
+    """A simulators/ file by name (bundled, then ``<home>/simulators/``)
+    or by path, validated (SimulatorProfile)."""
+    p = paths.find("simulators", sim, home)
+    return dump(validate(SimulatorProfile, load_yaml(p), p))
+
+
+def assemble(robot_type: dict, embodiments: list[dict], install: dict,
+             cameras: dict | None, source: str) -> dict:
+    """robot type + embodiments (simulator's, then the benchmark's) +
+    install -> the ``machine:`` dict (Machine, validated). Later
+    embodiments write over earlier ones, key by key."""
+    m = copy.deepcopy(robot_type)
+    for e in embodiments:
+        _merge(m, e)
+    if cameras is not None:
+        m["cameras"] = copy.deepcopy(cameras)
+    backend = {"kind": "sim", "ros_distro": install["ros_distro"],
+               "gpus": install.get("gpus", False),
+               "simulator": {"venv": install["venv"]}}
+    for k in ("container",):
+        if install.get(k):
+            backend["simulator"][k] = install[k]
+    for k in ("image", "sandbox_image", "resources"):
+        if install.get(k) is not None:
+            backend[k] = install[k]
+    m["backend"] = backend
+    return dump(validate(Machine, m, source))
+
+
+def _instance_machine(inst: dict, home: Path | None) -> dict:
+    """An instance's machine over its type's facts (when it names one)."""
+    if not inst.get("type"):
+        return dump(validate(Machine, inst["machine"], "robot instance"))
+    kind, facts = load_robot(inst["type"], home)
+    if kind != "type":
+        raise ConfigError(f"robot instance names type {inst['type']!r}, which is itself "
+                          "an instance (has a machine: section)")
+    m = copy.deepcopy(facts)
+    _merge(m, inst["machine"])
+    return dump(validate(Machine, m, f"instance of {inst['type']}"))
+
+
+def _who_embodies(robot: str, home: Path | None) -> list[str]:
+    """Benchmarks whose scenes bring this robot type, for error hints."""
+    out = []
+    for e in paths.available("benchmarks", home):
+        try:
+            b = validate(Benchmark, load_yaml(e.path), e.path)
+        except ConfigError:
+            continue
+        if robot in b.scenes.robots:
+            out.append(e.name)
+    return out
+
+
+@dataclass
+class Composed:
+    """One resolved config and where it came from."""
+    cfg: dict
+    suite: str
+    task_id: int
+    robot: str
+    simulator: str | None      # None for a real-robot instance
+    benchmark: str | None      # None for an engine's native scene
+
+
+def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
+            home: Path | None = None) -> Composed:
+    """robot (type or instance) + simulator + optional benchmark -> one
+    resolved config (ResolvedConfig, validated) and the scene to load.
+
+    A benchmark supplies robot and simulator when the arguments do not;
+    the user's config.yaml supplies a default robot. A robot type needs
+    a simulator that embodies it (its ``robots:``) or a benchmark whose
+    ``scenes.robots`` does; a robot instance (a real robot) brings its
+    own machine and takes no simulator. Without a benchmark the
+    simulator's native scene is loaded.
+    """
+    defaults = load_user_config(paths.package_config_path())
+    user = load_user_config(paths.config_path(home))
+    b = bench_path = None
+    if bench:
+        bench_path = paths.find("benchmarks", bench, home)
+        b = dump(validate(Benchmark, load_yaml(bench_path), bench_path))
+        robot = robot or b.get("robot") or user.robot
+        sim = sim or b.get("simulator")
+    else:
+        robot = robot or user.robot
+    if b is not None and b.get("machine") and not robot:
+        machine, simulator, robot = b["machine"], None, "(inline machine:)"
+    else:
+        if not robot:
+            raise UsageError("name a robot",
+                             hint="openrua robots lists them; a benchmark config or "
+                                  f"robot: in {paths.config_path(home)} can name a default")
+        kind, r = load_robot(robot, home)
+        if kind == "instance":
+            if sim and not (b and b.get("simulator") == sim):
+                raise UsageError(f"{robot} is a robot instance with its own machine: "
+                                 "and takes no --sim")
+            machine, simulator = _instance_machine(r, home), None
+        else:
+            if not sim:
+                raise UsageError(f"{robot} is a robot type: name the simulator that "
+                                 "embodies it (--sim) or a benchmark (--bench)",
+                                 hint="openrua simulators / openrua benchmarks list them")
+            s = load_simulator(sim, home)
+            embodiments = [e for e in (s["robots"].get(robot),
+                                       (b or {}).get("scenes", {}).get("robots", {}).get(robot))
+                           if e]
+            if not embodiments:
+                brings = _who_embodies(robot, home)
+                hint = (f"benchmarks that bring {robot}: {', '.join(brings)}; pass one "
+                        "with --bench" if brings else "openrua robots / openrua simulators")
+                raise ConfigError(f"simulator {sim} does not embody {robot} (it has: "
+                                  f"{', '.join(sorted(s['robots'])) or 'none'})", hint=hint)
+            install = copy.deepcopy(s["install"])
+            if b and b.get("install"):
+                install.update({k: v for k, v in b["install"].items() if v is not None})
+            cameras = ((b or {}).get("scenes", {}).get("cameras")
+                       or (s.get("native") or {}).get("cameras"))
+            if not b and not s.get("native"):
+                raise UsageError(f"simulator {sim} has no native scene: name a benchmark "
+                                 "(--bench)", hint="openrua benchmarks lists them")
+            machine = assemble(r, embodiments, install, cameras,
+                               f"{robot} on {sim}" + (f" for {bench}" if bench else ""))
+            simulator = sim
+    if b is not None:
+        cfg = {k: v for k, v in b.items()
+               if k in ("task", "protocol", "agent", "suite_overrides")}
+        source = bench_path
+    else:
+        native = load_simulator(sim, home)["native"] if simulator else None
+        if native is None:
+            raise UsageError(f"{robot} is a real robot: name a benchmark (--bench) to "
+                             "run, or use openrua up / openrua agent with --task")
+        cfg = {"task": {"benchmark": native["loader"], "suites": [native["scene"]],
+                        "init_states": "seeded-reset"}}
+        source = f"{sim} native scene"
+    cfg["machine"] = machine
+    cfg["agent"] = layer_agent(cfg.get("agent", {}), defaults, user)
+    cfg["sandbox"] = layer_sandbox(defaults, user)
+    cfg = dump(validate(ResolvedConfig, cfg, source))
+    suite = (b or {}).get("scenes", {}).get("default_suite") or cfg["task"]["suites"][0]
+    if suite not in cfg["task"]["suites"]:
+        raise ConfigError(f"{source}: scenes.default_suite {suite!r} is not in task.suites")
+    return Composed(cfg, suite, 0, robot, simulator,
+                    (b or {}).get("task", {}).get("benchmark") if b else None)
 
 
 def load_config(path: Path | str, robot: str | None = None,
-                home: Path | None = None) -> dict:
-    """A benchmark config (name or path), validated and assembled:
-    ``robot: <name>`` in the file (or the argument, which wins; or the
-    user's default) pulls in that profile's ``machine:`` section; a file
-    carrying its own ``machine:`` is taken as is. The user's
-    ``~/.openrua/config.yaml`` supplies agent defaults under the file's
-    own, and the package's ``configs/config.yaml`` under that. Returns the
-    assembled dict (ResolvedConfig, validated)."""
-    p = paths.find("benchmarks", path, home)
-    bench = validate(Benchmark, load_yaml(p), p)
-    defaults = load_user_config(paths.package_config_path())
-    user = load_user_config(paths.config_path(home))
-    cfg = dump(bench)
-    named = cfg.pop("robot", None)          # always popped: the argument wins
-    robot = robot or named or user.robot
-    if robot:
-        cfg["machine"] = load_robot(robot, home)["machine"]
-    if "machine" not in cfg:
-        raise ConfigError(
-            f"{p}: names no robot (robot: <name>, --robot, or robot: in "
-            f"{paths.config_path(home)}) and carries no machine: section")
-    cfg["agent"] = layer_agent(cfg.get("agent", {}), defaults, user)
-    cfg["sandbox"] = layer_sandbox(defaults, user)
-    return dump(validate(ResolvedConfig, cfg, p))
-
-
-def compose(robot: str | None, bench: str | None,
-            home: Path | None = None) -> tuple[dict, str, int]:
-    """robot profile + benchmark config -> one assembled config, plus the
-    (task_suite, task_id) to load. Without --bench the profile's
-    ``world:`` says which scene to load."""
-    if not robot and not bench:
-        raise UsageError("name a robot or a benchmark (--bench)",
-                         hint="openrua robots / openrua benchmarks list them")
-    world = {}
-    if robot:
-        world = load_robot(robot, home).get("world", {})
-    bench = bench or world.get("benchmark")
-    if not bench:
-        raise UsageError(f"robot {robot!r} names no world: and no --bench given",
-                         hint="pass --bench <benchmark> or add world: to the profile")
-    cfg = load_config(bench, robot, home)
-    suite = world.get("task_suite") or cfg["task"]["suites"][0]
-    task_id = int(world.get("task_id", 0))
-    return cfg, suite, task_id
+                home: Path | None = None, sim: str | None = None) -> dict:
+    """A benchmark config (name or path), assembled with its robot and
+    simulator (the arguments win over the file's ``robot:`` /
+    ``simulator:`` lines) and the defaults files. Returns the resolved
+    dict (ResolvedConfig, validated)."""
+    return compose(robot, sim, str(path), home).cfg
 
 
 def apply_suite_overrides(cfg: dict, task_suite: str) -> dict:

@@ -1,0 +1,35 @@
+# Franka Panda on an Omron holonomic mobile base (PandaOmron): the arm's
+# facts plus a mobile base. No simulator here: robosuite's own robots do
+# not include this body; the RoboCasa365 benchmark's assets bring it
+# (see benchmarks/robocasa365.yaml, scenes.robots).
+
+robot:
+  model: Franka Emika Panda on Omron mobile base (PandaOmron)
+  description: 7-joint arm with parallel-jaw gripper on a holonomic
+    mobile base
+frames: {world: world, base: panda_link0, hand: panda_hand}
+arm:
+  joints: [panda_joint1, panda_joint2, panda_joint3, panda_joint4,
+           panda_joint5, panda_joint6, panda_joint7]
+  limits_rad: [[-2.90, 2.90], [-1.76, 1.76], [-2.90, 2.90],
+               [-3.07, -0.07], [-2.90, 2.90], [-0.02, 3.75],
+               [-2.90, 2.90]]
+gripper: {open_m: 0.04, closed_m: 0.0, max_effort: 30.0,
+          stops_at: [open, closed]}
+ports:                       # franka_ros2-shaped arm surface + mobile base
+  twist: /servo_node/delta_twist_cmds
+  trajectory: /panda_arm_controller/follow_joint_trajectory
+  gripper: /franka_gripper/gripper_action
+  wrench: /franka_robot_state_broadcaster/external_wrench
+  base_twist: /cmd_vel       # plain geometry_msgs/Twist (REP-119 shape)
+  odom: /odom
+base:                        # a mobile base
+  type: holonomic            # omnidirectional: vx, vy, wz all actuated
+  frame: base_footprint
+  cmd_vel: /cmd_vel
+  odom: /odom
+planning: {moveit: true, move_action: /move_action,
+           ik_service: /compute_ik, group: panda_arm,
+           planning_frame: panda_link0}  # model frame; the IK request's
+                           # frame_id must be empty
+workspace_template: workspace

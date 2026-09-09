@@ -1,4 +1,5 @@
-"""``openrua up <robot>``: a live robot with a sandbox terminal on it.
+"""``openrua up <robot> --sim <simulator> [--bench <benchmark>]``: a live
+robot with a sandbox terminal on it.
 
 Stays in the foreground: the robot holds its control line to this
 process and powers itself off when the process ends. Open a second
@@ -34,9 +35,9 @@ class Session:
     name: str
     sim: str
     sandbox: str
-    robot: str            # the profile as named on the command line
+    robot: str            # the robot as named on the command line (or by the benchmark)
     robot_model: str      # machine.robot.model
-    backend: str          # "simulated (ROS 2 jazzy)" or "real"
+    backend: str          # "simulated by robosuite (ROS 2 jazzy)" or "real"
     benchmark: str | None
     suite: str | None
     task_id: int | None
@@ -46,7 +47,10 @@ class Session:
     power_off: Callable[[], None]
 
     def scene(self) -> str:
-        where = f"{self.benchmark} / {self.suite} #{self.task_id}" if self.suite else "(none)"
+        if not self.suite:
+            return "(none)"
+        where = (f"{self.benchmark} / {self.suite} #{self.task_id}" if self.benchmark
+                 else f"{self.suite} (the simulator's own scene)")
         return f'{where}: "{self.task}"' if self.task else where
 
     def header(self, tag: str, prompt: str | None = None) -> str:
@@ -56,12 +60,12 @@ class Session:
             agent += f', opening message: "{prompt}"'
         return (f"[{tag}] robot     {self.robot}: {self.robot_model}, {self.backend}\n"
                 f"[{tag}] scene     {self.scene()}\n"
-                f"[{tag}] agent     {agent}\n"
-                f"[{tag}] terminal  {self.sandbox}, on the robot's ROS 2 graph")
+                f"[{tag}] agent     {agent}")
 
     def banner(self) -> str:
         return f"""
 {self.header("up")}
+[up] sandbox   {self.sandbox}, on the robot's ROS 2 graph
 
      openrua agent --name {self.name}            # your coding agent, on the robot
      docker exec -it -u robot -w /workspace {self.sandbox} bash   # or you
@@ -72,9 +76,10 @@ class Session:
 def open_session(args) -> Session:
     """Bring the robot and its sandbox up and record them under
     ``args.name``; the returned session's ``power_off`` takes them down."""
-    cfg, suite, task_id = compose(args.robot, args.bench, args.home)
-    suite = args.task_suite or suite
-    task_id = args.task_id if args.task_id is not None else task_id
+    composed = compose(args.robot, args.sim, args.bench, args.home)
+    cfg = composed.cfg
+    suite = args.task_suite or composed.suite
+    task_id = args.task_id if args.task_id is not None else composed.task_id
     apply_suite_overrides(cfg, suite)
     normalize_arms(cfg)
     sim_name, sandbox_name = state.container_names(args.name)
@@ -127,14 +132,13 @@ def open_session(args) -> Session:
                         **cfg.get("agent", {}).get("options", {})},
                workspace=str(workdir / "workspace"), task=task)
     backend = cfg["machine"]["backend"]
-    where = (f"simulated (ROS 2 {backend.get('ros_distro', '?')})" if backend["kind"] == "sim"
-             else "real")
+    where = (f"simulated by {composed.simulator} (ROS 2 {backend.get('ros_distro', '?')})"
+             if backend["kind"] == "sim" else "real")
     robot = cfg["machine"].get("robot", {})
     return Session(
         name=args.name, sim=sim_name, sandbox=sandbox_name,
-        robot=args.robot or f"{args.bench}'s robot",
-        robot_model=robot.get("model", "?"), backend=where,
-        benchmark=args.bench or cfg.get("task", {}).get("benchmark"),
+        robot=composed.robot, robot_model=robot.get("model", "?"), backend=where,
+        benchmark=composed.benchmark,
         suite=suite, task_id=task_id, task=task,
         agent=adapter.name,
         model=cfg.get("agent", {}).get("model") or adapter.default_model,
@@ -154,8 +158,12 @@ def run(args) -> int:
 def add_options(p) -> None:
     """The bring-up options ``up`` and ``run`` share (everything but the
     robot positional)."""
+    p.add_argument("--sim", default=None,
+                   help="simulator that embodies the robot (openrua simulators); default: "
+                   "the benchmark's; a real robot's file needs none")
     p.add_argument("--bench", default=None,
-                   help="benchmark to take the scene from (default: the profile's world:)")
+                   help="benchmark whose world to load (openrua benchmarks); default: the "
+                   "simulator's native scene")
     p.add_argument("--task-suite", default=None, help="scene suite (default: the profile's)")
     p.add_argument("--task-id", type=int, default=None, help="scene index (default: the profile's)")
     p.add_argument("--init-state", type=int, default=0,
@@ -179,7 +187,7 @@ def add_parser(sub) -> None:
                        "in the foreground; Ctrl-C powers it off. Open a second terminal "
                        "for `openrua agent`, or use `openrua run` to do all of it in one.")
     p.add_argument("robot", nargs="?", default=None,
-                   help="robot profile: a name (openrua robots) or a path; "
-                   "default: --bench's robot, else the user config's default")
+                   help="robot: a type or your robot's file (openrua robots), by name "
+                   "or path; default: --bench's robot, else the user config's default")
     add_options(p)
     p.set_defaults(fn=run)

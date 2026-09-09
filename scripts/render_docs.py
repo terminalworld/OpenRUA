@@ -120,7 +120,9 @@ def render_config() -> str:
     from openrua.config import schema
 
     roots = [
-        (schema.RobotProfile, "robots/<name>.yaml (bundled or ~/.openrua/robots/)"),
+        (schema.RobotType, "robots/<type>.yaml (bundled or ~/.openrua/robots/): a robot type"),
+        (schema.RobotInstance, "robots/<name>.yaml: a particular robot (type: + machine:)"),
+        (schema.SimulatorProfile, "simulators/<engine>.yaml (bundled or ~/.openrua/simulators/)"),
         (schema.Benchmark, "benchmarks/<name>.yaml (bundled or ~/.openrua/benchmarks/)"),
         (schema.UserConfig, "~/.openrua/config.yaml and the package's configs/config.yaml"),
         (schema.AgentManifest, "agents/<name>.yaml (bundled or ~/.openrua/agents/)"),

@@ -21,16 +21,17 @@
 
 A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html)
 uses a robot just as a computer-use agent uses a computer. OpenRUA is
-the open harness for one: type `openrua run panda-sim "pick up the bowl"`
+the open harness for one: type `openrua run panda --sim robosuite --bench libero_pro "pick up the bowl"`
 and Claude Code or Codex opens in a terminal on the robot's ROS&nbsp;2 graph,
 lists the topics, reads the docs in its workspace, writes a script with
 `rclpy`, runs it, and checks the camera.
 
 OpenRUA gives you one command for three things:
 
-- **Play in simulation.** `openrua run panda-sim` brings up a Franka
-  Panda in MuJoCo; the agent drives it the same way it would a real one.
-- **Put an agent on your robot.** Draft a profile from the robot's live
+- **Play in simulation.** `openrua run panda --sim robosuite` brings up
+  a Franka Panda in MuJoCo; the agent drives it the same way it would a
+  real one.
+- **Put an agent on your robot.** Draft its file from the robot's live
   graph, finish the `TODO` lines, `openrua run <name>`. See
   [docs/your-own-robot.md](docs/your-own-robot.md).
 - **Run experiments.** `openrua bench` plays a benchmark across tasks and
@@ -48,25 +49,28 @@ OpenRUA gives you one command for three things:
 ```bash
 pip install git+https://github.com/terminalworld/OpenRUA
 openrua build                                    # the three images, once
-openrua run panda-sim --agent claude-code "pick up the bowl and place it on the plate"
+openrua run panda --sim robosuite --bench libero_pro --agent claude-code \
+    "pick up the bowl and place it on the plate"
 ```
 
 ```
-[run] robot     panda-sim: Franka Emika Panda, simulated (ROS 2 jazzy)
+[run] robot     panda: Franka Emika Panda, simulated by robosuite (ROS 2 jazzy)
 [run] scene     libero_pro / libero_goal_task #0: "open the bottom drawer of the cabinet"
 [run] agent     claude-code (claude-opus-5), opening message: "pick up the bowl and place it on the plate"
-[run] terminal  openrua-sandbox, on the robot's ROS 2 graph
 [run] the robot powers off when the agent exits
 ```
 
-The robot profile names the scene (a LIBERO kitchen: a bowl, a plate, a
-wine bottle, a drawer, a stove; the sentence is yours, the scene's own
-task is shown for reference); `--agent codex` opens Codex instead;
-`--task-suite` and `--task-id` pick another scene; `openrua robots`,
+Three choices, one each: the robot (`panda`), the simulator that
+embodies it (`robosuite`), the benchmark whose world to load
+(`libero_pro`: a kitchen with a bowl, a plate, a wine bottle, a drawer,
+a stove; the sentence is yours, the scene's own task is shown for
+reference). Leave out `--bench` for the simulator's own scene (a table
+and a cube); `--agent codex` opens Codex; `--task-suite` and `--task-id`
+pick another scene; `openrua robots`, `openrua simulators`,
 `openrua benchmarks` and `openrua agents` list the choices. To keep a
 robot up between sessions, do the same in three commands:
-`openrua up panda-sim`, then `openrua agent "..."` in a second terminal,
-then `openrua down`.
+`openrua up panda --sim robosuite --bench libero_pro`, then
+`openrua agent "..."` in a second terminal, then `openrua down`.
 
 `openrua doctor` tells you what is missing before the first `run`
 (Docker, the three images, the simulator checkout, an agent login); the
@@ -105,35 +109,41 @@ details are in [docs/install.md](docs/install.md).
 
 ## Supported robots
 
-| Profile | Robot | Where it runs |
-|---|---|---|
-| `panda-sim` | Franka Emika Panda | simulation, ROS&nbsp;2 Jazzy |
-| `panda-sim-humble` | Franka Emika Panda | simulation, ROS&nbsp;2 Humble |
-| `panda-omron-sim` | Panda on an Omron mobile base | simulation, ROS&nbsp;2 Humble |
-| *your robot* | any ROS&nbsp;2 arm or mobile manipulator | real; see [docs/your-own-robot.md](docs/your-own-robot.md) |
+A robot is what is true of it wherever it runs: joints, limits, frames,
+gripper, ports, planner. Which simulator embodies it, and what surrounds
+it, come from the other two kinds of file.
 
-`openrua robots` prints this list from the profiles on disk, yours included.
+| Robot | Model | Embodied by |
+|---|---|---|
+| `panda` | Franka Emika Panda | `robosuite` |
+| `panda-omron` | Panda on an Omron mobile base | `robosuite` through `robocasa365`'s assets |
+| *your robot* | any ROS&nbsp;2 arm or mobile manipulator, real | its own file; see [docs/your-own-robot.md](docs/your-own-robot.md) |
+
+`openrua robots` prints this list from the files on disk, yours included.
 
 ## Supported simulators
 
-| Simulator | Engine | Profiles |
-|---|---|---|
-| [robosuite](https://robosuite.ai) | MuJoCo | `panda-sim`, `panda-sim-humble` |
-| [RoboCasa](https://robocasa.ai) | robosuite / MuJoCo | `panda-omron-sim` |
+| Simulator | Engine | Robots | Native scene |
+|---|---|---|---|
+| `robosuite` | [robosuite](https://robosuite.ai) 1.5 on MuJoCo | `panda` | `Lift`: a table and a cube |
 
-Simulators are checkouts under `~/.openrua/simulators/`, each with its
-own venv; see [docs/simulation.md](docs/simulation.md).
+A simulator file knows the engine and how it drives each robot it
+embodies; it knows no benchmark. Its install (a venv under
+`~/.openrua/simulators/`) and the benchmarks' own are described in
+[docs/simulation.md](docs/simulation.md).
 
 ## Supported benchmarks
 
-| Benchmark | Robot profile | Config |
-|---|---|---|
-| LIBERO-PRO | `panda-sim` | `--config libero_pro` |
-| CaP-Bench | `panda-sim-humble` | `--config capbench` |
-| RoboCasa365 | `panda-omron-sim` | `--config robocasa365` |
+| Benchmark | Robot | Simulator | Brings |
+|---|---|---|---|
+| LIBERO-PRO (`libero_pro`) | `panda` | `robosuite` | LIBERO's scenes on its own robosuite 1.4 fork, ROS&nbsp;2 Jazzy |
+| CaP-Bench (`capbench`) | `panda` | `robosuite` | CaP-X's tabletop scenes on robosuite 1.5, ROS&nbsp;2 Humble |
+| RoboCasa365 (`robocasa365`) | `panda-omron` | `robosuite` | [RoboCasa](https://robocasa.ai)'s kitchens and the Panda-Omron body, ROS&nbsp;2 Humble |
 
-`openrua benchmarks` prints this list from the configs on disk, yours
-included; `openrua bench` runs one.
+A benchmark names its robot and simulator and brings its own world:
+`install:` (its venv and ROS distro) and `scenes:` (scene cameras, and
+robot embodiments its assets add). `openrua benchmarks` prints this
+list; `openrua bench --config <name>` runs one.
 
 ## Supported agents
 

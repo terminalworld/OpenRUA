@@ -38,7 +38,7 @@ CONFIG_FILENAME = "config.yaml"
 
 # Declarative kinds (one yaml per named entry) and the plugin kinds (one
 # python module per entry); a name is looked up by kind.
-KINDS = {"robots": ".yaml", "benchmarks": ".yaml", "agents": ".yaml"}
+KINDS = {"robots": ".yaml", "simulators": ".yaml", "benchmarks": ".yaml", "agents": ".yaml"}
 PLUGIN_KINDS = {"agents": ".py"}
 
 

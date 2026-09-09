@@ -16,15 +16,16 @@ def test_home_defaults_and_overrides(tmp_path):
 
 def test_bundled_entries_ship_in_the_package():
     names = {e.name for e in paths.available("robots")}
-    assert {"panda-sim", "panda-sim-humble", "panda-omron-sim"} <= names
+    assert {"panda", "panda-omron"} <= names
+    assert {e.name for e in paths.available("simulators")} >= {"robosuite"}
     assert {e.name for e in paths.available("benchmarks")} >= {
         "libero_pro", "capbench", "robocasa365"}
     assert all(e.source == "bundled" for e in paths.available("robots"))
 
 
 def test_find_by_name_then_user_dir_then_path(tmp_path):
-    bundled = paths.find("robots", "panda-sim")
-    assert bundled.name == "panda-sim.yaml" and bundled.is_file()
+    bundled = paths.find("robots", "panda")
+    assert bundled.name == "panda.yaml" and bundled.is_file()
     (tmp_path / "robots").mkdir()
     mine = tmp_path / "robots" / "my-arm.yaml"
     mine.write_text("machine: {}\n")
@@ -36,20 +37,20 @@ def test_find_by_name_then_user_dir_then_path(tmp_path):
 
 def test_user_file_with_a_bundled_name_is_flagged_not_used(tmp_path):
     (tmp_path / "robots").mkdir()
-    shadow = tmp_path / "robots" / "panda-sim.yaml"
+    shadow = tmp_path / "robots" / "panda.yaml"
     shadow.write_text("machine: {}\n")
-    found = paths.find("robots", "panda-sim", tmp_path)
+    found = paths.find("robots", "panda", tmp_path)
     assert found != shadow and found.is_file()
-    entry = next(e for e in paths.available("robots", tmp_path) if e.name == "panda-sim")
+    entry = next(e for e in paths.available("robots", tmp_path) if e.name == "panda")
     assert entry.source == "bundled" and entry.shadowed_by == shadow
     assert not [e for e in paths.available("robots", tmp_path)
-                if e.source == "user" and e.name == "panda-sim"]
+                if e.source == "user" and e.name == "panda"]
 
 
 def test_missing_name_says_what_exists_and_where_to_add(tmp_path):
     with pytest.raises(FileNotFoundError) as e:
         paths.find("robots", "nope", tmp_path)
-    assert "panda-sim" in str(e.value)
+    assert "panda" in str(e.value)
     assert str(tmp_path / "robots") in e.value.hint      # where to add your own
     with pytest.raises(FileNotFoundError):
         paths.find("robots", str(tmp_path / "gone.yaml"))

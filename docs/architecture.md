@@ -31,7 +31,7 @@ the bridge:
 | Leaf | Owns |
 |---|---|
 | `openrua/config/paths.py` | where things live: the user directory (`~/.openrua`), the bundled data (`openrua/configs/`, `openrua/plugins/`), the lookup order (bundled, then user, then a path), simulator and workspace locations. |
-| `openrua/config/schema.py` | the schema (pydantic): robot profile, benchmark config, user config, the assembled per-trial config; defaults and a description per key; unknown keys are errors. |
+| `openrua/config/schema.py` | the schema (pydantic): robot type and instance, simulator, benchmark, user config, the assembled per-trial config; defaults and a description per key; unknown keys are errors. `loader.compose` folds robot, simulator and benchmark (benchmark -> simulator -> robot, one direction) into the one `machine:` dict every unit reads. |
 | `openrua/errors.py` | the error family: message, hint, sysexits code. The CLI entry point is the one place an error becomes text. |
 | `openrua/testing.py` | `check_manifest` and `check_agent`, the conformance tests third parties run. |
 
@@ -48,7 +48,7 @@ files under `runs/`.
 openrua/configs/{robots,benchmarks,agents}/, openrua/plugins/agents/   bundled, ship in the wheel
 ~/.openrua/                                             the user directory ($OPENRUA_HOME, --home)
   config.yaml        your defaults: agent section, default robot
-  robots/ benchmarks/ agents/ plugins/agents/            yours, looked up after the bundled ones
+  robots/ simulators/ benchmarks/ agents/ plugins/agents/   yours, looked up after the bundled ones
   credentials/<agent>/                                   login profiles
   simulators/<name>/.venv-*                              simulator checkouts
   workspaces/<name>/  state/<name>.yaml                  what `openrua up` / `run` keep

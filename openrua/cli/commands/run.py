@@ -1,4 +1,5 @@
-"""``openrua run <robot> [prompt]``: up, agent, down in one command.
+"""``openrua run <robot> --sim <simulator> [--bench <benchmark>] [prompt]``:
+up, agent, down in one command.
 
 The shape of ``docker run``: bring the robot up with a sandbox terminal
 on it, open the coding agent there, and power everything off when the
@@ -42,8 +43,8 @@ def add_parser(sub) -> None:
                        "terminal with PROMPT as the opening message, and power the robot "
                        "off when the agent exits. Same steps as up, agent, down.")
     p.add_argument("robot", nargs="?", default=None,
-                   help="robot profile: a name (openrua robots) or a path; "
-                   "default: --bench's robot, else the user config's default")
+                   help="robot: a type or your robot's file (openrua robots), by name "
+                   "or path; default: --bench's robot, else the user config's default")
     p.add_argument("prompt", nargs="?", default=None, help="opening message for the agent")
     p.add_argument("--model", default=None, help="model (default: the config's)")
     up.add_options(p)

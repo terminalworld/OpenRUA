@@ -88,6 +88,8 @@ def draft_profile(graph: dict, discovery: dict) -> str:
     y.append("# a person; everything else was read from the robot. Delete any port the")
     y.append("# robot does not actually serve: every port listed is a promise preflight")
     y.append("# checks and the agent is told about.")
+    y.append("# type: panda   # TODO if this is an instance of a bundled robot type (openrua")
+    y.append("#               # robots): name it and delete the facts below that it supplies")
     y.append("machine:")
     y.append("  backend:")
     y.append("    kind: real")
