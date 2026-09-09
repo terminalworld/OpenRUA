@@ -13,7 +13,8 @@ subtask by subtask with the oracle on every step, in order.
 
 The env is built from the validation split's own recorded config
 (``configs/benchmarks/calvin/merged_config.yaml``), cameras sized from
-the config, no EGL (PyBullet's CPU renderer) and no tactile sensor. The
+the config, EGL only when the install has a GPU (else PyBullet's CPU
+renderer) and no tactile sensor. The
 ``Episode`` object drives control ticks through the robot's position
 motors, the env's ``action_repeat`` physics steps per tick, and keeps
 the chain's progress.
@@ -139,19 +140,16 @@ class CalvinLoader:
     def create(self, cfg: dict, task_suite: str, task_id: int):
         import hydra
         from omegaconf import OmegaConf
-        from calvin_env.envs import play_table_env
 
-        # The env logs its checkout's git state on construction; in the
-        # container the checkout belongs to another user and git refuses
-        # the diff. The log line is all that is lost.
-        play_table_env.get_git_commit_hash = lambda path: "unavailable"
         merged = resources.files("openrua") / "configs/benchmarks/calvin/merged_config.yaml"
         conf = OmegaConf.load(str(merged))
         w, h = cfg.get("machine", {}).get("cameras", {}).get("resolution", [640, 480])
         conf.cameras.pop("tactile", None)
         for cam in conf.cameras.values():
             cam.width, cam.height = int(w), int(h)
-        env = hydra.utils.instantiate(conf.env, show_gui=False, use_vr=False, use_egl=False,
+        gpus = bool(cfg.get("machine", {}).get("backend", {}).get("gpus"))
+        env = hydra.utils.instantiate(conf.env, show_gui=False, use_vr=False,
+                                      use_egl=gpus,  # the EGL plugin needs a GPU; else TinyRenderer
                                       use_scene_info=True)
         oracle = hydra.utils.instantiate(
             OmegaConf.load(_conf_dir() / "callbacks/rollout/tasks/new_playtable_tasks.yaml"))

@@ -1,0 +1,41 @@
+diff --git a/mani_skill/envs/tasks/digital_twins/bridge_dataset_eval/base_env.py b/mani_skill/envs/tasks/digital_twins/bridge_dataset_eval/base_env.py
+index e6fd27a..f657788 100644
+--- a/mani_skill/envs/tasks/digital_twins/bridge_dataset_eval/base_env.py
++++ b/mani_skill/envs/tasks/digital_twins/bridge_dataset_eval/base_env.py
+@@ -12,7 +12,10 @@ from transforms3d.quaternions import quat2mat
+ 
+ from mani_skill import ASSET_DIR
+ from mani_skill.agents.controllers.pd_ee_pose import PDEEPoseControllerConfig
+-from mani_skill.agents.controllers.pd_joint_pos import PDJointPosMimicControllerConfig
++from mani_skill.agents.controllers.pd_joint_pos import (
++    PDJointPosControllerConfig,
++    PDJointPosMimicControllerConfig,
++)
+ from mani_skill.agents.registration import register_agent
+ from mani_skill.agents.robots.widowx.widowx import WidowX250S
+ from mani_skill.envs.tasks.digital_twins.base_env import BaseDigitalTwinEnv
+@@ -122,7 +125,23 @@ class WidowX250SBridgeDatasetFlatTable(WidowX250S):
+         controller = dict(
+             arm=arm_pd_ee_target_delta_pose_align2, gripper=gripper_pd_joint_pos
+         )
+-        return dict(arm_pd_ee_target_delta_pose_align2_gripper_pd_joint_pos=controller)
++        # A joint-position mode next to the end-effector one, from the same
++        # arm gains: what a joint-level interface (a trajectory controller)
++        # drives. The scenes, placements and predicate are unchanged.
++        arm_pd_joint_pos = PDJointPosControllerConfig(
++            joint_names=self.arm_joint_names,
++            lower=None,
++            upper=None,
++            stiffness=self.arm_stiffness,
++            damping=self.arm_damping,
++            force_limit=self.arm_force_limit,
++            friction=self.arm_friction,
++            normalize_action=False,
++        )
++        return dict(
++            arm_pd_ee_target_delta_pose_align2_gripper_pd_joint_pos=controller,
++            pd_joint_pos=dict(arm=arm_pd_joint_pos, gripper=gripper_pd_joint_pos),
++        )
+ 
+ 
+ # Tuned for the sink setup

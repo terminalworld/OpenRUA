@@ -16,6 +16,7 @@ install:
     - path: robotwin/RoboTwin
       repo: https://github.com/RoboTwin-Platform/RoboTwin.git
       commit: c3ddfa8b97d5519efa828b075999bd0006778e5e
+      patch: robotwin/eval-without-curobo.patch   # robot setup without CuRobo (GPU planner); camera shader from ROBOTWIN_SHADER
   requirements: robotwin/requirements.txt   # uv pip freeze of the venv the gate ran in (sapien 3.0.3, no CuRobo)
   shell: |
     cd {root}/robotwin/RoboTwin/assets

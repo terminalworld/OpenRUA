@@ -13,18 +13,17 @@ control loop does between planned waypoints.
 
 What this loader arranges around the checkout: its modules import by
 path from the checkout root and read assets relative to it (the
-process changes directory there, as its evaluator does); CuRobo, the
-GPU motion planner its expert uses, is not installed, so the planner
-module gets a stand-in and the robot's planner setup is skipped the
-way the community harness skips it; the ray-traced camera shader is
-replaced by SAPIEN's default (there is no GPU to trace on). The
-sentence for a task is its instruction template's ``full_description``.
+process changes directory there, as its evaluator does). The declared
+patch on the checkout (``eval-without-curobo.patch``) lets the robot
+set up without CuRobo, the GPU motion planner its expert uses, and
+reads the camera shader from ``ROBOTWIN_SHADER``: ray tracing when the
+install has a GPU, SAPIEN's default otherwise. The sentence for a task
+is its instruction template's ``full_description``.
 """
 
 from __future__ import annotations
 
 import importlib
-import importlib.util
 import json
 import os
 import sys
@@ -50,48 +49,15 @@ def _sentence(root: Path, task: str) -> str:
     return task.replace("_", " ")
 
 
-def _import_robotwin(root: Path) -> None:
-    """Make the checkout importable the way its own scripts are run."""
+def _import_robotwin(root: Path, gpus: bool) -> None:
+    """Make the checkout importable the way its own scripts are run, and
+    pick its camera shader: ray tracing on a GPU, SAPIEN's default
+    otherwise (the declared patch reads ROBOTWIN_SHADER)."""
     for p in (str(root), str(root / "policy"), str(root / "description" / "utils")):
         if p not in sys.path:
             sys.path.insert(0, p)
     os.chdir(root)
-    if "envs.robot.planner" in sys.modules:
-        return
-    import envs  # noqa: F401  the package, so relative imports resolve
-
-    spec = importlib.util.spec_from_file_location("envs.robot.planner", root / "envs/robot/planner.py")
-    planner = importlib.util.module_from_spec(spec)
-    sys.modules["envs.robot.planner"] = planner
-    spec.loader.exec_module(planner)
-    if not hasattr(planner, "CuroboPlanner"):
-        class CuroboPlanner:  # the GPU planner is not installed; nothing here plans
-            def __init__(self, *a, **k):
-                raise RuntimeError("CuRobo is not installed; the bridge drives joints directly")
-
-        planner.CuroboPlanner = CuroboPlanner
-    import sapien.render as sr
-
-    sr.set_camera_shader_dir("default")  # no ray tracing without a GPU
-    for name in ("set_ray_tracing_samples_per_pixel", "set_ray_tracing_path_depth",
-                 "set_ray_tracing_denoiser"):
-        setattr(sr, name, lambda *a, **k: None)
-    import envs.robot.robot as robot_mod
-
-    class _Grippers:
-        """What the task still asks a planner for during setup."""
-        def plan_grippers(self, now_val, target_val):
-            vals = np.linspace(now_val, target_val, 200)
-            return {"num_step": 200, "per_step": (target_val - now_val) / 200, "result": vals}
-
-        def update_point_cloud(self, *a, **k):
-            return None
-
-    def set_planner(self, scene=None):
-        self.communication_flag = False
-        self.left_planner = self.right_planner = _Grippers()
-
-    robot_mod.Robot.set_planner = set_planner
+    os.environ["ROBOTWIN_SHADER"] = "rt" if gpus else "default"
 
 
 def _args(root: Path, protocol: str, task: str, cameras: dict) -> dict:
@@ -190,7 +156,7 @@ class RoboTwinLoader:
 
     def create(self, cfg: dict, task_suite: str, task_id: int):
         root = _root()
-        _import_robotwin(root)
+        _import_robotwin(root, bool(cfg.get("machine", {}).get("backend", {}).get("gpus")))
         name = _task_names(root)[task_id]
         episode = Episode(root, task_suite, name, cfg.get("machine", {}).get("cameras", {}))
         episode.reset(0)  # the bridge resets again with the trial's episode

@@ -15,6 +15,7 @@ install:
       repo: https://github.com/mees/calvin.git
       commit: fa03f01f19c65920e18cf37398a9ce859274af76
       submodules: [calvin_env]
+      patch: calvin/log-without-git.patch   # the env's git-commit log line survives a checkout git cannot read
   requirements: calvin/requirements.txt   # uv pip freeze of the venv the gate ran in
   editable: [calvin/calvin/calvin_env, calvin/calvin/calvin_models]   # calvin_models for its evaluation helpers only
 

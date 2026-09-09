@@ -1,0 +1,68 @@
+diff --git a/envs/_base_task.py b/envs/_base_task.py
+index 982e6ec..9c32057 100644
+--- a/envs/_base_task.py
++++ b/envs/_base_task.py
+@@ -211,10 +211,12 @@ class Base_Task(gym.Env):
+         # give renderer to sapien sim
+         self.engine.set_renderer(self.renderer)
+ 
+-        sapien.render.set_camera_shader_dir("rt")
+-        sapien.render.set_ray_tracing_samples_per_pixel(32)
+-        sapien.render.set_ray_tracing_path_depth(8)
+-        sapien.render.set_ray_tracing_denoiser("oidn")
++        shader = os.environ.get("ROBOTWIN_SHADER", "rt")  # "default" where no GPU can trace rays
++        sapien.render.set_camera_shader_dir(shader)
++        if shader == "rt":
++            sapien.render.set_ray_tracing_samples_per_pixel(32)
++            sapien.render.set_ray_tracing_path_depth(8)
++            sapien.render.set_ray_tracing_denoiser("oidn")
+ 
+         # declare sapien scene
+         scene_config = sapien.SceneConfig()
+diff --git a/envs/robot/robot.py b/envs/robot/robot.py
+index 9dfc08f..fa1f999 100644
+--- a/envs/robot/robot.py
++++ b/envs/robot/robot.py
+@@ -12,10 +12,25 @@ from copy import deepcopy
+ import sapien.core as sapien
+ import envs._GLOBAL_CONFIGS as CONFIGS
+ from envs.utils import transforms
+-from .planner import CuroboPlanner
++try:
++    from .planner import CuroboPlanner
++except ImportError:  # CuRobo (GPU motion planner) not installed: joints are driven directly
++    CuroboPlanner = None
+ import torch.multiprocessing as mp
+ 
+ 
++class GripperOnlyPlanner:
++    """What setup still asks a planner for when CuRobo is absent: gripper interpolation."""
++
++    def plan_grippers(self, now_val, target_val):
++        num_step = 200
++        return {"num_step": num_step, "per_step": (target_val - now_val) / num_step,
++                "result": np.linspace(now_val, target_val, num_step)}
++
++    def update_point_cloud(self, *args, **kwargs):
++        return None
++
++
+ class Robot:
+ 
+     def __init__(self, scene, need_topp=False, **kwargs):
+@@ -255,6 +270,15 @@ class Robot:
+         print("right ee: ", self.right_ee.get_name())
+ 
+     def set_planner(self, scene=None):
++        if CuroboPlanner is None:
++            self.communication_flag = False
++            self.left_planner = self.right_planner = GripperOnlyPlanner()
++            if self.need_topp:
++                self.left_mplib_planner = MplibPlanner(self.left_urdf_path, self.left_srdf_path, self.left_move_group,
++                                                       self.left_entity_origion_pose, self.left_entity, self.left_planner_type, scene)
++                self.right_mplib_planner = MplibPlanner(self.right_urdf_path, self.right_srdf_path, self.right_move_group,
++                                                        self.right_entity_origion_pose, self.right_entity, self.right_planner_type, scene)
++            return
+         abs_left_curobo_yml_path = os.path.join(CONFIGS.ROOT_PATH, self.left_curobo_yml_path)
+         abs_right_curobo_yml_path = os.path.join(CONFIGS.ROOT_PATH, self.right_curobo_yml_path)
+ 

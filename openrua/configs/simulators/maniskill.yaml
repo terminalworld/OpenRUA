@@ -6,11 +6,17 @@
 engine: ManiSkill 3 on SAPIEN 3 (PhysX CPU)
 entry_point: maniskill       # bridge engine: joints, poses, cameras, actions over a ManiSkill env
 
-install:                     # the stock package, no checkout; rendering is Vulkan (lavapipe with no GPU)
+install:                     # ManiSkill 3.0.1 from its checkout; rendering is Vulkan (lavapipe with no GPU)
   venv: maniskill/.venv      # relative to ~/.openrua/simulators/; py3.12 == Jazzy
   ros_distro: jazzy
   python: "3.12"
-  requirements: maniskill/requirements.txt   # uv pip freeze of the venv the gate ran in
+  checkouts:
+    - path: maniskill/ManiSkill
+      repo: https://github.com/haosulab/ManiSkill.git
+      commit: a4a4f9272ad64b1564035874b605ceb687b63ed8   # tag v3.0.1
+      patch: maniskill/bridge-joint-mode.patch   # the Bridge WidowX agents get a pd_joint_pos mode from their own gains
+  requirements: maniskill/requirements.txt   # uv pip freeze of the venv the gate ran in (ManiSkill's dependencies)
+  editable: [maniskill/ManiSkill]
 
 native:                      # `openrua run <robot> --sim maniskill` with no --bench
   entry_point: maniskill     # bridge loader: gym.make on a ManiSkill task

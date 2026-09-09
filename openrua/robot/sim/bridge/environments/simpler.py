@@ -8,9 +8,10 @@ which is what loads here: the same scenes, object placements (the
 Robot tasks exist only in the SAPIEN 2 original and are not here.
 
 The Bridge WidowX ships with one control mode (an end-effector delta
-pose). The bridge drives joints, so this loader gives the real2sim
-agents a ``pd_joint_pos`` mode next to it, built from their own arm
-gains; the scenes and the predicate are untouched.
+pose); the bridge drives joints, so the ManiSkill checkout carries a
+declared patch giving the real2sim agents a ``pd_joint_pos`` mode from
+their own arm gains (``simulators/maniskill/bridge-joint-mode.patch``);
+the scenes and the predicate are untouched.
 """
 
 from __future__ import annotations
@@ -28,38 +29,6 @@ TASKS = [
 SUITES = {"bridge": TASKS}
 
 
-def _add_joint_position_mode() -> None:
-    from mani_skill.agents.controllers import PDJointPosControllerConfig
-    from mani_skill.agents.registration import register_agent
-    from mani_skill.envs.tasks.digital_twins.bridge_dataset_eval import base_env
-
-    def with_joint_pos(cls):
-        if "pd_joint_pos" in cls.__dict__.get("_openrua_modes", ()):
-            return cls
-
-        class JointPos(cls):
-            uid = cls.uid
-            _openrua_modes = ("pd_joint_pos",)
-
-            @property
-            def _controller_configs(self):
-                configs = super()._controller_configs
-                ee = next(iter(configs.values()))
-                arm = PDJointPosControllerConfig(
-                    joint_names=self.arm_joint_names, lower=None, upper=None,
-                    stiffness=self.arm_stiffness, damping=self.arm_damping,
-                    force_limit=self.arm_force_limit, friction=self.arm_friction,
-                    normalize_action=False)
-                configs["pd_joint_pos"] = dict(arm=arm, gripper=ee["gripper"])
-                return configs
-
-        JointPos.__name__ = cls.__name__
-        return register_agent(asset_download_ids=["widowx250s"], override=True)(JointPos)
-
-    for name in ("WidowX250SBridgeDatasetFlatTable", "WidowX250SBridgeDatasetSink"):
-        setattr(base_env, name, with_joint_pos(getattr(base_env, name)))
-
-
 class SimplerLoader:
     def tasks(self, cfg: dict, task_suite: str) -> list[dict]:
         return [{"task_id": i, "language": s} for i, (_, _, s) in enumerate(SUITES[task_suite])]
@@ -69,7 +38,6 @@ class SimplerLoader:
         import gymnasium as gym
         import mani_skill.envs  # noqa: F401
 
-        _add_joint_position_mode()
         env_id, name, sentence = SUITES[task_suite][task_id]
         env = gym.make(env_id, **make_kwargs(cfg, env_id))
         return env, {"task_id": task_id, "env_id": env_id, "name": name, "language": sentence}

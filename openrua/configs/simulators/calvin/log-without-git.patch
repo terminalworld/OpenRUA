@@ -1,0 +1,16 @@
+diff --git a/calvin_env/calvin_env/envs/play_table_env.py b/calvin_env/calvin_env/envs/play_table_env.py
+index ea7c348..764e5e0 100644
+--- a/calvin_env/calvin_env/envs/play_table_env.py
++++ b/calvin_env/calvin_env/envs/play_table_env.py
+@@ -72,7 +72,10 @@ class PlayTableSimEnv(gym.Env):
+             )
+             for name in cameras
+         ]
+-        log.info(f"Using calvin_env with commit {get_git_commit_hash(Path(calvin_env.__file__))}.")
++        try:
++            log.info(f"Using calvin_env with commit {get_git_commit_hash(Path(calvin_env.__file__))}.")
++        except Exception:  # the checkout may belong to another user, or have no git
++            log.info("Using calvin_env (commit unavailable).")
+ 
+     def __del__(self):
+         self.close()
