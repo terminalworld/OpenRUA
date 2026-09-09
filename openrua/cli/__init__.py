@@ -2,8 +2,9 @@
 
     openrua robots | simulators | benchmarks | agents   what is available (bundled + yours)
     openrua build [robot|sandbox|proxy]    the three images (or one of them)
-    openrua run panda --sim robosuite "pick up ..."    a robot up, the agent on it, off after
-    openrua up panda --sim robosuite       a live robot (real or simulated) with
+    openrua config set robot panda simulator robosuite   your defaults
+    openrua run "pick up the red cube"     a robot up, the agent on it, off after
+    openrua up                             a live robot (real or simulated) with
                                            a sandbox terminal on its ROS 2 graph
     openrua agent                          open a coding agent on that terminal
     openrua down                           power everything off

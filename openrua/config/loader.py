@@ -197,6 +197,8 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
     """
     defaults = load_user_config(paths.package_config_path())
     user = load_user_config(paths.config_path(home))
+    explicit_sim = sim
+    bench = bench or user.benchmark or defaults.benchmark
     b = bench_path = None
     if bench:
         bench_path = paths.find("benchmarks", bench, home)
@@ -204,17 +206,18 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
         robot = robot or b.get("robot") or user.robot
         sim = sim or b.get("simulator")
     else:
-        robot = robot or user.robot
+        robot = robot or user.robot or defaults.robot
+    sim = sim or user.simulator or defaults.simulator
     if b is not None and b.get("machine") and not robot:
         machine, simulator, robot = b["machine"], None, "(inline machine:)"
     else:
         if not robot:
             raise UsageError("name a robot",
-                             hint="openrua robots lists them; a benchmark config or "
-                                  f"robot: in {paths.config_path(home)} can name a default")
+                             hint="openrua robots lists them; openrua config set robot <name> "
+                                  "makes one the default")
         kind, r = load_robot(robot, home)
         if kind == "instance":
-            if sim and not (b and b.get("simulator") == sim):
+            if explicit_sim and not (b and b.get("simulator") == explicit_sim):
                 raise UsageError(f"{robot} is a robot instance with its own machine: "
                                  "and takes no --sim")
             machine, simulator = _instance_machine(r, home), None
@@ -222,7 +225,8 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
             if not sim:
                 raise UsageError(f"{robot} is a robot type: name the simulator that "
                                  "embodies it (--sim) or a benchmark (--bench)",
-                                 hint="openrua simulators / openrua benchmarks list them")
+                                 hint="openrua simulators / openrua benchmarks list them; "
+                                      "openrua config set simulator <name> makes one the default")
             s = load_simulator(sim, home)
             embodiments = [e for e in (s["robots"].get(robot),
                                        (b or {}).get("scenes", {}).get("robots", {}).get(robot))

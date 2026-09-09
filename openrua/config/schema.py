@@ -547,6 +547,11 @@ class UserConfig(Strict):
     agent: AgentOverrides = Field(default_factory=AgentOverrides, description="agent "
                                   "defaults; only the keys written are layered in")
     robot: str | None = Field(default=None, description="robot when a command names none")
+    simulator: str | None = Field(default=None, description="simulator when a command "
+                                  "names none (and the robot is a type)")
+    benchmark: str | None = Field(default=None, description="benchmark whose world "
+                                  "openrua run / up load when --bench is not given; null = "
+                                  "the simulator's native scene")
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig, description="how this "
                                    "machine starts the sandbox")
 
