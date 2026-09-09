@@ -46,3 +46,18 @@ def test_a_loader_file_of_your_own_and_the_holes_it_can_have(tmp_path):
         environment.load(str(tmp_path / "hole.py"))
     with pytest.raises(ModuleNotFoundError):
         environment.load("openrua.robot.sim.bridge.environments.no_such")
+
+
+def test_robocerebra_cases_are_numbered_and_goals_parsed(tmp_path):
+    from openrua.robot.sim.bridge.environments import robocerebra
+    root = tmp_path / "RoboCerebra_Bench"
+    for n in (1, 10, 2):
+        d = root / "Ideal" / f"case{n}"
+        d.mkdir(parents=True)
+        (d / "scene.bddl").write_text("")
+    (root / "Ideal" / "notes").mkdir()                       # no bddl: not a case
+    cases = robocerebra._cases(root, "Ideal")
+    assert [c.name for c in cases] == ["case1", "case2", "case10"]   # numeric, not lexical
+    with pytest.raises(FileNotFoundError, match="have: Ideal"):
+        robocerebra._cases(root, "Mix")
+    assert robocerebra._bench_root({"task": {"dataset_root": str(root)}}) == root

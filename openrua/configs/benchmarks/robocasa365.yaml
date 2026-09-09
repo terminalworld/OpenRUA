@@ -6,7 +6,7 @@
 # and split stay theirs.
 # Sections: task / protocol / agent / robot + simulator / install / scenes.
 
-entry_point: robocasa   # the bridge loader: bundled name, or ./path to a module of your own
+entry_point: robocasa365   # the bridge loader: bundled name, or ./path to a module of your own
 task:
   benchmark: robocasa365
   # The official target50 evaluation set, copied out of their

@@ -1,0 +1,72 @@
+# LIBERO-Plus benchmark config (sylvestf/LIBERO-plus, arXiv 2510.13626): the
+# four standard LIBERO suites replaced by ~10,030 perturbed variants across
+# seven axes (object layout, camera viewpoint, robot initial state, language,
+# lighting, background texture, sensor noise). Their protocol runs each
+# variant once. Their fork installs as the ``libero`` package, so it has a
+# venv of its own. The sensor-noise axis is applied by their env wrapper to
+# the observation images; the bridge publishes the renderer's frames, so
+# that axis does not reach the agent's cameras here.
+
+entry_point: libero   # the LIBERO family loader
+task:
+  benchmark: libero_plus
+  suites: [libero_spatial, libero_object, libero_goal, libero_10]  # 2402 + 2518 + 2591 + 2519 variants
+  init_states: benchmark-files    # the base task's init file, as their get_task_init_states resolves it
+
+protocol:
+  trials_per_task: 1
+  max_turns: 500
+  active_wall_clock_minutes: 240
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:
+  name: claude-code
+  model: claude-opus-5
+  options:
+    effort: high
+
+robot: panda
+simulator: robosuite
+
+install:
+  venv: libero-plus/.venv
+  ros_distro: jazzy
+  python: "3.12"
+  checkouts:
+    - path: libero-plus
+      repo: https://github.com/sylvestf/LIBERO-plus.git
+      commit: 4976dc30028e805ff8094b55501d532c48fec182
+      patch: libero_plus/py312.patch   # torch.load on current torch (the fix LIBERO-PRO carries)
+    - path: cap-x             # LIBERO-PRO's robosuite 1.4 fork, the one that runs on Python 3.12
+      repo: https://github.com/capgym/cap-x.git
+      commit: 53e9966d7a8e2fa7494676772bccc35280f5c0ed
+      submodules: [capx/third_party/libero_dependencies/robosuite]
+  requirements: libero_plus/requirements.txt
+  editable: [libero-plus, cap-x/capx/third_party/libero_dependencies/robosuite]
+  # Their assets (new objects, textures, scenes; 6.4 GB) come from Hugging Face.
+  shell: |
+    ASSETS={root}/libero-plus/libero/libero/assets
+    if [ ! -d "$ASSETS/new_objects" ]; then
+      note "downloading LIBERO-plus assets (6.4G)"
+      TMP={root}/libero-plus/.download   # under the simulators directory, not /tmp: 6.4G
+      mkdir -p "$TMP"
+      [ -f "$TMP/assets.zip" ] || run curl -L "https://huggingface.co/datasets/Sylvest/LIBERO-plus/resolve/main/assets.zip?download=true" -o "$TMP/assets.zip.part" && mv -f "$TMP/assets.zip.part" "$TMP/assets.zip"
+      run unzip -q "$TMP/assets.zip" -d "$TMP/x"
+      mv "$(find "$TMP/x" -type d -name assets -print -quit)" "$ASSETS"
+      rm -rf "$TMP"
+    fi
+
+scenes:
+  default_suite: libero_spatial
+  cameras:
+    resolution: [640, 480]
+    list: null            # publish every camera the scene defines
+    rate_hz: 2
+    record: [agentview, robot0_eye_in_hand]
+  robots:
+    panda:
+      controller_kp_scale: 10  # robosuite 1.4: stock kp=50 tracks ~15% of a 20 Hz setpoint

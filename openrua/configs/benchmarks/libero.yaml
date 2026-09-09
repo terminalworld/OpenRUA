@@ -1,0 +1,58 @@
+# LIBERO benchmark config (the original suites: Lifelong-Robot-Learning/LIBERO,
+# arXiv 2310.07899). The suites run from the LIBERO-PRO fork that the
+# libero_pro benchmark installs: it carries the original bddl and init
+# files unchanged, so one venv serves both.
+
+entry_point: libero   # the bridge loader, shared with libero_pro
+task:
+  benchmark: libero
+  # The four standard suites (10 tasks each) plus LIBERO-90 (90 tasks);
+  # each task has 50 fixed init states.
+  suites: [libero_spatial, libero_object, libero_goal, libero_10, libero_90]
+  init_states: benchmark-files    # fixed .init files, never random
+
+protocol:
+  trials_per_task: 10    # seeds index the init files in order; 50 is the
+                         # benchmark's full grid
+  max_turns: 500
+  active_wall_clock_minutes: 240
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:
+  name: claude-code
+  model: claude-opus-5
+  options:
+    effort: high
+
+robot: panda              # configs/robots/panda.yaml
+simulator: robosuite      # configs/simulators/robosuite.yaml; LIBERO ships its own fork of it
+
+install:                  # the same install as libero_pro: one venv, one lock
+  venv: cap-x/.venv-libero
+  ros_distro: jazzy
+  python: "3.12"
+  checkouts:
+    - path: cap-x
+      repo: https://github.com/capgym/cap-x.git
+      commit: 53e9966d7a8e2fa7494676772bccc35280f5c0ed
+      submodules: [capx/third_party/sam3, capx/third_party/robosuite,
+                   capx/third_party/LIBERO-PRO, capx/third_party/libero_dependencies/robosuite]
+      patch: ../simulators/robosuite/capx-pyproject.patch
+  requirements: libero_pro/requirements.txt
+  editable: [cap-x/capx/third_party/LIBERO-PRO, cap-x/capx/third_party/libero_dependencies/robosuite]
+
+scenes:
+  default_suite: libero_spatial
+  cameras:
+    resolution: [640, 480]
+    list: null            # publish every camera the scene defines
+    rate_hz: 2
+    record: [agentview, robot0_eye_in_hand]
+  robots:
+    panda:
+      controller_kp_scale: 10  # LIBERO's robosuite 1.4: stock kp=50 tracks ~15% of a
+                               # 20 Hz setpoint; measured gain: x10 -> 0.92, x20 overshoots

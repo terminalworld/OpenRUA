@@ -65,7 +65,12 @@ class Task(Strict):
     init_states: str | None = Field(
         default=None, description="how episodes start (documentation of the "
         "loader's behaviour): benchmark-files | seeded-reset")
-    split: str = Field(default="target", description="robocasa: object/layout split")
+    split: str = Field(default="target", description="robocasa: object/layout split "
+                       "(robocasa365: target | pretrain | all; robocasa: eval | train | all)")
+    dataset_root: str | None = Field(default=None, description="a benchmark dataset kept "
+                                     "outside its checkout (robocerebra: the "
+                                     "RoboCerebra_Bench directory); default: next to the "
+                                     "checkout")
     task_language: dict[str, str] = Field(
         default_factory=dict, description="capbench: task name -> instruction")
 

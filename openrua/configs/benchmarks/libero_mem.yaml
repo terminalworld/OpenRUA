@@ -1,0 +1,62 @@
+# LIBERO-Mem benchmark config (libero-mem/libero-mem, arXiv 2511.11478):
+# ten non-Markovian kitchen tasks whose goals are sequences of subgoals
+# over visually identical objects. Their fork installs as the ``libero``
+# package, with its own robosuite and robomimic, so it has a venv of its
+# own. Their predicate advances a subgoal state machine when called with
+# inc=True; the bridge calls it that way on every step, as their loop does.
+# The fork ships init-state files for four of the ten tasks; the other six
+# start from a seeded reset.
+
+entry_point: libero   # the LIBERO family loader
+task:
+  benchmark: libero_mem
+  suites: [libero_mem]            # 10 tasks
+  init_states: benchmark-files    # four tasks; seeded-reset for the six without a file
+
+protocol:
+  trials_per_task: 10
+  max_turns: 500
+  active_wall_clock_minutes: 240
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:
+  name: claude-code
+  model: claude-opus-5
+  options:
+    effort: high
+
+robot: panda
+simulator: robosuite
+
+install:
+  venv: libero-mem/.venv
+  ros_distro: jazzy
+  python: "3.12"
+  checkouts:
+    - path: libero-mem
+      repo: https://github.com/libero-mem/libero-mem.git
+      commit: 0eee0defa4024e51511b6e15a79f30e9620209de
+      patch: libero_mem/py312.patch   # their robosuite EGL context on current PyOpenGL, torch.load on current torch (fixes LIBERO-PRO carries)
+  requirements: libero_mem/requirements.txt
+  editable: [libero-mem, libero-mem/thirdparty/robomimic, libero-mem/thirdparty/robosuite]
+  # The init-state files they ship live under scripts/; the benchmark reads
+  # them from init_files/libero_mem/.
+  shell: |
+    L={root}/libero-mem/libero/libero
+    mkdir -p "$L/init_files/libero_mem"
+    cp -n {root}/libero-mem/scripts/__init_data/*.pruned_init "$L/init_files/libero_mem/" 2>/dev/null || true
+
+scenes:
+  default_suite: libero_mem
+  cameras:
+    resolution: [640, 480]
+    list: null            # publish every camera the scene defines
+    rate_hz: 2
+    record: [agentview, robot0_eye_in_hand]
+  robots:
+    panda:
+      controller_kp_scale: 10  # robosuite 1.4: stock kp=50 tracks ~15% of a 20 Hz setpoint

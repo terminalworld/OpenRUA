@@ -19,6 +19,7 @@ import subprocess
 from pathlib import Path
 
 from openrua import __version__
+from openrua.errors import OpenRUAError
 
 PACKAGE_GIT = "https://github.com/terminalworld/OpenRUA"
 
@@ -86,12 +87,18 @@ def render(install: dict, what: str, simulators_dir: Path, code_root: Path) -> s
         lines.append(f'run uv pip install -q --python "$VENV/bin/python" -r '
                      f'{shlex.quote(install["requirements"])}')
     editables = [f"-e {_q(Path('$ROOT') / e)}" for e in install.get("editable") or []]
+    if editables:
+        # compat mode: a path line in a .pth, not setuptools' import hook,
+        # which loses packages whose top-level directory holds a
+        # same-named subpackage (the LIBERO forks: libero/libero).
+        lines.append('CUDA_HOME="${CUDA_HOME:-/usr}" run uv pip install -q --python '
+                     '"$VENV/bin/python" --no-deps --config-setting editable_mode=compat '
+                     + " ".join(editables))
     if (code_root / "pyproject.toml").is_file():
         ours = f"-e {shlex.quote(str(code_root))}"
     else:
         ours = shlex.quote(f"openrua @ git+{PACKAGE_GIT}@v{__version__}")
-    lines.append('CUDA_HOME="${CUDA_HOME:-/usr}" run uv pip install -q --python '
-                 '"$VENV/bin/python" --no-deps ' + " ".join(editables + [ours]))
+    lines.append(f'run uv pip install -q --python "$VENV/bin/python" --no-deps {ours}')
     lines.append('note "$VENV: $("$VENV/bin/python" -V)"')
     if install.get("shell"):
         tail = install["shell"].replace("{root}", '"$ROOT"').replace("{venv}", '"$VENV"')
@@ -111,5 +118,10 @@ def _q(p: Path) -> str:
 
 
 def run(script: Path) -> None:
-    """Run a rendered script with bash; its output is the user's."""
-    subprocess.run(["bash", str(script)], check=True)
+    """Run a rendered script with bash; its output is the user's. A
+    failing step ends the script (set -e), and the error names it."""
+    r = subprocess.run(["bash", str(script)])
+    if r.returncode != 0:
+        raise OpenRUAError(f"install script failed (exit {r.returncode}): {script}",
+                           hint="the failing step is the last command printed above; fix "
+                                f"it and rerun, or run bash {script} by hand")

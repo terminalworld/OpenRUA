@@ -158,6 +158,10 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             probe_argv=graph_probe(sandbox_name),
             record=str(dest / "frames") if record_cameras is not None else None,
             record_cameras=record_cameras or (),
+            # A venv's editable installs may point into sibling checkouts
+            # (a LIBERO fork's venv uses cap-x's robosuite): the whole
+            # simulators directory is visible, by its real path.
+            mounts=(str(paths.simulators_dir(home).resolve()),),
         )
         machine.wait_ready()
     except BaseException:
