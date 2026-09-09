@@ -252,7 +252,7 @@ may import whom is enforced by CI (import-linter and
 
 ```bibtex
 @software{openrua,
-  author  = {Chu, Zhaoyang},
+  author  = {{Terminal World Labs}},
   title   = {OpenRUA},
   year    = {2026},
   url     = {https://github.com/terminalworld/OpenRUA},

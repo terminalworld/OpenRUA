@@ -3,8 +3,6 @@ message: "If you use this software, please cite it as below."
 type: software
 title: OpenRUA
 authors:
-  - family-names: Chu
-    given-names: Zhaoyang
-    affiliation: University College London
+  - name: Terminal World Labs
 repository-code: https://github.com/terminalworld/OpenRUA
 license: Apache-2.0
