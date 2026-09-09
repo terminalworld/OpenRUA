@@ -74,7 +74,8 @@ CDI specs"; leave `gpus` unset for software rendering.
 
 Podman 6.1 (netavark, aardvark-dns), rootless, Ubuntu 24.04: name
 resolution inside an `--internal` network, no egress from it, stdin
-piping with `run -i`, `ps --filter name=^x$`, `exec --env-file`,
+piping with `run -i`, `ps --filter name=^x$` and `--filter network=`,
+`inspect` (env and start time), `exec --env-file`,
 `--restart unless-stopped`, and the ownership behaviour above. Older
 Podman (before 4.0, CNI networking) has no DNS on internal networks and
 is not supported.
