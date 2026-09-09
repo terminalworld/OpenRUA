@@ -50,7 +50,7 @@ Install, choose a robot and a simulator once, run:
 ```bash
 pip install git+https://github.com/terminalworld/OpenRUA
 openrua build                                       # the three images, once
-openrua config set robot panda simulator robosuite  # your defaults, in ~/.openrua/config.yaml
+openrua config set --robot panda --sim robosuite --agent claude-code   # your defaults
 openrua run "pick up the red cube"
 ```
 
