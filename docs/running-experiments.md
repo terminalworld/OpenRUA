@@ -59,6 +59,13 @@ same trial moves the previous attempt under `attempts/` and never
 overwrites it. Two runs never share a directory: name a new
 `--run-id` when the task set changes.
 
+Runs share a machine without arrangement: each bring-up takes the
+lowest ROS domain no running container on the internal network uses,
+so two `openrua bench` (or a `bench` beside an `openrua run`) never
+share a DDS graph; the domain is in `result.json` and `provenance.json`.
+`--ros-domain` pins one by hand, which a real robot needs (its graph
+has a domain already).
+
 While an attempt runs, its trial directory carries a claim (`.running`:
 process, host, container stem, start time); a second `openrua bench` on
 the same trial refuses to start while the claim is live, and takes over

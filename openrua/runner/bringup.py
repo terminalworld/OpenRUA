@@ -9,13 +9,15 @@ through the one mount it has on that directory.
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Callable
 
 from openrua import robot
 from openrua.config import paths
-from openrua.errors import NotFound
+from openrua.errors import NotFound, UnavailableError
 from openrua import proxy
 from openrua.proxy.up import url_from_network as proxy_url_from_network
 from openrua.runner import record
@@ -101,11 +103,92 @@ def simulator_venv(backend: dict, home: Path | None = None) -> Path:
     return paths.simulator_venv(backend["simulator"]["venv"], home)
 
 
+# ROS_DOMAIN_ID values that keep DDS on its default ports (ROS 2 documents
+# 0-101 as safe on Linux); the higher range is reserved for hand-picked ids.
+DOMAINS = range(0, 102)
+
+
+def domains_in_use(network: str) -> dict[int, tuple[str, str]]:
+    """``{ROS_DOMAIN_ID: (started_at, container)}`` over the containers on
+    ``network``, keeping the earliest-started container per domain.
+
+    Read from the containers themselves, never from bookkeeping: a
+    container that is up is the fact that matters, and only containers
+    on this network can hear each other's DDS traffic. A daemon that
+    cannot be asked is not evidence that nothing is running, so the
+    answer is then "unknown" (an exception), not "free".
+    """
+    names = subprocess.run(
+        ["docker", "network", "inspect", network, "--format",
+         "{{range .Containers}}{{.Name}} {{end}}"],
+        capture_output=True, text=True, timeout=30, check=True).stdout.split()
+    if not names:
+        return {}
+    infos = json.loads(subprocess.run(
+        ["docker", "inspect", *names],
+        capture_output=True, text=True, timeout=60, check=True).stdout)
+    used: dict[int, tuple[str, str]] = {}
+    for info in infos:
+        env = dict(e.split("=", 1) for e in info["Config"].get("Env") or [] if "=" in e)
+        if "ROS_DOMAIN_ID" not in env:
+            continue
+        try:
+            domain = int(env["ROS_DOMAIN_ID"])
+        except ValueError:
+            continue
+        # RFC 3339 UTC timestamps of one fixed shape compare as strings.
+        claim = (info["State"]["StartedAt"], info["Name"].lstrip("/"))
+        if domain not in used or claim < used[domain]:
+            used[domain] = claim
+    return used
+
+
+def free_domain(used: dict[int, tuple[str, str]]) -> int:
+    """The lowest domain no container uses."""
+    for d in DOMAINS:
+        if d not in used:
+            return d
+    raise UnavailableError(f"every ROS domain {DOMAINS.start}-{DOMAINS.stop - 1} is in use",
+                           hint="wait for a robot to power off, or pass --ros-domain")
+
+
+def claim_domain(network: str, requested: int | None,
+                 start: Callable[[int], str], stop: Callable[[str], None]) -> int:
+    """Start the first container of a bring-up on a ROS domain nobody
+    else on ``network`` uses, and return the domain.
+
+    A requested domain is taken as given. Otherwise the lowest free one
+    is tried: ``start(domain)`` starts the container (returning its
+    name), then the network is read again, because between reading and
+    starting another bring-up may have chosen the same number. The
+    earlier-started container keeps the domain; the later one is stopped
+    with ``stop(name)`` and the next free domain is tried. Bounded by the
+    number of domains, so two bring-ups racing each other converge.
+    """
+    if requested is not None:
+        start(requested)
+        return requested
+    tried: set[int] = set()
+    while True:
+        used = domains_in_use(network)
+        domain = free_domain({**used, **{d: ("", "") for d in tried}})
+        name = start(domain)
+        holder = domains_in_use(network).get(domain)
+        if holder is None or holder[1] == name:
+            print(f"[bringup] ROS_DOMAIN_ID {domain}: lowest free on {network}", flush=True)
+            return domain
+        print(f"[bringup] ROS_DOMAIN_ID {domain} was taken by {holder[1]} first; "
+              "trying the next", flush=True)
+        stop(name)
+        tried.add(domain)
+
+
 def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
              task_suite: str, task_id: int, network: str, proxy_url: str,
-             mounts: tuple[str, ...], ros_domain: int, robot_log: Path,
+             mounts: tuple[str, ...], ros_domain: int | None, robot_log: Path,
              home: Path | None = None,
-             record_cameras: tuple[str, ...] | None = None) -> tuple[Path, robot.Handle]:
+             record_cameras: tuple[str, ...] | None = None
+             ) -> tuple[Path, robot.Handle, int]:
     """Write the config, start the sandbox, then the robot.
 
     Sandbox first: the robot's ROS_STATIC_PEERS must resolve the
@@ -114,27 +197,40 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     party reads that same file; files the robot opens by path are copied
     next to it first (resolve_robot_files).
 
-    Returns the config path and the robot's handle, ready (``wait_ready``
-    done). If the robot fails to come up, the sandbox this call started
-    is torn down before the error propagates: the caller never inherits
-    half a bring-up. ``record_cameras`` (camera names; empty = the
-    profile's ``cameras.record``) makes the robot write its frames to
+    ``ros_domain`` None means: a simulated robot takes the lowest ROS
+    domain no container on the internal network uses (claim_domain), so
+    concurrent bring-ups on one machine never share a DDS graph; a real
+    robot joins its own graph, domain 0 unless told otherwise.
+
+    Returns the config path, the robot's handle, ready (``wait_ready``
+    done), and the domain the pair runs on. If the robot fails to come
+    up, the sandbox this call started is torn down before the error
+    propagates: the caller never inherits half a bring-up.
+    ``record_cameras`` (camera names; empty = the profile's
+    ``cameras.record``) makes the robot write its frames to
     ``dest/frames``; None records nothing.
     """
     resolve_robot_files(cfg, dest, home)
     config_path = record.write_config(dest, cfg)
     backend = cfg.get("machine", {}).get("backend", {})
     reach = sandbox_reachability(backend, network, sim_name, proxy_url)
-    sandbox_up(
-        cfg,
-        dest / "workspace",
-        image=backend["sandbox_image"],
-        run_args=tuple(cfg.get("sandbox", {}).get("run_args", [])),
-        ros_domain=ros_domain,
-        name=sandbox_name,
-        mounts=mounts,
-        **reach,
-    )
+
+    def start_sandbox(domain: int) -> str:
+        sandbox_up(
+            cfg,
+            dest / "workspace",
+            image=backend["sandbox_image"],
+            run_args=tuple(cfg.get("sandbox", {}).get("run_args", [])),
+            ros_domain=domain,
+            name=sandbox_name,
+            mounts=mounts,
+            **reach,
+        )
+        return sandbox_name
+
+    if backend.get("kind") != "sim":
+        ros_domain = 0 if ros_domain is None else ros_domain
+    ros_domain = claim_domain(network, ros_domain, start_sandbox, sandbox_down)
     machine = None
     try:
         # The container mounts and runs the venv by this string, and a
@@ -169,7 +265,7 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             machine.shutdown()
         sandbox_down(sandbox_name)
         raise
-    return config_path, machine
+    return config_path, machine, ros_domain
 
 
 def resolve_robot_files(cfg: dict, dest: Path, home: Path | None = None) -> None:

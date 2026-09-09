@@ -218,7 +218,9 @@ options:
   --workspace WORKSPACE
                         working directory (default: <home>/workspaces/<name>)
   --ros-domain ROS_DOMAIN
-                        ROS_DOMAIN_ID; concurrent robots need distinct ones
+                        ROS_DOMAIN_ID (default: the lowest one no running
+                        robot uses, so concurrent robots never share a graph;
+                        a real robot: its own domain, 0)
 ```
 
 ## openrua up
@@ -260,7 +262,9 @@ options:
   --workspace WORKSPACE
                         working directory (default: <home>/workspaces/<name>)
   --ros-domain ROS_DOMAIN
-                        ROS_DOMAIN_ID; concurrent robots need distinct ones
+                        ROS_DOMAIN_ID (default: the lowest one no running
+                        robot uses, so concurrent robots never share a graph;
+                        a real robot: its own domain, 0)
 ```
 
 ## openrua agent
@@ -295,10 +299,11 @@ options:
 ## openrua bench
 
 ```
-usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM] --run-id
-                     RUN_ID --task-suite TASK_SUITE [--task-ids TASK_IDS]
-                     [--seeds SEEDS] [--operator {agent,none,script}]
-                     [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
+usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
+                     --run-id RUN_ID --task-suite TASK_SUITE
+                     [--task-ids TASK_IDS] [--seeds SEEDS]
+                     [--operator {agent,none,script}] [--task TASK]
+                     [--script SCRIPT] [--record [CAMERAS]]
                      [--wall-clock-min WALL_CLOCK_MIN]
                      [--ros-domain ROS_DOMAIN]
                      [--credentials-dir CREDENTIALS_DIR]
@@ -336,9 +341,10 @@ options:
                         protocol.active_wall_clock_minutes (the config is the
                         default's single source)
   --ros-domain ROS_DOMAIN
-                        ROS_DOMAIN_ID for this run's containers; concurrent
-                        runs must use distinct domains (one DDS network would
-                        cross-talk)
+                        ROS_DOMAIN_ID for this run's containers (default: each
+                        trial takes the lowest domain no running container
+                        uses, so concurrent runs never share a DDS graph; a
+                        real robot: its own domain, 0)
   --credentials-dir CREDENTIALS_DIR
                         agent login-profile override (default: the config's
                         agent.credentials_dir, then

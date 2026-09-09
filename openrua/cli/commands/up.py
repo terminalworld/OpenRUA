@@ -103,7 +103,7 @@ def open_session(args) -> Session:
     print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
           flush=True)
     try:
-        _, machine = bring_up(
+        _, machine, _ = bring_up(
             cfg, workdir, sim_name, sandbox_name, suite, task_id, network, proxy_url,
             adapter.sandbox_mounts(cfg_dir, creds_file), args.ros_domain,
             robot_log=workdir / "robot.log", home=args.home)
@@ -180,8 +180,10 @@ def add_options(p) -> None:
     p.add_argument("--agent", default=None, help="agent to open (default: the config's)")
     p.add_argument("--workspace", default=None,
                    help="working directory (default: <home>/workspaces/<name>)")
-    p.add_argument("--ros-domain", type=int, default=0,
-                   help="ROS_DOMAIN_ID; concurrent robots need distinct ones")
+    p.add_argument("--ros-domain", type=int, default=None,
+                   help="ROS_DOMAIN_ID (default: the lowest one no running robot "
+                        "uses, so concurrent robots never share a graph; a real "
+                        "robot: its own domain, 0)")
 
 
 def add_parser(sub) -> None:

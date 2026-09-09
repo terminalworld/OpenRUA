@@ -67,9 +67,10 @@ def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> Non
         "(the config is the default's single source)",
     )
     ap.add_argument(
-        "--ros-domain", type=int, default=0,
-        help="ROS_DOMAIN_ID for this run's containers; concurrent runs "
-        "must use distinct domains (one DDS network would cross-talk)",
+        "--ros-domain", type=int, default=None,
+        help="ROS_DOMAIN_ID for this run's containers (default: each trial "
+        "takes the lowest domain no running container uses, so concurrent "
+        "runs never share a DDS graph; a real robot: its own domain, 0)",
     )
     ap.add_argument(
         "--credentials-dir", default=None,

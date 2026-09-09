@@ -25,7 +25,7 @@ def _harness(monkeypatch, tmp_path):
     handle = _Handle()
     monkeypatch.setattr(trial, "ensure_internal_network", lambda: "net")
     monkeypatch.setattr(trial, "ensure_proxy", lambda net: "http://p:8888")
-    monkeypatch.setattr(trial, "bring_up", lambda *a, **k: (tmp_path / "config.yaml", handle))
+    monkeypatch.setattr(trial, "bring_up", lambda *a, **k: (tmp_path / "config.yaml", handle, 0))
     monkeypatch.setattr(trial, "sandbox_down", lambda name: None)
     monkeypatch.setattr(trial, "run_preflight",
                         lambda cfg, sandbox, agent: {"ok": True, "checks": [("x", True)], "failed": []})
