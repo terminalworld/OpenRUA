@@ -53,10 +53,11 @@ testpaths = ["tests"]
 #   robot       the machine the agent operates, provided by a backend
 #               (sim/ or real/; up() dispatches on backend.kind). The
 #               host side is data-fed; sim/bridge/ is the simulated
-#               robot's own software (container: environments + ros +
-#               rpc + main). Inside the bridge the three parts never see
-#               each other (parameters only, passed by main). Host code
-#               never imports the bridge (rclpy lives in the container).
+#               robot's own software (container: environments + engines
+#               + ros + rpc + main). Inside the bridge the four parts
+#               never see each other (parameters only, passed by main).
+#               Host code never imports the bridge (rclpy lives in the
+#               container).
 #   sandbox     the agent's terminal: machine + config -> live sandbox
 #               container with the workspace docs seeded; imports no
 #               other layer (what the agent experiences knows nothing
@@ -112,9 +113,9 @@ source_modules = ["openrua.robot.base", "openrua.robot.real", "openrua.robot.sim
 forbidden_modules = ["openrua.cli", "openrua.runner", "openrua.sandbox", "openrua.proxy", "openrua.agents", "openrua.config", "openrua.robot.sim.bridge"]
 
 [[tool.importlinter.contracts]]
-name = "environments, ros, rpc never see each other (parameters only)"
+name = "environments, engines, ros, rpc never see each other (parameters only)"
 type = "independence"
-modules = ["openrua.robot.sim.bridge.environments", "openrua.robot.sim.bridge.ros", "openrua.robot.sim.bridge.rpc"]
+modules = ["openrua.robot.sim.bridge.environments", "openrua.robot.sim.bridge.engines", "openrua.robot.sim.bridge.ros", "openrua.robot.sim.bridge.rpc"]
 
 [[tool.importlinter.contracts]]
 name = "sandbox imports no other unit (what the agent experiences knows nothing about scoring)"

@@ -286,8 +286,9 @@ def resolve_robot_files(cfg: dict, dest: Path, home: Path | None = None) -> None
     named there by absolute path, so the container sees them through
     the one mount it has on that directory and the config stays
     self-contained: ``machine.controller_config`` (a bundled name under
-    ``robots/controllers/`` or a path) and ``task.loader`` when it is a
-    file of your own (a bundled module path is left alone)."""
+    ``robots/controllers/`` or a path), and ``task.loader`` and
+    ``machine.backend.simulator.engine`` when they are files of your own
+    (a bundled module path is left alone)."""
     del home
     machine = cfg.get("machine", {})
     spec = machine.get("controller_config")
@@ -303,6 +304,10 @@ def resolve_robot_files(cfg: dict, dest: Path, home: Path | None = None) -> None
     loader = cfg.get("task", {}).get("loader")
     if loader and loader.endswith(".py"):
         cfg["task"]["loader"] = _stage(Path(loader), dest)
+    simulator = machine.get("backend", {}).get("simulator", {})
+    engine = simulator.get("engine")
+    if engine and engine.endswith(".py"):
+        simulator["engine"] = _stage(Path(engine), dest)
 
 
 def _stage(src: Path, dest: Path) -> str:

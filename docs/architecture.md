@@ -16,7 +16,7 @@ is visible to the agent.
 
 | Unit | Role | Front door |
 |---|---|---|
-| `openrua/robot/` | the machine, provided by a backend (`up()` dispatches on `machine.backend.kind`). `sim/`: image build, container up/down, the host-side client, and `bridge/`, the simulated robot's own software (`environments/`, `ros/`, `rpc.py`, `main.py`). `real/`: an optional launch command (on the host or in a driver image), a handle that waits for the graph, and `probe.py` (a profile draft from the graph). | `python -m openrua.robot.sim.build` |
+| `openrua/robot/` | the machine, provided by a backend (`up()` dispatches on `machine.backend.kind`). `sim/`: image build, container up/down, the host-side client, and `bridge/`, the simulated robot's own software (`environments/`, `engines/`, `ros/`, `rpc.py`, `main.py`). `real/`: an optional launch command (on the host or in a driver image), a handle that waits for the graph, and `probe.py` (a profile draft from the graph). | `python -m openrua.robot.sim.build` |
 | `openrua/sandbox/` | the agent's terminal: an Ubuntu + ROS 2 container with the agent installed and `workspace/` seeded (README, `machine.yaml`, four docs, a few tools). | `python -m openrua.sandbox` |
 | `openrua/proxy/` | a whitelist HTTP proxy, the sandbox's only route out. | `python -m openrua.proxy` |
 | `openrua/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, the module each names under `entry_point`), the launcher, credentials staging, the prompts. | `python -m openrua.agents launch` |
@@ -46,7 +46,7 @@ files under `runs/`.
 
 ```
 openrua/configs/{robots,simulators,benchmarks,agents}/   bundled declarations, ship in the wheel
-openrua/plugins/agents/, openrua/robot/sim/bridge/environments/   the code bundled entry_points name
+openrua/plugins/agents/, openrua/robot/sim/bridge/{environments,engines}/   the code bundled entry_points name
 ~/.openrua/                                             the user directory ($OPENRUA_HOME, --home); written by the tool, not by hand
   config.yaml                                            your defaults (openrua config set)
   credentials/<agent>/                                   login profiles
@@ -64,8 +64,12 @@ shared ones go.
 
 - Nothing host-side imports `openrua.robot.sim.bridge` (it lives in the
   container, with rclpy).
-- Inside the bridge, `environments/`, `ros/` and `rpc.py` never import
-  each other; `main.py` wires them with parameters.
+- Inside the bridge, `environments/`, `engines/`, `ros/` and `rpc.py`
+  never import each other; `main.py` wires them with parameters. A
+  physics engine is named in `engines/` and nowhere else: the ROS side
+  and the control line read joints, poses and cameras and assemble
+  actions through the bound engine (`ENGINE_INTERFACE`), the way the
+  monitor scores through the loader (`LOADER_INTERFACE`).
 - The bridge imports nothing from openrua outside itself, the shared
   leaves included: it can be installed on its own inside the container
   and reads absolute paths and validated dicts from the resolved config

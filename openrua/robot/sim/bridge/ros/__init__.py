@@ -6,7 +6,8 @@ and the paused-clock stepping that ties graph commands to sim steps.
 Graph shape copies franka_ros2 naming verbatim; zero invention.
 
 Zero truth, zero evaluation: no success predicate, no reset, no episode
-state lives here. Zero knowledge of the sibling environment package: the
-env, the sim-owner thread, and the config arrive as plain constructor
-parameters (boot.py does the passing).
+state lives here. Zero knowledge of the sibling environments and engines packages: the
+bound engine, the sim-owner thread, and the config arrive as plain
+constructor parameters (main.py does the passing); nothing here names
+a physics engine.
 """

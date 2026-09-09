@@ -140,6 +140,9 @@ class AgentFacts(Strict):
 class Simulator(Strict):
     venv: str = Field(description="simulator venv: absolute, ~, or relative to "
                       "~/.openrua/simulators/")
+    engine: str | None = Field(default=None, description="the bridge engine module "
+                               "(resolved from the simulator's entry_point: a module "
+                               "path, or an absolute .py file copied next to the config)")
     container: str | None = Field(default=None, description="which sim image family "
                                   "(sim-jazzy | sim-humble); documentation")
 
@@ -519,6 +522,8 @@ class SimulatorProfile(Strict):
     scene, and how it drives each robot type it embodies."""
     engine: str = Field(description="the engine, as a person would name it "
                         "(robosuite 1.5 on MuJoCo)")
+    entry_point: str = Field(description="the bridge engine: a bundled name (robosuite) "
+                             "or a path to a module of your own, relative to this file")
     install: Install = Field(description="the venv and distro the bridge runs with")
     native: NativeScene | None = Field(default=None, description="scene loaded with no "
                                        "benchmark; null = a benchmark is required")

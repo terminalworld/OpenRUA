@@ -2,9 +2,9 @@
 
 Wires the publish side (sensors) and the command side (ports) onto one
 node and re-publishes current state on a wall timer (observation never
-advances the world). The env, config, and sim-owner thread arrive as
-constructor parameters; nothing here knows how the world was built or
-what counts as success.
+advances the world). The bound engine, config, and sim-owner thread
+arrive as constructor parameters; nothing here knows how the world was
+built, which engine runs it, or what counts as success.
 
 The on-graph node name stays ``robot_bridge`` (agent-visible surface;
 frozen).
@@ -21,11 +21,11 @@ REPUBLISH_PERIOD_S = 0.5  # wall-clock re-publish of current state (no step)
 
 
 class GraphNode(Node):
-    def __init__(self, env, cfg: dict, sim):
+    def __init__(self, engine, cfg: dict, sim):
         super().__init__("robot_bridge")
-        self.sensors = SensorPublishers(self, env, cfg, sim=sim)
+        self.sensors = SensorPublishers(self, engine, cfg, sim=sim)
         self.ports = CommandPorts(
-            self, env, cfg, on_step=self.sensors.publish, sim=sim
+            self, engine, cfg, on_step=self.sensors.publish, sim=sim
         )
         # Observation never advances the world: republish on a wall timer.
         self.create_timer(REPUBLISH_PERIOD_S, self.sensors.publish)

@@ -196,10 +196,10 @@ def install_for(sim: str, bench: str | None = None) -> dict:
 
 
 def assemble(robot_type: dict, embodiments: list[dict], install: dict,
-             cameras: dict | None, source: str) -> dict:
+             cameras: dict | None, source: str, engine: str | None = None) -> dict:
     """robot type + embodiments (simulator's, then the benchmark's) +
-    install -> the ``machine:`` dict (Machine, validated). Later
-    embodiments write over earlier ones, key by key."""
+    install + the resolved engine -> the ``machine:`` dict (Machine,
+    validated). Later embodiments write over earlier ones, key by key."""
     m = copy.deepcopy(robot_type)
     for e in embodiments:
         _merge(m, e)
@@ -207,7 +207,7 @@ def assemble(robot_type: dict, embodiments: list[dict], install: dict,
         m["cameras"] = copy.deepcopy(cameras)
     backend = {"kind": "sim", "ros_distro": install["ros_distro"],
                "gpus": install.get("gpus", False),
-               "simulator": {"venv": install["venv"]}}
+               "simulator": {"venv": install["venv"], "engine": engine}}
     for k in ("container",):
         if install.get(k):
             backend["simulator"][k] = install[k]
@@ -320,7 +320,9 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                 raise UsageError(f"simulator {sim} has no native scene: name a benchmark "
                                  "(--bench)", hint="openrua benchmarks lists them")
             machine = assemble(r, embodiments, install, cameras,
-                               f"{robot} on {sim}" + (f" for {bench}" if bench else ""))
+                               f"{robot} on {sim}" + (f" for {bench}" if bench else ""),
+                               engine=paths.entry_point("simulators", s["entry_point"],
+                                                        paths.find("simulators", sim)))
             simulator = sim
     if b is not None:
         cfg = {k: copy.deepcopy(v) for k, v in b.items()

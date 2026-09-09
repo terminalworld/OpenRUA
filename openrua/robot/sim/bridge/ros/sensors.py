@@ -3,14 +3,17 @@
 Graph shape copies franka_ros2 / standard camera-driver naming (zero
 invention): ``/clock``, ``/joint_states`` (effort from sim torques),
 per-camera ``/<name>/color/image_raw`` (rgb8) + ``/<name>/depth/image_raw``
-(32FC1, metric) + ``/<name>/color/camera_info`` (K via robosuite's own
-intrinsics helper), TF (world -> base/hand/camera optical frames; the
-eye-in-hand frame follows the arm because poses are read from the sim at
-publish time), and the estimated external wrench (``WrenchStamped``).
+(32FC1, metric) + ``/<name>/color/camera_info`` (K from the engine's
+intrinsics), TF (world -> base/hand/camera optical frames; the
+eye-in-hand frame follows the arm because poses are read from the engine
+at publish time), and the estimated external wrench (``WrenchStamped``).
+
+Everything about the world comes through the bound engine parameter
+(joint addresses, poses, renders); nothing here names a physics engine.
 
 Privileged object poses are NEVER published; the no-perception tier is
-constructively deleted here (the env's ``*_pos``/``*_quat`` obs keys stay
-inside this process).
+constructively deleted here (the engine's object poses stay inside this
+process).
 
 Pull-style observation in a paused world: cameras render on their own
 wall-clock timer (rendering is expensive, ~65 ms/frame under llvmpipe) and
@@ -27,10 +30,6 @@ from tf2_ros import TransformBroadcaster
 
 from .clock import sim_time_msg
 from .joints import build_joint_map
-
-# mujoco cameras look along -Z; ROS optical frames look along +Z
-# (REP 103/104): rotate pi about X to convert.
-_MJ2OPTICAL = np.diag([1.0, -1.0, -1.0])
 
 
 def _mat_to_quat(m: np.ndarray) -> tuple[float, float, float, float]:
@@ -52,16 +51,14 @@ def _mat_to_quat(m: np.ndarray) -> tuple[float, float, float, float]:
 
 
 class SensorPublishers:
-    def __init__(self, node, env, cfg: dict, sim=None):
+    def __init__(self, node, engine, cfg: dict, sim=None):
         self._node = node
-        self._env = env
+        self._engine = engine
         self._runner = sim  # Worker: all sim access goes through it
         self._pending_state = False
         self._pending_cams = False
-        self._sim = env.sim
-        self._raw = env.env if hasattr(env, "env") else env  # robosuite env
 
-        self._joint_map = build_joint_map(env, cfg)
+        self._joint_map = build_joint_map(engine, cfg)
         # With the MoveIt stack up (mainline), robot_state_publisher owns
         # the arm-chain TF from /joint_states + URDF; the bridge then only
         # publishes world->panda_link0 and camera frames (TF single-parent
@@ -104,7 +101,7 @@ class SensorPublishers:
         self._cam_w, self._cam_h = int(res[0]), int(res[1])
         names = cam_cfg.get("list")
         if not isinstance(names, list):
-            names = list(self._sim.model.camera_names)
+            names = self._engine.camera_names()
         self._cams = {}
         for name in names:
             self._cams[name] = {
@@ -138,13 +135,13 @@ class SensorPublishers:
         js = JointState()
         tfs = []
 
-        sim = self._env.sim
-        now = sim_time_msg(float(sim.data.time))
-        qfrc = sim.data.qfrc_actuator
+        engine = self._engine
+        now = sim_time_msg(engine.time())
+        qpos, qvel, qfrc = engine.qpos(), engine.qvel(), engine.effort()
         for name, qadr, dadr in self._joint_map:
             js.name.append(name)
-            js.position.append(float(sim.data.qpos[qadr]))
-            js.velocity.append(float(sim.data.qvel[dadr]))
+            js.position.append(float(qpos[qadr]))
+            js.velocity.append(float(qvel[dadr]))
             js.effort.append(float(qfrc[dadr]))
 
         # Arm-root TF source per arm: "robot0_base" on fixed-base
@@ -164,13 +161,7 @@ class SensorPublishers:
 
         wrenches = []
         for i, arm, pub in self._wrench_pubs:
-            robot = self._raw.robots[i]
-            f = getattr(robot, "ee_force", np.zeros(3))
-            t = getattr(robot, "ee_torque", np.zeros(3))
-            if isinstance(f, dict):  # robosuite >= 1.5: keyed by arm name
-                f = next(iter(f.values()))
-            if isinstance(t, dict):
-                t = next(iter(t.values()))
+            f, t = engine.ee_wrench(i)
             wr = WrenchStamped()
             wr.wrench.force.x, wr.wrench.force.y, wr.wrench.force.z = \
                 map(float, f)
@@ -186,9 +177,9 @@ class SensorPublishers:
             od.header.stamp = now
             od.header.frame_id = "world"
             od.child_frame_id = self._odom_frame
-            bid = sim.model.body_name2id(self._odom_body)
-            px, py, pz = (float(v) for v in sim.data.body_xpos[bid])
-            qw, qx, qy, qz = (float(v) for v in sim.data.body_xquat[bid])
+            pos, quat, _ = engine.body_pose(self._odom_body)
+            px, py, pz = (float(v) for v in pos)
+            qw, qx, qy, qz = (float(v) for v in quat)
             od.pose.pose.position.x = px
             od.pose.pose.position.y = py
             od.pose.pose.position.z = pz
@@ -210,23 +201,17 @@ class SensorPublishers:
             pub.publish(wr)
 
     def _tf_from_body(self, now, body: str, child: str) -> TransformStamped | None:
-        sim = self._env.sim
         try:
-            bid = sim.model.body_name2id(body)
-        except Exception:  # noqa: BLE001
+            pos, _, mat = self._engine.body_pose(body)
+        except KeyError:
             return None
-        pos = sim.data.body_xpos[bid]
-        mat = sim.data.body_xmat[bid].reshape(3, 3)
         return self._make_tf(now, "world", child, pos, mat)
 
     def _tf_from_camera(self, now, cam: str) -> TransformStamped | None:
-        sim = self._env.sim
         try:
-            cid = sim.model.camera_name2id(cam)
-        except Exception:  # noqa: BLE001
+            pos, mat = self._engine.camera_pose(cam)
+        except KeyError:
             return None
-        pos = sim.data.cam_xpos[cid]
-        mat = sim.data.cam_xmat[cid].reshape(3, 3) @ _MJ2OPTICAL
         return self._make_tf(now, "world", f"{cam}_optical_frame", pos, mat)
 
     @staticmethod
@@ -257,12 +242,9 @@ class SensorPublishers:
     def _publish_info_only(self, name: str, pubs: dict) -> None:
         """CameraInfo stays on air for unwatched cameras (tools read the
         intrinsics before deciding to subscribe); costs no render."""
-        from robosuite.utils.camera_utils import get_camera_intrinsic_matrix
-
-        sim = self._env.sim
-        k = get_camera_intrinsic_matrix(sim, name, self._cam_h, self._cam_w)
+        k = self._engine.intrinsics(name, self._cam_w, self._cam_h)
         info = CameraInfo()
-        info.header.stamp = sim_time_msg(float(sim.data.time))
+        info.header.stamp = sim_time_msg(self._engine.time())
         info.header.frame_id = f"{name}_optical_frame"
         info.height, info.width = self._cam_h, self._cam_w
         info.distortion_model = "plumb_bob"
@@ -285,28 +267,16 @@ class SensorPublishers:
         # instead of the robot's responsiveness.
         if self._runner.backlog() > 0:
             return
-        from robosuite.utils.camera_utils import (
-            get_camera_intrinsic_matrix,
-            get_real_depth_map,
-        )
-
+        engine = self._engine
         for name, pubs in self._cams.items():
             if (self._render_mode == "on_demand"
                     and pubs["color"].get_subscription_count() == 0
                     and pubs["depth"].get_subscription_count() == 0):
                 self._publish_info_only(name, pubs)
                 continue
-            sim = self._env.sim
-            now = sim_time_msg(float(sim.data.time))
-            rgb, depth = sim.render(
-                width=self._cam_w,
-                height=self._cam_h,
-                camera_name=name,
-                depth=True,
-            )
-            rgb = np.flipud(rgb).copy()
-            depth = np.flipud(get_real_depth_map(sim, depth)).astype(np.float32)
-            k = get_camera_intrinsic_matrix(sim, name, self._cam_h, self._cam_w)
+            now = sim_time_msg(engine.time())
+            rgb, depth = engine.render(name, self._cam_w, self._cam_h, depth=True)
+            k = engine.intrinsics(name, self._cam_w, self._cam_h)
 
             frame_id = f"{name}_optical_frame"
             img = Image()

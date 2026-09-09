@@ -54,7 +54,7 @@ def main() -> None:
     import yaml
     from rclpy.executors import MultiThreadedExecutor
 
-    from . import environments
+    from . import engines, environments
     from .environments.worker import Worker
     from .ros.node import GraphNode
     from .rpc import ControlChannel, Monitor, Recording
@@ -87,12 +87,16 @@ def main() -> None:
     env, task_ctx = loader.create(cfg, args.task_suite, args.task_id)
     env.reset()
     sim.bind_current_thread()
+    # The engine is the bridge's only view of the world from here on:
+    # the graph and the control line read joints, poses and cameras
+    # through it and never name a physics engine themselves.
+    engine = engines.bind(cfg["machine"]["backend"]["simulator"]["engine"], env, cfg)
 
     rclpy.init()
-    node = GraphNode(env, cfg, sim)
+    node = GraphNode(engine, cfg, sim)
     # The graph re-aligns itself whenever the world is restored under it;
     # simulation only fires the slot, this wiring is the whole coupling.
-    monitor = Monitor(env, task_ctx, loader, sim, on_reset=node.refresh,
+    monitor = Monitor(env, task_ctx, loader, engine, sim, on_reset=node.refresh,
                       record=recording(cfg, args.record, args.record_cameras))
 
     stop = {"flag": False}
