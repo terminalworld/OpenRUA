@@ -48,7 +48,8 @@ def add_parser(sub) -> None:
                    help="x264 constant rate factor, 0 lossless to 51 worst (default 18, "
                    "visually lossless; 23 halves the file again)")
     p.add_argument("--speed", type=float, default=1.0,
-                   help="sim steps per video frame (default 1: real-time robot motion)")
+                   help="sim steps per video frame (default 1: real-time robot motion; "
+                        "a trial recorded one step in N plays N at least)")
     p.add_argument("--font-size", type=int, default=13, help="terminal font size (default 13)")
     p.add_argument("--gif-width", type=int, default=640, help="gif width in pixels (default 640)")
     p.add_argument("--gif-fps", type=int, default=8, help="gif frames per second (default 8)")

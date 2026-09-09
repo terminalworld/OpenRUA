@@ -38,19 +38,28 @@ class Recording:
     """Where and what the monitor records: a directory and the cameras
     (name, width, height). ``frames/<step>_<camera>.jpg`` per camera and
     one ``index.jsonl`` line per step with its wall time, which is what
-    a later rendering aligns against the timed command stream."""
+    a later rendering aligns against the timed command stream. ``every``
+    records one step in that many (the rendering plays several steps
+    per video frame anyway, and each recorded step is a software render
+    of every camera)."""
 
-    def __init__(self, directory: str, cameras: list[tuple[str, int, int]]):
+    def __init__(self, directory: str, cameras: list[tuple[str, int, int]],
+                 every: int = 1):
         import os
 
+        if every < 1:
+            raise ValueError("every must be at least 1")
         self.directory = directory
         self.cameras = cameras
+        self.every = every
         os.makedirs(directory, exist_ok=True)
         self._index = open(os.path.join(directory, "index.jsonl"), "a")
 
     def frame(self, step: int, engine) -> None:
         from PIL import Image
 
+        if step % self.every:
+            return
         files = []
         for cam, w, h in self.cameras:
             px = engine.render(cam, w, h)

@@ -62,6 +62,13 @@ def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> Non
         "(--operator script), not the experiment",
     )
     ap.add_argument(
+        "--record-every", type=int, default=1, metavar="N",
+        help="with --record, write one sim step in N (default 1: every step). "
+        "Each recorded step renders every camera in software; a demo played "
+        "at --speed N shows nothing of the steps between, so N here cuts the "
+        "replay's time by about that factor at no cost to the video",
+    )
+    ap.add_argument(
         "--wall-clock-min", type=float, default=None,
         help="override of the config's protocol.active_wall_clock_minutes "
         "(the config is the default's single source)",
@@ -127,6 +134,8 @@ def run(args: argparse.Namespace) -> int:
         raise UsageError("--record needs camera names: the robot profile sets no "
                          "cameras.record", hint="pass --record <main>,<inset> or add "
                          "cameras.record to the profile")
+    if args.record_every < 1:
+        raise UsageError("--record-every must be at least 1")
     if args.wall_clock_min is None:
         args.wall_clock_min = resolve_wall_clock_min(cfg)
     # The per-suite view, computed exactly once; everyone downstream
@@ -157,7 +166,7 @@ def run(args: argparse.Namespace) -> int:
                     credentials_dir=args.credentials_dir,
                     account_alias=args.account_alias, script=args.script,
                     token_file=args.token_file, home=home, task=args.task,
-                    record_cameras=record_cameras,
+                    record_cameras=record_cameras, record_every=args.record_every,
                 )
             except lock.TrialLocked as e:
                 # Not a failure of this trial: someone else is doing it.

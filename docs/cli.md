@@ -304,10 +304,11 @@ options:
 ## openrua bench
 
 ```
-usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM] --run-id
-                     RUN_ID --task-suite TASK_SUITE [--task-ids TASK_IDS]
-                     [--seeds SEEDS] [--operator {agent,none,script}]
-                     [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
+usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
+                     --run-id RUN_ID --task-suite TASK_SUITE
+                     [--task-ids TASK_IDS] [--seeds SEEDS]
+                     [--operator {agent,none,script}] [--task TASK]
+                     [--script SCRIPT] [--record [CAMERAS]] [--record-every N]
                      [--wall-clock-min WALL_CLOCK_MIN]
                      [--ros-domain ROS_DOMAIN]
                      [--credentials-dir CREDENTIALS_DIR]
@@ -340,6 +341,11 @@ options:
                         the profile's cameras.record. Rendering costs wall
                         clock on whole-room scenes: record a replay
                         (--operator script), not the experiment
+  --record-every N      with --record, write one sim step in N (default 1:
+                        every step). Each recorded step renders every camera
+                        in software; a demo played at --speed N shows nothing
+                        of the steps between, so N here cuts the replay's time
+                        by about that factor at no cost to the video
   --wall-clock-min WALL_CLOCK_MIN
                         override of the config's
                         protocol.active_wall_clock_minutes (the config is the
@@ -417,7 +423,8 @@ options:
                         (default 18, visually lossless; 23 halves the file
                         again)
   --speed SPEED         sim steps per video frame (default 1: real-time robot
-                        motion)
+                        motion; a trial recorded one step in N plays N at
+                        least)
   --font-size FONT_SIZE
                         terminal font size (default 13)
   --gif-width GIF_WIDTH
