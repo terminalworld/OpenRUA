@@ -21,7 +21,7 @@
 
 A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html)
 uses a robot just as a computer-use agent uses a computer. OpenRUA is
-the open harness for one: type `openrua run "pick up the red cube"` and
+the open harness for one: type `openrua run panda "pick up the red cube"` and
 Claude Code or Codex opens in a terminal on the robot's ROS&nbsp;2 graph,
 lists the topics, reads the docs in its workspace, writes a script with
 `rclpy`, runs it, and checks the camera.
@@ -45,14 +45,14 @@ OpenRUA gives you one command for three things:
 
 ## Quick start
 
-Install, choose a robot and a simulator once, run:
+Install, choose a simulator and an agent once, name a robot, run:
 
 ```bash
 pip install git+https://github.com/terminalworld/OpenRUA
-openrua config set --robot panda --sim robosuite --agent claude-code   # your defaults
+openrua config set --sim robosuite --agent claude-code   # your defaults
 openrua build                                       # the three images, once
 openrua install --sim robosuite                     # the simulator's checkout and venv, once
-openrua run "pick up the red cube"
+openrua run panda "pick up the red cube"
 ```
 
 The robot comes up on its ROS&nbsp;2 graph, the agent opens on its
@@ -97,15 +97,18 @@ details are in [docs/install.md](docs/install.md).
 - **The sandbox is a plain Ubuntu + ROS&nbsp;2 container** with the agent
   installed, a workspace mounted, and a whitelist proxy as its only
   way out (the model API; nothing else).
-- **A robot is a profile** ([`openrua/configs/robots/`](openrua/configs/robots), or
-  a file of your own passed by path): what it is (`machine:`) and how
-  it is provided (`machine.backend`: a simulator image and scene, or a
-  real robot's launch command and how to reach its graph).
-- **A benchmark is a task set** ([`openrua/configs/benchmarks/`](openrua/configs/benchmarks)):
-  which suites and init states to load, how a trial runs and stops.
-  `openrua bench` runs trials, checks every promise the workspace docs
-  make before the agent starts, and records each trial with full
-  provenance.
+- **A robot is a file** ([`openrua/configs/robots/`](openrua/configs/robots)):
+  the facts true of it wherever it runs (joints, limits, frames, gripper,
+  ports). Your real robot is the same kind of file with a `machine:`
+  section that says how to reach its graph, passed by path.
+- **A simulator is a file** ([`openrua/configs/simulators/`](openrua/configs/simulators)):
+  the engine, its install, its native scene, and how it drives each robot
+  it embodies.
+- **A benchmark is a file** ([`openrua/configs/benchmarks/`](openrua/configs/benchmarks)):
+  which robot and simulator, which suites and init states to load, how a
+  trial runs and stops. `openrua bench` runs trials, checks every promise
+  the workspace docs make before the agent starts, and records each trial
+  with full provenance.
 - **Everything is checked against one schema** (`openrua config
   schema`): a misspelled key in any file is an error, never a silent
   no-op. Your defaults live in `~/.openrua/config.yaml`.
@@ -147,16 +150,16 @@ embodies; it knows no benchmark. Its install (a venv under
 |---|---|---|---|
 | [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) (`libero`) | `panda` | `robosuite` | the four standard suites and LIBERO-90, on LIBERO's robosuite 1.4 fork, ROS&nbsp;2 Jazzy |
 | [LIBERO-PRO](https://github.com/Zxy-MLlab/LIBERO-PRO) (`libero_pro`) | `panda` | `robosuite` | LIBERO's scenes under five perturbation axes, same fork and venv as `libero` |
-| [LIBERO-Plus](https://github.com/sylvestf/LIBERO-plus) (`libero_plus`) | `panda` | `robosuite` | ~10,000 perturbed variants of the four suites, its own fork and assets |
-| [LIBERO-Mem](https://github.com/libero-mem/libero-mem) (`libero_mem`) | `panda` | `robosuite` | ten non-Markovian tasks with subgoal sequences, its own fork |
-| [RoboCerebra](https://github.com/qiuboxiang/RoboCerebra) (`robocerebra`) | `panda` | `robosuite` | long-horizon tabletop cases on its LIBERO fork, the `Ideal` protocol |
+| [LIBERO-Plus](https://github.com/sylvestf/LIBERO-plus) (`libero_plus`) | `panda` | `robosuite` | ~10,000 perturbed variants of the four suites, its own fork and assets, ROS&nbsp;2 Jazzy |
+| [LIBERO-Mem](https://github.com/libero-mem/libero-mem) (`libero_mem`) | `panda` | `robosuite` | ten non-Markovian tasks with subgoal sequences, its own fork, ROS&nbsp;2 Jazzy |
+| [RoboCerebra](https://github.com/qiuboxiang/RoboCerebra) (`robocerebra`) | `panda` | `robosuite` | long-horizon tabletop cases on its LIBERO fork, the `Ideal` protocol, ROS&nbsp;2 Jazzy |
 | [CaP-Bench](https://github.com/capgym/cap-x) (`capbench`) | `panda` | `robosuite` | CaP-X's tabletop scenes on robosuite 1.5, ROS&nbsp;2 Humble |
 | [RoboCasa](https://robocasa.ai) (`robocasa`) | `panda-omron` | `robosuite` | the original release's 24 atomic kitchen tasks (v0.2 on robosuite 1.5.0), ROS&nbsp;2 Humble |
 | [RoboCasa365](https://robocasa.ai) (`robocasa365`) | `panda-omron` | `robosuite` | the 365-task release's kitchens and the Panda-Omron body, ROS&nbsp;2 Humble |
 | [ManiSkill](https://maniskill.ai) (`maniskill`) | `panda` | `maniskill` | the eleven table-top Panda tasks that ship with ManiSkill 3, seeded resets, ROS&nbsp;2 Jazzy |
-| [SimplerEnv](https://simpler-env.github.io) (`simpler`) | `widowx` | `maniskill` | the four WidowX Bridge tasks as their authors ported them to ManiSkill 3 (the SAPIEN 2 original needs a GPU; its Google Robot tasks are not ported), the visual-matching placement grid |
-| [MIKASA-Robo](https://github.com/CognitiveAISystems/MIKASA-Robo) (`mikasa`) | `panda` | `maniskill` | the 90 language-conditioned memory tasks (remember, shell game, intercept, ...), its own venv on ManiSkill 3.0.1 |
-| [RoboTwin 2.0](https://robotwin-platform.github.io) (`robotwin`) | `aloha-agilex` | `robotwin` | the fifty dual-arm tasks under the Easy protocol (`demo_clean`); the Hard protocol needs its 11 GB textures and is not declared |
+| [SimplerEnv](https://simpler-env.github.io) (`simpler`) | `widowx` | `maniskill` | the four WidowX Bridge tasks as their authors ported them to ManiSkill 3 (the SAPIEN 2 original needs a GPU; its Google Robot tasks are not ported), the visual-matching placement grid, ROS&nbsp;2 Jazzy |
+| [MIKASA-Robo](https://github.com/CognitiveAISystems/MIKASA-Robo) (`mikasa`) | `panda` | `maniskill` | the 90 language-conditioned memory tasks (remember, shell game, intercept, ...), its own venv on ManiSkill 3.0.1, ROS&nbsp;2 Jazzy |
+| [RoboTwin 2.0](https://robotwin-platform.github.io) (`robotwin`) | `aloha-agilex` | `robotwin` | the fifty dual-arm tasks under the Easy protocol (`demo_clean`); the Hard protocol needs its 11 GB textures and is not declared; ROS&nbsp;2 Jazzy |
 | [CALVIN](https://github.com/mees/calvin) (`calvin`) | `panda` | `calvin` | the 1000 five-subtask chains of the long-horizon evaluation on play table D, each with its fixed initial condition and the benchmark's task oracle, ROS&nbsp;2 Humble |
 | [VLABench](https://github.com/OpenMOSS/VLABench) (`vlabench`) | `panda` | `vlabench` | every task registered in the pinned checkout (5 GB of objects and scenes), seeded resets, the task's own termination as success, ROS&nbsp;2 Humble |
 
@@ -218,12 +221,14 @@ right (`openrua demo <trial>`; see
 
 ## Architecture
 
-Six units, one direction of dependency: `robot/` (the machine, simulated
-or real), `sandbox/` (the agent's terminal and workspace), `proxy/`
-(the only route out), `agents/` (the agent contract, registry and
-launcher), `runner/` (bring-up, preflight, operator, verdict, record),
-`cli/`; beside them `demo/` renders a recorded trial's files into a
-video. Who may import whom is enforced by CI (import-linter and
+Eight units, one direction of dependency: `robot/` (the machine,
+simulated or real), `sandbox/` (the agent's terminal and workspace),
+`proxy/` (the only route out), `agents/` (the agent contract, registry
+and launcher), `runner/` (bring-up, preflight, operator, verdict,
+record), `demo/` (a recorded trial's files rendered into a video),
+`cli/` and `doctor/`; under all of them the shared leaves `config/`
+(schema, loader, where things live), `errors.py` and `testing.py`. Who
+may import whom is enforced by CI (import-linter and
 `tests/architecture/`). The prose is [docs/architecture.md](docs/architecture.md).
 
 ## Documentation
@@ -242,6 +247,18 @@ video. Who may import whom is enforced by CI (import-linter and
 | [docs/agents.md](docs/agents.md) | adding a coding agent |
 | [docs/architecture.md](docs/architecture.md) | the units and the layering contract |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | conventions for code, names and docs |
+
+## Citation
+
+```bibtex
+@software{openrua,
+  author  = {Chu, Zhaoyang},
+  title   = {OpenRUA},
+  year    = {2026},
+  url     = {https://github.com/terminalworld/OpenRUA},
+  license = {Apache-2.0}
+}
+```
 
 ## License
 
