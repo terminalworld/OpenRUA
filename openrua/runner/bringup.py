@@ -182,7 +182,11 @@ def claim_domain(network: str, requested: int | None,
     while True:
         domain = free_domain(domains_in_use(network), skip=lost)
         name = start(domain)
-        holder = domains_in_use(network).get(domain)
+        try:
+            holder = domains_in_use(network).get(domain)
+        except BaseException:
+            stop(name)      # never leave the container we just started behind
+            raise
         if holder is None or holder[1] == name:
             print(f"[bringup] ROS_DOMAIN_ID {domain}: lowest free on {network}", flush=True)
             return domain

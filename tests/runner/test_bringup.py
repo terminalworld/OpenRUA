@@ -165,3 +165,22 @@ def test_a_container_gone_between_ps_and_inspect_is_simply_absent(monkeypatch):
             [_info("a-sandbox", "2026-09-09T01:00:01.000000000Z", 0)], vanished=1)
     assert bringup.domains_in_use("openrua-internal") == {
         0: ("2026-09-09T01:00:01.000000000", "a-sandbox")}
+
+
+def test_a_failed_verification_stops_the_container_it_started(monkeypatch):
+    import pytest
+    _docker(monkeypatch, [], [])
+    calls = {"n": 0}
+    real = bringup.domains_in_use
+
+    def flaky(network):
+        calls["n"] += 1
+        if calls["n"] == 2:          # the read after start blows up
+            raise RuntimeError("daemon hiccup")
+        return real(network)
+
+    monkeypatch.setattr(bringup, "domains_in_use", flaky)
+    stops = []
+    with pytest.raises(RuntimeError, match="hiccup"):
+        bringup.claim_domain("net", None, lambda d: "me-sandbox", stops.append)
+    assert stops == ["me-sandbox"]
