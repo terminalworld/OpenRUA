@@ -132,6 +132,21 @@ def frame_stride(index: list[dict], speed: float) -> int:
     return max(1, int(round(speed / spacing)))
 
 
+def from_motion(index: list[dict], ops: list[dict], lead_s: float
+                ) -> tuple[list[dict], int]:
+    """The operations from ``lead_s`` seconds before the robot first moves,
+    and how many came earlier. Under a paused clock the simulator steps
+    only when the robot is driven, so the first recorded frame is the
+    first motion; everything before it is the agent reading the robot
+    and the scene. An operation that starts before the cut but ends
+    after it is kept (it is the one driving the robot)."""
+    if not index or not ops:
+        return ops, 0
+    cut = index[0]["t"] - lead_s
+    kept = [op for op in ops if op.get("t1", op.get("t0", 0)) >= cut]
+    return kept, len(ops) - len(kept)
+
+
 def camera_names(index: list[dict]) -> list[str]:
     """The cameras the index names, in recording order."""
     names: list[str] = []
@@ -356,10 +371,12 @@ class _Encoder:
 
 def render(trial: Path, out: Path | None = None, *, cameras: tuple[str, ...] = (),
            style: Style | None = None, gif: bool = False,
-           ops_range: tuple[int | None, int | None] = (None, None)) -> Path:
+           ops_range: tuple[int | None, int | None] = (None, None),
+           from_motion_s: float | None = None) -> Path:
     """Write the video and return its path. ``cameras`` picks the main
     view and the inset by name (default: the first two recorded);
-    ``ops_range`` renders only the operations whose index falls in
+    ``from_motion_s`` starts the clip that many seconds before the robot
+    first moves (see ``from_motion``). ``ops_range`` renders only the operations whose index falls in
     ``[start, end)`` (a README clip wants the last few)."""
     try:
         import imageio.v2 as imageio
@@ -378,6 +395,9 @@ def render(trial: Path, out: Path | None = None, *, cameras: tuple[str, ...] = (
            if (start is None or op["i"] >= start) and (end is None or op["i"] < end)]
     if not ops:
         raise NotFound(f"no operations in the range {start}:{end}")
+    skipped = 0
+    if from_motion_s is not None:
+        ops, skipped = from_motion(index, ops, from_motion_s)
     main_cam, inset_cam = pick_cameras(cameras, camera_names(index))
     out = Path(out) if out else trial / "demo.mp4"
     canvas = Canvas(style, trial / "frames", result.get("task_language", ""),
@@ -419,6 +439,9 @@ def render(trial: Path, out: Path | None = None, *, cameras: tuple[str, ...] = (
             term.add(f"... ({len(lines) - style.output_lines} more lines)", style.dim)
 
     stride = frame_stride(index, style.speed)
+    if skipped:
+        term.add(f"... {skipped} earlier command{'s' if skipped > 1 else ''} "
+                 "(reading the robot and the scene)", style.dim)
     prev_t = None
     for t, kind, payload in events:
         # An idle stretch (nothing recorded on either track) plays as one

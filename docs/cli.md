@@ -304,11 +304,12 @@ options:
 ## openrua bench
 
 ```
-usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM] --run-id
-                     RUN_ID --task-suite TASK_SUITE [--task-ids TASK_IDS]
-                     [--seeds SEEDS] [--operator {agent,none,script}]
-                     [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
-                     [--record-every N] [--wall-clock-min WALL_CLOCK_MIN]
+usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
+                     --run-id RUN_ID --task-suite TASK_SUITE
+                     [--task-ids TASK_IDS] [--seeds SEEDS]
+                     [--operator {agent,none,script}] [--task TASK]
+                     [--script SCRIPT] [--record [CAMERAS]] [--record-every N]
+                     [--wall-clock-min WALL_CLOCK_MIN]
                      [--ros-domain ROS_DOMAIN]
                      [--credentials-dir CREDENTIALS_DIR]
                      [--token-file TOKEN_FILE] [--runs-root RUNS_ROOT]
@@ -394,9 +395,10 @@ options:
 
 ```
 usage: openrua demo [-h] [--out OUT] [--gif] [--cameras CAMERAS]
-                    [--ops START:END] [--size WxH] [--fps FPS] [--quality CRF]
-                    [--speed SPEED] [--font-size FONT_SIZE]
-                    [--gif-width GIF_WIDTH] [--gif-fps GIF_FPS] [--no-typing]
+                    [--from-motion SECONDS] [--ops START:END] [--size WxH]
+                    [--fps FPS] [--quality CRF] [--speed SPEED]
+                    [--font-size FONT_SIZE] [--gif-width GIF_WIDTH]
+                    [--gif-fps GIF_FPS] [--no-typing]
                     trial
 
 Compose demo.mp4 from a trial that ran with --record: the commands typed on
@@ -413,6 +415,11 @@ options:
                         keep it short with --ops and --speed)
   --cameras CAMERAS     main view and inset by name (default: the first two
                         recorded)
+  --from-motion SECONDS
+                        start the clip this many seconds (on the trial's
+                        clock) before the robot first moves, skipping the
+                        agent's reading of the robot and the scene; the
+                        terminal notes how many commands came earlier
   --ops START:END       only the operations with index in [START, END) as
                         numbered in ops.jsonl (default all; a README clip
                         wants the last few)

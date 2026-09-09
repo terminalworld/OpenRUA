@@ -61,6 +61,17 @@ def test_frame_stride_counts_sim_steps_not_index_entries():
     assert demo.frame_stride([], 4) == 4
 
 
+def test_from_motion_keeps_the_driving_op_and_counts_the_rest():
+    index = [{"step": 1, "t": 42.0, "files": []}, {"step": 2, "t": 42.5, "files": []}]
+    ops = [{"i": 0, "t0": 0.0, "t1": 1.0}, {"i": 1, "t0": 20.0, "t1": 21.0},
+           {"i": 2, "t0": 30.0, "t1": 300.0},     # starts before the cut (32 s), drives the robot
+           {"i": 3, "t0": 301.0, "t1": 302.0}]
+    kept, skipped = demo.from_motion(index, ops, 10.0)
+    assert [op["i"] for op in kept] == [2, 3]
+    assert skipped == 2
+    assert demo.from_motion([], ops, 10.0) == (ops, 0)
+
+
 def test_blocks_split_on_markers_and_keep_heredocs():
     script = ("#!/usr/bin/env bash\n# header\n\n# openrua op 0\nls\n\n"
               "# openrua op 1\ncat > f <<'EOF'\n# openrua op 99 is content, no marker\nEOF\n")

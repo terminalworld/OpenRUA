@@ -18,7 +18,8 @@ def run(args) -> int:
     out = demo.render(Path(args.trial), Path(args.out) if args.out else None,
                       cameras=tuple(c for c in args.cameras.split(",") if c),
                       style=style, gif=args.gif,
-                      ops_range=(int(start) if start else None, int(end) if end else None))
+                      ops_range=(int(start) if start else None, int(end) if end else None),
+                      from_motion_s=args.from_motion)
     print(out)
     if args.gif:
         print(out.with_suffix(".gif"))
@@ -39,6 +40,11 @@ def add_parser(sub) -> None:
                    "short with --ops and --speed)")
     p.add_argument("--cameras", default="",
                    help="main view and inset by name (default: the first two recorded)")
+    p.add_argument("--from-motion", type=float, default=None, metavar="SECONDS",
+                   help="start the clip this many seconds (on the trial's clock) "
+                        "before the robot first moves, skipping the agent's "
+                        "reading of the robot and the scene; the terminal notes "
+                        "how many commands came earlier")
     p.add_argument("--ops", default=None, metavar="START:END",
                    help="only the operations with index in [START, END) as numbered "
                    "in ops.jsonl (default all; a README clip wants the last few)")

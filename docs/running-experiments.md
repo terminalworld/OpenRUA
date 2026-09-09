@@ -161,7 +161,12 @@ and a demo played at `--speed 4` shows nothing of the steps between); `openrua d
 `demo.mp4`, the commands typed on the left and the cameras on the
 right, both on the trial's own clock (a command, the motion it caused,
 its output), one sim step per video frame, and `--gif` adds a smaller
-`demo.gif` for a README. `--ops START:END` renders a slice of the
+`demo.gif` for a README. `--from-motion 10` starts the clip ten seconds
+(on the trial's clock) before the robot first moves: under a paused
+clock the simulator steps only when the robot is driven, so the agent's
+reading of the robot and the scene, which comes first and moves
+nothing, is skipped and the terminal notes how many commands it took.
+`--ops START:END` renders a slice of the
 operations and `--speed` plays several sim steps per frame (never
 fewer than the trial recorded), which is how a
 clip gets short enough for a README. Rendering needs the `demo` extra: `pip install
