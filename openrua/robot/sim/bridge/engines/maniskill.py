@@ -20,9 +20,7 @@ from __future__ import annotations
 
 import numpy as np
 
-# SAPIEN cameras look along -Z (OpenGL), as MuJoCo's do; ROS optical
-# frames look along +Z (REP 103/104): rotate pi about X to convert.
-_GL2OPTICAL = np.diag([1.0, -1.0, -1.0])
+from .frames import GL2OPTICAL, quat_to_mat
 
 
 def _np(t) -> np.ndarray:
@@ -31,16 +29,6 @@ def _np(t) -> np.ndarray:
         t = t.detach().cpu().numpy()
     a = np.asarray(t)
     return a[0] if a.ndim >= 1 and a.shape[0] == 1 else a  # drop the batch axis
-
-
-def _quat_to_mat(q) -> np.ndarray:
-    """(w, x, y, z) -> rotation matrix."""
-    w, x, y, z = (float(v) for v in q)
-    return np.array([
-        [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
-        [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
-        [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
-    ])
 
 
 class _Arm:
@@ -113,7 +101,7 @@ class ManiSkill:
     def body_pose(self, name: str):
         pose = self._pose_of(name)
         p, q = np.asarray(pose.p, dtype=float), np.asarray(pose.q, dtype=float)
-        return p, q, _quat_to_mat(q)
+        return p, q, quat_to_mat(q)
 
     def site_pos(self, name: str):
         raise KeyError(name)  # SAPIEN has no sites
@@ -143,7 +131,7 @@ class ManiSkill:
 
     def camera_pose(self, name: str):
         m = _np(self._camera(name).get_params()["cam2world_gl"])
-        return m[:3, 3].astype(float), m[:3, :3].astype(float) @ _GL2OPTICAL
+        return m[:3, 3].astype(float), m[:3, :3].astype(float) @ GL2OPTICAL
 
     def camera_size(self, name: str, width: int, height: int):
         cam = self._camera(name)  # sized at creation (the loader passes the config's size)
@@ -217,7 +205,7 @@ class ManiSkill:
         # Link poses come in the robot's root frame; the root sits at robot.pose.
         pose = robot.pose.sp * a.pinocchio.get_link_pose(a.hand_index)
         return (np.asarray(pose.p, dtype=float),
-                _quat_to_mat(np.asarray(pose.q, dtype=float)))
+                quat_to_mat(np.asarray(pose.q, dtype=float)))
 
 
 ENGINE = ManiSkill

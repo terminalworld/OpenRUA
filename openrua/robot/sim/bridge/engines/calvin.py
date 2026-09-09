@@ -24,7 +24,7 @@ import math
 
 import numpy as np
 
-from .maniskill import _GL2OPTICAL, _quat_to_mat
+from .frames import GL2OPTICAL, quat_to_mat
 
 _FIXED = 4  # pybullet.JOINT_FIXED
 
@@ -100,7 +100,7 @@ class Calvin:
         else:
             pos, orn = self._p.getLinkState(self._uid, idx, physicsClientId=self._cid)[4:6]
         q = _xyzw_to_wxyz(orn)
-        return np.asarray(pos, dtype=float), q, _quat_to_mat(q)
+        return np.asarray(pos, dtype=float), q, quat_to_mat(q)
 
     def site_pos(self, name: str):
         raise KeyError(name)
@@ -141,7 +141,7 @@ class Calvin:
 
     def camera_pose(self, name: str):
         cam2world = np.linalg.inv(self._view(self._camera(name)))
-        return cam2world[:3, 3], cam2world[:3, :3] @ _GL2OPTICAL
+        return cam2world[:3, 3], cam2world[:3, :3] @ GL2OPTICAL
 
     def render(self, name: str, width: int, height: int, depth: bool = False):
         rgb, d = self._camera(name).render()
@@ -206,7 +206,7 @@ class Calvin:
                 client.resetJointState(uid, i, float(full[i]))
         idx = self._links[a.hand_body]
         pos, orn = client.getLinkState(uid, idx, computeForwardKinematics=1)[4:6]
-        return np.asarray(pos, dtype=float), _quat_to_mat(_xyzw_to_wxyz(orn))
+        return np.asarray(pos, dtype=float), quat_to_mat(_xyzw_to_wxyz(orn))
 
 
 ENGINE = Calvin

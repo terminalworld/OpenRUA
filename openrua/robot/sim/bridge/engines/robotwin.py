@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .maniskill import _GL2OPTICAL, _quat_to_mat
+from .frames import GL2OPTICAL, quat_to_mat
 
 
 class _Arm:
@@ -73,7 +73,7 @@ class RoboTwin:
     def body_pose(self, name: str):
         pose = self._pose_of(name)
         p, q = np.asarray(pose.p, dtype=float), np.asarray(pose.q, dtype=float)
-        return p, q, _quat_to_mat(q)
+        return p, q, quat_to_mat(q)
 
     def site_pos(self, name: str):
         raise KeyError(name)
@@ -101,7 +101,7 @@ class RoboTwin:
 
     def camera_pose(self, name: str):
         m = np.asarray(self._config(name)["cam2world_gl"], dtype=float)
-        return m[:3, 3], m[:3, :3] @ _GL2OPTICAL
+        return m[:3, 3], m[:3, :3] @ GL2OPTICAL
 
     def _camera(self, name: str):
         cams = self._cameras()
@@ -181,7 +181,7 @@ class RoboTwin:
         model = self._pinocchio[1]
         model.compute_forward_kinematics(full)
         pose = entity.get_root_pose() * model.get_link_pose(a.hand_index)
-        return (np.asarray(pose.p, dtype=float), _quat_to_mat(np.asarray(pose.q, dtype=float)))
+        return (np.asarray(pose.p, dtype=float), quat_to_mat(np.asarray(pose.q, dtype=float)))
 
 
 ENGINE = RoboTwin

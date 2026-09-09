@@ -21,9 +21,7 @@ import math
 
 import numpy as np
 
-# mujoco cameras look along -Z; ROS optical frames look along +Z
-# (REP 103/104): rotate pi about X to convert.
-_MJ2OPTICAL = np.diag([1.0, -1.0, -1.0])
+from .frames import GL2OPTICAL
 
 
 class MuJoCo:
@@ -91,7 +89,7 @@ class MuJoCo:
 
         cid = self._id(mujoco.mjtObj.mjOBJ_CAMERA, name)
         d = self._data
-        return d.cam_xpos[cid], d.cam_xmat[cid].reshape(3, 3) @ _MJ2OPTICAL
+        return d.cam_xpos[cid], d.cam_xmat[cid].reshape(3, 3) @ GL2OPTICAL
 
     def camera_size(self, name: str, width: int, height: int):
         return width, height  # MuJoCo renders any camera at any size

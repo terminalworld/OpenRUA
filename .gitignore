@@ -12,3 +12,4 @@ substrates/
 # run data lives on disk, not in git
 runs/
 workspaces/
+data/
