@@ -19,9 +19,10 @@ remembers the first success (which step, what time); official eval
 semantics latch success per step (RoboCasa's runner does
 ``successes |= check``, LIBERO/robosuite eval loops end on first
 success), and the end-state verdict is reported alongside. All benchmark
-knowledge arrives through the loader parameter; ``on_reset`` is a plain
-callable slot fired inside the same sim-thread job right after the world
-is restored (the ROS graph re-aligns itself there).
+knowledge arrives through the loader parameter and all engine knowledge
+through the bound engine parameter (time, renders, poses); ``on_reset``
+is a plain callable slot fired inside the same sim-thread job right
+after the world is restored (the ROS graph re-aligns itself there).
 """
 
 from __future__ import annotations
@@ -31,8 +32,6 @@ import sys
 import threading
 import time
 from typing import Callable
-
-import numpy as np
 
 
 class Recording:
@@ -49,12 +48,12 @@ class Recording:
         os.makedirs(directory, exist_ok=True)
         self._index = open(os.path.join(directory, "index.jsonl"), "a")
 
-    def frame(self, step: int, sim) -> None:
+    def frame(self, step: int, engine) -> None:
         from PIL import Image
 
         files = []
         for cam, w, h in self.cameras:
-            px = sim.render(width=w, height=h, camera_name=cam)[::-1]
+            px = engine.render(cam, w, h)
             name = f"{step:06d}_{cam}.jpg"
             Image.fromarray(px).save(f"{self.directory}/{name}", quality=85)
             files.append(name)
@@ -111,11 +110,12 @@ class ControlChannel:
 
 
 class Monitor:
-    def __init__(self, env, task_ctx: dict, loader, sim,
+    def __init__(self, env, task_ctx: dict, loader, engine, sim,
                  on_reset=None, record: "Recording | None" = None):
         self._env = env
         self._ctx = task_ctx
         self._loader = loader  # the environment package's plug (parameter)
+        self._engine = engine  # the engine package's plug (parameter)
         self._sim = sim  # Worker: all env access goes through it
         self.on_reset = on_reset or (lambda: None)
         # Camera recording, off unless a Recording is handed in: then
@@ -135,8 +135,7 @@ class Monitor:
 
     # ------------------------------------------------------------- stepping
     def _record_frame(self) -> None:
-        raw = self._env.env if hasattr(self._env, "env") else self._env
-        self._record.frame(self._steps, raw.sim)
+        self._record.frame(self._steps, self._engine)
 
     def _latching_step(self, action, **kwargs):  # kwargs: cap-x fork's
         r = self._inner_step(action, **kwargs)  # skip_render_images etc.
@@ -150,7 +149,7 @@ class Monitor:
             # behaviorally exact; these stamps are what post-hoc judging
             # looks up.
             self._at_step = self._steps
-            self._at_sim_time = float(self._env.sim.data.time)
+            self._at_sim_time = self._engine.time()
             self._at_wall = time.time()
         return r
 
@@ -209,21 +208,10 @@ class Monitor:
     # by the agent (the channel these ride is physically unreachable
     # from the sandbox).
     def objects(self, _req: dict) -> dict:
-        def job():
-            raw = self._env.env if hasattr(self._env, "env") else self._env
-            obs = (raw._get_observations()
-                   if hasattr(raw, "_get_observations") else {})
-            return {
-                k: [float(v) for v in np.asarray(val).flatten()]
-                for k, val in obs.items()
-                if k.endswith("_pos") or k.endswith("_quat")
-            }
-
-        return {"objects": self._sim.submit(job)}
+        return {"objects": self._sim.submit(self._engine.objects)}
 
     def hand(self, _req: dict) -> dict:
         def job():
-            sim_ = self._env.sim
             # Grasp point between the fingertips (right reference for
             # servoing; the hand body origin sits ~10 cm above it). Site
             # name differs across simulator generations: robosuite 1.4
@@ -232,16 +220,12 @@ class Monitor:
             grip = None
             for site in ("gripper0_grip_site", "gripper0_right_grip_site"):
                 try:
-                    sid = sim_.model.site_name2id(site)
-                    grip = [float(v) for v in sim_.data.site_xpos[sid]]
+                    grip = [float(v) for v in self._engine.site_pos(site)]
                     break
-                except Exception:  # noqa: BLE001; try the next generation
+                except KeyError:  # try the next generation
                     continue
-            bid = sim_.model.body_name2id("robot0_right_hand")
-            return {
-                "pos": [float(v) for v in sim_.data.body_xpos[bid]],
-                "grip": grip,
-            }
+            pos, _, _ = self._engine.body_pose("robot0_right_hand")
+            return {"pos": [float(v) for v in pos], "grip": grip}
 
         return self._sim.submit(job)
 

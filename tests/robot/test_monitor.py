@@ -16,7 +16,6 @@ from openrua.robot.sim.bridge.rpc import Monitor
 
 class _Env:
     def __init__(self):
-        self.sim = SimpleNamespace(data=SimpleNamespace(time=1.5))
         self.stepped = 0
 
     def step(self, action, **kwargs):
@@ -50,7 +49,8 @@ def _monitor(script):
     sim = Worker()
     sim.bind_current_thread()
     env = _Env()
-    return env, Monitor(env, {}, _Loader(script), sim)
+    engine = SimpleNamespace(time=lambda: 1.5)
+    return env, Monitor(env, {}, _Loader(script), engine, sim)
 
 
 def test_latch_survives_state_degradation():

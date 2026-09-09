@@ -18,15 +18,15 @@ from openrua.runner import record
 from openrua.runner.operators import blocks
 
 
-class _Sim:
-    def render(self, width, height, camera_name):
+class _Engine:
+    def render(self, name, width, height, depth=False):
         return np.zeros((height, width, 3), dtype=np.uint8)
 
 
 def test_recording_writes_frames_and_index(tmp_path):
     rec = Recording(str(tmp_path / "frames"), [("cam_a", 32, 24), ("cam_b", 16, 12)])
-    rec.frame(0, _Sim())
-    rec.frame(1, _Sim())
+    rec.frame(0, _Engine())
+    rec.frame(1, _Engine())
     files = sorted(p.name for p in (tmp_path / "frames").glob("*.jpg"))
     assert files == ["000000_cam_a.jpg", "000000_cam_b.jpg",
                      "000001_cam_a.jpg", "000001_cam_b.jpg"]
@@ -76,7 +76,7 @@ def _trial(tmp_path: Path) -> Path:
     ts = []
     import time
     for step in range(4):
-        rec.frame(step, _Sim())
+        rec.frame(step, _Engine())
         ts.append(time.time())
         time.sleep(0.01)
     t_mid = (ts[0] + ts[1]) / 2

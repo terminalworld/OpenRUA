@@ -38,6 +38,7 @@ KINDS = ("robots", "simulators", "benchmarks", "agents")
 ENTRY_POINT_PACKAGES = {
     "agents": "openrua.plugins.agents",
     "benchmarks": "openrua.robot.sim.bridge.environments",
+    "simulators": "openrua.robot.sim.bridge.engines",
 }
 
 

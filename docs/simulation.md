@@ -91,7 +91,14 @@ loader with a name missing, and `openrua benchmarks <name>` prints
 what `tasks` returns). Bundled, the two live under
 `openrua/configs/benchmarks/` and `openrua/robot/sim/bridge/environments/`;
 yours sit side by side (`entry_point: ./my_bench.py`) and are passed
-with `--bench ./my-bench.yaml`. A new engine is a simulator file plus a
-bridge backend for it. A robot the engine's
-own assets lack is declared under the benchmark's `scenes.robots`, as
-RoboCasa365 does for `panda-omron`.
+with `--bench ./my-bench.yaml`. A new engine is a simulator file plus
+the engine module its `entry_point` names: a module exposing `ENGINE`,
+a callable `ENGINE(env, cfg)` whose result answers every name in
+`ENGINE_INTERFACE` (`openrua/robot/sim/bridge/engines/__init__.py`
+lists them with their units and conventions: joint addressing, poses,
+camera renders and intrinsics, action assembly, FK). Bundled engines
+live under `openrua/robot/sim/bridge/engines/` (`robosuite`); yours
+sits next to your simulator file (`entry_point: ./my_engine.py`) and
+is passed with `--sim ./my-sim.yaml`. A robot the engine's own assets
+lack is declared under the benchmark's `scenes.robots`, as RoboCasa365
+does for `panda-omron`.

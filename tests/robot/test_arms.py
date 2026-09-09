@@ -1,11 +1,12 @@
-"""Pure multi-arm action math (no ROS imports): the commanded arm moves,
-every other arm holds its current configuration."""
+"""Pure multi-arm action math of the robosuite engine (no ROS, no
+simulator imports): the commanded arm moves, every other arm holds its
+current configuration."""
 
 from __future__ import annotations
 
 import numpy as np
 
-from openrua.robot.sim.bridge.ros.arms import arm_targets
+from openrua.robot.sim.bridge.engines.robosuite import arm_targets
 
 
 def test_absolute_mode_commanded_moves_others_hold():

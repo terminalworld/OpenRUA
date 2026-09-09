@@ -211,6 +211,7 @@ A simulated robot: a container running the bridge over a simulator venv.
 | key | type | default | meaning |
 |---|---|---|---|
 | `venv` | str | **required** | simulator venv: absolute, ~, or relative to ~/.openrua/simulators/ |
+| `engine` | str \| null | None | the bridge engine module (resolved from the simulator's entry_point: a module path, or an absolute .py file copied next to the config) |
 | `container` | str \| null | None | which sim image family (sim-jazzy \| sim-humble); documentation |
 
 ## Cameras
@@ -260,6 +261,7 @@ A simulators/<engine>.yaml: the engine, its install, its native scene, and how i
 | key | type | default | meaning |
 |---|---|---|---|
 | `engine` | str | **required** | the engine, as a person would name it (robosuite 1.5 on MuJoCo) |
+| `entry_point` | str | **required** | the bridge engine: a bundled name (robosuite) or a path to a module of your own, relative to this file |
 | `install` | [Install](#install) | **required** | the venv and distro the bridge runs with |
 | `native` | [NativeScene](#nativescene) \| null | None | scene loaded with no benchmark; null = a benchmark is required |
 | `robots` | dict[str, [Embodiment](#embodiment)] | {} | robot type name -> how this engine drives it |

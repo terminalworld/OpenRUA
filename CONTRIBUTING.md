@@ -22,8 +22,11 @@ per unit (`tests/<unit>/`).
   <name> --sim <engine>` must load it; `tests/config/test_config.py`
   validates every bundled file.
 - **A simulator**: a file under `openrua/configs/simulators/<engine>.yaml` and
-  a bridge backend that drives the engine. It embodies robots and loads a
-  native scene; it knows no benchmark.
+  the engine module its `entry_point` names (under
+  `openrua/robot/sim/bridge/engines/`, exposing `ENGINE`: how joints,
+  poses and cameras are read and actions assembled; the test suite fails
+  an engine with a name of `ENGINE_INTERFACE` missing). It embodies
+  robots and loads a native scene; it knows no benchmark.
 - **An agent**: a manifest under `openrua/configs/agents/<name>.yaml`
   and a module under `openrua/plugins/agents/<name>.py` named by its `entry_point`
   (docs/agents.md). `openrua.testing.check_manifest` must pass; the

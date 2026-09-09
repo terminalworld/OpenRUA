@@ -4,6 +4,7 @@
 # scenes:) and may add robots the engine's own assets lack.
 
 engine: robosuite 1.5 on MuJoCo
+entry_point: robosuite       # bridge engine: joint addressing, poses, cameras, actions over a robosuite env
 
 install:                     # the stock engine: robosuite 1.5.1 in the CaP-X checkout
   venv: cap-x/.venv-capbench # relative to ~/.openrua/simulators/; py3.10 == Humble
