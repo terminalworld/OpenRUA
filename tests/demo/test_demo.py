@@ -36,6 +36,31 @@ def test_recording_writes_frames_and_index(tmp_path):
     assert index[0]["t"] <= index[1]["t"]
 
 
+def test_recording_every_n_keeps_one_step_in_n(tmp_path):
+    rec = Recording(str(tmp_path / "frames"), [("cam_a", 8, 6)], every=3)
+    for step in range(1, 8):
+        rec.frame(step, _Engine())
+    index = [json.loads(l) for l in (tmp_path / "frames" / "index.jsonl").read_text().splitlines()]
+    assert [i["step"] for i in index] == [3, 6]
+    assert sorted(p.name for p in (tmp_path / "frames").glob("*.jpg")) == \
+        ["000003_cam_a.jpg", "000006_cam_a.jpg"]
+
+
+def test_recording_refuses_a_zero_stride(tmp_path):
+    with pytest.raises(ValueError):
+        Recording(str(tmp_path / "frames"), [("cam_a", 8, 6)], every=0)
+
+
+def test_frame_stride_counts_sim_steps_not_index_entries():
+    dense = [{"step": s, "t": float(s), "files": []} for s in range(1, 10)]
+    sparse = [{"step": s, "t": float(s), "files": []} for s in range(4, 40, 4)]
+    assert demo.frame_stride(dense, 4) == 4
+    assert demo.frame_stride(sparse, 4) == 1      # one entry already spans 4 steps
+    assert demo.frame_stride(sparse, 8) == 2
+    assert demo.frame_stride(sparse, 1) == 1      # cannot play slower than recorded
+    assert demo.frame_stride([], 4) == 4
+
+
 def test_blocks_split_on_markers_and_keep_heredocs():
     script = ("#!/usr/bin/env bash\n# header\n\n# openrua op 0\nls\n\n"
               "# openrua op 1\ncat > f <<'EOF'\n# openrua op 99 is content, no marker\nEOF\n")

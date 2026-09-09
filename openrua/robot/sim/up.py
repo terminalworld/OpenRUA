@@ -46,6 +46,7 @@ def up(
     peers_xml: str | None = None,
     record: str | None = None,
     record_cameras: tuple[str, ...] = (),
+    record_every: int = 1,
     mounts: tuple[str, ...] = (),
 ) -> BridgeClient:
     """docker-run the container with the bridge as its first process.
@@ -58,7 +59,8 @@ def up(
     resolved config file (the robot's config and any file it names by path).
     ``record`` is a host directory for the bridge's camera frames (under
     the config directory, so the same mount carries it); ``record_cameras``
-    narrows the cameras to the names given.
+    narrows the cameras to the names given; ``record_every`` records one
+    sim step in that many.
     """
     # The simulator venvs' python is a symlink into uv's interpreter
     # store; mount it read-only at the same path. Derived from the
@@ -115,6 +117,7 @@ def up(
         *(["--moveit-log", moveit_log] if moveit_log else []),
         *(["--record", str(record)] if record else []),
         *(["--record-cameras", ",".join(record_cameras)] if record_cameras else []),
+        *(["--record-every", str(record_every)] if record and record_every != 1 else []),
     ]
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     proc = subprocess.Popen(
@@ -183,6 +186,8 @@ def main() -> int:
                     help="record every sim step's cameras under DIR")
     ap.add_argument("--record-cameras", default="",
                     help="comma-separated camera names for --record")
+    ap.add_argument("--record-every", type=int, default=1, metavar="N",
+                    help="record one sim step in N")
     args = ap.parse_args()
 
     proc = up(
@@ -194,6 +199,7 @@ def main() -> int:
         moveit_log=args.moveit_log, network=args.network,
         ros_domain=args.ros_domain, gpus=args.gpus, record=args.record,
         record_cameras=tuple(c for c in args.record_cameras.split(",") if c),
+        record_every=args.record_every,
     )
 
     def pump_answers() -> None:

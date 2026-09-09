@@ -248,6 +248,7 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
         # cameras.record, else the names given.
         "record": (None if getattr(args, "record", None) is None
                    else list(args.record)),
+        "record_every": int(getattr(args, "record_every", 1) or 1),
         # Whatever answers to `docker` on this host (Docker Engine or a
         # podman with its docker-compatible command); one string as the
         # engine prints it, plus the flags the sandbox container took.

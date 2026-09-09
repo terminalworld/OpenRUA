@@ -122,6 +122,16 @@ def timeline(index: list[dict], ops: list[dict]) -> list[tuple]:
     return events
 
 
+def frame_stride(index: list[dict], speed: float) -> int:
+    """How many recorded camera events one video frame consumes so that
+    ``speed`` sim steps pass per frame. A trial recorded one step in N
+    (``--record-every N``) has index entries N steps apart, so a speed
+    below N plays as N."""
+    steps = sorted({f["step"] for f in index})
+    spacing = min((b - a for a, b in zip(steps, steps[1:])), default=1) or 1
+    return max(1, int(round(speed / spacing)))
+
+
 def camera_names(index: list[dict]) -> list[str]:
     """The cameras the index names, in recording order."""
     names: list[str] = []
@@ -408,7 +418,7 @@ def render(trial: Path, out: Path | None = None, *, cameras: tuple[str, ...] = (
         if len(lines) > style.output_lines:
             term.add(f"... ({len(lines) - style.output_lines} more lines)", style.dim)
 
-    stride = max(1, int(round(style.speed)))
+    stride = frame_stride(index, style.speed)
     prev_t = None
     for t, kind, payload in events:
         # An idle stretch (nothing recorded on either track) plays as one

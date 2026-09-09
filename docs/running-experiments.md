@@ -148,18 +148,22 @@ A demo is a replay with the cameras recorded, then rendered:
 openrua bench --config libero_pro --run-id demo --task-suite libero_goal_task \
             --task-ids 3 --seeds 0 --operator script \
             --script runs/libero_pro/main/trials/libero_goal_task-3/seed0/commands.sh \
-            --record
-openrua demo runs/libero_pro/demo/trials/libero_goal_task-3/seed0 --gif
+            --record --record-every 4
+openrua demo runs/libero_pro/demo/trials/libero_goal_task-3/seed0 --gif --speed 4
 ```
 
-`--record` makes the robot write every sim step's frames for the
+`--record` makes the robot write its sim steps' frames for the
 profile's `cameras.record` (or the names you give it) under the
-trial's `frames/`; `openrua demo` composes them with `ops.jsonl` into
+trial's `frames/`, one step in `--record-every` (every step by
+default; each recorded step is a software render of every camera, so
+recording one step in four makes the replay about four times faster,
+and a demo played at `--speed 4` shows nothing of the steps between); `openrua demo` composes them with `ops.jsonl` into
 `demo.mp4`, the commands typed on the left and the cameras on the
 right, both on the trial's own clock (a command, the motion it caused,
 its output), one sim step per video frame, and `--gif` adds a smaller
 `demo.gif` for a README. `--ops START:END` renders a slice of the
-operations and `--speed` plays several steps per frame, which is how a
+operations and `--speed` plays several sim steps per frame (never
+fewer than the trial recorded), which is how a
 clip gets short enough for a README. Rendering needs the `demo` extra: `pip install
 'openrua[demo]'`.
 
