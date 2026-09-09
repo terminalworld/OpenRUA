@@ -17,6 +17,7 @@ usage: openrua [-h] [--version] [--home HOME] <verb> ...
 | verb | does |
 |---|---|
 | `robots` | list the robots: bundled, then ~/.openrua/robots/ |
+| `simulators` | list the simulators: bundled, then ~/.openrua/simulators/ |
 | `benchmarks` | list the benchmarks: bundled, then ~/.openrua/benchmarks/ |
 | `agents` | list the agents: bundled, then ~/.openrua/agents/ |
 | `build` | build the robot, sandbox and proxy images |
@@ -41,6 +42,20 @@ usage: openrua robots [-h] [--json]
 Every robot OpenRUA can find: the bundled ones, then yours under
 <home>/robots/. A user file that carries a bundled name is reported and not
 used.
+
+options:
+  -h, --help  show this help message and exit
+  --json      machine-readable output
+```
+
+## openrua simulators
+
+```
+usage: openrua simulators [-h] [--json]
+
+Every simulator OpenRUA can find: the bundled ones, then yours under
+<home>/simulators/. A user file that carries a bundled name is reported and
+not used.
 
 options:
   -h, --help  show this help message and exit
@@ -148,7 +163,7 @@ options:
 ## openrua run
 
 ```
-usage: openrua run [-h] [--model MODEL] [--bench BENCH]
+usage: openrua run [-h] [--model MODEL] [--sim SIM] [--bench BENCH]
                    [--task-suite TASK_SUITE] [--task-id TASK_ID]
                    [--init-state INIT_STATE] [--task TASK] [--name NAME]
                    [--agent AGENT] [--workspace WORKSPACE]
@@ -160,16 +175,19 @@ opening message, and power the robot off when the agent exits. Same steps as
 up, agent, down.
 
 positional arguments:
-  robot                 robot profile: a name (openrua robots) or a path;
-                        default: --bench's robot, else the user config's
-                        default
+  robot                 robot: a type or your robot's file (openrua robots),
+                        by name or path; default: --bench's robot, else the
+                        user config's default
   prompt                opening message for the agent
 
 options:
   -h, --help            show this help message and exit
   --model MODEL         model (default: the config's)
-  --bench BENCH         benchmark to take the scene from (default: the
-                        profile's world:)
+  --sim SIM             simulator that embodies the robot (openrua
+                        simulators); default: the benchmark's; a real robot's
+                        file needs none
+  --bench BENCH         benchmark whose world to load (openrua benchmarks);
+                        default: the simulator's native scene
   --task-suite TASK_SUITE
                         scene suite (default: the profile's)
   --task-id TASK_ID     scene index (default: the profile's)
@@ -189,7 +207,7 @@ options:
 ## openrua up
 
 ```
-usage: openrua up [-h] [--bench BENCH] [--task-suite TASK_SUITE]
+usage: openrua up [-h] [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
                   [--task-id TASK_ID] [--init-state INIT_STATE] [--task TASK]
                   [--name NAME] [--agent AGENT] [--workspace WORKSPACE]
                   [--ros-domain ROS_DOMAIN]
@@ -201,14 +219,17 @@ Open a second terminal for `openrua agent`, or use `openrua run` to do all of
 it in one.
 
 positional arguments:
-  robot                 robot profile: a name (openrua robots) or a path;
-                        default: --bench's robot, else the user config's
-                        default
+  robot                 robot: a type or your robot's file (openrua robots),
+                        by name or path; default: --bench's robot, else the
+                        user config's default
 
 options:
   -h, --help            show this help message and exit
-  --bench BENCH         benchmark to take the scene from (default: the
-                        profile's world:)
+  --sim SIM             simulator that embodies the robot (openrua
+                        simulators); default: the benchmark's; a real robot's
+                        file needs none
+  --bench BENCH         benchmark whose world to load (openrua benchmarks);
+                        default: the simulator's native scene
   --task-suite TASK_SUITE
                         scene suite (default: the profile's)
   --task-id TASK_ID     scene index (default: the profile's)
@@ -257,10 +278,11 @@ options:
 ## openrua bench
 
 ```
-usage: openrua bench [-h] --config CONFIG [--robot ROBOT] --run-id RUN_ID
-                     --task-suite TASK_SUITE [--task-ids TASK_IDS]
-                     [--seeds SEEDS] [--operator {agent,none,script}]
-                     [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
+usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
+                     --run-id RUN_ID --task-suite TASK_SUITE
+                     [--task-ids TASK_IDS] [--seeds SEEDS]
+                     [--operator {agent,none,script}] [--task TASK]
+                     [--script SCRIPT] [--record [CAMERAS]]
                      [--wall-clock-min WALL_CLOCK_MIN]
                      [--ros-domain ROS_DOMAIN]
                      [--credentials-dir CREDENTIALS_DIR]
@@ -272,8 +294,10 @@ usage: openrua bench [-h] --config CONFIG [--robot ROBOT] --run-id RUN_ID
 options:
   -h, --help            show this help message and exit
   --config CONFIG       benchmark config (benchmarks/<name>.yaml)
-  --robot ROBOT         robot profile name or path; overrides the config's
-                        robot: line
+  --robot ROBOT         robot (type or your robot's file) name or path;
+                        overrides the config's robot: line
+  --sim SIM             simulator name or path; overrides the config's
+                        simulator: line
   --run-id RUN_ID
   --task-suite TASK_SUITE
   --task-ids TASK_IDS
@@ -423,13 +447,18 @@ options:
 ## openrua doctor
 
 ```
-usage: openrua doctor [-h] [--agent NAME[@VERSION]] [--json] [robot]
+usage: openrua doctor [-h] [--sim SIM] [--bench BENCH]
+                      [--agent NAME[@VERSION]] [--json]
+                      [robot]
 
 positional arguments:
-  robot                 also check this robot's images and simulator
+  robot                 also check this robot's images and simulator (with
+                        --sim, or --bench, as for openrua run)
 
 options:
   -h, --help            show this help message and exit
+  --sim SIM             simulator that embodies the robot
+  --bench BENCH         benchmark to check the install of
   --agent NAME[@VERSION]
                         agent(s) the images must carry, @VERSION as pinned at
                         build (default: the robot's config, else the

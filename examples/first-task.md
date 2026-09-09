@@ -9,12 +9,12 @@ read_when:
 
 Twenty minutes: a simulated Franka Panda with a live ROS 2 graph, your
 coding agent on its terminal, one task. [Install](../docs/install.md)
-first; `openrua doctor panda-sim` must be green.
+first; `openrua doctor panda --bench libero_pro` must be green.
 
 ## 1. One command
 
 ```bash
-openrua run panda-sim "open the bottom drawer of the cabinet"
+openrua run panda --sim robosuite --bench libero_pro "open the bottom drawer of the cabinet"
 ```
 
 The robot container boots its scene and MoveIt (about a minute), the
@@ -26,16 +26,16 @@ its two-terminal form, which keeps the robot up between sessions.
 ## 1a. Bring the robot up
 
 ```bash
-openrua up panda-sim
+openrua up panda --sim robosuite --bench libero_pro
 ```
 
 The command stays in the foreground:
 
 ```
-[up] ready.
-     robot     openrua-sim   (ROS 2 graph live; scene: libero_goal_task #0)
-     terminal  openrua-sandbox
-     task      open the bottom drawer of the cabinet
+[up] robot     panda: Franka Emika Panda, simulated by robosuite (ROS 2 jazzy)
+[up] scene     libero_pro / libero_goal_task #0: "open the bottom drawer of the cabinet"
+[up] agent     claude-code (claude-opus-5)
+[up] sandbox   openrua-sandbox, on the robot's ROS 2 graph
 
      openrua agent --name openrua            # your coding agent, on the robot
      docker exec -it -u robot -w /workspace openrua-sandbox bash   # or you
@@ -44,7 +44,8 @@ The command stays in the foreground:
 ```
 
 `--task-suite` and `--task-id` pick another scene from the benchmark;
-`--init-state` another initial layout of the same scene.
+`--init-state` another initial layout of the same scene; leaving out
+`--bench` loads robosuite's own `Lift` scene, a table and a cube.
 
 ## 1b. Hand the agent the task
 

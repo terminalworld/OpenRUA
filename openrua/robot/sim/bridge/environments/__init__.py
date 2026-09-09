@@ -1,6 +1,6 @@
 """Environment: everything serving the simulated world's env object.
 
-Two kinds of service live here: the per-benchmark loaders (the env's
+Two kinds of service live here: the per-world loaders (one per benchmark, plus the engine's native scenes) (the env's
 construction and semantics: build, initial state, original predicate, task
 sentence) and the worker (the env's access discipline: one owner thread,
 everyone else queues). Consumers receive env and Worker as a pair from
@@ -26,6 +26,7 @@ from __future__ import annotations
 from .capbench import CapBenchLoader
 from .libero import LiberoLoader
 from .robocasa import RoboCasaLoader
+from .robosuite import RobosuiteLoader
 
 # The plug shape every loader implements (a duck-typed contract, like agents.Agent).
 LOADER_INTERFACE = (
@@ -37,7 +38,7 @@ LOADER_INTERFACE = (
     "task_info",    # env, ctx -> {language, name, [init_state]}
 )
 
-LOADERS = (LiberoLoader(), CapBenchLoader(), RoboCasaLoader())
+LOADERS = (LiberoLoader(), CapBenchLoader(), RoboCasaLoader(), RobosuiteLoader())
 
 
 def get(benchmark: str):

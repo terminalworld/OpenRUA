@@ -1,15 +1,18 @@
 ---
-summary: Describe your robot in one YAML profile and bring it up
+summary: Describe your robot in one YAML file and bring it up
 read_when:
-  - You have a ROS 2 robot (real or simulated) that is not one of the bundled profiles
+  - You have a ROS 2 robot (real or simulated) that is not one of the bundled ones
   - You want to know what the agent's machine.yaml is generated from
 ---
 
 # Use your own robot
 
-A robot is a YAML profile. The bundled ones (`openrua robots`) are
-simulated; a real robot's profile is the same file with a `real`
-backend instead of a simulator. Put yours in
+A robot is a YAML file under `robots/`. The bundled ones (`openrua
+robots`) are robot *types*: the facts true of a Franka Panda wherever it
+runs, with no simulator in them; a simulator file says how it embodies
+them. Your real robot is an *instance*: the same kind of file with a
+`machine:` section carrying its `real` backend and, when it is a bundled
+type, `type: panda` on top so you only write what differs. Put yours in
 `~/.openrua/robots/<name>.yaml` and it is found by name, or pass its
 path.
 
@@ -35,11 +38,14 @@ probed from its own sandbox: `openrua probe --name openrua`.
 
 ## What the agent reads
 
-`openrua up` generates the agent's `machine.yaml` from the profile's
+`openrua up` generates the agent's `machine.yaml` from the assembled
 `machine:` section. The agent's docs explain how to read it; you supply
 the facts:
 
 ```yaml
+# type: panda            # an instance of a bundled type: its facts come first,
+                         # and this file writes over them (then delete the
+                         # facts below that the type already supplies)
 machine:
   backend:
     kind: real
@@ -89,20 +95,17 @@ meaning is in [config.md](config.md#machine).
 
 ```bash
 cp ur5e.yaml ~/.openrua/robots/
-openrua doctor ur5e                # images, login, and that the profile loads
-openrua up ur5e --ros-domain 7 --task "move the arm to the home pose"
+openrua doctor ur5e                # images, login, and that the file loads
+openrua run ur5e --ros-domain 7 "move the arm to the home pose"      # or up + agent + down
 ```
 
 The sandbox joins the host network and reaches the graph the way
 `backend.discovery` says. On a real robot there is no simulator to ask,
-so the task sentence comes from `--task` (on `up` and on `run`), and a
-trial's `result.json` records `success: null` with `verdict:
-not_applicable`; preflight, the agent, the transcript and the provenance
-are the same as in simulation. Then, as always:
-
-```bash
-openrua agent "move the arm to the home pose and open the gripper"
-```
+so the task sentence is the one you give (`run`'s prompt, or `--task`
+on `up` and `bench`), and a trial's `result.json` records `success: null`
+with `verdict: not_applicable`; preflight, the agent, the transcript and
+the provenance are the same as in simulation. A real robot takes no
+`--sim`; it may take `--bench` to run a benchmark's task list on it.
 
 One difference from simulation to know about: a sandbox on the host
 network is not on an internal docker network, so the proxy is the route
@@ -112,9 +115,10 @@ sandbox is the same toolchain and the same workspace, not containment.
 
 ## A simulated robot of your own
 
-The same profile with a `sim` backend names a simulator venv and its
-`ros_distro` (the robot and sandbox images follow from it); the bundled `panda-sim`, `panda-sim-humble` and
-`panda-omron-sim` are the templates, and [simulation.md](simulation.md)
-says where the venvs live. Adding a benchmark the bridge does not know
-is a loader under `robot/sim/bridge/environments/`, described in
-[architecture.md](architecture.md).
+A simulated robot is a robot type plus an entry under a simulator's
+`robots:` (how the engine drives it: controller, gains, joint-name
+map). Copy `openrua/configs/robots/panda.yaml` for the type and add
+your robot to `~/.openrua/simulators/<engine>.yaml`; a benchmark whose
+assets bring the body declares it under `scenes.robots` instead, as
+`robocasa365` does for `panda-omron`. [simulation.md](simulation.md)
+has the files and where the installs live.

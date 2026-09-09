@@ -26,7 +26,7 @@ def _session(calls):
         calls.append(("up", args.robot))
         return up_cmd.Session(
             name="r", sim="sim", sandbox="box", robot=args.robot or "?",
-            robot_model="Franka Emika Panda", backend="simulated (ROS 2 jazzy)",
+            robot_model="Franka Emika Panda", backend="simulated by robosuite (ROS 2 jazzy)",
             benchmark="libero_pro", suite="libero_goal_task", task_id=0,
             task="open the bottom drawer of the cabinet", agent="fake", model="m",
             power_off=lambda: calls.append(("down",)))
@@ -41,13 +41,13 @@ def test_run_brings_up_opens_the_agent_and_powers_off(monkeypatch, tmp_path, cap
     monkeypatch.setattr(run_cmd.agents, "get", lambda name, home: _Adapter(["agent-cli"]))
     monkeypatch.setattr(run_cmd.subprocess, "call",
                         lambda argv: calls.append(("agent", argv)) or 3)
-    args = build_parser().parse_args(["--home", str(tmp_path), "run", "panda-sim", "hello"])
+    args = build_parser().parse_args(["--home", str(tmp_path), "run", "panda", "hello"])
     assert args.fn(args) == 3
     out = capsys.readouterr().out
-    assert "[run] robot     panda-sim: Franka Emika Panda, simulated (ROS 2 jazzy)" in out
+    assert "[run] robot     panda: Franka Emika Panda, simulated by robosuite (ROS 2 jazzy)" in out
     assert '[run] scene     libero_pro / libero_goal_task #0: "open the bottom drawer' in out
     assert '[run] agent     fake (m), opening message: "hello"' in out
-    assert calls == [("up", "panda-sim"), ("agent", ["agent-cli", "box", "m", "hello"]),
+    assert calls == [("up", "panda"), ("agent", ["agent-cli", "box", "m", "hello"]),
                      ("down",)]
 
 
@@ -57,17 +57,17 @@ def test_run_powers_off_when_the_agent_cannot_open(monkeypatch, tmp_path):
     monkeypatch.setattr(run_cmd.state, "load", lambda name, home: {
         "agent": "fake", "sandbox": "box", "model": "m", "proxy": "http://p"})
     monkeypatch.setattr(run_cmd.agents, "get", lambda name, home: _Adapter(None))
-    args = build_parser().parse_args(["--home", str(tmp_path), "run", "panda-sim"])
+    args = build_parser().parse_args(["--home", str(tmp_path), "run", "panda"])
     with pytest.raises(run_cmd.UnavailableError):
         args.fn(args)
     assert calls[-1] == ("down",)
 
 
 def test_run_positionals_are_robot_then_prompt():
-    args = build_parser().parse_args(["run", "panda-sim"])
-    assert (args.robot, args.prompt) == ("panda-sim", None)
-    args = build_parser().parse_args(["run", "panda-sim", "pick up the bowl", "--model", "x"])
-    assert (args.robot, args.prompt, args.model) == ("panda-sim", "pick up the bowl", "x")
+    args = build_parser().parse_args(["run", "panda"])
+    assert (args.robot, args.prompt) == ("panda", None)
+    args = build_parser().parse_args(["run", "panda", "pick up the bowl", "--model", "x"])
+    assert (args.robot, args.prompt, args.model) == ("panda", "pick up the bowl", "x")
 
 
 def test_bare_build_builds_all_three(monkeypatch, tmp_path, capsys):

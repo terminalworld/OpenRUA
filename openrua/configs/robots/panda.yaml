@@ -1,0 +1,30 @@
+# Franka Emika Panda: what is true of the arm wherever it runs. No
+# simulator, no cameras, no scene here; a simulator's robots: section says
+# how it drives this arm, a benchmark's scenes: what surrounds it.
+# These facts and the ports are what the agent's machine.yaml is
+# generated from at seeding: one source, so the bridge and the docs
+# cannot drift.
+
+robot:
+  model: Franka Emika Panda
+  description: 7-joint robot arm with a parallel-jaw gripper
+frames: {world: world, base: panda_link0, hand: panda_hand}
+arm:
+  joints: [panda_joint1, panda_joint2, panda_joint3, panda_joint4,
+           panda_joint5, panda_joint6, panda_joint7]
+  limits_rad: [[-2.90, 2.90], [-1.76, 1.76], [-2.90, 2.90],
+               [-3.07, -0.07], [-2.90, 2.90], [-0.02, 3.75],
+               [-2.90, 2.90]]
+gripper: {open_m: 0.04, closed_m: 0.0, max_effort: 30.0,
+          stops_at: [open, closed]}
+hand: {tcp_offset_m: 0.1034}  # hand frame -> fingertip grasp point
+ports:                 # franka_ros2 / moveit_servo-shaped names
+  twist: /servo_node/delta_twist_cmds            # TwistStamped
+  trajectory: /panda_arm_controller/follow_joint_trajectory  # FollowJointTrajectory action
+  gripper: /franka_gripper/gripper_action        # GripperCommand action
+  wrench: /franka_robot_state_broadcaster/external_wrench    # WrenchStamped
+planning: {moveit: true, move_action: /move_action,
+           ik_service: /compute_ik, group: panda_arm,
+           planning_frame: panda_link0}  # model frame; the IK request's
+                           # frame_id must be empty
+workspace_template: workspace  # the tree seeded into the sandbox

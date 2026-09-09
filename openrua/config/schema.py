@@ -1,18 +1,30 @@
-"""The configuration schema: what a robot profile, a benchmark config,
-an agent manifest and the resolved per-trial config may say, with
-defaults and a one-line description on every field.
+"""The configuration schema: what a robot, a simulator, a benchmark, an
+agent manifest and the resolved per-trial config may say, with defaults
+and a one-line description on every field.
 
-Three files feed one resolved config:
+Three kinds of file feed one resolved config, and they depend in one
+direction only, benchmark -> simulator -> robot:
 
-- a robot profile (``robots/<name>.yaml``): ``machine:`` (the robot and
-  its runtime shell) plus, for simulated ones, ``world:`` (the scene
-  ``openrua up`` loads when no benchmark is named);
-- a benchmark config (``benchmarks/<name>.yaml``): ``task:``,
-  ``protocol:``, ``agent:``, either ``robot: <name>`` or its own
-  ``machine:``, and optional ``suite_overrides:``;
+- a robot (``robots/<type>.yaml``): what is true of this robot wherever
+  it runs (joints, limits, frames, gripper, ports, planner). A real
+  robot is an instance: the same file kind with a ``machine:`` section
+  carrying its ``real`` backend (and optionally ``type:`` naming the
+  robot type it is an instance of);
+- a simulator (``simulators/<engine>.yaml``): the engine, its install
+  (venv, ROS distro), the native scene ``openrua run`` loads when no
+  benchmark is named, and ``robots:``, how it drives each robot type it
+  embodies (controller, gains, joint-name map);
+- a benchmark (``benchmarks/<name>.yaml``): ``task:``, ``protocol:``,
+  ``agent:``, which ``robot:`` and ``simulator:`` it runs on, and what
+  it brings along: ``install:`` (its own venv and distro over the
+  simulator's) and ``scenes:`` (scene cameras, and robot embodiments
+  the benchmark's own assets add or adjust);
 - the user's ``~/.openrua/config.yaml``: defaults for the ``agent:``
   section and a default robot, applied under whatever the benchmark
   config says.
+
+``loader.assemble`` folds robot type, embodiments and install into the
+one ``machine:`` dict every downstream unit reads (``Machine`` below).
 
 Layering, lowest first: the defaults declared here, the package's
 ``configs/config.yaml``, the user file, the benchmark config,
@@ -345,6 +357,8 @@ class Machine(Strict):
     backend: Backend = Field(description="how the robot is provided: kind: sim | real")
     workspace_template: str | None = Field(
         default="workspace", description="workspace tree seeded into the sandbox; null = none")
+    engine_model: str | None = Field(default=None, description="the robot's name inside "
+                                     "the simulator (robosuite: Panda, PandaOmron)")
     controller: str = Field(default="JOINT_POSITION", description="robosuite controller")
     controller_config: str | None = Field(
         default=None, description="controller json: under robots/ (bundled, then "
@@ -371,32 +385,136 @@ class Machine(Strict):
     base: Base | None = Field(default=None, description="the mobile base; null = fixed")
 
 
-class World(Strict):
-    """The scene ``openrua up <robot>`` loads when no benchmark is named."""
-    benchmark: str = Field(description="benchmark config the scene comes from")
-    task_suite: str | None = Field(default=None, description="suite; default: the "
-                                   "benchmark's first")
-    task_id: int = Field(default=0, description="scene index within the suite")
+class RobotType(Strict):
+    """A robots/<type>.yaml: what is true of this robot wherever it runs.
+    No cameras, no backend, no scene: those come from the simulator or
+    the benchmark that embodies it."""
+    robot: RobotFacts = Field(description="model and description")
+    frames: Frames | None = Field(default=None, description="world, base and hand frames")
+    arm: Arm | None = Field(default=None, description="the arm (single-arm robots)")
+    arms: list[ArmSpec] | None = Field(default=None, description="the arms (multi-arm "
+                                       "robots); replaces arm, gripper and ports")
+    gripper: Gripper | None = Field(default=None, description="the gripper; null = none")
+    hand: Hand | None = Field(default=None, description="hand geometry")
+    ports: Ports = Field(default_factory=Ports, description="the ROS 2 names the robot "
+                         "serves (single arm)")
+    planning: Planning | None = Field(default=None, description="the MoveIt planner")
+    base: Base | None = Field(default=None, description="the mobile base; null = fixed")
+    workspace_template: str | None = Field(
+        default="workspace", description="workspace tree seeded into the sandbox; null = none")
 
 
-# ----------------------------------------------------------------- files
+class Embodiment(Strict):
+    """How an engine drives one robot type: the keys that depend on the
+    simulator, merged over the robot type. Written under a simulator's
+    ``robots:`` (the engine's own robots) or a benchmark's
+    ``scenes.robots:`` (robots the benchmark's assets add or adjust).
+    Only the keys written are merged in."""
+    engine_model: str | None = Field(default=None, description="the robot's name inside "
+                                     "the engine (robosuite: Panda, PandaOmron)")
+    controller: str | None = Field(default=None, description="robosuite controller type")
+    controller_config: str | None = Field(
+        default=None, description="controller json: under robots/ (bundled, then "
+        "~/.openrua/robots/) or a path")
+    controller_kp_scale: float | None = Field(default=None, description="multiplier on the "
+                                              "engine's joint position gains")
+    joint_name_map: dict[str, str] | None = Field(
+        default=None, description="engine joint prefix -> published prefix")
+    control: Control | None = Field(default=None, description="how goals are executed "
+                                    "and judged")
+    tf: Tf | None = Field(default=None, description="what the bridge publishes on TF")
+    base: Base | None = Field(default=None, description="mobile-base keys the engine "
+                              "decides (body, effective speed)")
+    cameras: Cameras | None = Field(default=None, description="robot-mounted cameras this "
+                                    "embodiment adds")
 
-class RobotProfile(Strict):
-    """A robots/<name>.yaml: the robot, and the scene ``up`` opens by default."""
-    world: World | None = Field(default=None, description="default scene for openrua up")
-    machine: Machine = Field(description="the robot")
+
+class Install(Strict):
+    """A simulator install: the venv the bridge runs in and the ROS distro
+    that goes with its Python."""
+    venv: str = Field(description="simulator venv: absolute, ~, or relative to "
+                      "~/.openrua/simulators/")
+    ros_distro: Distro = Field(default="jazzy", description="the ROS 2 distro the robot "
+                               "runs; the robot and sandbox images are named after it")
+    container: str | None = Field(default=None, description="which sim image family "
+                                  "(sim-jazzy | sim-humble); documentation")
+    image: str | None = Field(default=None, description="simulated robot image; default: "
+                              "openrua-sim-<ros_distro>")
+    sandbox_image: str | None = Field(default=None, description="agent terminal image; "
+                                      "default: openrua-sandbox-<ros_distro>")
+    gpus: bool = Field(default=False, description="render on the GPU (needs nvidia toolkit)")
+    resources: dict[str, Any] | None = Field(
+        default=None, description="render_threads: int | off | auto")
+
+
+class InstallOverrides(Strict):
+    """A benchmark's install section: same keys as Install, none required;
+    only what is written replaces the simulator's."""
+    venv: str | None = Field(default=None, description="see Install")
+    ros_distro: Distro | None = Field(default=None, description="see Install")
+    container: str | None = Field(default=None, description="see Install")
+    image: str | None = Field(default=None, description="see Install")
+    sandbox_image: str | None = Field(default=None, description="see Install")
+    gpus: bool | None = Field(default=None, description="see Install")
+    resources: dict[str, Any] | None = Field(default=None, description="see Install")
+
+
+class NativeScene(Strict):
+    """What ``openrua run <robot> --sim <engine>`` loads with no benchmark."""
+    loader: str = Field(description="bridge loader name (robosuite)")
+    scene: str = Field(description="the engine's own scene / env name (robosuite: Lift)")
+    cameras: Cameras = Field(default_factory=Cameras, description="the scene's cameras")
+
+
+class SimulatorProfile(Strict):
+    """A simulators/<engine>.yaml: the engine, its install, its native
+    scene, and how it drives each robot type it embodies."""
+    engine: str = Field(description="the engine, as a person would name it "
+                        "(robosuite 1.5 on MuJoCo)")
+    install: Install = Field(description="the venv and distro the bridge runs with")
+    native: NativeScene | None = Field(default=None, description="scene loaded with no "
+                                       "benchmark; null = a benchmark is required")
+    robots: dict[str, Embodiment] = Field(default_factory=dict, description="robot type "
+                                          "name -> how this engine drives it")
+
+
+class Scenes(Strict):
+    """What a benchmark brings into the simulator's world."""
+    default_suite: str | None = Field(default=None, description="the suite openrua run / up "
+                                      "load when none is named; default: the first in "
+                                      "task.suites")
+    cameras: Cameras | None = Field(default=None, description="the scene cameras (over "
+                                    "the simulator's native ones)")
+    robots: dict[str, Embodiment] = Field(default_factory=dict, description="robot type "
+                                          "name -> embodiment this benchmark's assets add "
+                                          "or adjust (merged over the simulator's)")
+
+
+class RobotInstance(Strict):
+    """A robots/<name>.yaml describing one particular robot, usually a real
+    one: its ``machine:`` (backend and facts), optionally over a robot
+    type's facts (``type:``)."""
+    type: str | None = Field(default=None, description="robot type this is an instance "
+                             "of; its facts come first, machine: writes over them")
+    machine: Machine = Field(description="backend (kind: real | sim) and facts")
 
 
 class Benchmark(Strict):
-    """A benchmarks/<name>.yaml as written: names its robot or carries a machine."""
+    """A benchmarks/<name>.yaml as written."""
     task: Task = Field(description="what is run")
     protocol: Protocol = Field(default_factory=Protocol, description="budgets and clock")
     agent: AgentConfig = Field(default_factory=AgentConfig, description="which agent, "
                                "over the defaults files")
-    robot: str | None = Field(default=None, description="robot profile name or path; "
-                              "--robot overrides it")
+    robot: str | None = Field(default=None, description="robot type (or instance) name or "
+                              "path; --robot overrides it")
+    simulator: str | None = Field(default=None, description="simulator name or path; "
+                                  "--sim overrides it; null with a real-robot instance")
+    install: InstallOverrides | None = Field(default=None, description="this benchmark's "
+                                             "own venv and distro, over the simulator's")
+    scenes: Scenes = Field(default_factory=Scenes, description="what the benchmark brings "
+                           "into the world")
     machine: Machine | None = Field(default=None, description="a robot written inline "
-                                    "instead of named")
+                                    "instead of assembled")
     suite_overrides: dict[str, dict[str, Any]] = Field(
         default_factory=dict, description="per-suite deep merge into the config; "
         "null deletes a key")

@@ -32,7 +32,7 @@ def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
     creds = paths.credentials_dir(tmp_path) / a.name
     creds.mkdir(parents=True)
     (creds / a.credentials.filename).write_text("{}")
-    r = doctor.run(robot="panda-sim", home=tmp_path)
+    r = doctor.run(robot="panda", home=tmp_path, bench="libero_pro")
     assert r.ok, r.render()
     assert r.summary["error"] == 0 and r.summary["warning"] == 0
     ids = [c.id for c in r.checks]
@@ -67,7 +67,7 @@ def test_missing_pieces_are_errors_with_a_fix_and_stale_labels_are_warnings(tmp_
         "openrua-proxy": {"openrua.whitelist_sha256": "stale"},
         "openrua-sandbox-jazzy": {"openrua.preinstall_sha256": "stale"}}))
     monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: None)
-    r = doctor.run(robot="panda-sim", home=tmp_path)
+    r = doctor.run(robot="panda", home=tmp_path, bench="libero_pro")
     by = {c.id: c for c in r.checks}
     assert by["docker"].severity == "error" and "docs.docker.com" in by["docker"].hint
     assert by["robot-image"].severity == "error" and by["robot-image"].hint == "openrua build robot --distro jazzy"
@@ -84,7 +84,7 @@ def test_user_directory_problems_are_reported_not_fatal(tmp_path, monkeypatch):
     monkeypatch.setattr(doctor.checks, "docker_inspect", _fake_docker({"openrua-proxy": {}}))
     monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
     (tmp_path / "robots").mkdir()
-    (tmp_path / "robots" / "panda-sim.yaml").write_text("machine: {}\n")     # shadows a bundled name
+    (tmp_path / "robots" / "panda.yaml").write_text("machine: {}\n")     # shadows a bundled name
     (tmp_path / "robots" / "bad.yaml").write_text("machine: [unclosed\n")    # not yaml
     (tmp_path / "agents").mkdir()
     (tmp_path / "agents" / "broken.yaml").write_text("name: broken\ndefault_model: m\nhooks: broken\n")
@@ -92,7 +92,7 @@ def test_user_directory_problems_are_reported_not_fatal(tmp_path, monkeypatch):
     (tmp_path / "plugins" / "agents" / "broken.py").write_text("raise RuntimeError('nope')\n")
     r = doctor.run(home=tmp_path)
     by = {c.id: c for c in r.checks}
-    assert by["robots-panda-sim-shadowed"].severity == "warning"
+    assert by["robots-panda-shadowed"].severity == "warning"
     assert by["robots-bad-unreadable"].severity == "error"
     assert by["agents-broken-broken"].severity == "error" and "nope" in by["agents-broken-broken"].detail
     assert by["proxy-image"].detail.startswith("unlabelled")

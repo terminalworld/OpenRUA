@@ -16,30 +16,134 @@ same information as JSON Schema.
 
 | file | schema |
 |---|---|
-| `robots/<name>.yaml (bundled or ~/.openrua/robots/)` | [RobotProfile](#robotprofile) |
+| `robots/<type>.yaml (bundled or ~/.openrua/robots/): a robot type` | [RobotType](#robottype) |
+| `robots/<name>.yaml: a particular robot (type: + machine:)` | [RobotInstance](#robotinstance) |
+| `simulators/<engine>.yaml (bundled or ~/.openrua/simulators/)` | [SimulatorProfile](#simulatorprofile) |
 | `benchmarks/<name>.yaml (bundled or ~/.openrua/benchmarks/)` | [Benchmark](#benchmark) |
 | `~/.openrua/config.yaml and the package's configs/config.yaml` | [UserConfig](#userconfig) |
 | `agents/<name>.yaml (bundled or ~/.openrua/agents/)` | [AgentManifest](#agentmanifest) |
 | `<trial>/config.yaml, the resolved view every party reads` | [ResolvedConfig](#resolvedconfig) |
 
-## RobotProfile
+## RobotType
 
-A robots/<name>.yaml: the robot, and the scene ``up`` opens by default.
-
-| key | type | default | meaning |
-|---|---|---|---|
-| `world` | [World](#world) \| null | None | default scene for openrua up |
-| `machine` | [Machine](#machine) | **required** | the robot |
-
-## World
-
-The scene ``openrua up <robot>`` loads when no benchmark is named.
+A robots/<type>.yaml: what is true of this robot wherever it runs. No cameras, no backend, no scene: those come from the simulator or the benchmark that embodies it.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `benchmark` | str | **required** | benchmark config the scene comes from |
-| `task_suite` | str \| null | None | suite; default: the benchmark's first |
-| `task_id` | int | 0 | scene index within the suite |
+| `robot` | [RobotFacts](#robotfacts) | **required** | model and description |
+| `frames` | [Frames](#frames) \| null | None | world, base and hand frames |
+| `arm` | [Arm](#arm) \| null | None | the arm (single-arm robots) |
+| `arms` | list[[ArmSpec](#armspec)] \| null | None | the arms (multi-arm robots); replaces arm, gripper and ports |
+| `gripper` | [Gripper](#gripper) \| null | None | the gripper; null = none |
+| `hand` | [Hand](#hand) \| null | None | hand geometry |
+| `ports` | [Ports](#ports) |  | the ROS 2 names the robot serves (single arm) |
+| `planning` | [Planning](#planning) \| null | None | the MoveIt planner |
+| `base` | [Base](#base) \| null | None | the mobile base; null = fixed |
+| `workspace_template` | str \| null | 'workspace' | workspace tree seeded into the sandbox; null = none |
+
+## RobotFacts
+
+What the agent is told the robot is.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `model` | str | **required** | the model as a person would name it |
+| `description` | str | '' | one line: arm, gripper, base |
+
+## Frames
+
+The TF frames the workspace docs refer to.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `world` | str | 'world' | the fixed frame the robot plans in |
+| `base` | str \| null | 'panda_link0' | the arm's root link |
+| `hand` | str \| null | 'panda_hand' | the hand frame that twist commands and IK targets refer to |
+
+## Arm
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `joints` | list[str] | **required** | joint names in the order the trajectory port expects them |
+| `limits_rad` | list[list[float]] | **required** | travel per joint as [min, max], radians |
+
+## ArmSpec
+
+One arm of a multi-arm machine (machine.arms); single-arm profiles are normalised into this shape by the loader.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `label` | str | '' | how the docs name this arm (left, right); empty on a single arm |
+| `joints` | list[str] | [] | joint names in the order the trajectory port expects them |
+| `limits_rad` | list[list[float]] | [] | travel per joint as [min, max], radians |
+| `gripper` | [Gripper](#gripper) \| null | None | this arm's gripper; null = a tool with no gripper |
+| `ports` | [Ports](#ports) |  | this arm's ports |
+| `hand_body` | str | 'robot0_right_hand' | simulator body the hand frame is read from |
+| `tf_base_body` | str | 'robot0_base' | simulator body the base frame is read from |
+| `base_frame` | str | 'panda_link0' | the arm's root link |
+| `hand_frame` | str \| null | 'panda_hand' | the hand frame |
+
+## Gripper
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `open_m` | float | **required** | fingers fully open: position of one finger, metres (the gap is twice this) |
+| `closed_m` | float | **required** | fingers fully closed: position of one finger, metres |
+| `max_effort` | float | **required** | force ceiling a GripperCommand goal may ask for, newtons |
+| `stops_at` | list[str] | ['open', 'closed'] | the only positions the gripper comes to rest at; a commanded width is read as open or closed |
+
+## Ports
+
+ROS 2 names the machine exposes; null = this machine has no such port.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `twist` | str \| null | None | TwistStamped topic for Cartesian servoing of the hand |
+| `trajectory` | str \| null | None | FollowJointTrajectory action |
+| `gripper` | str \| null | None | GripperCommand action |
+| `wrench` | str \| null | None | WrenchStamped topic of the wrist force-torque sensor |
+| `base_twist` | str \| null | None | Twist topic driving a mobile base |
+| `odom` | str \| null | None | Odometry topic of a mobile base |
+
+## Hand
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `tcp_offset_m` | float | **required** | hand frame -> fingertip grasp point |
+
+## Planning
+
+The MoveIt planner, when the graph runs one.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `moveit` | bool | False | whether a MoveIt planner runs on this robot |
+| `move_action` | str | '/move_action' | MoveIt's plan-and-execute action |
+| `ik_service` | str | '/compute_ik' | inverse-kinematics service |
+| `group` | str \| null | None | the MoveIt planning group covering the arm |
+| `planning_frame` | str \| null | None | the frame MoveIt plans in |
+
+## Base
+
+A mobile base, when the machine has one.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `type` | str \| null | None | the base as a person would name it (omnidirectional, differential) |
+| `body` | str \| null | None | simulator body odometry is read from |
+| `frame` | str | 'base_footprint' | the base's TF frame |
+| `effective_speed_note` | str \| null | None | one line for the agent on how commanded speed maps to motion |
+| `cmd_vel` | str \| null | None | Twist topic driving the base |
+| `odom` | str \| null | None | Odometry topic |
+
+## RobotInstance
+
+A robots/<name>.yaml describing one particular robot, usually a real one: its ``machine:`` (backend and facts), optionally over a robot type's facts (``type:``).
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `type` | str \| null | None | robot type this is an instance of; its facts come first, machine: writes over them |
+| `machine` | [Machine](#machine) | **required** | backend (kind: real \| sim) and facts |
 
 ## Machine
 
@@ -47,6 +151,7 @@ The scene ``openrua up <robot>`` loads when no benchmark is named.
 |---|---|---|---|
 | `backend` | [SimBackend](#simbackend) \| [RealBackend](#realbackend) | **required** | how the robot is provided: kind: sim \| real |
 | `workspace_template` | str \| null | 'workspace' | workspace tree seeded into the sandbox; null = none |
+| `engine_model` | str \| null | None | the robot's name inside the simulator (robosuite: Panda, PandaOmron) |
 | `controller` | str | 'JOINT_POSITION' | robosuite controller |
 | `controller_config` | str \| null | None | controller json: under robots/ (bundled, then ~/.openrua/robots/) or a path |
 | `controller_kp_scale` | float | 10.0 | multiplier on the simulator's joint position gains |
@@ -141,88 +246,6 @@ Graph-side actuation behaviour (the facts below feed machine.yaml).
 | `goal_tolerance_rad` | float | 0.05 | a FollowJointTrajectory goal succeeds when every joint is within this of its last point, radians |
 | `settle_steps` | int | 20 | control ticks the arm keeps tracking after the last point before the result is judged |
 
-## Ports
-
-ROS 2 names the machine exposes; null = this machine has no such port.
-
-| key | type | default | meaning |
-|---|---|---|---|
-| `twist` | str \| null | None | TwistStamped topic for Cartesian servoing of the hand |
-| `trajectory` | str \| null | None | FollowJointTrajectory action |
-| `gripper` | str \| null | None | GripperCommand action |
-| `wrench` | str \| null | None | WrenchStamped topic of the wrist force-torque sensor |
-| `base_twist` | str \| null | None | Twist topic driving a mobile base |
-| `odom` | str \| null | None | Odometry topic of a mobile base |
-
-## RobotFacts
-
-What the agent is told the robot is.
-
-| key | type | default | meaning |
-|---|---|---|---|
-| `model` | str | **required** | the model as a person would name it |
-| `description` | str | '' | one line: arm, gripper, base |
-
-## Frames
-
-The TF frames the workspace docs refer to.
-
-| key | type | default | meaning |
-|---|---|---|---|
-| `world` | str | 'world' | the fixed frame the robot plans in |
-| `base` | str \| null | 'panda_link0' | the arm's root link |
-| `hand` | str \| null | 'panda_hand' | the hand frame that twist commands and IK targets refer to |
-
-## Arm
-
-| key | type | default | meaning |
-|---|---|---|---|
-| `joints` | list[str] | **required** | joint names in the order the trajectory port expects them |
-| `limits_rad` | list[list[float]] | **required** | travel per joint as [min, max], radians |
-
-## ArmSpec
-
-One arm of a multi-arm machine (machine.arms); single-arm profiles are normalised into this shape by the loader.
-
-| key | type | default | meaning |
-|---|---|---|---|
-| `label` | str | '' | how the docs name this arm (left, right); empty on a single arm |
-| `joints` | list[str] | [] | joint names in the order the trajectory port expects them |
-| `limits_rad` | list[list[float]] | [] | travel per joint as [min, max], radians |
-| `gripper` | [Gripper](#gripper) \| null | None | this arm's gripper; null = a tool with no gripper |
-| `ports` | [Ports](#ports) |  | this arm's ports |
-| `hand_body` | str | 'robot0_right_hand' | simulator body the hand frame is read from |
-| `tf_base_body` | str | 'robot0_base' | simulator body the base frame is read from |
-| `base_frame` | str | 'panda_link0' | the arm's root link |
-| `hand_frame` | str \| null | 'panda_hand' | the hand frame |
-
-## Gripper
-
-| key | type | default | meaning |
-|---|---|---|---|
-| `open_m` | float | **required** | fingers fully open: position of one finger, metres (the gap is twice this) |
-| `closed_m` | float | **required** | fingers fully closed: position of one finger, metres |
-| `max_effort` | float | **required** | force ceiling a GripperCommand goal may ask for, newtons |
-| `stops_at` | list[str] | ['open', 'closed'] | the only positions the gripper comes to rest at; a commanded width is read as open or closed |
-
-## Hand
-
-| key | type | default | meaning |
-|---|---|---|---|
-| `tcp_offset_m` | float | **required** | hand frame -> fingertip grasp point |
-
-## Planning
-
-The MoveIt planner, when the graph runs one.
-
-| key | type | default | meaning |
-|---|---|---|---|
-| `moveit` | bool | False | whether a MoveIt planner runs on this robot |
-| `move_action` | str | '/move_action' | MoveIt's plan-and-execute action |
-| `ik_service` | str | '/compute_ik' | inverse-kinematics service |
-| `group` | str \| null | None | the MoveIt planning group covering the arm |
-| `planning_frame` | str \| null | None | the frame MoveIt plans in |
-
 ## Tf
 
 | key | type | default | meaning |
@@ -230,30 +253,71 @@ The MoveIt planner, when the graph runs one.
 | `hand` | bool | False | bridge publishes hand frames (MoveIt-less runs) |
 | `base_body` | str | 'robot0_base' | simulator body the base frame is read from |
 
-## Base
+## SimulatorProfile
 
-A mobile base, when the machine has one.
+A simulators/<engine>.yaml: the engine, its install, its native scene, and how it drives each robot type it embodies.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `type` | str \| null | None | the base as a person would name it (omnidirectional, differential) |
-| `body` | str \| null | None | simulator body odometry is read from |
-| `frame` | str | 'base_footprint' | the base's TF frame |
-| `effective_speed_note` | str \| null | None | one line for the agent on how commanded speed maps to motion |
-| `cmd_vel` | str \| null | None | Twist topic driving the base |
-| `odom` | str \| null | None | Odometry topic |
+| `engine` | str | **required** | the engine, as a person would name it (robosuite 1.5 on MuJoCo) |
+| `install` | [Install](#install) | **required** | the venv and distro the bridge runs with |
+| `native` | [NativeScene](#nativescene) \| null | None | scene loaded with no benchmark; null = a benchmark is required |
+| `robots` | dict[str, [Embodiment](#embodiment)] | {} | robot type name -> how this engine drives it |
+
+## Install
+
+A simulator install: the venv the bridge runs in and the ROS distro that goes with its Python.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `venv` | str | **required** | simulator venv: absolute, ~, or relative to ~/.openrua/simulators/ |
+| `ros_distro` | 'jazzy' \| 'humble' | 'jazzy' | the ROS 2 distro the robot runs; the robot and sandbox images are named after it |
+| `container` | str \| null | None | which sim image family (sim-jazzy \| sim-humble); documentation |
+| `image` | str \| null | None | simulated robot image; default: openrua-sim-<ros_distro> |
+| `sandbox_image` | str \| null | None | agent terminal image; default: openrua-sandbox-<ros_distro> |
+| `gpus` | bool | False | render on the GPU (needs nvidia toolkit) |
+| `resources` | dict[str, Any] \| null | None | render_threads: int \| off \| auto |
+
+## NativeScene
+
+What ``openrua run <robot> --sim <engine>`` loads with no benchmark.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `loader` | str | **required** | bridge loader name (robosuite) |
+| `scene` | str | **required** | the engine's own scene / env name (robosuite: Lift) |
+| `cameras` | [Cameras](#cameras) |  | the scene's cameras |
+
+## Embodiment
+
+How an engine drives one robot type: the keys that depend on the simulator, merged over the robot type. Written under a simulator's ``robots:`` (the engine's own robots) or a benchmark's ``scenes.robots:`` (robots the benchmark's assets add or adjust). Only the keys written are merged in.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `engine_model` | str \| null | None | the robot's name inside the engine (robosuite: Panda, PandaOmron) |
+| `controller` | str \| null | None | robosuite controller type |
+| `controller_config` | str \| null | None | controller json: under robots/ (bundled, then ~/.openrua/robots/) or a path |
+| `controller_kp_scale` | float \| null | None | multiplier on the engine's joint position gains |
+| `joint_name_map` | dict[str, str] \| null | None | engine joint prefix -> published prefix |
+| `control` | [Control](#control) \| null | None | how goals are executed and judged |
+| `tf` | [Tf](#tf) \| null | None | what the bridge publishes on TF |
+| `base` | [Base](#base) \| null | None | mobile-base keys the engine decides (body, effective speed) |
+| `cameras` | [Cameras](#cameras) \| null | None | robot-mounted cameras this embodiment adds |
 
 ## Benchmark
 
-A benchmarks/<name>.yaml as written: names its robot or carries a machine.
+A benchmarks/<name>.yaml as written.
 
 | key | type | default | meaning |
 |---|---|---|---|
 | `task` | [Task](#task) | **required** | what is run |
 | `protocol` | [Protocol](#protocol) |  | budgets and clock |
 | `agent` | [AgentConfig](#agentconfig) |  | which agent, over the defaults files |
-| `robot` | str \| null | None | robot profile name or path; --robot overrides it |
-| `machine` | [Machine](#machine) \| null | None | a robot written inline instead of named |
+| `robot` | str \| null | None | robot type (or instance) name or path; --robot overrides it |
+| `simulator` | str \| null | None | simulator name or path; --sim overrides it; null with a real-robot instance |
+| `install` | [InstallOverrides](#installoverrides) \| null | None | this benchmark's own venv and distro, over the simulator's |
+| `scenes` | [Scenes](#scenes) |  | what the benchmark brings into the world |
+| `machine` | [Machine](#machine) \| null | None | a robot written inline instead of assembled |
 | `suite_overrides` | dict[str, dict[str, Any]] | {} | per-suite deep merge into the config; null deletes a key |
 
 ## Task
@@ -296,6 +360,30 @@ A benchmarks/<name>.yaml as written: names its robot or carries a machine.
 | `version` | str \| null | None | pin the agent CLI version: the sandbox image must carry it and preflight checks it; default: whatever the image has |
 | `credentials_dir` | str \| null | None | login profile directory; default: ~/.openrua/credentials/<agent name> |
 | `options` | dict[str, Any] | {} | adapter-specific knobs passed through as given, over the adapter's default_options |
+
+## InstallOverrides
+
+A benchmark's install section: same keys as Install, none required; only what is written replaces the simulator's.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `venv` | str \| null | None | see Install |
+| `ros_distro` | 'jazzy' \| 'humble' \| null | None | see Install |
+| `container` | str \| null | None | see Install |
+| `image` | str \| null | None | see Install |
+| `sandbox_image` | str \| null | None | see Install |
+| `gpus` | bool \| null | None | see Install |
+| `resources` | dict[str, Any] \| null | None | see Install |
+
+## Scenes
+
+What a benchmark brings into the simulator's world.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `default_suite` | str \| null | None | the suite openrua run / up load when none is named; default: the first in task.suites |
+| `cameras` | [Cameras](#cameras) \| null | None | the scene cameras (over the simulator's native ones) |
+| `robots` | dict[str, [Embodiment](#embodiment)] | {} | robot type name -> embodiment this benchmark's assets add or adjust (merged over the simulator's) |
 
 ## UserConfig
 

@@ -16,18 +16,24 @@ per unit (`tests/<unit>/`).
 
 ## Adding things
 
-- **A robot**: a profile under `openrua/configs/robots/<name>.yaml`
-  (docs/your-own-robot.md). `openrua doctor <name>` must load it;
-  `tests/config/test_config.py` validates every bundled profile.
+- **A robot**: a type under `openrua/configs/robots/<name>.yaml` (facts true
+  of it anywhere) and, for simulation, an entry under the simulator's
+  `robots:` (docs/your-own-robot.md, docs/simulation.md). `openrua doctor
+  <name> --sim <engine>` must load it; `tests/config/test_config.py`
+  validates every bundled file.
+- **A simulator**: a file under `openrua/configs/simulators/<engine>.yaml` and
+  a bridge backend that drives the engine. It embodies robots and loads a
+  native scene; it knows no benchmark.
 - **An agent**: a manifest under `openrua/configs/agents/<name>.yaml`
   and a hooks module under `openrua/plugins/agents/<hooks>.py`
   (docs/agents.md). `openrua.testing.check_manifest` must pass; the
   bundled agents run through it in `tests/agents/test_agents.py`. Nothing
   outside those two directories may name the agent (the boundary
   test lists the banned tokens).
-- **A benchmark**: a config under `openrua/configs/benchmarks/<name>.yaml` and,
-  if it needs a new simulator, a loader under
-  `openrua/robot/sim/bridge/environments/`.
+- **A benchmark**: a config under `openrua/configs/benchmarks/<name>.yaml`
+  naming its robot and simulator and bringing its world (`install:`,
+  `scenes:`), plus a loader under `openrua/robot/sim/bridge/environments/`
+  (how its scenes are built, reset and scored).
 - **A config key**: add it to `openrua/config/schema.py` with a default and a
   description; unknown keys are errors everywhere, so the schema is
   the single place a key exists.
@@ -35,7 +41,7 @@ per unit (`tests/<unit>/`).
 ## Command-line conventions
 
 - The main object is a positional argument; configuration is a flag:
-  `openrua up panda-sim --ros-domain 7`, `openrua doctor ur5e --json`.
+  `openrua up panda --sim robosuite --ros-domain 7`, `openrua doctor ur5e --json`.
   An optional filter, mode or setting stays a flag even when it is
   usually given.
 - Every argument has `help=`, and the help says where the default comes

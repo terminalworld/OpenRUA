@@ -1,0 +1,39 @@
+# robosuite (MuJoCo): the engine every bundled benchmark runs on. This
+# file knows the engine and how it drives each robot type it embodies;
+# it knows no benchmark. A benchmark brings its own world (install:,
+# scenes:) and may add robots the engine's own assets lack.
+
+engine: robosuite 1.5 on MuJoCo
+
+install:                     # the stock engine: robosuite 1.5.1 in the CaP-X checkout
+  venv: cap-x/.venv-capbench # relative to ~/.openrua/simulators/; py3.10 == Humble
+  ros_distro: humble         # names the robot and sandbox images (openrua-sim-humble, openrua-sandbox-humble)
+
+native:                      # `openrua run <robot> --sim robosuite` with no --bench
+  loader: robosuite          # bridge loader: robosuite.make on the engine's own env
+  scene: Lift                # a table with a red cube
+  cameras:
+    resolution: [640, 480]
+    list: null               # publish every camera the scene defines
+    rate_hz: 2               # wall-clock render/publish rate (pull-style; never steps)
+    record: [agentview, robot0_eye_in_hand]  # --record default: main view, inset
+
+robots:
+  panda:
+    engine_model: Panda      # robosuite's name for it
+    controller: JOINT_POSITION  # base action space (real-robot shape: both
+                                # ports above a joint layer; OSC's null-space
+                                # bias fights joint-space trajectory goals)
+    controller_kp_scale: 1   # the composite JOINT_POSITION config carries
+                             # tuned gains (kp=1500, absolute input); a
+                             # benchmark on an older robosuite may scale
+    joint_name_map:          # robosuite internal -> franka_ros2 published names
+      robot0_: panda_
+      gripper0_: panda_
+    control:                 # graph-side actuation behavior
+      gripper:
+        open_threshold_m: 0.02 # GripperCommand position below this = close
+        settle_steps: 10       # control ticks a gripper goal advances the world
+    tf:
+      hand: false            # robot_state_publisher (MoveIt stack) owns the
+                             # arm chain; the bridge keeps base + cameras

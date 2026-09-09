@@ -89,7 +89,7 @@ the file, and command-line flags override both. The keys are listed in
 ## Check it
 
 ```bash
-openrua doctor panda-sim
+openrua doctor panda --bench libero_pro
 ```
 
 Read-only. One row per fact: the container engine, each image and

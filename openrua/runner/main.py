@@ -33,8 +33,10 @@ def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> Non
     ap.add_argument("--config", required=True,
                     help="benchmark config (benchmarks/<name>.yaml)")
     ap.add_argument("--robot", default=None,
-                    help="robot profile name or path; overrides the "
+                    help="robot (type or your robot's file) name or path; overrides the "
                     "config's robot: line")
+    ap.add_argument("--sim", default=None,
+                    help="simulator name or path; overrides the config's simulator: line")
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--task-suite", required=True)
     ap.add_argument("--task-ids", default="0")
@@ -113,7 +115,7 @@ def run(args: argparse.Namespace) -> int:
 
     home = paths.home(args.home)
     cfg_path = paths.find("benchmarks", args.config, home).resolve()
-    cfg = load_config(cfg_path, args.robot, home)
+    cfg = load_config(cfg_path, args.robot, home, sim=args.sim)
     if cfg["machine"]["backend"].get("kind") != "sim" and not args.task:
         raise UsageError("a real robot has no benchmark task to ask for",
                          hint="pass --task \"<what the agent should do>\"")

@@ -1,4 +1,4 @@
-"""``openrua robots | benchmarks | agents``: what is available, bundled and yours."""
+"""``openrua robots | simulators | benchmarks | agents``: what is available, bundled and yours."""
 
 from __future__ import annotations
 
@@ -19,11 +19,20 @@ def _describe(kind: str, path: Path) -> str:
     except Exception as exc:  # noqa: BLE001
         return f"(unreadable: {exc})"
     if kind == "robots":
-        r = d.get("machine", {}).get("robot", {})
+        if "machine" in d:      # an instance: a particular (usually real) robot
+            r = d["machine"].get("robot", {})
+            kind_ = d["machine"].get("backend", {}).get("kind", "?")
+            return f"{r.get('model', '?'):<28} {kind_}: {r.get('description', '')}"
+        r = d.get("robot", {})
         return f"{r.get('model', '?'):<28} {r.get('description', '')}"
+    if kind == "simulators":
+        robots = ", ".join(sorted(d.get("robots", {}))) or "-"
+        native = (d.get("native") or {}).get("scene", "-")
+        return f"{d.get('engine', '?'):<28} robots: {robots}; native scene: {native}"
     t = d.get("task", {})
     suites = t.get("suites", [])
-    return f"{t.get('benchmark', '?'):<14} {len(suites)} suites; robot: {d.get('robot', '(own machine:)')}"
+    return (f"{t.get('benchmark', '?'):<14} {len(suites)} suites; robot: "
+            f"{d.get('robot', '(own machine:)')} on {d.get('simulator', '-')}")
 
 
 def _list_kind(kind: str, args) -> int:
@@ -37,6 +46,10 @@ def _list_kind(kind: str, args) -> int:
 
 def run_robots(args) -> int:
     return _list_kind("robots", args)
+
+
+def run_simulators(args) -> int:
+    return _list_kind("simulators", args)
 
 
 def run_benchmarks(args) -> int:
@@ -57,8 +70,8 @@ def run_agents(args) -> int:
 
 
 def add_parser(sub) -> None:
-    for kind, fn in (("robots", run_robots), ("benchmarks", run_benchmarks),
-                     ("agents", run_agents)):
+    for kind, fn in (("robots", run_robots), ("simulators", run_simulators),
+                     ("benchmarks", run_benchmarks), ("agents", run_agents)):
         p = sub.add_parser(kind, help=f"list the {kind}: bundled, then ~/.openrua/{kind}/",
                            description=f"Every {kind[:-1]} OpenRUA can find: the bundled "
                            f"ones, then yours under <home>/{kind}/. A user file that "
