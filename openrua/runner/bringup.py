@@ -109,7 +109,7 @@ DOMAINS = range(0, 102)
 
 
 def domains_in_use(network: str) -> dict[int, tuple[str, str]]:
-    """``{ROS_DOMAIN_ID: (started_at, container)}`` over the containers on
+    """``{ROS_DOMAIN_ID: (started, container)}`` over the containers on
     ``network``, keeping the earliest-started container per domain.
 
     Read from the containers themselves, never from bookkeeping: a
@@ -119,8 +119,7 @@ def domains_in_use(network: str) -> dict[int, tuple[str, str]]:
     answer is then "unknown" (an exception), not "free".
     """
     names = subprocess.run(
-        ["docker", "network", "inspect", network, "--format",
-         "{{range .Containers}}{{.Name}} {{end}}"],
+        ["docker", "ps", "--filter", f"network={network}", "--format", "{{.Names}}"],
         capture_output=True, text=True, timeout=30, check=True).stdout.split()
     if not names:
         return {}
@@ -136,17 +135,25 @@ def domains_in_use(network: str) -> dict[int, tuple[str, str]]:
             domain = int(env["ROS_DOMAIN_ID"])
         except ValueError:
             continue
-        # RFC 3339 UTC timestamps of one fixed shape compare as strings.
-        claim = (info["State"]["StartedAt"], info["Name"].lstrip("/"))
+        claim = (_instant(info["State"]["StartedAt"]), info["Name"].lstrip("/"))
         if domain not in used or claim < used[domain]:
             used[domain] = claim
     return used
 
 
-def free_domain(used: dict[int, tuple[str, str]]) -> int:
-    """The lowest domain no container uses."""
+def _instant(started_at: str) -> str:
+    """A container's StartedAt as a string that orders correctly: the
+    engines write RFC 3339 UTC with a fraction of varying length (docker
+    nine digits, podman as few as it needs), so the fraction is padded
+    before two of them are compared."""
+    head, _, frac = started_at.replace("+00:00", "Z").rstrip("Z").partition(".")
+    return f"{head}.{frac.ljust(9, '0')}"
+
+
+def free_domain(used: dict[int, tuple[str, str]], skip: set[int] = frozenset()) -> int:
+    """The lowest domain no container uses, ``skip`` excluded."""
     for d in DOMAINS:
-        if d not in used:
+        if d not in used and d not in skip:
             return d
     raise UnavailableError(f"every ROS domain {DOMAINS.start}-{DOMAINS.stop - 1} is in use",
                            hint="wait for a robot to power off, or pass --ros-domain")
@@ -168,10 +175,9 @@ def claim_domain(network: str, requested: int | None,
     if requested is not None:
         start(requested)
         return requested
-    tried: set[int] = set()
+    lost: set[int] = set()
     while True:
-        used = domains_in_use(network)
-        domain = free_domain({**used, **{d: ("", "") for d in tried}})
+        domain = free_domain(domains_in_use(network), skip=lost)
         name = start(domain)
         holder = domains_in_use(network).get(domain)
         if holder is None or holder[1] == name:
@@ -180,7 +186,7 @@ def claim_domain(network: str, requested: int | None,
         print(f"[bringup] ROS_DOMAIN_ID {domain} was taken by {holder[1]} first; "
               "trying the next", flush=True)
         stop(name)
-        tried.add(domain)
+        lost.add(domain)
 
 
 def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,

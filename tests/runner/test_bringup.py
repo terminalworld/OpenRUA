@@ -51,8 +51,8 @@ def _docker(monkeypatch, network_names, inspect_infos):
     import subprocess
 
     def fake_run(argv, **kw):
-        if argv[:3] == ["docker", "network", "inspect"]:
-            return subprocess.CompletedProcess(argv, 0, " ".join(network_names) + " ", "")
+        if argv[:2] == ["docker", "ps"]:   # --filter network=<ours>
+            return subprocess.CompletedProcess(argv, 0, "\n".join(network_names) + "\n", "")
         if argv[:2] == ["docker", "inspect"]:
             return subprocess.CompletedProcess(argv, 0, json.dumps(inspect_infos), "")
         raise AssertionError(argv)
@@ -146,3 +146,11 @@ def test_a_race_won_keeps_the_domain(monkeypatch):
         return "me-sandbox"
 
     assert bringup.claim_domain("net", None, start, lambda n: None) == 0
+
+
+def test_started_at_orders_across_fraction_lengths():
+    # podman writes as few fraction digits as it needs; docker nine.
+    a, b = "2026-09-09T15:23:59.12Z", "2026-09-09T15:23:59.123Z"
+    assert bringup._instant(a) < bringup._instant(b)
+    assert bringup._instant("2026-09-09T15:23:59.9Z") > bringup._instant("2026-09-09T15:23:59.85Z")
+    assert bringup._instant("2026-09-09T15:24:00+00:00") > bringup._instant("2026-09-09T15:23:59.999999999Z")
