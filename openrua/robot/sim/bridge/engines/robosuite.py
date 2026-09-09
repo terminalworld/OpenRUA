@@ -1,28 +1,25 @@
 """robosuite (MuJoCo) engine: the bridge's view of a robosuite env.
 
 The env is robosuite's own (or a benchmark wrapper around it, unwrapped
-here through ``.env``); ``env.sim`` is its MjSim. Joint addressing,
-poses and cameras read the MjSim model and data; actions follow
-robosuite's action vector (per-robot slices of arm targets and a
-gripper column, or the composite robot's ``create_action_vector``);
-forward kinematics runs on a scratch MjData so the world never moves
-for a jacobian.
+here through ``.env``); ``env.sim`` is its MjSim, whose raw MjModel and
+MjData the shared MuJoCo base reads (joints, poses, cameras, FK).
+Actions follow robosuite's action vector (per-robot slices of arm
+targets and a gripper column, or the composite robot's
+``create_action_vector``).
 
 Engine facts the ROS side used to hold and now only asks for:
-mujoco cameras look along -Z and render bottom-up; the arm controller
-moved from ``robot.controller`` (robosuite <= 1.4) to
-``robot.part_controllers`` (1.5); ``ee_force`` is keyed by arm name
-from 1.5 on; capbench's ``panda_joint_ctrl`` takes absolute joint
-targets while the LIBERO forks take clipped deltas.
+robosuite renders bottom-up; the arm controller moved from
+``robot.controller`` (robosuite <= 1.4) to ``robot.part_controllers``
+(1.5); ``ee_force`` is keyed by arm name from 1.5 on; capbench's
+``panda_joint_ctrl`` takes absolute joint targets while the LIBERO
+forks take clipped deltas.
 """
 
 from __future__ import annotations
 
 import numpy as np
 
-# mujoco cameras look along -Z; ROS optical frames look along +Z
-# (REP 103/104): rotate pi about X to convert.
-_MJ2OPTICAL = np.diag([1.0, -1.0, -1.0])
+from .mujoco import MuJoCo
 
 
 def arm_targets(q_current: list[np.ndarray], dq: np.ndarray, idx: int,
@@ -61,7 +58,6 @@ class _Arm:
         # happens at the action-assembly boundary.
         self.absolute = getattr(self.ctrl, "input_type", "delta") == "absolute"
         self.kp_target = np.asarray(self.ctrl.kp, dtype=float).copy() * kp_scale
-        self.hand_id = None  # lazy (needs the mujoco model)
         # Some robots mount a 0-DoF tool (no gripper): the action is
         # sized from the robot's own action dim, never assumed from the
         # config (a blind gripper column trips robosuite's action-dim
@@ -85,8 +81,9 @@ class _Arm:
         raise AttributeError(f"no arm controller among parts {list(parts)}")
 
 
-class Robosuite:
+class Robosuite(MuJoCo):
     def __init__(self, env, cfg: dict):
+        super().__init__()
         self._env = env
         self._raw = env.env if hasattr(env, "env") else env  # robosuite env
         # Joint-impedance stiffness tuned for 20Hz carrot streaming: the
@@ -101,51 +98,21 @@ class Robosuite:
         # exactly the tick that carries them.
         parts = getattr(self._raw.robots[0], "part_controllers", None)
         self._mobile = bool(parts) and "base" in parts
-        self._scratch = None  # FK scratch MjData (lazy)
 
     @property
     def _sim(self):
         # Read through the env every time: a hard reset replaces the MjSim.
         return self._raw.sim
 
+    @property
+    def _model(self):
+        return self._sim.model._model
+
+    @property
+    def _data(self):
+        return self._sim.data._data
+
     # ---------------------------------------------------------------- world
-    def joints(self) -> list[tuple[str, int, int]]:
-        model = self._sim.model
-        out = []
-        for name in model.joint_names:
-            jid = model.joint_name2id(name)
-            out.append((name, model.jnt_qposadr[jid], model.jnt_dofadr[jid]))
-        return out
-
-    def time(self) -> float:
-        return float(self._sim.data.time)
-
-    def qpos(self) -> np.ndarray:
-        return self._sim.data.qpos
-
-    def qvel(self) -> np.ndarray:
-        return self._sim.data.qvel
-
-    def effort(self) -> np.ndarray:
-        return self._sim.data.qfrc_actuator
-
-    def body_pose(self, name: str):
-        sim = self._sim
-        try:
-            bid = sim.model.body_name2id(name)
-        except Exception as exc:  # noqa: BLE001; robosuite raises ValueError
-            raise KeyError(name) from exc
-        return (sim.data.body_xpos[bid], sim.data.body_xquat[bid],
-                sim.data.body_xmat[bid].reshape(3, 3))
-
-    def site_pos(self, name: str):
-        sim = self._sim
-        try:
-            sid = sim.model.site_name2id(name)
-        except Exception as exc:  # noqa: BLE001
-            raise KeyError(name) from exc
-        return sim.data.site_xpos[sid]
-
     def objects(self) -> dict:
         obs = (self._raw._get_observations()
                if hasattr(self._raw, "_get_observations") else {})
@@ -156,20 +123,6 @@ class Robosuite:
         }
 
     # -------------------------------------------------------------- cameras
-    def camera_names(self) -> list[str]:
-        return list(self._sim.model.camera_names)
-
-    def camera_pose(self, name: str):
-        sim = self._sim
-        try:
-            cid = sim.model.camera_name2id(name)
-        except Exception as exc:  # noqa: BLE001
-            raise KeyError(name) from exc
-        return sim.data.cam_xpos[cid], sim.data.cam_xmat[cid].reshape(3, 3) @ _MJ2OPTICAL
-
-    def camera_size(self, name: str, width: int, height: int):
-        return width, height  # MuJoCo renders any camera at any size
-
     def render(self, name: str, width: int, height: int, depth: bool = False):
         if not depth:
             return self._sim.render(width=width, height=height, camera_name=name)[::-1]
@@ -179,11 +132,6 @@ class Robosuite:
                                   depth=True)
         return (np.flipud(rgb).copy(),
                 np.flipud(get_real_depth_map(self._sim, d)).astype(np.float32))
-
-    def intrinsics(self, name: str, width: int, height: int) -> np.ndarray:
-        from robosuite.utils.camera_utils import get_camera_intrinsic_matrix
-
-        return get_camera_intrinsic_matrix(self._sim, name, height, width)
 
     # ------------------------------------------------------------ actuation
     def control_dt(self) -> float:
@@ -256,23 +204,6 @@ class Robosuite:
 
     def step(self, action: np.ndarray) -> None:
         self._env.step(action)
-
-    def fk(self, arm: int, q: np.ndarray | None = None):
-        """FK of the arm's hand body; q=None reads the live sim state."""
-        import mujoco
-
-        a = self._arms[arm]
-        model = self._sim.model._model
-        if self._scratch is None:
-            self._scratch = mujoco.MjData(model)
-        if a.hand_id is None:
-            a.hand_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, a.hand_body)
-        d = self._scratch
-        d.qpos[:] = self._sim.data.qpos
-        if q is not None:
-            d.qpos[a.qadrs] = q
-        mujoco.mj_kinematics(model, d)
-        return d.xpos[a.hand_id].copy(), d.xmat[a.hand_id].reshape(3, 3).copy()
 
 
 ENGINE = Robosuite

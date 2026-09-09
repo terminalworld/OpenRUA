@@ -20,8 +20,8 @@ from __future__ import annotations
 
 import numpy as np
 
-# SAPIEN cameras look along -Z (OpenGL); ROS optical frames look along +Z
-# (REP 103/104): rotate pi about X to convert.
+# SAPIEN cameras look along -Z (OpenGL), as MuJoCo's do; ROS optical
+# frames look along +Z (REP 103/104): rotate pi about X to convert.
 _GL2OPTICAL = np.diag([1.0, -1.0, -1.0])
 
 
