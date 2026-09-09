@@ -431,20 +431,28 @@ options:
 ## openrua config
 
 ```
-usage: openrua config [-h] {show,set,schema} [KEY VALUE ...]
+usage: openrua config [-h] [--robot ROBOT] [--sim SIM] [--bench BENCH]
+                      [--agent AGENT] [--model MODEL]
+                      [--credentials-dir CREDENTIALS_DIR]
+                      {show,set,schema}
 
-Your defaults file, ~/.openrua/config.yaml: `config set robot panda simulator
-robosuite` writes keys into it (dotted paths such as agent.model), `config
-show` prints it, `config schema` prints the resolved config's JSON schema,
-every key with its meaning.
+Your defaults file, ~/.openrua/config.yaml: `config set` writes the flags it
+is given into it (the same flags run takes), `config show` prints it, `config
+schema` prints the resolved config's JSON schema, every key with its meaning.
 
 positional arguments:
-  {show,set,schema}  what to do
-  KEY VALUE          for set: key and value, repeatable (robot, simulator,
-                     benchmark, agent.name, agent.model, ...)
+  {show,set,schema}     what to do
 
 options:
-  -h, --help         show this help message and exit
+  -h, --help            show this help message and exit
+  --robot ROBOT         robot a command uses when it names none
+  --sim SIM             simulator, likewise
+  --bench BENCH         benchmark whose world run / up load by default (null =
+                        the simulator's native scene)
+  --agent AGENT         agent (openrua agents)
+  --model MODEL         model id for the agent
+  --credentials-dir CREDENTIALS_DIR
+                        the agent's login profile directory
 ```
 
 ## openrua doctor

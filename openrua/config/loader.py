@@ -213,7 +213,7 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
     else:
         if not robot:
             raise UsageError("name a robot",
-                             hint="openrua robots lists them; openrua config set robot <name> "
+                             hint="openrua robots lists them; openrua config set --robot <name> "
                                   "makes one the default")
         kind, r = load_robot(robot, home)
         if kind == "instance":
@@ -226,7 +226,7 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                 raise UsageError(f"{robot} is a robot type: name the simulator that "
                                  "embodies it (--sim) or a benchmark (--bench)",
                                  hint="openrua simulators / openrua benchmarks list them; "
-                                      "openrua config set simulator <name> makes one the default")
+                                      "openrua config set --sim <name> makes one the default")
             s = load_simulator(sim, home)
             embodiments = [e for e in (s["robots"].get(robot),
                                        (b or {}).get("scenes", {}).get("robots", {}).get(robot))

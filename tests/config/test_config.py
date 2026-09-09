@@ -215,7 +215,7 @@ def test_benchmark_without_robot_or_machine_says_where_to_name_one(tmp_path):
     b.write_text("task: {benchmark: libero_pro, suites: [x]}\n")
     with pytest.raises(UsageError) as e:
         load_config(b, home=tmp_path)
-    assert "config set robot" in e.value.hint and "name a robot" in str(e.value)
+    assert "config set --robot" in e.value.hint and "name a robot" in str(e.value)
 
 
 def test_camera_list_key_round_trips(tmp_path):
