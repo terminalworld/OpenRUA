@@ -35,8 +35,6 @@ _TASKS = {
 
 
 class CapBenchLoader:
-    BENCHMARKS = ("capbench",)
-
     def create(self, cfg: dict, task_suite: str, task_id: int):
         import importlib
 
@@ -96,3 +94,6 @@ class CapBenchLoader:
     def task_info(self, env, ctx: dict) -> dict:
         return {"language": ctx.get("language", ""),
                 "name": ctx.get("capbench_task", "")}
+
+
+LOADER = CapBenchLoader()

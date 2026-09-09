@@ -15,7 +15,6 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-import yaml
 
 from openrua import agents, config, proxy
 from openrua.config import compose, paths
@@ -109,33 +108,14 @@ def check_home(ctx: Context) -> list[CheckResult]:
     return [CheckResult("home", f"user directory {h}")]
 
 
-def check_user_entries(ctx: Context) -> list[CheckResult]:
-    """User-directory robots, benchmarks and agents: shadowed names are
-    warnings (the bundled one wins), unreadable files are errors."""
+def check_bundled_agents(ctx: Context) -> list[CheckResult]:
+    """Every bundled agent composes (its entry point imports)."""
     out: list[CheckResult] = []
-    for kind in ("robots", "benchmarks"):
-        for e in paths.available(kind, ctx.home):
-            if e.shadowed_by:
-                out.append(CheckResult(
-                    f"{kind}-{e.name}-shadowed", f"{kind[:-1]} {e.name}: {e.shadowed_by} "
-                    "has a bundled name and is ignored", "warning",
-                    hint=f"rename {e.shadowed_by} to use it"))
-            if e.source == "user":
-                try:
-                    yaml.safe_load(e.path.read_text())
-                except yaml.YAMLError as exc:
-                    out.append(CheckResult(f"{kind}-{e.name}-unreadable",
-                                           f"{kind[:-1]} {e.name}: {e.path} is not valid YAML",
-                                           "error", detail=str(exc).splitlines()[0]))
-    for a in agents.available(ctx.home):
+    for a in agents.available():
         if a.agent is None:
             out.append(CheckResult(f"agents-{a.name}-broken",
                                    f"agent {a.name}: {a.path} failed to load", "error",
-                                   detail=a.error or "", hint="fix the module; it must expose AGENT"))
-        elif a.shadowed_by:
-            out.append(CheckResult(f"agents-{a.name}-shadowed",
-                                   f"agent {a.name}: {a.shadowed_by} has a bundled name and is ignored",
-                                   "warning", hint=f"rename {a.shadowed_by} to use it"))
+                                   detail=a.error or "", hint="fix the module; it must expose HOOKS"))
     return out
 
 
@@ -215,8 +195,8 @@ def check_simulator(ctx: Context) -> list[CheckResult]:
     if venv.is_dir():
         return [CheckResult("simulator", f"simulator venv {venv}")]
     return [CheckResult("simulator", f"simulator venv {venv} missing", "error",
-                        hint=f"build it under {paths.simulators_dir(ctx.home)} (docs/simulation.md) "
-                        "or point machine.backend.simulator.venv at it")]
+                        hint="openrua install --bench <benchmark> (or --sim <engine>) builds it "
+                        f"under {paths.simulators_dir(ctx.home)} (docs/simulation.md)")]
 
 
 def check_login(ctx: Context) -> list[CheckResult]:
@@ -238,7 +218,7 @@ def check_login(ctx: Context) -> list[CheckResult]:
 
 
 CHECKS: tuple[Callable[[Context], list[CheckResult]], ...] = (
-    check_docker, check_home, check_user_entries, check_proxy_image,
+    check_docker, check_home, check_bundled_agents, check_proxy_image,
     check_robot_images, check_simulator, check_login,
 )
 

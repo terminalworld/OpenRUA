@@ -1,4 +1,4 @@
-"""``openrua robots | simulators | benchmarks | agents``: what is available, bundled and yours."""
+"""``openrua robots | simulators | benchmarks | agents``: what ships in the package."""
 
 from __future__ import annotations
 
@@ -36,10 +36,8 @@ def _describe(kind: str, path: Path) -> str:
 
 
 def _list_kind(kind: str, args) -> int:
-    rows = [{"name": e.name, "source": e.source, "path": str(e.path),
-             "description": _describe(kind, e.path),
-             "shadowed_by": str(e.shadowed_by) if e.shadowed_by else None}
-            for e in paths.available(kind, args.home)]
+    rows = [{"name": e.name, "path": str(e.path), "description": _describe(kind, e.path)}
+            for e in paths.available(kind)]
     print_listing(rows, args.json)
     return 0
 
@@ -58,12 +56,10 @@ def run_benchmarks(args) -> int:
 
 def run_agents(args) -> int:
     rows = []
-    for a in agents.available(args.home):
+    for a in agents.available():
         desc = (f"FAILED: {a.error}" if a.agent is None else
                 f"{a.agent.default_model:<24} {' '.join(sorted(a.agent.capabilities))}")
-        rows.append({"name": a.name, "source": a.source, "path": str(a.path),
-                     "description": desc,
-                     "shadowed_by": str(a.shadowed_by) if a.shadowed_by else None,
+        rows.append({"name": a.name, "path": str(a.path), "description": desc,
                      "capabilities": sorted(a.agent.capabilities) if a.agent else None})
     print_listing(rows, args.json)
     return 0
@@ -72,9 +68,9 @@ def run_agents(args) -> int:
 def add_parser(sub) -> None:
     for kind, fn in (("robots", run_robots), ("simulators", run_simulators),
                      ("benchmarks", run_benchmarks), ("agents", run_agents)):
-        p = sub.add_parser(kind, help=f"list the {kind}: bundled, then ~/.openrua/{kind}/",
-                           description=f"Every {kind[:-1]} OpenRUA can find: the bundled "
-                           f"ones, then yours under <home>/{kind}/. A user file that "
-                           "carries a bundled name is reported and not used.")
+        p = sub.add_parser(kind, help=f"list the bundled {kind}",
+                           description=f"Every {kind[:-1]} shipped in the package. A file "
+                           "of your own is not listed; pass it as a path where a name "
+                           "is expected.")
         add_json(p)
         p.set_defaults(fn=fn)

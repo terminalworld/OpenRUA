@@ -10,7 +10,7 @@ install:                     # the stock engine: robosuite 1.5.1 in the CaP-X ch
   ros_distro: humble         # names the robot and sandbox images (openrua-sim-humble, openrua-sandbox-humble)
 
 native:                      # `openrua run <robot> --sim robosuite` with no --bench
-  loader: robosuite          # bridge loader: robosuite.make on the engine's own env
+  entry_point: robosuite     # bridge loader: robosuite.make on the engine's own env
   scene: Lift                # a table with a red cube
   cameras:
     resolution: [640, 480]

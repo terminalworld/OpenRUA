@@ -6,6 +6,7 @@
 # and split stay theirs.
 # Sections: task / protocol / agent / robot + simulator / install / scenes.
 
+entry_point: robocasa   # the bridge loader: bundled name, or ./path to a module of your own
 task:
   benchmark: robocasa365
   # The official target50 evaluation set, copied out of their
@@ -132,7 +133,7 @@ scenes:
     panda-omron:            # RoboCasa's assets bring this body; robosuite's own do not
       engine_model: PandaOmron
       controller: JOINT_POSITION
-      controller_config: controllers/pandaomron_joint_ctrl.json  # under configs/robots/ (bundled, then ~/.openrua/robots/), or a path
+      controller_config: controllers/pandaomron_joint_ctrl.json  # bundled name under configs/robots/controllers/, or a path relative to this file
       controller_kp_scale: 1  # gains live in the JSON (kp=1500 arm, their
                               # defaults for torso/base)
       joint_name_map:

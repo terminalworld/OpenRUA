@@ -25,8 +25,6 @@ _ARM_JOINT_POSITION = {
 
 
 class RobosuiteLoader:
-    BENCHMARKS = ("robosuite",)
-
     def create(self, cfg: dict, task_suite: str, task_id: int):
         import json as _json
 
@@ -75,3 +73,6 @@ class RobosuiteLoader:
 
     def task_info(self, env, ctx: dict) -> dict:
         return {"language": "", "name": ctx.get("scene", "")}
+
+
+LOADER = RobosuiteLoader()

@@ -63,10 +63,13 @@ docs/podman.md).
 
 ## A simulator or benchmark of your own
 
-A new benchmark on an existing engine is one file under
-`~/.openrua/benchmarks/` plus a loader under
-`openrua/robot/sim/bridge/environments/` (how its scenes are built,
-reset and scored; see [architecture.md](architecture.md)). A new engine
-is a simulator file plus a bridge backend for it. A robot the engine's
+A new benchmark on an existing engine is a benchmark file plus the
+loader its `entry_point` names (how its scenes are built, reset and
+scored: a module exposing `LOADER`, see
+[architecture.md](architecture.md)). Bundled, the two live under
+`openrua/configs/benchmarks/` and `openrua/robot/sim/bridge/environments/`;
+yours sit side by side (`entry_point: ./my_bench.py`) and are passed
+with `--bench ./my-bench.yaml`. A new engine is a simulator file plus a
+bridge backend for it. A robot the engine's
 own assets lack is declared under the benchmark's `scenes.robots`, as
 RoboCasa365 does for `panda-omron`.

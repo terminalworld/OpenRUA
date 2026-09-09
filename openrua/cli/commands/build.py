@@ -27,7 +27,7 @@ def default_agent(home: Path | None) -> str:
 
 
 def manifests_for(names: list[str] | None, home: Path | None) -> list[agents.Manifest]:
-    return [agents.manifest(n, home) for n in (names or [default_agent(home)])]
+    return [agents.manifest(n) for n in (names or [default_agent(home)])]
 
 
 def preinstall_for(names: list[str] | None, home: Path | None) -> str:

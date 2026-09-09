@@ -1,11 +1,11 @@
-"""Finding agents: manifests under configs/agents, hooks under plugins/agents.
+"""Finding agents: manifests under configs/agents, code behind ``entry_point``.
 
 A manifest (``<name>.yaml``) is read and validated without importing any
-code; the hooks module it names is imported only when an ``Agent`` is
-actually needed. Both halves are looked up bundled first, then in the
-user directory (``~/.openrua/agents/<name>.yaml``,
-``~/.openrua/plugins/agents/<hooks>.py``). A third source, pip entry
-points, would come after the user directory; not implemented.
+code; the module its ``entry_point`` names is imported only when an
+``Agent`` is actually needed. A bundled name resolves under
+``openrua/plugins/agents/``; a manifest of your own is passed as a path
+and its entry_point is a path relative to it (``./my_agent.py``). Both
+expose ``HOOKS``, an Agent subclass.
 """
 
 from __future__ import annotations
@@ -31,9 +31,7 @@ class Manifest:
     """One validated manifest and where it came from."""
     name: str
     path: Path
-    source: str                        # "bundled" | "user"
     fields: dict                       # the validated manifest as a dict
-    shadowed_by: Path | None = None
 
     @property
     def install(self) -> str:
@@ -50,8 +48,7 @@ def split_pin(spec: str) -> tuple[str, str | None]:
     return name, (version or None)
 
 
-def _read(path: Path, source: str, shadowed_by: Path | None = None,
-          version: str | None = None) -> Manifest:
+def _read(path: Path, version: str | None = None) -> Manifest:
     """Validate one manifest. ``version`` pins the CLI (from ``name@version``
     or a config's ``agent.version``); without a pin the install line
     installs whatever is current, and no version check is minted."""
@@ -62,46 +59,44 @@ def _read(path: Path, source: str, shadowed_by: Path | None = None,
     install = fields["install"]
     fields["install"] = (install.replace("{version}", version) if version
                          else install.replace("@{version}", "").replace("{version}", ""))
-    return Manifest(m.name, path, source, fields, shadowed_by)
+    if fields.get("entry_point"):
+        fields["entry_point"] = paths.entry_point("agents", fields["entry_point"], path)
+    return Manifest(m.name, path, fields)
 
 
-def manifests(home: Path | None = None) -> list[Manifest]:
-    """Every agent manifest, bundled then user, validated. A manifest that
-    fails validation is logged and skipped; it hides nothing else."""
+def manifests() -> list[Manifest]:
+    """Every bundled agent manifest, validated. A manifest that fails
+    validation is logged and skipped; it hides nothing else."""
     out: list[Manifest] = []
-    for e in paths.available("agents", home):
+    for e in paths.available("agents"):
         try:
-            out.append(_read(e.path, e.source, e.shadowed_by))
+            out.append(_read(e.path))
         except Exception as exc:  # noqa: BLE001
             _log.warning("agent manifest %s skipped: %s", e.path, exc)
     return out
 
 
-def manifest(spec: str, home: Path | None = None, version: str | None = None) -> Manifest:
-    """The manifest for ``name`` or ``name@version``; unknown names list
-    what exists."""
+def manifest(spec: str, version: str | None = None) -> Manifest:
+    """The manifest for ``name`` or ``name@version`` (a bundled name or a
+    path); unknown names list what exists."""
     if not spec:
         raise ValueError("agent name is empty; a resolved config always carries agent.name")
     name, pin = split_pin(spec)
-    path = paths.find("agents", name, home)
-    source = "user" if path.is_relative_to(paths.user_dir("agents", home)) else "bundled"
-    return _read(path, source, version=pin or version)
+    return _read(paths.find("agents", name), version=pin or version)
 
 
-def _load_hooks(hooks: str, home: Path | None) -> type[Agent]:
-    """The ``HOOKS`` class of a hooks module: bundled ``openrua.plugins.agents.<hooks>``,
-    then ``<home>/plugins/agents/<hooks>.py``."""
-    bundled_name = f"openrua.plugins.agents.{hooks}"
-    try:
-        module = importlib.import_module(bundled_name)
-    except ModuleNotFoundError as e:
-        if e.name != bundled_name:
-            raise
-        user_file = paths.user_plugins("agents", home) / f"{hooks}.py"
-        if not user_file.is_file():
-            raise NotFound(f"hooks module {hooks!r} not found",
-                           hint=f"bundled as {bundled_name} or a file at {user_file}") from None
-        module = _import_file(user_file)
+def _load_hooks(entry_point: str) -> type[Agent]:
+    """The ``HOOKS`` class of a resolved entry point: a module path
+    (``openrua.plugins.agents.<name>``) or an absolute file path."""
+    if entry_point.endswith(".py"):
+        module = _import_file(Path(entry_point))
+    else:
+        try:
+            module = importlib.import_module(entry_point)
+        except ModuleNotFoundError as e:
+            if e.name != entry_point:
+                raise
+            raise NotFound(f"entry_point module {entry_point!r} not found") from None
     cls = getattr(module, "HOOKS", None)
     if not (isinstance(cls, type) and issubclass(cls, Agent)):
         raise TypeError(f"{module.__name__} exposes no HOOKS (an Agent subclass)")
@@ -109,10 +104,10 @@ def _load_hooks(hooks: str, home: Path | None) -> type[Agent]:
 
 
 def _import_file(path: Path):
-    """Import one user-directory module under a private name, so two
-    users' files (or a user's and ours) never collide. A failure removes
-    the half-initialised module so a retry starts clean."""
-    modname = f"_openrua_user_hooks_{path.stem}"
+    """Import one module by file path under a private name, so two files
+    of the same stem never collide. A failure removes the
+    half-initialised module so a retry starts clean."""
+    modname = f"_openrua_entry_point_{path.stem}_{abs(hash(str(path)))}"
     if modname in sys.modules:
         return sys.modules[modname]
     spec = importlib.util.spec_from_file_location(modname, path)
@@ -128,12 +123,13 @@ def _import_file(path: Path):
     return module
 
 
-def compose(m: Manifest, home: Path | None = None) -> Agent:
-    """Manifest + hooks -> Agent. Without ``hooks:`` the plain contract
-    class is used; it has no launch command, which check_agent reports."""
+def compose(m: Manifest) -> Agent:
+    """Manifest + entry point -> Agent. Without ``entry_point:`` the plain
+    contract class is used; it has no launch command, which check_agent
+    reports."""
     fields = dict(m.fields)
-    hooks = fields.pop("hooks", None)
-    cls = _load_hooks(hooks, home) if hooks else Agent
+    entry = fields.pop("entry_point", None)
+    cls = _load_hooks(entry) if entry else Agent
     if fields.get("credentials") is not None:
         fields["credentials"] = Credentials(**fields["credentials"])
     fields["whitelist"] = tuple(fields.get("whitelist", ()))
@@ -143,33 +139,32 @@ def compose(m: Manifest, home: Path | None = None) -> Agent:
 
 
 def get(spec: str, home: Path | None = None, version: str | None = None) -> Agent:
-    """The Agent for an ``agent.name`` (or ``name@version``): manifest
-    found, hooks imported. ``version`` is a config's ``agent.version``."""
-    return compose(manifest(spec, home, version), home)
+    """The Agent for an ``agent.name`` (or ``name@version``, or a manifest
+    path): manifest found, entry point imported. ``version`` is a
+    config's ``agent.version``. ``home`` is accepted for call-site
+    symmetry and unused: agents are bundled or passed as paths."""
+    del home
+    return compose(manifest(spec, version))
 
 
 @dataclass(frozen=True)
 class Listed:
     name: str
-    source: str            # "bundled" | "user"
     path: Path
-    agent: Agent | None    # None when the hooks failed to load
+    agent: Agent | None    # None when the entry point failed to load
     error: str | None = None
-    shadowed_by: Path | None = None
 
 
-def available(home: Path | None = None) -> list[Listed]:
-    """Every agent, bundled then user, each composed in isolation: a
-    broken hooks module is listed with its error and hides nothing else."""
+def available() -> list[Listed]:
+    """Every bundled agent, each composed in isolation: a broken entry
+    point is listed with its error and hides nothing else."""
     out: list[Listed] = []
-    for m in manifests(home):
+    for m in manifests():
         try:
-            out.append(Listed(m.name, m.source, m.path, compose(m, home),
-                              shadowed_by=m.shadowed_by))
+            out.append(Listed(m.name, m.path, compose(m)))
         except Exception as exc:  # noqa: BLE001
             _log.warning("agent %s failed to load: %s", m.path, exc)
-            out.append(Listed(m.name, m.source, m.path, None, error=str(exc),
-                              shadowed_by=m.shadowed_by))
+            out.append(Listed(m.name, m.path, None, error=str(exc)))
     return out
 
 

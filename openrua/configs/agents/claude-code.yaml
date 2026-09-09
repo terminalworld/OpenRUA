@@ -1,5 +1,5 @@
 # Claude Code: the facts OpenRUA needs about this agent. The behaviour
-# (launch command, transcript parsing, quota handling) is the hooks module
+# (launch command, transcript parsing, quota handling) is the module named by entry_point
 # named at the bottom.
 name: claude-code
 default_model: claude-opus-5
@@ -47,4 +47,4 @@ default_options:
   autocompact: 1M
   bash_timeout_ms: 600000
   bash_max_timeout_ms: 1800000
-hooks: claude_code
+entry_point: claude_code

@@ -4,6 +4,7 @@
 # published numbers; see environments/capbench.py).
 # Sections: task / protocol / agent / robot + simulator / install / scenes.
 
+entry_point: capbench   # the bridge loader: bundled name, or ./path to a module of your own
 task:
   benchmark: capbench
   # The suites this benchmark runs, spelled the way every consumer spells

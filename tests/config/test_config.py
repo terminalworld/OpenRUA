@@ -5,7 +5,7 @@ import pytest
 import yaml
 
 from openrua import config
-from openrua.errors import UsageError
+from openrua.errors import NotFound, UsageError
 from openrua.config import paths
 from openrua.config import (apply_suite_overrides, compose, load_config, load_robot,
                             load_simulator, normalize_arms)
@@ -65,7 +65,8 @@ def test_native_scene_without_a_benchmark(tmp_path):
     c = compose("panda", "robosuite", None, tmp_path)
     assert (c.benchmark, c.suite, c.task_id) == (None, "Lift", 0)
     assert c.cfg["task"] == {"benchmark": "robosuite", "suites": ["Lift"],
-                             "init_states": "seeded-reset", "split": "target", "task_language": {}}
+                             "init_states": "seeded-reset", "split": "target", "task_language": {},
+                             "loader": "openrua.robot.sim.bridge.environments.robosuite"}
     assert c.cfg["machine"]["backend"]["simulator"]["venv"] == "cap-x/.venv-capbench"
     assert c.cfg["agent"]["name"] == "claude-code"              # the defaults files
 
@@ -77,8 +78,8 @@ def test_robot_type_alone_asks_for_a_simulator(tmp_path):
 
 
 def test_real_instance_brings_its_machine_over_its_type(tmp_path):
-    (tmp_path / "robots").mkdir()
-    (tmp_path / "robots" / "lab-panda.yaml").write_text(
+    lab = tmp_path / "lab-panda.yaml"                          # a file of your own: by path
+    lab.write_text(
         "type: panda\n"
         "machine:\n"
         "  backend: {kind: real, ros_distro: humble, discovery: {network: host}}\n"
@@ -86,8 +87,8 @@ def test_real_instance_brings_its_machine_over_its_type(tmp_path):
         "  robot: {model: Our lab Panda}\n")
     # a real robot alone has no scene to load; with a benchmark it runs its tasks
     with pytest.raises(UsageError):
-        compose("lab-panda", None, None, tmp_path)
-    c = compose("lab-panda", None, "libero_pro", tmp_path)
+        compose(str(lab), None, None, tmp_path)
+    c = compose(str(lab), None, "libero_pro", tmp_path)
     m = c.cfg["machine"]
     assert c.simulator is None and m["backend"]["kind"] == "real"
     assert m["robot"]["model"] == "Our lab Panda"               # instance over type
@@ -95,15 +96,14 @@ def test_real_instance_brings_its_machine_over_its_type(tmp_path):
     assert m["arm"]["joints"][0] == "panda_joint1" and m["cameras"]["list"] == ["wrist"]
     assert m["backend"]["sandbox_image"] == "openrua-sandbox-humble"
     with pytest.raises(UsageError):                            # an instance takes no --sim
-        compose("lab-panda", "robosuite", None, tmp_path)
+        compose(str(lab), "robosuite", None, tmp_path)
 
 
 def test_simulator_file_is_validated(tmp_path):
     s = load_simulator("robosuite", tmp_path)
     assert s["engine"].startswith("robosuite") and "panda" in s["robots"]
-    assert s["native"]["loader"] == "robosuite"
-    (tmp_path / "simulators").mkdir()
-    bad = tmp_path / "simulators" / "x.yaml"
+    assert s["native"]["entry_point"] == "robosuite"
+    bad = tmp_path / "x.yaml"
     bad.write_text("engine: x\ninstall: {venv: v}\nrobots: {panda: {kp: 3}}\n")
     with pytest.raises(config.ConfigError) as e:
         load_simulator(bad, tmp_path)
@@ -184,7 +184,7 @@ def test_user_config_layers_under_the_benchmark(tmp_path):
     assert cfg["agent"]["credentials_dir"] == "/creds"        # benchmark silent: user's
     # a benchmark naming no robot takes the user's default
     b = tmp_path / "noname.yaml"
-    b.write_text("task: {benchmark: libero_pro, suites: [libero_goal_task]}\n"
+    b.write_text("entry_point: libero\ntask: {benchmark: libero_pro, suites: [libero_goal_task]}\n"
                  "simulator: robosuite\n")
     assert load_config(b, home=tmp_path)["machine"]["robot"]["model"] == "Franka Emika Panda"
 
@@ -196,7 +196,7 @@ def test_sandbox_run_args_come_from_the_defaults_file_only(tmp_path):
     assert cfg["sandbox"]["run_args"] == ["--userns=keep-id"]
     # a machine fact has no place in a benchmark config
     b = tmp_path / "b.yaml"
-    b.write_text("task: {benchmark: libero_pro, suites: [libero_goal_task]}\n"
+    b.write_text("entry_point: libero\ntask: {benchmark: libero_pro, suites: [libero_goal_task]}\n"
                  "robot: panda\nsimulator: robosuite\nsandbox: {run_args: ['--userns=keep-id']}\n")
     with pytest.raises(config.ConfigError) as e:
         load_config(b, home=tmp_path)
@@ -212,7 +212,7 @@ def test_user_config_unknown_key_is_an_error(tmp_path):
 
 def test_benchmark_without_robot_or_machine_says_where_to_name_one(tmp_path):
     b = tmp_path / "noname.yaml"
-    b.write_text("task: {benchmark: libero_pro, suites: [x]}\n")
+    b.write_text("entry_point: libero\ntask: {benchmark: libero_pro, suites: [x]}\n")
     with pytest.raises(UsageError) as e:
         load_config(b, home=tmp_path)
     assert "config set --robot" in e.value.hint and "name a robot" in str(e.value)
@@ -232,3 +232,16 @@ def test_schema_is_json_and_documents_fields():
     assert s["properties"]["protocol"]
     protocol = s["$defs"]["Protocol"]["properties"]
     assert "description" in protocol["resume_on_quota_wall"]
+
+
+def test_a_benchmark_of_your_own_names_its_loader_by_path(tmp_path):
+    (tmp_path / "my_loader.py").write_text("LOADER = object()\n")
+    b = tmp_path / "mine.yaml"
+    b.write_text("entry_point: ./my_loader.py\ntask: {benchmark: mine, suites: [s]}\n"
+                 "robot: panda\nsimulator: robosuite\n")
+    cfg = load_config(b, home=tmp_path)
+    assert cfg["task"]["loader"] == str(tmp_path / "my_loader.py")
+    b.write_text("entry_point: ./gone.py\ntask: {benchmark: mine, suites: [s]}\n"
+                 "robot: panda\nsimulator: robosuite\n")
+    with pytest.raises(NotFound, match="gone.py"):
+        load_config(b, home=tmp_path)

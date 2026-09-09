@@ -1,5 +1,5 @@
 # Codex (OpenAI): the facts OpenRUA needs about this agent. The behaviour
-# (launch command, transcript parsing) is the hooks module named at the
+# (launch command, transcript parsing) is the module named by entry_point at the
 # bottom. Facts read from codex-cli 0.145.0 --help and its JSONL output.
 name: codex
 default_model: gpt-5.6-sol
@@ -40,4 +40,4 @@ instruction_file: AGENTS.md
 default_options:
   effort: high
   web_search: disabled
-hooks: codex
+entry_point: codex

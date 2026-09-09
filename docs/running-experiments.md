@@ -18,8 +18,8 @@ openrua bench --config libero_pro --run-id demo \
 
 A run is one benchmark config, one task suite, and a set of task ids
 and seeds; each (task, seed) pair is one trial, run in sequence. `--config`
-names a bundled benchmark (`openrua benchmarks`), a file under
-`~/.openrua/benchmarks/`, or a path. `--robot` overrides the config's
+names a bundled benchmark (`openrua benchmarks`) or a path to a
+benchmark file of your own. `--robot` overrides the config's
 robot. Everything else about the protocol (wall clock, turn budget,
 cameras, control) is in the config, and the trial writes the resolved
 copy it ran with.

@@ -153,7 +153,7 @@ A robots/<name>.yaml describing one particular robot, usually a real one: its ``
 | `workspace_template` | str \| null | 'workspace' | workspace tree seeded into the sandbox; null = none |
 | `engine_model` | str \| null | None | the robot's name inside the simulator (robosuite: Panda, PandaOmron) |
 | `controller` | str | 'JOINT_POSITION' | robosuite controller |
-| `controller_config` | str \| null | None | controller json: under robots/ (bundled, then ~/.openrua/robots/) or a path |
+| `controller_config` | str \| null | None | controller json: a bundled name under robots/controllers/ or a path relative to the file naming it |
 | `controller_kp_scale` | float | 10.0 | multiplier on the simulator's joint position gains |
 | `cameras` | [Cameras](#cameras) |  | the cameras the graph publishes |
 | `control` | [Control](#control) |  | how goals are executed and judged |
@@ -284,7 +284,7 @@ What ``openrua run <robot> --sim <engine>`` loads with no benchmark.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `loader` | str | **required** | bridge loader name (robosuite) |
+| `entry_point` | str | **required** | the bridge loader for the engine's own scenes: a bundled name (robosuite) or a path to a module of your own, relative to this file |
 | `scene` | str | **required** | the engine's own scene / env name (robosuite: Lift) |
 | `cameras` | [Cameras](#cameras) |  | the scene's cameras |
 
@@ -296,7 +296,7 @@ How an engine drives one robot type: the keys that depend on the simulator, merg
 |---|---|---|---|
 | `engine_model` | str \| null | None | the robot's name inside the engine (robosuite: Panda, PandaOmron) |
 | `controller` | str \| null | None | robosuite controller type |
-| `controller_config` | str \| null | None | controller json: under robots/ (bundled, then ~/.openrua/robots/) or a path |
+| `controller_config` | str \| null | None | controller json: a bundled name under robots/controllers/ or a path relative to the file naming it |
 | `controller_kp_scale` | float \| null | None | multiplier on the engine's joint position gains |
 | `joint_name_map` | dict[str, str] \| null | None | engine joint prefix -> published prefix |
 | `control` | [Control](#control) \| null | None | how goals are executed and judged |
@@ -310,6 +310,7 @@ A benchmarks/<name>.yaml as written.
 
 | key | type | default | meaning |
 |---|---|---|---|
+| `entry_point` | str | **required** | the bridge loader building, resetting and scoring this benchmark's scenes: a bundled name (libero, capbench, robocasa) or a path to a module of your own, relative to this file; the module exposes LOADER |
 | `task` | [Task](#task) | **required** | what is run |
 | `protocol` | [Protocol](#protocol) |  | budgets and clock |
 | `agent` | [AgentConfig](#agentconfig) |  | which agent, over the defaults files |
@@ -324,7 +325,8 @@ A benchmarks/<name>.yaml as written.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `benchmark` | str | **required** | loader name: libero_pro \| capbench \| robocasa365 |
+| `benchmark` | str | **required** | the benchmark's name as records carry it: libero_pro \| capbench \| robocasa365 \| the engine's name for a native scene |
+| `loader` | str \| null | None | the loader the bridge imports, resolved by openrua from the benchmark's (or native scene's) entry_point: a module path or an absolute file path; not written by hand |
 | `suites` | list[str] | **required** | task suites this benchmark runs; openrua bench picks one with --task-suite |
 | `init_states` | str \| null | None | how episodes start (documentation of the loader's behaviour): benchmark-files \| seeded-reset |
 | `split` | str | 'target' | robocasa: object/layout split |
@@ -419,7 +421,7 @@ How this machine starts the sandbox container. A machine fact, so it lives in th
 
 ## AgentManifest
 
-configs/agents/<name>.yaml: the facts about one coding agent, no code. The hooks module named by ``hooks`` supplies the behaviour.
+configs/agents/<name>.yaml: the facts about one coding agent, no code. The module named by ``entry_point`` supplies the behaviour.
 
 | key | type | default | meaning |
 |---|---|---|---|
@@ -434,7 +436,7 @@ configs/agents/<name>.yaml: the facts about one coding agent, no code. The hooks
 | `version_argv` | list[str] \| null | None | command printing the agent's version |
 | `instruction_file` | str \| null | None | the file the agent reads instructions from, e.g. AGENTS.md |
 | `default_options` | dict[str, Any] | {} | knobs a config may override under agent.options |
-| `hooks` | str \| null | None | hooks module name under plugins/agents/ (bundled, then ~/.openrua/plugins/agents/) |
+| `entry_point` | str \| null | None | the module behind this manifest, exposing HOOKS (an Agent subclass): a bundled name under plugins/agents/ or a path to a module of your own, relative to this file |
 
 ## Credentials
 

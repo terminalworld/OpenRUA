@@ -89,8 +89,14 @@ def open_session(args) -> Session:
     workdir.mkdir(parents=True)
     network = ensure_internal_network()
     proxy_url = ensure_proxy(network)
-    adapter = agents.get(args.agent or cfg.get("agent", {}).get("name"), args.home,
-                         version=cfg.get("agent", {}).get("version"))
+    cfg_agent = cfg.get("agent", {})
+    adapter = agents.get(args.agent or cfg_agent.get("name"), args.home,
+                         version=cfg_agent.get("version"))
+    # The config's model belongs to the config's agent; with --agent
+    # naming another one, that model would be sent to the wrong CLI.
+    model = (getattr(args, "model", None)
+             or (cfg_agent.get("model") if adapter.name == cfg_agent.get("name") else None)
+             or adapter.default_model)
     creds_home = Path(cfg.get("agent", {}).get("credentials_dir")
                       or paths.credentials_dir(args.home) / adapter.name).expanduser()
     cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter)
@@ -127,7 +133,7 @@ def open_session(args) -> Session:
     state.save(args.name, args.home, sim=sim_name, sandbox=sandbox_name,
                backend=cfg["machine"]["backend"]["kind"],
                network=network, proxy=proxy_url, agent=adapter.name,
-               model=cfg.get("agent", {}).get("model") or adapter.default_model,
+               model=model,
                options={**adapter.default_options,
                         **cfg.get("agent", {}).get("options", {})},
                workspace=str(workdir / "workspace"), task=task)
@@ -140,9 +146,7 @@ def open_session(args) -> Session:
         robot=composed.robot, robot_model=robot.get("model", "?"), backend=where,
         benchmark=composed.benchmark,
         suite=suite, task_id=task_id, task=task,
-        agent=adapter.name,
-        model=cfg.get("agent", {}).get("model") or adapter.default_model,
-        power_off=power_off)
+        agent=adapter.name, model=model, power_off=power_off)
 
 
 def run(args) -> int:

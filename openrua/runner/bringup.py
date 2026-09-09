@@ -169,26 +169,34 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
 
 
 def resolve_robot_files(cfg: dict, dest: Path, home: Path | None = None) -> None:
-    """Files the robot reads by path (``machine.controller_config``) are
-    copied next to the config and named there by absolute path, so the
-    container sees them through the one mount it has on that directory
-    and the config stays self-contained. Names resolve bundled
-    (``openrua/configs/robots/``), then ``<home>/robots/``, then as a
-    path."""
+    """Files the robot reads by path are copied next to the config and
+    named there by absolute path, so the container sees them through
+    the one mount it has on that directory and the config stays
+    self-contained: ``machine.controller_config`` (a bundled name under
+    ``robots/controllers/`` or a path) and ``task.loader`` when it is a
+    file of your own (a bundled module path is left alone)."""
+    del home
     machine = cfg.get("machine", {})
     spec = machine.get("controller_config")
-    if not spec:
-        return
-    p = Path(spec).expanduser()
-    candidates = [p] if p.is_absolute() else [
-        paths.bundled("robots") / p, paths.user_dir("robots", home) / p, p]
-    src = next((c for c in candidates if c.is_file()), None)
-    if src is None:
-        looked = ", ".join(str(c) for c in candidates)
-        raise NotFound(f"machine.controller_config {spec!r} not found (looked at: {looked})")
+    if spec:
+        p = Path(spec).expanduser()
+        candidates = [p] if p.is_absolute() else [
+            paths.bundled("robots") / "controllers" / p, paths.bundled("robots") / p, p]
+        src = next((c for c in candidates if c.is_file()), None)
+        if src is None:
+            looked = ", ".join(str(c) for c in candidates)
+            raise NotFound(f"machine.controller_config {spec!r} not found (looked at: {looked})")
+        machine["controller_config"] = _stage(src, dest)
+    loader = cfg.get("task", {}).get("loader")
+    if loader and loader.endswith(".py"):
+        cfg["task"]["loader"] = _stage(Path(loader), dest)
+
+
+def _stage(src: Path, dest: Path) -> str:
     dst = dest / src.name
-    shutil.copyfile(src, dst)
-    machine["controller_config"] = str(dst.resolve())
+    if dst.resolve() != src.resolve():
+        shutil.copyfile(src, dst)
+    return str(dst.resolve())
 
 
 def ensure_internal_network(name: str = "openrua-internal") -> str:

@@ -16,10 +16,10 @@ usage: openrua [-h] [--version] [--home HOME] <verb> ...
 
 | verb | does |
 |---|---|
-| `robots` | list the robots: bundled, then ~/.openrua/robots/ |
-| `simulators` | list the simulators: bundled, then ~/.openrua/simulators/ |
-| `benchmarks` | list the benchmarks: bundled, then ~/.openrua/benchmarks/ |
-| `agents` | list the agents: bundled, then ~/.openrua/agents/ |
+| `robots` | list the bundled robots |
+| `simulators` | list the bundled simulators |
+| `benchmarks` | list the bundled benchmarks |
+| `agents` | list the bundled agents |
 | `build` | build the robot, sandbox and proxy images |
 | `run` | bring a robot up, open the agent on it, power off after |
 | `up` | bring a robot up with a sandbox terminal on it |
@@ -39,9 +39,8 @@ Global options: `--home` (the user directory, default `$OPENRUA_HOME` or `~/.ope
 ```
 usage: openrua robots [-h] [--json]
 
-Every robot OpenRUA can find: the bundled ones, then yours under
-<home>/robots/. A user file that carries a bundled name is reported and not
-used.
+Every robot shipped in the package. A file of your own is not listed; pass it
+as a path where a name is expected.
 
 options:
   -h, --help  show this help message and exit
@@ -53,9 +52,8 @@ options:
 ```
 usage: openrua simulators [-h] [--json]
 
-Every simulator OpenRUA can find: the bundled ones, then yours under
-<home>/simulators/. A user file that carries a bundled name is reported and
-not used.
+Every simulator shipped in the package. A file of your own is not listed; pass
+it as a path where a name is expected.
 
 options:
   -h, --help  show this help message and exit
@@ -67,9 +65,8 @@ options:
 ```
 usage: openrua benchmarks [-h] [--json]
 
-Every benchmark OpenRUA can find: the bundled ones, then yours under
-<home>/benchmarks/. A user file that carries a bundled name is reported and
-not used.
+Every benchmark shipped in the package. A file of your own is not listed; pass
+it as a path where a name is expected.
 
 options:
   -h, --help  show this help message and exit
@@ -81,9 +78,8 @@ options:
 ```
 usage: openrua agents [-h] [--json]
 
-Every agent OpenRUA can find: the bundled ones, then yours under
-<home>/agents/. A user file that carries a bundled name is reported and not
-used.
+Every agent shipped in the package. A file of your own is not listed; pass it
+as a path where a name is expected.
 
 options:
   -h, --help  show this help message and exit

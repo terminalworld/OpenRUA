@@ -83,7 +83,7 @@ def main() -> None:
     # The main thread creates the env (and its EGL context) and becomes the
     # single sim-owner thread; everything else submits jobs to it.
     sim = Worker()
-    loader = environments.get(cfg["task"]["benchmark"])
+    loader = environments.load(cfg["task"]["loader"])
     env, task_ctx = loader.create(cfg, args.task_suite, args.task_id)
     env.reset()
     sim.bind_current_thread()

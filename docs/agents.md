@@ -15,9 +15,11 @@ the agent through `openrua.agents.get(name)`:
 - the manifest, `configs/agents/<name>.yaml`: the facts (name, default
   model, install line, proxy whitelist, login layout, token variable,
   version, default options), no code;
-- the hooks module, `plugins/agents/<hooks>.py`: the behaviour (launch
-  command, interactive command, transcript parsing, quota handling,
-  replay), a subclass of `openrua.agents.Agent` exposing `HOOKS`.
+- the module the manifest names under `entry_point`
+  (`plugins/agents/<name>.py` for the bundled ones): the behaviour
+  (launch command, interactive command, transcript parsing, quota
+  handling, replay), a subclass of `openrua.agents.Agent` exposing
+  `HOOKS`.
 
 Selecting, pinning and logging an agent in is in [install.md](install.md).
 A test (`tests/agents/test_agent_boundary.py`) fails the build if agent-specific
@@ -31,7 +33,7 @@ knowledge appears anywhere else.
 |---|---|---|
 | `name` | yes | the name configs use under `agent.name` |
 | `default_model` | yes | model when the config names none |
-| `hooks` | for launch | hooks module name (`plugins/agents/<hooks>.py`) |
+| `entry_point` | for launch | the module behind the manifest: a bundled name (`plugins/agents/<name>.py`) or a path relative to the manifest (`./my_agent.py`) |
 | `binary` | | the CLI executable inside the sandbox |
 | `install` | | one-line root shell chain that installs the CLI into the sandbox image; `{version}` in it is replaced by a pin when one is given |
 | `version` | | a pin the manifest itself carries; normally absent (see below) |
@@ -64,16 +66,16 @@ the set of hooks its class overrides; `openrua agents` lists them.
 ## The smallest agent
 
 ```yaml
-# ~/.openrua/agents/my-agent.yaml
+# my-agent.yaml
 name: my-agent
 default_model: some-model
 install: pip install my-agent-cli
 whitelist: ['^api\\.example\\.com$']
-hooks: my_agent
+entry_point: ./my_agent.py
 ```
 
 ```python
-# ~/.openrua/plugins/agents/my_agent.py
+# my_agent.py, next to the manifest
 from openrua.agents import Agent
 
 class MyAgent(Agent):
@@ -84,11 +86,12 @@ class MyAgent(Agent):
 HOOKS = MyAgent
 ```
 
-Both halves are looked up bundled first, then in the user directory. A
-user manifest carrying a bundled name is reported by `openrua doctor`
-and ignored. To ship an agent with OpenRUA, put the two files under
-`openrua/configs/agents/` and `openrua/plugins/agents/` and open a pull
-request.
+Pass the manifest where an agent name is expected (`openrua run
+--agent ./my-agent.yaml`, `openrua build sandbox --agent
+./my-agent.yaml`); the module is found next to it. To ship an agent
+with OpenRUA, put the manifest under `openrua/configs/agents/`, the
+module under `openrua/plugins/agents/`, name it by its bare module name
+(`entry_point: my_agent`) and open a pull request.
 
 Conformance, from your own tests:
 
@@ -96,7 +99,7 @@ Conformance, from your own tests:
 from openrua.testing import check_manifest
 
 def test_conforms():
-    check_manifest("~/.openrua/agents/my-agent.yaml")
+    check_manifest("./my-agent.yaml")
 ```
 
 ## Bundled

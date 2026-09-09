@@ -7,7 +7,7 @@ A third-party agent proves itself with one call from its own tests::
     def test_conforms():
         check_manifest("~/.openrua/agents/my-agent.yaml")
 
-``check_manifest`` validates the manifest, composes it with its hooks
+``check_manifest`` validates the manifest, composes it with its entry point
 module and runs ``check_agent`` on the result; both raise
 AssertionError naming the first violation. The bundled agents run
 through the same functions in OpenRUA's own suite.
@@ -22,13 +22,14 @@ from openrua.agents.base import HOOK_NAMES, Agent, Credentials
 
 
 def check_manifest(path: str | Path, home: Path | None = None) -> Agent:
-    """Validate one manifest file, compose it with its hooks, check the
-    result. Returns the composed Agent."""
+    """Validate one manifest file, compose it with its entry point, check
+    the result. Returns the composed Agent."""
     p = Path(path).expanduser()
     assert p.is_file(), f"manifest not found: {p}"
-    m = registry._read(p, "user")
-    assert m.fields.get("hooks"), f"{p}: names no hooks module; launch_argv would be missing"
-    agent = registry.compose(m, home)
+    del home
+    m = registry._read(p)
+    assert m.fields.get("entry_point"), f"{p}: names no entry_point; launch_argv would be missing"
+    agent = registry.compose(m)
     check_agent(agent)
     return agent
 

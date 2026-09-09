@@ -44,10 +44,10 @@ def test_set_needs_a_flag_and_keeps_other_keys(tmp_path):
 
 
 def test_a_defaulted_simulator_does_not_break_a_real_instance(tmp_path):
-    (tmp_path / "robots").mkdir()
-    (tmp_path / "robots" / "lab.yaml").write_text(
+    lab = tmp_path / "lab.yaml"
+    lab.write_text(
         "machine:\n  backend: {kind: real, discovery: {network: host}}\n"
         "  robot: {model: Lab arm}\n  arm: {joints: [j1], limits_rad: [[-1, 1]]}\n")
     (tmp_path / "config.yaml").write_text("simulator: robosuite\n")
-    c = compose("lab", None, "libero_pro", tmp_path)
+    c = compose(str(lab), None, "libero_pro", tmp_path)
     assert c.simulator is None and c.cfg["machine"]["backend"]["kind"] == "real"

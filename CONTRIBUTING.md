@@ -25,7 +25,7 @@ per unit (`tests/<unit>/`).
   a bridge backend that drives the engine. It embodies robots and loads a
   native scene; it knows no benchmark.
 - **An agent**: a manifest under `openrua/configs/agents/<name>.yaml`
-  and a hooks module under `openrua/plugins/agents/<hooks>.py`
+  and a module under `openrua/plugins/agents/<name>.py` named by its `entry_point`
   (docs/agents.md). `openrua.testing.check_manifest` must pass; the
   bundled agents run through it in `tests/agents/test_agents.py`. Nothing
   outside those two directories may name the agent (the boundary

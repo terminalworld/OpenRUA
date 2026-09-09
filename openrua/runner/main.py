@@ -114,7 +114,7 @@ def run(args: argparse.Namespace) -> int:
     record_cameras = args.record
 
     home = paths.home(args.home)
-    cfg_path = paths.find("benchmarks", args.config, home).resolve()
+    cfg_path = paths.find("benchmarks", args.config).resolve()
     cfg = load_config(cfg_path, args.robot, home, sim=args.sim)
     if cfg["machine"]["backend"].get("kind") != "sim" and not args.task:
         raise UsageError("a real robot has no benchmark task to ask for",
