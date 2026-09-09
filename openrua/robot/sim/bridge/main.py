@@ -101,8 +101,10 @@ def main() -> None:
     node = GraphNode(engine, cfg, sim)
     # The graph re-aligns itself whenever the world is restored under it;
     # simulation only fires the slot, this wiring is the whole coupling.
+    arms = cfg["machine"].get("arms") or [{}]
     monitor = Monitor(env, task_ctx, loader, engine, sim, on_reset=node.refresh,
-                      record=recording(cfg, args.record, args.record_cameras))
+                      record=recording(cfg, args.record, args.record_cameras),
+                      hand_body=arms[0].get("hand_body", "robot0_right_hand"))
 
     stop = {"flag": False}
 

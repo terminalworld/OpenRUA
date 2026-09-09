@@ -1,0 +1,36 @@
+# ManiSkill 3 (SAPIEN 3, PhysX): the engine behind the maniskill benchmark
+# and, through SAPIEN, the one SimplerEnv and RoboTwin build on. This file
+# knows the engine and how it drives each robot type it embodies; it knows
+# no benchmark.
+
+engine: ManiSkill 3 on SAPIEN 3 (PhysX CPU)
+entry_point: maniskill       # bridge engine: joints, poses, cameras, actions over a ManiSkill env
+
+install:                     # the stock package, no checkout; rendering is Vulkan (lavapipe with no GPU)
+  venv: maniskill/.venv      # relative to ~/.openrua/simulators/; py3.12 == Jazzy
+  ros_distro: jazzy
+  python: "3.12"
+  requirements: maniskill/requirements.txt   # uv pip freeze of the venv the gate ran in
+
+native:                      # `openrua run <robot> --sim maniskill` with no --bench
+  entry_point: maniskill     # bridge loader: gym.make on a ManiSkill task
+  scene: PickCube-v1         # a red cube and a goal marker on a table
+  cameras:
+    resolution: [640, 480]
+    list: null               # publish every camera the task defines (base_camera, render_camera, ...)
+    rate_hz: 2
+    record: [render_camera, base_camera]
+
+robots:
+  panda:
+    controller: pd_joint_pos # absolute joint targets; the gripper part is a normalised mimic joint
+    joint_name_map:          # SAPIEN names are the URDF's: already the franka_ros2 names
+      panda_: panda_
+    control:
+      gripper:
+        open_threshold_m: 0.02
+        settle_steps: 10
+    tf:
+      hand: false
+      base_body: panda_link0 # the arm's root link
+      hand_body: panda_hand

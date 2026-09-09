@@ -253,6 +253,7 @@ Graph-side actuation behaviour (the facts below feed machine.yaml).
 |---|---|---|---|
 | `hand` | bool | False | bridge publishes hand frames (MoveIt-less runs) |
 | `base_body` | str | 'robot0_base' | simulator body the base frame is read from |
+| `hand_body` | str | 'robot0_right_hand' | simulator body the hand frame is read from (and FK targets) |
 
 ## SimulatorProfile
 
@@ -314,7 +315,7 @@ How an engine drives one robot type: the keys that depend on the simulator, merg
 | key | type | default | meaning |
 |---|---|---|---|
 | `engine_model` | str \| null | None | the robot's name inside the engine (robosuite: Panda, PandaOmron) |
-| `controller` | str \| null | None | robosuite controller type |
+| `controller` | str \| null | None | the engine's controller type (robosuite: JOINT_POSITION; ManiSkill: pd_joint_pos) |
 | `controller_config` | str \| null | None | controller json: a bundled name under robots/controllers/ or a path relative to the file naming it |
 | `controller_kp_scale` | float \| null | None | multiplier on the engine's joint position gains |
 | `joint_name_map` | dict[str, str] \| null | None | engine joint prefix -> published prefix |

@@ -118,7 +118,7 @@ it, come from the other two kinds of file.
 
 | Robot | Model | Embodied by |
 |---|---|---|
-| `panda` | Franka Emika Panda | `robosuite` |
+| `panda` | Franka Emika Panda | `robosuite`, `maniskill` |
 | `panda-omron` | Panda on an Omron mobile base | `robosuite` through `robocasa` / `robocasa365`'s assets |
 | *your robot* | any ROS&nbsp;2 arm or mobile manipulator, real | its own file; see [docs/your-own-robot.md](docs/your-own-robot.md) |
 
@@ -129,6 +129,7 @@ it, come from the other two kinds of file.
 | Simulator | Engine | Robots | Native scene |
 |---|---|---|---|
 | `robosuite` | [robosuite](https://robosuite.ai) 1.5 on MuJoCo | `panda` | `Lift`: a table and a cube |
+| `maniskill` | [ManiSkill](https://maniskill.ai) 3 on SAPIEN 3 (PhysX, CPU) | `panda` | `PickCube-v1`: a table, a cube and a goal marker |
 
 A simulator file knows the engine and how it drives each robot it
 embodies; it knows no benchmark. Its install (a venv under
@@ -147,6 +148,7 @@ embodies; it knows no benchmark. Its install (a venv under
 | [CaP-Bench](https://github.com/capgym/cap-x) (`capbench`) | `panda` | `robosuite` | CaP-X's tabletop scenes on robosuite 1.5, ROS&nbsp;2 Humble |
 | [RoboCasa](https://robocasa.ai) (`robocasa`) | `panda-omron` | `robosuite` | the original release's 24 atomic kitchen tasks (v0.2 on robosuite 1.5.0), ROS&nbsp;2 Humble |
 | [RoboCasa365](https://robocasa.ai) (`robocasa365`) | `panda-omron` | `robosuite` | the 365-task release's kitchens and the Panda-Omron body, ROS&nbsp;2 Humble |
+| [ManiSkill](https://maniskill.ai) (`maniskill`) | `panda` | `maniskill` | the eleven table-top Panda tasks that ship with ManiSkill 3, seeded resets, ROS&nbsp;2 Jazzy |
 
 A benchmark names its robot and simulator and brings its own world:
 `install:` (its venv and ROS distro) and `scenes:` (scene cameras, and

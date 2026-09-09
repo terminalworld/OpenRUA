@@ -17,7 +17,9 @@ robots, a robot knows neither.
   native scene `openrua run <robot> --sim <engine>` loads with no
   benchmark, and `robots:`, how the engine drives each robot type it
   embodies (controller, gains, joint-name map). The bundled `robosuite`
-  embodies `panda` and loads its `Lift` scene.
+  embodies `panda` and loads its `Lift` scene; `maniskill` (SAPIEN 3,
+  PhysX on the CPU, Vulkan rendering through lavapipe when there is no
+  GPU) embodies `panda` and loads `PickCube-v1`.
 - `benchmarks/<name>.yaml`: names its `robot:` and `simulator:` and
   brings its own world: `install:` (its venv and distro, over the
   simulator's) and `scenes:` (scene cameras, a default suite, and robot
@@ -54,6 +56,7 @@ by hand. It needs `uv` and `git` on the host. The installs are large
   robocerebra/      RoboCerebra (.venv; its LIBERO fork and the RoboCerebra_Bench cases)
   robocasa/         RoboCasa v0.2 on robosuite 1.5.0 (.venv; its kitchen assets)
   robocasa365/      RoboCasa365 (.venv-robocasa)
+  maniskill/        ManiSkill 3 (.venv; assets it downloads land in data/)
   install-*.sh      the rendered scripts
 ```
 

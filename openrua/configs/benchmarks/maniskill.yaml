@@ -1,0 +1,39 @@
+# ManiSkill 3 table-top benchmark (haosulab/ManiSkill, arXiv 2410.00425):
+# the Panda tasks that ship with the package. One suite, eleven tasks,
+# each reset from a seed (the task's own randomisation); success is the
+# task's evaluate().
+
+entry_point: maniskill    # the bridge loader, shared with the engine's native scene
+task:
+  benchmark: maniskill
+  suites: [tabletop]      # PickCube, StackCube, PushCube, PullCube, LiftPegUpright,
+                          # PegInsertionSide, PlugCharger, PokeCube, PullCubeTool,
+                          # PlaceSphere, RollBall (openrua benchmarks maniskill lists them)
+  init_states: seeded-reset
+
+protocol:
+  trials_per_task: 10
+  max_turns: 500
+  active_wall_clock_minutes: 240
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:
+  name: claude-code
+  model: claude-opus-5
+  options:
+    effort: high
+
+robot: panda              # configs/robots/panda.yaml; tasks that mount a wrist camera use ManiSkill's panda_wristcam
+simulator: maniskill      # configs/simulators/maniskill.yaml
+
+scenes:
+  default_suite: tabletop
+  cameras:
+    resolution: [640, 480]
+    list: null            # every camera the task defines
+    rate_hz: 2
+    record: [render_camera, base_camera]

@@ -334,6 +334,8 @@ class Tf(Strict):
     hand: bool = Field(default=False, description="bridge publishes hand frames (MoveIt-less runs)")
     base_body: str = Field(default="robot0_base", description="simulator body the base "
                            "frame is read from")
+    hand_body: str = Field(default="robot0_right_hand", description="simulator body the "
+                           "hand frame is read from (and FK targets)")
 
 
 class Base(Strict):
@@ -429,7 +431,8 @@ class Embodiment(Strict):
     Only the keys written are merged in."""
     engine_model: str | None = Field(default=None, description="the robot's name inside "
                                      "the engine (robosuite: Panda, PandaOmron)")
-    controller: str | None = Field(default=None, description="robosuite controller type")
+    controller: str | None = Field(default=None, description="the engine's controller "
+                                   "type (robosuite: JOINT_POSITION; ManiSkill: pd_joint_pos)")
     controller_config: str | None = Field(
         default=None, description="controller json: a bundled name under "
         "robots/controllers/ or a path relative to the file naming it")
