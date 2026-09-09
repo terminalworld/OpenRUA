@@ -412,26 +412,26 @@ What a benchmark brings into the simulator's world.
 
 ## UserConfig
 
-A defaults file: the package's configs/config.yaml or ~/.openrua/config.yaml.
+A defaults file: the package's configs/config.yaml or ~/.openrua/config.yaml. Four default names (robot, simulator, benchmark, agent) and, per agent name, this machine's facts about it.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `agent` | [AgentOverrides](#agentoverrides) |  | agent defaults; only the keys written are layered in |
+| `agent` | str \| null | None | agent when a command names none (openrua agents lists them) |
+| `agents` | dict[str, [AgentFacts](#agentfacts)] | {} | agent name -> this machine's facts about it (model, version, credentials_dir, options) |
 | `robot` | str \| null | None | robot when a command names none |
 | `simulator` | str \| null | None | simulator when a command names none (and the robot is a type) |
 | `benchmark` | str \| null | None | benchmark whose world openrua run / up load when --bench is not given; null = the simulator's native scene |
 | `sandbox` | [SandboxConfig](#sandboxconfig) |  | how this machine starts the sandbox |
 
-## AgentOverrides
+## AgentFacts
 
-A defaults file's agent section: same keys, no defaults, so only what the file wrote is layered in.
+What a machine knows about one agent (``agents.<name>`` in a defaults file): the model it runs, a CLI version pin, where its login lives, its default knobs. No defaults: only what is written is layered in.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `name` | str \| null | None | see AgentConfig |
-| `model` | str \| null | None | see AgentConfig |
-| `version` | str \| null | None | see AgentConfig |
-| `credentials_dir` | str \| null | None | see AgentConfig |
+| `model` | str \| null | None | model id this agent runs by default on this machine |
+| `version` | str \| null | None | pin the agent CLI version |
+| `credentials_dir` | str \| null | None | login profile directory; default: ~/.openrua/credentials/<name> |
 | `options` | dict[str, Any] \| null | None | merged key by key with the layers above |
 
 ## SandboxConfig

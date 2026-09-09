@@ -91,10 +91,17 @@ script it renders is printed and saved, and rerunning is cheap
 ## Your defaults
 
 `~/.openrua/config.yaml` holds what is true on this machine and nowhere
-else: the default agent and model, a credentials directory, the robot
-`up` opens when none is named, and under rootless Podman the sandbox's
-`--userns=keep-id`. Every key is optional; a benchmark config overrides
-the file, and command-line flags override both. The keys are listed in
+else: the robot, simulator, benchmark and agent a command uses when it
+names none; under `agents.<name>`, what this machine knows about each
+agent (the model it runs, a CLI version pin, its login directory, its
+default options); and under rootless Podman the sandbox's
+`--userns=keep-id`. `openrua config set` writes it (`--model`,
+`--version` and `--credentials-dir` land under the agent named with
+`--agent`, else the default one). Every key is optional; a benchmark
+config overrides the file, and command-line flags override both. A
+model belongs to an agent, so a benchmark's `agent.model` applies only
+when that agent runs; `--agent` switching to another agent takes that
+agent's facts and default model. The keys are listed in
 [config.md](config.md#userconfig).
 
 ## Check it

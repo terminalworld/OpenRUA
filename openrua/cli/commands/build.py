@@ -20,10 +20,9 @@ from openrua.sandbox.build import build as build_sandbox
 def default_agent(home: Path | None) -> str:
     """The agent name the defaults files resolve to: the user's file over
     the package's."""
-    layered = config.layer_agent(
-        {}, config.load_user_config(paths.package_config_path()),
+    return config.default_agent_name(
+        config.load_user_config(paths.package_config_path()),
         config.load_user_config(paths.config_path(home)))
-    return layered["name"]
 
 
 def manifests_for(names: list[str] | None, home: Path | None) -> list[agents.Manifest]:

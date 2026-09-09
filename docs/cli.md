@@ -299,11 +299,10 @@ options:
 ## openrua bench
 
 ```
-usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
-                     --run-id RUN_ID --task-suite TASK_SUITE
-                     [--task-ids TASK_IDS] [--seeds SEEDS]
-                     [--operator {agent,none,script}] [--task TASK]
-                     [--script SCRIPT] [--record [CAMERAS]]
+usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM] --run-id
+                     RUN_ID --task-suite TASK_SUITE [--task-ids TASK_IDS]
+                     [--seeds SEEDS] [--operator {agent,none,script}]
+                     [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
                      [--wall-clock-min WALL_CLOCK_MIN]
                      [--ros-domain ROS_DOMAIN]
                      [--credentials-dir CREDENTIALS_DIR]
@@ -455,7 +454,7 @@ options:
 
 ```
 usage: openrua config [-h] [--robot ROBOT] [--sim SIM] [--bench BENCH]
-                      [--agent AGENT] [--model MODEL]
+                      [--agent AGENT] [--model MODEL] [--version VERSION]
                       [--credentials-dir CREDENTIALS_DIR]
                       {show,set,schema}
 
@@ -472,10 +471,14 @@ options:
   --sim SIM             simulator, likewise
   --bench BENCH         benchmark whose world run / up load by default (null =
                         the simulator's native scene)
-  --agent AGENT         agent (openrua agents)
-  --model MODEL         model id for the agent
+  --agent AGENT         agent a command uses when it names none (openrua
+                        agents)
+  --model MODEL         model the agent runs on this machine (written under
+                        agents.<agent>)
+  --version VERSION     pin the agent's CLI version (agents.<agent>.version)
   --credentials-dir CREDENTIALS_DIR
                         the agent's login profile directory
+                        (agents.<agent>.credentials_dir)
 ```
 
 ## openrua doctor

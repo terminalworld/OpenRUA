@@ -121,13 +121,16 @@ class AgentConfig(Strict):
         "given, over the adapter's default_options")
 
 
-class AgentOverrides(Strict):
-    """A defaults file's agent section: same keys, no defaults, so only
-    what the file wrote is layered in."""
-    name: str | None = Field(default=None, description="see AgentConfig")
-    model: str | None = Field(default=None, description="see AgentConfig")
-    version: str | None = Field(default=None, description="see AgentConfig")
-    credentials_dir: str | None = Field(default=None, description="see AgentConfig")
+class AgentFacts(Strict):
+    """What a machine knows about one agent (``agents.<name>`` in a
+    defaults file): the model it runs, a CLI version pin, where its
+    login lives, its default knobs. No defaults: only what is written
+    is layered in."""
+    model: str | None = Field(default=None, description="model id this agent runs by "
+                              "default on this machine")
+    version: str | None = Field(default=None, description="pin the agent CLI version")
+    credentials_dir: str | None = Field(default=None, description="login profile "
+                                        "directory; default: ~/.openrua/credentials/<name>")
     options: dict[str, Any] | None = Field(default=None, description="merged key by key "
                                            "with the layers above")
 
@@ -592,9 +595,14 @@ class ResolvedConfig(Strict):
 
 
 class UserConfig(Strict):
-    """A defaults file: the package's configs/config.yaml or ~/.openrua/config.yaml."""
-    agent: AgentOverrides = Field(default_factory=AgentOverrides, description="agent "
-                                  "defaults; only the keys written are layered in")
+    """A defaults file: the package's configs/config.yaml or ~/.openrua/config.yaml.
+    Four default names (robot, simulator, benchmark, agent) and, per agent
+    name, this machine's facts about it."""
+    agent: str | None = Field(default=None, description="agent when a command names none "
+                              "(openrua agents lists them)")
+    agents: dict[str, AgentFacts] = Field(default_factory=dict, description="agent name -> "
+                                          "this machine's facts about it (model, version, "
+                                          "credentials_dir, options)")
     robot: str | None = Field(default=None, description="robot when a command names none")
     simulator: str | None = Field(default=None, description="simulator when a command "
                                   "names none (and the robot is a type)")

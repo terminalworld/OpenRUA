@@ -1,11 +1,14 @@
 """``openrua config show | set --robot R --sim S ... | schema``: your
 defaults file and the schema.
 
-The defaults file is ``~/.openrua/config.yaml``: the robot, simulator
-and benchmark a command uses when it names none, the agent and model,
-the sandbox's docker flags. ``set`` writes the flags it is given into
-it (the same flags ``run`` takes), ``show`` prints it, ``schema`` prints
-every key of the resolved config with its meaning.
+The defaults file is ``~/.openrua/config.yaml``: the robot, simulator,
+benchmark and agent a command uses when it names none; under
+``agents.<name>`` what this machine knows about each agent (model,
+version pin, login directory, options); the sandbox's docker flags.
+``set`` writes the flags it is given into it (the same flags ``run``
+takes; the agent facts under the agent named or defaulted), ``show``
+prints it, ``schema`` prints every key of the resolved config with its
+meaning.
 """
 
 from __future__ import annotations
@@ -18,10 +21,10 @@ from openrua import config
 from openrua.config import paths
 from openrua.errors import UsageError
 
-# flag -> key path in the defaults file
-KEYS = {"robot": ("robot",), "sim": ("simulator",), "bench": ("benchmark",),
-        "agent": ("agent", "name"), "model": ("agent", "model"),
-        "credentials_dir": ("agent", "credentials_dir")}
+# flag -> key path in the defaults file; an agent's facts go under
+# agents.<name>, the agent being --agent, else the file's, else the package's
+NAMES = {"robot": "robot", "sim": "simulator", "bench": "benchmark", "agent": "agent"}
+FACTS = {"model": "model", "credentials_dir": "credentials_dir", "version": "version"}
 
 
 def run(args) -> int:
@@ -34,21 +37,29 @@ def run(args) -> int:
         if path.is_file():
             print(path.read_text(), end="")
         return 0
-    given = {flag: getattr(args, flag) for flag in KEYS if getattr(args, flag) is not None}
-    if not given:
+    names = {f: getattr(args, f) for f in NAMES if getattr(args, f) is not None}
+    facts = {f: getattr(args, f) for f in FACTS if getattr(args, f) is not None}
+    if not names and not facts:
         raise UsageError("config set needs at least one flag",
                          hint="openrua config set --robot panda --sim robosuite --agent <name>")
+    config.load_user_config(path)                       # refuses the old agent: shape
     data = (config.load_yaml(path) if path.is_file() else {}) or {}
-    for flag, value in given.items():
-        node = data
-        for part in KEYS[flag][:-1]:
-            node = node.setdefault(part, {})
-        node[KEYS[flag][-1]] = value
+    written = []
+    for flag, value in names.items():
+        data[NAMES[flag]] = value
+        written.append((NAMES[flag], value))
+    if facts:
+        agent = (names.get("agent") or data.get("agent")
+                 or config.load_user_config(paths.package_config_path()).agent)
+        node = data.setdefault("agents", {}).setdefault(agent, {})
+        for flag, value in facts.items():
+            node[FACTS[flag]] = value
+            written.append((f"agents.{agent}.{FACTS[flag]}", value))
     config.validate(config.UserConfig, data, path)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.safe_dump(data, sort_keys=False))
-    for flag, value in given.items():
-        print(f"{'.'.join(KEYS[flag])}: {value}")
+    for key, value in written:
+        print(f"{key}: {value}")
     return 0
 
 
@@ -63,7 +74,12 @@ def add_parser(sub) -> None:
     p.add_argument("--sim", default=None, help="simulator, likewise")
     p.add_argument("--bench", default=None, help="benchmark whose world run / up load by "
                    "default (null = the simulator's native scene)")
-    p.add_argument("--agent", default=None, help="agent (openrua agents)")
-    p.add_argument("--model", default=None, help="model id for the agent")
-    p.add_argument("--credentials-dir", default=None, help="the agent's login profile directory")
+    p.add_argument("--agent", default=None, help="agent a command uses when it names none "
+                   "(openrua agents)")
+    p.add_argument("--model", default=None, help="model the agent runs on this machine "
+                   "(written under agents.<agent>)")
+    p.add_argument("--version", default=None, metavar="VERSION",
+                   help="pin the agent's CLI version (agents.<agent>.version)")
+    p.add_argument("--credentials-dir", default=None, help="the agent's login profile "
+                   "directory (agents.<agent>.credentials_dir)")
     p.set_defaults(fn=run)

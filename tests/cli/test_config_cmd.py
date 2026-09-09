@@ -19,18 +19,37 @@ def test_set_writes_the_defaults_and_run_uses_them(tmp_path, capsys):
     assert _run(["--home", home, "config", "set", "--robot", "panda", "--sim", "robosuite",
                  "--agent", "claude-code"]) == 0
     assert (tmp_path / "config.yaml").read_text() == (
-        "robot: panda\nsimulator: robosuite\nagent:\n  name: claude-code\n")
+        "robot: panda\nsimulator: robosuite\nagent: claude-code\n")
     c = compose(None, None, None, tmp_path)
     assert (c.robot, c.simulator, c.benchmark, c.suite) == ("panda", "robosuite", None, "Lift")
+    # an agent's facts land under agents.<name>: the flagged agent, else the file's
     _run(["--home", home, "config", "set", "--bench", "libero_pro", "--model", "m-1"])
+    _run(["--home", home, "config", "set", "--agent", "codex", "--credentials-dir", "/c",
+          "--version", "1.2.3"])
+    text = (tmp_path / "config.yaml").read_text()
+    assert "agents:\n  claude-code:\n    model: m-1\n" in text
+    assert "  codex:\n    credentials_dir: /c\n    version: 1.2.3\n" in text
+    assert "agent: codex" in text                            # the default moved with --agent
     c = compose(None, None, None, tmp_path)
     assert (c.benchmark, c.suite) == ("libero_pro", "libero_goal_task")
-    assert c.cfg["agent"]["model"] == "claude-opus-5"        # the benchmark's own wins
+    # the benchmark names its agent, and that wins over the file's default (as robot: does)
+    assert c.cfg["agent"]["name"] == "claude-code"
+    assert c.cfg["agent"]["model"] == "claude-opus-5"        # the benchmark's own wins over m-1
+    c = compose(None, None, None, tmp_path, agent="codex")   # --agent wins over both
+    assert c.cfg["agent"]["name"] == "codex" and c.cfg["agent"]["credentials_dir"] == "/c"
+    assert "model" not in c.cfg["agent"]                    # the benchmark's model is claude-code's
     c = compose(None, None, "capbench", tmp_path)               # a flag wins over the file
     assert c.benchmark == "capbench"
     _run(["--home", home, "config", "show"])
     out = capsys.readouterr().out
-    assert "benchmark: libero_pro" in out and "agent:" in out
+    assert "benchmark: libero_pro" in out and "agents:" in out
+    # the old shape is refused with the rewrite spelled out
+    (tmp_path / "config.yaml").write_text("agent:\n  name: codex\n  credentials_dir: /c\n")
+    import pytest
+    from openrua.errors import ConfigError
+    with pytest.raises(ConfigError) as e:
+        _run(["--home", home, "config", "set", "--robot", "panda"])
+    assert "agents.<name>" in str(e.value) and "agent: codex" in e.value.hint
 
 
 def test_set_needs_a_flag_and_keeps_other_keys(tmp_path):

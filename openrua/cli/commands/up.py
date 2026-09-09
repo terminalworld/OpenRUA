@@ -76,7 +76,7 @@ class Session:
 def open_session(args) -> Session:
     """Bring the robot and its sandbox up and record them under
     ``args.name``; the returned session's ``power_off`` takes them down."""
-    composed = compose(args.robot, args.sim, args.bench, args.home)
+    composed = compose(args.robot, args.sim, args.bench, args.home, agent=args.agent)
     cfg = composed.cfg
     suite = args.task_suite or composed.suite
     task_id = args.task_id if args.task_id is not None else composed.task_id
@@ -89,14 +89,11 @@ def open_session(args) -> Session:
     workdir.mkdir(parents=True)
     network = ensure_internal_network()
     proxy_url = ensure_proxy(network)
-    cfg_agent = cfg.get("agent", {})
-    adapter = agents.get(args.agent or cfg_agent.get("name"), args.home,
-                         version=cfg_agent.get("version"))
-    # The config's model belongs to the config's agent; with --agent
-    # naming another one, that model would be sent to the wrong CLI.
-    model = (getattr(args, "model", None)
-             or (cfg_agent.get("model") if adapter.name == cfg_agent.get("name") else None)
-             or adapter.default_model)
+    # cfg["agent"] is already the chosen agent's (compose took --agent):
+    # its model, version, login directory and options are that agent's.
+    cfg_agent = cfg["agent"]
+    adapter = agents.get(cfg_agent["name"], args.home, version=cfg_agent.get("version"))
+    model = getattr(args, "model", None) or cfg_agent.get("model") or adapter.default_model
     creds_home = Path(cfg.get("agent", {}).get("credentials_dir")
                       or paths.credentials_dir(args.home) / adapter.name).expanduser()
     cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter)

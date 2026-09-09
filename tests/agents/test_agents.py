@@ -244,8 +244,8 @@ def test_build_takes_install_and_whitelist_from_the_manifests(tmp_path):
     assert whitelist_for(["claude-code", "claude-code"], tmp_path).splitlines() == \
         list(a.whitelist)
     # the user's defaults file picks the default agent
-    (tmp_path / "config.yaml").write_text("agent: {name: claude-code}\n")
-    assert default_agent(tmp_path) == "claude-code"
+    (tmp_path / "config.yaml").write_text("agent: codex\n")
+    assert default_agent(tmp_path) == "codex"
 
 
 def test_agents_module_exposes_launch_only():

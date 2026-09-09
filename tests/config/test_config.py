@@ -176,12 +176,18 @@ def test_backend_union_is_strict():
 
 def test_user_config_layers_under_the_benchmark(tmp_path):
     (tmp_path / "config.yaml").write_text(
-        "agent:\n  model: my-model\n  options: {effort: low, autocompact: 1M}\n"
-        "  credentials_dir: /creds\nrobot: panda\n")
+        "agents:\n  claude-code:\n    model: my-model\n"
+        "    options: {effort: low, autocompact: 1M}\n    credentials_dir: /creds\n"
+        "  codex: {model: gpt-x, credentials_dir: /codex}\n"
+        "robot: panda\n")
     cfg = load_config("libero_pro", home=tmp_path)
     assert cfg["agent"]["model"] == "claude-opus-5"           # benchmark wins
     assert cfg["agent"]["options"] == {"effort": "high", "autocompact": "1M"}
     assert cfg["agent"]["credentials_dir"] == "/creds"        # benchmark silent: user's
+    # --agent picks that agent's facts; the benchmark's section is claude-code's, so it is left out
+    cfg = load_config("libero_pro", home=tmp_path, agent="codex")
+    assert (cfg["agent"]["name"], cfg["agent"]["model"], cfg["agent"]["credentials_dir"]) == \
+        ("codex", "gpt-x", "/codex") and cfg["agent"]["options"] == {}
     # a benchmark naming no robot takes the user's default
     b = tmp_path / "noname.yaml"
     b.write_text("entry_point: libero\ntask: {benchmark: libero_pro, suites: [libero_goal_task]}\n"
