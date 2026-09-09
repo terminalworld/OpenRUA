@@ -20,6 +20,11 @@ EVAL_LAYOUT_AND_STYLE_IDS = [(1, 1), (2, 2), (4, 4), (6, 9), (7, 10)]
 
 
 class RoboCasaLoader:
+    def tasks(self, cfg: dict, task_suite: str) -> list[dict]:
+        # A suite IS one of their env names: one task, whose sentence
+        # their reset writes per episode (task_info reads it).
+        return [{"task_id": 0, "language": ""}]
+
     def create(self, cfg: dict, task_suite: str, task_id: int):
         import json as _json
 

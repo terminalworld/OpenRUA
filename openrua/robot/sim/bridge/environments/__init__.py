@@ -18,6 +18,11 @@ identity; zero reimplementation), ``init_state``/``reset`` speak their
 protocol, ``task_info`` reads their task sentence. The state returned by
 ``init_state`` is opaque to everyone but the same loader's ``reset``.
 
+One hook is optional: ``tasks(cfg, task_suite) -> [{task_id, language}]``,
+the suite's tasks and sentences without an env, which ``openrua
+benchmarks <name>`` prints (through ``catalog.py``, run in the
+simulator's venv). A loader without it lists the suite alone.
+
 Zero ROS imports; simulator imports live inside ``create`` (the registry
 imports cheaply anywhere). Zero knowledge of the sibling ros package and
 rpc module: the env and the loader travel onward as parameters (main.py
