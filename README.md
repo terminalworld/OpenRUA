@@ -54,12 +54,9 @@ openrua config set --robot panda --sim robosuite --agent claude-code   # your de
 openrua run "pick up the red cube"
 ```
 
-```
-[run] robot     panda: Franka Emika Panda, simulated by robosuite (ROS 2 humble)
-[run] scene     Lift (the simulator's own scene)
-[run] agent     claude-code (claude-opus-5), opening message: "pick up the red cube"
-[run] the robot powers off when the agent exits
-```
+The robot comes up on its ROS&nbsp;2 graph, the agent opens on its
+terminal with that sentence, and the robot powers off when you leave;
+`run` first prints which robot, scene and agent it picked.
 
 `openrua doctor` tells you what is missing before the first `run`
 (Docker, the three images, the simulator checkout, an agent login); the
