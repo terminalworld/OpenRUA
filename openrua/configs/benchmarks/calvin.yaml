@@ -1,0 +1,38 @@
+# CALVIN (mees/calvin, arXiv 2112.03227): the long-horizon evaluation on
+# play table D. 1000 chains of five subtasks, each with a fixed initial
+# condition (task id = chain); success is the whole chain, judged by the
+# benchmark's task oracle subtask by subtask. The sentence lists the five
+# instructions in order.
+
+entry_point: calvin       # the bridge loader
+task:
+  benchmark: calvin
+  suites: [chains]        # openrua benchmarks calvin lists the 1000 chains
+  init_states: benchmark-files   # one initial condition per chain; the seed picks nothing
+
+protocol:
+  trials_per_task: 1
+  max_turns: 500
+  active_wall_clock_minutes: 240
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:
+  name: claude-code
+  model: claude-opus-5
+  options:
+    effort: high
+
+robot: panda              # configs/robots/panda.yaml
+simulator: calvin         # configs/simulators/calvin.yaml
+
+scenes:
+  default_suite: chains
+  cameras:
+    resolution: [640, 480]   # the benchmark records 200x200 static and 84x84 gripper views
+    list: null               # static, gripper
+    rate_hz: 2
+    record: [static, gripper]

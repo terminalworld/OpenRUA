@@ -21,7 +21,8 @@ robots, a robot knows neither.
   PhysX on the CPU, Vulkan rendering through lavapipe when there is no
   GPU) embodies `panda` and `widowx` and loads `PickCube-v1`; `robotwin`
   (RoboTwin's own harness on SAPIEN 3) embodies its dual-arm
-  `aloha-agilex` and has no native scene.
+  `aloha-agilex` and has no native scene; `calvin` (calvin_env on
+  PyBullet, CPU rendering) embodies `panda` for the CALVIN benchmark.
 - `benchmarks/<name>.yaml`: names its `robot:` and `simulator:` and
   brings its own world: `install:` (its venv and distro, over the
   simulator's) and `scenes:` (scene cameras, a default suite, and robot
@@ -61,6 +62,7 @@ by hand. It needs `uv` and `git` on the host. The installs are large
   maniskill/        ManiSkill 3 and SimplerEnv's Bridge tasks (.venv; assets they download land in data/)
   mikasa/           MIKASA-Robo (.venv; its checkout over ManiSkill 3.0.1, the YCB objects in data/)
   robotwin/         RoboTwin 2.0 (.venv on SAPIEN 3.0.3; its checkout with 9 GB of objects and embodiments)
+  calvin/           CALVIN (.venv; the calvin checkout with calvin_env, py3.10 == Humble)
   install-*.sh      the rendered scripts
 ```
 

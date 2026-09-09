@@ -19,7 +19,7 @@ def test_summary_lists_trials_and_totals(tmp_path):
     (run / "config.json").write_text(json.dumps({
         "config_file": "benchmarks/libero_pro.yaml", "config_sha256": "abc123def456ff",
         "agent_cli": {"name": "claude-code", "version_pin": None}, "operator": "agent",
-        "openrua_version": "0.0.4", "openrua_commit": "0123456789abcdef", "git_dirty": False,
+        "openrua_version": "0.0.5", "openrua_commit": "0123456789abcdef", "git_dirty": False,
         "simulator_commit": "fedcba9876543210", "sim_image_digest": "sha256:aaaa",
         "sandbox_image_digest": "sha256:bbbb", "proxy_image_digest": "sha256:cccc",
         "config": {"task": {"benchmark": "libero_pro"}, "agent": {}}}))
