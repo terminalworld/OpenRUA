@@ -84,8 +84,11 @@ docs/podman.md).
 
 A new benchmark on an existing engine is a benchmark file plus the
 loader its `entry_point` names (how its scenes are built, reset and
-scored: a module exposing `LOADER`, see
-[architecture.md](architecture.md)). Bundled, the two live under
+scored, and what tasks each suite holds: a module exposing `LOADER`
+with `create`, `init_state`, `reset`, `success`, `task_info` and
+`tasks`, see [architecture.md](architecture.md); the test suite fails a
+loader with a name missing, and `openrua benchmarks <name>` prints
+what `tasks` returns). Bundled, the two live under
 `openrua/configs/benchmarks/` and `openrua/robot/sim/bridge/environments/`;
 yours sit side by side (`entry_point: ./my_bench.py`) and are passed
 with `--bench ./my-bench.yaml`. A new engine is a simulator file plus a

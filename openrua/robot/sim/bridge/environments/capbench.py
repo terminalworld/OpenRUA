@@ -35,6 +35,12 @@ _TASKS = {
 
 
 class CapBenchLoader:
+    def tasks(self, cfg: dict, task_suite: str) -> list[dict]:
+        # One task per suite; its instruction is declared in the benchmark
+        # config (task.task_language, keyed by the task name).
+        name = task_suite.replace("capbench_", "")
+        return [{"task_id": 0, "language": cfg.get("task", {}).get("task_language", {}).get(name, "")}]
+
     def create(self, cfg: dict, task_suite: str, task_id: int):
         import importlib
 

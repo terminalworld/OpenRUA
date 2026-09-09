@@ -25,6 +25,10 @@ _ARM_JOINT_POSITION = {
 
 
 class RobosuiteLoader:
+    def tasks(self, cfg: dict, task_suite: str) -> list[dict]:
+        # A native scene is one task; the sentence is whatever `openrua run` is given.
+        return [{"task_id": 0, "language": ""}]
+
     def create(self, cfg: dict, task_suite: str, task_id: int):
         import json as _json
 

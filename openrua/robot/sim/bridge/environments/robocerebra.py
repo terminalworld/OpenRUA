@@ -43,7 +43,21 @@ def _cases(root: Path, task_type: str) -> list[Path]:
     return sorted((p for p in d.iterdir() if p.is_dir() and list(p.glob("*.bddl"))), key=key)
 
 
+def _case_language(case: Path) -> str:
+    """The case's ``Task:`` line from its task_description.txt, else its name."""
+    desc = case / "task_description.txt"
+    if desc.is_file():
+        for line in desc.read_text().splitlines():
+            if line.strip().startswith("Task:"):
+                return line.split(":", 1)[1].strip()
+    return case.name
+
+
 class RoboCerebraLoader:
+    def tasks(self, cfg: dict, task_suite: str) -> list[dict]:
+        return [{"task_id": i, "language": _case_language(case)}
+                for i, case in enumerate(_cases(_bench_root(cfg), task_suite))]
+
     def create(self, cfg: dict, task_suite: str, task_id: int):
         import h5py
         import libero.libero.envs  # noqa: F401; registers TASK_MAPPING
@@ -75,13 +89,7 @@ class RoboCerebraLoader:
                     if isinstance(t, list):
                         triples.append([x.lower() if i == 0 else x for i, x in enumerate(t)])
                 goal[obj] = triples
-        language = case.name
-        desc = case / "task_description.txt"
-        if desc.is_file():
-            for line in desc.read_text().splitlines():
-                if line.strip().startswith("Task:"):
-                    language = line.split(":", 1)[1].strip()
-                    break
+        language = _case_language(case)
         # success() receives the env only; one env per bridge process, so
         # the loader keeps this case's goal.
         self._goal = goal

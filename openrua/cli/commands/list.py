@@ -93,15 +93,8 @@ def _show_benchmark(args) -> int:
     composed = compose(None, None, args.name, args.home)
     cfg = composed.cfg
     task, proto = cfg["task"], cfg.get("protocol", {})
-    sentences = task.get("task_language") or {}
-    catalog, note = ({}, "") if sentences else benchmark_catalog(cfg, args.home)
-    suites = {}
-    for suite in task["suites"]:
-        if sentences:
-            rows = [{"task_id": 0, "language": sentences.get(suite.split("_", 1)[-1], "")}]
-        else:
-            rows = (catalog or {}).get(suite)
-        suites[suite] = rows
+    catalog, note = benchmark_catalog(cfg, args.home)
+    suites = {suite: (catalog or {}).get(suite) for suite in task["suites"]}
     info = {"name": args.name, "benchmark": task["benchmark"], "robot": composed.robot,
             "simulator": composed.simulator, "init_states": task.get("init_states"),
             "trials_per_task": proto.get("trials_per_task"), "suites": suites, "note": note}
@@ -111,12 +104,11 @@ def _show_benchmark(args) -> int:
     print(f"{args.name:<20} robot {info['robot']} on {info['simulator']}; "
           f"{len(suites)} suites")
     how = _EPISODES.get(info["init_states"] or "", info["init_states"] or "loader-defined")
-    depth = (f"; the reported runs use {info['trials_per_task']} seeds per task"
-             if info["trials_per_task"] else "")
+    n = info["trials_per_task"]
+    depth = f"; the reported runs use {n} seed{'s' if n != 1 else ''} per task" if n else ""
     print(f"{'episodes':<20} {how}{depth}")
     for suite, rows in suites.items():
-        if rows is None:
-            # No catalog: the loader has no tasks hook, or could not be asked (note)
+        if rows is None:            # the loader could not be asked; the note says why
             print(suite)
             continue
         print(f"{suite:<20} {len(rows)} task{'s' if len(rows) != 1 else ''}: --task-ids "
@@ -125,9 +117,6 @@ def _show_benchmark(args) -> int:
             print(f"{'':<20}   {r['task_id']:>3}  {r['language'] or '(sentence written at reset)'}")
     if note:
         print(f"{'note':<20} {note}")
-    elif catalog is not None and any(v is None for v in catalog.values()):
-        print(f"{'note':<20} this loader lists no tasks (no tasks hook); "
-              "see the benchmark's own documentation for task ids")
     return 0
 
 
