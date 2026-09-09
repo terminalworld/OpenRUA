@@ -140,9 +140,10 @@ def from_motion(index: list[dict], ops: list[dict], lead_s: float
     first motion; everything before it is the agent reading the robot
     and the scene. An operation that starts before the cut but ends
     after it is kept (it is the one driving the robot)."""
-    if not index or not ops:
+    moving = [f for f in index if f["step"] > 0]  # step 0 is the reset's frame
+    if not moving or not ops:
         return ops, 0
-    cut = index[0]["t"] - lead_s
+    cut = moving[0]["t"] - lead_s
     kept = [op for op in ops if op.get("t1", op.get("t0", 0)) >= cut]
     return kept, len(ops) - len(kept)
 

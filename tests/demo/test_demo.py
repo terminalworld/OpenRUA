@@ -62,7 +62,8 @@ def test_frame_stride_counts_sim_steps_not_index_entries():
 
 
 def test_from_motion_keeps_the_driving_op_and_counts_the_rest():
-    index = [{"step": 1, "t": 42.0, "files": []}, {"step": 2, "t": 42.5, "files": []}]
+    index = [{"step": 0, "t": -1.0, "files": []},   # the reset's frame, before any command
+             {"step": 1, "t": 42.0, "files": []}, {"step": 2, "t": 42.5, "files": []}]
     ops = [{"i": 0, "t0": 0.0, "t1": 1.0}, {"i": 1, "t0": 20.0, "t1": 21.0},
            {"i": 2, "t0": 30.0, "t1": 300.0},     # starts before the cut (32 s), drives the robot
            {"i": 3, "t0": 301.0, "t1": 302.0}]
