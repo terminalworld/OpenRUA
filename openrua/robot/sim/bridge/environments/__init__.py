@@ -6,8 +6,11 @@ sentence) and the worker (the env's access discipline: one owner thread,
 everyone else queues). Consumers receive env and Worker as a pair from
 main.py; nothing here knows the sibling packages.
 
-Adding a benchmark = adding one module here implementing every name in
-``LOADER_INTERFACE`` (test-enforced) and registering it in ``get()``.
+Adding a benchmark = one module implementing every name in
+``LOADER_INTERFACE`` (test-enforced) and exposing an instance as
+``LOADER``; the benchmark's yaml names it under ``entry_point``, and the
+resolved config carries the result as ``task.loader`` (a module path or
+an absolute file path), which ``load()`` imports. No list here to edit.
 Each loader wraps NOTHING: ``create`` goes through the benchmark's own
 factory (single-wrap discipline; the env object is their class, their
 instance), ``success`` calls their ORIGINAL predicate in place (scoring
@@ -23,14 +26,13 @@ passes them).
 
 from __future__ import annotations
 
-from .capbench import CapBenchLoader
-from .libero import LiberoLoader
-from .robocasa import RoboCasaLoader
-from .robosuite import RobosuiteLoader
+import importlib
+import importlib.util
+import sys
+from pathlib import Path
 
 # The plug shape every loader implements (a duck-typed contract, like agents.Agent).
 LOADER_INTERFACE = (
-    "BENCHMARKS",   # config names this loader answers to
     "create",       # cfg, task_suite, task_id -> (env, ctx)
     "init_state",   # ctx, seed -> opaque state (its own reset understands it)
     "reset",        # env, ctx, state -> None (restore the world)
@@ -38,13 +40,38 @@ LOADER_INTERFACE = (
     "task_info",    # env, ctx -> {language, name, [init_state]}
 )
 
-LOADERS = (LiberoLoader(), CapBenchLoader(), RoboCasaLoader(), RobosuiteLoader())
+
+def load(spec: str):
+    """The ``LOADER`` object of a resolved ``task.loader``: a module path
+    (``openrua.robot.sim.bridge.environments.libero``) or an absolute
+    ``.py`` file (a benchmark of your own, copied next to the config)."""
+    if spec.endswith(".py"):
+        module = _import_file(Path(spec))
+    else:
+        module = importlib.import_module(spec)
+    loader = getattr(module, "LOADER", None)
+    if loader is None:
+        raise ValueError(f"{spec} exposes no LOADER")
+    missing = [n for n in LOADER_INTERFACE if not hasattr(loader, n)]
+    if missing:
+        raise ValueError(f"{spec}: LOADER lacks {', '.join(missing)}")
+    return loader
 
 
-def get(benchmark: str):
-    """The loader for a config's ``benchmark`` name."""
-    for loader in LOADERS:
-        if benchmark in loader.BENCHMARKS:
-            return loader
-    known = sorted(b for ld in LOADERS for b in ld.BENCHMARKS)
-    raise ValueError(f"unknown benchmark: {benchmark} (have {known})")
+def _import_file(path: Path):
+    """Import one module by file path under a private name; a failure
+    removes the half-initialised module so a retry starts clean."""
+    modname = f"_openrua_loader_{path.stem}_{abs(hash(str(path)))}"
+    if modname in sys.modules:
+        return sys.modules[modname]
+    spec = importlib.util.spec_from_file_location(modname, path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load {path}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[modname] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception:
+        sys.modules.pop(modname, None)
+        raise
+    return module

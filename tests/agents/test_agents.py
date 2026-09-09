@@ -182,50 +182,51 @@ def test_agent_requires_name_and_model_and_refuses_unknown_attributes():
         agents.Agent(name="x", default_model="m", colour="red")
 
 
-def test_user_directory_agent_is_found_and_a_broken_one_is_isolated(tmp_path):
+def test_an_agent_of_your_own_is_a_manifest_path_with_its_module_beside_it(tmp_path):
     import pytest
     from openrua.errors import NotFound
-    manifests = tmp_path / "agents"
-    hooks = tmp_path / "plugins" / "agents"
-    manifests.mkdir()
-    hooks.mkdir(parents=True)
-    (manifests / "my-agent.yaml").write_text(
-        "name: my-agent\ndefault_model: m1\nhooks: my_hooks\n")
-    (hooks / "my_hooks.py").write_text(
+    (tmp_path / "my-agent.yaml").write_text(
+        "name: my-agent\ndefault_model: m1\nentry_point: ./my_agent.py\n")
+    (tmp_path / "my_agent.py").write_text(
         "from openrua.agents import Agent\n"
         "class My(Agent):\n"
         "    def launch_argv(self, sandbox, prompt, model, max_turns, proxy, **_):\n"
         "        return ['docker', 'exec', sandbox, 'my', prompt]\n"
         "HOOKS = My\n")
-    (manifests / "broken.yaml").write_text("name: broken\ndefault_model: m\nhooks: broken\n")
-    (hooks / "broken.py").write_text("raise RuntimeError('boom')\n")
-    (manifests / "nohooks.yaml").write_text("name: nohooks\ndefault_model: m\nhooks: nohooks\n")
-    (hooks / "nohooks.py").write_text("x = 1\n")
-    got = agents.get("my-agent", tmp_path)
+    got = agents.get(str(tmp_path / "my-agent.yaml"))
     assert got.name == "my-agent" and got.default_model == "m1"
-    listed = {a.name: a for a in agents.available(tmp_path)}
-    assert listed["claude-code"].source == "bundled"
-    assert listed["my-agent"].source == "user" and listed["my-agent"].agent is not None
-    assert listed["broken"].agent is None and "boom" in listed["broken"].error
-    assert listed["nohooks"].agent is None and "HOOKS" in listed["nohooks"].error
-    with pytest.raises(NotFound, match="my-agent"):
-        agents.get("nope", tmp_path)
-    # a manifest without hooks composes to the bare contract; check_manifest says so
+    # bundled ones are listed; a file of your own is not looked up by name
+    listed = {a.name: a for a in agents.available()}
+    assert "claude-code" in listed and "my-agent" not in listed
+    with pytest.raises(NotFound, match="nope"):
+        agents.get("nope")
+    # a broken module fails loud with its own error; no HOOKS is named as such
+    (tmp_path / "broken.yaml").write_text("name: broken\ndefault_model: m\nentry_point: ./broken.py\n")
+    (tmp_path / "broken.py").write_text("raise RuntimeError('boom')\n")
+    with pytest.raises(RuntimeError, match="boom"):
+        agents.get(str(tmp_path / "broken.yaml"))
+    (tmp_path / "nohooks.yaml").write_text("name: nohooks\ndefault_model: m\nentry_point: ./nohooks.py\n")
+    (tmp_path / "nohooks.py").write_text("x = 1\n")
+    with pytest.raises(TypeError, match="HOOKS"):
+        agents.get(str(tmp_path / "nohooks.yaml"))
+    # a manifest without entry_point composes to the bare contract; check_manifest says so
     from openrua.testing import check_manifest
-    (manifests / "facts-only.yaml").write_text("name: facts-only\ndefault_model: m\n")
-    with pytest.raises(AssertionError, match="hooks"):
-        check_manifest(manifests / "facts-only.yaml", tmp_path)
-    check_manifest(manifests / "my-agent.yaml", tmp_path)
+    (tmp_path / "facts-only.yaml").write_text("name: facts-only\ndefault_model: m\n")
+    with pytest.raises(AssertionError, match="entry_point"):
+        check_manifest(tmp_path / "facts-only.yaml")
+    check_manifest(tmp_path / "my-agent.yaml")
 
 
 def test_no_direct_hooks_imports_outside_the_registry():
     # Consumers go through agents.get(); naming a hooks module elsewhere
     # breaks the agent-agnostic promise.
     src = Path(agents.__file__).resolve().parents[1]
-    registry = src / "agents" / "registry.py"
+    # the registry imports entry points; paths.py is the one home of the
+    # kind -> package map a short entry_point resolves in
+    allowed = {src / "agents" / "registry.py", src / "config" / "paths.py"}
     offenders = []
     for f in src.rglob("*.py"):
-        if f == registry or "__pycache__" in f.parts or (src / "plugins") in f.parents:
+        if f in allowed or "__pycache__" in f.parts or (src / "plugins") in f.parents:
             continue
         if "plugins.agents" in f.read_text():
             offenders.append(str(f))

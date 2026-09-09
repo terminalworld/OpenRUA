@@ -11,13 +11,9 @@ def add_json(parser: argparse.ArgumentParser) -> None:
 
 
 def print_listing(rows: list[dict], as_json: bool) -> None:
-    """Rows of {name, source, description, shadowed_by}: a table, or JSON."""
+    """Rows of {name, description, ...}: a table, or JSON."""
     if as_json:
         print(json.dumps(rows, indent=2))
         return
     for r in rows:
-        tag = "" if r["source"] == "bundled" else f"  [{r['source']}]"
-        print(f"{r['name']:<20} {r['description']}{tag}")
-        if r.get("shadowed_by"):
-            print(f"{'':<20} note: {r['shadowed_by']} has the same name and is "
-                  "ignored; rename it to use it")
+        print(f"{r['name']:<20} {r['description']}")

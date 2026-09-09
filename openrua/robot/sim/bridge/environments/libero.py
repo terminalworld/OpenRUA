@@ -36,8 +36,6 @@ def write_libero_settings() -> Path:
 
 
 class LiberoLoader:
-    BENCHMARKS = ("libero_pro", "libero")
-
     def create(self, cfg: dict, task_suite: str, task_id: int):
         write_libero_settings()
         from libero import benchmark, get_libero_path
@@ -105,3 +103,6 @@ class LiberoLoader:
             or getattr(ctx.get("task"), "language", ""),
             "name": getattr(ctx.get("task"), "name", ""),
         }
+
+
+LOADER = LiberoLoader()

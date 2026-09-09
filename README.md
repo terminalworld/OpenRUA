@@ -96,7 +96,7 @@ details are in [docs/install.md](docs/install.md).
   installed, a workspace mounted, and a whitelist proxy as its only
   way out (the model API; nothing else).
 - **A robot is a profile** ([`openrua/configs/robots/`](openrua/configs/robots), or
-  your own under `~/.openrua/robots/`): what it is (`machine:`) and how
+  a file of your own passed by path): what it is (`machine:`) and how
   it is provided (`machine.backend`: a simulator image and scene, or a
   real robot's launch command and how to reach its graph).
 - **A benchmark is a task set** ([`openrua/configs/benchmarks/`](openrua/configs/benchmarks)):
@@ -155,9 +155,8 @@ list; `openrua bench --config <name>` runs one.
 
 Bring your own agent. An agent is a manifest (how to install its CLI in the sandbox, which
 hosts it talks to, how it logs in) and a small hooks class (how to
-launch it); everything else is optional. Drop yours in
-`~/.openrua/agents/` and `~/.openrua/plugins/agents/` or send a pull
-request;
+launch it); everything else is optional. Pass yours as a path
+(`--agent ./my-agent.yaml`) or send a pull request;
 `openrua agents` lists what is available and what each can do. See
 [docs/agents.md](docs/agents.md).
 
@@ -168,7 +167,7 @@ and point `up` at it:
 
 ```bash
 openrua probe --host > my-ur5.yaml   # joints, limits, frames, ports, cameras from the graph
-openrua run ./my-ur5.yaml "..."      # or copy it to ~/.openrua/robots/ and: openrua run my-ur5
+openrua run ./my-ur5.yaml "..."      # or: openrua config set --robot ./my-ur5.yaml
 ```
 
 The profile's `machine:` section is what the agent's `machine.yaml` is

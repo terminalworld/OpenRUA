@@ -12,9 +12,9 @@ robots`) are robot *types*: the facts true of a Franka Panda wherever it
 runs, with no simulator in them; a simulator file says how it embodies
 them. Your real robot is an *instance*: the same kind of file with a
 `machine:` section carrying its `real` backend and, when it is a bundled
-type, `type: panda` on top so you only write what differs. Put yours in
-`~/.openrua/robots/<name>.yaml` and it is found by name, or pass its
-path.
+type, `type: panda` on top so you only write what differs. Pass its
+path wherever a robot name is expected; the bundled names are the
+only ones looked up by name.
 
 ## Draft it from the graph
 
@@ -94,9 +94,9 @@ meaning is in [config.md](config.md#machine).
 ## Bringing it up
 
 ```bash
-cp ur5e.yaml ~/.openrua/robots/
-openrua doctor ur5e                # images, login, and that the file loads
-openrua run ur5e --ros-domain 7 "move the arm to the home pose"      # or up + agent + down
+openrua doctor ./ur5e.yaml         # images, login, and that the file loads
+openrua run ./ur5e.yaml --ros-domain 7 "move the arm to the home pose"   # or up + agent + down
+openrua config set --robot ./ur5e.yaml                                    # or make it the default
 ```
 
 The sandbox joins the host network and reaches the graph the way
@@ -118,7 +118,8 @@ sandbox is the same toolchain and the same workspace, not containment.
 A simulated robot is a robot type plus an entry under a simulator's
 `robots:` (how the engine drives it: controller, gains, joint-name
 map). Copy `openrua/configs/robots/panda.yaml` for the type and add
-your robot to `~/.openrua/simulators/<engine>.yaml`; a benchmark whose
+your robot to the simulator file (`openrua/configs/simulators/<engine>.yaml`
+in a pull request, or your own copy passed with `--sim ./<engine>.yaml`); a benchmark whose
 assets bring the body declares it under `scenes.robots` instead, as
 `robocasa365` does for `panda-omron`. [simulation.md](simulation.md)
 has the files and where the installs live.

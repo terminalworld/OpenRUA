@@ -1,24 +1,19 @@
-"""Where things live: the user directory and how named things are found.
+"""Where things live: the bundled files, the user directory, entry points.
 
-Two places hold data, in a fixed lookup order:
+Bundled files ship inside the installed package: declarative files under
+``openrua/configs/<kind>/`` (``robots/``, ``simulators/``, ``benchmarks/``,
+``agents/``) and, for the kinds that need code, one module per entry in
+the package ``ENTRY_POINT_PACKAGES`` names. A short name resolves there
+and nowhere else; anything else (a slash or a suffix) is a path to a
+file of your own. There is no lookup in the user directory: extensions
+enter the repository or travel as a path.
 
-1. bundled, inside the installed package: declarative files under
-   ``openrua/configs/<kind>/`` (``robots/``, ``benchmarks/``, ``agents/``),
-   extension code under ``openrua/plugins/<kind>/`` (``agents/``);
-2. the user directory, ``~/.openrua`` unless overridden, with the same
-   shape (``robots/``, ``benchmarks/``, ``agents/``, ``plugins/<kind>/``)
-   plus what the tool keeps for the user (``credentials/``,
-   ``simulators/``, ``workspaces/``, ``state/``, ``config.yaml``).
-
-A name is looked up bundled first, then in the user directory; a path
-(anything with a slash or a suffix) is taken as is. A user file carrying
-a bundled name does not win: the bundled one is used and ``available()``
-reports the pair as shadowed, so ``openrua doctor`` can say so.
-
-The user directory reaches this module as a parameter (``home=``); the
-CLI entry point reads ``OPENRUA_HOME`` and ``--home`` once and passes the
-result down. Nothing here reads the environment. A third source, pip
-entry points, would slot in after the user directory; not implemented.
+The user directory, ``~/.openrua`` unless overridden, holds only what
+the tool writes: ``config.yaml`` (openrua config set), ``credentials/``
+(logins), ``simulators/`` (openrua install), ``workspaces/``, ``state/``.
+It reaches this module as a parameter (``home=``); the CLI entry point
+reads ``OPENRUA_HOME`` and ``--home`` once and passes the result down.
+Nothing here reads the environment.
 
 Imports only openrua.errors. Nothing in ``openrua.robot.sim.bridge``
 imports this; the container reads absolute paths from the resolved
@@ -36,10 +31,14 @@ from openrua.errors import NotFound
 DEFAULT_HOME = "~/.openrua"
 CONFIG_FILENAME = "config.yaml"
 
-# Declarative kinds (one yaml per named entry) and the plugin kinds (one
-# python module per entry); a name is looked up by kind.
-KINDS = {"robots": ".yaml", "simulators": ".yaml", "benchmarks": ".yaml", "agents": ".yaml"}
-PLUGIN_KINDS = {"agents": ".py"}
+# The declarative kinds, one yaml per named entry.
+KINDS = ("robots", "simulators", "benchmarks", "agents")
+# Kinds whose yaml names code under ``entry_point:``, and the package a
+# short name resolves in (``entry_point: foo`` -> openrua.plugins.agents.foo).
+ENTRY_POINT_PACKAGES = {
+    "agents": "openrua.plugins.agents",
+    "benchmarks": "openrua.robot.sim.bridge.environments",
+}
 
 
 def home(override: str | Path | None = None) -> Path:
@@ -59,10 +58,6 @@ def package_config_path() -> Path:
 
 
 
-
-
-def plugins_dir(home_dir: Path | None = None) -> Path:
-    return home(home_dir) / "plugins"
 
 
 def credentials_dir(home_dir: Path | None = None) -> Path:
@@ -100,82 +95,59 @@ def bundled(kind: str) -> Path:
     return Path(str(resources.files("openrua"))) / "configs" / kind
 
 
-def user_dir(kind: str, home_dir: Path | None = None) -> Path:
-    """The user directory holding the declarative entries of one kind."""
-    if kind not in KINDS:
-        raise KeyError(f"unknown kind {kind!r} (kinds: {', '.join(KINDS)})")
-    return home(home_dir) / kind
-
-
-def configs(kind: str, home_dir: Path | None = None) -> tuple[Path, Path]:
-    """(bundled, user) directories of one declarative kind, lookup order."""
-    return bundled(kind), user_dir(kind, home_dir)
-
-
-def bundled_plugins(kind: str) -> Path:
-    """The package directory shipping the plugin modules of one kind."""
-    if kind not in PLUGIN_KINDS:
-        raise KeyError(f"unknown plugin kind {kind!r} (kinds: {', '.join(PLUGIN_KINDS)})")
-    return Path(str(resources.files("openrua"))) / "plugins" / kind
-
-
-def user_plugins(kind: str, home_dir: Path | None = None) -> Path:
-    """The user directory holding the plugin modules of one kind."""
-    if kind not in PLUGIN_KINDS:
-        raise KeyError(f"unknown plugin kind {kind!r} (kinds: {', '.join(PLUGIN_KINDS)})")
-    return plugins_dir(home_dir) / kind
-
-
-def plugins(kind: str, home_dir: Path | None = None) -> tuple[Path, Path]:
-    """(bundled, user) directories of one plugin kind, lookup order."""
-    return bundled_plugins(kind), user_plugins(kind, home_dir)
-
-
 @dataclass(frozen=True)
 class Entry:
     name: str
     path: Path
-    source: str                        # "bundled" | "user"
-    shadowed_by: Path | None = None    # a user file of the same name, ignored
 
 
-def available(kind: str, home_dir: Path | None = None) -> list[Entry]:
-    """Every named entry of a kind: bundled first, then the user's.
-    A user file whose name matches a bundled one is not its own entry;
-    it appears as ``shadowed_by`` on the bundled one."""
-    suffix = KINDS[kind]
-    ours = _named(bundled(kind), suffix)
-    theirs = _named(user_dir(kind, home_dir), suffix)
-    out = [Entry(n, p, "bundled", theirs.get(n)) for n, p in ours.items()]
-    out += [Entry(n, p, "user") for n, p in theirs.items() if n not in ours]
-    return out
+def available(kind: str) -> list[Entry]:
+    """Every bundled entry of a kind, by name."""
+    base = bundled(kind)
+    return [Entry(p.stem, p) for p in sorted(base.glob("*.yaml"))
+            if not p.name.startswith(("_", "."))]
 
 
-def _named(base: Path, suffix: str) -> dict[str, Path]:
-    if not base.is_dir():
-        return {}
-    return {p.stem: p for p in sorted(base.glob(f"*{suffix}"))
-            if not p.name.startswith(("_", "."))}
+def is_path(spec: str) -> bool:
+    """A slash or a suffix makes a spec a path; a bare word is a name."""
+    return "/" in spec or bool(Path(spec).suffix)
 
 
-def find(kind: str, name_or_path: str | Path, home_dir: Path | None = None) -> Path:
-    """Resolve a name (bundled, then the user directory) or a path (as
-    given). Raises FileNotFoundError naming what is available."""
+def find(kind: str, name_or_path: str | Path) -> Path:
+    """Resolve a bundled name, or a path as given. Raises NotFound naming
+    what is bundled."""
     s = str(name_or_path)
-    if "/" in s or Path(s).suffix:
+    if is_path(s):
         p = Path(s).expanduser()
         if not p.is_file():
             raise NotFound(f"{kind[:-1]} file not found: {p}")
         return p
-    suffix = KINDS[kind]
-    for base in (bundled(kind), user_dir(kind, home_dir)):
-        p = base / f"{s}{suffix}"
-        if p.is_file():
-            return p
-    names = ", ".join(e.name for e in available(kind, home_dir)) or "(none)"
-    raise NotFound(f"no {kind[:-1]} named {s!r} (available: {names})",
-                   hint=f"openrua {kind} lists them; add your own under "
-                   f"{user_dir(kind, home_dir)}/ or pass a path")
+    p = bundled(kind) / f"{s}.yaml"
+    if p.is_file():
+        return p
+    names = ", ".join(e.name for e in available(kind)) or "(none)"
+    raise NotFound(f"no {kind[:-1]} named {s!r} (bundled: {names})",
+                   hint=f"openrua {kind} lists them; a file of your own is passed "
+                   "as a path (./my-file.yaml)")
+
+
+def entry_point(kind: str, spec: str, declared_in: Path) -> str:
+    """The code a declaration names under ``entry_point:``, resolved to
+    what an importer needs: a short name becomes the module under the
+    kind's package (``foo`` -> ``openrua.plugins.agents.foo``); a path
+    is taken relative to the yaml that names it and returned absolute.
+    The module exposes the kind's conventional object (agents:
+    ``HOOKS``, benchmarks: ``LOADER``)."""
+    if kind not in ENTRY_POINT_PACKAGES:
+        raise KeyError(f"{kind} declarations carry no entry_point")
+    if is_path(spec):
+        p = Path(spec).expanduser()
+        if not p.is_absolute():
+            p = Path(declared_in).expanduser().resolve().parent / p
+        if not p.is_file():
+            raise NotFound(f"entry_point {spec!r} of {declared_in}: file not found at {p}")
+        return str(p.resolve())
+    return f"{ENTRY_POINT_PACKAGES[kind]}.{spec}"
 
 
 def simulator_venv(spec: str | Path, home_dir: Path | None = None) -> Path:

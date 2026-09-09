@@ -16,8 +16,6 @@ import numpy as np
 
 
 class RoboCasaLoader:
-    BENCHMARKS = ("robocasa365",)
-
     def create(self, cfg: dict, task_suite: str, task_id: int):
         import json as _json
         from pathlib import Path as _P
@@ -122,3 +120,6 @@ class RoboCasaLoader:
                 "init_state": {"layout_id": _id("layout_id"),
                                "style_id": _id("style_id"),
                                "split": ctx.get("split")}}
+
+
+LOADER = RoboCasaLoader()

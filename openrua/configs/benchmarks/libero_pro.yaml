@@ -4,6 +4,7 @@
 # install (the venv and distro this benchmark brings), scenes (what it
 # puts in the world).
 
+entry_point: libero   # the bridge loader: bundled name, or ./path to a module of your own
 task:
   benchmark: libero_pro
   # The six comparable cells = (goal, spatial, object) x (swap, task),

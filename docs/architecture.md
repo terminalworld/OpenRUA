@@ -19,7 +19,7 @@ is visible to the agent.
 | `openrua/robot/` | the machine, provided by a backend (`up()` dispatches on `machine.backend.kind`). `sim/`: image build, container up/down, the host-side client, and `bridge/`, the simulated robot's own software (`environments/`, `ros/`, `rpc.py`, `main.py`). `real/`: an optional launch command (on the host or in a driver image), a handle that waits for the graph, and `probe.py` (a profile draft from the graph). | `python -m openrua.robot.sim.build` |
 | `openrua/sandbox/` | the agent's terminal: an Ubuntu + ROS 2 container with the agent installed and `workspace/` seeded (README, `machine.yaml`, four docs, a few tools). | `python -m openrua.sandbox` |
 | `openrua/proxy/` | a whitelist HTTP proxy, the sandbox's only route out. | `python -m openrua.proxy` |
-| `openrua/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, hooks under `plugins/agents/`, bundled then `~/.openrua/`), the launcher, credentials staging, the prompts. | `python -m openrua.agents launch` |
+| `openrua/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, the module each names under `entry_point`), the launcher, credentials staging, the prompts. | `python -m openrua.agents launch` |
 | `openrua/runner/` | running trials: `main.py` (`openrua bench`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua bench` |
 | `openrua/demo/` | a video from a recorded trial's files (`frames/`, `ops.jsonl`): `compose.py` renders the terminal beside the cameras. Reads files, imports `errors` only; its libraries are the `demo` extra. | `openrua demo` |
 | `openrua/cli/` | the command line: one module per verb under `commands/` (`robots / benchmarks / agents / build / up / agent / down / run / demo / probe / config / doctor`), `output.py`, `state.py`. | `openrua` |
@@ -30,7 +30,7 @@ the bridge:
 
 | Leaf | Owns |
 |---|---|
-| `openrua/config/paths.py` | where things live: the user directory (`~/.openrua`), the bundled data (`openrua/configs/`, `openrua/plugins/`), the lookup order (bundled, then user, then a path), simulator and workspace locations. |
+| `openrua/config/paths.py` | where things live: the bundled data (`openrua/configs/`, `openrua/plugins/`), how a name resolves (a bundled name, else a path), how an `entry_point` resolves (a bundled module, else a file next to the yaml), the user directory (`~/.openrua`) and what the tool keeps there. |
 | `openrua/config/schema.py` | the schema (pydantic): robot type and instance, simulator, benchmark, user config, the assembled per-trial config; defaults and a description per key; unknown keys are errors. `loader.compose` folds robot, simulator and benchmark (benchmark -> simulator -> robot, one direction) into the one `machine:` dict every unit reads. |
 | `openrua/errors.py` | the error family: message, hint, sysexits code. The CLI entry point is the one place an error becomes text. |
 | `openrua/testing.py` | `check_manifest` and `check_agent`, the conformance tests third parties run. |
@@ -45,15 +45,20 @@ files under `runs/`.
 ## Where things live
 
 ```
-openrua/configs/{robots,benchmarks,agents}/, openrua/plugins/agents/   bundled, ship in the wheel
-~/.openrua/                                             the user directory ($OPENRUA_HOME, --home)
-  config.yaml        your defaults: agent section, default robot
-  robots/ simulators/ benchmarks/ agents/ plugins/agents/   yours, looked up after the bundled ones
+openrua/configs/{robots,simulators,benchmarks,agents}/   bundled declarations, ship in the wheel
+openrua/plugins/agents/, openrua/robot/sim/bridge/environments/   the code bundled entry_points name
+~/.openrua/                                             the user directory ($OPENRUA_HOME, --home); written by the tool, not by hand
+  config.yaml                                            your defaults (openrua config set)
   credentials/<agent>/                                   login profiles
-  simulators/<name>/.venv-*                              simulator checkouts
+  simulators/<name>/.venv-*                              simulator checkouts (openrua install)
   workspaces/<name>/  state/<name>.yaml                  what `openrua up` / `run` keep
 ./runs/                                                 trial data (--runs-root)
 ```
+
+A file of your own (a robot, a simulator, a benchmark, an agent
+manifest) is passed as a path where a name is expected; code it needs
+is named under `entry_point` relative to it. The repository is where
+shared ones go.
 
 ## The layering contract
 

@@ -53,7 +53,13 @@ class Strict(BaseModel):
 # ------------------------------------------------------------------ task
 
 class Task(Strict):
-    benchmark: str = Field(description="loader name: libero_pro | capbench | robocasa365")
+    benchmark: str = Field(description="the benchmark's name as records carry it: "
+                           "libero_pro | capbench | robocasa365 | the engine's name "
+                           "for a native scene")
+    loader: str | None = Field(default=None, description="the loader the bridge imports, "
+                               "resolved by openrua from the benchmark's (or native "
+                               "scene's) entry_point: a module path or an absolute "
+                               "file path; not written by hand")
     suites: list[str] = Field(description="task suites this benchmark runs; "
                               "openrua bench picks one with --task-suite")
     init_states: str | None = Field(
@@ -361,8 +367,8 @@ class Machine(Strict):
                                      "the simulator (robosuite: Panda, PandaOmron)")
     controller: str = Field(default="JOINT_POSITION", description="robosuite controller")
     controller_config: str | None = Field(
-        default=None, description="controller json: under robots/ (bundled, then "
-        "~/.openrua/robots/) or a path")
+        default=None, description="controller json: a bundled name under "
+        "robots/controllers/ or a path relative to the file naming it")
     controller_kp_scale: float = Field(default=10.0, description="multiplier on the "
                                        "simulator's joint position gains")
     cameras: Cameras = Field(default_factory=Cameras, description="the cameras the graph "
@@ -414,8 +420,8 @@ class Embodiment(Strict):
                                      "the engine (robosuite: Panda, PandaOmron)")
     controller: str | None = Field(default=None, description="robosuite controller type")
     controller_config: str | None = Field(
-        default=None, description="controller json: under robots/ (bundled, then "
-        "~/.openrua/robots/) or a path")
+        default=None, description="controller json: a bundled name under "
+        "robots/controllers/ or a path relative to the file naming it")
     controller_kp_scale: float | None = Field(default=None, description="multiplier on the "
                                               "engine's joint position gains")
     joint_name_map: dict[str, str] | None = Field(
@@ -461,7 +467,9 @@ class InstallOverrides(Strict):
 
 class NativeScene(Strict):
     """What ``openrua run <robot> --sim <engine>`` loads with no benchmark."""
-    loader: str = Field(description="bridge loader name (robosuite)")
+    entry_point: str = Field(description="the bridge loader for the engine's own scenes: "
+                             "a bundled name (robosuite) or a path to a module of your "
+                             "own, relative to this file")
     scene: str = Field(description="the engine's own scene / env name (robosuite: Lift)")
     cameras: Cameras = Field(default_factory=Cameras, description="the scene's cameras")
 
@@ -501,6 +509,10 @@ class RobotInstance(Strict):
 
 class Benchmark(Strict):
     """A benchmarks/<name>.yaml as written."""
+    entry_point: str = Field(description="the bridge loader building, resetting and "
+                             "scoring this benchmark's scenes: a bundled name (libero, "
+                             "capbench, robocasa) or a path to a module of your own, "
+                             "relative to this file; the module exposes LOADER")
     task: Task = Field(description="what is run")
     protocol: Protocol = Field(default_factory=Protocol, description="budgets and clock")
     agent: AgentConfig = Field(default_factory=AgentConfig, description="which agent, "
@@ -568,7 +580,7 @@ class Credentials(Strict):
 
 class AgentManifest(Strict):
     """configs/agents/<name>.yaml: the facts about one coding agent, no code.
-    The hooks module named by ``hooks`` supplies the behaviour."""
+    The module named by ``entry_point`` supplies the behaviour."""
     name: str = Field(description="the name configs use under agent.name")
     default_model: str = Field(description="model when the config names none")
     binary: str | None = Field(default=None, description="executable name inside the sandbox")
@@ -589,5 +601,7 @@ class AgentManifest(Strict):
                                          "reads instructions from, e.g. AGENTS.md")
     default_options: dict[str, Any] = Field(default_factory=dict, description="knobs a "
                                             "config may override under agent.options")
-    hooks: str | None = Field(default=None, description="hooks module name under "
-                              "plugins/agents/ (bundled, then ~/.openrua/plugins/agents/)")
+    entry_point: str | None = Field(default=None, description="the module behind this "
+                                    "manifest, exposing HOOKS (an Agent subclass): a "
+                                    "bundled name under plugins/agents/ or a path to a "
+                                    "module of your own, relative to this file")

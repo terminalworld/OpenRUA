@@ -101,12 +101,11 @@ def _merge(dst: dict, src: dict) -> dict:
 
 
 def load_robot(robot: str, home: Path | None = None) -> tuple[str, dict]:
-    """A robots/ file by name (bundled, then ``<home>/robots/``) or by
-    path. Returns ``("type", facts)`` for a robot type or
+    """A robots/ file by bundled name or by path. Returns ``("type", facts)`` for a robot type or
     ``("instance", {"type": ..., "machine": ...})`` for a particular
     (usually real) robot; a file with a ``machine:`` section is an
     instance."""
-    p = paths.find("robots", robot, home)
+    p = paths.find("robots", robot)
     data = load_yaml(p) or {}
     if "machine" in data:
         # Only the keys the file wrote, so an instance over a type replaces
@@ -117,9 +116,10 @@ def load_robot(robot: str, home: Path | None = None) -> tuple[str, dict]:
 
 
 def load_simulator(sim: str, home: Path | None = None) -> dict:
-    """A simulators/ file by name (bundled, then ``<home>/simulators/``)
-    or by path, validated (SimulatorProfile)."""
-    p = paths.find("simulators", sim, home)
+    """A simulators/ file by bundled name or by path, validated
+    (SimulatorProfile)."""
+    del home
+    p = paths.find("simulators", sim)
     return dump(validate(SimulatorProfile, load_yaml(p), p))
 
 
@@ -162,7 +162,7 @@ def _instance_machine(inst: dict, home: Path | None) -> dict:
 def _who_embodies(robot: str, home: Path | None) -> list[str]:
     """Benchmarks whose scenes bring this robot type, for error hints."""
     out = []
-    for e in paths.available("benchmarks", home):
+    for e in paths.available("benchmarks"):
         try:
             b = validate(Benchmark, load_yaml(e.path), e.path)
         except ConfigError:
@@ -201,7 +201,7 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
     bench = bench or user.benchmark or defaults.benchmark
     b = bench_path = None
     if bench:
-        bench_path = paths.find("benchmarks", bench, home)
+        bench_path = paths.find("benchmarks", bench)
         b = dump(validate(Benchmark, load_yaml(bench_path), bench_path))
         robot = robot or b.get("robot") or user.robot
         sim = sim or b.get("simulator")
@@ -249,16 +249,22 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                                f"{robot} on {sim}" + (f" for {bench}" if bench else ""))
             simulator = sim
     if b is not None:
-        cfg = {k: v for k, v in b.items()
+        cfg = {k: copy.deepcopy(v) for k, v in b.items()
                if k in ("task", "protocol", "agent", "suite_overrides")}
+        cfg["task"]["loader"] = paths.entry_point("benchmarks", b["entry_point"], bench_path)
         source = bench_path
     else:
-        native = load_simulator(sim, home)["native"] if simulator else None
+        sim_path, native = (None, None)
+        if simulator:
+            sim_path = paths.find("simulators", sim)
+            native = load_simulator(sim, home).get("native")
         if native is None:
             raise UsageError(f"{robot} is a real robot: name a benchmark (--bench) to "
                              "run, or use openrua up / openrua agent with --task")
-        cfg = {"task": {"benchmark": native["loader"], "suites": [native["scene"]],
-                        "init_states": "seeded-reset"}}
+        cfg = {"task": {"benchmark": sim_path.stem, "suites": [native["scene"]],
+                        "init_states": "seeded-reset",
+                        "loader": paths.entry_point("benchmarks", native["entry_point"],
+                                                    sim_path)}}
         source = f"{sim} native scene"
     cfg["machine"] = machine
     cfg["agent"] = layer_agent(cfg.get("agent", {}), defaults, user)

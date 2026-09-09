@@ -1,59 +1,57 @@
-"""paths: the user directory and the bundled -> user lookup order."""
+"""paths: the user directory, the bundled lookup, entry points."""
 from pathlib import Path
 
 import pytest
 
 from openrua.config import paths
+from openrua.errors import NotFound
 
 
 def test_home_defaults_and_overrides(tmp_path):
     assert paths.home() == Path("~/.openrua").expanduser()
     assert paths.home(tmp_path) == tmp_path
-    assert paths.user_dir("robots", tmp_path) == tmp_path / "robots"
     assert paths.credentials_dir(tmp_path) == tmp_path / "credentials"
+    assert paths.simulators_dir(tmp_path) == tmp_path / "simulators"
     assert paths.config_path(tmp_path) == tmp_path / "config.yaml"
 
 
 def test_bundled_entries_ship_in_the_package():
-    names = {e.name for e in paths.available("robots")}
-    assert {"panda", "panda-omron"} <= names
+    assert {"panda", "panda-omron"} <= {e.name for e in paths.available("robots")}
     assert {e.name for e in paths.available("simulators")} >= {"robosuite"}
     assert {e.name for e in paths.available("benchmarks")} >= {
         "libero_pro", "capbench", "robocasa365"}
-    assert all(e.source == "bundled" for e in paths.available("robots"))
+    assert {e.name for e in paths.available("agents")} >= {"claude-code", "codex"}
 
 
-def test_find_by_name_then_user_dir_then_path(tmp_path):
+def test_find_takes_a_bundled_name_or_a_path(tmp_path):
     bundled = paths.find("robots", "panda")
     assert bundled.name == "panda.yaml" and bundled.is_file()
-    (tmp_path / "robots").mkdir()
-    mine = tmp_path / "robots" / "my-arm.yaml"
+    mine = tmp_path / "my-arm.yaml"
     mine.write_text("machine: {}\n")
-    assert paths.find("robots", "my-arm", tmp_path) == mine
-    assert paths.find("robots", str(mine)) == mine          # a path is taken as is
-    entries = {e.name: e for e in paths.available("robots", tmp_path)}
-    assert entries["my-arm"].source == "user"
-
-
-def test_user_file_with_a_bundled_name_is_flagged_not_used(tmp_path):
-    (tmp_path / "robots").mkdir()
-    shadow = tmp_path / "robots" / "panda.yaml"
-    shadow.write_text("machine: {}\n")
-    found = paths.find("robots", "panda", tmp_path)
-    assert found != shadow and found.is_file()
-    entry = next(e for e in paths.available("robots", tmp_path) if e.name == "panda")
-    assert entry.source == "bundled" and entry.shadowed_by == shadow
-    assert not [e for e in paths.available("robots", tmp_path)
-                if e.source == "user" and e.name == "panda"]
-
-
-def test_missing_name_says_what_exists_and_where_to_add(tmp_path):
-    with pytest.raises(FileNotFoundError) as e:
-        paths.find("robots", "nope", tmp_path)
-    assert "panda" in str(e.value)
-    assert str(tmp_path / "robots") in e.value.hint      # where to add your own
-    with pytest.raises(FileNotFoundError):
+    assert paths.find("robots", str(mine)) == mine
+    assert paths.find("robots", mine) == mine
+    with pytest.raises(NotFound, match="gone.yaml"):
         paths.find("robots", str(tmp_path / "gone.yaml"))
+
+
+def test_missing_name_says_what_is_bundled_and_how_to_pass_your_own():
+    with pytest.raises(NotFound) as e:
+        paths.find("robots", "nope")
+    assert "panda" in str(e.value) and "path" in e.value.hint
+
+
+def test_entry_point_short_name_or_path_relative_to_the_yaml(tmp_path):
+    yaml_file = tmp_path / "mine.yaml"
+    yaml_file.write_text("x: 1\n")
+    assert paths.entry_point("agents", "codex_like", yaml_file) == "openrua.plugins.agents.codex_like"
+    assert paths.entry_point("benchmarks", "libero", yaml_file) == \
+        "openrua.robot.sim.bridge.environments.libero"
+    (tmp_path / "mine.py").write_text("LOADER = 1\n")
+    assert paths.entry_point("benchmarks", "./mine.py", yaml_file) == str(tmp_path / "mine.py")
+    with pytest.raises(NotFound, match="gone.py"):
+        paths.entry_point("benchmarks", "./gone.py", yaml_file)
+    with pytest.raises(KeyError):
+        paths.entry_point("robots", "x", yaml_file)
 
 
 def test_simulator_venv_relative_names_live_under_home(tmp_path):
