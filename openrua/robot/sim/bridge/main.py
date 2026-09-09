@@ -90,7 +90,12 @@ def main() -> None:
     # The engine is the bridge's only view of the world from here on:
     # the graph and the control line read joints, poses and cameras
     # through it and never name a physics engine themselves.
-    engine = engines.bind(cfg["machine"]["backend"]["simulator"]["engine"], env, cfg)
+    engine_spec = cfg["machine"].get("backend", {}).get("simulator", {}).get("engine")
+    if not engine_spec:
+        raise ValueError("resolved config names no engine (machine.backend.simulator."
+                         "engine): the simulator file needs an entry_point line; a "
+                         "config written before 0.0.3 must be composed again")
+    engine = engines.bind(engine_spec, env, cfg)
 
     rclpy.init()
     node = GraphNode(engine, cfg, sim)
