@@ -173,7 +173,7 @@ def score(rec: dict, machine) -> None:
 
 
 def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
-              wall_cap_min, ros_domain=0, credentials_dir=None, home=None,
+              wall_cap_min, ros_domain=None, credentials_dir=None, home=None,
               account_alias=None, script=None, token_file=None, task=None,
               record_cameras=None):
     """One trial: claim the directory, bring the robot and sandbox up,
@@ -204,7 +204,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         # record to docker events and logs when a container dies
         # out-of-band.
         "containers": {"sim": sim_name, "sandbox": sandbox_name},
-        "ros_domain": ros_domain,
+        "ros_domain": ros_domain,   # None until bring_up picked one
     }
     proxy_url = ensure_proxy(network)
     if account_alias:
@@ -236,7 +236,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         # the overrides), written as an artifact by bring_up and read by
         # every party below. bring_up tears its own sandbox down if the
         # robot fails, so sandbox_live flips only on success.
-        config_path, machine = bring_up(
+        config_path, machine, rec["ros_domain"] = bring_up(
             cfg, trial_dir, sim_name, sandbox_name, task_suite, task_id,
             network, proxy_url, agent.sandbox_mounts(cfg_dir, creds_file),
             ros_domain, robot_log=trial_dir / "bridge.log", home=home,
