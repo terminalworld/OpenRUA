@@ -61,10 +61,6 @@ openrua run "pick up the red cube"
 [run] the robot powers off when the agent exits
 ```
 
-`run` brings the robot up with its ROS&nbsp;2 graph, opens the agent on
-its terminal with the sentence as the opening message, and powers the
-robot off when you leave.
-
 `openrua doctor` tells you what is missing before the first `run`
 (Docker, the three images, the simulator checkout, an agent login); the
 details are in [docs/install.md](docs/install.md).
