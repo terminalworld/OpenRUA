@@ -56,7 +56,28 @@ def write_libero_settings() -> Path:
     return path
 
 
+def _bddl_language(get_libero_path, task) -> str:
+    """The task sentence from its bddl ``(:language ...)`` line, the
+    AUTHORITATIVE source: perturbed variants (the *_task cells) change
+    goal AND language in the bddl while the fork's static task map still
+    returns the original sentence; reading task.language would hand the
+    agent the WRONG instruction for an entire protocol column."""
+    bddl_path = os.path.join(get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
+    m = re.search(r"\(:language\s+(.+?)\)\s*$", open(bddl_path).read(), re.MULTILINE)
+    return m.group(1).strip() if m else getattr(task, "language", "")
+
+
 class LiberoLoader:
+    def tasks(self, cfg: dict, task_suite: str) -> list[dict]:
+        """Every task of a suite with its sentence, without building an
+        env (the catalog ``openrua benchmarks <name>`` prints)."""
+        write_libero_settings()
+        lib = _libero()
+        benchmark = importlib.import_module(lib.__name__ + ".benchmark")
+        suite = benchmark.get_benchmark_dict()[task_suite]()
+        return [{"task_id": i, "language": _bddl_language(lib.get_libero_path, suite.get_task(i))}
+                for i in range(suite.n_tasks)]
+
     def create(self, cfg: dict, task_suite: str, task_id: int):
         import inspect
 
@@ -91,17 +112,7 @@ class LiberoLoader:
             # disclosed protocol asymmetry (plan P5 ledger).
             horizon=int(cfg.get("protocol", {}).get("horizon", 10**9)),
         )
-        # The task sentence's AUTHORITATIVE source is the bddl (:language ...)
-        # line: perturbed variants (the *_task cells!) change goal AND language
-        # in the bddl while the fork's static task map still returns the
-        # original sentence; reading task.language would hand the agent the
-        # WRONG instruction for an entire protocol column.
-        bddl_path = os.path.join(
-            get_libero_path("bddl_files"), task.problem_folder, task.bddl_file
-        )
-        m = re.search(r"\(:language\s+(.+?)\)\s*$",
-                      open(bddl_path).read(), re.MULTILINE)
-        language = m.group(1).strip() if m else getattr(task, "language", "")
+        language = _bddl_language(get_libero_path, task)
         # LIBERO-Mem: its predicate advances a subgoal state machine only
         # when asked to (inc=True); asked on every step, as their loop does.
         params = inspect.signature(env.env._check_success).parameters

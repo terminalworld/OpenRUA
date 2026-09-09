@@ -18,7 +18,7 @@ usage: openrua [-h] [--version] [--home HOME] <verb> ...
 |---|---|
 | `robots` | list the bundled robots |
 | `simulators` | list the bundled simulators |
-| `benchmarks` | list the bundled benchmarks |
+| `benchmarks` | list the bundled benchmarks (or one benchmark's suites and tasks) |
 | `agents` | list the bundled agents |
 | `build` | build the robot, sandbox and proxy images |
 | `install` | build a simulator install (checkouts and venv) |
@@ -64,10 +64,15 @@ options:
 ## openrua benchmarks
 
 ```
-usage: openrua benchmarks [-h] [--json]
+usage: openrua benchmarks [-h] [--json] [name]
 
 Every benchmark shipped in the package. A file of your own is not listed; pass
-it as a path where a name is expected.
+it as a path where a name is expected. With a name: that benchmark's suites,
+each suite's task ids and sentences, and what a seed means, for choosing
+--task-suite, --task-ids and --seeds.
+
+positional arguments:
+  name        a benchmark (name or path) to show in full
 
 options:
   -h, --help  show this help message and exit
@@ -299,10 +304,11 @@ options:
 ## openrua bench
 
 ```
-usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM] --run-id
-                     RUN_ID --task-suite TASK_SUITE [--task-ids TASK_IDS]
-                     [--seeds SEEDS] [--operator {agent,none,script}]
-                     [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
+usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
+                     --run-id RUN_ID --task-suite TASK_SUITE
+                     [--task-ids TASK_IDS] [--seeds SEEDS]
+                     [--operator {agent,none,script}] [--task TASK]
+                     [--script SCRIPT] [--record [CAMERAS]]
                      [--wall-clock-min WALL_CLOCK_MIN]
                      [--ros-domain ROS_DOMAIN]
                      [--credentials-dir CREDENTIALS_DIR]

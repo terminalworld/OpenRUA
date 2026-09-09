@@ -73,7 +73,8 @@ details are in [docs/install.md](docs/install.md).
 - **Once or every time.** Whatever `config set` stored can also be given on the
   command line: `openrua run panda --sim robosuite --bench libero_pro "pick up the bowl"`.
   `openrua robots`, `openrua simulators`, `openrua benchmarks` and
-  `openrua agents` list the choices.
+  `openrua agents` list the choices; `openrua benchmarks libero_pro`
+  lists one benchmark's suites and tasks.
 - **A robot that stays up.** The same three steps as separate commands:
   `openrua up`, then `openrua agent "..."` in a second terminal, then
   `openrua down`.

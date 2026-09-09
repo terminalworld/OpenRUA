@@ -16,6 +16,11 @@ import numpy as np
 
 
 class RoboCasaLoader:
+    def tasks(self, cfg: dict, task_suite: str) -> list[dict]:
+        # A suite IS one of their env names: one task, whose sentence
+        # their reset writes per episode (task_info reads it).
+        return [{"task_id": 0, "language": ""}]
+
     def create(self, cfg: dict, task_suite: str, task_id: int):
         import json as _json
         from pathlib import Path as _P
