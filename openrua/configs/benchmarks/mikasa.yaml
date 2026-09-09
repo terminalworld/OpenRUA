@@ -1,0 +1,52 @@
+# MIKASA-Robo (CognitiveAISystems/MIKASA-Robo, arXiv 2502.07007): memory-
+# intensive manipulation on ManiSkill 3. The language-conditioned VLA set
+# (90 tasks: remember a colour or shape, track a shell game, intercept a
+# rolling ball, ...), each reset from a seed; success is the task's own.
+# The release pins ManiSkill 3.0.0b15, whose SAPIEN renders on GPUs only;
+# it runs unchanged on ManiSkill 3.0.1, which is what installs here.
+
+entry_point: mikasa       # the bridge loader
+task:
+  benchmark: mikasa
+  suites: [vla]           # openrua benchmarks mikasa lists the 90 tasks
+  init_states: seeded-reset
+
+protocol:
+  trials_per_task: 10
+  max_turns: 500
+  active_wall_clock_minutes: 240
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:
+  name: claude-code
+  model: claude-opus-5
+  options:
+    effort: high
+
+robot: panda              # the tasks mount ManiSkill's panda_wristcam
+simulator: maniskill      # configs/simulators/maniskill.yaml
+
+install:                  # its own venv: the MIKASA package over ManiSkill 3.0.1, plus the YCB objects
+  venv: mikasa/.venv
+  ros_distro: jazzy
+  python: "3.12"
+  checkouts:
+    - path: mikasa/MIKASA-Robo
+      repo: https://github.com/CognitiveAISystems/MIKASA-Robo.git
+      commit: 16634db18bef08128ed79346469c86fc12169aed   # tag v1.0.0
+  requirements: mikasa/requirements.txt
+  editable: [mikasa/MIKASA-Robo]
+  shell: |
+    MS_ASSET_DIR={root}/mikasa/data {venv}/bin/python -m mani_skill.utils.download_asset ycb -y
+
+scenes:
+  default_suite: vla
+  cameras:
+    resolution: [640, 480]
+    list: null            # base_camera, hand_camera, render_camera
+    rate_hz: 2
+    record: [render_camera, base_camera]

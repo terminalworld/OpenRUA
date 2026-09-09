@@ -42,6 +42,32 @@ def _assets_next_to_the_venv() -> None:
     os.environ.setdefault("MS_ASSET_DIR", str(root))
 
 
+def make_kwargs(cfg: dict, env_id: str) -> dict:
+    """gym.make arguments every ManiSkill-based loader shares: one
+    sub-environment on the PhysX CPU backend, rendering on the GPU only
+    when the install says there is one, cameras sized from the config,
+    the lightest observation mode the task allows (the bridge reads
+    cameras itself), no termination (that belongs to the runner)."""
+    from mani_skill.utils.registration import REGISTERED_ENVS
+
+    machine = cfg.get("machine", {})
+    w, h = machine.get("cameras", {}).get("resolution", [640, 480])
+    size = dict(width=int(w), height=int(h))
+    supported = list(REGISTERED_ENVS[env_id].cls.SUPPORTED_OBS_MODES)
+    kwargs = dict(
+        obs_mode="none" if "none" in supported else supported[0],
+        control_mode=machine.get("controller") or "pd_joint_pos",
+        sim_backend="physx_cpu",
+        render_backend="gpu" if machine.get("backend", {}).get("gpus") else "cpu",
+        render_mode=None, num_envs=1,
+        sensor_configs=size, human_render_camera_configs=size,
+        max_episode_steps=10**9,
+    )
+    if machine.get("engine_model"):
+        kwargs["robot_uids"] = machine["engine_model"]
+    return kwargs
+
+
 def _success(env) -> bool:
     v = env.unwrapped.evaluate()["success"]
     return bool(v.flatten()[0]) if hasattr(v, "flatten") else bool(v)
@@ -64,19 +90,7 @@ class ManiSkillLoader:
         import mani_skill.envs  # noqa: F401  registers the tasks
 
         env_id, sentence = self._task(task_suite, task_id)
-        machine = cfg.get("machine", {})
-        w, h = machine.get("cameras", {}).get("resolution", [640, 480])
-        size = dict(width=int(w), height=int(h))
-        kwargs = dict(
-            obs_mode="none", control_mode=machine.get("controller") or "pd_joint_pos",
-            sim_backend="physx_cpu", render_mode=None, num_envs=1,
-            sensor_configs=size, human_render_camera_configs=size,
-            # Termination belongs to the runner, never to the env.
-            max_episode_steps=10**9,
-        )
-        if machine.get("engine_model"):
-            kwargs["robot_uids"] = machine["engine_model"]
-        env = gym.make(env_id, **kwargs)
+        env = gym.make(env_id, **make_kwargs(cfg, env_id))
         return env, {"task_id": task_id, "env_id": env_id, "language": sentence}
 
     def init_state(self, ctx: dict, seed: int):

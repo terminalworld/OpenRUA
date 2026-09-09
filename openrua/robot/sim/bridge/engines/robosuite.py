@@ -167,6 +167,9 @@ class Robosuite:
             raise KeyError(name) from exc
         return sim.data.cam_xpos[cid], sim.data.cam_xmat[cid].reshape(3, 3) @ _MJ2OPTICAL
 
+    def camera_size(self, name: str, width: int, height: int):
+        return width, height  # MuJoCo renders any camera at any size
+
     def render(self, name: str, width: int, height: int, depth: bool = False):
         if not depth:
             return self._sim.render(width=width, height=height, camera_name=name)[::-1]

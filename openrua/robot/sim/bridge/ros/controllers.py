@@ -155,8 +155,12 @@ class CommandPorts:
 
         def job():
             # Differential IK (moveit_servo semantics): dq = J^+ (v * dt).
+            # Singular directions are dropped (singular values under 1e-3
+            # of the largest), as moveit_servo halts motion near a
+            # singularity instead of commanding a joint jump; a
+            # well-conditioned arm is solved exactly as before.
             jac = self._jacobian(arm)
-            dq, *_ = np.linalg.lstsq(jac, v6 * self._control_dt, rcond=None)
+            dq, *_ = np.linalg.lstsq(jac, v6 * self._control_dt, rcond=1e-3)
             self._tick(arm, dq)
             self._on_step()
 

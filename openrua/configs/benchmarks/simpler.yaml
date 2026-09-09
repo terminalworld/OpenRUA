@@ -1,0 +1,44 @@
+# SimplerEnv (simpler-env/SimplerEnv, arXiv 2405.05941): the WidowX Bridge
+# tasks, as their authors ported them to ManiSkill 3 (the scenes, the
+# placement grid and the predicate of the original, on SAPIEN 3; the
+# SAPIEN 2 original renders only on a GPU). Google Robot tasks are not in
+# the port and not here. The visual-matching protocol: 24 placements per
+# task (64 for the eggplant), indexed by seed.
+
+entry_point: simpler      # the bridge loader
+task:
+  benchmark: simpler
+  suites: [bridge]        # spoon on towel, carrot on plate, stack cube, eggplant in basket
+  init_states: benchmark-files   # the seed indexes the task's own placement grid
+
+protocol:
+  trials_per_task: 24
+  max_turns: 500
+  active_wall_clock_minutes: 240
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:
+  name: claude-code
+  model: claude-opus-5
+  options:
+    effort: high
+
+robot: widowx             # configs/robots/widowx.yaml
+simulator: maniskill      # configs/simulators/maniskill.yaml; same venv as the maniskill benchmark
+
+install:                  # the maniskill venv plus the Bridge scenes and the WidowX asset
+  shell: |
+    MS_ASSET_DIR={root}/maniskill/data {venv}/bin/python -m mani_skill.utils.download_asset bridge_v2_real2sim -y
+    MS_ASSET_DIR={root}/maniskill/data {venv}/bin/python -m mani_skill.utils.download_asset widowx250s -y
+
+scenes:
+  default_suite: bridge
+  cameras:
+    resolution: [640, 480]   # the Bridge camera's own size
+    list: null               # 3rd_view_camera (the dataset's), render_camera
+    rate_hz: 2
+    record: [3rd_view_camera, render_camera]

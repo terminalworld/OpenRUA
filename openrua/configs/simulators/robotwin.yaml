@@ -1,0 +1,43 @@
+# RoboTwin 2.0's simulator: its task harness over SAPIEN 3 (PhysX). Every
+# task is a Base_Task subclass in its checkout, so there is no native
+# scene: name a benchmark. This file knows the engine and how it drives
+# the dual-arm embodiment; the benchmark file knows the protocols.
+# RoboTwin pins sapien 3.0.0b1, whose renderer runs on GPUs only; the
+# checkout runs unchanged on 3.0.3, which renders through lavapipe.
+
+engine: RoboTwin 2.0 on SAPIEN 3 (PhysX CPU)
+entry_point: robotwin        # bridge engine over a RoboTwin task
+
+install:
+  venv: robotwin/.venv       # relative to ~/.openrua/simulators/; py3.12 == Jazzy
+  ros_distro: jazzy
+  python: "3.12"
+  checkouts:
+    - path: robotwin/RoboTwin
+      repo: https://github.com/RoboTwin-Platform/RoboTwin.git
+      commit: c3ddfa8b97d5519efa828b075999bd0006778e5e
+  requirements: robotwin/requirements.txt   # uv pip freeze of the venv the gate ran in (sapien 3.0.3, no CuRobo)
+  shell: |
+    cd {root}/robotwin/RoboTwin/assets
+    if [ ! -d objects ] || [ ! -d embodiments ]; then
+      {venv}/bin/python -c "from huggingface_hub import snapshot_download; snapshot_download(repo_id='TianxingChen/RoboTwin2.0', allow_patterns=['embodiments.zip', 'objects.zip'], local_dir='.', repo_type='dataset')"
+      unzip -qo objects.zip && unzip -qo embodiments.zip
+    fi
+    cd {root}/robotwin/RoboTwin && {venv}/bin/python script/update_embodiment_config_path.py < /dev/null
+
+native: null                 # a benchmark is required
+
+robots:
+  aloha-agilex:
+    joint_name_map:
+      "": ""                 # the URDF's names are the published names (fl_joint1, fr_joint1, ...)
+    control:
+      gripper:
+        open_threshold_m: 0.025
+        settle_steps: 25     # a tick is ten physics steps (0.04 s); the fingers travel 5 cm in about a second
+      trajectory:
+        goal_tolerance_rad: 0.05
+        settle_steps: 25
+    tf:
+      hand: false
+      base_body: base_link

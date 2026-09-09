@@ -145,12 +145,12 @@ class ManiSkill:
         m = _np(self._camera(name).get_params()["cam2world_gl"])
         return m[:3, 3].astype(float), m[:3, :3].astype(float) @ _GL2OPTICAL
 
+    def camera_size(self, name: str, width: int, height: int):
+        cam = self._camera(name)  # sized at creation (the loader passes the config's size)
+        return int(cam.config.width), int(cam.config.height)
+
     def render(self, name: str, width: int, height: int, depth: bool = False):
         cam = self._camera(name)
-        cw, ch = cam.config.width, cam.config.height
-        if (cw, ch) != (width, height):
-            raise ValueError(f"camera {name} renders {cw}x{ch}; the loader sized it from "
-                             f"the config, ask for that size (got {width}x{height})")
         self._u.scene.update_render()
         cam.capture()
         obs = cam.get_obs(rgb=True, depth=depth, position=False, segmentation=False)

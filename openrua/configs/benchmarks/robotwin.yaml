@@ -1,0 +1,40 @@
+# RoboTwin 2.0 (RoboTwin-Platform/RoboTwin, arXiv 2506.18088): fifty
+# dual-arm tasks, each a task module in the checkout, under the "Easy"
+# protocol (task_config/demo_clean: clean table, no domain
+# randomisation). The "Hard" protocol (demo_randomized) needs the 11 GB
+# background textures and is not declared here. Success is each task's
+# own check_success; the sentence is its instruction template's
+# full description (the per-episode paraphrases need the expert rollout).
+
+entry_point: robotwin     # the bridge loader
+task:
+  benchmark: robotwin
+  suites: [demo_clean]    # a suite is a RoboTwin protocol; task ids index the fifty tasks
+  init_states: seeded-reset   # seed N -> the N-th stable RoboTwin seed counting up from 100000
+
+protocol:
+  trials_per_task: 10
+  max_turns: 500
+  active_wall_clock_minutes: 240
+  max_quota_wait_minutes: 360
+  max_suspensions: 4
+  resume_on_quota_wall: true
+  clock:
+    mode: paused
+
+agent:
+  name: claude-code
+  model: claude-opus-5
+  options:
+    effort: high
+
+robot: aloha-agilex       # configs/robots/aloha-agilex.yaml
+simulator: robotwin       # configs/simulators/robotwin.yaml
+
+scenes:
+  default_suite: demo_clean
+  cameras:
+    resolution: [640, 480]   # RoboTwin's Large_D435 for head and wrist cameras
+    list: null               # head_camera, front_camera, left_camera, right_camera
+    rate_hz: 2
+    record: [head_camera, front_camera]
