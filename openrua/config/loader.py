@@ -60,17 +60,45 @@ def load_user_config(path: Path) -> UserConfig:
     """The user's defaults file; absent = no defaults."""
     if not path.is_file():
         return UserConfig()
-    return validate(UserConfig, load_yaml(path), path)
+    data = load_yaml(path)
+    if isinstance(data, dict) and isinstance(data.get("agent"), dict):
+        old = data["agent"]
+        name = old.get("name", "<name>")
+        facts = {k: v for k, v in old.items() if k != "name"}
+        raise ConfigError(f"{path}: agent: is a name now, and an agent's facts live under "
+                          f"agents.<name>",
+                          hint="rewrite it as:\n  agent: " + str(name) + "\n  agents:\n    "
+                               + str(name) + ": " + (str(facts) if facts else "{}"))
+    return validate(UserConfig, data, path)
 
 
-def layer_agent(bench_agent: dict, *defaults: UserConfig) -> dict:
-    """The benchmark's agent section over the defaults files, lowest
-    layer first (package defaults, then the user's file). A defaults
-    file contributes only the keys it wrote; ``options`` merge key by
-    key, every other key is replaced by the higher layer."""
-    out: dict = {}
-    layers = [d.agent.model_dump(exclude_unset=True, exclude_none=True) for d in defaults]
-    for layer in layers + [bench_agent]:
+def default_agent_name(*defaults: UserConfig) -> str | None:
+    """The agent the defaults files name, highest layer that wrote it."""
+    name = None
+    for d in defaults:
+        name = d.agent or name
+    return name
+
+
+def layer_agent(bench_agent: dict, *defaults: UserConfig, agent: str | None = None) -> dict:
+    """The resolved ``agent:`` section for one agent: the defaults
+    files' facts about it (``agents.<name>``, lowest layer first: the
+    package's file, then the user's), then the benchmark's agent
+    section over them. The agent is ``agent`` (a command's --agent),
+    else the benchmark's ``agent.name``, else the defaults' name. A
+    benchmark section naming a different agent is that agent's and is
+    left out; ``options`` merge key by key, every other key is replaced
+    by the higher layer."""
+    name = agent or bench_agent.get("name") or default_agent_name(*defaults)
+    if not name:
+        raise ConfigError("no agent named", hint="openrua config set --agent <name>, or "
+                          "agent.name in the benchmark file, or --agent")
+    layers = [d.agents[name].model_dump(exclude_unset=True, exclude_none=True)
+              for d in defaults if name in d.agents]
+    if bench_agent.get("name") in (None, name):
+        layers.append({k: v for k, v in bench_agent.items() if k != "name"})
+    out: dict = {"name": name}
+    for layer in layers:
         for k, v in layer.items():
             if k == "options":
                 out["options"] = {**out.get("options", {}), **(v or {})}
@@ -229,7 +257,7 @@ class Composed:
 
 
 def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
-            home: Path | None = None) -> Composed:
+            home: Path | None = None, agent: str | None = None) -> Composed:
     """robot (type or instance) + simulator + optional benchmark -> one
     resolved config (ResolvedConfig, validated) and the scene to load.
 
@@ -313,7 +341,7 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                                                     sim_path)}}
         source = f"{sim} native scene"
     cfg["machine"] = machine
-    cfg["agent"] = layer_agent(cfg.get("agent", {}), defaults, user)
+    cfg["agent"] = layer_agent(cfg.get("agent", {}), defaults, user, agent=agent)
     cfg["sandbox"] = layer_sandbox(defaults, user)
     cfg = dump(validate(ResolvedConfig, cfg, source))
     suite = (b or {}).get("scenes", {}).get("default_suite") or cfg["task"]["suites"][0]
@@ -325,12 +353,13 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
 
 
 def load_config(path: Path | str, robot: str | None = None,
-                home: Path | None = None, sim: str | None = None) -> dict:
+                home: Path | None = None, sim: str | None = None,
+                agent: str | None = None) -> dict:
     """A benchmark config (name or path), assembled with its robot and
     simulator (the arguments win over the file's ``robot:`` /
     ``simulator:`` lines) and the defaults files. Returns the resolved
     dict (ResolvedConfig, validated)."""
-    return compose(robot, sim, str(path), home).cfg
+    return compose(robot, sim, str(path), home, agent).cfg
 
 
 def apply_suite_overrides(cfg: dict, task_suite: str) -> dict:

@@ -298,7 +298,7 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
                                              hint="openrua robots / simulators / benchmarks "
                                                   "list what there is"))
     names = agent_names or [(cfg or {}).get("agent", {}).get("name")
-                     or config.load_user_config(paths.package_config_path()).agent.name]
+                     or config.load_user_config(paths.package_config_path()).agent]
     pin = (cfg or {}).get("agent", {}).get("version")
     chosen: list[agents.Agent] = []
     for n in names:
