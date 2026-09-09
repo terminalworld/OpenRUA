@@ -13,8 +13,10 @@ task:
   # plus two bimanual ones.
   suites: [capbench_lift, capbench_stack, capbench_nut, capbench_restack,
            capbench_wipe, capbench_twoarm_lift, capbench_handover]
-  init_states: seeded-reset   # no fixed init files: seed = init_state_id,
-                              # applied through their reset path
+  init_states: random-reset   # their reset(seed) seeds only the task's own rng;
+                              # robosuite's placement sampler is built unseeded,
+                              # so every reset places the objects afresh and
+                              # seed N is the episode's number, not its world
   # Task language verbatim from cap-x task prompts (their Goal: lines).
   task_language:
     lift: "Pick up the red cube and lift it."

@@ -62,6 +62,8 @@ def run_benchmarks(args) -> int:
 _EPISODES = {
     "benchmark-files": "seed N starts episode N of the benchmark's fixed initial-state files",
     "seeded-reset": "seed N seeds the benchmark's own randomised reset",
+    "random-reset": ("the benchmark's reset draws fresh randomness every time; "
+                     "seed N only numbers the episode"),
 }
 
 

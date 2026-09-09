@@ -25,7 +25,7 @@ def test_one_task_per_suite_and_the_seed_meaning(tmp_path, capsys, monkeypatch):
     out = capsys.readouterr().out
     assert "capbench_lift        1 task: --task-ids 0" in out
     assert "do capbench_lift" in out
-    assert "100 seeds per task" in out and "randomised reset" in out
+    assert "100 seeds per task" in out and "only numbers the episode" in out
 
 
 def test_sentences_from_the_loader_are_asked_in_the_simulator_venv(tmp_path, capsys, monkeypatch):

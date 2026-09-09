@@ -84,13 +84,16 @@ class CapBenchLoader:
                      "capbench_task": task_name}
 
     def init_state(self, ctx: dict, seed: int):
-        """No fixed init files; the protocol is seeded resets, so the
-        "state" is the seed itself."""
+        """No fixed init files; the seed goes to their reset path and
+        names the episode. It does not fix the world: their reset(seed)
+        seeds the task's own rng only, and robosuite's placement sampler
+        underneath is built unseeded, so objects land afresh each time
+        (init_states: random-reset in the benchmark file)."""
         return seed
 
     def reset(self, env, ctx: dict, state) -> None:
-        # Seeded reset through their own reset path (placement sampling
-        # parity with CaP-X).
+        # Their own reset path, seed and all (parity with CaP-X); see
+        # init_state for what the seed does and does not decide.
         ctx["low"].reset(seed=state)
 
     def success(self, env) -> bool:

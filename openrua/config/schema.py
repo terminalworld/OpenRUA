@@ -64,7 +64,11 @@ class Task(Strict):
                               "openrua bench picks one with --task-suite")
     init_states: str | None = Field(
         default=None, description="how episodes start (documentation of the "
-        "loader's behaviour): benchmark-files | seeded-reset")
+        "loader's behaviour): benchmark-files (seed N is episode N of the "
+        "benchmark's fixed initial states) | seeded-reset (seed N seeds the "
+        "benchmark's own reset, so the episode is reproducible from N) | "
+        "random-reset (the benchmark's reset draws fresh randomness every "
+        "time; seed N only numbers the episode)")
     split: str = Field(default="target", description="robocasa: object/layout split "
                        "(robocasa365: target | pretrain | all; robocasa: eval | train | all)")
     dataset_root: str | None = Field(default=None, description="a benchmark dataset kept "

@@ -21,8 +21,9 @@ and seeds; each (task, seed) pair is one trial, run in sequence.
 `openrua benchmarks <name>` shows what there is to choose from: the
 suites, each suite's task ids with their sentences (read from the
 benchmark's own files in its simulator install), and what a seed means
-there (an index into fixed initial-state files, or the seed of the
-benchmark's own randomised reset). `--config`
+there (an index into fixed initial-state files, the seed of the
+benchmark's own reset, or, where the benchmark's reset is unseeded,
+only the episode's number). `--config`
 names a bundled benchmark (`openrua benchmarks`) or a path to a
 benchmark file of your own. `--robot` overrides the config's
 robot. Everything else about the protocol (wall clock, turn budget,
