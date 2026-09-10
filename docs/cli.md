@@ -305,11 +305,11 @@ options:
 
 ```
 usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
-                     --run-id RUN_ID --task-suite TASK_SUITE
-                     [--task-ids TASK_IDS] [--seeds SEEDS]
-                     [--operator {agent,none,script}] [--task TASK]
-                     [--script SCRIPT] [--record [CAMERAS]] [--record-every N]
-                     [--wall-clock-min WALL_CLOCK_MIN]
+                     [--agent AGENT] [--model MODEL] --run-id RUN_ID
+                     --task-suite TASK_SUITE [--task-ids TASK_IDS]
+                     [--seeds SEEDS] [--operator {agent,none,script}]
+                     [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
+                     [--record-every N] [--wall-clock-min WALL_CLOCK_MIN]
                      [--ros-domain ROS_DOMAIN]
                      [--credentials-dir CREDENTIALS_DIR]
                      [--token-file TOKEN_FILE] [--runs-root RUNS_ROOT]
@@ -324,6 +324,12 @@ options:
                         overrides the config's robot: line
   --sim SIM             simulator name or path; overrides the config's
                         simulator: line
+  --agent AGENT         agent name (openrua agents); overrides the config's
+                        agent.name. A different agent drops the config's agent
+                        section: its model and options come from its own
+                        manifest and your defaults
+  --model MODEL         model name; overrides the config's (or the agent's
+                        default) model
   --run-id RUN_ID
   --task-suite TASK_SUITE
   --task-ids TASK_IDS

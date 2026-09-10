@@ -344,6 +344,8 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
         source = f"{sim} native scene"
     cfg["machine"] = machine
     cfg["agent"] = layer_agent(cfg.get("agent", {}), defaults, user, agent=agent)
+    if model:
+        cfg["agent"]["model"] = model
     cfg["sandbox"] = layer_sandbox(defaults, user)
     cfg = dump(validate(ResolvedConfig, cfg, source))
     suite = (b or {}).get("scenes", {}).get("default_suite") or cfg["task"]["suites"][0]
@@ -356,11 +358,12 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
 
 def load_config(path: Path | str, robot: str | None = None,
                 home: Path | None = None, sim: str | None = None,
-                agent: str | None = None) -> dict:
+                agent: str | None = None, model: str | None = None) -> dict:
     """A benchmark config (name or path), assembled with its robot and
     simulator (the arguments win over the file's ``robot:`` /
-    ``simulator:`` lines) and the defaults files. Returns the resolved
-    dict (ResolvedConfig, validated)."""
+    ``simulator:`` lines) and the defaults files; ``agent`` and
+    ``model`` likewise win over the file's agent section. Returns the
+    resolved dict (ResolvedConfig, validated)."""
     return compose(robot, sim, str(path), home, agent).cfg
 
 

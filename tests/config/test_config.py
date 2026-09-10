@@ -251,3 +251,16 @@ def test_a_benchmark_of_your_own_names_its_loader_by_path(tmp_path):
                  "robot: panda\nsimulator: robosuite\n")
     with pytest.raises(NotFound, match="gone.py"):
         load_config(b, home=tmp_path)
+
+
+def test_agent_and_model_arguments_win_over_the_file(tmp_path):
+    """--agent picks another agent (the file's claude-code section is that
+    agent's and is left out); --model overrides whichever model resulted."""
+    cfg = load_config("libero_pro", home=tmp_path, agent="codex")
+    assert cfg["agent"]["name"] == "codex"
+    assert cfg["agent"]["model"] == "gpt-5.6-sol"          # codex's own default
+    assert cfg["agent"]["options"]["effort"] == "medium"    # its manifest, not the file's high
+    cfg = load_config("libero_pro", home=tmp_path, agent="codex", model="gpt-6-astra")
+    assert cfg["agent"]["model"] == "gpt-6-astra"
+    cfg = load_config("libero_pro", home=tmp_path, model="claude-sonnet-5")
+    assert cfg["agent"] ["name"] == "claude-code" and cfg["agent"]["model"] == "claude-sonnet-5"

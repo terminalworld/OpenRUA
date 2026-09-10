@@ -37,6 +37,12 @@ def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> Non
                     "config's robot: line")
     ap.add_argument("--sim", default=None,
                     help="simulator name or path; overrides the config's simulator: line")
+    ap.add_argument("--agent", default=None,
+                    help="agent name (openrua agents); overrides the config's agent.name. "
+                    "A different agent drops the config's agent section: its model "
+                    "and options come from its own manifest and your defaults")
+    ap.add_argument("--model", default=None,
+                    help="model name; overrides the config's (or the agent's default) model")
     ap.add_argument("--run-id", required=True)
     ap.add_argument("--task-suite", required=True)
     ap.add_argument("--task-ids", default="0")
@@ -123,7 +129,8 @@ def run(args: argparse.Namespace) -> int:
 
     home = paths.home(args.home)
     cfg_path = paths.find("benchmarks", args.config).resolve()
-    cfg = load_config(cfg_path, args.robot, home, sim=args.sim)
+    cfg = load_config(cfg_path, args.robot, home, sim=args.sim,
+                      agent=args.agent, model=args.model)
     if cfg["machine"]["backend"].get("kind") != "sim" and not args.task:
         raise UsageError("a real robot has no benchmark task to ask for",
                          hint="pass --task \"<what the agent should do>\"")
