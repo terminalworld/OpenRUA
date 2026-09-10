@@ -80,3 +80,61 @@ def test_scan_transcript_sees_a_clean_ending_and_a_quota_error(tmp_path):
     ev = a.scan_transcript(_transcript(tmp_path, bad))
     assert ev["final_is_error"] and ev["quota"] is not None
     assert a.quota_since(_transcript(tmp_path, bad))["resets_at"] is None
+
+
+def _rollout_lines():
+    """Three model responses, each with the account's rate limits."""
+    stamps = ["2026-09-10T19:21:12.000Z", "2026-09-10T19:22:12.000Z", "2026-09-10T19:23:12.000Z"]
+    used = [2.0, 2.5, 3.0]
+    lines = [json.dumps({"timestamp": stamps[0], "type": "session_meta", "payload": {"id": "s1"}})]
+    for stamp, u in zip(stamps, used):
+        lines.append(json.dumps({"timestamp": stamp, "type": "response_item",
+                                 "payload": {"type": "custom_tool_call", "name": "exec", "input": "ls"}}))
+        lines.append(json.dumps({"timestamp": stamp, "type": "token_usage_record",
+                                 "payload": {"usage": {"input_tokens": 1000, "cached_input_tokens": 800,
+                                                       "output_tokens": 10, "reasoning_output_tokens": 2}}}))
+        lines.append(json.dumps({"timestamp": stamp, "type": "event_msg", "payload": {
+            "type": "token_count",
+            "rate_limits": {"primary": {"used_percent": u, "window_minutes": 10080, "resets_at": 1789668541},
+                            "secondary": None, "plan_type": "pro", "rate_limit_reached_type": None}}}))
+    return lines
+
+
+def test_collect_keeps_the_session_log_beside_the_transcript(tmp_path):
+    profile = tmp_path / "profile"
+    (profile / "sessions" / "2026" / "09" / "10").mkdir(parents=True)
+    (profile / "sessions" / "2026" / "09" / "10" / "rollout-2026-09-10T19-21-10-x.jsonl").write_text(
+        "\n".join(_rollout_lines()))          # no trailing newline
+    trial = tmp_path / "trial"; trial.mkdir()
+    kept = agents.get("codex").collect(profile, trial)
+    assert kept == [trial / "rollout.jsonl"]
+    assert kept[0].read_text().endswith("\n")
+    assert agents.get("codex").collect(tmp_path / "empty", trial / "other") == []
+
+
+def test_rollout_gives_model_responses_as_turns_readings_and_dating(tmp_path):
+    trial = tmp_path; (trial / "rollout.jsonl").write_text("\n".join(_rollout_lines()) + "\n")
+    transcript = trial / "transcript.jsonl"
+    transcript.write_text(json.dumps({"type": "item.completed", "item": {"type": "command_execution"}}) + "\n"
+                          + json.dumps({"type": "turn.completed", "usage": {"input_tokens": 99}}) + "\n")
+    agent = agents.get("codex")
+    final = agent.read_final(transcript)
+    assert final["num_turns"] == 3 and final["segments"] == 1
+    assert final["usage"] == {"input_tokens": 3000, "cached_input_tokens": 2400,
+                              "output_tokens": 30, "reasoning_output_tokens": 6}
+    readings = agent.read_rate_limits(transcript)
+    assert [r["window"] for r in readings] == ["seven_day"] * 3
+    assert [r["utilization"] for r in readings] == [0.02, 0.025, 0.03]
+    assert readings[0]["status"] == "ok" and readings[0]["resets_at"] == 1789668541
+    assert readings[1]["at"] - readings[0]["at"] == 60.0
+    assert agent.assistant_turns_before(transcript, readings[1]["at"]) == 2
+
+
+def test_without_a_rollout_the_stream_still_answers(tmp_path):
+    transcript = tmp_path / "transcript.jsonl"
+    transcript.write_text(json.dumps({"type": "item.completed", "item": {"type": "command_execution"}}) + "\n"
+                          + json.dumps({"type": "turn.completed", "usage": {"input_tokens": 99}}) + "\n")
+    agent = agents.get("codex")
+    assert agent.read_final(transcript)["num_turns"] == 1
+    assert agent.read_rate_limits(transcript) == []
+    assert agent.assistant_turns_before(transcript, 0) is None

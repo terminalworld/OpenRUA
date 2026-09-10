@@ -394,12 +394,18 @@ def archive_prior_attempt(trial_dir: Path, keep: Iterable[Path] = ()) -> Path | 
     return dest
 
 
-def finalize_trial(trial_dir: Path, agent, secrets: list[str]) -> None:
-    """After a trial: scrub secrets from everything the agent or the sim
-    could have echoed, then extract the replay script and the timed
-    operation stream from the transcript (an operator that wrote
+def finalize_trial(trial_dir: Path, agent, secrets: list[str],
+                   profile_dir: Path | None = None) -> None:
+    """After a trial: let the agent keep what it wants from its sandbox
+    profile directory (``agent.collect``; the caller discards the
+    directory afterwards), scrub secrets from everything the agent or
+    the sim could have echoed, then extract the replay script and the
+    timed operation stream from the transcript (an operator that wrote
     ``ops.jsonl`` itself has no transcript)."""
     transcript = trial_dir / "transcript.jsonl"
+    kept = agent.collect(profile_dir, trial_dir) if profile_dir is not None else []
+    for path in kept:
+        scrub_file(Path(path), secrets)
     scrub_file(transcript, secrets)
     scrub_file(trial_dir / "bridge.log", secrets)
     if transcript.exists():

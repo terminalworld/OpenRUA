@@ -52,7 +52,7 @@ HOOK_NAMES = (
     "interactive_argv", "sandbox_cli_check", "login_hint", "token_hint",
     "quota_probe_argv", "quota_window_open", "matches_quota_anomaly",
     "read_rate_limits", "quota_since", "read_final", "scan_transcript",
-    "assistant_turns_before", "replay_ops",
+    "assistant_turns_before", "replay_ops", "collect",
 )
 
 
@@ -212,6 +212,15 @@ class Agent:
         """Agent turns completed at or before an instant (post-hoc turn
         budgets). Default: None, unknown."""
         return None
+
+    def collect(self, profile_dir: Path, trial_dir: Path) -> list[Path]:
+        """After the run, before the sandbox's profile directory is
+        discarded: keep what this agent wants from it in the trial
+        directory (a CLI that writes its own session log there, say).
+        Returns the files written; they get the same secret scrub as the
+        transcript. The file names are this agent's alone: its reading
+        hooks find them beside the transcript. Default: nothing kept."""
+        return []
 
     def replay_ops(self, transcript: Path) -> list[dict]:
         """The agent's world-facing operations in order, each one of

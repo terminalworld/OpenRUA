@@ -59,7 +59,12 @@ default does without: `interactive_argv` (`openrua agent`),
 `sandbox_cli_check`, `login_hint`, `token_hint`, the quota hooks
 (`quota_probe_argv`, `quota_window_open`, `matches_quota_anomaly`,
 `read_rate_limits`, `quota_since`), the transcript hooks (`read_final`,
-`scan_transcript`, `assistant_turns_before`) and `replay_ops`. The
+`scan_transcript`, `assistant_turns_before`), `replay_ops` and
+`collect` (what to keep from the sandbox's profile directory once the
+run is over: a CLI that writes its own session log there gives the
+reading hooks something finer than the stdout stream; the files an
+agent keeps are named by that agent alone and land beside the
+transcript, so agents never read each other's). The
 manifest's fields are available on `self`. An agent's `capabilities` is
 the set of hooks its class overrides; `openrua agents` lists them.
 
@@ -114,10 +119,14 @@ implementation for all of the above.
 headless `codex exec --json` with approvals and the CLI's own sandbox
 switched off (the container is the sandbox) and web search disabled;
 login through a `CODEX_HOME` profile directory (`CODEX_HOME=<dir> codex
-login`) or an API key by file; token usage from the transcript; shell
-commands replayed (its file-change events carry no content). The CLI
-has no turn budget flag, so `protocol.max_turns` is carried by the
-runner across segments but not enforced inside a segment.
+login`) or an API key by file; shell commands replayed (its file-change
+events carry no content). Its stdout stream counts one turn per prompt,
+so `collect` keeps the CLI's own session log as `rollout.jsonl`, from
+which turns are model responses (the unit Claude Code's transcript
+counts), token usage is per response, and the account's rate limits are
+read. The CLI has no turn budget flag, so `protocol.max_turns` is
+carried by the runner across segments but not enforced inside a
+segment.
 
 Images carry one label per agent baked in (the hash of its install line
 or whitelist); `openrua doctor` reads them, so one sandbox image can

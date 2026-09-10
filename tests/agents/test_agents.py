@@ -562,3 +562,11 @@ def test_transcript_evidence_names_the_actual_file(tmp_path):
                              "rate_limit_info": {"status": "rejected",
                                                  "rateLimitType": "five_hour"}}))
     assert a.quota_since(t)["evidence"].startswith("segment-2.jsonl:1:")
+
+
+def test_collect_on_an_empty_profile_keeps_nothing(tmp_path):
+    """Every bundled agent: nothing in the profile, nothing kept, no error
+    (the runner calls collect for every trial, whatever the agent)."""
+    for listed in agents.available():
+        agent = listed.agent
+        assert agent.collect(tmp_path / "empty", tmp_path / "trial") == [], agent.name

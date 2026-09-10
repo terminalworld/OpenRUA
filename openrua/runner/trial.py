@@ -292,8 +292,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         # Post-trial token values too; a mid-trial rotation would leave
         # both generations potentially visible in the record.
         secrets += record.secret_strings(creds_home)
+        record.finalize_trial(trial_dir, agent, secrets, profile_dir=cfg_dir)
         shutil.rmtree(cfg_dir, ignore_errors=True)
-        record.finalize_trial(trial_dir, agent, secrets)
         held.release()
     # wall_seconds spans the whole harness (boot, preflight, operator,
     # teardown). The wall cap is enforced only on the operator and its

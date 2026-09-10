@@ -9,15 +9,28 @@ container is the sandbox; web search is disabled because it cannot be
 routed through the proxy. A resumed launch continues the most recent
 session in the sandbox's own CODEX_HOME (``codex exec resume --last``).
 
+The stdout stream is coarse: one ``turn`` per prompt, however many
+commands ran inside it, and no quota state. The CLI's own session log
+(the rollout under ``$CODEX_HOME/sessions/``) has the fine grain: one
+``token_count`` event per model response, each with the account's rate
+limits, and one ``token_usage_record`` per response. ``collect`` keeps
+that log beside the transcript as ``rollout.jsonl`` before the sandbox
+profile is discarded, and the reading hooks prefer it: ``read_final``
+counts model responses as the agent's turns (the same unit Claude Code's
+transcript counts), ``read_rate_limits`` reads the limits, and
+``assistant_turns_before`` dates the responses. Without a rollout they
+fall back to the stream (completed items as turns, no readings).
+
 The CLI has no turn budget flag, so ``max_turns`` is not enforced by it;
-``read_final`` counts completed items as the agent's turns so the runner
-can carry its budget across segments. A ``file_change`` event names the
-file but not its content, so replay covers shell commands only.
+the runner carries its budget across segments from ``read_final``. A
+``file_change`` event names the file but not its content, so replay
+covers shell commands only.
 """
 
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -25,6 +38,8 @@ from openrua.agents.base import Agent
 
 QUOTA_PHRASES = ("rate limit", "usage limit", "quota")
 _ACTION_ITEMS = ("command_execution", "file_change", "agent_message")
+ROLLOUT = "rollout.jsonl"           # the session log kept beside the transcript
+_WINDOWS = {300: "five_hour", 10080: "seven_day"}
 
 
 class Codex(Agent):
@@ -99,18 +114,55 @@ class Codex(Agent):
         low = text.lower()
         return any(k in low for k in QUOTA_PHRASES)
 
+    # ---- the session log ---------------------------------------------
+    def collect(self, profile_dir: Path, trial_dir: Path) -> list[Path]:
+        """Keep the CLI's session log(s) as ``rollout.jsonl``. A resumed
+        segment continues the same session file, so one file is the
+        rule; several (a fresh session after a lost one) are kept in
+        the order they were written."""
+        logs = sorted((profile_dir / "sessions").rglob("rollout-*.jsonl"),
+                      key=lambda p: p.stat().st_mtime)
+        if not logs:
+            return []
+        out = trial_dir / ROLLOUT
+        with out.open("w") as f:
+            for log in logs:
+                text = log.read_text(errors="replace")
+                f.write(text if text.endswith("\n") else text + "\n")
+        return [out]
+
+    @staticmethod
+    def _rollout(transcript: Path) -> Path | None:
+        path = transcript.with_name(ROLLOUT)
+        return path if path.is_file() else None
+
     def read_final(self, transcript: Path) -> dict:
-        """Totals across every segment in the transcript: completed items
-        as turns, token usage summed over ``turn.completed`` events."""
+        """Totals across every segment: from the rollout, model responses
+        as turns and per-response usage summed; from the stream alone,
+        completed items as turns and ``turn.completed`` usage summed."""
+        segments = sum(1 for rec in _iter_records(transcript)
+                       if rec.get("type") == "turn.completed")
+        rollout = self._rollout(transcript)
+        if rollout is not None:
+            turns = 0
+            usage: dict[str, int] = {}
+            for rec in _iter_records(rollout):
+                if _event(rec) == "token_count":
+                    turns += 1
+                elif rec.get("type") == "token_usage_record":
+                    for k, v in (rec.get("payload", {}).get("usage") or {}).items():
+                        if isinstance(v, (int, float)):
+                            usage[k] = usage.get(k, 0) + v
+            if turns:
+                return {"num_turns": turns, "hit_max_turns": False,
+                        "usage": usage or None, "segments": segments}
         turns = 0
-        usage: dict[str, int] = {}
-        segments = 0
+        usage = {}
         for rec in _iter_records(transcript):
             t = rec.get("type")
             if t == "item.completed" and rec.get("item", {}).get("type") in _ACTION_ITEMS:
                 turns += 1
             elif t == "turn.completed":
-                segments += 1
                 for k, v in (rec.get("usage") or {}).items():
                     if isinstance(v, (int, float)):
                         usage[k] = usage.get(k, 0) + v
@@ -118,6 +170,47 @@ class Codex(Agent):
             return {}
         return {"num_turns": turns, "hit_max_turns": False, "usage": usage or None,
                 "segments": segments}
+
+    def read_rate_limits(self, transcript: Path) -> list[dict]:
+        """Every rate-limit reading in the rollout, one per model response,
+        normalized to ``{window, utilization, resets_at, status, at}``
+        like Claude Code's. A window is named by its length (five_hour,
+        seven_day, else ``<minutes>_min``); ``status`` is the CLI's
+        ``rate_limit_reached_type`` or "ok"."""
+        rollout = self._rollout(transcript)
+        if rollout is None:
+            return []
+        out: list[dict] = []
+        for rec in _iter_records(rollout):
+            if _event(rec) != "token_count":
+                continue
+            limits = rec.get("payload", {}).get("rate_limits") or {}
+            at = _iso(rec.get("timestamp"))
+            for key in ("primary", "secondary"):
+                w = limits.get(key)
+                if not w:
+                    continue
+                minutes = w.get("window_minutes")
+                out.append({
+                    "window": _WINDOWS.get(minutes, f"{minutes}_min"),
+                    "utilization": (w.get("used_percent") or 0) / 100.0,
+                    "resets_at": w.get("resets_at"),
+                    "status": limits.get("rate_limit_reached_type") or "ok",
+                    "at": at,
+                })
+        return out
+
+    def assistant_turns_before(self, transcript: Path, wall_unix: float) -> int | None:
+        rollout = self._rollout(transcript)
+        if rollout is None:
+            return None
+        n = 0
+        for rec in _iter_records(rollout):
+            if _event(rec) == "token_count":
+                at = _iso(rec.get("timestamp"))
+                if at is not None and at <= wall_unix:
+                    n += 1
+        return n
 
     def scan_transcript(self, transcript: Path) -> dict:
         ev: dict = {"quota": None, "malformed_lines": 0, "lines": 0,
@@ -176,6 +269,23 @@ class Codex(Agent):
                 ops.append({"kind": "shell", "command": item.get("command", ""),
                             "output": item.get("aggregated_output", ""), "duration_s": 0.0})
         return ops
+
+
+def _event(rec: dict) -> str | None:
+    """The event name of a rollout ``event_msg`` line, else None."""
+    if rec.get("type") != "event_msg":
+        return None
+    return (rec.get("payload") or {}).get("type")
+
+
+def _iso(stamp: str | None) -> float | None:
+    """A rollout timestamp (RFC 3339, Z) as unix seconds, else None."""
+    if not stamp:
+        return None
+    try:
+        return datetime.fromisoformat(stamp.replace("Z", "+00:00")).timestamp()
+    except ValueError:
+        return None
 
 
 def _iter_records(transcript: Path):
