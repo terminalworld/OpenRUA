@@ -214,6 +214,12 @@ def agent_operator(ctx: dict) -> dict:
         mark = _line_count(transcript) if resumed else 0
         t0, t1, timed_out = run_segment(cmd, trial_dir, env, remaining_s, meta)
         active_s += t1 - t0
+        # What the CLI wrote in its own profile directory this segment
+        # (a session log, say) is kept now, before the transcript hooks
+        # below and in summarize() read the segment; the trial's
+        # finalize collects once more and scrubs.
+        if ctx.get("profile_dir"):
+            agent.collect(Path(ctx["profile_dir"]), trial_dir)
         # Absolute bounds, not just a duration: post-hoc budget judging
         # asks how much active time had passed when a success latched,
         # and only per-segment timestamps can answer that for a

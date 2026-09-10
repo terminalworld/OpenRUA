@@ -71,7 +71,8 @@ def harness(tmp_path, monkeypatch):
                "protocol": {"max_turns": 100, "resume_on_quota_wall": True,
                             **protocol}}
         ctx = {"cfg": cfg, "sandbox": "rc-x-sandbox", "task_language": "T",
-               "trial_dir": tmp_path, "proxy": "http://p",
+               "trial_dir": tmp_path, "profile_dir": tmp_path / "profile",
+               "proxy": "http://p",
                "sim": "rc-x-sim",
                "active_wall_clock_min": 240}
         return R.agent_operator(ctx)
@@ -246,3 +247,36 @@ def test_the_switch_is_recorded_on_the_trial(harness):
     # Which way a trial ran must be readable from the trial, not inferred
     # from a config file's history.
     assert harness([[INIT, _result(1)]])["resume_on_quota_wall"] is True
+
+
+def test_agent_files_are_collected_after_every_segment_before_they_are_read(
+        harness, tmp_path, monkeypatch):
+    """An agent that keeps files from its profile directory (a session
+    log) sees them collected after each segment, and the totals the
+    runner records come from the collected state, not the stream."""
+    from openrua.plugins.agents.claude_code import ClaudeCode
+    calls: list[tuple] = []
+
+    def collect(self, profile_dir, trial_dir):
+        calls.append((profile_dir, trial_dir))
+        kept = trial_dir / "kept.jsonl"
+        kept.write_text(f"segments seen: {len(calls)}\n")
+        return [kept]
+
+    real_read_final = ClaudeCode.read_final
+
+    def read_final(self, transcript):
+        fin = real_read_final(self, transcript)
+        kept = transcript.with_name("kept.jsonl")
+        if kept.is_file():             # the finer source wins, as codex's does
+            fin["num_turns"] = 10 + int(kept.read_text().split()[-1])
+        return fin
+
+    monkeypatch.setattr(ClaudeCode, "collect", collect)
+    monkeypatch.setattr(ClaudeCode, "read_final", read_final)
+    meta = harness([[INIT, WALL, _result(4, "error_during_execution")],
+                    [INIT, _result(6)]])
+    assert meta["segments"] == 2
+    assert [c[0] for c in calls] == [tmp_path / "profile"] * 2
+    assert meta["num_turns"] == 12
+

@@ -256,6 +256,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         op_meta = operate(cfg, machine, sandbox_name, operator, {
             "machine": machine,
             "trial_dir": trial_dir,
+            "profile_dir": cfg_dir,
             "cfg": cfg,
             "sandbox": sandbox_name,
             "sim": sim_name,
