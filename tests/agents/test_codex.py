@@ -125,7 +125,7 @@ def test_rollout_gives_model_responses_as_turns_readings_and_dating(tmp_path):
     readings = agent.read_rate_limits(transcript)
     assert [r["window"] for r in readings] == ["seven_day"] * 3
     assert [r["utilization"] for r in readings] == [0.02, 0.025, 0.03]
-    assert readings[0]["status"] == "ok" and readings[0]["resets_at"] == 1789668541
+    assert readings[0]["status"] == "allowed" and readings[0]["resets_at"] == 1789668541
     assert readings[1]["at"] - readings[0]["at"] == 60.0
     assert agent.assistant_turns_before(transcript, readings[1]["at"]) == 2
 

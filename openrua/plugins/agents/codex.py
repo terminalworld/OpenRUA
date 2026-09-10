@@ -137,35 +137,31 @@ class Codex(Agent):
         return path if path.is_file() else None
 
     def read_final(self, transcript: Path) -> dict:
-        """Totals across every segment: from the rollout, model responses
-        as turns and per-response usage summed; from the stream alone,
-        completed items as turns and ``turn.completed`` usage summed."""
-        segments = sum(1 for rec in _iter_records(transcript)
-                       if rec.get("type") == "turn.completed")
-        rollout = self._rollout(transcript)
-        if rollout is not None:
-            turns = 0
-            usage: dict[str, int] = {}
-            for rec in _iter_records(rollout):
-                if _event(rec) == "token_count":
-                    turns += 1
-                elif rec.get("type") == "token_usage_record":
-                    for k, v in (rec.get("payload", {}).get("usage") or {}).items():
-                        if isinstance(v, (int, float)):
-                            usage[k] = usage.get(k, 0) + v
-            if turns:
-                return {"num_turns": turns, "hit_max_turns": False,
-                        "usage": usage or None, "segments": segments}
-        turns = 0
-        usage = {}
+        """Totals across every segment. The stream gives the segment
+        count, and on its own completed items as turns with
+        ``turn.completed`` usage; a rollout beside it gives the finer
+        answer, model responses as turns and per-response usage, and
+        takes precedence."""
+        segments = turns = 0
+        usage: dict[str, int] = {}
         for rec in _iter_records(transcript):
             t = rec.get("type")
             if t == "item.completed" and rec.get("item", {}).get("type") in _ACTION_ITEMS:
                 turns += 1
             elif t == "turn.completed":
-                for k, v in (rec.get("usage") or {}).items():
-                    if isinstance(v, (int, float)):
-                        usage[k] = usage.get(k, 0) + v
+                segments += 1
+                _add(usage, rec.get("usage"))
+        rollout = self._rollout(transcript)
+        if rollout is not None:
+            responses = 0
+            fine: dict[str, int] = {}
+            for rec in _iter_records(rollout):
+                if _event(rec) == "token_count":
+                    responses += 1
+                elif rec.get("type") == "token_usage_record":
+                    _add(fine, rec.get("payload", {}).get("usage"))
+            if responses:
+                turns, usage = responses, fine
         if not segments and not turns:
             return {}
         return {"num_turns": turns, "hit_max_turns": False, "usage": usage or None,
@@ -175,8 +171,9 @@ class Codex(Agent):
         """Every rate-limit reading in the rollout, one per model response,
         normalized to ``{window, utilization, resets_at, status, at}``
         like Claude Code's. A window is named by its length (five_hour,
-        seven_day, else ``<minutes>_min``); ``status`` is the CLI's
-        ``rate_limit_reached_type`` or "ok"."""
+        seven_day, else ``<minutes>_min``); ``status`` speaks the shared
+        vocabulary, "allowed" or "rejected" (the CLI's
+        ``rate_limit_reached_type`` set means rejected)."""
         rollout = self._rollout(transcript)
         if rollout is None:
             return []
@@ -195,7 +192,7 @@ class Codex(Agent):
                     "window": _WINDOWS.get(minutes, f"{minutes}_min"),
                     "utilization": (w.get("used_percent") or 0) / 100.0,
                     "resets_at": w.get("resets_at"),
-                    "status": limits.get("rate_limit_reached_type") or "ok",
+                    "status": "rejected" if limits.get("rate_limit_reached_type") else "allowed",
                     "at": at,
                 })
         return out
@@ -269,6 +266,13 @@ class Codex(Agent):
                 ops.append({"kind": "shell", "command": item.get("command", ""),
                             "output": item.get("aggregated_output", ""), "duration_s": 0.0})
         return ops
+
+
+def _add(total: dict[str, int], usage: dict | None) -> None:
+    """Sum a usage record's numeric fields into ``total``."""
+    for k, v in (usage or {}).items():
+        if isinstance(v, (int, float)):
+            total[k] = total.get(k, 0) + v
 
 
 def _event(rec: dict) -> str | None:

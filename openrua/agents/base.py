@@ -213,6 +213,14 @@ class Agent:
         budgets). Default: None, unknown."""
         return None
 
+    def replay_ops(self, transcript: Path) -> list[dict]:
+        """The agent's world-facing operations in order, each one of
+        ``{kind: "shell", command}``, ``{kind: "write", path, content}`` or
+        ``{kind: "edit", path, old, new, replace_all}``, plus ``output``,
+        ``duration_s`` and the wall times ``t0``/``t1`` (unix seconds,
+        None when the transcript has none). Default: [] (no replay)."""
+        return []
+
     def collect(self, profile_dir: Path, trial_dir: Path) -> list[Path]:
         """After the run, before the sandbox's profile directory is
         discarded: keep what this agent wants from it in the trial
@@ -220,12 +228,4 @@ class Agent:
         Returns the files written; they get the same secret scrub as the
         transcript. The file names are this agent's alone: its reading
         hooks find them beside the transcript. Default: nothing kept."""
-        return []
-
-    def replay_ops(self, transcript: Path) -> list[dict]:
-        """The agent's world-facing operations in order, each one of
-        ``{kind: "shell", command}``, ``{kind: "write", path, content}`` or
-        ``{kind: "edit", path, old, new, replace_all}``, plus ``output``,
-        ``duration_s`` and the wall times ``t0``/``t1`` (unix seconds,
-        None when the transcript has none). Default: [] (no replay)."""
         return []
