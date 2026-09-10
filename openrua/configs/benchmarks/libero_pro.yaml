@@ -7,13 +7,14 @@
 entry_point: libero   # the bridge loader: bundled name, or ./path to a module of your own
 task:
   benchmark: libero_pro
-  # The six comparable cells = (goal, spatial, object) x (swap, task),
-  # written out because this list is what a batch runs and what results
-  # are keyed by. Identical to cap-x's own default suite list
-  # (capx/envs/scripts/run_libero_batch.py).
+  # The eight cells = (goal, spatial, object, 10) x (swap, task): the
+  # four LIBERO suites, libero_10 being the long-horizon one, under the
+  # two perturbations LIBERO-PRO generates. Written out because this
+  # list is what a batch runs and what results are keyed by.
   suites: [libero_goal_swap, libero_goal_task,
            libero_spatial_swap, libero_spatial_task,
-           libero_object_swap, libero_object_task]
+           libero_object_swap, libero_object_task,
+           libero_10_swap, libero_10_task]
   init_states: benchmark-files    # fixed .init files, never random
 
 protocol:
