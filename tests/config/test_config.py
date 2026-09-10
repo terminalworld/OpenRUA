@@ -258,7 +258,7 @@ def test_agent_and_model_arguments_win_over_the_file(tmp_path):
     agent's and is left out); --model overrides whichever model resulted."""
     cfg = load_config("libero_pro", home=tmp_path, agent="codex")
     assert cfg["agent"]["name"] == "codex"
-    assert cfg["agent"]["model"] == "gpt-5.6-sol"          # codex's own default
+    assert "model" not in cfg["agent"]                     # the runner takes codex's default
     assert cfg["agent"]["options"]["effort"] == "medium"    # its manifest, not the file's high
     cfg = load_config("libero_pro", home=tmp_path, agent="codex", model="gpt-6-astra")
     assert cfg["agent"]["model"] == "gpt-6-astra"

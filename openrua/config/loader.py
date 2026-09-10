@@ -257,7 +257,8 @@ class Composed:
 
 
 def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
-            home: Path | None = None, agent: str | None = None) -> Composed:
+            home: Path | None = None, agent: str | None = None,
+            model: str | None = None) -> Composed:
     """robot (type or instance) + simulator + optional benchmark -> one
     resolved config (ResolvedConfig, validated) and the scene to load.
 
@@ -364,7 +365,7 @@ def load_config(path: Path | str, robot: str | None = None,
     ``simulator:`` lines) and the defaults files; ``agent`` and
     ``model`` likewise win over the file's agent section. Returns the
     resolved dict (ResolvedConfig, validated)."""
-    return compose(robot, sim, str(path), home, agent).cfg
+    return compose(robot, sim, str(path), home, agent, model=model).cfg
 
 
 def apply_suite_overrides(cfg: dict, task_suite: str) -> dict:
