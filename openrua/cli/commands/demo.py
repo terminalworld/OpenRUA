@@ -14,6 +14,12 @@ def run(args) -> int:
     if args.size:
         w, h = args.size.lower().split("x")
         style.width, style.height = int(w), int(h)
+    if args.pace != 1.0:
+        # The terminal's clock: how fast commands type and how long the
+        # video rests between events. The robot's clock is --speed.
+        style.typing_chars_per_s *= args.pace
+        style.typing_max_s /= args.pace
+        style.hold_s /= args.pace
     start, _, end = (args.ops or ":").partition(":")
     out = demo.render(Path(args.trial), Path(args.out) if args.out else None,
                       cameras=tuple(c for c in args.cameras.split(",") if c),
@@ -40,6 +46,12 @@ def add_parser(sub) -> None:
                    "short with --ops and --speed)")
     p.add_argument("--cameras", default="",
                    help="main view and inset by name (default: the first two recorded)")
+    p.add_argument("--pace", type=float, default=1.0, metavar="FACTOR",
+                   help="the terminal's clock: commands type FACTOR times faster "
+                        "and the rests between events shrink by FACTOR (default 1; "
+                        "the robot's clock is --speed). Most of a clip is typing: "
+                        "a trial of a few hundred sim steps and fifty commands is "
+                        "seconds of motion and minutes of terminal")
     p.add_argument("--from-motion", type=float, default=None, metavar="SECONDS",
                    help="start the clip this many seconds (on the trial's clock) "
                         "before the robot first moves, skipping the agent's "

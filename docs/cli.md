@@ -395,8 +395,8 @@ options:
 
 ```
 usage: openrua demo [-h] [--out OUT] [--gif] [--cameras CAMERAS]
-                    [--from-motion SECONDS] [--ops START:END] [--size WxH]
-                    [--fps FPS] [--quality CRF] [--speed SPEED]
+                    [--pace FACTOR] [--from-motion SECONDS] [--ops START:END]
+                    [--size WxH] [--fps FPS] [--quality CRF] [--speed SPEED]
                     [--font-size FONT_SIZE] [--gif-width GIF_WIDTH]
                     [--gif-fps GIF_FPS] [--no-typing]
                     trial
@@ -415,6 +415,12 @@ options:
                         keep it short with --ops and --speed)
   --cameras CAMERAS     main view and inset by name (default: the first two
                         recorded)
+  --pace FACTOR         the terminal's clock: commands type FACTOR times
+                        faster and the rests between events shrink by FACTOR
+                        (default 1; the robot's clock is --speed). Most of a
+                        clip is typing: a trial of a few hundred sim steps and
+                        fifty commands is seconds of motion and minutes of
+                        terminal
   --from-motion SECONDS
                         start the clip this many seconds (on the trial's
                         clock) before the robot first moves, skipping the
