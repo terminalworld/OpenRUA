@@ -64,6 +64,14 @@ class Shell:
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT, text=True, bufsize=1)
         self._n = 0
+        # The agent's tool ran each command in a shell of its own, where
+        # `exit` ends only that command. Here every operation is one
+        # shell function and `exit` is aliased to `return`, so an `exit`
+        # inside an operation ends the operation, not the shell that the
+        # operations behind it still need (aliases expand at parse time;
+        # a quoted `exit`, in a python -c or bash -c string, is untouched).
+        self._proc.stdin.write("shopt -s expand_aliases; alias exit='return'\n")
+        self._proc.stdin.flush()
 
     def run(self, command: str, timeout_s: float) -> tuple[str, bool]:
         """Run one operation; returns (output, finished). Not finished
@@ -71,10 +79,12 @@ class Shell:
         the shell is unusable afterwards."""
         self._n += 1
         sentinel = f"__openrua_op_done_{self._n}__"
-        # Braces keep the operation in this shell (cd and variables
-        # persist); the redirection gives it an empty stdin, so a command
+        # A function keeps the operation in this shell (cd and variables
+        # persist) and gives `exit` (see __init__) something to return
+        # from; the redirection gives it an empty stdin, so a command
         # that reads input cannot swallow the operations queued behind it.
-        self._proc.stdin.write(f"{{\n{command}\n}} </dev/null\necho {sentinel}\n")
+        self._proc.stdin.write(f"_op_{self._n}() {{\n{command}\n}}\n"
+                               f"_op_{self._n} </dev/null\necho {sentinel}\n")
         self._proc.stdin.flush()
         lines: list[str] = []
         deadline = time.monotonic() + timeout_s

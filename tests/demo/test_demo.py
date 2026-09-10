@@ -183,5 +183,11 @@ def test_shell_keeps_state_and_gives_each_op_an_empty_stdin(monkeypatch):
         assert ok and out.strip() == "after"
         out, ok = sh.run("cat <<'EOF'\nheredoc still works\nEOF", 5)
         assert ok and out.strip() == "heredoc still works"
+        # An `exit` ends the operation, as it ended the agent's one-off
+        # shell, and never the shell the next operation needs.
+        out, ok = sh.run("cd /; echo before; exit 0; echo not-here", 5)
+        assert ok and out.split() == ["before"]
+        out, ok = sh.run("pwd; bash -c 'exit 3'; echo rc=$?", 5)
+        assert ok and out.split() == ["/", "rc=3"]
     finally:
         sh.close()
