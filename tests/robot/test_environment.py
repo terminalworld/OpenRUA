@@ -61,3 +61,22 @@ def test_robocerebra_cases_are_numbered_and_goals_parsed(tmp_path):
     with pytest.raises(FileNotFoundError, match="have: Ideal"):
         robocerebra._cases(root, "Mix")
     assert robocerebra._bench_root({"task": {"dataset_root": str(root)}}) == root
+
+
+def test_libero_settings_are_written_without_importing_libero(tmp_path, monkeypatch):
+    """The settings file pre-empts LIBERO's import-time stdin prompt, so
+    writing it must not itself import libero (a dotted find_spec would)."""
+    import sys
+    pkg = tmp_path / "site" / "libero"
+    (pkg / "libero").mkdir(parents=True)
+    (pkg / "__init__.py").write_text("raise RuntimeError('libero imported')\n")
+    (pkg / "libero" / "__init__.py").write_text("")
+    monkeypatch.syspath_prepend(str(tmp_path / "site"))
+    monkeypatch.delitem(sys.modules, "libero", raising=False)
+    monkeypatch.setenv("LIBERO_CONFIG_PATH", str(tmp_path / "cfg"))
+    from openrua.robot.sim.bridge.environments.libero import write_libero_settings
+    import yaml
+    path = write_libero_settings()
+    assert "libero" not in sys.modules
+    got = yaml.safe_load(path.read_text())
+    assert got["bddl_files"] == str(pkg / "libero" / "bddl_files")

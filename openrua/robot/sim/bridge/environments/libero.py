@@ -37,12 +37,20 @@ def _libero():
 
 def write_libero_settings() -> Path:
     """LIBERO reads ``~/.libero/config.yaml`` at import and, when the
-    file is missing, asks on stdin where to keep datasets. Write the
-    package's own default paths first so the import never blocks. The
-    paths derive from the installed package (the inner ``libero``
-    package directory), not from any checkout layout."""
-    spec = importlib.util.find_spec("libero.libero") or importlib.util.find_spec("libero")
+    file is missing, asks on stdin where to keep datasets; on the bridge
+    that stdin is the control line, and the question would swallow the
+    host's first request. Write the package's own default paths first so
+    the import never asks. Nothing here may import ``libero``: the top
+    level package is located by name only (``find_spec`` of a dotted
+    name imports the parent, which is the very import being pre-empted),
+    and the inner package directory, where upstream's layout keeps
+    ``bddl_files``, is found on disk."""
+    spec = importlib.util.find_spec("libero")
+    if spec is None or spec.origin is None:
+        raise ImportError("libero is not installed in this simulator venv")
     root = Path(spec.origin).parent
+    if (root / "libero" / "__init__.py").exists():   # upstream: libero.libero
+        root = root / "libero"
     settings_dir = Path(os.environ.get("LIBERO_CONFIG_PATH", "~/.libero")).expanduser()
     settings_dir.mkdir(parents=True, exist_ok=True)
     path = settings_dir / "config.yaml"
