@@ -13,6 +13,10 @@ ARG ROS_DISTRO=jazzy
 FROM ros:${ROS_DISTRO}
 ARG ROS_DISTRO
 
+# --- openrua-local: packages.ros.org 不在本 pod 的出网白名单里,换成 mkrosrepo.sh
+# 从公开镜像 dpkg-repack 出来的本地源。包列表未改动。见 RUNBOOK §0.0b-4。
+RUN rm -f /etc/apt/sources.list.d/ros2*.list /etc/apt/sources.list.d/ros2*.sources \
+    && echo 'deb [trusted=yes] http://127.0.0.1:8899/ ./' > /etc/apt/sources.list.d/local-ros.list
 RUN apt-get update && apt-get install -y --no-install-recommends \
     # perception toolchain (standard image_pipeline members + CV libs)
     ros-${ROS_DISTRO}-image-view ros-${ROS_DISTRO}-cv-bridge \
