@@ -6,6 +6,7 @@ renderer produces a video from them."""
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -78,16 +79,26 @@ def test_blocks_split_on_markers_and_keep_heredocs():
               "# openrua op 1\ncat > f <<'EOF'\n# openrua op 99 is content, no marker\nEOF\n")
     ops = blocks(script)
     assert len(ops) == 2
-    assert ops[0].strip() == "ls"
-    assert "cat > f" in ops[1]
+    assert ops[0].command.strip() == "ls" and ops[0].ran_s is None
+    assert "cat > f" in ops[1].command
     # only a whole marker line splits; a here-doc line that merely
     # begins like one is content
-    assert "no marker" in ops[1]
-    assert blocks("echo one\necho two\n") == ["echo one\necho two"]
+    assert "no marker" in ops[1].command
+    assert [op.command for op in blocks("echo one\necho two\n")] == ["echo one\necho two"]
+
+
+def test_marker_durations_bound_the_replay():
+    from openrua.runner.operators import op_timeout_s
+    ops = blocks("# openrua op 0  ran 12.3s\nls\n\n# openrua op 1\npwd\n")
+    assert [op.ran_s for op in ops] == [12.3, None]
+    assert op_timeout_s(12.3, 1000) == 66.9          # 3x + 30 s
+    assert op_timeout_s(0.5, 1000) == 60.0           # never under a minute
+    assert op_timeout_s(500, 200) == 200             # never past the wall clock
+    assert op_timeout_s(None, 200) == 200            # unknown: the wall clock alone
 
 
 def test_extraction_marks_every_operation(tmp_path):
-    ops = [{"kind": "shell", "command": "ls", "output": "a\nb", "t0": 1.0, "t1": 2.0},
+    ops = [{"kind": "shell", "command": "ls", "output": "a\nb", "t0": 1.0, "t1": 2.0, "duration_s": 1.0},
            {"kind": "write", "path": "/tmp/x.py", "content": "print(1)\n", "t0": 3.0, "t1": 3.5},
            {"kind": "read", "path": "/tmp/x.py"}]
     path = record.write_ops(tmp_path, ops)
@@ -174,7 +185,7 @@ def test_shell_keeps_state_and_gives_each_op_an_empty_stdin(monkeypatch):
                         lambda argv, **kw: real_popen(["bash"], **kw))
     sh = operators.Shell("ignored")
     try:
-        assert sh.run("cd /tmp && X=42", 5)[1] is True
+        assert sh.run("cd /tmp && export X=42", 5)[1] is True
         out, ok = sh.run("pwd; echo $X", 5)
         assert ok and out.split() == ["/tmp", "42"]
         out, ok = sh.run("cat", 5)  # reads stdin: must not hang or eat the next op
@@ -189,6 +200,15 @@ def test_shell_keeps_state_and_gives_each_op_an_empty_stdin(monkeypatch):
         assert ok and out.split() == ["before"]
         out, ok = sh.run("pwd; bash -c 'exit 3'; echo rc=$?", 5)
         assert ok and out.split() == ["/", "rc=3"]
+        # A command that never returns is killed at its bound; the note
+        # says so, and the shell goes on where the previous operation
+        # left it (a killed operation hands nothing back, its cd included).
+        t = time.monotonic()
+        out, ok = sh.run("cd /tmp; echo started; sleep 30; echo late", 20, op_timeout_s=1)
+        assert ok and time.monotonic() - t < 10
+        assert "started" in out and "late" not in out and "killed after 1s" in out
+        out, ok = sh.run("pwd", 5)
+        assert ok and out.strip() == "/"
     finally:
         sh.close()
 

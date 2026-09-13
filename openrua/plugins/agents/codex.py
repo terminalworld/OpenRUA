@@ -258,14 +258,44 @@ class Codex(Agent):
 
     def replay_ops(self, transcript: Path) -> list[dict]:
         """Shell commands in order (``command_execution`` items); file
-        changes carry no content in the transcript and are not replayed."""
+        changes carry no content in the transcript and are not replayed.
+        The stream carries no timing; the rollout does (each tool call
+        and its output are stamped), and when its exec calls line up one
+        to one with the stream's commands each gets its duration, the
+        bound a replay puts on it."""
         ops: list[dict] = []
         for rec in _iter_records(transcript):
             item = rec.get("item", {})
             if rec.get("type") == "item.completed" and item.get("type") == "command_execution":
                 ops.append({"kind": "shell", "command": item.get("command", ""),
                             "output": item.get("aggregated_output", ""), "duration_s": 0.0})
+        rollout = self._rollout(transcript)
+        if rollout is not None:
+            durations = _exec_durations(rollout)
+            if len(durations) == len(ops):
+                for op, d in zip(ops, durations):
+                    op["duration_s"] = d
         return ops
+
+
+def _exec_durations(rollout: Path) -> list[float]:
+    """Seconds from each exec tool call to its output, in call order,
+    from the rollout's stamped ``custom_tool_call`` /
+    ``custom_tool_call_output`` items matched by ``call_id``."""
+    started: dict[str, float] = {}
+    order: list[str] = []
+    ended: dict[str, float] = {}
+    for rec in _iter_records(rollout):
+        if rec.get("type") != "response_item":
+            continue
+        p = rec.get("payload") or {}
+        at = _iso(rec.get("timestamp"))
+        if p.get("type") == "custom_tool_call" and p.get("name") == "exec" and at is not None:
+            started[p.get("call_id")] = at
+            order.append(p.get("call_id"))
+        elif p.get("type") == "custom_tool_call_output" and at is not None:
+            ended[p.get("call_id")] = at
+    return [max(0.0, ended[c] - started[c]) for c in order if c in ended]
 
 
 def _add(total: dict[str, int], usage: dict | None) -> None:

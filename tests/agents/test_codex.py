@@ -130,6 +130,26 @@ def test_rollout_gives_model_responses_as_turns_readings_and_dating(tmp_path):
     assert agent.assistant_turns_before(transcript, readings[1]["at"]) == 2
 
 
+def test_replay_ops_take_their_durations_from_the_rollout(tmp_path):
+    trial = tmp_path
+    calls = [("c1", "2026-09-10T19:21:18.000Z", "2026-09-10T19:21:19.500Z"),
+             ("c2", "2026-09-10T19:22:00.000Z", "2026-09-10T19:22:30.000Z")]
+    lines = []
+    for cid, t0, t1 in calls:
+        lines.append(json.dumps({"timestamp": t0, "type": "response_item",
+                                 "payload": {"type": "custom_tool_call", "name": "exec", "call_id": cid, "input": "x"}}))
+        lines.append(json.dumps({"timestamp": t1, "type": "response_item",
+                                 "payload": {"type": "custom_tool_call_output", "call_id": cid, "output": []}}))
+    (trial / "rollout.jsonl").write_text("\n".join(lines) + "\n")
+    transcript = trial / "transcript.jsonl"
+    transcript.write_text("\n".join(json.dumps({"type": "item.completed", "item": {
+        "type": "command_execution", "command": c, "aggregated_output": ""}}) for c in ("ls", "sleep 30")) + "\n")
+    ops = agents.get("codex").replay_ops(transcript)
+    assert [op["duration_s"] for op in ops] == [1.5, 30.0]
+    (trial / "rollout.jsonl").write_text(lines[0] + "\n" + lines[1] + "\n")   # one call for two commands: no match
+    assert [op["duration_s"] for op in agents.get("codex").replay_ops(transcript)] == [0.0, 0.0]
+
+
 def test_without_a_rollout_the_stream_still_answers(tmp_path):
     transcript = tmp_path / "transcript.jsonl"
     transcript.write_text(json.dumps({"type": "item.completed", "item": {"type": "command_execution"}}) + "\n"

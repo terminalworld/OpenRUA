@@ -89,6 +89,7 @@ its state; check it before restarting anything that launches trials.
 | `success_end_state` | the same predicate at the end of the episode |
 | `success_at` | step and time of the first success |
 | `steps_total` | simulator steps since reset |
+| `end_state` | the world when the operator was done: `objects` (every object's position and quaternion, by the simulator's own names) and `hand` (the hand's position and the grasp point); what a failed trial is measured against later |
 | `termination` | `self_finished`, `max_turns`, `wall_clock_cap`, `quota_limit`, `sandbox_lost`, `launcher_failed`, `operator_done`, `anomaly` |
 | `anomaly`, `anomaly_traceback` | a harness failure (preflight red, sim stall, bring-up error); the trial does not count |
 | `preflight` | every check and its verdict, from the sandbox's own vantage, before the agent started |
@@ -134,9 +135,18 @@ openrua bench --config libero_pro --run-id replay --task-suite libero_goal_task 
             --script runs/libero_pro/demo/trials/libero_goal_task-3/seed0/commands.sh
 ```
 
-`commands.sh` opens every operation with a `# openrua op N` line, and
-the script operator runs them one at a time in a single sandbox shell,
-the way the agent did, timing each one into `ops.jsonl`. The agent ran
+`commands.sh` opens every operation with a `# openrua op N` line
+(followed by `ran 12.3s`, how long it took the agent, when the
+transcript says), and the script operator runs them one at a time in a
+single sandbox shell, the way the agent did, timing each one into
+`ops.jsonl`. Each operation is bounded: three times its recorded
+duration plus half a minute, never under a minute, never past the wall
+clock; an operation with no recorded duration has the wall clock alone.
+The agent's own tool bounded its commands the same way, so a command
+that never returns on its own (a `tf2_echo`, a topic echo without
+`--once`) ends where it ended for the agent instead of holding the
+replay until the wall clock. A killed operation hands nothing back:
+the shell goes on where the previous operation left it. The agent ran
 closed-loop, so an identical outcome under a paused clock and a seeded
 reset is likely, never guaranteed. A hand-written command file works
 the same way: without markers it is one operation.

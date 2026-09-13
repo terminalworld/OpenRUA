@@ -164,7 +164,16 @@ def score(rec: dict, machine) -> None:
     if "success_at" in verdict:  # time-to-success (post-hoc budgets)
         rec["success_at"] = verdict["success_at"]
     # Guarded on its own: auxiliary telemetry must never retract an
-    # already-obtained verdict.
+    # already-obtained verdict. The end state (every object's pose and
+    # the hand) is what a failed trial is diagnosed against later: how
+    # far from the goal region, which object was moved.
+    try:
+        rec["end_state"] = {
+            "objects": machine.rpc({"cmd": "objects"}, timeout_s=60.0).get("objects"),
+            "hand": machine.rpc({"cmd": "hand"}, timeout_s=60.0),
+        }
+    except Exception:  # noqa: BLE001
+        rec["end_state"] = None
     try:
         rec["steps_total"] = machine.rpc({"cmd": "steps"}, timeout_s=60.0).get("steps")
     except Exception:  # noqa: BLE001

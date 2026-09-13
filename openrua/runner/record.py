@@ -120,6 +120,7 @@ def _edit_as_command(op: dict) -> str:
 
 
 OP_MARKER = "# openrua op "
+RAN_MARK = "  ran "     # the marker line's trailing "  ran 12.3s": how long it took the agent
 OUTPUT_HEAD = 4000  # characters of an operation's output kept in ops.jsonl
 
 
@@ -144,7 +145,10 @@ def extract_commands(transcript: Path, out: Path, agent) -> None:
     in the archived workspace); reads are not extracted (no world
     effect; they stay in the transcript). A ``# openrua op N`` line
     opens each operation, which is how ``--operator script`` replays
-    the file one operation at a time.
+    the file one operation at a time; ``ran 12.3s`` on that line is how
+    long the operation took the agent, the replay's bound for it (the
+    agent's tool cut a command that never returned; a bare bash would
+    wait for it forever).
 
     Evidence first; the same file feeds ``--operator script`` for
     open-loop replay. The agent ran closed-loop, so an identical outcome
@@ -160,7 +164,9 @@ def extract_commands(transcript: Path, out: Path, agent) -> None:
         cmd = as_command(op)
         if cmd is None:
             continue
-        lines += [f"{OP_MARKER}{i}", cmd, ""]
+        ran = op.get("duration_s")
+        mark = f"{OP_MARKER}{i}" + (f"{RAN_MARK}{ran:.1f}s" if ran else "")
+        lines += [mark, cmd, ""]
     out.write_text("\n".join(lines))
 
 

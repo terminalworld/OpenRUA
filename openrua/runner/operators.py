@@ -14,6 +14,7 @@ recorded under ``operator_meta``.
 from __future__ import annotations
 
 import re
+from typing import NamedTuple
 import subprocess
 import threading
 import time
@@ -27,36 +28,79 @@ def none_operator(ctx: dict) -> dict:
     return {"operator": "none"}
 
 
-_MARKER = re.compile(rf"^{re.escape(record.OP_MARKER)}\d+$")
+_MARKER = re.compile(rf"^{re.escape(record.OP_MARKER)}\d+(?:{re.escape(record.RAN_MARK)}([0-9.]+)s)?$")
 
 
-def blocks(script: str) -> list[str]:
+class Op(NamedTuple):
+    command: str
+    ran_s: float | None      # how long it took the agent, when the marker says
+
+
+def blocks(script: str) -> list[Op]:
     """The operations of a command file: the text between consecutive
-    ``# openrua op N`` lines (what commands.sh extraction writes). A file
-    without markers is one operation; text that is only comments and
-    blank lines (the file's header) is none."""
-    out: list[str] = []
+    ``# openrua op N`` lines (what commands.sh extraction writes), each
+    with the duration its marker carries. A file without markers is one
+    operation; text that is only comments and blank lines (the file's
+    header) is none."""
+    out: list[Op] = []
     current: list[str] = []
+    ran: float | None = None
 
-    def flush() -> None:
+    def flush(next_ran: float | None) -> None:
+        nonlocal ran
         if any(l.strip() and not l.lstrip().startswith("#") for l in current):
-            out.append("\n".join(current).strip("\n"))
+            out.append(Op("\n".join(current).strip("\n"), ran))
         current.clear()
+        ran = next_ran
 
     for line in script.splitlines():
-        if _MARKER.match(line):
-            flush()
+        m = _MARKER.match(line)
+        if m:
+            flush(float(m.group(1)) if m.group(1) else None)
         else:
             current.append(line)
-    flush()
+    flush(None)
     return out
+
+
+def op_timeout_s(ran_s: float | None, remaining_s: float) -> float:
+    """The bound for one replayed operation: three times what it took
+    the agent plus half a minute (a replay's simulator may be slower),
+    never under a minute, never past the trial's wall clock; without a
+    recorded duration, the wall clock alone."""
+    if not ran_s:
+        return remaining_s
+    return min(remaining_s, max(60.0, 3.0 * ran_s + 30.0))
+
+
+# The persistent shell's prelude: a state directory and the runner of one
+# operation (bash -c is quoted once, as a whole).
+_PRELUDE = r"""
+_openrua_state=$(mktemp -d)
+_openrua_run() {
+  timeout --foreground -k 5 "$1" bash -c '
+    shopt -s expand_aliases; alias exit="return"
+    [ -f "$1/env" ] && source "$1/env"
+    [ -f "$1/cwd" ] && cd "$(cat "$1/cwd")" 2>/dev/null
+    source "$1/op"; _op </dev/null; _rc=$?
+    export -p > "$1/env"; pwd > "$1/cwd"
+    builtin exit $_rc' _ "$_openrua_state"
+  _rc=$?
+  [ "$_rc" -eq 124 ] && echo "[openrua] operation killed after $1s (bounded as the recorded run was; see commands.sh)"
+  return $_rc
+}
+"""
 
 
 class Shell:
     """One bash inside the sandbox, kept open across operations the way
-    the agent's own shell is (cwd and variables carry over). Each
-    operation is written to it followed by a sentinel echo; the output
-    is everything up to that sentinel."""
+    the agent's own shell is: the working directory and exported
+    variables carry over. Each operation runs under its own time bound
+    (the agent's tool cut commands that never returned; see
+    ``op_timeout_s``), which means in a child bash: the persistent
+    shell hands it the directory and the environment and takes them
+    back afterwards. Each operation is followed by a sentinel echo; the
+    output is everything up to that sentinel."""
 
     def __init__(self, sandbox: str):
         self._proc = subprocess.Popen(
@@ -64,27 +108,33 @@ class Shell:
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT, text=True, bufsize=1)
         self._n = 0
-        # The agent's tool ran each command in a shell of its own, where
-        # `exit` ends only that command. Here every operation is one
-        # shell function and `exit` is aliased to `return`, so an `exit`
-        # inside an operation ends the operation, not the shell that the
-        # operations behind it still need (aliases expand at parse time;
+        # The operation runs in a child bash under `timeout`, from a file
+        # the persistent shell writes. In the child, `exit` is aliased to
+        # `return`: the agent's tool ran each command in a shell of its
+        # own, where `exit` ended only that command; here it ends the
+        # operation's function and the child still hands the directory
+        # and the exported variables back (aliases expand at parse time;
         # a quoted `exit`, in a python -c or bash -c string, is untouched).
-        self._proc.stdin.write("shopt -s expand_aliases; alias exit='return'\n")
+        # An empty stdin, so a command that reads input cannot swallow
+        # the operations queued behind it.
+        self._proc.stdin.write(_PRELUDE)
         self._proc.stdin.flush()
 
-    def run(self, command: str, timeout_s: float) -> tuple[str, bool]:
+    def run(self, command: str, timeout_s: float,
+            op_timeout_s: float | None = None) -> tuple[str, bool]:
         """Run one operation; returns (output, finished). Not finished
-        means the wall clock ran out while it was still running, and
-        the shell is unusable afterwards."""
+        means the wall clock (``timeout_s``) ran out while it was still
+        running, and the shell is unusable afterwards. ``op_timeout_s``
+        bounds the operation itself: past it the operation is killed, a
+        note is appended to its output, and the shell goes on to the
+        next one."""
         self._n += 1
         sentinel = f"__openrua_op_done_{self._n}__"
-        # A function keeps the operation in this shell (cd and variables
-        # persist) and gives `exit` (see __init__) something to return
-        # from; the redirection gives it an empty stdin, so a command
-        # that reads input cannot swallow the operations queued behind it.
-        self._proc.stdin.write(f"_op_{self._n}() {{\n{command}\n}}\n"
-                               f"_op_{self._n} </dev/null\necho {sentinel}\n")
+        marker = f"__openrua_op_text_{self._n}__"
+        bound = int(op_timeout_s if op_timeout_s else timeout_s) or 1
+        self._proc.stdin.write(f"cat > \"$_openrua_state/op\" <<'{marker}'\n"
+                               f"_op() {{\n{command}\n}}\n{marker}\n"
+                               f"_openrua_run {bound}\necho {sentinel}\n")
         self._proc.stdin.flush()
         lines: list[str] = []
         deadline = time.monotonic() + timeout_s
@@ -139,10 +189,12 @@ def script_operator(ctx: dict) -> dict:
     timed: list[dict] = []
     finished = True
     try:
-        for i, command in enumerate(ops):
+        for i, op in enumerate(ops):
             t0 = time.time()
-            output, finished = shell.run(command, deadline - time.monotonic())
-            timed.append({"kind": "shell", "command": command, "output": output,
+            remaining = deadline - time.monotonic()
+            output, finished = shell.run(op.command, remaining,
+                                         op_timeout_s=op_timeout_s(op.ran_s, remaining))
+            timed.append({"kind": "shell", "command": op.command, "output": output,
                           "t0": t0, "t1": time.time()})
             if not finished:
                 break
