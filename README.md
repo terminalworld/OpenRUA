@@ -14,8 +14,11 @@
 [![Forks](https://img.shields.io/github/forks/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/forks)
 [![Watchers](https://img.shields.io/github/watchers/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/watchers)
 
-<!-- demo GIF: Claude Code in a terminal — `ros2 topic list`, a camera
-     snapshot, a trajectory goal, the arm picking the object up -->
+<!-- hero: docs/media/hero.gif (a recorded trial rendered by `openrua demo`:
+     the commands typed on the left, the robot's cameras on the right) -->
+<img src="docs/media/hero.gif" alt="A coding agent operating a robot through its ROS 2 terminal" width="800">
+
+*Task sentence here, model here, outcome here. More in [docs/demos.md](docs/demos.md).*
 
 </div>
 
@@ -241,6 +244,7 @@ may import whom is enforced by CI (import-linter and
 | [examples/real-robot.md](examples/real-robot.md) | the same flow on a real ROS&nbsp;2 arm |
 | [docs/simulation.md](docs/simulation.md) | the simulator checkouts and GPU rendering |
 | [docs/podman.md](docs/podman.md) | machines without Docker |
+| [docs/demos.md](docs/demos.md) | recorded trials rendered as videos, one per task type |
 | [docs/running-experiments.md](docs/running-experiments.md) | `openrua bench`, the `runs/` layout, every record field, replays and demo videos |
 | [docs/cli.md](docs/cli.md) | every verb and flag, exit codes (generated) |
 | [docs/config.md](docs/config.md) | every config key (generated) |
@@ -248,7 +252,25 @@ may import whom is enforced by CI (import-linter and
 | [docs/architecture.md](docs/architecture.md) | the units and the layering contract |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | conventions for code, names and docs |
 
+## Results
+
+Claude Code with Claude Opus 5 (effort high), one trial per task and seed,
+the benchmark's own success predicate, 240 minutes of active wall clock
+per trial. Details, protocol and per-model runs in [docs/demos.md](docs/demos.md)
+and the paper.
+
+| Benchmark | Trials | Success |
+|:---|---:|---:|
+| CaP-Bench (7 tasks × 100 seeded resets) | 700 | 693 (99.0%) |
+| LIBERO-PRO (8 cells × 10 tasks × 10 initial states) | 800 | 696 (87.0%) |
+| RoboCasa365 (50 tasks × 10 seeds) | 500 | in progress |
+
+Runs dated 2026-08 to 2026-09.
+
 ## Citation
+
+A paper describing the method and these results is in preparation and
+will be released soon; until then, cite the software:
 
 ```bibtex
 @software{openrua,

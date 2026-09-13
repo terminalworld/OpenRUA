@@ -1,8 +1,9 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below."
+message: "If you use this software, please cite it as below. A paper describing the method and its results is in preparation and will be released soon; this file will then name it as the preferred citation."
 type: software
 title: OpenRUA
 authors:
   - name: Terminal World Labs
 repository-code: https://github.com/terminalworld/OpenRUA
 license: Apache-2.0
+date-released: 2026-09-06
