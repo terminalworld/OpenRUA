@@ -191,3 +191,17 @@ def test_shell_keeps_state_and_gives_each_op_an_empty_stdin(monkeypatch):
         assert ok and out.split() == ["/", "rc=3"]
     finally:
         sh.close()
+
+
+def test_thinning_keeps_where_every_motion_ended():
+    """One frame in four, but a three-step motion between two commands
+    still shows its last frame, and so does the final motion."""
+    def fr(step): return (float(step), "frame", {"step": step})
+    cmd = (0.5, "command", {"i": 0}); out = (3.5, "output", {"i": 0})
+    cmd2 = (10.5, "command", {"i": 1}); out2 = (13.5, "output", {"i": 1})
+    events = [fr(0), cmd, fr(1), fr(2), fr(3), out, cmd2, fr(11), fr(12), fr(13), out2, fr(14), fr(15)]
+    kept = demo.thin(events, 4)
+    steps = [e[2]["step"] for e in kept if e[1] == "frame"]
+    assert steps == [0, 3, 11, 13, 15]     # 0 and 11 by stride; 3, 13 before an output; 15 last of all
+    assert [e[1] for e in kept if e[1] != "frame"] == ["command", "output", "command", "output"]
+    assert demo.thin(events, 1) == events   # stride 1 changes nothing

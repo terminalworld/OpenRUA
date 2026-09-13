@@ -148,6 +148,33 @@ def from_motion(index: list[dict], ops: list[dict], lead_s: float
     return kept, len(ops) - len(kept)
 
 
+def thin(events: list[tuple], stride: int) -> list[tuple]:
+    """The event stream with the camera track thinned to one frame in
+    ``stride``, never losing where a motion ended: the last frame before
+    a command or an output, and the last frame of all, are always kept,
+    so a short motion (fewer steps than the stride) still shows its
+    result instead of vanishing between two commands."""
+    out: list[tuple] = []
+    since = -1
+    pending = None
+    for ev in events:
+        if ev[1] == "frame":
+            since += 1
+            if since % stride == 0:
+                out.append(ev)
+                pending = None
+            else:
+                pending = ev
+        else:
+            if pending is not None:
+                out.append(pending)
+                pending = None
+            out.append(ev)
+    if pending is not None:
+        out.append(pending)
+    return out
+
+
 def camera_names(index: list[dict]) -> list[str]:
     """The cameras the index names, in recording order."""
     names: list[str] = []
@@ -413,7 +440,6 @@ def render(trial: Path, out: Path | None = None, *, cameras: tuple[str, ...] = (
     frame = before[-1] if before else (index[0] if index else None)
     events = [e for e in timeline(index, ops)
               if first_t is None or e[0] >= first_t or e[1] != "frame"]
-    since = None  # frames since the last rendered camera event, for speed
 
     def emit(n: int, cursor: bool = False) -> None:
         for _ in range(n):
@@ -439,7 +465,7 @@ def render(trial: Path, out: Path | None = None, *, cameras: tuple[str, ...] = (
         if len(lines) > style.output_lines:
             term.add(f"... ({len(lines) - style.output_lines} more lines)", style.dim)
 
-    stride = frame_stride(index, style.speed)
+    events = thin(events, frame_stride(index, style.speed))
     if skipped:
         term.add(f"... {skipped} earlier command{'s' if skipped > 1 else ''} "
                  "(reading the robot and the scene)", style.dim)
@@ -451,10 +477,8 @@ def render(trial: Path, out: Path | None = None, *, cameras: tuple[str, ...] = (
             emit(int(style.fps * style.hold_s))
         prev_t = t
         if kind == "frame":
-            since = 0 if since is None else since + 1
-            if since % stride == 0:
-                frame = payload
-                emit(1)
+            frame = payload
+            emit(1)
         elif kind == "command":
             type_command(payload["command"])
         else:
