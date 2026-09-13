@@ -20,7 +20,7 @@ read_when:
 ## The package
 
 ```bash
-pip install git+https://github.com/terminalworld/OpenRUA
+pip install openrua
 openrua --version
 ```
 

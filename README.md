@@ -51,7 +51,7 @@ OpenRUA gives you one command for three things:
 Install, choose a simulator and an agent once, name a robot, run:
 
 ```bash
-pip install git+https://github.com/terminalworld/OpenRUA
+pip install openrua
 openrua config set --sim robosuite --agent claude-code   # your defaults
 openrua build                                       # the three images, once
 openrua install --sim robosuite                     # the simulator's checkout and venv, once
