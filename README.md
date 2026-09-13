@@ -269,8 +269,7 @@ Runs dated 2026-08 to 2026-09.
 
 ## Citation
 
-A paper describing the method and these results is in preparation and
-will be released soon; until then, cite the software:
+The paper will be released soon; until then, cite the software:
 
 ```bibtex
 @software{openrua,
