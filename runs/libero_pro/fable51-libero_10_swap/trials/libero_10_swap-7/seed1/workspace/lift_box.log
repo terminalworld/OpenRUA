@@ -1,0 +1,3 @@
+traj[0] error_code=0 max joint err=0.0023
+tcp now [ 0.1116 -0.1959  0.5599] target [ 0.111 -0.196  0.56 ]
+fingers after lift (0.02234223851225682, -0.022504013236896825)

@@ -1,0 +1,21 @@
+start tcp [ 0.0126 -0.258   0.6199] fingers (0.02087564938313882, -0.02134179671865834)
+transit over basket
+  traj error_code=-5 max_joint_err=0.0639
+  tcp [0.0121 0.2396 0.7497] fingers (0.021075212658925757, -0.021142503234403476)
+measuring basket from eye-in-hand
+camera robot0_eye_in_hand at world [0.062 0.243 0.854]; table_z ~ 0.425
+[ 1] px=(314,386) n=87318 center=(0.032,0.245,0.754) x[-0.108,0.089] y[-0.154,0.339] z[0.475,0.812]
+[ 2] px=(506,270) n= 3828 center=(0.042,0.035,0.507) x[0.009,0.074] y[-0.001,0.068] z[0.475,0.517]
+[ 3] px=(602,287) n= 3869 center=(0.032,-0.056,0.525) x[0.005,0.059] y[-0.090,-0.054] z[0.475,0.565]
+  rim pts n=8205 x[-0.059,0.089] y[0.167,0.339] ztop=0.579
+  rim centre (0.015,0.253)
+  basket floor z ~ 0.450 (n=1492)
+centre and lower
+  traj error_code=0 max_joint_err=0.0025
+  tcp [0.015  0.2527 0.6503] fingers (0.021104195126884825, -0.021113206587845847)
+release
+  gripper reached=True stalled=False fingers=0.0363,-0.0363
+retreat up
+  traj error_code=0 max_joint_err=0.0022
+  tcp [0.0153 0.2527 0.7496]
+DONE

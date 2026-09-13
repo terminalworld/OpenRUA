@@ -1,0 +1,10 @@
+open
+  gripper: reached=True stalled=False gap=0.0775
+pre-grasp
+  move_q: error_code=-5 max_joint_err=1.1469
+  tcp now [-0.2148 -0.1569  0.6002] (target [-0.215 -0.157  0.6  ])
+descend
+  move_q: error_code=-5 max_joint_err=1.0176
+  tcp now [-0.132  -0.1691  0.551 ] (target [-0.215  -0.157   0.4725])
+q now [-0.077 -0.021 -0.292 -2.821  0.35   3.04  -0.515]
+wrench [  4.36 -12.47  23.68   0.33  -0.23  -0.14]

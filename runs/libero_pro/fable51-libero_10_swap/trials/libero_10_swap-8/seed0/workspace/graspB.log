@@ -1,0 +1,11 @@
+[graspB: advance] 1 waypoints, 2.0s
+   !! sweep near potB (tip at [-0.117  0.258  0.965]) s=0.29
+   !! sweep near potB (tip at [-0.107  0.258  0.965]) s=0.43
+   !! sweep near potB (tip at [-0.097  0.258  0.964]) s=0.57
+   !! sweep near potB (tip at [-0.087  0.258  0.964]) s=0.71
+   !! sweep near potB (tip at [-0.077  0.258  0.965]) s=0.86
+   !! sweep near potB (tip at [-0.067  0.257  0.965]) s=1.00
+  traj done code=0 max_joint_err=0.0022
+   TCP now [-0.0675  0.2569  0.9652] (target [-0.067  0.257  0.965]) err=0.0005
+  gripper -> 0.0: reached=True stalled=False fingers=0.0330,-0.0337
+fingers: (0.03303216216888081, -0.03368804312969018)

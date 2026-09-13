@@ -1,0 +1,9 @@
+== above approximate can position
+  move_line: error_code=0 max_joint_err=0.0023 tcp=[-0.211 -0.136  0.6  ] (target [-0.212 -0.135  0.6  ], off 0.7mm)
+  lid: n=970 x[-0.1861,-0.1521] y[-0.1292,-0.1082] ztop=0.5006
+  can centre [-0.1691 -0.1122] dia 0.0339
+Traceback (most recent call last):
+  File "/workspace/pick_soup3.py", line 21, in <module>
+    assert abs(dia - 0.066) < 0.01
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

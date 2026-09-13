@@ -1,0 +1,26 @@
+start joints [ 0.12   0.244 -0.03  -2.1    0.008  2.344 -2.137]
+open gripper
+  gripper -> 0.04: reached=True stalled=False fingers=[ 0.04 -0.04]
+pre-grasp above (0.0645,0.0529) at z=0.62, yaw 37.4
+  traj done code=0 max_joint_err=0.0052
+  TCP [0.0645 0.053  0.6201] finger-axis yaw 37.8 (want 37.4 mod 180)
+descend to grasp z=0.445
+  traj done code=0 max_joint_err=0.0025
+  TCP [0.064  0.0526 0.4451] finger-axis yaw 37.3 wrench [ 1.04426551e-02  3.47851192e-04 -5.10207819e+00]
+close gripper
+  gripper -> 0.0: reached=True stalled=False fingers=[ 0.0173 -0.0172]
+  finger gap = 0.0345 m
+lift
+  traj done code=0 max_joint_err=0.0024
+  fingers after lift [ 0.0168 -0.0168]
+transit to basket
+  traj done code=0 max_joint_err=0.0121
+  traj done code=0 max_joint_err=0.0025
+  fingers over basket [ 0.0168 -0.0168]
+  traj done code=0 max_joint_err=0.0022
+  TCP [0.0615 0.3182 0.7399] fingers [ 0.0168 -0.0168]
+release
+  gripper -> 0.04: reached=True stalled=False fingers=[ 0.0361 -0.0361]
+retreat up
+  traj done code=0 max_joint_err=0.0022
+DONE

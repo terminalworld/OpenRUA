@@ -1,0 +1,53 @@
+13:45:39 rotation alpha=-90.5 deg -> dj7=1.580
+13:45:40 start q [ 2.197  0.481 -2.897 -2.515  0.128  2.044 -0.779] gap 0.08
+13:45:41 hand y axis (finger opening): [-1.  0.  0.]
+13:45:41 IK attempt 0: solution deviates 1.89 rad from seed
+13:45:41 IK attempt 1: solution deviates 1.84 rad from seed
+13:45:41 IK attempt 2: solution deviates 1.90 rad from seed
+13:45:41 IK attempt 3: solution deviates 1.95 rad from seed
+13:45:41 IK: returning best solution (dev 1.84)
+13:45:41 j7 1.059 -> 2.638
+13:46:00 trajectory code=-5 err=0.7913 (dur 6.13s)
+13:46:00   re-sending final point (err 0.7913, 2.6s)
+13:46:10   code=-5 err=0.2776 worst j7 dq=[ 0.001 -0.    -0.001 -0.    -0.002 -0.001 -0.278]
+13:46:10   re-sending final point (err 0.2776, 2.0s)
+13:46:18   code=0 err=0.0024 worst j7 dq=[ 0.    -0.    -0.001 -0.    -0.001 -0.001 -0.002]
+13:46:18 above tcp [-0.2203 -0.0701  1.2199]
+13:46:18 IK attempt 0: solution deviates 1.36 rad from seed
+13:46:18 IK attempt 1: solution deviates 0.85 rad from seed
+13:46:18 IK attempt 2: solution deviates 1.11 rad from seed
+13:46:18 IK attempt 3: solution deviates 0.82 rad from seed
+13:46:18 IK: returning best solution (dev 0.82)
+13:46:29 trajectory code=-5 err=0.2572 (dur 2.72s)
+13:46:29   re-sending final point (err 0.2572, 2.0s)
+13:46:37   code=0 err=0.0025 worst j7 dq=[-0.     0.001  0.001  0.001  0.002 -0.002 -0.003]
+13:46:37   tcp now [-0.2198 -0.0701  0.9854] (target [-0.22  -0.07   0.985]) joint err 0.0025
+13:46:39 gripper -> 0.0: reached=True stalled=False gap=0.0095
+13:46:48 trajectory code=0 err=0.0025 (dur 2.0s)
+13:46:48   tcp now [-0.2197 -0.0702  1.0299] (target [-0.22 -0.07  1.03]) joint err 0.0025
+13:46:49 gap after lift 0.0057
+13:46:58 trajectory code=-5 err=0.1247 (dur 2.0s)
+13:46:58   re-sending final point (err 0.1247, 2.0s)
+13:47:06   code=0 err=0.0021 worst j7 dq=[ 0.    -0.001 -0.001 -0.001 -0.002  0.002  0.002]
+13:47:07   tcp now [-0.2202 -0.0704  1.2194] (target [-0.22 -0.07  1.22]) joint err 0.0021
+13:47:07 gap at high 0.0057
+13:47:07 rotate j7 -> 2.782
+13:47:38 trajectory code=0 err=0.0034 (dur 10.52s)
+13:47:39 after rotation tcp [-0.2202 -0.0702  1.2195] y_hand [-0.704  0.71  -0.   ] gap 0.0057 err 0.0034
+13:47:39 alpha_done=-90.3 deg; place tcp xy [-0.2198 -0.086 ]
+13:47:49 trajectory code=-5 err=0.2701 (dur 2.54s)
+13:47:49   re-sending final point (err 0.2701, 2.0s)
+13:47:57   code=0 err=0.0023 worst j7 dq=[-0.     0.001  0.001 -0.001  0.001 -0.002  0.002]
+13:47:58   tcp now [-0.2204 -0.0856  1.2195] (target [-0.2198 -0.086   1.22  ]) joint err 0.0023
+13:48:06 trajectory code=-5 err=0.1069 (dur 2.0s)
+13:48:06   re-sending final point (err 0.1069, 2.0s)
+13:48:14   code=0 err=0.0024 worst j6 dq=[ 0.001  0.    -0.001  0.001  0.002 -0.002 -0.002]
+13:48:15   tcp now [-0.22   -0.0862  1.03  ] (target [-0.2198 -0.086   1.03  ]) joint err 0.0024
+13:48:23 trajectory code=0 err=0.0025 (dur 2.0s)
+13:48:24   tcp now [-0.2205 -0.0857  0.9908] (target [-0.2198 -0.086   0.991 ]) joint err 0.0025
+13:48:25 gripper -> 0.04: reached=True stalled=False gap=0.0718
+13:48:35 trajectory code=-5 err=0.2299 (dur 2.53s)
+13:48:35   re-sending final point (err 0.2299, 2.0s)
+13:48:44   code=0 err=0.0023 worst j7 dq=[ 0.001 -0.001 -0.001 -0.001 -0.002  0.002  0.002]
+13:48:44   tcp now [-0.2199 -0.0864  1.1498] (target [-0.2198 -0.086   1.15  ]) joint err 0.0023
+13:48:44 PHASE1E DONE

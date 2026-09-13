@@ -1,0 +1,20 @@
+PICK mug at (-0.22,0.018) rim 0.53, wall grasp at y=0.054
+  gripper(0.04): reached=True stalled=False fingers=(0.03997231921202909, -0.039972650718197764)
+  move_joints: code=-5 max_err=0.5532
+  goto [-0.22   0.054  0.68 ] -> tcp [-0.1467  0.0336  0.6484] (|d|=0.0824) code=-5
+  retrying goal
+  move_joints: code=0 max_err=0.0024
+  goto [-0.22   0.054  0.68 ] -> tcp [-0.2198  0.0535  0.6802] (|d|=0.0005) code=0
+  move_joints: code=0 max_err=0.0126
+  goto [-0.22   0.054  0.55 ] -> tcp [-0.2222  0.0533  0.5492] (|d|=0.0024) code=0
+  move_joints: code=0 max_err=0.0086
+  goto [-0.22   0.054  0.5  ] -> tcp [-0.2189  0.0543  0.5021] (|d|=0.0024) code=0
+  gripper(0.0): reached=True stalled=False fingers=(0.004132940004688383, -0.009465235215128763)
+  finger gap after close: 0.0136
+  move_joints: code=-5 max_err=0.1921
+  goto [-0.22   0.054  0.68 ] -> tcp [-0.1866  0.0626  0.6814] (|d|=0.0345) code=-5
+  retrying goal
+  move_joints: code=0 max_err=0.0022
+  goto [-0.22   0.054  0.68 ] -> tcp [-0.2202  0.0538  0.6792] (|d|=0.0008) code=0
+  fingers after lift: (0.004876865181218836, -0.0048654558510094)
+done in 58s wall

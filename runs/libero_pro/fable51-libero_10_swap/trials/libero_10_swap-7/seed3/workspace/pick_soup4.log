@@ -1,0 +1,13 @@
+  can: n=10806 centre=[-0.1459 -0.1139] axis_yaw=-162.2 grasp_yaw=17.8 len=0.083 wid=0.069 ztop=0.501
+== above can, aligned
+  move_line: error_code=0 max_joint_err=0.0021 tcp=[-0.147 -0.114  0.6  ] (target [-0.146 -0.114  0.6  ], off 0.7mm)
+  can: n=8645 centre=[-0.1376 -0.1095] axis_yaw=-162.9 grasp_yaw=17.1 len=0.072 wid=0.070 ztop=0.501
+  move_line: error_code=0 max_joint_err=0.0022 tcp=[-0.138 -0.11   0.6  ] (target [-0.138 -0.109  0.6  ], off 0.7mm)
+== slow straight descent
+  move_line: error_code=0 max_joint_err=0.0056 tcp=[-0.137 -0.11   0.462] (target [-0.138 -0.109  0.46 ], off 1.9mm)
+  tcp [-0.1375 -0.1104  0.4617] wrench [-0.20978937  1.39680608 -1.28460818]
+== close
+  gripper(0.0): reached=True stalled=False gap=0.0629
+== lift
+  move_line: error_code=0 max_joint_err=0.0035 tcp=[-0.138 -0.11   0.719] (target [-0.138 -0.109  0.72 ], off 0.7mm)
+  gap after lift 0.0627593517569687 wrench [-3.14251531e-03  1.12718845e-02 -5.35569305e+00]

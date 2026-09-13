@@ -1,0 +1,3 @@
+  fjt code=-5 max_joint_err=0.4665
+  fjt code=0 max_joint_err=0.0014
+  tcp now [-0.1498  0.0501  0.8001] target [-0.15  0.05  0.8 ] d=0.0003

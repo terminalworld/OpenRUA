@@ -1,0 +1,17 @@
+19:56:16 pre-grasp
+19:56:30 move done code=-5 max joint err=0.2434
+19:56:30 retrying slower: 6.4s
+19:56:49 move done code=0 max joint err=0.0021
+19:56:49 tcp [-0.224 -0.126  0.64 ]
+19:56:49 descend
+19:57:00 move done code=-5 max joint err=0.2702
+19:57:00 retrying slower: 4.8s
+19:57:15 move done code=-5 max joint err=0.0592
+19:57:15 retrying slower: 7.7s
+19:57:37 move done code=-5 max joint err=0.0572
+19:57:37 retrying slower: 12.3s
+Traceback (most recent call last):
+  File "/workspace/pick_ketchup.py", line 12, in <module>
+    log("descend"); q2 = r.move_world([KX, KY, 0.475], Q, 3.0, seed=q1); assert q2 is not None
+                                                                                ^^^^^^^^^^^^^^
+AssertionError

@@ -1,0 +1,8 @@
+move: error_code=0 max_joint_err=0.0023
+  tcp now world=[0.0078 0.2717 0.64  ] target=[0.008 0.272 0.64 ]
+wrench [-3.000e-03 -9.000e-03 -5.356e+00  1.000e-03 -1.000e-03  0.000e+00]
+gripper: reached=True stalled=False fingers=(0.03723149305775045, -0.03718866047654949)
+move: error_code=0 max_joint_err=0.0022
+  tcp now world=[0.0083 0.2717 0.7596] target=[0.008 0.272 0.76 ]
+/workspace/agentview.png
+/workspace/robot0_eye_in_hand.png

@@ -1,0 +1,8 @@
+traj done code=0 max_joint_err=0.0027
+  tcp [-0.0482 -0.2347  1.1785] fingers [ 0.0331 -0.0332]
+traj done code=0 max_joint_err=0.0037
+  tcp [-0.0501 -0.0201  1.1783] fingers [ 0.0295 -0.0298]
+traj done code=0 max_joint_err=0.0038
+  tcp [-0.0503  0.1957  1.1782] fingers [ 0.0259 -0.0263]
+traj done code=0 max_joint_err=0.0035
+  tcp [-0.0509  0.196   1.0583] fingers [ 0.0232 -0.0235]

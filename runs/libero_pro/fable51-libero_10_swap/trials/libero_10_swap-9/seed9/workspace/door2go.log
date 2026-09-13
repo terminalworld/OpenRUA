@@ -1,0 +1,170 @@
+start q [-0.991  1.289 -0.213 -0.922  1.387  1.035 -1.523] hand [-0.237 -0.549  1.038]
+hi    hand [-0.237 -0.549  1.25 ] -> [-0.968  0.88  -0.231 -1.149  1.439  0.965 -1.323] dist 0.41 bad 0 l7 [-0.29  -0.642  1.25 ] l6 [-0.355 -0.604  1.295]
+      sweep: lowest link-bottom z 0.938 (panda_hand)  over-microwave hits: []
+over  hand [-0.413 -0.464  1.353] -> [-0.183 -0.115 -0.874 -2.127 -0.099  2.051 -1.794] dist 1.54 bad 0 l7 [-0.413 -0.464  1.46 ] l6 [-0.46 -0.39  1.46]
+      sweep: lowest link-bottom z 1.150 (panda_hand)  over-microwave hits: []
+   11 hand [-0.401 -0.465  1.227] tip [-0.399 -0.463  1.124] tip in door zone
+   12 hand [-0.403 -0.465  1.216] tip [-0.402 -0.463  1.113] tip in door zone
+   13 hand [-0.406 -0.465  1.205] tip [-0.405 -0.464  1.102] tip in door zone
+   14 hand [-0.41  -0.464  1.194] tip [-0.409 -0.464  1.091] tip in door zone
+   15 hand [-0.413 -0.464  1.183] tip [-0.413 -0.464  1.08 ] tip in door zone
+a228  hand [-0.413 -0.464  1.183] -> [-0.206  0.273 -0.871 -2.294  0.328  2.445 -2.099] dist 0.43 bad 5 l7 [-0.413 -0.464  1.29 ] l6 [-0.436 -0.379  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: []
+    0 hand [-0.413 -0.464  1.183] tip [-0.413 -0.464  1.08 ] tip in door zone
+    1 hand [-0.412 -0.466  1.184] tip [-0.412 -0.466  1.08 ] tip in door zone
+    2 hand [-0.41  -0.468  1.184] tip [-0.41  -0.468  1.08 ] tip in door zone
+    3 hand [-0.409 -0.469  1.184] tip [-0.409 -0.469  1.08 ] tip in door zone
+    4 hand [-0.407 -0.471  1.184] tip [-0.407 -0.471  1.081] tip in door zone
+    5 hand [-0.406 -0.472  1.184] tip [-0.406 -0.473  1.081] tip in door zone
+    6 hand [-0.404 -0.474  1.184] tip [-0.404 -0.474  1.081] tip in door zone
+    7 hand [-0.402 -0.476  1.184] tip [-0.402 -0.476  1.081] tip in door zone
+    8 hand [-0.401 -0.477  1.184] tip [-0.401 -0.477  1.081] tip in door zone
+    9 hand [-0.399 -0.479  1.184] tip [-0.399 -0.479  1.081] tip in door zone
+   10 hand [-0.397 -0.48   1.184] tip [-0.398 -0.48   1.081] tip in door zone
+   11 hand [-0.396 -0.482  1.184] tip [-0.396 -0.482  1.081] tip in door zone
+   12 hand [-0.394 -0.483  1.184] tip [-0.394 -0.483  1.08 ] tip in door zone
+   13 hand [-0.392 -0.485  1.184] tip [-0.392 -0.485  1.08 ] tip in door zone
+   14 hand [-0.391 -0.486  1.184] tip [-0.391 -0.486  1.08 ] tip in door zone
+   15 hand [-0.389 -0.488  1.183] tip [-0.389 -0.488  1.08 ] tip in door zone
+a240  hand [-0.389 -0.488  1.183] -> [-0.254  0.37  -0.82  -2.173  0.398  2.391 -2.123] dist 0.12 bad 16 l7 [-0.389 -0.488  1.29 ] l6 [-0.409 -0.402  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: []
+    0 hand [-0.389 -0.488  1.183] tip [-0.389 -0.488  1.08 ] tip in door zone
+    1 hand [-0.387 -0.489  1.184] tip [-0.387 -0.489  1.08 ] tip in door zone
+    2 hand [-0.385 -0.49   1.184] tip [-0.385 -0.49   1.08 ] tip in door zone
+    3 hand [-0.383 -0.491  1.184] tip [-0.383 -0.491  1.08 ] tip in door zone
+    4 hand [-0.382 -0.493  1.184] tip [-0.382 -0.493  1.08 ] tip in door zone
+    5 hand [-0.38  -0.494  1.184] tip [-0.38  -0.494  1.081] tip in door zone
+    6 hand [-0.378 -0.495  1.184] tip [-0.378 -0.495  1.081] tip in door zone
+    7 hand [-0.376 -0.496  1.184] tip [-0.376 -0.496  1.081] tip in door zone
+    8 hand [-0.374 -0.497  1.184] tip [-0.374 -0.498  1.081] tip in door zone
+    9 hand [-0.372 -0.499  1.184] tip [-0.372 -0.499  1.081] tip in door zone
+   10 hand [-0.37  -0.5    1.184] tip [-0.37  -0.5    1.081] tip in door zone
+   11 hand [-0.368 -0.501  1.184] tip [-0.368 -0.501  1.08 ] tip in door zone
+   12 hand [-0.366 -0.502  1.184] tip [-0.366 -0.502  1.08 ] tip in door zone
+   13 hand [-0.364 -0.503  1.184] tip [-0.364 -0.503  1.08 ] tip in door zone
+   14 hand [-0.362 -0.504  1.184] tip [-0.362 -0.504  1.08 ] tip in door zone
+   15 hand [-0.36  -0.505  1.183] tip [-0.36  -0.505  1.08 ] tip in door zone
+a252  hand [-0.36  -0.505  1.183] -> [-0.288  0.452 -0.779 -2.057  0.441  2.339 -2.116] dist 0.12 bad 16 l7 [-0.36  -0.505  1.29 ] l6 [-0.381 -0.42   1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: []
+    0 hand [-0.36  -0.505  1.183] tip [-0.36  -0.505  1.08 ] tip in door zone
+    1 hand [-0.358 -0.506  1.183] tip [-0.358 -0.506  1.08 ] tip in door zone
+    2 hand [-0.356 -0.507  1.184] tip [-0.356 -0.507  1.08 ] tip in door zone
+    3 hand [-0.354 -0.508  1.184] tip [-0.354 -0.508  1.08 ] tip in door zone
+    4 hand [-0.352 -0.509  1.184] tip [-0.352 -0.509  1.08 ] tip in door zone
+    5 hand [-0.35  -0.51   1.184] tip [-0.35 -0.51  1.08] tip in door zone
+    6 hand [-0.348 -0.51   1.184] tip [-0.348 -0.51   1.08 ] tip in door zone
+    7 hand [-0.346 -0.511  1.184] tip [-0.346 -0.511  1.08 ] tip in door zone
+    8 hand [-0.344 -0.512  1.184] tip [-0.344 -0.512  1.08 ] tip in door zone
+    9 hand [-0.341 -0.513  1.184] tip [-0.341 -0.513  1.08 ] tip in door zone
+   10 hand [-0.339 -0.513  1.184] tip [-0.339 -0.513  1.08 ] tip in door zone
+   11 hand [-0.337 -0.514  1.184] tip [-0.337 -0.514  1.08 ] tip in door zone
+   12 hand [-0.335 -0.515  1.184] tip [-0.335 -0.515  1.08 ] tip in door zone
+   13 hand [-0.333 -0.515  1.184] tip [-0.333 -0.516  1.08 ] tip in door zone
+   14 hand [-0.331 -0.516  1.184] tip [-0.331 -0.516  1.08 ] tip in door zone
+   15 hand [-0.329 -0.517  1.183] tip [-0.329 -0.517  1.08 ] tip in door zone
+a264  hand [-0.329 -0.517  1.183] -> [-0.308  0.521 -0.745 -1.949  0.466  2.293 -2.088] dist 0.11 bad 16 l7 [-0.329 -0.517  1.29 ] l6 [-0.352 -0.432  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: []
+    0 hand [-0.329 -0.517  1.183] tip [-0.329 -0.517  1.08 ] tip in door zone
+    1 hand [-0.326 -0.517  1.183] tip [-0.326 -0.517  1.08 ] tip in door zone
+    2 hand [-0.324 -0.518  1.184] tip [-0.324 -0.518  1.08 ] tip in door zone
+    3 hand [-0.322 -0.518  1.184] tip [-0.322 -0.518  1.08 ] tip in door zone
+    4 hand [-0.32  -0.518  1.184] tip [-0.32  -0.518  1.08 ] tip in door zone
+    5 hand [-0.318 -0.519  1.184] tip [-0.318 -0.519  1.08 ] tip in door zone
+    6 hand [-0.315 -0.519  1.184] tip [-0.315 -0.519  1.08 ] tip in door zone
+    7 hand [-0.313 -0.519  1.184] tip [-0.313 -0.519  1.08 ] tip in door zone
+    8 hand [-0.311 -0.52   1.184] tip [-0.311 -0.52   1.08 ] tip in door zone
+    9 hand [-0.309 -0.52   1.184] tip [-0.309 -0.52   1.08 ] tip in door zone
+   10 hand [-0.306 -0.52   1.184] tip [-0.306 -0.52   1.08 ] tip in door zone
+   11 hand [-0.304 -0.52   1.184] tip [-0.304 -0.521  1.08 ] tip in door zone
+   12 hand [-0.302 -0.521  1.184] tip [-0.302 -0.521  1.08 ] tip in door zone
+   13 hand [-0.3   -0.521  1.184] tip [-0.3   -0.521  1.08 ] tip in door zone
+   14 hand [-0.297 -0.521  1.183] tip [-0.297 -0.521  1.08 ] tip in door zone
+   15 hand [-0.295 -0.521  1.183] tip [-0.295 -0.521  1.08 ] tip in door zone
+a276  hand [-0.295 -0.521  1.183] -> [-0.314  0.579 -0.718 -1.854  0.482  2.252 -2.048] dist 0.10 bad 16 l7 [-0.295 -0.521  1.29 ] l6 [-0.322 -0.438  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: []
+    0 hand [-0.295 -0.521  1.183] tip [-0.295 -0.521  1.08 ] tip in door zone
+    1 hand [-0.293 -0.521  1.183] tip [-0.293 -0.521  1.08 ] tip in door zone
+    2 hand [-0.291 -0.521  1.183] tip [-0.291 -0.521  1.08 ] tip in door zone
+    3 hand [-0.288 -0.521  1.184] tip [-0.288 -0.521  1.08 ] tip in door zone
+    4 hand [-0.286 -0.521  1.184] tip [-0.286 -0.521  1.08 ] tip in door zone
+    5 hand [-0.284 -0.521  1.184] tip [-0.284 -0.521  1.08 ] tip in door zone
+    6 hand [-0.282 -0.521  1.184] tip [-0.282 -0.521  1.08 ] tip in door zone
+a288  hand [-0.261 -0.519  1.183] -> [-0.307  0.625 -0.696 -1.774  0.49   2.219 -2.   ] dist 0.08 bad 7 l7 [-0.261 -0.519  1.29 ] l6 [-0.292 -0.436  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: []
+a300  hand [-0.229 -0.51   1.183] -> [-0.289  0.659 -0.679 -1.713  0.494  2.194 -1.947] dist 0.06 bad 0 l7 [-0.229 -0.51   1.29 ] l6 [-0.264 -0.429  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: []
+a312  hand [-0.206 -0.486  1.183] -> [-0.24   0.651 -0.676 -1.724  0.488  2.2   -1.896] dist 0.05 bad 0 l7 [-0.206 -0.486  1.29 ] l6 [-0.245 -0.407  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: []
+a324  hand [-0.19  -0.46   1.183] -> [-0.186  0.629 -0.677 -1.758  0.479  2.216 -1.85 ] dist 0.05 bad 0 l7 [-0.19 -0.46  1.29] l6 [-0.232 -0.383  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: []
+a336  hand [-0.18  -0.433  1.183] -> [-0.128  0.595 -0.682 -1.812  0.467  2.24  -1.809] dist 0.06 bad 0 l7 [-0.18  -0.433  1.29 ] l6 [-0.226 -0.358  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: ['panda_hand']
+a346  hand [-0.179 -0.41   1.183] -> [-0.078  0.556 -0.691 -1.873  0.454  2.267 -1.779] dist 0.06 bad 0 l7 [-0.179 -0.41   1.29 ] l6 [-0.227 -0.337  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: ['panda_hand']
+a354  hand [-0.183 -0.393  1.183] -> [-0.038  0.518 -0.702 -1.933  0.441  2.293 -1.76 ] dist 0.06 bad 0 l7 [-0.183 -0.393  1.29 ] l6 [-0.232 -0.321  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: ['panda_hand']
+   14 hand [-0.18  -0.379  1.183] tip [-0.18  -0.379  1.08 ] tip in microwave box
+   15 hand [-0.179 -0.378  1.183] tip [-0.179 -0.378  1.08 ] tip in microwave box
+a362  hand [-0.179 -0.378  1.183] -> [-0.006  0.499 -0.706 -1.962  0.432  2.306 -1.733] dist 0.03 bad 2 l7 [-0.179 -0.378  1.29 ] l6 [-0.231 -0.307  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: ['panda_hand']
+    0 hand [-0.179 -0.378  1.183] tip [-0.179 -0.378  1.08 ] tip in microwave box
+back  hand [-0.183 -0.433  1.183] -> [-0.125  0.592 -0.687 -1.819  0.469  2.242 -1.814] dist 0.14 bad 1 l7 [-0.183 -0.433  1.29 ] l6 [-0.228 -0.358  1.29 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: ['panda_hand']
+up    hand [-0.183 -0.433  1.353] -> [-0.04   0.397 -0.823 -1.649  0.306  1.912 -1.713] dist 0.33 bad 0 l7 [-0.183 -0.433  1.46 ] l6 [-0.236 -0.363  1.46 ]
+      sweep: lowest link-bottom z 1.083 (panda_hand)  over-microwave hits: ['panda_hand']
+  gripper(0.0): reached=True stalled=False fingers=0.0005,-0.0005
+>> hi
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-0.2363 -0.549   1.2497] F [ 0.   5.1 -0. ] |F| 5.1
+>> over
+  move_q: error_code=-5 max_joint_err=0.9498
+  retry 1: max_joint_err=0.950
+  move_q: error_code=-5 max_joint_err=0.3413
+  retry 2: max_joint_err=0.341
+  move_q: error_code=0 max_joint_err=0.0021
+   reached hand [-0.4132 -0.4641  1.3536] F [-0.   0.  -5.1] |F| 5.1
+>> a228
+  move_q: error_code=0 max_joint_err=0.0025
+   reached hand [-0.4134 -0.4643  1.1838] F [ 0.   0.  -5.1] |F| 5.1
+>> a240
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-0.3895 -0.4876  1.1835] F [ 0.  -0.  -5.1] |F| 5.1
+>> a252
+  move_q: error_code=0 max_joint_err=0.0022
+   reached hand [-0.361  -0.5055  1.1835] F [ 0.  -0.  -5.1] |F| 5.1
+>> a264
+  move_q: error_code=0 max_joint_err=0.0022
+   reached hand [-0.3292 -0.5169  1.1835] F [ 0.  -0.  -5.1] |F| 5.1
+>> a276
+  move_q: error_code=0 max_joint_err=0.0022
+   reached hand [-0.2958 -0.5216  1.1835] F [ 0.  -0.  -5.1] |F| 5.1
+>> a288
+  move_q: error_code=0 max_joint_err=0.0022
+   reached hand [-0.2621 -0.5193  1.1835] F [ 0.  -0.  -5.1] |F| 5.1
+>> a300
+  move_q: error_code=0 max_joint_err=0.0022
+   reached hand [-0.2296 -0.5099  1.1835] F [ 0.  -0.  -5.1] |F| 5.1
+>> a312
+  move_q: error_code=0 max_joint_err=0.0025
+   reached hand [-0.206  -0.4866  1.1836] F [-0.   0.  -5.1] |F| 5.1
+>> a324
+  move_q: error_code=0 max_joint_err=0.0025
+   reached hand [-0.1896 -0.4605  1.1835] F [-0.   0.  -5.1] |F| 5.1
+>> a336
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-0.1799 -0.433   1.1834] F [-0.   0.  -5.1] |F| 5.1
+>> a346
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-0.1785 -0.4104  1.1833] F [-0.   0.  -5.1] |F| 5.1
+>> a354
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-0.1825 -0.3933  1.1833] F [-0.   0.  -5.1] |F| 5.1
+>> a362
+  move_q: error_code=0 max_joint_err=0.0024
+   reached hand [-0.1796 -0.3794  1.1835] F [-0.   0.  -5.1] |F| 5.1
+>> back
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-0.1832 -0.4334  1.1835] F [ 0.  -0.  -5.1] |F| 5.1
+>> up
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-0.1827 -0.4334  1.3529] F [-0.  -0.  -5.1] |F| 5.1

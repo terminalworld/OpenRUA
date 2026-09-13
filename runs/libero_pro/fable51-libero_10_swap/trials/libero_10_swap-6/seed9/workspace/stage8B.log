@@ -1,0 +1,9 @@
+G [0.0595 0.185  0.5219] PRE [0.0689 0.1984 0.5934]
+FJT code=0 max_joint_err=0.0027 (secs=6.0)
+tcp now [0.0596 0.1854 0.7206] quat [ 0.846 -0.268 -0.139  0.44 ]
+FJT code=0 max_joint_err=0.0450 (secs=10.0)
+  -> re-sending goal
+FJT code=0 max_joint_err=0.0024 (secs=10.0)
+tcp now [0.0591 0.1848 0.7211] quat [ 0.909 -0.289  0.09  -0.286]
+fingers (0.004278390272660082, -0.0028835553376971466)
+done

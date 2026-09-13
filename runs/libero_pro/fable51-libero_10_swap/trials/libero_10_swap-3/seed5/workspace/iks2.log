@@ -1,0 +1,53 @@
+== tilt 0 ztip 0.955: 16 sols
+   start j2=-0.951 ok=True []  q=[-2.152, -0.951, 2.115, -2.099, 1.178, 2.287, -1.568]
+     end j2=-1.006 ok=True [] q=[-2.439, -1.006, 2.11, -2.007, 1.177, 2.238, -1.792]
+   start j2=-0.536 ok=True []  q=[-2.897, -0.536, 2.871, -2.187, 0.316, 2.687, -1.061]
+     end j2=-0.653 ok=True [] q=[-2.897, -0.653, 2.621, -2.07, 0.597, 2.574, -1.489]
+   start j2=-0.787 ok=True []  q=[-2.301, -0.787, 2.286, -2.121, 0.98, 2.442, -1.478]
+     end j2=-0.848 ok=True [] q=[-2.576, -0.848, 2.278, -2.027, 0.983, 2.387, -1.709]
+   start j2=-0.594 ok=True []  q=[-2.653, -0.594, 2.643, -2.166, 0.578, 2.63, -1.237]
+     end j2=-0.653 ok=True [] q=[-2.897, -0.653, 2.621, -2.07, 0.597, 2.574, -1.489]
+   start j2=-0.720 ok=True []  q=[-2.389, -0.72, 2.381, -2.134, 0.874, 2.507, -1.42]
+     end j2=-0.781 ok=True [] q=[-2.657, -0.781, 2.37, -2.039, 0.879, 2.451, -1.655]
+   start j2=-1.205 ok=True []  q=[1.908, -1.205, -1.932, -2.082, -1.4, 2.052, -0.046]
+     end j2=-1.209 ok=True [] q=[1.725, -1.209, -1.952, -1.993, -1.366, 2.052, -0.331]
+   start j2=-0.549 ok=True []  q=[2.719, -0.549, -2.808, -2.182, -0.39, 2.675, -0.569]
+     end j2=-0.594 ok=True [] q=[2.501, -0.594, -2.826, -2.089, -0.364, 2.631, -0.84]
+   start j2=-0.532 ok=True []  q=[2.817, -0.532, -2.897, -2.188, -0.286, 2.691, -0.64]
+     end j2=-0.581 ok=True [] q=[2.577, -0.581, -2.897, -2.094, -0.282, 2.644, -0.895]
+   start j2=-1.113 ok=True []  q=[-2.057, -1.113, 1.991, -2.087, 1.326, 2.137, -1.617]
+     end j2=-1.161 ok=True [] q=[-2.352, -1.161, 1.986, -1.995, 1.325, 2.096, -1.837]
+   start j2=-0.662 ok=True []  q=[2.381, -0.662, -2.483, -2.147, -0.758, 2.563, -0.328]
+     end j2=-0.703 ok=True [] q=[2.178, -0.703, -2.506, -2.056, -0.726, 2.526, -0.609]
+   start j2=-1.452 ok=True []  q=[1.831, -1.452, -1.8, -2.078, -1.577, 1.828, -0.03]
+     end j2=-1.443 ok=True [] q=[1.649, -1.443, -1.81, -1.987, -1.548, 1.84, -0.31]
+   start j2=-0.595 ok=True []  q=[2.541, -0.595, -2.641, -2.166, -0.581, 2.629, -0.441]
+     end j2=-0.639 ok=True [] q=[2.331, -0.639, -2.661, -2.074, -0.552, 2.587, -0.717]
+   start j2=-0.552 ok=True []  q=[-2.813, -0.552, 2.794, -2.181, 0.405, 2.672, -1.122]
+     end j2=-0.653 ok=True [] q=[-2.897, -0.653, 2.621, -2.07, 0.597, 2.574, -1.489]
+   start j2=-0.615 ok=True []  q=[-2.594, -0.615, 2.586, -2.16, 0.642, 2.609, -1.279]
+     end j2=-0.673 ok=True [] q=[-2.848, -0.673, 2.571, -2.064, 0.653, 2.554, -1.524]
+   start j2=-0.641 ok=True []  q=[-2.533, -0.641, 2.527, -2.152, 0.709, 2.584, -1.322]
+     end j2=-0.700 ok=True [] q=[-2.791, -0.7, 2.513, -2.057, 0.719, 2.529, -1.564]
+   start j2=-0.765 ok=True []  q=[2.219, -0.765, -2.316, -2.125, -0.947, 2.464, -0.219]
+     end j2=-0.800 ok=True [] q=[2.025, -0.8, -2.342, -2.035, -0.911, 2.433, -0.505]
+Traceback (most recent call last):
+  File "/workspace/iksearch2.py", line 30, in <module>
+    sc.publish(objects(drawer_front=-0.23, with_bowl=False))
+  File "/workspace/scene.py", line 82, in publish
+    rclpy.spin_until_future_complete(self.node, fut, timeout_sec=30)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 274, in spin_until_future_complete
+    executor.spin_until_future_complete(future, timeout_sec)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 393, in spin_until_future_complete
+    self._spin_once_until_future_complete(future, timeout_left)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 935, in _spin_once_until_future_complete
+    self._spin_once_impl(timeout_sec, future.done)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 907, in _spin_once_impl
+    handler, entity, node = self.wait_for_ready_callbacks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 877, in wait_for_ready_callbacks
+    return next(self._cb_iter)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 785, in _wait_for_ready_callbacks
+    raise ExternalShutdownException()
+rclpy.executors.ExternalShutdownException

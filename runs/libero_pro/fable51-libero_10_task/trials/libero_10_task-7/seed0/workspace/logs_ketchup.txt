@@ -1,0 +1,23 @@
+start joints [ 0.    -0.161  0.    -2.445  0.     2.227  0.785]
+open gripper
+  gripper -> 0.04: reached=True stalled=False fingers=[ 0.0387 -0.0387]
+pre-grasp above (-0.194,-0.155) at z=0.62
+  traj done code=-5 max_joint_err=1.8852
+  TCP now at world [-0.1937 -0.155   0.6202] (target [-0.194 -0.155  0.62 ])
+descend to grasp z=0.525
+  traj done code=-5 max_joint_err=1.2864
+  hand at [-0.1721 -0.1573  0.6525] wrench [-2.63705035 -5.6165887  27.50636414]
+close gripper
+  gripper -> 0.0: reached=True stalled=False fingers=[ 0.0264 -0.0272]
+  finger gap = 0.0536 m
+lift
+  traj done code=-5 max_joint_err=0.6049
+  fingers after lift [ 0.0188 -0.019 ]
+transit to basket
+  traj done code=0 max_joint_err=0.0129
+  hand at [-0.0018  0.2573  0.8216] fingers [ 0.0161 -0.0188]
+release
+  gripper -> 0.04: reached=True stalled=False fingers=[ 0.0361 -0.0361]
+retreat up
+  traj done code=0 max_joint_err=0.0023
+DONE

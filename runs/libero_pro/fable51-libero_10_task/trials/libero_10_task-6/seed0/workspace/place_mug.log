@@ -1,0 +1,12 @@
+  move: code=-5 max_joint_err=0.3007
+  tcp now [0.0404 0.0538 0.747 ] (target [0.126 0.056 0.72 ])
+fingers [ 0.0037 -0.0042] wrench [-0.8  -0.06 -5.33  0.01 -0.13  0.  ]
+  move: code=0 max_joint_err=0.0203
+  tcp now [0.1274 0.0555 0.6512] (target [0.126 0.056 0.64 ])
+   z 0.64: tcp [0.1274 0.0555 0.6512] dz=+0.0112 Fz=-5.51 dF=-0.18
+   touchdown
+  gripper: reached=True stalled=False fingers=[ 0.0359 -0.0359]
+fingers [ 0.0359 -0.0359]
+  move: code=0 max_joint_err=0.0023
+  tcp now [0.1262 0.0558 0.6995] (target [0.126 0.056 0.7  ])
+wrench [-0.01  0.01 -5.1  -0.   -0.   -0.  ]

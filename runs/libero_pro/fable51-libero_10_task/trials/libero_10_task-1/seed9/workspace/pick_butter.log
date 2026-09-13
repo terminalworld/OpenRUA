@@ -1,0 +1,26 @@
+open gripper
+  gripper open: reached=True stalled=False fingers=0.0399,-0.0399
+pre-grasp
+  tcp->(0.067,0.048,0.600) yaw=0 joints=[0.375, 0.297, -0.299, -2.101, 0.125, 2.381, 0.783]
+  fjt error_code=0 max_joint_err=0.0027
+descend
+  tcp->(0.067,0.048,0.440) yaw=0 joints=[0.31, 0.638, -0.207, -2.067, 0.278, 2.679, 0.678]
+  fjt error_code=0 max_joint_err=0.0025
+close
+  gripper close: reached=True stalled=False fingers=0.0198,-0.0191
+lift
+  tcp->(0.067,0.048,0.760) yaw=0 joints=[0.53, 0.094, -0.461, -1.931, 0.046, 2.014, 0.836]
+  fjt error_code=-5 max_joint_err=0.0664
+  fingers after lift 0.019474903854254048
+to basket
+  tcp->(0.010,0.295,0.760) yaw=0 joints=[0.786, 0.147, -0.285, -1.856, 0.045, 1.997, 1.27]
+  fjt error_code=0 max_joint_err=0.0026
+lower
+  tcp->(0.010,0.295,0.700) yaw=0 joints=[0.783, 0.201, -0.282, -1.944, 0.066, 2.137, 1.257]
+  fjt error_code=0 max_joint_err=0.0023
+release
+  gripper open: reached=True stalled=False fingers=0.0362,-0.0362
+retreat
+  tcp->(0.010,0.295,0.760) yaw=0 joints=[0.788, 0.147, -0.287, -1.856, 0.046, 1.997, 1.27]
+  fjt error_code=0 max_joint_err=0.0023
+DONE

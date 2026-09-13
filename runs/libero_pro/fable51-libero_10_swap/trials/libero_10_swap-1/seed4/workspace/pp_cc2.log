@@ -1,0 +1,25 @@
+open gripper
+  gripper reached=True stalled=False fingers=(0.0400,-0.0400)
+above object
+  traj code=0 max_joint_err=0.0020
+  TCP now world=(-0.001,-0.274,0.560) target=(-0.001, -0.274, 0.56)
+descend
+  traj code=0 max_joint_err=0.0071
+  TCP now world=(-0.001,-0.275,0.439) target=(-0.001, -0.274, 0.436)
+close
+  gripper reached=True stalled=False fingers=(0.0211,-0.0209)
+lift
+  traj code=0 max_joint_err=0.0089
+  TCP now world=(0.000,-0.275,0.699) target=(-0.001, -0.274, 0.7)
+  fingers after lift: 0.0211
+to basket
+  traj code=-5 max_joint_err=0.4137
+  traj code=0 max_joint_err=0.0026
+  TCP now world=(0.007,0.258,0.720) target=(0.007, 0.258, 0.72)
+  fingers over basket: 0.0213
+release
+  gripper reached=True stalled=False fingers=(0.0363,-0.0363)
+retreat up
+  traj code=0 max_joint_err=0.0023
+  TCP now world=(0.007,0.159,0.750) target=(0.007, 0.158, 0.75)
+DONE

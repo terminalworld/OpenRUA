@@ -1,0 +1,12 @@
+start q [ 0.    -0.161  0.    -2.445  0.     2.227  0.785]
+gripper(0.04): reached=True stalled=False fingers=0.0392,-0.0392
+hover [-0.2, 0.198, 1.1583999999999999]
+move_q: error_code=0 max_joint_err=0.0027
+  reached hand pos [-0.2002  0.1975  1.1584] target [-0.2     0.198   1.1584]
+move_q: error_code=0 max_joint_err=0.0025
+  reached hand pos [-0.2004  0.198   1.0385] target [-0.2     0.198   1.0384]
+hand at [-0.2004  0.198   1.0385] fingertip z 0.9351
+wrench (array([-7.03125248e-04, -8.99483812e-03, -5.10218053e+00]), array([ 1.25438357e-03, -1.08865380e-04,  2.23903662e-05]))
+gripper(0.0): reached=True stalled=False fingers=0.0110,-0.0144
+fingers after close (0.011016821564575585, -0.014436429298124238)
+joint7 target 2.9216235166626805 out of limits [-2.9, 2.9]

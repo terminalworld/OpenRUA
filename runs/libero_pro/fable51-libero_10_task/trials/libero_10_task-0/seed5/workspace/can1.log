@@ -1,0 +1,19 @@
+start tcp [-0.1148  0.0729  0.7003] gap 0.08
+1. open gripper
+  gripper(0.04): reached=True stalled=False gap=0.0800
+2. pre-grasp above target
+  move: code=0 max_joint_err=0.0020
+  tcp now [-0.1145  0.073   0.6999] target [-0.114  0.073  0.7  ]
+3. descend to grasp height
+  move: code=-5 max_joint_err=0.1492
+  move: retry 1 (err=0.1492)
+  move: code=-5 max_joint_err=0.0864
+  move: retry 2 (err=0.0864)
+  move: code=-5 max_joint_err=0.0579
+  move: retry 3 (err=0.0579)
+  tcp now [-0.0641  0.0733  0.5094] target [-0.114  0.073  0.475]
+DESCENT BLOCKED at z=0.5094 (fingers probably on top of object); retreating
+  move: code=-5 max_joint_err=0.1709
+  move: retry 1 (err=0.1709)
+  move: code=0 max_joint_err=0.0023
+  tcp now [-0.114   0.0735  0.6998] target [-0.114  0.073  0.7  ]

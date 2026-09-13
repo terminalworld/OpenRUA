@@ -1,0 +1,3 @@
+[INFO] [1789243697.119886238] [tf2_echo]: Waiting for transform panda_hand ->  panda_leftfinger: Invalid frame ID "panda_hand" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789243699.103481207] [tf2_echo]: Waiting for transform panda_hand ->  panda_leftfinger: Invalid frame ID "panda_hand" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789243716.918691573] [rclcpp]: signal_handler(SIGINT/SIGTERM)

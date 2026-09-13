@@ -1,0 +1,42 @@
+base in world: [-0.51  0.    0.42]
+== measure box
+  birdview: n=190 x=[0.077,0.156] y=[-0.228,-0.189] ztop=0.4554
+  agentview: n=2412 x=[0.084,0.162] y=[-0.226,-0.186] ztop=0.4562
+box centre [ 0.1196 -0.2075]
+== open; go high then over to the box hover (continuity-checked)
+  gripper reached=True stalled=False fingers=(0.04001685347702207, -0.039562381171384546)
+  traj error_code=-5 max_joint_err=0.1428 (attempt 1)
+  traj error_code=-5 max_joint_err=0.1408 (attempt 2)
+  traj error_code=-5 max_joint_err=0.1393 (attempt 3)
+  now at tcp [0.0029 0.2562 0.8996] (target [0.002  0.2558 0.9   ], off 1.0 mm)
+  traj error_code=0 max_joint_err=0.0026 (attempt 1)
+  now at tcp [ 0.1194 -0.207   0.7498] (target [ 0.1196 -0.2075  0.75  ], off 0.5 mm)
+  traj error_code=0 max_joint_err=0.0023 (attempt 1)
+  now at tcp [ 0.1195 -0.2072  0.6004] (target [ 0.1196 -0.2075  0.6   ], off 0.5 mm)
+  finger axis [-0.002 -1.    -0.   ]
+== re-measure and centre
+  agentview: n=2412 x=[0.084,0.162] y=[-0.226,-0.186] ztop=0.4562
+box centre [ 0.1228 -0.2063]
+  traj error_code=0 max_joint_err=0.0024 (attempt 1)
+  now at tcp [ 0.1221 -0.2063  0.6001] (target [ 0.1228 -0.2063  0.6   ], off 0.7 mm)
+== descend
+  traj error_code=0 max_joint_err=0.0049 (attempt 1)
+  now at tcp [ 0.1223 -0.2064  0.4391] (target [ 0.1228 -0.2063  0.437 ], off 2.2 mm)
+== close
+  gripper reached=True stalled=False fingers=(0.02117147769447898, -0.021047366607397575)
+finger gap (sum) = 0.0422
+== lift
+  traj error_code=0 max_joint_err=0.0023 (attempt 1)
+  now at tcp [ 0.1231 -0.2065  0.7994] (target [ 0.1228 -0.2063  0.8   ], off 0.7 mm)
+fingers after lift [ 0.0212 -0.021 ]
+== to basket
+  traj error_code=0 max_joint_err=0.0026 (attempt 1)
+  now at tcp [3.000e-04 2.542e-01 7.998e-01] (target [0.    0.255 0.8  ], off 0.9 mm)
+  traj error_code=0 max_joint_err=0.0020 (attempt 1)
+  now at tcp [-3.000e-04  2.552e-01  7.203e-01] (target [0.    0.255 0.72 ], off 0.5 mm)
+  tcp above basket [-3.000e-04  2.552e-01  7.203e-01] fingers [ 0.0214 -0.0208]
+== release
+  gripper reached=True stalled=False fingers=(0.036278925342400056, -0.03627604581553672)
+  traj error_code=0 max_joint_err=0.0022 (attempt 1)
+  now at tcp [4.000e-04 2.549e-01 7.996e-01] (target [0.    0.255 0.8  ], off 0.6 mm)
+DONE box

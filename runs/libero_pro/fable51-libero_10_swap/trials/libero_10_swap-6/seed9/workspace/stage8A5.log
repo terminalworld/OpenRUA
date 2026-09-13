@@ -1,0 +1,14 @@
+G [-0.022 -0.025  0.541] PRE [-0.022 -0.095  0.541]
+gripper -> 0.04: reached=True stalled=False fingers=(0.03695379069077376, -0.03480003923783274)
+FJT code=0 max_joint_err=0.0025 (secs=5.0)
+tcp now [-0.022  -0.026   0.8574] quat [-0.708 -0.001 -0.001  0.706]
+FJT code=0 max_joint_err=0.0022 (secs=10.0)
+FJT code=0 max_joint_err=0.0022 (secs=7.0)
+tcp now [-0.0221 -0.0947  0.5418] quat [-0.706  0.001  0.001  0.708]
+at pre: tcp [-0.0221 -0.0947  0.5418] quat [-0.706  0.001  0.001  0.708]
+FJT code=0 max_joint_err=0.0023 (secs=6.0)
+tcp now [-0.0222 -0.0255  0.541 ] quat [-0.707  0.     0.001  0.707]
+at grasp: tcp [-0.0222 -0.0255  0.541 ] quat [-0.707  0.     0.001  0.707]
+gripper -> 0.0: reached=True stalled=False fingers=(0.00636929250297642, -0.004023082500155365)
+fingers (0.00636929250297642, -0.004023082500155365)
+done

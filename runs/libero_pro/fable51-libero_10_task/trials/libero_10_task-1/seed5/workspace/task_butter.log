@@ -1,0 +1,23 @@
+== butter: open gripper
+  gripper(0.04) reached=True stalled=False fingers=(0.039896657941446756, -0.03989787025654399)
+== butter: pre-grasp above
+  move -> traj code=0 jerr=0.0027 tcp_now=[0.0469 0.0674 0.6004] target=[0.047 0.067 0.6  ]
+  refine: n=4608 top-face centroid [0.0486 0.0699] (prior [0.047 0.067]) x[0.011,0.087] y[0.050,0.089]
+  move -> traj code=0 jerr=0.0015 tcp_now=[0.0483 0.0693 0.6   ] target=[0.0486 0.0699 0.6   ]
+== butter: descend
+  move -> traj code=0 jerr=0.0025 tcp_now=[0.0481 0.0696 0.4691] target=[0.0486 0.0699 0.469 ]
+  move -> traj code=0 jerr=0.0025 tcp_now=[0.0481 0.0696 0.4421] target=[0.0486 0.0699 0.442 ]
+== butter: close
+  gripper(0.0) reached=True stalled=False fingers=(0.03778234930196479, -0.03777748873905539)
+  finger gap 0.0756
+== butter: lift
+  move -> traj code=0 jerr=0.0098 tcp_now=[0.0503 0.0704 0.72  ] target=[0.0486 0.0699 0.72  ]
+  fingers after lift (0.037640299486276736, -0.03791795785431465)
+== butter: over basket
+  move -> traj code=0 jerr=0.0026 tcp_now=[0.0051 0.2497 0.7198] target=[0.005 0.25  0.72 ]
+  fingers over basket (0.03762194798864772, -0.03793598139919442)
+== butter: release
+  gripper(0.04) reached=True stalled=False fingers=(0.0388541508404809, -0.03886882380929173)
+  move -> traj code=0 jerr=0.0023 tcp_now=[0.005  0.2504 0.7795] target=[0.005 0.25  0.78 ]
+#### butter: OK
+#### DONE

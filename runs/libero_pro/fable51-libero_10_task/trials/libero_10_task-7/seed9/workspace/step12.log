@@ -1,0 +1,5 @@
+open
+  gripper: reached=True stalled=False gap=0.0726
+retreat up
+  move_q[0]: error_code=0 max_joint_err=0.0024
+  tcp now [0.001  0.1074 0.8003] quat [ 1.    -0.001  0.001  0.   ] (target [5.000e-04 1.076e-01 8.000e-01] [1. 0. 0. 0.])

@@ -1,0 +1,8 @@
+traj[0] error_code=0 max joint err=0.0022
+tcp now [-0.1892 -0.1404  0.6203] target [-0.189 -0.14   0.62 ]
+traj[0] error_code=-5 max joint err=0.0767
+traj[1] error_code=-5 max joint err=0.0738
+traj[2] error_code=-5 max joint err=0.0718
+traj[3] error_code=-5 max joint err=0.0699
+tcp now [-0.1823 -0.1429  0.4748] target [-0.189 -0.14   0.455]
+fingers before close (0.039957419721203355, -0.04000167999817381)

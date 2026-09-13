@@ -1,0 +1,3 @@
+[INFO] [1789234757.373963889] [tf2_echo]: Waiting for transform panda_link0 ->  panda_hand: Invalid frame ID "panda_link0" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789234759.357805751] [tf2_echo]: Waiting for transform panda_link0 ->  panda_hand: Could not find a connection between 'panda_link0' and 'panda_hand' because they are not part of the same tree.Tf has two or more unconnected trees.
+[INFO] [1789234772.190501569] [rclcpp]: signal_handler(SIGINT/SIGTERM)

@@ -1,0 +1,20 @@
+tcp [-0.1423 -0.3978  1.0199]
+closed-door box added
+move: code=0 max_joint_err=0.0038
+backed off tcp [-0.1417 -0.4367  1.0198]
+exec_plan: 19 pts, code=-5, err=1.5771
+move: code=-5 max_joint_err=0.9975
+move: code=-5 max_joint_err=0.5716
+move: code=-5 max_joint_err=0.1536
+home tcp [-0.1516 -0.2531  1.4042]
+pts 1535
+x -0.32: y min -0.376  z max 1.107 n 96
+x -0.28: y min -0.376  z max 1.107 n 262
+x -0.24: y min -0.376  z max 1.107 n 130
+x -0.20: y min -0.376  z max 1.107 n 13
+x -0.12: y min -0.320  z max 1.107 n 13
+x -0.08: y min -0.417  z max 1.107 n 351
+x -0.04: y min -0.376  z max 1.107 n 312
+x -0.00: y min -0.376  z max 1.107 n 288
+x +0.04: y min -0.376  z max 1.107 n 70
+DONE

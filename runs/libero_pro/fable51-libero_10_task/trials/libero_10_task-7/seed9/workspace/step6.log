@@ -1,0 +1,9 @@
+lift+yaw
+  move_q[0]: error_code=0 max_joint_err=0.0293
+  move_q[1]: error_code=0 max_joint_err=0.0021
+  tcp now [-0.1397 -0.1546  0.7393] quat [ 0.924  0.382  0.    -0.   ] (target [-0.1397 -0.1549  0.74  ] [0.924 0.383 0.    0.   ])
+gap 0.05646039956937135
+translate
+  move_q[0]: error_code=0 max_joint_err=0.0024
+  tcp now [-0.0177  0.2385  0.7394] quat [0.923 0.384 0.    0.001] (target [-0.0177  0.2393  0.74  ] [0.924 0.383 0.    0.   ])
+gap 0.056459419490279966

@@ -1,0 +1,8 @@
+  fjt code=0 max_joint_err=0.0024
+  tcp now [0.0402 0.2942 0.7495] target [0.04  0.295 0.75 ] d=0.0010
+fingers (0.0322842128400374, -0.032321210686556225)
+  fjt code=0 max_joint_err=0.0024
+  tcp now [0.0397 0.2948 0.6451] target [0.04  0.295 0.645] d=0.0004
+  gripper reached=True stalled=False fingers=(0.03730674056271995, -0.037356050234485697)
+  fjt code=0 max_joint_err=0.0023
+  tcp now [0.0402 0.2953 0.7995] target [0.04  0.295 0.8  ] d=0.0006

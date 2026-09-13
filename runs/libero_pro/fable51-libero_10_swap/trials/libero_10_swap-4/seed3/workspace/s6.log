@@ -1,0 +1,12 @@
+pinch [-0.226, 0.07200000000000001]
+  traj done code=0 max_joint_err=0.0027
+tcp [-0.226   0.072   0.5768] target z 0.5765
+  traj done code=0 max_joint_err=0.0025
+tcp [-0.2259  0.0722  0.5167] target z 0.5165
+wrench before close [ 1.000e-03 -4.000e-03 -5.102e+00]
+  gripper -> 0.0: reached=True stalled=False fingers=(0.006417299165705386, -0.0063052428281466155)
+wrench after close [ 0.921  0.098 -4.44 ]
+lift to 0.80
+  traj done code=-5 max_joint_err=0.3894
+  traj done code=0 max_joint_err=0.0022
+tcp [-0.2259  0.0723  0.7992] fingers [ 0.0052 -0.0052] wrench [ 5.000e-03 -0.000e+00 -5.405e+00]

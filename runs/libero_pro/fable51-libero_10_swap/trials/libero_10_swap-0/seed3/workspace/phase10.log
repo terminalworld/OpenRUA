@@ -1,0 +1,23 @@
+19:22:04 robot ready
+19:22:06 gripper -> 0.04: reached=True stalled=False fingers=(0.03999849022284966, -0.0399973245053945)
+19:22:06 PRE [ 0.306  0.749  0.124 -1.614 -0.004  2.877  0.622]
+19:22:26 traj code=-5 max_joint_err=0.6332
+19:22:26 retrying trajectory
+19:22:46 traj code=0 max_joint_err=0.0017
+19:22:46 at PRE True wrench [-0.01  2.54 -4.42]
+19:22:46 cam at [0.2005 0.3123 0.6912]
+19:22:46 n=12649 centroid [0.2902 0.3497 0.4738] x[0.222,0.357] y[0.246,0.473] ztop 0.5000
+19:22:46 refined center [0.2691 0.3535] axis deg 31.1 n 7194 ztop 0.5
+19:22:46 using refined pose
+19:22:58 traj code=0 max_joint_err=0.0025
+19:22:59 iter 0: tcp [0.2476 0.3407 0.4984] err [-0.0002  0.0001  0.0001] |err|=0.0002 joint err [-0.    -0.001  0.001 -0.002  0.002  0.002 -0.003]
+19:22:59 at mid True wrench [ 0.    2.56 -4.42]
+19:23:11 traj code=0 max_joint_err=0.0152
+19:23:11 iter 0: tcp [0.2759 0.3564 0.473 ] err [0.0068 0.0029 0.018 ] |err|=0.0195 joint err [-0.001 -0.015  0.002  0.008  0.001  0.004 -0.001]
+19:23:23 traj code=0 max_joint_err=0.0286
+19:23:24 iter 1: tcp [0.277  0.3565 0.4735] err [0.0079 0.003  0.0185] |err|=0.0204 joint err [ 0.    -0.029  0.002  0.021  0.001  0.005  0.001]
+19:23:36 traj code=0 max_joint_err=0.0425
+19:23:36 iter 2: tcp [0.278  0.3566 0.4741] err [0.0089 0.0031 0.0191] |err|=0.0213 joint err [-0.    -0.042  0.003  0.033  0.001  0.012  0.003]
+19:23:36 at grasp False wrench [-0.82 -1.23 24.91]
+19:23:36 tcp before close [0.278  0.3566 0.4741]
+19:23:36 grasp pose not reached; stopping for inspection

@@ -1,0 +1,3 @@
+[INFO] [1789225644.222916667] [tf2_echo]: Waiting for transform world ->  agentview_optical_frame: Invalid frame ID "world" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789225646.207491742] [tf2_echo]: Waiting for transform world ->  agentview_optical_frame: Invalid frame ID "world" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789225659.020630139] [rclcpp]: signal_handler(SIGINT/SIGTERM)

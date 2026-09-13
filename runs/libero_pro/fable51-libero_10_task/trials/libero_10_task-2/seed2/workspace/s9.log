@@ -1,0 +1,4 @@
+move done code=-5 max_err=0.9225
+move done code=-5 max_err=0.3476
+move done code=0 max_err=0.0021
+tcp [-0.1966  0.2012  1.08  ] joints [ 0.695  0.129 -0.282 -2.375  0.059  2.5    1.15 ] fingers (0.03999932893484631, -0.040000009161094974)

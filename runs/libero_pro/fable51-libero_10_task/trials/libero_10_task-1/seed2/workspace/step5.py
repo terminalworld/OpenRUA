@@ -1,0 +1,12 @@
+from rob import *
+r = Robot()
+q = down_quat(0)
+print("pre-grasp")
+r.move_tcp([0.068, 0.058, 0.52], q, 2.0)
+print("descend")
+r.move_tcp([0.068, 0.058, 0.437], q, 2.0)
+print("close")
+r.gripper(0.0)
+print("lift")
+r.move_tcp([0.068, 0.058, 0.60], q, 2.5)
+print("fingers", r.fingers())

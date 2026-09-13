@@ -1,0 +1,14 @@
+[INFO] [1789243717.224187076] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789243719.208095774] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243721.208098643] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243723.208087559] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243724.208107265] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243726.208095478] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243728.208096650] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243729.208099045] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243731.208102169] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243732.208105876] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243733.208120142] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243734.208133544] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243736.208111005] [tf2_echo]: Waiting for transform panda_hand ->  panda_hand_tcp: Invalid frame ID "panda_hand_tcp" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789243737.033601729] [rclcpp]: signal_handler(SIGINT/SIGTERM)

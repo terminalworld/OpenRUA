@@ -1,0 +1,22 @@
+  gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0394
+[approachB: via HOME]
+  traj done code=-5 max_joint_err=0.4444
+   retrying HOME (code=-5, err=0.4444)
+  traj done code=0 max_joint_err=0.0186
+   retrying HOME (code=0, err=0.0186)
+  traj done code=0 max_joint_err=0.0020
+[approachB: high pre-grasp] 1 waypoints, 4.0s
+  traj done code=-5 max_joint_err=1.6046
+   retrying final waypoint (code=-5, err=1.6046)
+  traj done code=-5 max_joint_err=0.9648
+   retrying final waypoint (code=-5, err=0.9648)
+  traj done code=-5 max_joint_err=0.5173
+   retrying final waypoint (code=-5, err=0.5173)
+  traj done code=-5 max_joint_err=0.0805
+   retrying final waypoint (code=-5, err=0.0805)
+  traj done code=0 max_joint_err=0.0016
+   TCP now [-0.1369  0.2566  1.1499] (target [-0.137  0.257  1.15 ]) err=0.0004
+[approachB: descend] 1 waypoints, 3.0s
+  traj done code=0 max_joint_err=0.0023
+   TCP now [-0.1371  0.2571  0.9657] (target [-0.137  0.257  0.965]) err=0.0007
+fingers: (0.039988252587154396, -0.03999998156874396)

@@ -1,0 +1,22 @@
+open gripper
+  gripper reached=True stalled=False gap=0.0775
+hover above soup
+  traj error_code=-5 max_joint_err=0.6379
+  tcp now [-0.2387 -0.1452  0.6202] (target [-0.2387 -0.1451  0.62  ])
+descend
+  traj error_code=-5 max_joint_err=0.2217
+  tcp now [-0.2387 -0.145   0.5603] (target [-0.2387 -0.1451  0.56  ])
+  traj error_code=0 max_joint_err=0.0024
+  tcp now [-0.2391 -0.1447  0.5001] (target [-0.2387 -0.1451  0.5   ])
+  traj error_code=-5 max_joint_err=0.0856
+  tcp now [-0.2355 -0.1462  0.4747] (target [-0.2387 -0.1451  0.455 ])
+wrench before [-16.39899642   4.70095443  44.45689243]
+close
+  gripper reached=True stalled=False gap=0.0649
+wrench after [-0.26859695  0.07730229 -5.34749666]
+GRASP_GAP 0.06489633665027926
+lift
+  traj error_code=-5 max_joint_err=0.4016
+  tcp now [-0.1812 -0.1788  0.6746] (target [-0.2387 -0.1451  0.7   ])
+gap after lift 0.06424082961396224
+DONE

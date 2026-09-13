@@ -1,0 +1,7 @@
+lift
+  move_q[0]: error_code=0 max_joint_err=0.0025
+  tcp now [-0.1326  0.0432  0.7395] quat [ 1.    -0.001  0.     0.001] (target [-0.1327  0.0433  0.74  ] [1. 0. 0. 0.])
+translate
+  move_q[0]: error_code=0 max_joint_err=0.0026
+  tcp now [5.000e-04 2.576e-01 7.397e-01] quat [ 1.     0.001 -0.001  0.   ] (target [0.001 0.258 0.74 ] [1. 0. 0. 0.])
+gap 0.04221712474255551

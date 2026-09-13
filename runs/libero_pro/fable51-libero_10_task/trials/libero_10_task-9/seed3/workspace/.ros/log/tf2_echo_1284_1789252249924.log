@@ -1,0 +1,3 @@
+[INFO] [1789252249.943173081] [tf2_echo]: Waiting for transform panda_hand ->  robot0_eye_in_hand_optical_frame: Invalid frame ID "panda_hand" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789252251.927089343] [tf2_echo]: Waiting for transform panda_hand ->  robot0_eye_in_hand_optical_frame: Invalid frame ID "robot0_eye_in_hand_optical_frame" passed to canTransform argument source_frame - frame does not exist
+[INFO] [1789252279.749301663] [rclcpp]: signal_handler(SIGINT/SIGTERM)

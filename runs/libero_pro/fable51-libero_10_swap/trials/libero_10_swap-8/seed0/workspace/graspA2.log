@@ -1,0 +1,10 @@
+   grasp hand z: [ 0.273  0.037 -0.961] hand y (fingers): [ 0.136 -0.991  0.   ]
+  gripper -> 0.04: reached=True stalled=False fingers=0.0359,-0.0359
+[grasp: above] 1 waypoints, 4.0s
+  traj done code=0 max_joint_err=0.0026
+   TCP now [ 0.014  -0.0622  1.0648] (target [ 0.0145 -0.062   1.0648]) err=0.0006
+[grasp: descend] 1 waypoints, 3.0s
+  traj done code=0 max_joint_err=0.0025
+   TCP now [ 0.0413 -0.058   0.9687] (target [ 0.0418 -0.0583  0.9687]) err=0.0006
+  gripper -> 0.0: reached=True stalled=False fingers=0.0341,-0.0337
+fingers: (0.03414710135406877, -0.033708893263272595)

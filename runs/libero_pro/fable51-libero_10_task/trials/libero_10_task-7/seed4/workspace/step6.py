@@ -1,0 +1,11 @@
+from rob import *
+r = Robot()
+N = np.array([-0.06, -0.146])
+print("close"); r.gripper(0.0)
+print("gap:", round(r.finger_gap(),4))
+print("lift")
+r.move_tcp([N[0], N[1], 0.62], Q_DOWN_Y)
+print("gap after lift:", round(r.finger_gap(),4))
+r.snap("agentview", "/workspace/agent_k5.png")
+r.snap("robot0_eye_in_hand", "/workspace/eih_k3.png")
+print("DONE")

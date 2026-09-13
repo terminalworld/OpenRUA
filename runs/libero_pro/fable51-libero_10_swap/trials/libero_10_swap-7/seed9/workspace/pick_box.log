@@ -1,0 +1,20 @@
+21:33:06 start tcp [0.   0.23 0.85] gap 0.0798
+21:33:08 gripper(0.04) reached=True stalled=False gap=0.0799
+21:33:22 move done code=0 max_joint_err=0.0023
+21:33:23 tcp now [ 0.1027 -0.2121  0.62  ] target [ 0.103 -0.213  0.62 ]
+21:33:23 descend to z=0.520 max joint jump 0.184
+21:33:31 move done code=0 max_joint_err=0.0230
+21:33:31 descend to z=0.440 max joint jump 0.163
+21:33:39 move done code=0 max_joint_err=0.0118
+21:33:39 at grasp height tcp [ 0.1084 -0.2195  0.4482]
+eih_pregrasp.png
+21:33:43 gripper(0.0) reached=True stalled=False gap=0.0551
+21:33:53 move done code=0 max_joint_err=0.0024
+21:33:53 after lift gap 0.0423
+21:34:01 move done code=0 max_joint_err=0.0029
+21:34:16 move done code=0 max_joint_err=0.0026
+21:34:17 over basket tcp [0.0401 0.2796 0.78  ] gap 0.0422
+21:34:19 gripper(0.04) reached=True stalled=False gap=0.0726
+21:34:19 released; tcp [0.04 0.28 0.78]
+after_drop.png
+21:34:23 DONE

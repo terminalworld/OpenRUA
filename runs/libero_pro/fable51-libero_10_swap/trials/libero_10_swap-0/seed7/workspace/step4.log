@@ -1,0 +1,13 @@
+  fjt code=-5 max_joint_err=0.5490
+  fjt code=0 max_joint_err=0.0022
+  tcp now [-0.2433 -0.1504  0.7494] target [-0.243 -0.15   0.75 ] d=0.0008
+fingers (0.030395166556952895, -0.03436313410564649)
+  fjt code=-5 max_joint_err=0.1366
+  fjt code=0 max_joint_err=0.0017
+  tcp now [0.0071 0.2644 0.7496] target [0.007 0.265 0.75 ] d=0.0007
+fingers (0.02975547309351308, -0.03500195871539262)
+  fjt code=0 max_joint_err=0.0025
+  tcp now [0.0066 0.2651 0.6001] target [0.007 0.265 0.6  ] d=0.0004
+  gripper reached=True stalled=False fingers=(0.03715683548449907, -0.037602228986183796)
+  fjt code=0 max_joint_err=0.0024
+  tcp now [0.0073 0.2651 0.7794] target [0.007 0.265 0.78 ] d=0.0006

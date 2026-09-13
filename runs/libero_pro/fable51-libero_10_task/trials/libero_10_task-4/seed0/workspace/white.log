@@ -1,0 +1,30 @@
+start q [ 0.    -1.     0.    -2.001  0.     1.002  0.785] tcp [-0.364  0.     1.06 ]
+gripper -> reached=True stalled=False fingers=(0.039999788569985824, -0.03999984294639426)
+traj done code=-5 max_joint_err=1.9717
+pre-grasp: residual too big, resending
+traj done code=-5 max_joint_err=1.1771
+pre-grasp: residual too big, resending
+traj done code=-5 max_joint_err=0.3976
+pre-grasp: residual too big, resending
+pre-grasp: tcp world [-0.093 -0.21   0.81 ] (target [-0.094 -0.221  0.75 ])
+traj done code=0 max_joint_err=0.0022
+approach: tcp world [-0.095 -0.221  0.581] (target [-0.094 -0.221  0.58 ])
+traj done code=0 max_joint_err=0.0021
+grasp-height: tcp world [-0.095 -0.221  0.52 ] (target [-0.094 -0.221  0.52 ])
+gripper -> reached=True stalled=False fingers=(0.004125557963754923, -0.004155497362093252)
+finger gap after close: 0.0083
+traj done code=0 max_joint_err=0.0022
+lift: tcp world [-0.094 -0.221  0.749] (target [-0.094 -0.221  0.75 ])
+finger gap after lift: 0.0057
+traj done code=-5 max_joint_err=0.2797
+transport: residual too big, resending
+traj done code=0 max_joint_err=0.0020
+transport: tcp world [0.015 0.249 0.75 ] (target [0.015 0.25  0.75 ])
+traj done code=0 max_joint_err=0.0024
+pre-place: tcp world [0.015 0.25  0.605] (target [0.015 0.25  0.605])
+traj done code=0 max_joint_err=0.0024
+place: tcp world [0.015 0.249 0.555] (target [0.015 0.25  0.555])
+gripper -> reached=True stalled=False fingers=(0.03588733939921617, -0.03589055209632562)
+traj done code=0 max_joint_err=0.0023
+retreat: tcp world [0.015 0.25  0.749] (target [0.015 0.25  0.75 ])
+done

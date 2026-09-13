@@ -1,0 +1,9 @@
+fingers (0.040000049995063874, -0.039997891648307644)
+-> above
+move done code=0 max_joint_err=0.0023
+hand [-0.1497 -0.1837  0.7037] tcp z 0.6003 [ 0.993  0.121 -0.    -0.001]
+Traceback (most recent call last):
+  File "/workspace/grasp_k2.py", line 7, in <module>
+    R=_qR(*q); print("hand Y axis (closing dir) world:",R[:,1].round(3),flush=True)
+      ^^^
+NameError: name '_qR' is not defined

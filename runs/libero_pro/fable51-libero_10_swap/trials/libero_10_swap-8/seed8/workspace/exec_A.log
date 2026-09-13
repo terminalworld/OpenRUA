@@ -1,0 +1,12 @@
+pot at start: (array([-0.192, -0.2  ]), 1.053, 450)  dst: None
+[gripper] reached=True stalled=False fingers=(0.03997790437665174, -0.039977075999727094)
+[move_q] error_code=0 max_joint_err=0.0023
+== A_pre_high: code=0 jerr=0.0023 tcp=[-0.28  -0.115  1.17 ] tgt=[-0.28  -0.115  1.17 ] poserr=0.3mm fingers=[0.04 0.04] F=[-0.  -5.1  0. ]
+[move_q] error_code=0 max_joint_err=0.0023
+== A_pre: code=0 jerr=0.0023 tcp=[-0.28  -0.115  0.975] tgt=[-0.28  -0.115  0.975] poserr=0.2mm fingers=[0.04 0.04] F=[ 0.  -5.1 -0. ]
+[move_q] error_code=0 max_joint_err=0.0024
+== A_grasp: code=0 jerr=0.0024 tcp=[-0.195 -0.199  0.975] tgt=[-0.195 -0.2    0.975] poserr=1.1mm fingers=[0.04 0.04] F=[ 0.2 -4.9  0.4]
+pot before close: (array([-0.199, -0.195]), 1.053, 597)
+[gripper] reached=True stalled=False fingers=(0.037090990190960633, -0.036686000591466414)
+fingers after close: [0.03709099 0.036686  ]
+GRASP MISSED (fingers [0.03709099 0.036686  ])

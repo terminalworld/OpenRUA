@@ -1,0 +1,11 @@
+lift higher
+  joint delta 0.444 rad -> 4.4s
+  move_q done code=0 (final max joint error 0.0024 rad) max_joint_err=0.0024
+  tcp now [-0.0599 -0.1456  0.7793] target [-0.06  -0.146  0.78 ]
+gap: 0.0378
+over basket, diagonal
+  joint delta 0.466 rad -> 4.7s
+  move_q done code=0 (final max joint error 0.0024 rad) max_joint_err=0.0024
+  tcp now [0.0242 0.2834 0.7795] target [0.024 0.284 0.78 ]
+gap: 0.0378
+DONE

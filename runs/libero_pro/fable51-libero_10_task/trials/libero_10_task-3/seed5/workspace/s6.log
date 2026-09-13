@@ -1,0 +1,18 @@
+start tcp [-0.2398  0.1683  0.9448] fingers (0.007580095928274823, -0.007578423691143237)
+== lift to 1.10
+  move done code=0 max_joint_err=0.0025
+  hand at [-0.2404  0.168   1.2028] target [-0.2401  0.1679  1.2034] poserr=0.0006
+  TCP now [-0.2403  0.1682  1.0994] target [-0.24   0.168  1.1  ]
+fingers (0.007473865404798094, -0.007479204978062566)
+== yaw to x
+  move done code=-5 max_joint_err=0.3249
+  hand at [-0.2403  0.1679  1.2032] target [-0.24    0.168   1.2034] poserr=0.0004
+  move done code=0 max_joint_err=0.0028
+  TCP now [-0.2402  0.1678  1.0998] target [-0.24   0.168  1.1  ]
+fingers (0.007476032402780817, -0.007477723320464159) q [ 0.86 -0.06 -0.48 -2.54 -0.05  2.49  1.2 ]
+== translate over drawer
+  move done code=0 max_joint_err=0.0054
+  hand at [0.0641 0.1042 1.2016] target [0.065  0.105  1.2034] poserr=0.0022
+  TCP now [0.0638 0.104  1.0982] target [0.065 0.105 1.1  ]
+fingers (0.007469578213699486, -0.007484209415175774) q [ 0.48  0.78 -0.47 -1.36  0.36  2.05  0.75]
+DONE

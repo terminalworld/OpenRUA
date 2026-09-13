@@ -1,0 +1,82 @@
+{
+  "task_suite": "libero_10_task",
+  "task_id": 2,
+  "init_state_id": 2,
+  "started_utc": "2026-09-12T17:18:14.104298+00:00",
+  "workspace_template_sha256": "f5999634776108746bd4b5476c9e5643e49a4fbd3fda7c0a59d0411eb5f60836",
+  "containers": {
+    "sim": "rc-fable51-libero_10_task-t2-2-2-b4b3ca-sim",
+    "sandbox": "rc-fable51-libero_10_task-t2-2-2-b4b3ca-sandbox"
+  },
+  "ros_domain": 4,
+  "agent_version": "2.1.251 (Claude Code)",
+  "task_language": "turn on the stove and put the pan on it",
+  "preflight": [
+    [
+      "shell_sh_provisioned",
+      true
+    ],
+    [
+      "credentials_readable",
+      true
+    ],
+    [
+      "sandbox_cli_matches_pin",
+      true
+    ],
+    [
+      "clock_topic",
+      true
+    ],
+    [
+      "joint_states_flow",
+      true
+    ],
+    [
+      "tf_flow",
+      true
+    ],
+    [
+      "joint_names_match_manual",
+      true
+    ],
+    [
+      "trajectory_action",
+      true
+    ],
+    [
+      "twist_subscribed",
+      true
+    ],
+    [
+      "gripper_action",
+      true
+    ],
+    [
+      "wrench_flow",
+      true
+    ],
+    [
+      "camera_frame_flow",
+      true
+    ],
+    [
+      "camera_depth_intrinsics_flow",
+      true
+    ],
+    [
+      "workspace_tools_importable",
+      true
+    ],
+    [
+      "moveit_ik_answers",
+      false
+    ]
+  ],
+  "success": false,
+  "termination": "anomaly",
+  "anomaly": "RuntimeError: preflight failed: moveit_ik_answers",
+  "anomaly_traceback": "Traceback (most recent call last):\n  File \"/storage/home/yehe8/OpenRUA/openrua/runner/trial.py\", line 255, in run_trial\n    raise RuntimeError(f\"preflight failed: {','.join(conf['failed'])}\")\nRuntimeError: preflight failed: moveit_ik_answers\n",
+  "wall_seconds": 88.9,
+  "active_wall_cap_min": 240.0
+}

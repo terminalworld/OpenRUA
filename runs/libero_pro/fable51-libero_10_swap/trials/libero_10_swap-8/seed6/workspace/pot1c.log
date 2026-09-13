@@ -1,0 +1,150 @@
+05:25:38 flip=+1: 5 hover solutions
+05:25:38 flip=-1: 6 hover solutions
+05:25:38 plan_rot: fail at step 7/15 (limits) [-2.73 -0.6   2.8  -1.72  0.71  3.   -2.89]
+05:25:38 flip=+1 yaw=+154 rot_first=False j7h=+0.06: segment rot infeasible
+05:25:39 ik_local: not converged, pos err 0.0165 rot err 0.0030 seed [-2.789 -1.132  2.314 -0.64   0.67   1.51   0.176] target [0.1267 0.0553 1.265 ] hist [0.10518, 0.02987, 0.02053, 0.01939, 0.01893, 0.01871, 0.01803, 0.01771, 0.01759, 0.01754, 0.01746, 0.01742, 0.01736, 0.01733, 0.01729, 0.01726, 0.01723, 0.0172, 0.01718, 0.01715, 0.01714, 0.01711, 0.01711, 0.01708, 0.01708, 0.01705, 0.01694, 0.01685, 0.01678, 0.01676]
+05:25:39 plan_rot: fail at step 2/15
+05:25:39 flip=+1 yaw=+154 rot_first=True j7h=+0.06: segment rot infeasible
+05:25:39 plan_rot: fail at step 11/15 (limits) [ 0.46  0.77 -0.61 -1.8  -0.41  3.72 -1.65]
+05:25:39 flip=+1 yaw=+154 rot_first=False j7h=+0.35: segment rot infeasible
+05:25:39 ik_local: not converged, pos err 0.0139 rot err 0.0018 seed [ 0.068  0.993  0.005 -0.707 -0.046  1.611  0.354] target [0.1256 0.0548 1.2653] hist [0.09861, 0.01722, 0.01468, 0.01425, 0.01421, 0.01418, 0.01416, 0.01414, 0.01413, 0.01412, 0.01411, 0.0141, 0.0141, 0.01409, 0.01409, 0.01409, 0.01409, 0.01409, 0.01407, 0.01407, 0.01407, 0.01407, 0.01406, 0.01406, 0.01406, 0.01406, 0.01406, 0.01406, 0.01406, 0.01406]
+05:25:39 plan_rot: fail at step 2/16
+05:25:39 flip=+1 yaw=+154 rot_first=True j7h=+0.35: segment rot infeasible
+05:25:40 plan_rot: fail at step 11/15 (limits) [ 0.61  0.89 -0.87 -1.76 -0.55  3.77 -1.33]
+05:25:40 flip=+1 yaw=+154 rot_first=False j7h=+0.40: segment rot infeasible
+05:25:40 ik_local: not converged, pos err 0.0139 rot err 0.0019 seed [ 1.000e-03  9.990e-01  1.680e-01 -7.050e-01 -1.800e-01  1.605e+00
+  3.930e-01] target [0.1256 0.0548 1.2653] hist [0.09861, 0.01772, 0.01492, 0.01449, 0.01445, 0.01433, 0.01429, 0.01425, 0.01423, 0.0142, 0.01418, 0.01417, 0.01416, 0.01414, 0.01414, 0.01413, 0.01413, 0.01412, 0.01412, 0.01411, 0.01411, 0.01411, 0.01411, 0.01411, 0.0141, 0.0141, 0.0141, 0.0141, 0.01408, 0.01408]
+05:25:40 plan_rot: fail at step 2/16
+05:25:40 flip=+1 yaw=+154 rot_first=True j7h=+0.40: segment rot infeasible
+05:25:40 plan_rot: fail at step 12/15 (limits) [-0.54  0.71  0.68 -1.6  -2.88  2.82  0.12]
+05:25:40 flip=+1 yaw=+154 rot_first=False j7h=+0.49: segment rot infeasible
+05:25:41 ik_local: not converged, pos err 0.0140 rot err 0.0018 seed [-0.089  1.025  0.401 -0.695 -0.375  1.584  0.446] target [0.1256 0.0548 1.2653] hist [0.09861, 0.01886, 0.01539, 0.01505, 0.0149, 0.01475, 0.01465, 0.01456, 0.0145, 0.01444, 0.0144, 0.01436, 0.01433, 0.0143, 0.01429, 0.01427, 0.01425, 0.01424, 0.01423, 0.01422, 0.01421, 0.0142, 0.01419, 0.01419, 0.01418, 0.01417, 0.01417, 0.01416, 0.01416, 0.01416]
+05:25:41 plan_rot: fail at step 2/16
+05:25:41 flip=+1 yaw=+154 rot_first=True j7h=+0.49: segment rot infeasible
+05:25:41 plan_rot: fail at step 12/15 (limits) [-0.16  0.75  0.32 -1.82  0.12  3.82 -2.65]
+05:25:41 flip=+1 yaw=+154 rot_first=False j7h=+0.14: segment rot infeasible
+05:25:41 ik_local: not converged, pos err 0.0165 rot err 0.0023 seed [ 0.284  1.071 -0.578 -0.659  0.445  1.553  0.224] target [0.1267 0.0553 1.265 ] hist [0.10518, 0.02698, 0.02096, 0.01889, 0.0186, 0.0181, 0.01799, 0.01772, 0.01766, 0.01747, 0.01744, 0.0173, 0.01728, 0.01718, 0.01718, 0.0171, 0.0171, 0.01704, 0.01693, 0.01674, 0.01669, 0.01669, 0.01667, 0.01667, 0.01666, 0.01665, 0.01665, 0.01665, 0.01664, 0.01664]
+05:25:41 plan_rot: fail at step 2/15
+05:25:41 flip=+1 yaw=+154 rot_first=True j7h=+0.14: segment rot infeasible
+05:25:41 plan_line: fail at waypoint 2/10 (limits) [-0.51  1.72  1.93 -1.03 -1.9   1.35 -2.41]
+05:25:41 flip=-1 yaw=+154 rot_first=False j7h=-2.42: segment descend infeasible
+05:25:41 plan_line: fail at waypoint 2/10 (limits) [-0.51  1.72  1.93 -1.03 -1.9   1.35 -2.41]
+05:25:41 flip=-1 yaw=+154 rot_first=True j7h=-2.42: segment descend infeasible
+05:25:41 plan_rot: fail at step 2/20 (limits) [-0.31  0.96  0.71 -0.97 -0.57  1.75 -2.86]
+05:25:41 flip=-1 yaw=+154 rot_first=False j7h=-2.58: segment yaw infeasible
+05:25:42 ik_local: not converged, pos err 0.0141 rot err 0.0018 seed [-0.165  1.068  0.624 -0.681 -0.567  1.55  -2.649] target [0.1256 0.0548 1.2653] hist [0.09861, 0.02025, 0.01578, 0.0155, 0.0153, 0.01512, 0.01499, 0.01487, 0.01479, 0.01471, 0.01465, 0.0146, 0.01456, 0.01452, 0.01449, 0.01446, 0.01444, 0.01441, 0.0144, 0.01438, 0.01437, 0.01435, 0.01434, 0.01432, 0.01431, 0.0143, 0.01429, 0.01428, 0.01427, 0.01426]
+05:25:42 plan_rot: fail at step 2/16
+05:25:42 flip=-1 yaw=+154 rot_first=True j7h=-2.58: segment rot infeasible
+05:25:42 plan_rot: fail at step 2/20 (limits) [ 2.81 -0.98 -2.37 -0.96 -0.62  1.74 -2.85]
+05:25:42 flip=-1 yaw=+154 rot_first=False j7h=-2.56: segment yaw infeasible
+05:25:42 plan_rot: fail at step 1/16 (limits) [ 2.96 -1.08 -2.46 -0.68 -0.61  1.54 -2.64]
+05:25:42 flip=-1 yaw=+154 rot_first=True j7h=-2.56: segment rot infeasible
+05:25:42 plan_rot: fail at step 2/20 (limits) [-0.25  0.92  0.59 -0.97 -0.47  1.78 -2.9 ]
+05:25:42 flip=-1 yaw=+154 rot_first=False j7h=-2.62: segment yaw infeasible
+05:25:42 ik_local: not converged, pos err 0.0141 rot err 0.0018 seed [-0.127  1.043  0.506 -0.689 -0.464  1.569 -2.673] target [0.1256 0.0548 1.2653] hist [0.09861, 0.01948, 0.01559, 0.01529, 0.01511, 0.01494, 0.01482, 0.01471, 0.01464, 0.01456, 0.01452, 0.01447, 0.01443, 0.0144, 0.01438, 0.01435, 0.01433, 0.01431, 0.0143, 0.01428, 0.01427, 0.01426, 0.01425, 0.01424, 0.01424, 0.01423, 0.01422, 0.01421, 0.01421, 0.0142]
+05:25:42 plan_rot: fail at step 2/16
+05:25:42 flip=-1 yaw=+154 rot_first=True j7h=-2.62: segment rot infeasible
+05:25:43 plan_rot: fail at step 1/20 (limits) [ 0.09  0.84 -0.05 -0.99  0.04  1.83 -2.95]
+05:25:43 flip=-1 yaw=+154 rot_first=False j7h=-2.83: segment yaw infeasible
+05:25:43 ik_local: not converged, pos err 0.0165 rot err 0.0022 seed [ 0.103  1.01  -0.082 -0.677  0.024  1.591 -2.807] target [0.1267 0.0554 1.265 ] hist [0.10519, 0.02408, 0.0195, 0.01802, 0.0172, 0.01696, 0.01692, 0.01689, 0.01686, 0.01684, 0.01682, 0.0168, 0.01679, 0.01678, 0.01678, 0.01677, 0.01676, 0.01676, 0.01676, 0.01675, 0.01675, 0.01674, 0.01665, 0.01662]
+05:25:43 plan_rot: fail at step 2/15
+05:25:43 flip=-1 yaw=+154 rot_first=True j7h=-2.83: segment rot infeasible
+05:25:43 plan_rot: fail at step 2/20 (limits) [-0.28  0.94  0.65 -0.97 -0.52  1.77 -2.88]
+05:25:43 flip=-1 yaw=+154 rot_first=False j7h=-2.60: segment yaw infeasible
+05:25:43 ik_local: not converged, pos err 0.0141 rot err 0.0018 seed [-0.148  1.055  0.568 -0.685 -0.518  1.56  -2.66 ] target [0.1256 0.0548 1.2653] hist [0.09861, 0.01988, 0.01569, 0.01541, 0.01522, 0.01504, 0.01492, 0.0148, 0.01472, 0.01464, 0.01459, 0.01453, 0.0145, 0.01446, 0.01443, 0.01441, 0.01439, 0.01436, 0.01435, 0.01433, 0.01432, 0.0143, 0.0143, 0.01428, 0.01427, 0.01426, 0.01425, 0.01424, 0.01424, 0.01423]
+05:25:43 plan_rot: fail at step 2/16
+05:25:43 flip=-1 yaw=+154 rot_first=True j7h=-2.60: segment rot infeasible
+05:25:44 plan_line: fail at waypoint 1/1 (limits) [-2.03 -1.74  1.74 -1.75  0.77  3.38 -1.37]
+05:25:44 flip=+1 yaw=+124 rot_first=False j7h=+0.06: segment up infeasible
+05:25:44 ik_local: not converged, pos err 0.0165 rot err 0.0030 seed [-2.789 -1.132  2.314 -0.64   0.67   1.51   0.176] target [0.1267 0.0553 1.265 ] hist [0.10518, 0.02987, 0.02053, 0.01939, 0.01893, 0.01871, 0.01803, 0.01771, 0.01759, 0.01754, 0.01746, 0.01742, 0.01736, 0.01733, 0.01729, 0.01726, 0.01723, 0.0172, 0.01718, 0.01715, 0.01714, 0.01711, 0.01711, 0.01708, 0.01708, 0.01705, 0.01694, 0.01685, 0.01678, 0.01676]
+05:25:44 plan_rot: fail at step 2/15
+05:25:44 flip=+1 yaw=+124 rot_first=True j7h=+0.06: segment rot infeasible
+05:25:45 flip=+1 yaw=+124 rot_first=False j7h=+0.35: feasible, travel 8.73; hover q [ 0.05  0.88  0.02 -1.07 -0.02  1.96  0.35]; final hand z [ 0.89 -0.45 -0.  ]
+05:25:45 ik_local: not converged, pos err 0.0139 rot err 0.0018 seed [ 0.068  0.993  0.005 -0.707 -0.046  1.611  0.354] target [0.1256 0.0548 1.2653] hist [0.09861, 0.01722, 0.01468, 0.01425, 0.01421, 0.01418, 0.01416, 0.01414, 0.01413, 0.01412, 0.01411, 0.0141, 0.0141, 0.01409, 0.01409, 0.01409, 0.01409, 0.01409, 0.01407, 0.01407, 0.01407, 0.01407, 0.01406, 0.01406, 0.01406, 0.01406, 0.01406, 0.01406, 0.01406, 0.01406]
+05:25:45 plan_rot: fail at step 2/16
+05:25:45 flip=+1 yaw=+124 rot_first=True j7h=+0.35: segment rot infeasible
+05:25:45 flip=+1 yaw=+124 rot_first=False j7h=+0.40: feasible, travel 8.45; hover q [-0.05  0.89  0.19 -1.07 -0.16  1.95  0.4 ]; final hand z [ 0.89 -0.45 -0.  ]
+05:25:46 ik_local: not converged, pos err 0.0139 rot err 0.0019 seed [ 1.000e-03  9.990e-01  1.680e-01 -7.050e-01 -1.800e-01  1.605e+00
+  3.930e-01] target [0.1256 0.0548 1.2653] hist [0.09861, 0.01772, 0.01492, 0.01449, 0.01445, 0.01433, 0.01429, 0.01425, 0.01423, 0.0142, 0.01418, 0.01417, 0.01416, 0.01414, 0.01414, 0.01413, 0.01413, 0.01412, 0.01412, 0.01411, 0.01411, 0.01411, 0.01411, 0.01411, 0.0141, 0.0141, 0.0141, 0.0141, 0.01408, 0.01408]
+05:25:46 plan_rot: fail at step 2/16
+05:25:46 flip=+1 yaw=+124 rot_first=True j7h=+0.40: segment rot infeasible
+05:25:46 flip=+1 yaw=+124 rot_first=False j7h=+0.49: feasible, travel 8.10; hover q [-0.19  0.93  0.43 -1.06 -0.36  1.92  0.49]; final hand z [ 0.89 -0.45 -0.  ]
+05:25:46 ik_local: not converged, pos err 0.0140 rot err 0.0018 seed [-0.089  1.025  0.401 -0.695 -0.375  1.584  0.446] target [0.1256 0.0548 1.2653] hist [0.09861, 0.01886, 0.01539, 0.01505, 0.0149, 0.01475, 0.01465, 0.01456, 0.0145, 0.01444, 0.0144, 0.01436, 0.01433, 0.0143, 0.01429, 0.01427, 0.01425, 0.01424, 0.01423, 0.01422, 0.01421, 0.0142, 0.01419, 0.01419, 0.01418, 0.01417, 0.01417, 0.01416, 0.01416, 0.01416]
+05:25:46 plan_rot: fail at step 2/16
+05:25:46 flip=+1 yaw=+124 rot_first=True j7h=+0.49: segment rot infeasible
+05:25:47 plan_rot: fail at step 15/15 (limits) [ 1.13  1.73 -1.51 -1.83  0.25  3.39 -0.86]
+05:25:47 flip=+1 yaw=+124 rot_first=False j7h=+0.14: segment rot infeasible
+05:25:47 ik_local: not converged, pos err 0.0165 rot err 0.0023 seed [ 0.284  1.071 -0.578 -0.659  0.445  1.553  0.224] target [0.1267 0.0553 1.265 ] hist [0.10518, 0.02698, 0.02096, 0.01889, 0.0186, 0.0181, 0.01799, 0.01772, 0.01766, 0.01747, 0.01744, 0.0173, 0.01728, 0.01718, 0.01718, 0.0171, 0.0171, 0.01704, 0.01693, 0.01674, 0.01669, 0.01669, 0.01667, 0.01667, 0.01666, 0.01665, 0.01665, 0.01665, 0.01664, 0.01664]
+05:25:47 plan_rot: fail at step 2/15
+05:25:47 flip=+1 yaw=+124 rot_first=True j7h=+0.14: segment rot infeasible
+05:25:47 plan_line: fail at waypoint 2/10 (limits) [-0.51  1.72  1.93 -1.03 -1.9   1.35 -2.41]
+05:25:47 flip=-1 yaw=+124 rot_first=False j7h=-2.42: segment descend infeasible
+05:25:47 plan_line: fail at waypoint 2/10 (limits) [-0.51  1.72  1.93 -1.03 -1.9   1.35 -2.41]
+05:25:47 flip=-1 yaw=+124 rot_first=True j7h=-2.42: segment descend infeasible
+05:25:47 plan_rot: fail at step 2/16 (limits) [-0.31  0.96  0.71 -0.97 -0.57  1.75 -2.86]
+05:25:47 flip=-1 yaw=+124 rot_first=False j7h=-2.58: segment yaw infeasible
+05:25:48 ik_local: not converged, pos err 0.0141 rot err 0.0018 seed [-0.165  1.068  0.624 -0.681 -0.567  1.55  -2.649] target [0.1256 0.0548 1.2653] hist [0.09861, 0.02025, 0.01578, 0.0155, 0.0153, 0.01512, 0.01499, 0.01487, 0.01479, 0.01471, 0.01465, 0.0146, 0.01456, 0.01452, 0.01449, 0.01446, 0.01444, 0.01441, 0.0144, 0.01438, 0.01437, 0.01435, 0.01434, 0.01432, 0.01431, 0.0143, 0.01429, 0.01428, 0.01427, 0.01426]
+05:25:48 plan_rot: fail at step 2/16
+05:25:48 flip=-1 yaw=+124 rot_first=True j7h=-2.58: segment rot infeasible
+05:25:48 plan_rot: fail at step 2/16 (limits) [ 2.81 -0.98 -2.37 -0.96 -0.62  1.74 -2.85]
+05:25:48 flip=-1 yaw=+124 rot_first=False j7h=-2.56: segment yaw infeasible
+05:25:48 plan_rot: fail at step 1/16 (limits) [ 2.96 -1.08 -2.46 -0.68 -0.61  1.54 -2.64]
+05:25:48 flip=-1 yaw=+124 rot_first=True j7h=-2.56: segment rot infeasible
+05:25:48 plan_rot: fail at step 2/16 (limits) [-0.25  0.92  0.59 -0.97 -0.47  1.78 -2.9 ]
+05:25:48 flip=-1 yaw=+124 rot_first=False j7h=-2.62: segment yaw infeasible
+05:25:48 ik_local: not converged, pos err 0.0141 rot err 0.0018 seed [-0.127  1.043  0.506 -0.689 -0.464  1.569 -2.673] target [0.1256 0.0548 1.2653] hist [0.09861, 0.01948, 0.01559, 0.01529, 0.01511, 0.01494, 0.01482, 0.01471, 0.01464, 0.01456, 0.01452, 0.01447, 0.01443, 0.0144, 0.01438, 0.01435, 0.01433, 0.01431, 0.0143, 0.01428, 0.01427, 0.01426, 0.01425, 0.01424, 0.01424, 0.01423, 0.01422, 0.01421, 0.01421, 0.0142]
+05:25:48 plan_rot: fail at step 2/16
+05:25:48 flip=-1 yaw=+124 rot_first=True j7h=-2.62: segment rot infeasible
+05:25:49 plan_rot: fail at step 1/16 (limits) [ 0.09  0.84 -0.05 -0.99  0.04  1.83 -2.95]
+05:25:49 flip=-1 yaw=+124 rot_first=False j7h=-2.83: segment yaw infeasible
+05:25:49 ik_local: not converged, pos err 0.0165 rot err 0.0022 seed [ 0.103  1.01  -0.082 -0.677  0.024  1.591 -2.807] target [0.1267 0.0554 1.265 ] hist [0.10519, 0.02408, 0.0195, 0.01802, 0.0172, 0.01696, 0.01692, 0.01689, 0.01686, 0.01684, 0.01682, 0.0168, 0.01679, 0.01678, 0.01678, 0.01677, 0.01676, 0.01676, 0.01676, 0.01675, 0.01675, 0.01674, 0.01665, 0.01662]
+05:25:49 plan_rot: fail at step 2/15
+05:25:49 flip=-1 yaw=+124 rot_first=True j7h=-2.83: segment rot infeasible
+05:25:49 plan_rot: fail at step 2/16 (limits) [-0.28  0.94  0.65 -0.97 -0.52  1.77 -2.88]
+05:25:49 flip=-1 yaw=+124 rot_first=False j7h=-2.60: segment yaw infeasible
+05:25:49 ik_local: not converged, pos err 0.0141 rot err 0.0018 seed [-0.148  1.055  0.568 -0.685 -0.518  1.56  -2.66 ] target [0.1256 0.0548 1.2653] hist [0.09861, 0.01988, 0.01569, 0.01541, 0.01522, 0.01504, 0.01492, 0.0148, 0.01472, 0.01464, 0.01459, 0.01453, 0.0145, 0.01446, 0.01443, 0.01441, 0.01439, 0.01436, 0.01435, 0.01433, 0.01432, 0.0143, 0.0143, 0.01428, 0.01427, 0.01426, 0.01425, 0.01424, 0.01424, 0.01423]
+05:25:49 plan_rot: fail at step 2/16
+05:25:49 flip=-1 yaw=+124 rot_first=True j7h=-2.60: segment rot infeasible
+05:25:49 chosen flip=+1 yaw=+124 rot_first=False j7h=+0.49
+05:25:52 gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0400
+05:27:00 move done; max joint err 0.0021 rad
+05:27:01 move_path (1 pts, 14.8s) ok=True; hand now [0.1097 0.0461 1.2072]
+05:27:27 move done; max joint err 0.0109 rad
+05:27:28 move_path (11 pts, 5.0s) ok=True; hand now [0.1127 0.0431 1.0673]
+05:27:28 pads at [0.1127 0.0431 0.9743] (knob [0.11  0.046 0.964])
+05:27:31 gripper -> 0.0: reached=True stalled=False fingers=0.0053,-0.0075
+05:27:31 gap after close 0.0127
+05:27:58 move done; max joint err 0.0027 rad
+05:27:59 move_path (14 pts, 5.0s) ok=True; hand now [0.1097 0.0458 1.2648]
+05:28:22 move done; max joint err 0.0029 rad
+05:28:23 move_path (4 pts, 4.0s) ok=True; hand now [0.1096 0.0457 1.2631]
+05:28:23 yaw chunk ok=True gap 0.0121
+05:28:46 move done; max joint err 0.0028 rad
+05:28:47 move_path (4 pts, 4.0s) ok=True; hand now [0.1098 0.0456 1.2632]
+05:28:47 yaw chunk ok=True gap 0.0121
+05:29:10 move done; max joint err 0.0027 rad
+05:29:11 move_path (4 pts, 4.0s) ok=True; hand now [0.1101 0.0456 1.2632]
+05:29:11 yaw chunk ok=True gap 0.0121
+05:29:34 move done; max joint err 0.0026 rad
+05:29:35 move_path (4 pts, 4.0s) ok=True; hand now [0.1103 0.0457 1.2633]
+05:29:35 yaw chunk ok=True gap 0.0113
+05:29:58 move done; max joint err 0.0025 rad
+05:29:58 move_path (4 pts, 4.0s) ok=True; hand now [0.1105 0.0459 1.2634]
+05:29:59 yaw chunk ok=True gap 0.0113
+05:30:22 move done; max joint err 0.0025 rad
+05:30:22 move_path (1 pts, 4.0s) ok=True; hand now [0.1106 0.046  1.2634]
+05:30:22 yaw chunk ok=True gap 0.0113
+05:30:45 move done; max joint err 0.0024 rad
+05:30:46 move_path (4 pts, 4.0s) ok=True; hand now [0.0798 0.0613 1.2555]
+05:30:46 rot chunk ok=True gap 0.0113
+05:31:08 move done; max joint err 0.0025 rad
+05:31:08 move_path (4 pts, 4.0s) ok=True; hand now [0.0538 0.0743 1.2362]
+05:31:08 rot chunk ok=True gap 0.0113
+05:31:31 move done; max joint err 0.0025 rad
+05:31:32 move_path (4 pts, 4.5s) ok=True; hand now [0.0361 0.0833 1.2072]
+05:31:32 rot chunk ok=True gap 0.0113
+05:31:53 move done; max joint err 0.0031 rad
+05:31:53 move_path (4 pts, 4.0s) ok=True; hand now [0.0297 0.0865 1.1732]
+05:31:53 rot chunk ok=True gap 0.0113
+05:31:54 righted: hand [0.0297 0.0865 1.1732] z [ 0.894 -0.447 -0.005] fingers (0.0056758367366851895, -0.005668537669111773)
+05:31:54 RIGHTED -- pausing here for a visual check

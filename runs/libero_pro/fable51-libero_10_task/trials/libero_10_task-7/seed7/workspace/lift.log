@@ -1,0 +1,6 @@
+20:04:29 gripper(0.04) reached=True stalled=False fingers=0.0359,-0.0359
+20:04:45 move done code=-5 max joint err=0.0680
+20:04:45 retrying slower: 7.2s
+20:05:07 move done code=0 max joint err=0.0022
+20:05:07 line end tcp [-0.2156 -0.1253  0.6996] (target [-0.2155 -0.1249  0.7   ]) err 0.6 mm
+20:05:08 tcp [-0.216 -0.125  0.7  ] q [-0.324 -0.682 -0.08  -2.828 -0.061  2.146 -1.139]

@@ -1,0 +1,9 @@
+start joints [-0.271 -0.633 -0.659 -2.672 -0.446  2.117 -2.138]
+open gripper
+  gripper -> 0.04: reached=True stalled=False fingers=[ 0.04 -0.04]
+pre-grasp above (0.0645,0.0529) at z=0.62, yaw 37.4
+  traj done code=-5 max_joint_err=0.1037
+  resend (1) to converge
+  traj done code=0 max_joint_err=0.0019
+  TCP [0.0645 0.0524 0.6202] finger-axis yaw 82.3 (want 37.4 mod 180)
+YAW OFF: aborting before descent

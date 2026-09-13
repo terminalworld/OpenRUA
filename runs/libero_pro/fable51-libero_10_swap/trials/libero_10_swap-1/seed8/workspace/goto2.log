@@ -1,0 +1,6 @@
+base in world: [-0.51  0.    0.42]
+goto TCP world [ 0.004 -0.253  0.6  ]
+  IK sol [-0.318  0.271 -0.142 -2.125  0.056  2.393  0.29 ] (dev from natural 1.06)
+  travel 0.12 rad -> 4.0s
+  traj error_code=0 max joint err=0.0015
+hand world [ 0.0041 -0.253   0.7037] q [ 1.     0.001 -0.     0.   ]  TCP world [ 0.004  -0.253   0.6003]  finger gap 0.0800

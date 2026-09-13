@@ -1,0 +1,10 @@
+from rob import *
+r = Robot()
+C = np.array([-0.153, 0.046])
+print("above box")
+r.move_tcp([C[0], C[1], 0.60], Q_DOWN_Y)
+print("gap:", round(r.finger_gap(),4))
+print("descend")
+r.move_tcp([C[0], C[1], 0.44], Q_DOWN_Y)
+r.snap("robot0_eye_in_hand", "/workspace/eih_c1.png")
+print("DONE")

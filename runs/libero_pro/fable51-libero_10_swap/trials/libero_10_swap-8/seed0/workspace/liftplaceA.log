@@ -1,0 +1,30 @@
+[liftA] 1 waypoints, 3.0s
+  traj done code=0 max_joint_err=0.0024
+   TCP now [-0.2065 -0.1949  1.0989] (target [-0.206 -0.195  1.1  ]) err=0.0013
+[placeA: transport] 4 waypoints, 6.0s
+  traj done code=-5 max_joint_err=0.2638
+   retrying final waypoint (code=-5, err=0.2638)
+  traj done code=0 max_joint_err=0.0029
+   TCP now [ 0.1621 -0.0154  1.0982] (target [ 0.1629 -0.0151  1.1   ]) err=0.0020
+[placeA: lower] 1 waypoints, 3.0s
+  traj done code=0 max_joint_err=0.0031
+   TCP now [ 0.1625 -0.0151  1.0099] (target [ 0.1629 -0.0151  1.01  ]) err=0.0004
+  gripper -> 0.04: reached=True stalled=False fingers=0.0380,-0.0371
+[placeA: retreat] 1 waypoints, 2.0s
+   !! sweep near stoveA (tip at [ 0.157 -0.021  1.01 ]) s=0.14
+   !! sweep near stoveA (tip at [ 0.151 -0.028  1.01 ]) s=0.29
+   !! sweep near stoveA (tip at [ 0.145 -0.034  1.01 ]) s=0.43
+   !! sweep near stoveA (tip at [ 0.139 -0.04   1.01 ]) s=0.57
+   !! sweep near stoveA (tip at [ 0.133 -0.046  1.01 ]) s=0.71
+   !! sweep near stoveA (tip at [ 0.127 -0.052  1.01 ]) s=0.86
+   !! sweep near stoveA (tip at [ 0.121 -0.057  1.01 ]) s=1.00
+  traj done code=0 max_joint_err=0.0022
+   TCP now [ 0.1211 -0.0575  1.01  ] (target [ 0.1205 -0.0575  1.01  ]) err=0.0006
+[placeA: rise] 1 waypoints, 2.0s
+   !! sweep near stoveA (tip at [ 0.123 -0.058  1.03 ]) s=0.14
+   !! sweep near stoveA (tip at [ 0.124 -0.058  1.051]) s=0.29
+   !! sweep near stoveA (tip at [ 0.125 -0.058  1.071]) s=0.43
+   !! sweep near stoveA (tip at [ 0.125 -0.058  1.091]) s=0.57
+  traj done code=0 max_joint_err=0.0024
+   TCP now [ 0.1208 -0.0573  1.1502] (target [ 0.1205 -0.0575  1.15  ]) err=0.0004
+fingers: (0.03999632242239044, -0.039990498104103836)

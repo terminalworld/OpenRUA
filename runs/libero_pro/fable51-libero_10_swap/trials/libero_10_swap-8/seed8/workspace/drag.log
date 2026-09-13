@@ -1,0 +1,10 @@
+[gripper] reached=True stalled=False fingers=(0.03587469052068032, -0.03587874023366483)
+[move_q] error_code=0 max_joint_err=0.0024
+== pre[0.242 0.012 1.06 ]: code=0 jerr=0.0024 tcp=[0.242 0.012 1.06 ] fingers=[0.04 0.04] F=[ 0.   3.9 -3.3]
+[move_q] error_code=0 max_joint_err=0.0025
+== mid[0.242 0.012 1.006]: code=0 jerr=0.0025 tcp=[0.242 0.011 1.006] fingers=[0.04 0.04] F=[-0.   3.9 -3.3]
+[move_q] error_code=0 max_joint_err=0.0028
+== pinch[0.242 0.012 0.966]: code=0 jerr=0.0028 tcp=[0.242 0.011 0.966] fingers=[0.04 0.04] F=[-0.   3.9 -3.3]
+[gripper] reached=True stalled=False fingers=(0.008408300717433113, -0.008377711343068306)
+fingers after close: [0.0084083  0.00837771]
+OK

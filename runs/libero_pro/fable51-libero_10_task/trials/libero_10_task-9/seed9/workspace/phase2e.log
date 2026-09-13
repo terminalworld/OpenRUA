@@ -1,0 +1,54 @@
+15:01:45 gripper -> 0.0: reached=True stalled=False gap=0.0083
+15:01:46 start tcp [-0.021   0.0498  1.1492]
+15:02:00 trajectory code=0 err=0.0022 (dur 3.6s)
+15:02:00 IK attempt 0: solution deviates 1.74 rad from seed
+15:02:00 IK attempt 1: solution deviates 2.11 rad from seed
+15:02:00 IK attempt 2: solution deviates 4.10 rad from seed
+15:02:00 IK attempt 3: solution deviates 4.06 rad from seed
+15:02:00 IK: returning best solution (dev 1.74)
+15:02:23 trajectory code=-5 err=0.5141 (dur 6.97s)
+15:02:23   re-sending final point (err 0.5141, 2.1s)
+15:02:32   code=-5 err=0.0880 worst j7 dq=[ 0.001 -0.01   0.039  0.004 -0.064  0.006  0.088]
+15:02:32   re-sending final point (err 0.0880, 2.0s)
+15:02:40   code=0 err=0.0466 worst j3 dq=[ 0.    -0.013  0.047  0.006 -0.005  0.007  0.009]
+15:02:40   re-sending final point (err 0.0466, 2.0s)
+15:02:48   code=0 err=0.0444 worst j3 dq=[-0.    -0.013  0.044  0.006 -0.004  0.008  0.009]
+15:02:48   re-sending final point (err 0.0444, 2.0s)
+15:02:56   code=0 err=0.0426 worst j3 dq=[-0.    -0.013  0.043  0.007 -0.004  0.008  0.009]
+15:02:56   re-sending final point (err 0.0426, 2.0s)
+15:03:04   code=0 err=0.0410 worst j3 dq=[-0.    -0.013  0.041  0.007 -0.004  0.008  0.009]
+15:03:04   re-sending final point (err 0.0410, 2.0s)
+15:03:12   code=0 err=0.0396 worst j3 dq=[-0.001 -0.013  0.04   0.007 -0.004  0.009  0.009]
+15:03:13   tcp now [-0.2404 -0.1184  1.0224] (target [-0.25 -0.12  1.01]) joint err 0.0396
+15:03:13 approach tcp [-0.2404 -0.1184  1.0224] z_hand [0.995 0.095 0.021]
+15:03:43 trajectory code=0 err=0.0019 (dur 10.17s)
+15:03:53 trajectory code=0 err=0.0021 (dur 2.46s)
+15:03:54 at door face tcp [-0.1922  0.0736  1.0102] model [-0.1918  0.0738  1.01  ]
+15:04:02 trajectory code=0 err=0.0025 (dur 1.51s)
+15:04:02 theta 78: tcp [-0.1695  0.0739  1.0102] err 0.0025
+15:04:10 trajectory code=0 err=0.0026 (dur 1.49s)
+15:04:11 theta 70: tcp [-0.1471  0.077   1.0102] err 0.0026
+15:04:19 trajectory code=0 err=0.0025 (dur 1.54s)
+15:04:19 theta 62: tcp [-0.1254  0.083   1.0104] err 0.0025
+15:04:28 trajectory code=0 err=0.0025 (dur 1.6s)
+15:04:28 theta 54: tcp [-0.1047  0.0922  1.0104] err 0.0025
+15:04:37 trajectory code=0 err=0.0025 (dur 1.64s)
+15:04:37 theta 46: tcp [-0.0856  0.1041  1.0104] err 0.0025
+15:04:46 trajectory code=0 err=0.0025 (dur 1.66s)
+15:04:46 theta 38: tcp [-0.0683  0.1185  1.0104] err 0.0025
+15:04:55 trajectory code=0 err=0.0025 (dur 1.64s)
+15:04:55 theta 30: tcp [-0.0531  0.1351  1.01  ] err 0.0025
+15:05:03 trajectory code=0 err=0.0025 (dur 1.57s)
+15:05:04 theta 22: tcp [-0.0403  0.1537  1.0099] err 0.0025
+15:05:12 trajectory code=0 err=0.0025 (dur 1.46s)
+15:05:12 theta 14: tcp [-0.0303  0.174   1.01  ] err 0.0025
+15:05:20 trajectory code=0 err=0.0025 (dur 1.35s)
+15:05:20 theta 6: tcp [-0.0231  0.1953  1.01  ] err 0.0025
+15:05:28 trajectory code=0 err=0.0026 (dur 1.38s)
+15:05:29 theta -2: tcp [-0.0186  0.2169  1.01  ] err 0.0026
+15:05:35 trajectory code=0 err=0.0024 (dur 0.6s)
+15:05:35 theta -3: tcp [-0.0186  0.2201  1.01  ] err 0.0024
+15:05:46 trajectory code=0 err=0.0024 (dur 2.4s)
+15:06:02 trajectory code=0 err=0.0022 (dur 4.2s)
+15:06:03 gripper -> 0.04: reached=True stalled=False gap=0.0718
+15:06:03 PHASE2E DONE

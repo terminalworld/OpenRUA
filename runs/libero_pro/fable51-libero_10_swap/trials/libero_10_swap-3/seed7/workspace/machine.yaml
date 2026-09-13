@@ -1,0 +1,78 @@
+# This machine's manifest: an index of its ROS graph, written when the
+# machine was assembled. Each entry under actuators/sensors is one port.
+#   kind  what the port is for; docs/ has a how-to section per kind
+#   port  the ROS name to address
+#   type  the message or action type; `ros2 interface show <type>`
+#         prints its fields
+# The docs are generic; the facts below are this machine's and win.
+schema: openrua/machine-manifest v1
+robot:
+  model: Franka Emika Panda
+  description: 7-joint robot arm with a parallel-jaw gripper
+frames:
+  world: world
+  base: panda_link0
+  hand: panda_hand
+actuators:
+- kind: joint_trajectory
+  port: /panda_arm_controller/follow_joint_trajectory
+  type: control_msgs/action/FollowJointTrajectory
+  joints:  # the joints this port drives, in the order its messages
+    # expect them
+  - panda_joint1
+  - panda_joint2
+  - panda_joint3
+  - panda_joint4
+  - panda_joint5
+  - panda_joint6
+  - panda_joint7
+  limits_rad:  # travel per joint as [min, max], radians
+  - - -2.9
+    - 2.9
+  - - -1.76
+    - 1.76
+  - - -2.9
+    - 2.9
+  - - -3.07
+    - -0.07
+  - - -2.9
+    - 2.9
+  - - -0.02
+    - 3.75
+  - - -2.9
+    - 2.9
+- kind: cartesian_twist
+  port: /servo_node/delta_twist_cmds
+  type: geometry_msgs/msg/TwistStamped
+  frame: panda_link0  # the TF frame this port's messages are expressed in
+- open_m: 0.04  # fingers fully open: position of ONE finger, metres
+    # (the gap between the fingers is twice this)
+  closed_m: 0.0  # fingers fully closed: position of ONE finger, metres
+  max_effort: 30.0  # force ceiling a GripperCommand goal may ask for,
+    # newtons. NOT honoured by this machine - see stops_at
+  stops_at:  # the only positions this gripper comes to rest at. A
+    # commanded width is read as open-or-closed; there is no
+    # holding it part-way, and no force limit
+  - open
+  - closed
+  kind: gripper
+  port: /franka_gripper/gripper_action
+  type: control_msgs/action/GripperCommand
+sensors:
+- kind: joint_state
+  port: /joint_states
+  type: sensor_msgs/msg/JointState
+- kind: wrench
+  port: /franka_robot_state_broadcaster/external_wrench
+  type: geometry_msgs/msg/WrenchStamped
+- kind: camera_set
+  topics: /<name>/color/image_raw, /<name>/depth/image_raw, /<name>/color/camera_info  # topic name pattern, one set per camera
+  discover: ros2 topic list | grep image_raw  # shell command that lists what exists right now
+planning:
+  moveit: true  # whether a MoveIt planner is running on this machine
+  move_action: /move_action  # MoveIt's plan-and-execute action
+  ik_service: /compute_ik  # inverse-kinematics service (leave frame_id empty)
+  group: panda_arm  # the MoveIt planning group covering the arm
+  planning_frame: panda_link0  # the frame MoveIt plans in
+hand:
+  tcp_offset_m: 0.1034

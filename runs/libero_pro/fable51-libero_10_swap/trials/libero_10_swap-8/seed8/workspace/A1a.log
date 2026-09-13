@@ -1,0 +1,12 @@
+pinch: p=[0.212 0.108 0.975] q=[ 0.37  1.47 -0.66 -0.63  0.74  2.43  2.31] minlinkz=1.123
+pre: p=[0.212 0.108 1.1  ] q=[ 0.46  1.21 -0.71 -0.83  0.74  2.33  2.26] minlinkz=1.248
+lift: p=[0.212 0.108 1.2  ] q=[ 0.42  1.13 -0.74 -0.71  0.69  2.15  2.31] minlinkz=1.325
+pre->pinch dq 0.26  pinch->lift dq 0.34
+[gripper] reached=True stalled=False fingers=(0.03638028618603861, -0.03541651729300721)
+[move_q] error_code=0 max_joint_err=0.0025
+== pre: code=0 jerr=0.0025 tcp=[0.212 0.108 1.1  ] fingers=[0.04   0.0394] F=[ 2.3  0.  -4.5]
+[move_q] error_code=0 max_joint_err=0.0024
+== pinch: code=0 jerr=0.0024 tcp=[0.211 0.108 0.975] fingers=[0.04   0.0395] F=[ 2.3  0.  -4.6]
+[gripper] reached=True stalled=False fingers=(0.004611666793252752, -0.003637091484950618)
+fingers after close: [0.00461167 0.00363709]
+PINCH MISSED

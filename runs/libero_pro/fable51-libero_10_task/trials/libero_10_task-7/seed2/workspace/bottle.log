@@ -1,0 +1,49 @@
+hand world=(-0.1364,-0.1509,0.7034) q=(0.976,-0.216,-0.001,-0.001)
+TCP  world=(-0.1365,-0.1508,0.6000)
+arm: [-0.2367, -0.1719, -0.1538, -2.7028, -0.0443, 2.531, 0.8681]
+fingers: 0.04 -0.04
+== open
+gripper open: reached=True stalled=False fingers=0.0400,-0.0400 gap=0.0800
+== hover [-0.13618923 -0.15132145] -25.0
+traj done error_code=0 max_joint_err=0.0017
+TCP now (-0.1365,-0.1510,0.6000) target (-0.1362, -0.1513, 0.6) dist=0.0005
+   hand y-axis in world: (-0.422,-0.907); bottle axis dir (0.906,-0.423) dot=0.001 (want 0)
+   wrist: centre=(0.0936,-0.2102) ztop=0.469 n=1607 x[0.088,0.121] y[-0.244,-0.187] axis=70.1deg L=0.061 W=0.022
+   wrist: centre=(0.0309,-0.1230) ztop=0.517 n=13623 x[0.003,0.068] y[-0.154,-0.084] axis=-152.8deg L=0.065 W=0.070
+   wrist: centre=(-0.1051,-0.1641) ztop=0.477 n=13023 x[-0.173,-0.026] y[-0.217,-0.109] axis=152.0deg L=0.147 W=0.064
+   wrist: centre=(-0.1247,0.0453) ztop=0.455 n=334 x[-0.131,-0.122] y[0.037,0.075] axis=83.7deg L=0.039 W=0.009
+   widths: s<0 0.051  s>0 0.064 -> body on positive side
+   refined grasp (-0.1316,-0.1500) yaw -28.0  (delta 0.5 cm)
+traj_multi done error_code=0 max_joint_err=0.0022
+TCP now (-0.1321,-0.1502,0.5999) target (-0.1316, -0.15, 0.6) dist=0.0007
+   wrist: centre=(0.0940,-0.2104) ztop=0.477 n=2192 x[0.088,0.121] y[-0.246,-0.187] axis=70.7deg L=0.062 W=0.023
+   wrist: centre=(0.0310,-0.1231) ztop=0.517 n=13526 x[0.003,0.069] y[-0.154,-0.084] axis=-151.6deg L=0.066 W=0.070
+   wrist: centre=(-0.1050,-0.1641) ztop=0.477 n=13031 x[-0.173,-0.025] y[-0.217,-0.110] axis=151.9deg L=0.147 W=0.063
+   widths: s<0 0.051  s>0 0.063 -> body on positive side
+   refined grasp (-0.1314,-0.1500) yaw -28.1  (delta 0.0 cm)
+== descend
+traj_multi done error_code=0 max_joint_err=0.0025
+TCP now (-0.1321,-0.1499,0.4451) target (-0.1316, -0.15, 0.445) dist=0.0006
+== close
+gripper close: reached=True stalled=False fingers=0.0281,-0.0284 gap=0.0565
+== lift
+traj_multi done error_code=0 max_joint_err=0.0154
+TCP now (-0.1289,-0.1507,0.7205) target (-0.1316, -0.15, 0.72) dist=0.0028
+   gap after lift 0.0565
+== to basket
+traj done error_code=0 max_joint_err=0.0032
+TCP now (-0.0001,0.2544,0.7194) target (0.0, 0.255, 0.72) dist=0.0008
+   gap at basket 0.0565
+== lower
+traj_multi done error_code=0 max_joint_err=0.0024
+TCP now (-0.0004,0.2551,0.6300) target (0.0, 0.255, 0.63) dist=0.0004
+== release
+gripper open: reached=True stalled=False fingers=0.0368,-0.0368 gap=0.0736
+== retreat
+traj_multi done error_code=0 max_joint_err=0.0023
+TCP now (0.0003,0.2548,0.7195) target (0.0, 0.255, 0.72) dist=0.0006
+hand world=(0.0001,0.2548,0.8229) q=(0.924,0.382,0.001,0.001)
+TCP  world=(0.0003,0.2548,0.7195)
+arm: [0.2641, 0.0951, 0.2044, -2.0268, -0.0241, 2.1208, 0.4819]
+fingers: 0.0398 -0.0398
+DONE

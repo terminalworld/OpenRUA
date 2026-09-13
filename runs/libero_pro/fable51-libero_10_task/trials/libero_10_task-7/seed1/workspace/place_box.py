@@ -1,0 +1,13 @@
+from arm import *
+a=Arm()
+B=np.array([-0.009,0.253])
+print("-> above basket",flush=True)
+a.move_tcp_world([B[0],B[1],0.72],DOWN,secs=3)
+p,q=a.hand_pose_world(); print("hand",p.round(4),"fingers",a.fingers(),flush=True)
+print("-> lower",flush=True)
+a.move_tcp_world([B[0],B[1],0.66],DOWN,secs=2)
+p,q=a.hand_pose_world(); print("hand",p.round(4),"fingers",a.fingers(),flush=True)
+a.gripper(0.04)
+print("-> retreat up",flush=True)
+a.move_tcp_world([B[0],B[1],0.75],DOWN,secs=2)
+p,q=a.hand_pose_world(); print("hand",p.round(4),"fingers",a.fingers(),flush=True)

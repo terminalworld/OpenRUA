@@ -1,0 +1,28 @@
+05:37:28 hover q [-0.27  0.46  0.75 -1.8  -0.36  2.12 -1.04] feasible, travel 4.22
+05:37:29 hover q [ 0.63  0.36 -0.27 -1.81  0.11  2.16 -1.34] feasible, travel 4.57
+05:37:29 hover q [-0.2   0.43  0.67 -1.81 -0.31  2.13 -1.07] feasible, travel 4.26
+05:37:31 gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0400
+05:38:39 move done; max joint err 0.0064 rad
+05:38:40 move_path (1 pts, 14.9s) ok=True; hand now [-0.0705  0.2435  1.2589]
+05:39:06 move done; max joint err 0.0024 rad
+05:39:07 move_path (8 pts, 5.0s) ok=True; hand now [-0.0705  0.2439  1.1393]
+05:39:07 pads at [-0.0705  0.2439  1.0463] (target [-0.0702  0.2438  1.046 ])
+05:39:09 gripper -> 0.0: reached=True stalled=False fingers=0.0084,-0.0083
+05:39:09 gap after close 0.0167
+05:39:32 move done; max joint err 0.0025 rad
+05:39:32 move_path (4 pts, 4.0s) ok=True; hand now [-0.0705  0.2435  1.2573]
+05:39:33 lift chunk ok=True gap 0.0167
+05:39:55 move done; max joint err 0.0031 rad
+05:39:56 move_path (6 pts, 4.0s) ok=True; hand now [0.0627 0.1415 1.257 ]
+05:39:56 carry chunk ok=True gap 0.0167
+05:40:21 move done; max joint err 0.0031 rad
+05:40:22 move_path (3 pts, 4.5s) ok=True; hand now [0.1297 0.0904 1.2575]
+05:40:22 carry chunk ok=True gap 0.0167
+05:40:45 move done; max joint err 0.0056 rad
+05:40:46 move_path (7 pts, 4.0s) ok=True; hand now [0.1301 0.0902 1.1706]
+05:40:46 down ok=True; pads at [0.1301 0.0902 1.0776] (target [0.13  0.09  1.073]) fingers (0.008164220392800372, -0.00852376707201851)
+05:40:49 gripper -> 0.04: reached=True stalled=False fingers=0.0359,-0.0359
+05:41:12 move done; max joint err 0.0023 rad
+05:41:13 move_path (4 pts, 4.0s) ok=True; hand now [0.1299 0.0899 1.2255]
+05:41:13 retreat ok=True
+05:41:13 POT2 DONE

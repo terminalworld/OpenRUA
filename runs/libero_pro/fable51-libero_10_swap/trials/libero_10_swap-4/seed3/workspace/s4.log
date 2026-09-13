@@ -1,0 +1,4 @@
+  gripper -> 0.04: reached=True stalled=False fingers=(0.03588677276202217, -0.03589377780466341)
+wrench after release [-0.018  0.015 -5.101]
+  traj done code=0 max_joint_err=0.0024
+  tcp now [-0.0037 -0.3594  0.6995] (target [-0.004  -0.3594  0.7   ])

@@ -1,0 +1,4 @@
+move done code=0 max_err=0.0024
+tcp [-0.0636 -0.0752  1.0081]
+grip -> pos=0.0000 reached=True stalled=False fingers=(0.004127479957513991, -0.004123276671678613)
+fingers (0.004127479957513991, -0.004123276671678613)

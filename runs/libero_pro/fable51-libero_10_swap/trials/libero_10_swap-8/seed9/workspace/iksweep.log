@@ -1,0 +1,36 @@
+   x=0.1 ok 0.0s
+   x=0.14 ok 0.0s
+   x=0.17 ok 0.0s
+   x=0.2 ok 0.0s
+   x=0.24 fail 1.0s
+z=1.0 pitch=-20 fx: max x reachable = 0.2 [ 0.11  1.26 -0.12 -0.78  0.13  2.38  1.58]
+   x=0.1 ok 0.0s
+   x=0.14 ok 0.0s
+   x=0.17 ok 0.0s
+   x=0.2 ok 0.0s
+   x=0.24 fail 1.0s
+z=1.0 pitch=-20 fy: max x reachable = 0.2 [-0.01  1.26  0.12 -0.78 -0.17  2.38  0.11]
+   x=0.1 ok 0.0s
+   x=0.14 ok 0.0s
+   x=0.17 ok 0.0s
+   x=0.2 ok 0.0s
+   x=0.24 ok 0.0s
+z=1.0 pitch=-35 fx: max x reachable = 0.24 [ 0.11  1.46 -0.2  -0.53  0.21  2.59  1.58]
+   x=0.1 ok 0.0s
+   x=0.14 ok 0.0s
+   x=0.17 ok 0.0s
+   x=0.2 ok 0.0s
+   x=0.24 ok 0.0s
+z=1.0 pitch=-35 fy: max x reachable = 0.24 [-0.    1.46  0.15 -0.53 -0.25  2.59  0.14]
+   x=0.1 ok 0.0s
+   x=0.14 ok 0.0s
+   x=0.17 ok 0.0s
+   x=0.2 ok 0.0s
+   x=0.24 ok 0.0s
+z=1.0 pitch=-50 fx: max x reachable = 0.24 [ 0.17  1.38 -0.21 -0.83  0.41  3.06  1.41]
+   x=0.1 ok 0.0s
+   x=0.14 ok 0.0s
+   x=0.17 ok 0.0s
+   x=0.2 ok 0.0s
+   x=0.24 ok 0.0s
+z=1.0 pitch=-50 fy: max x reachable = 0.24 [ 0.    1.36  0.03 -0.84 -0.35  3.07  0.33]

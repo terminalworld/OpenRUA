@@ -1,0 +1,30 @@
+start tcp [-0.1579 -0.5004  1.1288] gap 0.001
+door box added
+pre dq from q0 0.216
+pre valid (True, [])
+plan pts 43
+exec_plan: 13 pts, code=-5, err=0.2139
+move: code=0 max_joint_err=0.0023
+at pre: tcp [-0.4355 -0.479   1.0201] jerr 0.0036
+move: code=0 max_joint_err=0.0020
+at arc start: tcp [-0.3783 -0.5003  1.02  ]
+move: code=0 max_joint_err=0.0220
+arc done jerr 0.022 tcp [-0.1424 -0.3976  1.0198]
+move: code=0 max_joint_err=0.0231
+move: code=0 max_joint_err=0.0232
+after converge tcp [-0.1423 -0.3978  1.0199] jerr 0.0232
+pose_path: IK fail at 0 [-0.14 -0.46  1.02]
+pose_path: IK fail at 0 [-0.14 -0.46  1.02]
+retreat tcp [-0.1423 -0.3978  1.0199]
+front-region high pts 3465
+x -0.32: y min -0.376 max -0.301 n 96
+x -0.28: y min -0.445 max -0.301 n 306
+x -0.24: y min -0.442 max -0.301 n 430
+x -0.20: y min -0.448 max -0.301 n 462
+x -0.16: y min -0.455 max -0.301 n 476
+x -0.12: y min -0.521 max -0.301 n 497
+x -0.08: y min -0.518 max -0.301 n 532
+x -0.04: y min -0.376 max -0.301 n 310
+x -0.00: y min -0.376 max -0.301 n 288
+x +0.04: y min -0.376 max -0.301 n 70
+DONE

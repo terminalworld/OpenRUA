@@ -1,0 +1,33 @@
+start q [ 1.41   1.124 -1.448 -1.898  1.176  1.818  1.944] tcp [-0.0729  0.1555  1.0995]
+rot [ 1.094  0.788 -1.209 -1.999  1.535  1.621  1.598]
+low [ 0.885  1.049 -0.933 -1.91   1.743  1.688  1.411]
+end [ 0.968  1.037 -0.902 -1.892  1.789  1.761  1.481]
+== rotate in place
+  move done code=0 max_joint_err=0.0025
+  hand at [-0.0797  0.0818  1.1734] target [-0.08    0.0819  1.1731] poserr=0.0004
+  TCP now [-0.0797  0.1547  1.1001] target [-0.08   0.155  1.1  ]
+== lower
+  move done code=0 max_joint_err=0.0022
+  hand at [-0.0803  0.0717  1.0085] target [-0.08    0.0719  1.0081] poserr=0.0005
+  TCP now [-0.0805  0.1449  0.9354] target [-0.08   0.145  0.935]
+wrench [-0.01 -3.61 -3.61  0.51 -0.   -0.  ]
+== push to 0.185
+  move done code=0 max_joint_err=0.0022
+  hand at [-0.0803  0.1112  1.0081] target [-0.08    0.1119  1.0081] poserr=0.0007
+  TCP now [-0.0805  0.1843  0.9349] target [-0.08   0.185  0.935]
+wrench [ 0.   -3.61 -3.61  0.51  0.   -0.  ]
+== push to 0.207
+  move done code=0 max_joint_err=0.0023
+  hand at [-0.0803  0.1333  1.008 ] target [-0.08    0.1339  1.0081] poserr=0.0007
+  TCP now [-0.0805  0.2064  0.9349] target [-0.08   0.207  0.935]
+wrench [ 0.   -3.61 -3.61  0.51  0.   -0.  ]
+== retreat/lift
+  move done code=0 max_joint_err=0.0023
+  hand at [-0.0797  0.0973  1.0329] target [-0.08    0.0969  1.0331] poserr=0.0006
+  TCP now [-0.0795  0.1704  0.9598] target [-0.08  0.17  0.96]
+  move done code=0 max_joint_err=0.0022
+  hand at [-0.0796  0.0771  1.1729] target [-0.08    0.0769  1.1731] poserr=0.0005
+  TCP now [-0.0794  0.1502  1.0998] target [-0.08  0.15  1.1 ]
+wrench [ 0.02 -3.61 -3.61  0.51  0.    0.  ]
+panel top y 0.212 0.216
+DONE

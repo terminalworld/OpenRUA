@@ -1,0 +1,32 @@
+04:19:17 axis dir [ 0.549 -0.836] phi -56.7 deg; grasp at [-0.116 -0.267  0.939]
+04:19:17 R_F z-axis [ 0.549 -0.836 -0.   ] x-axis [ 0. -0.  1.]
+04:19:18 flip=1.0 hover: hand [-0.116 -0.267  1.202] ok, joint travel 0.69
+04:19:18 flip=1.0 grasp: hand [-0.116 -0.267  1.042] ok, joint travel 0.28
+04:19:18 flip=1.0 high_v: hand [-0.116 -0.267  1.222] ok, joint travel 0.32
+04:19:18 flip=1.0 high_h: hand [-0.173 -0.18   1.119] ok, joint travel 1.46
+04:19:18 flip=1.0 down: hand [-0.173 -0.18   0.971] ok, joint travel 4.41
+04:19:18 flip=1.0 retreat: hand [-0.206 -0.13   1.091] ok, joint travel 0.41
+04:19:20 gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0400
+04:19:21 joint travel [ 0.14  0.04 -0.13 -0.02  0.08 -0.05  0.69]
+04:19:42 move done; max joint err 0.0107 rad
+04:19:43 hand now at [-0.1154 -0.2667  1.2027] (target [-0.1159 -0.2668  1.2024]) d=0.0005
+04:20:09 move done; max joint err 0.0134 rad
+04:20:09 hand now at [-0.1143 -0.2669  1.0494] (target [-0.1159 -0.2668  1.0424]) d=0.0072
+04:20:12 gripper -> 0.0: reached=True stalled=False fingers=0.0347,-0.0355
+04:20:12 gap after close 0.0702
+04:20:33 move done; max joint err 0.0025 rad
+04:20:34 hand now at [-0.1163 -0.2665  1.2208] (target [-0.1159 -0.2668  1.2224]) d=0.0017
+04:20:34 rotating pot upright
+04:20:34 joint travel [-1.61 -0.01  1.88 -0.45 -3.1  -0.53 -3.86]
+04:21:06 FJT error_code -5
+04:21:06 move done; max joint err 2.9276 rad
+04:21:06 retrying same goal (slower)
+04:21:49 FJT error_code -5
+04:21:49 move done; max joint err 1.5173 rad
+04:21:50 hand now at [-0.2152 -0.1925  1.0919] (target [-0.1726 -0.1804  1.119 ]) d=0.0519
+04:21:50 rotate ok=False fingers (0.04010471900635072, -0.026832626807265888)
+04:21:51 move_line: joint jump 1.33 at waypoint 1; abort
+04:21:51 fingers before release (0.04010471900635072, -0.026832626807265888)
+04:21:53 gripper -> 0.04: reached=True stalled=False fingers=0.0393,-0.0363
+04:21:54 move_line: joint jump 1.33 at waypoint 1; abort
+04:21:54 STANDUP DONE

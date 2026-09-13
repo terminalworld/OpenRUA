@@ -1,0 +1,10 @@
+-> above basket
+move done code=-5 max_joint_err=0.1169
+hand [-0.0369  0.2395  0.7719] fingers (0.021090335488001717, -0.021127505581576052)
+-> lower
+move done code=0 max_joint_err=0.0024
+hand [-0.0095  0.253   0.7632] fingers (0.021030621500274103, -0.021183890951404397)
+gripper reached=True stalled=False fingers=(0.03627705484994774, -0.03627782584977159)
+-> retreat up
+move done code=0 max_joint_err=0.0023
+hand [-0.0088  0.2528  0.8529] fingers (0.03989295959662508, -0.0398950008246196)

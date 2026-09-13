@@ -1,0 +1,10 @@
+from robot import *
+r = Robot()
+print("q", np.round(r.q(),4))
+print("hand", r.fk()); print("tcp", r.tcp())
+print("fingers", r.fingers()); print("wrench", r.wrench())
+print("down_quat", np.round(down_quat(0),4), np.round(down_quat(90),4))
+# test IK for pre-grasp above red mug rim (+y side)
+q = r.ik([-0.196, 0.056, 0.70], down_quat(0))
+print("IK pregrasp", None if q is None else np.round(q,3))
+if q is not None: print("  fk check", r.tcp(q))

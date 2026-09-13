@@ -1,0 +1,50 @@
+start q [-0.506  0.574  0.211 -1.887  1.159  1.548 -1.961] hand [-0.086 -0.077  1.143]
+up        None -> [-0.546  0.468  0.239 -2.084  1.237  1.469 -1.754]  dist 0.21
+  bad steps: 0
+up2       [-0.138  0.     1.32 ] -> [-0.538  0.109  0.317 -2.142  1.405  1.419 -1.468]  dist 0.36
+  bad steps: 0
+  chose orientation b
+over_mug  [-0.094  0.199  1.25 ] -> [-0.376  0.345  0.763 -1.975 -0.296  2.208 -0.249]  dist 1.70
+  bad steps: 0
+descend   [-0.094  0.199  1.072] -> [-0.221  0.682  0.557 -1.985 -0.592  2.502 -0.061]  dist 0.34
+  bad steps: 0
+lift      [-0.094  0.199  1.22 ] -> [-0.383  0.406  0.769 -1.994 -0.364  2.261 -0.205]  dist 0.28
+  bad steps: 0
+over_drop [-0.173  0.32   1.22 ] -> [-0.218  0.37   0.837 -2.063 -0.363  2.283  0.042]  dist 0.25
+  bad steps: 0
+setdown   [-0.173  0.32   1.076] -> [-0.055  0.66   0.623 -2.05  -0.649  2.508  0.225]  dist 0.29
+  bad steps: 0
+lift2     [-0.173  0.32   1.2  ] -> [-0.22   0.418  0.837 -2.07  -0.422  2.314  0.08 ]  dist 0.24
+  bad steps: 0
+>> up
+  move_q: error_code=0 max_joint_err=0.0057
+   reached hand [-0.1362 -0.0542  1.1516]
+>> up2
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-1.3770e-01 -5.0000e-04  1.3197e+00]
+>> over_mug
+  move_q: error_code=-5 max_joint_err=1.1116
+  retry 1: max_joint_err=1.112
+  move_q: error_code=-5 max_joint_err=0.5038
+  retry 2: max_joint_err=0.504
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-0.0941  0.1991  1.2499]
+>> descend
+  move_q: error_code=0 max_joint_err=0.0025
+   reached hand [-0.0937  0.1994  1.0725]
+  gripper(0.0): reached=True stalled=False fingers=0.0067,-0.0059
+   fingers after close (0.00665312967068344, -0.005897372474845254)
+>> lift
+  move_q: error_code=0 max_joint_err=0.0024
+   reached hand [-0.0936  0.1991  1.2195]
+   fingers while lifted (0.0053755066681663985, -0.005382264470220196)
+>> over_drop
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-0.1727  0.3195  1.2196]
+>> setdown
+  move_q: error_code=0 max_joint_err=0.0034
+   reached hand [-0.1714  0.3205  1.0789]
+  gripper(0.04): reached=True stalled=False fingers=0.0359,-0.0359
+>> lift2
+  move_q: error_code=0 max_joint_err=0.0024
+   reached hand [-0.1726  0.32    1.2   ]

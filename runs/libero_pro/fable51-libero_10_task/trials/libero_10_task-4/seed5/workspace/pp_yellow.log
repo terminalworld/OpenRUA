@@ -1,0 +1,30 @@
+== open gripper
+  gripper(0.04): reached=True stalled=False gap=0.0800
+== hover above pinch point
+  move_q: code=0 max_err=0.0026
+  tcp now [-0.0746  0.1787  0.6624] target [-0.0746  0.1789  0.662 ]
+== descend
+  move_q: code=0 max_err=0.0025
+  tcp now [-0.0745  0.1791  0.5073] target [-0.0746  0.1789  0.507 ]
+== close
+  gripper(0.0): reached=True stalled=False gap=0.0127
+  gap after close 0.0127 (closed_m=0 -> >0 means holding); wrench dF=[ 0.09 -0.   -0.25]
+== lift
+  move_q: code=-5 max_err=0.1478
+  move_q: code=0 max_err=0.0021
+  tcp now [-0.0746  0.1785  0.7792] target [-0.0746  0.1789  0.78  ]
+  gap after lift 0.0104
+== carry above plate
+  move_q: code=0 max_err=0.0033
+  tcp now [-0.0149 -0.2692  0.7793] target [-0.015 -0.27   0.78 ]
+== lower onto plate
+  move_q: code=0 max_err=0.0029
+  tcp now [-0.0153 -0.2695  0.5969] target [-0.015 -0.27   0.597]
+  move_q: code=0 max_err=0.0024
+  tcp now [-0.0152 -0.2696  0.5469] target [-0.015 -0.27   0.547]
+== release
+  gripper(0.04): reached=True stalled=False gap=0.0718
+== retreat
+  move_q: code=0 max_err=0.0023
+  tcp now [-0.0151 -0.2704  0.6965] target [-0.015 -0.27   0.697]
+done

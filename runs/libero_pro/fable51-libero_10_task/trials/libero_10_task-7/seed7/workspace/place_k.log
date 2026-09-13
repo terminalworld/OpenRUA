@@ -1,0 +1,11 @@
+20:10:43 rotate in place to yaw 45
+20:10:57 move done code=0 max joint err=0.0264
+20:10:57 line to basket
+20:11:23 move done code=0 max joint err=0.0024
+20:11:24 line end tcp [0.0099 0.2597 0.7394] (target [0.01 0.26 0.74]) err 0.6 mm
+20:11:25 over basket ok True tcp [0.0099 0.2597 0.7394] fingers (0.028192951157089745, -0.02826637149850979)
+20:11:26 gripper(0.04) reached=True stalled=False fingers=0.0368,-0.0368
+20:11:27 released; fingers (0.036795118137182135, -0.036793756309810285)
+20:11:39 move done code=0 max joint err=0.0021
+20:11:40 line end tcp [0.0104 0.2598 0.8496] (target [0.01 0.26 0.85]) err 0.6 mm
+20:11:40 retreated tcp [0.01 0.26 0.85]

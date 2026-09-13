@@ -1,0 +1,250 @@
+[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-13-09-00-24-074340-46655b497cf2-186
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [robot_state_publisher-1]: process started with pid [189]
+[INFO] [move_group-2]: process started with pid [190]
+[robot_state_publisher-1] [WARN] [1789290024.271169417] [kdl_parser]: The root link panda_link0 has an inertia specified in the URDF, but KDL does not support a root link with an inertia.  As a workaround, you can add an extra dummy link to your URDF.
+[robot_state_publisher-1] [INFO] [1789290024.271287274] [robot_state_publisher]: Robot initialized
+[move_group-2] [INFO] [1789290024.300446000] [move_group.moveit.moveit.ros.rdf_loader]: Loaded robot model in 0 seconds
+[move_group-2] [INFO] [1789290024.300550960] [move_group.moveit.moveit.core.robot_model]: Loading robot model 'panda'...
+[move_group-2] [WARN] [1789290024.305958371] [kdl_parser]: The root link panda_link0 has an inertia specified in the URDF, but KDL does not support a root link with an inertia.  As a workaround, you can add an extra dummy link to your URDF.
+[move_group-2] [INFO] [1789290024.306037827] [move_group.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'panda_arm': 1 1 1 1 1 1 1
+[move_group-2] [INFO] [1789290024.327150925] [move_group.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[move_group-2] [INFO] [1789290024.327310093] [move_group.moveit.moveit.ros.moveit_cpp]: Listening to 'joint_states' for joint states
+[move_group-2] [INFO] [1789290024.328164688] [move_group.moveit.moveit.ros.current_state_monitor]: Listening to joint states on topic 'joint_states'
+[move_group-2] [INFO] [1789290024.328454641] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to '/attached_collision_object' for attached collision objects
+[move_group-2] [INFO] [1789290024.328475282] [move_group.moveit.moveit.ros.planning_scene_monitor]: Stopping existing planning scene publisher.
+[move_group-2] [INFO] [1789290024.328570994] [move_group.moveit.moveit.ros.planning_scene_monitor]: Stopped publishing maintained planning scene.
+[move_group-2] [INFO] [1789290024.328817267] [move_group.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[move_group-2] [INFO] [1789290024.328907635] [move_group.moveit.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[move_group-2] [INFO] [1789290024.329394357] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to '/planning_scene'
+[move_group-2] [INFO] [1789290024.329413621] [move_group.moveit.moveit.ros.planning_scene_monitor]: Starting world geometry update monitor for collision objects, attached objects, octomap updates.
+[move_group-2] [INFO] [1789290024.329644822] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to 'collision_object'
+[move_group-2] [INFO] [1789290024.329897271] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to 'planning_scene_world' for planning scene world geometry
+[move_group-2] [WARN] [1789290024.330022231] [move_group.moveit.moveit.ros.occupancy_map_monitor]: Resolution not specified for Octomap. Assuming resolution = 0.1 instead
+[move_group-2] [ERROR] [1789290024.330040951] [move_group.moveit.moveit.ros.occupancy_map_monitor]: No 3D sensor plugin(s) defined for octomap updates
+[move_group-2] [INFO] [1789290024.334367462] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'CHOMP'
+[move_group-2] [INFO] [1789290024.335025448] [move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789290024.335578122] [move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789290024.335603114] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789290024.335714379] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789290024.335729323] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789290024.335748459] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789290024.335754283] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789290024.335769483] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789290024.336395213] [move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789290024.337838802] [move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789290024.347848341] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'OMPL'
+[move_group-2] [INFO] [1789290024.348547736] [move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789290024.348622872] [move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789290024.348634360] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789290024.348744216] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789290024.348757560] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789290024.348776312] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789290024.348781528] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789290024.348791512] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789290024.349413051] [move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789290024.349644795] [move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789290024.349661532] [move_group]: Try loading adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789290024.351042656] [move_group]: Loaded adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789290024.351076480] [move_group]: Try loading adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789290024.351424066] [move_group]: Loaded adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789290024.353198440] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Reading limits from namespace robot_description_planning
+[move_group-2] [WARN] [1789290024.353766122] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [WARN] [1789290024.353796874] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [INFO] [1789290024.356536436] [move_group.moveit.moveit.planners.pilz.command_planner]: Available plugins: pilz_industrial_motion_planner/PlanningContextLoaderCIRC pilz_industrial_motion_planner/PlanningContextLoaderLIN pilz_industrial_motion_planner/PlanningContextLoaderPTP 
+[move_group-2] [INFO] [1789290024.356567828] [move_group.moveit.moveit.planners.pilz.command_planner]: About to load: pilz_industrial_motion_planner/PlanningContextLoaderCIRC
+[move_group-2] [INFO] [1789290024.357505943] [move_group.moveit.moveit.planners.pilz.command_planner]: Registered Algorithm [CIRC]
+[move_group-2] [INFO] [1789290024.357536759] [move_group.moveit.moveit.planners.pilz.command_planner]: About to load: pilz_industrial_motion_planner/PlanningContextLoaderLIN
+[move_group-2] [INFO] [1789290024.358060217] [move_group.moveit.moveit.planners.pilz.command_planner]: Registered Algorithm [LIN]
+[move_group-2] [INFO] [1789290024.358089145] [move_group.moveit.moveit.planners.pilz.command_planner]: About to load: pilz_industrial_motion_planner/PlanningContextLoaderPTP
+[move_group-2] [INFO] [1789290024.358613851] [move_group.moveit.moveit.planners.pilz.command_planner]: Registered Algorithm [PTP]
+[move_group-2] [INFO] [1789290024.358643515] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'Pilz Industrial Motion Planner'
+[move_group-2] [INFO] [1789290024.359292061] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789290024.359491038] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789290024.359509694] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789290024.359531486] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789290024.359538558] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789290024.359551742] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [WARN] [1789290024.359558814] [move_group.moveit.moveit.ros.planning_pipeline]: No planning response adapter names specified.
+[move_group-2] [INFO] [1789290024.361543333] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'STOMP'
+[move_group-2] [INFO] [1789290024.362195111] [move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789290024.362267592] [move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789290024.362278536] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789290024.362413640] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789290024.362435624] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789290024.362457704] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789290024.362464264] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789290024.362475240] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789290024.363090730] [move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789290024.363391084] [move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789290024.363412044] [move_group]: Try loading adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789290024.363645964] [move_group]: Loaded adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789290024.363666028] [move_group]: Try loading adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789290024.363877709] [move_group]: Loaded adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789290024.393397748] [move_group.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for panda_arm_controller
+[move_group-2] [INFO] [1789290024.393443732] [move_group.moveit.moveit.plugins.simple_controller_manager]: panda_hand_controller will command a max effort of: 0
+[move_group-2] [ERROR] [1789290024.394995962] [move_group.moveit.moveit.plugins.simple_controller_manager]: Parallel Gripper requires exactly two joints, 1 are specified
+[move_group-2] [INFO] [1789290024.397127745] [move_group.moveit.moveit.plugins.simple_controller_manager]: Returned 1 controllers in list
+[move_group-2] [INFO] [1789290024.397163361] [move_group.moveit.moveit.plugins.simple_controller_manager]: Returned 1 controllers in list
+[move_group-2] [INFO] [1789290024.397557123] [move_group.moveit.moveit.ros.trajectory_execution_manager]: Trajectory execution is managing controllers
+[move_group-2] [INFO] [1789290024.397582787] [move_group]: MoveGroup debug mode is ON
+[move_group-2] [INFO] [1789290024.410268335] [move_group.moveit.moveit.planners.pilz.move_group_sequence_action]: initialize move group sequence action
+[move_group-2] [INFO] [1789290024.412148214] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Reading limits from namespace robot_description_planning
+[move_group-2] [WARN] [1789290024.412195382] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [WARN] [1789290024.412213590] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [INFO] [1789290024.412336150] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Reading limits from namespace robot_description_planning
+[move_group-2] [WARN] [1789290024.412362967] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [WARN] [1789290024.412377687] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [INFO] [1789290024.412937337] [move_group.moveit.moveit.ros.move_group.executable]: 
+[move_group-2] 
+[move_group-2] ********************************************************
+[move_group-2] * MoveGroup using: 
+[move_group-2] *     - apply_planning_scene_service
+[move_group-2] *     - clear_octomap_service
+[move_group-2] *     - get_group_urdf
+[move_group-2] *     - load_geometry_from_file
+[move_group-2] *     - CartesianPathService
+[move_group-2] *     - execute_trajectory_action
+[move_group-2] *     - get_planning_scene_service
+[move_group-2] *     - kinematics_service
+[move_group-2] *     - move_action
+[move_group-2] *     - motion_plan_service
+[move_group-2] *     - query_planners_service
+[move_group-2] *     - state_validation_service
+[move_group-2] *     - save_geometry_to_file
+[move_group-2] *     - SequenceAction
+[move_group-2] *     - SequenceService
+[move_group-2] ********************************************************
+[move_group-2] 
+[move_group-2] [INFO] [1789290024.412984537] [move_group.moveit.moveit.ros.move_group.context]: MoveGroup context using pipeline ompl
+[move_group-2] [INFO] [1789290024.412996121] [move_group.moveit.moveit.ros.move_group.context]: MoveGroup context initialization complete
+[move_group-2] [WARN] [1789290024.472794314] [move_group.moveit.moveit.ros.current_state_monitor]: Unable to update multi-DOF joint 'virtual_joint':Failure to lookup transform between 'world'and 'panda_link0' with TF exception: "world" passed to lookupTransform argument target_frame does not exist. 
+[move_group-2] [ERROR] [1789290049.168357633] [move_group.moveit.moveit.core.robot_model]: Group '' not found in model 'panda'
+[move_group-2] [WARN] [1789293415.726593816] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789293415.726671512] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789293423.486176281] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789293423.486246777] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789295298.112893066] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789295298.112966378] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789295477.814236340] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789295477.814350420] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789295490.409627465] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789295490.409701417] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789295927.884962333] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789295927.885033885] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789297329.214314970] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789297329.214390970] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789297745.617183273] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789297745.617254602] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [ERROR] [1789297745.618502254] [move_group.moveit.moveit.core.robot_state]: Attached body 'carried_mug' not found
+[move_group-2] [WARN] [1789297745.618586126] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'carried_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789297751.499130000] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789297751.499201968] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [ERROR] [1789297751.500386772] [move_group.moveit.moveit.core.robot_state]: Attached body 'carried_mug' not found
+[move_group-2] [WARN] [1789297751.500466676] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'carried_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789297906.133191409] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789297906.133303794] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789297912.279576155] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789297912.279639899] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298055.200259611] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298055.200334203] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298068.730929056] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298068.731009825] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298180.057357693] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298180.057424637] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298407.341667966] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298407.341740862] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298426.270282780] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298426.270360860] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298438.649323540] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298438.649401973] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298477.295424842] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298477.295496651] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298512.637072537] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298512.637151386] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298662.440066183] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298662.440139143] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298750.599580252] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789298750.599655100] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789299433.556005191] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789299433.556093736] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789299968.217107586] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789299968.217178690] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789299973.629157719] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789299973.629225431] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300023.893692266] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300023.893805130] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300138.430238201] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300138.430310169] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300192.399595398] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300192.399666694] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300237.429613924] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300237.429684069] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300354.413428343] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300354.413489783] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300414.423445284] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300414.423516964] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300504.266603706] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300504.266667226] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300732.305997537] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300732.306081729] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300777.285955553] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300777.286028834] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300783.444335306] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789300783.444449067] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301055.697514141] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301055.697585149] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301328.741540303] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301328.741618384] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301334.223413440] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301334.223491777] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301603.938863316] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301603.938938068] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301628.455654918] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301628.455735687] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301655.929409913] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301655.929491641] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301661.017126013] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301661.017211614] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301860.385205151] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301860.385272511] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301964.930062499] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301964.930146211] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301973.569122444] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789301973.569201388] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302278.760075762] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302278.760183763] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302735.907888060] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302735.907951836] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302741.771769323] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302741.771871660] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302757.295512749] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302757.295574061] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302762.159830173] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302762.159895517] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302880.117264791] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302880.117331351] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302932.800087652] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789302932.800155364] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303057.189005700] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303057.189086916] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303115.439745505] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303115.439808289] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303299.936073306] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303299.936180891] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303365.818167081] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303365.818241769] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303374.832124533] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303374.832194165] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303484.394750222] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303484.394816462] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303547.976233362] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303547.976307411] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303671.997415521] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303671.997486945] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303741.135487468] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303741.135594028] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303929.644508554] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789303929.644579882] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789304357.281664788] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789304357.281734356] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'white_handle', but it does not exist in this scene.

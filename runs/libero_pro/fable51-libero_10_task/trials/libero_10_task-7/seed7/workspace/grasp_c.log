@@ -1,0 +1,32 @@
+20:13:25 plan_descent: 16 distinct grasp solutions
+20:13:25   candidate q=[ 0.56  0.34 -0.2  -2.74  0.79  3.05  0.36] pathlen=5.12 limit-margin=0.33
+20:13:26     approach-jump=1.12 score=6.65
+20:13:26   candidate q=[ 1.93  1.55 -1.24 -2.67  1.86  1.73  0.02] pathlen=1.34 limit-margin=0.21
+20:13:26     approach-jump=2.10 score=4.39
+20:13:26   candidate q=[-0.17  0.33  0.17 -2.75 -0.74  3.06  1.51] pathlen=4.84 limit-margin=0.32
+20:13:27     approach-jump=1.09 score=6.32
+20:13:27   candidate q=[ 1.62  0.86 -1.1  -2.65  1.57  2.4  -0.06] pathlen=2.73 limit-margin=0.42
+20:13:27     approach-jump=2.20 score=5.82
+20:13:27   candidate q=[ 0.4   0.32 -0.1  -2.77  0.55  3.08  0.54] pathlen=3.94 limit-margin=0.30
+20:13:28     approach-jump=1.10 score=5.44
+20:13:28   candidate q=[ 1.96 -0.73 -2.12 -2.65 -1.5   2.53  1.97] pathlen=3.23 limit-margin=0.42
+20:13:28     approach-jump=1.59 score=5.41
+20:13:28   candidate q=[-0.1   0.33  0.12 -2.76 -0.63  3.07  1.43] pathlen=4.32 limit-margin=0.31
+20:13:29     approach-jump=1.10 score=5.81
+20:13:29   candidate q=[ 0.43  0.32 -0.11 -2.77  0.6   3.08  0.5 ] pathlen=4.18 limit-margin=0.30
+20:13:29     approach-jump=1.10 score=5.67
+20:13:29   candidate q=[ 2.03 -0.67 -2.17 -2.65 -1.46  2.6   1.96] pathlen=3.55 limit-margin=0.42
+20:13:30     approach-jump=1.56 score=5.67
+20:13:30   candidate q=[ 1.71 -1.14 -1.95 -2.65 -1.69  2.12  1.96] pathlen=1.96 limit-margin=0.42
+20:13:30     approach-jump=1.70 score=4.30
+20:13:30   candidate q=[ 1.25  0.53 -0.79 -2.66  1.34  2.76 -0.  ] pathlen=4.62 limit-margin=0.41
+20:13:31     approach-jump=2.39 score=8.00
+20:13:31 top [ 1.421 -1.117 -1.357 -2.735 -1.193  1.904  1.785] grasp [ 1.713 -1.145 -1.946 -2.653 -1.69   2.12   1.961]
+20:13:48 move done code=-5 max joint err=0.7653
+20:13:48 retrying slower: 6.4s with 0 waypoints
+20:14:11 move done code=0 max joint err=0.0024
+20:14:11 tcp top [-0.1579  0.0606  0.6003]
+20:14:32 move done code=0 max joint err=0.0070
+20:14:33 descent ok True tcp [-0.1583  0.0617  0.4391]
+20:14:34 gripper(0.0) reached=True stalled=False fingers=0.0210,-0.0211
+20:14:34 fingers after close (0.020991321687132525, -0.021066751307788286)

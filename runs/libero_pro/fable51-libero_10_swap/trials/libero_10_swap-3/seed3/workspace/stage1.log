@@ -1,0 +1,7 @@
+pick_xy [-0.2092  0.076 ] place_xy [-0.1462 -0.12  ] GRASP_Z 0.933 RELEASE_Z 0.965
+approach above pick point [-0.20923475  0.076     ]
+  traj done code=-5 max_joint_err=0.7148
+[above bowl] TCP world = [-0.2091  0.0759  1.0303]  fingers = [ 0.04 -0.04]
+[before descend] TCP world = [-0.2091  0.0759  1.0303]  fingers = [ 0.04 -0.04]
+  traj done code=-5 max_joint_err=0.1628
+[at grasp depth] TCP world = [-0.2098  0.0759  0.933 ]  fingers = [ 0.04 -0.04]

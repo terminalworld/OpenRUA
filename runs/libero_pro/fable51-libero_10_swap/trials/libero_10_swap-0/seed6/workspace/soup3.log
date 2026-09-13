@@ -1,0 +1,42 @@
+[soup] start tcp=[-0.168 -0.197  0.505] fingers=(0.03989215917267615, -0.039380771274115565)
+[soup] target (-0.25,-0.149) top=0.51 grasp_z=0.461
+open gripper
+  (True, False, (0.03989159607222742, -0.039707601393807926))
+-> pre-grasp
+  move code=-5 joint_err=0.3319 tcp=[-0.196 -0.202  0.607]
+  retry0 code=0 joint_err=0.0021 tcp=[-0.25  -0.149  0.61 ]
+-> descend
+  move code=-5 joint_err=0.1521 tcp=[-0.237 -0.202  0.502]
+  retry0 code=-5 joint_err=0.0927 tcp=[-0.23  -0.205  0.498]
+  retry1 code=-5 joint_err=0.1238 tcp=[-0.223 -0.21   0.493]
+  retry2 code=-5 joint_err=0.1292 tcp=[-0.219 -0.209  0.492]
+  retry3 code=-5 joint_err=0.1270 tcp=[-0.215 -0.21   0.489]
+  correcting: off=0.0703 dz=0.0285
+  move code=-5 joint_err=0.1221 tcp=[-0.212 -0.21   0.487]
+  retry0 code=-5 joint_err=0.1228 tcp=[-0.209 -0.209  0.486]
+Traceback (most recent call last):
+  File "/workspace/pick_place.py", line 111, in <module>
+    main()
+  File "/workspace/pick_place.py", line 83, in main
+    tcp = go(r, fix, 2.0)
+          ^^^^^^^^^^^^^^^
+  File "/workspace/pick_place.py", line 48, in go
+    code, err = r.move(qs[-1], max(2.0, seconds / 2))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/rob.py", line 177, in move
+    rclpy.spin_until_future_complete(self.node, res, timeout_sec=600)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 274, in spin_until_future_complete
+    executor.spin_until_future_complete(future, timeout_sec)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 393, in spin_until_future_complete
+    self._spin_once_until_future_complete(future, timeout_left)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 935, in _spin_once_until_future_complete
+    self._spin_once_impl(timeout_sec, future.done)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 907, in _spin_once_impl
+    handler, entity, node = self.wait_for_ready_callbacks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 877, in wait_for_ready_callbacks
+    return next(self._cb_iter)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 785, in _wait_for_ready_callbacks
+    raise ExternalShutdownException()
+rclpy.executors.ExternalShutdownException

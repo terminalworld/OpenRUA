@@ -1,0 +1,11 @@
+traverse to above left plate
+  traj done code=0 max_joint_err=0.0025
+  tcp now [-0.0042 -0.3569  0.6996] (target [-0.004 -0.357  0.7  ])
+lower to 0.62
+  traj done code=0 max_joint_err=0.0024
+  tcp now [-0.0043 -0.357   0.6202] (target [-0.004 -0.357  0.62 ])
+wrench (0.002626670365184514, -0.00687441430738581, -5.265814012645164)
+lower to placement height
+  traj done code=0 max_joint_err=0.0025
+  tcp now [-0.0042 -0.357   0.5472] (target [-0.004 -0.357  0.547])
+wrench (0.001879673914081267, -0.008947183891421006, -5.263042485965652) fingers (0.002864621397759174, -0.002863777841912866)

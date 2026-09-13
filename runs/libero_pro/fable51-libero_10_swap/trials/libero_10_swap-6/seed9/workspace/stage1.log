@@ -1,0 +1,9 @@
+start tcp [-0.0589 -0.      0.6744] fingers (0.03986192920800625, -0.039861868849442365)
+FJT code=-5 max_joint_err=0.4390
+tcp now [-0.1098 -0.1987  0.6601] target [-0.11  -0.199  0.66 ]
+FJT code=0 max_joint_err=0.0218
+tcp now [-0.1106 -0.1991  0.5201] target [-0.11  -0.199  0.52 ]
+gripper -> 0.0: reached=True stalled=False fingers=(0.00491952206894425, -0.004856739356121571)
+FJT code=0 max_joint_err=0.0025
+tcp now [-0.1101 -0.1989  0.6793] target [-0.11  -0.199  0.68 ]
+after lift fingers (0.0028488148391531873, -0.002852341027161037)

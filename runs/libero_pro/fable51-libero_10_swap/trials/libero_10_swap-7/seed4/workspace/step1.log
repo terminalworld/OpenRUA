@@ -1,0 +1,5 @@
+18:45:56 TF world->planning frame: [-0.51  0.    0.42]
+18:45:58 gripper(0.04) reached=True stalled=False fingers=(0.03923672847747653, -0.039236668168014625)
+18:46:10 traj done code=0 max_joint_err=0.0023
+18:46:11 move_to [-0.185 -0.133  0.6  ] -> ok=True tcp_now=[-0.185 -0.133  0.6  ]
+18:46:11 STEP1 above soup ok= True

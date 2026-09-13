@@ -1,0 +1,13 @@
+  move: code=-5 max_joint_err=0.9125
+  tcp now [-0.195   0.016   0.6204] (target [-0.195  0.016  0.62 ])
+   wrench [ 0.01  0.   -5.1  -0.    0.    0.02]
+  move: code=-5 max_joint_err=0.5579
+  tcp now [-0.1949  0.016   0.5853] (target [-0.195  0.016  0.585])
+   z target 0.585: tcp z 0.5853 dz=+0.0003  Fz=-5.10 (dF=-0.06)
+  move: code=-5 max_joint_err=0.2166
+  tcp now [-0.1939  0.0157  0.5716] (target [-0.195  0.016  0.57 ])
+   z target 0.57: tcp z 0.5716 dz=+0.0016  Fz=-5.07 (dF=-0.02)
+  move: code=-5 max_joint_err=0.0799
+  tcp now [-0.1896  0.013   0.569 ] (target [-0.195  0.016  0.555])
+   z target 0.555: tcp z 0.5690 dz=+0.0140  Fz=37.04 (dF=+42.08)
+   BLOCKED

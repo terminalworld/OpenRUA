@@ -1,0 +1,29 @@
+base in world: [-0.51  0.    0.42]
+start tcp [-0.1712 -0.1196  0.6195]
+== open gripper
+  gripper reached=True stalled=False fingers=(0.03997629665475484, -0.039973296111543925)
+== hover above soup (tilted)
+  traj error_code=0 max_joint_err=0.0023 (attempt 1)
+  now at tcp [-0.2039 -0.1175  0.6202] (target [-0.204  -0.1175  0.62  ], off 0.2 mm)
+== re-measure can from silhouette edges
+  agentview: n=2005 xmid=-0.2076 (w 0.059) ymid=-0.1180 (w 0.062)
+  sideview: n=695 xmid=-0.2076 (w 0.062) ymid=-0.1169 (w 0.060)
+  frontview: n=142 xmid=-0.2040 (w 0.044) ymid=-0.1195 (w 0.064)
+using measured centre [-0.2076 -0.118 ]
+== hover again over refined centre
+  traj error_code=0 max_joint_err=0.0020 (attempt 1)
+  now at tcp [-0.2074 -0.1176  0.6202] (target [-0.2076 -0.118   0.62  ], off 0.5 mm)
+== descend to grasp height
+  traj error_code=0 max_joint_err=0.0415 (attempt 1)
+  traj error_code=-5 max_joint_err=0.0568 (attempt 2)
+  traj error_code=-5 max_joint_err=0.0594 (attempt 3)
+  now at tcp [-0.1718 -0.1228  0.4747] (target [-0.2076 -0.118   0.46  ], off 39.0 mm)
+grasping at tcp [-0.1718 -0.1228  0.4747]
+== close gripper
+  gripper reached=True stalled=False fingers=(0.00411255435584727, -0.004138165896212104)
+finger gap (sum) = 0.008250720252059373
+Traceback (most recent call last):
+  File "/workspace/pick_soup.py", line 71, in <module>
+    assert gap > 0.02, "closed on air"
+           ^^^^^^^^^^
+AssertionError: closed on air

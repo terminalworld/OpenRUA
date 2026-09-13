@@ -1,0 +1,43 @@
+19:37:43 base in world: [-0.51  0.    0.42]
+19:37:43 == pregrasp
+19:38:03 traj done code=0 max_joint_err=0.0065
+19:38:03 tcp now [-0.1247  0.0469  0.6523] (target [-0.127  0.046  0.65 ])
+19:38:04 finger axis angle from +x: 90.0 deg (want 90.0)
+19:38:04 == descend
+19:38:16 traj done code=-5 max_joint_err=0.1301
+19:38:16 retrying goal
+19:38:29 traj done code=0 max_joint_err=0.0464
+19:38:29 retrying goal
+19:38:41 traj done code=-5 max_joint_err=0.0501
+19:38:41 retrying goal
+19:38:54 traj done code=-5 max_joint_err=0.0510
+19:38:54 tcp now [-0.0857  0.0608  0.5046] (target [-0.127  0.046  0.478])
+19:38:54 !! descend inaccurate, retrying
+19:39:07 traj done code=-5 max_joint_err=0.0510
+19:39:07 retrying goal
+19:39:19 traj done code=-5 max_joint_err=0.0506
+19:39:19 retrying goal
+19:39:32 traj done code=0 max_joint_err=0.0496
+19:39:32 retrying goal
+19:39:44 traj done code=0 max_joint_err=0.0491
+19:39:45 tcp now [-0.088   0.0648  0.5025] (target [-0.127  0.046  0.478])
+19:39:45 == close
+19:39:47 gripper(0.0) reached=True stalled=False fingers=(0.023771641904895398, -0.02696344401065483)
+19:39:47 finger gap = 0.0507 m
+19:39:47 == lift
+19:40:00 traj done code=-5 max_joint_err=0.3901
+19:40:00 retrying goal
+19:40:14 traj done code=0 max_joint_err=0.0023
+19:40:14 tcp now [-0.1271  0.0454  0.7494] (target [-0.127  0.046  0.75 ])
+19:40:15 gap after lift = 0.0283
+19:40:15 == to basket
+19:40:36 traj done code=-5 max_joint_err=0.1128
+19:40:36 retrying goal
+19:40:55 traj done code=0 max_joint_err=0.0014
+19:40:56 tcp now [-0.0103  0.2498  0.7497] (target [-0.01  0.25  0.75])
+19:40:56 gap over basket = 0.0010
+19:40:56 == release
+19:40:58 gripper(0.04) reached=True stalled=False fingers=(0.03587678507892823, -0.03587664345184304)
+19:40:58 == retreat up
+19:41:12 traj done code=0 max_joint_err=0.0023
+19:41:12 tcp now [-0.01    0.2504  0.8496] (target [-0.01  0.25  0.85])

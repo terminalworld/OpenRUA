@@ -1,0 +1,17 @@
+start tcp [-0.0589 -0.      0.6744] fingers (0.020833, -0.020833)
+open gripper
+  gripper reached=True stalled=False fingers=0.0387,-0.0387
+pregrasp above
+  traj error_code=0 max_joint_err=0.0027
+  tcp [ 0.0116 -0.2574  0.6   ]
+descend
+  traj error_code=0 max_joint_err=0.0055
+  tcp [ 0.0115 -0.2582  0.4391] target (0.012, -0.258, 0.437)
+close gripper
+  gripper reached=True stalled=False fingers=0.0208,-0.0213
+  finger gap after close: 0.042
+lift
+  traj error_code=0 max_joint_err=0.0024
+  tcp [ 0.0126 -0.258   0.6199]
+  fingers after lift: (0.02087564938313882, -0.02134179671865834) gap 0.0422
+DONE

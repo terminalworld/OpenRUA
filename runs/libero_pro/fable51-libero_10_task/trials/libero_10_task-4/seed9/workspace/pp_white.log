@@ -1,0 +1,44 @@
+IK pre-grasp  [-0.153 -0.176  0.78 ] -> [0.113, -0.558, -0.503, -2.466, -0.279, 1.951, -1.788] (dmax 0.94)
+IK descend-1  [-0.153 -0.176  0.579] -> [0.229, -0.163, -0.723, -2.725, -0.207, 2.593, -1.881] (dmax 0.64)
+IK grasp      [-0.153 -0.176  0.524] -> [0.312, 0.066, -0.743, -2.732, 0.127, 2.778, -2.119] (dmax 0.33)
+IK lift       [-0.153 -0.176  0.78 ] -> [0.33, -0.638, -0.681, -2.456, -0.408, 1.906, -1.676] (dmax 0.87)
+IK mid        [-0.104  0.064  0.81 ] -> [0.533, -0.487, -0.325, -2.373, -0.159, 1.903, -1.275] (dmax 0.40)
+IK over-plate [-0.055  0.304  0.78 ] -> [0.716, -0.025, -0.126, -2.013, -0.003, 1.989, -0.979] (dmax 0.46)
+IK lower-1    [-0.055  0.304  0.595] -> [0.712, 0.215, -0.123, -2.223, 0.041, 2.436, -1.01] (dmax 0.45)
+IK place      [-0.055  0.304  0.545] -> [0.707, 0.317, -0.115, -2.234, 0.064, 2.548, -1.026] (dmax 0.11)
+IK retreat    [-0.055  0.304  0.78 ] -> [0.768, -0.025, -0.177, -2.013, -0.005, 1.989, -0.978] (dmax 0.56)
+== pre-grasp
+  fjt code=-5 max_joint_err=0.2144
+  fjt code=0 max_joint_err=0.0022
+   tcp [-0.1531 -0.1758  0.7804] target [-0.153 -0.176  0.78 ] ok=True
+== descend-1
+  fjt code=-5 max_joint_err=0.1193
+  fjt code=0 max_joint_err=0.0023
+   tcp [-0.1531 -0.1759  0.5792] target [-0.153 -0.176  0.579] ok=True
+== grasp
+  fjt code=0 max_joint_err=0.0047
+   tcp [-0.1504 -0.1757  0.5262] target [-0.153 -0.176  0.524] ok=True
+  gripper close: reached=True stalled=False finger=0.0061
+   finger after close: 0.0061  wrench [ 0.04  0.09 -5.14] (before [-0.05 -0.04 -5.13])
+== lift
+  fjt code=-5 max_joint_err=0.2658
+  fjt code=0 max_joint_err=0.0023
+   tcp [-0.1529 -0.1759  0.7794] target [-0.153 -0.176  0.78 ] ok=True
+   holding: finger=0.0028 wrench [ 0.   -0.02 -5.24]
+== mid
+  fjt code=0 max_joint_err=0.0024
+   tcp [-0.104   0.0634  0.8094] target [-0.104  0.064  0.81 ] ok=True
+== over-plate
+  fjt code=0 max_joint_err=0.0023
+   tcp [-0.0553  0.303   0.7795] target [-0.055  0.304  0.78 ] ok=True
+== lower-1
+  fjt code=0 max_joint_err=0.0036
+   tcp [-0.0552  0.3035  0.595 ] target [-0.055  0.304  0.595] ok=True
+== place
+  fjt code=0 max_joint_err=0.0024
+   tcp [-0.055   0.3037  0.5451] target [-0.055  0.304  0.545] ok=True
+  gripper open: reached=True stalled=False finger=0.0359
+== retreat
+  fjt code=0 max_joint_err=0.0059
+   tcp [-0.0544  0.3049  0.7799] target [-0.055  0.304  0.78 ] ok=True
+DONE

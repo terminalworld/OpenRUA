@@ -1,0 +1,27 @@
+== soup3: start q=[-0.476 -0.662  0.699 -2.618  0.461  2.025 -0.107] fingers=(0.0400006700310757, -0.0399179558310032)
+   basket rim centroid [-0.0487  0.3814] floor centroid [-0.0527  0.382 ] (n=530)
+-- open gripper
+  gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0399
+-- move above guess
+  traj[0] code=-5 max_joint_err=0.3570
+  traj[1] code=0 max_joint_err=0.0025
+  hand now [0.0102 0.2213 0.7798] target [0.0104 0.2215 0.78  ]
+-- refine with eye-in-hand
+  locate robot0_eye_in_hand: n=4990 center=(0.0139,0.2232) ztop=0.5165 extent=(0.065,0.069)
+   correction 3.9 mm
+-- descend to grasp: xy=(0.0139,0.2232) hand z=0.5799
+  traj[0] code=0 max_joint_err=0.0026
+  hand now [0.014  0.2232 0.6604] target [0.0139 0.2232 0.6599]
+  traj[0] code=-5 max_joint_err=0.1782
+  traj[1] code=-5 max_joint_err=0.1562
+  traj[2] code=-5 max_joint_err=0.1289
+  traj[3] code=-5 max_joint_err=0.1147
+  hand now [0.0607 0.2008 0.65  ] target [0.0139 0.2232 0.5799]
+-- close gripper
+  gripper -> 0.0: reached=True stalled=False fingers=0.0040,-0.0043
+   finger gap after close = 8.3 mm
+!! grasp FAILED (gap not can-sized)
+  gripper -> 0.04: reached=True stalled=False fingers=0.0357,-0.0360
+  traj[0] code=-5 max_joint_err=0.1279
+  traj[1] code=0 max_joint_err=0.0022
+  hand now [0.0143 0.2231 0.8302] target [0.0139 0.2232 0.83  ]

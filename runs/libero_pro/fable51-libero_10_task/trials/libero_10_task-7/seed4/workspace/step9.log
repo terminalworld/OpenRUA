@@ -1,0 +1,10 @@
+above box
+  joint delta 1.199 rad -> 12.0s
+  move_q done code=0 (final max joint error 0.0024 rad) max_joint_err=0.0024
+  tcp now [-0.1529  0.0463  0.6001] target [-0.153  0.046  0.6  ]
+gap: 0.08
+descend
+  joint delta 0.607 rad -> 6.1s
+  move_q done code=0 (final max joint error 0.0025 rad) max_joint_err=0.0025
+  tcp now [-0.1535  0.0458  0.44  ] target [-0.153  0.046  0.44 ]
+DONE

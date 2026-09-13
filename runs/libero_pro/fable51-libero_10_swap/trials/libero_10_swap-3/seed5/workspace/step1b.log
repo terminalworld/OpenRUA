@@ -1,0 +1,26 @@
+  q=[-0.135, 0.207, 0.007, -2.192, -0.001, 2.4, -2.481]
+  hand=[-0.1102, -0.071, 1.2033] tcp=[-0.1101, -0.071, 1.0999] finger=0.0400
+  hand Z=[0.001, 0.001, -1.0] Y(finger axis)=[0.003, 1.0, 0.001]
+  cartesian fraction=1.000 points=13
+  move: max joint path 0.289 rad over 2.4s
+  move done code=0 max_joint_err=0.0017
+  q=[-0.134, 0.496, 0.006, -2.189, -0.004, 2.683, -2.481]
+  hand=[-0.1103, -0.0707, 1.0684] tcp=[-0.1105, -0.0706, 0.965] finger=0.0400
+  hand Z=[-0.002, 0.001, -1.0] Y(finger axis)=[0.001, 1.0, 0.001]
+wrench [-0.01  0.01 -5.1  -0.   -0.    0.  ]
+  cartesian fraction=1.000 points=6
+  move: max joint path 0.135 rad over 1.1s
+  move done code=-5 max_joint_err=0.0506
+  -> re-sending final target to converge
+  move: max joint path 0.051 rad over 1.0s
+  move done code=-5 max_joint_err=0.0510
+  q=[-0.031, 0.495, -0.035, -2.198, -0.033, 2.697, -2.363]
+  hand=[-0.1093, -0.0362, 1.0671] tcp=[-0.1091, -0.0394, 0.9638] finger=0.0400
+  hand Z=[0.002, -0.031, -1.0] Y(finger axis)=[0.026, 0.999, -0.031]
+wrench [-16.91   2.62  -9.1   -0.26  -1.29   0.24]
+  cartesian fraction=1.000 points=13
+  move: max joint path 0.299 rad over 2.5s
+  move done code=0 max_joint_err=0.0023
+  q=[-0.006, 0.197, 0.003, -2.208, -0.002, 2.405, -2.359]
+  hand=[-0.1101, -0.0015, 1.203] tcp=[-0.11, -0.0016, 1.0996] finger=0.0400
+  hand Z=[0.001, -0.001, -1.0] Y(finger axis)=[-0.002, 1.0, -0.001]

@@ -1,0 +1,25 @@
+traverse at 0.80
+  traj done code=0 max_joint_err=0.0303
+  retrying
+  traj done code=0 max_joint_err=0.0021
+tcp [-0.0164  0.2656  0.7993]
+lower to 0.60
+  traj done code=0 max_joint_err=0.0024
+wrench [ 0.    -0.012 -5.406]
+  traj done code=0 max_joint_err=0.0024
+z_cmd=0.590 tcp_z=0.5899 dFz=+0.001 fingers=[ 0.0052 -0.0052]
+  traj done code=0 max_joint_err=0.0024
+z_cmd=0.580 tcp_z=0.5799 dFz=+0.001 fingers=[ 0.0051 -0.0051]
+  traj done code=0 max_joint_err=0.0024
+z_cmd=0.570 tcp_z=0.5699 dFz=+0.001 fingers=[ 0.0051 -0.0051]
+  traj done code=0 max_joint_err=0.0024
+z_cmd=0.560 tcp_z=0.5599 dFz=+0.001 fingers=[ 0.0051 -0.0051]
+  traj done code=0 max_joint_err=0.0024
+z_cmd=0.550 tcp_z=0.5499 dFz=+0.001 fingers=[ 0.0051 -0.0051]
+  traj done code=0 max_joint_err=0.0026
+z_cmd=0.540 tcp_z=0.5401 dFz=+0.339 fingers=[ 0.0052 -0.0051]
+  traj done code=0 max_joint_err=0.0026
+z_cmd=0.530 tcp_z=0.5298 dFz=+0.282 fingers=[ 0.0053 -0.0049]
+  traj done code=0 max_joint_err=0.0103
+z_cmd=0.520 tcp_z=0.5271 dFz=+6.643 fingers=[ 0.0055 -0.0058]
+contact detected

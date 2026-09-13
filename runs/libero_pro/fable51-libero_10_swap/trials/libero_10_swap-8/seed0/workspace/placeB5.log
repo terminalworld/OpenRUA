@@ -1,0 +1,36 @@
+   grasp hand z: [ 0.706 -0.046 -0.707] hand y (fingers): [-0.706  0.046 -0.707]
+   lowest finger corner: [0.202 0.023 0.932]
+  gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0400
+[grasp: above] 1 waypoints, 4.0s
+   q=[ 0.253  0.94  -0.196 -1.48   0.69   3.187  1.92 ] tcp=[0.159 0.017 1.046] minlinkz=1.119
+  traj done code=-5 max_joint_err=0.4799
+   retrying final waypoint (code=-5, err=0.4799)
+  traj done code=-5 max_joint_err=0.0586
+   retrying final waypoint (code=-5, err=0.0586)
+  traj done code=0 max_joint_err=0.0021
+   TCP now [0.1591 0.0173 1.0455] (target [0.1594 0.0171 1.0458]) err=0.0004
+[grasp: descend] 1 waypoints, 3.0s
+   q=[ 0.218  1.396 -0.348 -0.848  0.572  2.972  2.186] tcp=[0.23  0.012 0.975] minlinkz=1.048
+  traj done code=0 max_joint_err=0.0130
+   TCP now [0.2321 0.0011 0.9836] (target [0.2299 0.0125 0.9751]) err=0.0144
+   descend shortfall along z: 3.6 mm
+  gripper -> 0.0: reached=True stalled=False fingers=0.0054,-0.0045
+   grasp width 0.99 cm
+!! unexpected grasp width, releasing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0367,-0.0351
+   fingers not fully open yet, re-issuing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0399,-0.0383
+   fingers not fully open yet, re-issuing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0386
+   fingers not fully open yet, re-issuing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0388
+   fingers not fully open yet, re-issuing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0390
+   fingers not fully open yet, re-issuing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0390
+[abort: retreat] 1 waypoints, 3.0s
+   q=[ 0.225  0.926 -0.183 -1.501  0.59   3.214  2.007] tcp=[0.16  0.007 1.053] minlinkz=1.125
+  traj done code=-5 max_joint_err=0.0529
+   retrying final waypoint (code=-5, err=0.0529)
+  traj done code=0 max_joint_err=0.0024
+   TCP now [0.1608 0.007  1.0531] (target [0.1604 0.0072 1.053 ]) err=0.0004

@@ -1,0 +1,17 @@
+start tcp [-0.2075  0.1894  0.9321]
+  gripper -> 0.04: reached=True stalled=False finger=0.0360
+  move_q done code=0 max_joint_err=0.0036
+  tcp now [-0.2068  0.1894  1.05  ] target [-0.2075  0.1894  1.05  ]
+-> above handle
+  move_q done code=-5 max_joint_err=1.2979
+  tcp now [-0.0761 -0.0596  1.05  ] target [-0.076 -0.06   1.05 ]
+-> descend
+  move_q done code=-5 max_joint_err=0.6534
+  tcp now [-0.0766 -0.0604  0.93  ] target [-0.076 -0.06   0.93 ]
+  gripper -> 0.0: reached=True stalled=False finger=0.0228
+finger after close 0.022772351226986863
+-> lift
+  move_q done code=-5 max_joint_err=0.1930
+  tcp now [-0.0761 -0.0604  1.1986] target [-0.076 -0.06   1.2  ]
+finger after lift 0.018798290455900552
+DONE

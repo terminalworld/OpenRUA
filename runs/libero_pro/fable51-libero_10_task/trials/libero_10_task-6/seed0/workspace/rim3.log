@@ -1,0 +1,19 @@
+finger axis now (array([ 0.63 , -0.776,  0.022]), array([ 0.038,  0.002, -0.999]))
+  move: code=0 max_joint_err=0.0026
+  tcp now [-0.1949  0.0556  0.6198] (target [-0.195  0.056  0.62 ])
+   finger axis, approach: (array([ 0.003, -1.   ,  0.001]), array([ 0.001, -0.001, -1.   ]))  fingers [ 0.04 -0.04]
+  move: code=0 max_joint_err=0.0023
+  tcp now [-0.1949  0.0559  0.5903] (target [-0.195  0.056  0.59 ])
+   z target 0.59: tcp [-0.1949  0.0559  0.5903] dz=+0.0003  Fz=-5.10 (dF=-0.00) axis [ 0.003 -1.     0.   ]
+  move: code=0 max_joint_err=0.0024
+  tcp now [-0.1949  0.0561  0.5753] (target [-0.195  0.056  0.575])
+   z target 0.575: tcp [-0.1949  0.0561  0.5753] dz=+0.0003  Fz=-5.10 (dF=-0.00) axis [ 0.001 -1.    -0.001]
+  move: code=0 max_joint_err=0.0025
+  tcp now [-0.1949  0.0561  0.5653] (target [-0.195  0.056  0.565])
+   z target 0.565: tcp [-0.1949  0.0561  0.5653] dz=+0.0003  Fz=-5.10 (dF=-0.00) axis [ 0.001 -1.    -0.001]
+  move: code=0 max_joint_err=0.0025
+  tcp now [-0.1949  0.0561  0.5553] (target [-0.195  0.056  0.555])
+   z target 0.555: tcp [-0.1949  0.0561  0.5553] dz=+0.0003  Fz=-5.10 (dF=-0.00) axis [ 0.001 -1.    -0.001]
+  move: code=0 max_joint_err=0.0026
+  tcp now [-0.1949  0.0561  0.5452] (target [-0.195  0.056  0.545])
+   z target 0.545: tcp [-0.1949  0.0561  0.5452] dz=+0.0002  Fz=-5.10 (dF=-0.00) axis [ 0.001 -1.    -0.001]

@@ -1,0 +1,5 @@
+wrench before [ 6.000e-03 -3.000e-03 -5.102e+00  0.000e+00  1.000e-03 -0.000e+00]
+move: error_code=0 max_joint_err=0.0024
+  tcp now world=[-0.0896 -0.1544  0.5353] target=[-0.0895 -0.154   0.535 ]
+wrench at 0.535 [-2.000e-03 -6.000e-03 -5.102e+00  1.000e-03 -0.000e+00 -0.000e+00]
+/workspace/robot0_eye_in_hand.png

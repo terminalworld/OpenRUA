@@ -1,0 +1,22 @@
+   hand z: [ 0.592 -0.295 -0.75 ] fingers: [0.799 0.333 0.5  ] lowest finger corner: [0.184 0.038 0.936]
+  gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0400
+[knob: above] 1 waypoints, 4.0s
+   q=[ 0.209  0.981 -0.162 -1.284 -0.783  2.766 -0.213] tcp=[0.172 0.073 1.033] minlinkz=1.111
+  traj done code=-5 max_joint_err=0.3848
+   retrying final waypoint (code=-5, err=0.3848)
+  traj done code=0 max_joint_err=0.0097
+   TCP now [0.1715 0.0729 1.0327] (target [0.1721 0.0733 1.033 ]) err=0.0008
+[knob: descend] 1 waypoints, 3.0s
+   q=[ 0.115  1.334 -0.086 -0.799 -0.674  2.666 -0.392] tcp=[0.219 0.05  0.973] minlinkz=1.051
+  traj done code=0 max_joint_err=0.0027
+   TCP now [0.2195 0.0498 0.973 ] (target [0.2195 0.0497 0.973 ]) err=0.0001
+  gripper -> 0.0: reached=True stalled=False fingers=0.0036,-0.0047
+   pinch width 0.82 cm
+[knob: lift] 2 waypoints, 6.0s
+   q=[ 0.109  1.093 -0.051 -0.986 -0.669  2.617 -0.442] tcp=[0.22  0.05  1.073] minlinkz=1.151
+   q=[ 9.200e-02  9.460e-01  2.000e-03 -1.004e+00 -6.230e-01  2.498e+00
+ -5.440e-01] tcp=[0.22  0.05  1.173] minlinkz=1.251
+  traj done code=0 max_joint_err=0.0025
+   TCP now [0.2199 0.0497 1.1732] (target [0.2195 0.0497 1.173 ]) err=0.0004
+PICK OK
+fingers: (-3.073639348328539e-06, -0.0010027458163184074)

@@ -1,0 +1,17 @@
+start [ 2.331  1.763 -0.864 -2.722 -1.634  2.633 -0.954]
+== s1
+  move done code=-5 max_joint_err=0.4219
+  move done code=0 max_joint_err=0.0020
+  settled err 0.002 tcp [-0.397  0.236  1.207]
+== s2
+  move done code=-5 max_joint_err=1.2224
+  move done code=-5 max_joint_err=0.5758
+  move done code=-5 max_joint_err=0.3660
+  move done code=-5 max_joint_err=0.3646
+  settled err 0.3646 tcp [-0.625 -0.082  1.138]
+== home
+  move done code=-5 max_joint_err=0.7459
+  move done code=-5 max_joint_err=0.1777
+  move done code=0 max_joint_err=0.0021
+  settled err 0.0021 tcp [-0.202 -0.     1.146]
+DONE

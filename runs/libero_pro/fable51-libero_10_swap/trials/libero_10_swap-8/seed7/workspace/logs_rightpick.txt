@@ -1,0 +1,19 @@
+fingers (0.0399991289491279, -0.040000039058246235) q [ 0.000e+00 -1.610e-01  0.000e+00 -2.169e+00 -1.000e-03  2.227e+00
+  7.880e-01]
+touchdown G0 [0.2407 0.096  1.0993]
+  gripper(0.04): reached=True stalled=False fingers=(0.03999907234626372, -0.040000039828654466)
+-> tcp [0.235 0.096 1.14 ] tilt 1.00 q [ 0.285  1.061 -0.261 -1.138  0.204  3.166  0.857]
+  move: code=-5 max_joint_err=0.4403
+  retry move
+  move: code=0 max_joint_err=0.0016
+  fk tcp now [0.2348 0.0961 1.1397] (err 0.3 mm)
+-> tcp [0.235 0.096 1.055] tilt 1.00 q [ 0.269  1.251 -0.26  -1.015  0.213  3.232  0.88 ]
+  move: code=0 max_joint_err=0.0022
+  fk tcp now [0.2351 0.0964 1.056 ] (err 1.1 mm)
+  gripper(0.0): reached=True stalled=False fingers=(0.007006201531251957, -0.007149605444061778)
+  finger gap after close: 14.2 mm
+-> tcp [0.235 0.096 1.2  ] tilt 1.00 q [ 0.298  0.96  -0.278 -1.163  0.2    3.09   0.849]
+  move: code=0 max_joint_err=0.0020
+  fk tcp now [0.2348 0.0961 1.198 ] (err 2.0 mm)
+fingers after lift (0.007030332047068599, -0.007031153968383488)
+done

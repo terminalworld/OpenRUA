@@ -1,0 +1,17 @@
+start tcp [-0.059 -0.     0.674] gap 0.0417
+open gripper
+  gripper(0.04) reached=True stalled=False gap=0.0775
+above can
+  move done code=0 max_joint_err=0.0023
+  [above] tcp now [-0.0848 -0.1394  0.6204] target [-0.085 -0.14   0.62 ] d=0.0007
+descend
+  move done code=0 max_joint_err=0.0221
+  [grasp] tcp now [-0.0829 -0.1399  0.4739] target [-0.085 -0.14   0.466] d=0.0082
+close
+  gripper(0.0) reached=True stalled=False gap=0.0629
+gap after close 0.0629
+lift
+  move done code=0 max_joint_err=0.0185
+  [lift] tcp now [-0.0821 -0.1405  0.6595] target [-0.085 -0.14   0.66 ] d=0.0030
+gap after lift 0.0629
+PHASE1 DONE

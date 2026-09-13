@@ -1,0 +1,11 @@
+gap 0.0627593517569687
+== transit over basket at z=0.72
+  move_line: error_code=0 max_joint_err=0.0026 tcp=[-0.01   0.253  0.719] (target [-0.01   0.253  0.72 ], off 0.7mm)
+== lower into basket
+  move_line: error_code=0 max_joint_err=0.0024 tcp=[-0.01   0.253  0.6  ] (target [-0.01   0.253  0.6  ], off 0.4mm)
+  gap 0.06271796086045642 wrench [ 4.57325288e-03 -1.04227424e-02 -5.35541445e+00]
+== release
+  gripper(0.04): reached=True stalled=False gap=0.0744
+== retreat up
+  move_line: error_code=0 max_joint_err=0.0023 tcp=[-0.01   0.253  0.78 ] (target [-0.01   0.253  0.78 ], off 0.5mm)
+gap 0.07996595838842875

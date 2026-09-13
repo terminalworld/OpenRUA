@@ -1,0 +1,12 @@
+from rob import *
+r = Robot()
+Q45 = (0.9238795, 0.3826834, 0.0, 0.0)
+print("lower over basket")
+r.move_tcp([0.024, 0.284, 0.70], Q45)
+print("release"); r.gripper(0.04)
+print("gap:", round(r.finger_gap(),4))
+print("retreat up")
+r.move_tcp([0.024, 0.284, 0.85], Q45)
+r.snap("agentview", "/workspace/agent_k7.png")
+r.snap("frontview", "/workspace/front_k7.png")
+print("DONE")

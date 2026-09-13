@@ -1,0 +1,10 @@
+from ctl import *
+r = Robot()
+B = np.array([-0.003, 0.26])
+print('gap', r.finger_gap())
+print('to basket high'); q = r.move_world((B[0], B[1], 0.76), Q_DOWN, 4.0)
+if q is None: sys.exit(1)
+print('gap', r.finger_gap())
+print('lower'); r.move_world((B[0], B[1], 0.72), Q_DOWN, 2.0)
+print('release'); r.gripper(0.04)
+print('retreat'); r.move_world((B[0], B[1], 0.85), Q_DOWN, 3.0)

@@ -1,0 +1,41 @@
+   hand z: [ 0.592 -0.295 -0.75 ] fingers: [0.799 0.333 0.5  ] lowest finger corner: [0.189 0.029 0.934]
+  gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0400
+[knob: above] 1 waypoints, 4.0s
+   q=[ 0.193  1.001 -0.158 -1.256 -0.766  2.767 -0.24 ] tcp=[0.178 0.065 1.031] minlinkz=1.109
+  traj done code=-5 max_joint_err=0.4126
+   retrying final waypoint (code=-5, err=0.4126)
+  traj done code=0 max_joint_err=0.0169
+   retrying final waypoint (code=0, err=0.0169)
+  traj done code=0 max_joint_err=0.0020
+   TCP now [0.1773 0.0644 1.0308] (target [0.1776 0.0646 1.031 ]) err=0.0004
+[knob: descend] 1 waypoints, 3.0s
+   q=[ 0.1    1.384 -0.077 -0.717 -0.643  2.643 -0.441] tcp=[0.225 0.041 0.971] minlinkz=1.049
+  traj done code=0 max_joint_err=0.0025
+   TCP now [0.2245 0.0409 0.9705] (target [0.225 0.041 0.971]) err=0.0007
+  gripper -> 0.0: reached=True stalled=False fingers=0.0075,-0.0078
+   pinch width 1.53 cm
+[knob: lift] 2 waypoints, 6.0s
+   q=[ 0.099  1.384 -0.076 -0.717 -0.644  2.643 -0.44 ] tcp=[0.225 0.041 0.971] minlinkz=1.049
+   q=[ 0.099  1.384 -0.076 -0.717 -0.644  2.643 -0.44 ] tcp=[0.225 0.041 0.971] minlinkz=1.049
+  traj done code=0 max_joint_err=0.0019
+   TCP now [0.2261 0.0418 0.9739] (target [0.225 0.041 0.971]) err=0.0032
+[knob: drag] 4 waypoints, 8.0s
+   q=[ 0.129  1.312 -0.105 -0.84  -0.675  2.686 -0.369] tcp=[0.217 0.054 0.974] minlinkz=1.051
+   q=[ 0.16   1.261 -0.131 -0.931 -0.699  2.714 -0.311] tcp=[0.208 0.065 0.974] minlinkz=1.051
+   q=[ 0.191  1.22  -0.154 -1.006 -0.72   2.735 -0.259] tcp=[0.198 0.077 0.974] minlinkz=1.051
+   q=[ 0.222  1.184 -0.175 -1.07  -0.739  2.751 -0.211] tcp=[0.189 0.089 0.974] minlinkz=1.051
+  traj done code=0 max_joint_err=0.0047
+   TCP now [0.191  0.0855 0.9775] (target [0.189  0.089  0.9739]) err=0.0054
+   pinch width after drag 0.54 cm
+  gripper -> 0.04: reached=True stalled=False fingers=0.0353,-0.0364
+   fingers not fully open yet, re-issuing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0385,-0.0396
+   fingers not fully open yet, re-issuing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0389,-0.0400
+   fingers not fully open yet, re-issuing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0391,-0.0400
+[knob: rise] 1 waypoints, 3.0s
+   q=[ 0.204  0.937 -0.114 -1.209 -0.703  2.656 -0.327] tcp=[0.189 0.089 1.094] minlinkz=1.171
+  traj done code=0 max_joint_err=0.0026
+   TCP now [0.1894 0.0891 1.0941] (target [0.189  0.089  1.0939]) err=0.0004
+fingers: (0.03944186031268303, -0.040021088500330454)

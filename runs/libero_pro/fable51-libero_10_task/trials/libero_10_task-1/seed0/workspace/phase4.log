@@ -1,0 +1,17 @@
+start tcp [0.03  0.061 0.6  ] gap 0.0389
+raise
+  move done code=0 max_joint_err=0.0027
+  [raise] tcp now [0.0301 0.0614 0.7394] target [0.03  0.061 0.74 ] d=0.0007
+above basket
+  move done code=0 max_joint_err=0.0035
+  [above basket] tcp now [-0.0249  0.2897  0.7398] target [-0.025  0.29   0.74 ] d=0.0004
+lower
+  move done code=0 max_joint_err=0.0024
+  [lower] tcp now [-0.0253  0.2902  0.6654] target [-0.025  0.29   0.665] d=0.0005
+gap before release 0.0389
+open
+  gripper(0.04) reached=True stalled=False gap=0.0724
+retreat
+  move done code=0 max_joint_err=0.0037
+  [retreat] tcp now [-0.0243  0.29    0.8196] target [-0.025  0.29   0.82 ] d=0.0008
+PHASE4 DONE

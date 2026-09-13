@@ -1,0 +1,14 @@
+18:41:40 robot ready
+18:41:41 fingers (0.03144203948922745, -0.030739555089548082) gap 0.062181594578775534
+18:42:01 traj code=-5 max_joint_err=0.0713
+18:42:01 retrying trajectory
+18:42:21 traj code=0 max_joint_err=0.0022
+18:42:21 tcp now [0.0201 0.2896 0.8393] target [0.02 0.29 0.84] err=0.0008
+18:42:22 fingers over basket (0.031567605406338, -0.030615717133545904) gap 0.0621833225398839
+18:42:39 line traj code=0 max_joint_err=0.0024 tcp now [0.0198 0.2896 0.67  ] target [0.02 0.29 0.67] err=0.0005
+18:42:41 gripper -> 0.04: reached=True stalled=False fingers=(0.0371902132042413, -0.03710650109835333)
+18:42:42 fingers after open (0.0371902132042413, -0.03710650109835333)
+18:42:58 line traj code=0 max_joint_err=0.0022 tcp now [0.0201 0.2906 0.8795] target [0.02 0.29 0.88] err=0.0007
+18:43:18 traj code=0 max_joint_err=0.0142
+18:43:18 tcp now [-0.1488  0.0014  0.847 ] target [-0.15  0.    0.85] err=0.0036
+18:43:18 PHASE4 DONE

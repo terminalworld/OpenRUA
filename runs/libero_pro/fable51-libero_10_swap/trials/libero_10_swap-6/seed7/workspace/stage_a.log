@@ -1,0 +1,32 @@
+== open gripper
+  gripper(0.04): reached=True stalled=False gap=0.0800
+== ready pose
+  move_joints round 0: dur=9.2s code=0 max err 0.0022
+  move_joints: converged (max err 0.0022)
+== above pudding
+  move_joints round 0: dur=6.4s code=0 max err 0.0025
+  move_joints: converged (max err 0.0025)
+  move_tcp: target [-0.187  0.013  0.6  ] -> tcp at [-0.187  0.013  0.6  ] (err 0.0004)
+== descend
+  line: target [-0.187  0.013  0.438] -> tcp [-0.187  0.013  0.439] (err 0.0011)
+   tcp now [-0.187   0.0128  0.4391]
+== close
+  gripper(0.0): reached=True stalled=False gap=0.0459
+   finger gap after close: 0.0459 (>0 means something is held)
+== lift
+  line: target [-0.187  0.013  0.6  ] -> tcp [-0.187  0.013  0.6  ] (err 0.0005)
+   gap while lifted: 0.0458
+== over destination
+  move_joints round 0: dur=8.7s code=0 max err 0.0023
+  move_joints: converged (max err 0.0023)
+  move_tcp: target [0.14 0.17 0.6 ] -> tcp at [0.14  0.169 0.6  ] (err 0.0007)
+== lower
+  line: target [0.14  0.17  0.447] -> tcp [0.139 0.17  0.447] (err 0.0007)
+== release
+  gripper(0.04): reached=True stalled=False gap=0.0728
+== retreat up
+  line: target [0.14 0.17 0.62] -> tcp [0.14  0.17  0.619] (err 0.0006)
+== back to ready
+  move_joints round 0: dur=9.4s code=0 max err 0.0022
+  move_joints: converged (max err 0.0022)
+STAGE A DONE

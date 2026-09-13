@@ -1,0 +1,13 @@
+  move: code=-5 max_joint_err=1.7398
+  tcp now [-0.1934  0.0489  0.6214] (target [-0.195  0.056  0.62 ])
+   finger axis [0.99  0.141 0.002]
+  move: code=-5 max_joint_err=1.3791
+  tcp now [-0.1949  0.056   0.5903] (target [-0.195  0.056  0.59 ])
+   z target 0.59: tcp [-0.1949  0.056   0.5903] dz=+0.0003  Fz=-5.10 (dF=-0.00)
+  move: code=-5 max_joint_err=1.0247
+  tcp now [-0.1949  0.0562  0.5753] (target [-0.195  0.056  0.575])
+   z target 0.575: tcp [-0.1949  0.0562  0.5753] dz=+0.0003  Fz=-5.10 (dF=-0.00)
+  move: code=-5 max_joint_err=0.6764
+  tcp now [-0.1813  0.0599  0.5707] (target [-0.195  0.056  0.56 ])
+   z target 0.56: tcp [-0.1813  0.0599  0.5707] dz=+0.0107  Fz=2.19 (dF=+7.29)
+   BLOCKED

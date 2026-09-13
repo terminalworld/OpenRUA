@@ -1,0 +1,2 @@
+[INFO] [1789272906.128233849] [tf2_echo]: Waiting for transform world ->  galleryview_optical_frame: Invalid frame ID "world" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789272920.929889961] [rclcpp]: signal_handler(SIGINT/SIGTERM)

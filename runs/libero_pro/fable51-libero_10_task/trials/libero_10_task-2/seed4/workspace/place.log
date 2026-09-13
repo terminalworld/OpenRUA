@@ -1,0 +1,38 @@
+q [ 0.437  0.399 -0.599 -2.213  0.384  2.513 -1.227] fingers [ 0.0131 -0.0131]
+place: hand xy target [-0.0367  0.3514] offset [-0.0027  0.1514]
+move_q: error_code=0 max_joint_err=0.0027
+  line reached [-0.1196 -0.0955  1.2187] target [-0.1191 -0.0958  1.22  ]
+move_q: error_code=0 max_joint_err=0.0279
+  line reached [-0.0407  0.3453  1.2078] target [-0.0367  0.3514  1.22  ]
+move_q: error_code=0 max_joint_err=0.0041
+  line reached [-0.0371  0.3543  1.0798] target [-0.0367  0.3514  1.0777]
+wrench above burner [-0.008 -0.017 -5.48 ]
+move_q: error_code=0 max_joint_err=0.0029
+  line reached [-0.0371  0.353   1.0735] target [-0.0367  0.3514  1.0727]
+  step 0: fingertip z 0.969 dF [ 0.009 -0.458  0.36 ]
+move_q: error_code=0 max_joint_err=0.0027
+  line reached [-0.037   0.3525  1.0686] target [-0.0367  0.3514  1.0677]
+  step 1: fingertip z 0.964 dF [ 0.353 -0.254  0.504]
+move_q: error_code=0 max_joint_err=0.0035
+  line reached [-0.0368  0.3534  1.0651] target [-0.0367  0.3514  1.0627]
+  step 2: fingertip z 0.959 dF [-0.015 -0.93   1.257]
+  contact
+gripper(0.04): reached=True stalled=False fingers=0.0360,-0.0360
+move_q: error_code=0 max_joint_err=0.0024
+  line reached [-0.0368  0.3515  1.1822] target [-0.0367  0.3514  1.1827]
+move_q: error_code=-5 max_joint_err=0.5615
+  retrying (controller lag)
+move_q: error_code=0 max_joint_err=0.0023
+Traceback (most recent call last):
+  File "/workspace/pan.py", line 157, in <module>
+    scan()
+  File "/workspace/pan.py", line 46, in scan
+    g = pan_geometry(pw)
+        ^^^^^^^^^^^^^^^^
+  File "/workspace/pan.py", line 28, in pan_geometry
+    cx = (rim[:, 0].min() + rim[:, 0].max()) / 2
+          ^^^^^^^^^^^^^^^
+  File "/usr/lib/python3/dist-packages/numpy/core/_methods.py", line 45, in _amin
+    return umr_minimum(a, axis, None, out, keepdims, initial, where)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: zero-size array to reduction operation minimum which has no identity

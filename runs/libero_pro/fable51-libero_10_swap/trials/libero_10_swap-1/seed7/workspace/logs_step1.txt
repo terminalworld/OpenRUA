@@ -1,0 +1,17 @@
+
+== state
+arm: [0.0, -0.161, 0.0, -2.4446, 0.0, 2.2268, 0.7854]
+hand world: [-0.053  -0.      0.7776] TCP world: [-0.0589 -0.      0.6744] hand z-axis: [-0.057 -0.    -0.998]
+finger gap: 0.0417
+wrench force: 0.0 -1.38 -3.33
+
+== grip open
+gripper -> reached=True stalled=False gap=0.0775
+
+== move -0.096 0.063 0.62 0 3
+traj error_code=0 max_joint_err=0.0022
+arm: [0.0675, -0.1748, 0.0848, -2.6396, 0.0224, 2.464, 0.9167]
+hand world: [-0.0957  0.0626  0.7235] TCP world: [-0.0958  0.0625  0.6201] hand z-axis: [-0.001 -0.001 -1.   ]
+finger gap: 0.0799
+wrench force: -0.0 -0.01 -5.1
+move -> TCP off-target by 0.5 mm

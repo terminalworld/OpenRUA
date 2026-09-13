@@ -1,0 +1,26 @@
+q [ 0.000e+00 -5.000e-01 -0.000e+00 -2.001e+00  1.000e-03  1.602e+00
+  7.830e-01] fingers [ 0.0005 -0.0005]
+pan body centre=(-0.116,-0.248) r=0.101 rim z max=0.942
+  handle @y=-0.096: x[-0.133,-0.104] xc=-0.119 ztop=0.948
+  handle @y=-0.086: x[-0.133,-0.104] xc=-0.119 ztop=0.951
+  handle @y=-0.066: x[-0.133,-0.104] xc=-0.119 ztop=0.953
+  handle @y=-0.046: x[-0.133,-0.105] xc=-0.119 ztop=0.954
+  handle @y=-0.026: x[-0.133,-0.108] xc=-0.121 ztop=0.953
+moka top pts: x[-0.006,0.065] y[-0.093,0.041] zmax=1.053
+gripper(0.04): reached=True stalled=False fingers=0.0359,-0.0359
+grasp at (-0.119,-0.096) fingertip z 0.934
+hover sol [ 0.442  0.368 -0.61  -2.215  0.347  2.491 -1.202] diff from HOME [ 0.44  0.87 -0.61 -0.21  0.35  0.89 -1.99]
+move_q: error_code=-5 max_joint_err=1.2358
+  retrying (controller lag)
+move_q: error_code=-5 max_joint_err=0.5184
+  hand [-0.119  -0.0961  1.1502]
+move_q: error_code=-5 max_joint_err=0.3100
+  retrying (controller lag)
+move_q: error_code=0 max_joint_err=0.0078
+  line reached [-0.1195 -0.0963  1.0378] target [-0.1191 -0.0961  1.0377]
+hand [-0.1195 -0.0963  1.0378] fingertip z 0.9344
+gripper(0.0): reached=True stalled=False fingers=0.0134,-0.0133
+move_q: error_code=0 max_joint_err=0.0026
+  line reached [-0.1191 -0.0958  1.137 ] target [-0.1191 -0.0961  1.1377]
+fingers after lift [ 0.0131 -0.0131] dF [-0.38 -0.24 -0.44]
+points in pan region: n=1770 z[0.980,1.024] median z 0.988

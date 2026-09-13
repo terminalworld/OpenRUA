@@ -1,0 +1,7 @@
+traj[0] error_code=0 max joint err=0.0024
+tcp now [ 0.1104 -0.1961  0.52  ] target [ 0.111 -0.196  0.52 ]
+traj[0] error_code=0 max joint err=0.0018
+tcp now [ 0.111  -0.1973  0.4411] target [ 0.111 -0.196  0.44 ]
+fingers before close (0.0399990853032642, -0.040000055600221275)
+gripper reached=True stalled=False fingers=(0.03280381810747649, -0.03276200181288998)
+tcp [ 0.1111 -0.1974  0.4413]

@@ -1,0 +1,15 @@
+from rob import *
+r = Robot()
+r.spin(0.5); f=r.fingers(); log("fingers", f, "gap", f[0]-f[1])
+BX, BY = 0.0, 0.215
+assert r.move_tcp_line(-0.238, -0.1765, 0.82, yaw=0.0, secs=3, n=2)
+ok = r.move_tcp(BX, BY, 0.82, yaw=0.0, secs=5)
+if not ok: log("retry"); ok = r.move_tcp(BX, BY, 0.82, yaw=0.0, secs=5)
+f=r.fingers(); log("fingers over basket", f, "gap", f[0]-f[1])
+ok = r.move_tcp_line(BX, BY, 0.66, yaw=0.0, secs=4, n=3)
+if not ok: log("retry"); r.move_tcp_line(BX, BY, 0.66, yaw=0.0, secs=4, n=2)
+r.gripper(0.04)
+r.spin(0.5); log("fingers after open", r.fingers())
+ok = r.move_tcp_line(BX, BY, 0.85, yaw=0.0, secs=4, n=2)
+if not ok: log("retry"); r.move_tcp_line(BX, BY, 0.85, yaw=0.0, secs=4, n=2)
+log("PHASE2 DONE")

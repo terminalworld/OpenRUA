@@ -1,0 +1,10 @@
+fingers before (0.031515592925113814, -0.030682896428524696)
+to basket
+  move: error_code=0 max joint err=0.0023
+  now hand=[0.008  0.2524 0.8627] tcp=[0.008  0.2524 0.7593] target=[0.008 0.253 0.76 ]
+fingers at basket (0.03153150000994482, -0.030662037071491788)
+release
+  gripper(0.04): reached=True stalled=False pos=0.0000 fingers=(0.03718799445525313, -0.03710751806922926)
+retreat up
+  move: error_code=0 max joint err=0.0023
+  now hand=[0.0082 0.253  0.9529] tcp=[0.0082 0.253  0.8495] target=[0.008 0.253 0.85 ]

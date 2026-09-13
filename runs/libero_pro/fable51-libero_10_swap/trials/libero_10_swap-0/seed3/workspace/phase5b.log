@@ -1,0 +1,11 @@
+18:50:37 robot ready
+18:50:39 gripper -> 0.04: reached=True stalled=False fingers=(0.03588855329553703, -0.035894270405666485)
+18:50:56 traj code=-5 max_joint_err=0.0920
+18:50:56 retrying trajectory
+18:51:14 traj code=0 max_joint_err=0.0019
+18:51:14 tcp now [0.1903 0.3098 0.66  ] target [0.19 0.31 0.66] err=0.0004
+18:51:15 cam at [0.2401 0.31   0.764 ]
+18:51:15 n=9069 centroid [0.2576 0.3472 0.4804] x[0.178,0.349] y[0.279,0.422] ztop 0.5012
+18:51:15 center [0.2576 0.3472 0.4804] extents x[0.178,0.349] y[0.279,0.422] axis -174.9 deg eig [0.0235 0.0516]
+18:51:15 ridge n=6375 center [0.2284 0.3463 0.4952] axis -148.4 deg
+18:51:15 PHASE5B DONE

@@ -1,0 +1,19 @@
+[liftB] 1 waypoints, 3.0s
+  traj done code=0 max_joint_err=0.0026
+   TCP now [-0.0673  0.2567  1.0986] (target [-0.067  0.257  1.1  ]) err=0.0015
+[placeB: transport] 4 waypoints, 6.0s
+  traj done code=0 max_joint_err=0.0346
+   retrying final waypoint (code=0, err=0.0346)
+  traj done code=0 max_joint_err=0.0030
+   TCP now [0.1624 0.0793 1.0976] (target [0.1629 0.0791 1.1   ]) err=0.0024
+[placeB: lower] 1 waypoints, 3.0s
+  traj done code=0 max_joint_err=0.0089
+   TCP now [0.1651 0.0813 1.0163] (target [0.1629 0.0791 1.01  ]) err=0.0071
+  gripper -> 0.04: reached=True stalled=False fingers=0.0379,-0.0372
+[placeB: retreat] 1 waypoints, 2.0s
+  traj done code=0 max_joint_err=0.0027
+   TCP now [0.1212 0.122  1.0101] (target [0.1205 0.1215 1.01  ]) err=0.0008
+[placeB: rise] 1 waypoints, 2.0s
+  traj done code=0 max_joint_err=0.0023
+   TCP now [0.1207 0.1213 1.1502] (target [0.1205 0.1215 1.15  ]) err=0.0003
+fingers: (0.039994856162677554, -0.039993896396169765)

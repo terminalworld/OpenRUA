@@ -1,0 +1,55 @@
+start tcp [0.   0.25 0.76] fingers [ 0.0399 -0.0399]
+open
+  gripper -> 0.04: reached=True stalled=False fingers=[ 0.0399 -0.0399]
+go high above box
+  traj done code=-5 max_joint_err=1.5654
+  resend final point (attempt 1)
+  traj done code=-5 max_joint_err=0.8459
+  resend final point (attempt 2)
+  traj done code=-5 max_joint_err=0.1393
+  tcp now [-0.1689  0.0329  0.76  ] target [-0.169  0.033  0.76 ] q=[ 0.998 -0.069 -0.     0.   ]
+descend to pre-grasp
+  traj done code=0 max_joint_err=0.0064
+  tcp now [-0.1698  0.0331  0.6   ] target [-0.169  0.033  0.6  ]
+descend to grasp
+  traj done code=-5 max_joint_err=0.8397
+  resend final point (attempt 1)
+  traj done code=-5 max_joint_err=0.3951
+  resend final point (attempt 2)
+  traj done code=0 max_joint_err=0.0062
+  tcp now [-0.1682  0.0331  0.4453] target [-0.169  0.033  0.445]
+at grasp: tcp [-0.1682  0.0331  0.4453] q [ 1.    -0.003  0.001 -0.001]
+close
+  gripper -> 0.0: reached=True stalled=False fingers=[ 0.0211 -0.0212]
+gap after close = 0.0423 m (HOLDING)
+lift
+  traj done code=-5 max_joint_err=0.9644
+  resend final point (attempt 1)
+  traj done code=-5 max_joint_err=0.5101
+  resend final point (attempt 2)
+  traj done code=-5 max_joint_err=0.0727
+  tcp now [-0.1705  0.0276  0.6   ] target [-0.169  0.033  0.6  ]
+fingers after lift [ 0.0196 -0.0226]
+to high
+  traj done code=0 max_joint_err=0.0282
+  tcp now [-0.1635  0.0314  0.762 ] target [-0.169  0.033  0.76 ] q=[1.    0.001 0.013 0.004]
+over basket
+  traj done code=-5 max_joint_err=0.4354
+  resend final point (attempt 1)
+  traj done code=0 max_joint_err=0.0014
+  tcp now [-4.000e-04  2.497e-01  7.596e-01] target [0.   0.25 0.76] q=[ 1.     0.    -0.001  0.   ]
+fingers over basket [ 0.02   -0.0222]
+lower
+  traj done code=0 max_joint_err=0.0025
+  tcp now [-1.000e-04  2.499e-01  6.505e-01] target [0.   0.25 0.65]
+release
+  gripper -> 0.04: reached=True stalled=False fingers=[ 0.0363 -0.0363]
+retreat
+  traj done code=0 max_joint_err=0.0024
+  tcp now [1.000e-04 2.503e-01 7.595e-01] target [0.   0.25 0.76] q=[ 1.     0.001  0.    -0.001]
+park away from basket
+  traj done code=-5 max_joint_err=0.5230
+  resend final point (attempt 1)
+  traj done code=0 max_joint_err=0.0023
+  tcp now [-0.1499 -0.0499  0.7599] target [-0.15 -0.05  0.76] q=[ 1.     0.001 -0.001 -0.   ]
+DONE tcp [-0.15 -0.05  0.76]

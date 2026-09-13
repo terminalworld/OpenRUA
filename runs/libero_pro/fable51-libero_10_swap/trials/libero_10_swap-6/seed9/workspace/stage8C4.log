@@ -1,0 +1,17 @@
+G [-0.022 -0.025  0.541] PRE [-0.022 -0.095  0.541]
+FJT code=0 max_joint_err=0.0024 (secs=6.0)
+tcp now [-0.016   0.1781  0.7404] quat [ 1.     0.001 -0.     0.001]
+FJT code=0 max_joint_err=0.0211 (secs=10.0)
+  -> re-sending goal
+FJT code=0 max_joint_err=0.0169 (secs=10.0)
+  -> re-sending goal
+FJT code=0 max_joint_err=0.0129 (secs=10.0)
+  -> re-sending goal
+FJT code=0 max_joint_err=0.0099 (secs=10.0)
+tcp now [-0.0124  0.1828  0.5633] quat [ 1.     0.001  0.004 -0.003]
+at place: tcp [-0.0124  0.1828  0.5633] quat [ 1.     0.001  0.004 -0.003]
+gripper -> 0.04: reached=True stalled=False fingers=(0.03589952928011716, -0.03589520565365708)
+fingers (0.03589952928011716, -0.03589520565365708)
+FJT code=0 max_joint_err=0.0024 (secs=14.0)
+tcp now [-0.0122  0.1828  0.7128] quat [ 1.     0.001  0.001 -0.   ]
+done

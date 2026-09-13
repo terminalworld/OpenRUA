@@ -1,0 +1,12 @@
+[gripper] target=0.04 reached=True stalled=False fingers=[ 0.0387 -0.0387]
+[move_q] code=-5 max_joint_err=0.7713
+[move_tcp] tcp now [-0.1371  0.0492  1.2198] (target [-0.137  0.049  1.22 ])
+[move_q] code=-5 max_joint_err=0.2294
+[move_tcp] tcp now [-0.1223  0.0498  1.0175] (target [-0.137  0.049  1.   ])
+wrench before close [-0.13  0.11  7.27]
+[gripper] target=0.0 reached=True stalled=False fingers=[ 0.0086 -0.0086]
+wrench after close [-1.07  0.04 -4.33]
+[move_q] code=0 max_joint_err=0.0023
+[move_tcp] tcp now [-0.1371  0.0494  1.1793] (target [-0.137  0.049  1.18 ])
+fingers after lift [ 0.0071 -0.0071]
+wrench after lift [-0.    0.01 -5.25]

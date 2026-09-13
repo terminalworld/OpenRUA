@@ -1,0 +1,21 @@
+== move 0.005 0.27 0.68 3
+IK ok -> [0.151, 0.18, 0.345, -2.031, -0.075, 2.2, 1.32]
+FJT done error_code=0 (12.7s wall)
+max joint err vs target: 0.0240 rad
+TCP world=(-0.0030,0.2662,0.6698) link8 q=(0.9243,-0.3816,-0.0077,0.0084) fingers=(0.0194,-0.0195) joints=[0.151, 0.18, 0.344, -2.055, -0.073, 2.201, 1.318]
+TCP err vs target: 0.0135 m
+== move 0.005 0.27 0.65 1.5
+IK ok -> [0.156, 0.223, 0.339, -2.06, -0.096, 2.268, 1.334]
+FJT done error_code=0 (7.6s wall)
+max joint err vs target: 0.0024 rad
+TCP world=(0.0048,0.2702,0.6503) link8 q=(0.9242,-0.3820,-0.0008,0.0001) fingers=(0.0195,-0.0195) joints=[0.155, 0.223, 0.34, -2.059, -0.094, 2.266, 1.332]
+TCP err vs target: 0.0005 m
+== grip 0.04
+gripper -> 0.04: reached_goal=True stalled=False fingers=(0.0362,-0.0362)
+== move 0.005 0.27 0.72 2
+IK ok -> [0.143, 0.133, 0.353, -1.983, -0.053, 2.107, 1.306]
+FJT done error_code=0 (8.9s wall)
+max joint err vs target: 0.0023 rad
+TCP world=(0.0053,0.2698,0.7195) link8 q=(0.9235,-0.3835,0.0008,0.0000) fingers=(0.0399,-0.0399) joints=[0.144, 0.134, 0.352, -1.984, -0.055, 2.11, 1.308]
+TCP err vs target: 0.0006 m
+SEQUENCE COMPLETE

@@ -1,0 +1,25 @@
+   handle dir now: [ 0.14 -0.99  0.  ] -> final: [0.71 0.71 0.  ]
+   final pot up (world): [0. 0. 1.]  final hand z: [ 0.707 -0.707  0.   ]
+   t=0.2 pot up=[-0.88 -0.47 -0.02] lowest pot pt z~1.057
+   t=0.4 pot up=[-0.7  -0.64  0.32] lowest pot pt z~1.038
+   t=0.6 pot up=[-0.44 -0.6   0.66] lowest pot pt z~1.016
+   t=0.8 pot up=[-0.19 -0.37  0.91] lowest pot pt z~0.999
+   t=1.0 pot up=[ 0. -0.  1.] lowest pot pt z~0.994
+[place: stage+reorient+transport] 9 waypoints, 12.0s
+  traj done code=0 max_joint_err=0.0487
+   retrying final waypoint (code=0, err=0.0487)
+  traj done code=0 max_joint_err=0.0026
+   TCP now [0.1333 0.0856 1.0962] (target [0.1343 0.0857 1.0985]) err=0.0026
+[place: lower] 1 waypoints, 4.0s
+  traj done code=0 max_joint_err=0.0020
+   TCP now [0.1344 0.0856 0.9991] (target [0.1343 0.0857 0.999 ]) err=0.0001
+  gripper -> 0.04: reached=True stalled=False fingers=0.0359,-0.0359
+   fingers not fully open yet, re-issuing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0391,-0.0391
+[place: retreat] 1 waypoints, 2.0s
+  traj done code=0 max_joint_err=0.0022
+   TCP now [0.0925 0.1282 0.9991] (target [0.0919 0.1281 0.999 ]) err=0.0006
+[place: rise] 1 waypoints, 2.0s
+  traj done code=0 max_joint_err=0.0021
+   TCP now [0.0919 0.1282 1.1488] (target [0.0919 0.1281 1.149 ]) err=0.0002
+fingers: (0.0399933434744143, -0.03999625019852343)

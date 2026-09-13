@@ -1,0 +1,10 @@
+base in world: [-0.51  0.    0.42]
+goto TCP world [0.04 0.3  0.62]
+  IK sol [ 0.534  0.376 -0.037 -1.901  0.018  2.276  1.273] (dev from natural 1.16)
+  travel 0.99 rad -> 4.0s
+  traj error_code=-5 max joint err=0.2358
+  resending same goal (controller lag)
+  traj error_code=0 max joint err=0.0027
+hand world [0.04   0.2996 0.7232] q [ 1.     0.001  0.    -0.001]  TCP world [0.04   0.2997 0.6198]  finger gap 0.0422
+gripper -> 0.04: reached=True stalled=False gap=0.0726
+hand world [0.04   0.2996 0.7232] q [ 1.     0.001  0.    -0.001]  TCP world [0.04   0.2997 0.6198]  finger gap 0.0726

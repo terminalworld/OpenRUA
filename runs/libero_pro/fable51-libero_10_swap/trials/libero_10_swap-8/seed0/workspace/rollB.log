@@ -1,0 +1,37 @@
+  gripper -> 0.0: reached=True stalled=False fingers=0.0033,-0.0049
+[roll: above] 1 waypoints, 4.0s
+   q=[-0.286  0.955  0.285 -1.366 -0.945  3.042 -1.661] tcp=[ 0.178 -0.003  1.072] minlinkz=1.145
+  traj done code=-5 max_joint_err=0.8038
+   retrying final waypoint (code=-5, err=0.8038)
+  traj done code=-5 max_joint_err=0.3784
+   retrying final waypoint (code=-5, err=0.3784)
+  traj done code=0 max_joint_err=0.0063
+   TCP now [ 0.1783 -0.003   1.0723] (target [ 0.1784 -0.003   1.0723]) err=0.0001
+[roll: press] 1 waypoints, 3.0s
+   q=[-0.243  1.323  0.402 -0.878 -0.821  2.896 -1.924] tcp=[ 0.235 -0.003  1.016] minlinkz=1.089
+  traj done code=0 max_joint_err=0.0027
+   TCP now [ 0.2349 -0.003   1.0157] (target [ 0.235  -0.003   1.0157]) err=0.0001
+   press: TCP z 1.0157 vs cmd 1.0157 (shortfall -0.0 mm)
+[roll: drag 1/3] 1 waypoints, 1.5s
+   q=[-0.252  1.213  0.325 -1.06  -0.87   2.983 -1.801] tcp=[ 0.215 -0.003  1.016] minlinkz=1.089
+  traj done code=0 max_joint_err=0.0027
+   TCP now [ 0.2152 -0.0029  1.0157] (target [ 0.215  -0.003   1.0157]) err=0.0002
+   TCP [ 0.2152 -0.0029  1.0157] (cmd [ 0.215  -0.003   1.0157])
+[roll: drag 2/3] 1 waypoints, 1.5s
+   q=[-0.238  1.125  0.245 -1.199 -0.909  3.059 -1.696] tcp=[ 0.195 -0.003  1.016] minlinkz=1.089
+  traj done code=0 max_joint_err=0.0028
+   TCP now [ 0.1952 -0.0032  1.0157] (target [ 0.195  -0.003   1.0157]) err=0.0003
+   TCP [ 0.1952 -0.0032  1.0157] (cmd [ 0.195  -0.003   1.0157])
+[roll: drag 3/3] 1 waypoints, 1.5s
+   q=[-0.202  1.05   0.154 -1.314 -0.942  3.133 -1.597] tcp=[ 0.175 -0.003  1.016] minlinkz=1.089
+  traj done code=0 max_joint_err=0.0027
+   TCP now [ 0.1753 -0.0031  1.0157] (target [ 0.175  -0.003   1.0157]) err=0.0003
+   TCP [ 0.1753 -0.0031  1.0157] (cmd [ 0.175  -0.003   1.0157])
+[roll: rise] 1 waypoints, 3.0s
+   q=[-0.315  0.866  0.328 -1.426 -0.869  3.001 -1.736] tcp=[ 0.175 -0.003  1.116] minlinkz=1.189
+  traj done code=0 max_joint_err=0.0026
+   TCP now [ 0.1756 -0.0032  1.1158] (target [ 0.1753 -0.0031  1.1157]) err=0.0003
+  gripper -> 0.04: reached=True stalled=False fingers=0.0359,-0.0359
+   fingers not fully open yet, re-issuing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0391,-0.0391
+fingers: (0.039081706571037295, -0.03908258530927179)

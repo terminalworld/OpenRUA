@@ -1,0 +1,18 @@
+start q [ 0.    -0.161  0.    -2.445  0.     2.227  0.785] fingers (0.020833, -0.020833)
+open gripper
+  gripper -> reached=True stalled=False fingers=[ 0.0387 -0.0387]
+pre-grasp
+  ik pos_err=0.0mm rot_err=0.00deg q=[ 0.279  0.216  0.121 -2.421 -0.053  2.635  1.229]
+  move done code=0 max_joint_err=0.0027
+  reached tcp=[-0.2064  0.1944  1.03  ]
+descend
+  ik pos_err=0.0mm rot_err=0.00deg q=[ 0.33   0.485  0.06  -2.375 -0.1    2.858  1.264]
+  move done code=0 max_joint_err=0.0025
+  reached tcp=[-0.2066  0.195   0.9301]
+close
+  gripper -> reached=True stalled=False fingers=[ 0.0112 -0.0143]
+wrench (array([-0.43826201, -0.19323574, -5.79656081]), array([0.2544189 , 0.19964249, 0.12270958]))
+rotate j7 by 1.5708
+  move done code=-5 max_joint_err=1.2716
+after rot q [ 0.331  0.487  0.066 -2.371 -0.117  2.86   1.562] fingers (0.01547352386317498, -0.014907149356938359) wrench (array([-2.80051176,  4.3908403 , -2.85418485]), array([-0.40799531, -0.35236253,  2.88803569]))
+DONE

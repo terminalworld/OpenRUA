@@ -1,0 +1,7 @@
+  move_q done code=0 max_joint_err=0.0026
+  tcp now [-0.0395  0.3745  1.1992] target [-0.039  0.374  1.2  ]
+  move_q done code=0 max_joint_err=0.0084
+  tcp now [-0.039   0.3809  1.0567] target [-0.039  0.374  1.05 ]
+  move_q done code=0 max_joint_err=0.0030
+  tcp now [-0.0394  0.3756  0.9663] target [-0.039  0.374  0.965]
+finger 0.013110545038526083

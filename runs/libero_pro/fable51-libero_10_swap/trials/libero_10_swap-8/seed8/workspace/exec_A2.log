@@ -1,0 +1,15 @@
+pot at start: (array([-0.198, -0.197]), 1.066, 626)  dst: None
+[move_q] error_code=0 max_joint_err=0.0025
+== A_lift: code=0 jerr=0.0025 tcp=[-0.195 -0.2    1.169] tgt=[-0.195 -0.2    1.17 ] poserr=1.3mm fingers=[0.0314 0.0309] F=[-0.  -5.8 -0. ]
+fingers after lift: [0.03135921 0.03087009]  src blob now: None
+[move_q] error_code=0 max_joint_err=0.0035
+== A_over: code=0 jerr=0.0035 tcp=[0.229 0.05  1.168] tgt=[0.23 0.05 1.17] poserr=2.3mm fingers=[0.0236 0.0222] F=[ 0.  -5.8 -0. ]
+[move_q] error_code=0 max_joint_err=0.0028
+== A_place: code=0 jerr=0.0028 tcp=[0.229 0.05  1.024] tgt=[0.23  0.05  1.026] poserr=2.6mm fingers=[0.0215 0.0201] F=[ 0.  -5.8 -0. ]
+[gripper] reached=True stalled=False fingers=(0.03621218499044132, -0.036234876962624174)
+[move_q] error_code=0 max_joint_err=0.0026
+== A_retreat: code=0 jerr=0.0026 tcp=[0.143 0.1   1.025] tgt=[0.143 0.1   1.026] poserr=1.4mm fingers=[0.0399 0.04  ] F=[-0.1 -5.6 -0.2]
+[move_q] error_code=0 max_joint_err=0.0024
+== A_up: code=0 jerr=0.0024 tcp=[0.144 0.1   1.17 ] tgt=[0.143 0.1   1.17 ] poserr=0.4mm fingers=[0.04 0.04] F=[-0.  -5.1  0. ]
+RESULT dst blob: (array([0.204, 0.049]), 1.07, 521)  src blob: None
+DONE

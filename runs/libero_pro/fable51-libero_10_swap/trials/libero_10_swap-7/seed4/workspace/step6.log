@@ -1,0 +1,11 @@
+18:50:14 TF world->planning frame: [-0.51  0.    0.42]
+18:50:22 traj done code=0 max_joint_err=0.0024
+18:50:23 move_to [ 0.09 -0.19  0.5 ] -> ok=True tcp_now=[ 0.09 -0.19  0.5 ]
+18:50:31 traj done code=0 max_joint_err=0.0051
+18:50:32 move_to [ 0.09  -0.19   0.437] -> ok=True tcp_now=[ 0.09  -0.19   0.439]
+18:50:32 STEP6 at grasp height ok= True
+18:50:34 gripper(0.0) reached=True stalled=False fingers=(0.02098948433747953, -0.021057768520679313)
+18:50:34 fingers after close: (0.02098948433747953, -0.021057768520679313)
+18:50:42 traj done code=0 max_joint_err=0.0024
+18:50:43 move_to [ 0.09 -0.19  0.6 ] -> ok=True tcp_now=[ 0.091 -0.19   0.6  ]
+18:50:43 lifted ok= True fingers: (0.021080866216968974, -0.021137032210518988)

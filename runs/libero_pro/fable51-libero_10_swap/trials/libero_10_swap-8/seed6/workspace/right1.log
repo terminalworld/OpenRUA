@@ -1,0 +1,7 @@
+04:57:07 pinch axis [-0.987 -0.161  0.   ]; rotate 90.0 deg; hand z after: [ 0.161 -0.987 -0.001]
+04:57:07 plan_rot: fail at step 16/16 (limits) [ 0.7   1.8  -1.46 -2.43 -0.08  3.48  2.69]
+Traceback (most recent call last):
+  File "/workspace/rightpot.py", line 25, in <module>
+    assert path is not None, "rotation plan failed"
+           ^^^^^^^^^^^^^^^^
+AssertionError: rotation plan failed

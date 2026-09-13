@@ -1,0 +1,6 @@
+pinch point [-0.13  -0.231]
+  gripper -> 0.04: reached=True stalled=False fingers=(0.0399425619997308, -0.03994250163925232)
+pre-grasp above pinch, z=0.65
+  traj done code=0 max_joint_err=0.0023
+  tcp now [-0.1296 -0.2306  0.6501] (target [-0.13  -0.231  0.65 ])
+joints [-0.2293 -0.1716 -0.3181 -2.5322 -0.0755  2.3663  0.2987]

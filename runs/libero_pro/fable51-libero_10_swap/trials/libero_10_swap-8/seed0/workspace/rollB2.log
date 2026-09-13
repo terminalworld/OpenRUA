@@ -1,0 +1,84 @@
+  gripper -> 0.0: reached=True stalled=False fingers=0.0041,-0.0041
+[roll: above] 1 waypoints, 4.0s
+   q=[-0.302  0.965  0.329 -1.327 -0.903  2.997 -1.726] tcp=[ 0.188 -0.003  1.086] minlinkz=1.159
+  traj done code=-5 max_joint_err=1.7178
+   retrying final waypoint (code=-5, err=1.7178)
+  traj done code=-5 max_joint_err=1.0750
+   retrying final waypoint (code=-5, err=1.0750)
+  traj done code=-5 max_joint_err=0.6255
+   retrying final waypoint (code=-5, err=0.6255)
+  traj done code=-5 max_joint_err=0.2043
+   retrying final waypoint (code=-5, err=0.2043)
+  traj done code=0 max_joint_err=0.0022
+   TCP now [ 0.1883 -0.0032  1.0861] (target [ 0.1884 -0.003   1.0863]) err=0.0003
+[roll: start] 1 waypoints, 3.0s
+   q=[-0.228  1.352  0.432 -0.794 -0.772  2.841 -1.997] tcp=[ 0.245 -0.003  1.03 ] minlinkz=1.103
+  traj done code=0 max_joint_err=0.0028
+   TCP now [ 0.2447 -0.0027  1.0292] (target [ 0.245  -0.003   1.0297]) err=0.0006
+[roll: creep 0] 1 waypoints, 1.0s
+   q=[-0.227  1.361  0.432 -0.785 -0.772  2.842 -1.999] tcp=[ 0.245 -0.003  1.027] minlinkz=1.100
+  traj done code=0 max_joint_err=0.0026
+   TCP now [ 0.2449 -0.0031  1.0266] (target [ 0.245  -0.003   1.0267]) err=0.0001
+   creep: TCP z 1.0266 vs cmd 1.0267 (shortfall -0.1 mm)
+[roll: creep 1] 1 waypoints, 1.0s
+   q=[-0.225  1.37   0.433 -0.776 -0.772  2.843 -2.001] tcp=[ 0.245 -0.003  1.024] minlinkz=1.097
+  traj done code=0 max_joint_err=0.0026
+   TCP now [ 0.2449 -0.0031  1.0236] (target [ 0.245  -0.003   1.0237]) err=0.0002
+   creep: TCP z 1.0236 vs cmd 1.0237 (shortfall -0.1 mm)
+[roll: creep 2] 1 waypoints, 1.0s
+   q=[-0.223  1.379  0.433 -0.767 -0.772  2.843 -2.004] tcp=[ 0.245 -0.003  1.021] minlinkz=1.094
+  traj done code=0 max_joint_err=0.0026
+   TCP now [ 0.2449 -0.0031  1.0206] (target [ 0.245  -0.003   1.0207]) err=0.0002
+   creep: TCP z 1.0206 vs cmd 1.0207 (shortfall -0.1 mm)
+[roll: creep 3] 1 waypoints, 1.0s
+   q=[-0.221  1.388  0.434 -0.757 -0.771  2.843 -2.006] tcp=[ 0.245 -0.003  1.018] minlinkz=1.091
+  traj done code=0 max_joint_err=0.0026
+   TCP now [ 0.2449 -0.0031  1.0175] (target [ 0.245  -0.003   1.0177]) err=0.0003
+   creep: TCP z 1.0175 vs cmd 1.0177 (shortfall -0.2 mm)
+[roll: creep 4] 1 waypoints, 1.0s
+   q=[-0.219  1.398  0.435 -0.747 -0.771  2.843 -2.01 ] tcp=[ 0.245 -0.003  1.015] minlinkz=1.088
+  traj done code=0 max_joint_err=0.0026
+   TCP now [ 0.2449 -0.0031  1.0145] (target [ 0.245  -0.003   1.0147]) err=0.0002
+   creep: TCP z 1.0145 vs cmd 1.0147 (shortfall -0.2 mm)
+[roll: creep 5] 1 waypoints, 1.0s
+   q=[-0.217  1.408  0.437 -0.736 -0.77   2.843 -2.013] tcp=[ 0.245 -0.003  1.012] minlinkz=1.085
+  traj done code=0 max_joint_err=0.0026
+   TCP now [ 0.2449 -0.0031  1.0116] (target [ 0.245  -0.003   1.0117]) err=0.0002
+   creep: TCP z 1.0116 vs cmd 1.0117 (shortfall -0.1 mm)
+[roll: creep 6] 1 waypoints, 1.0s
+   q=[-0.214  1.418  0.438 -0.725 -0.769  2.843 -2.017] tcp=[ 0.245 -0.003  1.009] minlinkz=1.082
+  traj done code=0 max_joint_err=0.0025
+   TCP now [ 0.2454 -0.0032  1.0102] (target [ 0.245  -0.003   1.0087]) err=0.0016
+   creep: TCP z 1.0102 vs cmd 1.0087 (shortfall 1.5 mm)
+[roll: press] 1 waypoints, 1.0s
+   q=[-0.212  1.427  0.439 -0.715 -0.769  2.842 -2.02 ] tcp=[ 0.245 -0.003  1.006] minlinkz=1.079
+  traj done code=0 max_joint_err=0.0034
+   TCP now [ 0.2462 -0.0032  1.0102] (target [ 0.245  -0.003   1.0062]) err=0.0042
+[roll: drag 1/4] 1 waypoints, 1.5s
+   q=[-0.241  1.286  0.349 -0.959 -0.831  2.951 -1.868] tcp=[ 0.225 -0.003  1.006] minlinkz=1.079
+  traj done code=0 max_joint_err=0.0048
+   TCP now [ 0.2267 -0.003   1.0104] (target [ 0.225  -0.003   1.0062]) err=0.0045
+   TCP [ 0.2267 -0.003   1.0104] (cmd [ 0.225  -0.003   1.0062])
+[roll: drag 2/4] 1 waypoints, 1.5s
+   q=[-0.235  1.187  0.267 -1.119 -0.873  3.034 -1.754] tcp=[ 0.205 -0.003  1.006] minlinkz=1.079
+  traj done code=0 max_joint_err=0.0028
+   TCP now [ 0.2052 -0.0032  1.0062] (target [ 0.205  -0.003   1.0062]) err=0.0003
+   TCP [ 0.2052 -0.0032  1.0062] (cmd [ 0.205  -0.003   1.0062])
+[roll: drag 3/4] 1 waypoints, 1.5s
+   q=[-0.207  1.105  0.178 -1.246 -0.906  3.111 -1.652] tcp=[ 0.185 -0.003  1.006] minlinkz=1.079
+  traj done code=0 max_joint_err=0.0027
+   TCP now [ 0.1853 -0.0032  1.0062] (target [ 0.185  -0.003   1.0062]) err=0.0003
+   TCP [ 0.1853 -0.0032  1.0062] (cmd [ 0.185  -0.003   1.0062])
+[roll: drag 4/4] 1 waypoints, 1.5s
+   q=[-0.156  1.036  0.075 -1.356 -0.929  3.188 -1.557] tcp=[ 0.165 -0.003  1.006] minlinkz=1.079
+  traj done code=0 max_joint_err=0.0027
+   TCP now [ 0.1653 -0.0031  1.0062] (target [ 0.165  -0.003   1.0062]) err=0.0003
+   TCP [ 0.1653 -0.0031  1.0062] (cmd [ 0.165  -0.003   1.0062])
+[roll: rise] 1 waypoints, 3.0s
+   q=[-0.283  0.843  0.268 -1.475 -0.864  3.05  -1.707] tcp=[ 0.165 -0.003  1.106] minlinkz=1.179
+  traj done code=0 max_joint_err=0.0026
+   TCP now [ 0.1656 -0.0032  1.1063] (target [ 0.1653 -0.0031  1.1062]) err=0.0003
+  gripper -> 0.04: reached=True stalled=False fingers=0.0359,-0.0359
+   fingers not fully open yet, re-issuing
+  gripper -> 0.04: reached=True stalled=False fingers=0.0391,-0.0391
+fingers: (0.03908165817750014, -0.03908263370143671)

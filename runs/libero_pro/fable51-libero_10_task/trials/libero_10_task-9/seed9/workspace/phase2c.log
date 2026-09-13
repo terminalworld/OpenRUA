@@ -1,0 +1,132 @@
+14:16:14 R0 y [ 1. -0.  0.] z [0. 1. 0.] x [-0.  0.  1.]
+14:16:14 IK attempt 0: solution deviates 1.36 rad from seed
+14:16:14 IK attempt 1: solution deviates 1.62 rad from seed
+14:16:14 IK attempt 2: solution deviates 1.57 rad from seed
+14:16:14 IK attempt 3: solution deviates 1.41 rad from seed
+14:16:14 IK: returning best solution (dev 1.36)
+14:16:29 trajectory code=-5 err=0.5376 (dur 4.53s)
+14:16:29   re-sending final point (err 0.5376, 2.0s)
+14:16:38   code=-5 err=0.0997 worst j5 dq=[ 0.001  0.    -0.001 -0.001 -0.1    0.002  0.004]
+14:16:38   re-sending final point (err 0.0997, 2.0s)
+14:16:46   code=0 err=0.0020 worst j7 dq=[ 0.     0.    -0.001 -0.001 -0.001  0.002  0.002]
+14:16:46   tcp now [0.0562 0.0498 1.2496] (target [0.056 0.05  1.25 ]) joint err 0.0020
+14:17:04 trajectory code=0 err=0.0081 (dur 4.8s)
+14:17:04   re-sending final point (err 0.0081, 2.0s)
+14:17:13   code=0 err=0.0072 worst j3 dq=[ 0.001 -0.007 -0.007  0.004 -0.003 -0.     0.004]
+14:17:13   re-sending final point (err 0.0072, 2.0s)
+14:17:21   code=0 err=0.0067 worst j3 dq=[ 0.001 -0.006 -0.007  0.004 -0.003 -0.     0.004]
+14:17:21   re-sending final point (err 0.0067, 2.0s)
+14:17:30   code=0 err=0.0064 worst j3 dq=[ 0.001 -0.006 -0.006  0.005 -0.003  0.     0.004]
+14:17:30   re-sending final point (err 0.0064, 2.0s)
+14:17:39   code=0 err=0.0060 worst j3 dq=[ 0.001 -0.006 -0.006  0.005 -0.003  0.     0.003]
+14:17:56 trajectory code=0 err=0.0018 (dur 4.8s)
+14:17:56 at handle tcp [0.0557 0.2099 1.02  ] z_hand [-0.002  1.    -0.001]
+14:17:58 gripper -> 0.0: reached=True stalled=False gap=0.0227
+14:17:58 gap on handle 0.0227
+14:18:08 trajectory code=0 err=0.0062 (dur 2.14s)
+14:18:08   re-sending final point (err 0.0062, 2.0s)
+14:18:16   code=0 err=0.0056 worst j6 dq=[ 0.001  0.     0.001  0.001 -0.003 -0.006  0.001]
+14:18:17 theta 10: tcp [0.0465 0.1694 1.02  ] gap 0.0227 err 0.0056
+14:18:26 trajectory code=0 err=0.0137 (dur 1.92s)
+14:18:26   re-sending final point (err 0.0137, 2.0s)
+14:18:34   code=0 err=0.0129 worst j6 dq=[ 0.003 -0.001  0.004  0.    -0.006 -0.013 -0.   ]
+14:18:34   re-sending final point (err 0.0129, 2.0s)
+14:18:42   code=0 err=0.0128 worst j6 dq=[ 0.003 -0.001  0.004  0.    -0.006 -0.013 -0.   ]
+14:18:42   re-sending final point (err 0.0128, 2.0s)
+14:18:51   code=0 err=0.0127 worst j6 dq=[ 0.003 -0.001  0.004  0.    -0.006 -0.013 -0.001]
+14:18:51   re-sending final point (err 0.0127, 2.0s)
+14:18:59   code=0 err=0.0126 worst j6 dq=[ 0.003 -0.001  0.004  0.    -0.006 -0.013 -0.001]
+14:19:00 theta 20: tcp [0.0293 0.1333 1.0198] gap 0.0227 err 0.0126
+14:19:10 trajectory code=0 err=0.0187 (dur 1.89s)
+14:19:10   re-sending final point (err 0.0187, 2.0s)
+14:19:18   code=0 err=0.0180 worst j6 dq=[ 0.005 -0.002  0.008  0.    -0.008 -0.018 -0.001]
+14:19:18   re-sending final point (err 0.0180, 2.0s)
+14:19:26   code=0 err=0.0178 worst j6 dq=[ 0.005 -0.002  0.008  0.    -0.008 -0.018 -0.002]
+14:19:26   re-sending final point (err 0.0178, 2.0s)
+14:19:34   code=0 err=0.0176 worst j6 dq=[ 0.005 -0.002  0.008  0.    -0.008 -0.018 -0.002]
+14:19:34   re-sending final point (err 0.0176, 2.0s)
+14:19:42   code=0 err=0.0174 worst j6 dq=[ 0.005 -0.003  0.008 -0.    -0.009 -0.017 -0.002]
+14:19:43 theta 30: tcp [0.0063 0.1007 1.0196] gap 0.0227 err 0.0174
+14:19:52 trajectory code=0 err=0.0217 (dur 1.87s)
+14:19:52   re-sending final point (err 0.0217, 2.0s)
+14:20:00   code=0 err=0.0212 worst j6 dq=[ 0.007 -0.004  0.012  0.001 -0.01  -0.021 -0.003]
+14:20:00   re-sending final point (err 0.0212, 2.0s)
+14:20:08   code=0 err=0.0208 worst j6 dq=[ 0.007 -0.004  0.012  0.001 -0.01  -0.021 -0.003]
+14:20:08   re-sending final point (err 0.0208, 2.0s)
+14:20:16   code=0 err=0.0206 worst j6 dq=[ 0.007 -0.004  0.012  0.001 -0.011 -0.021 -0.004]
+14:20:16   re-sending final point (err 0.0206, 2.0s)
+14:20:24   code=0 err=0.0205 worst j6 dq=[ 0.007 -0.004  0.012  0.001 -0.011 -0.02  -0.004]
+14:20:25 theta 40: tcp [-0.0218  0.0723  1.0193] gap 0.0227 err 0.0205
+14:20:34 trajectory code=0 err=0.0232 (dur 1.83s)
+14:20:34   re-sending final point (err 0.0232, 2.0s)
+14:20:42   code=0 err=0.0225 worst j6 dq=[ 0.008 -0.005  0.016  0.003 -0.012 -0.023 -0.004]
+14:20:42   re-sending final point (err 0.0225, 2.0s)
+14:20:50   code=0 err=0.0222 worst j6 dq=[ 0.008 -0.006  0.016  0.002 -0.012 -0.022 -0.005]
+14:20:50   re-sending final point (err 0.0222, 2.0s)
+14:20:59   code=0 err=0.0221 worst j6 dq=[ 0.008 -0.006  0.016  0.002 -0.012 -0.022 -0.006]
+14:20:59   re-sending final point (err 0.0221, 2.0s)
+14:21:07   code=0 err=0.0220 worst j6 dq=[ 0.008 -0.006  0.016  0.002 -0.012 -0.022 -0.006]
+14:21:08 theta 50: tcp [-0.0542  0.049   1.0189] gap 0.0227 err 0.0220
+14:21:17 trajectory code=0 err=0.0222 (dur 1.8s)
+14:21:17   re-sending final point (err 0.0222, 2.0s)
+14:21:25   code=0 err=0.0218 worst j6 dq=[ 0.009 -0.006  0.02   0.005 -0.013 -0.022 -0.005]
+14:21:25   re-sending final point (err 0.0218, 2.0s)
+14:21:33   code=0 err=0.0215 worst j6 dq=[ 0.009 -0.006  0.02   0.005 -0.013 -0.021 -0.006]
+14:21:33   re-sending final point (err 0.0215, 2.0s)
+14:21:41   code=0 err=0.0215 worst j6 dq=[ 0.009 -0.006  0.02   0.004 -0.013 -0.021 -0.007]
+14:21:41   re-sending final point (err 0.0215, 2.0s)
+14:21:49   code=0 err=0.0214 worst j6 dq=[ 0.008 -0.006  0.02   0.004 -0.013 -0.021 -0.007]
+14:21:50 theta 60: tcp [-0.0903  0.0311  1.0185] gap 0.0227 err 0.0214
+14:22:00 trajectory code=0 err=0.0268 (dur 2.12s)
+14:22:00   re-sending final point (err 0.0268, 2.0s)
+14:22:08   code=0 err=0.0272 worst j3 dq=[ 0.008 -0.005  0.027  0.003 -0.015 -0.015 -0.006]
+14:22:08   re-sending final point (err 0.0272, 2.0s)
+14:22:16   code=0 err=0.0271 worst j3 dq=[ 0.008 -0.005  0.027  0.003 -0.016 -0.014 -0.006]
+14:22:16   re-sending final point (err 0.0271, 2.0s)
+14:22:24   code=0 err=0.0270 worst j3 dq=[ 0.008 -0.005  0.027  0.003 -0.016 -0.014 -0.007]
+14:22:24   re-sending final point (err 0.0270, 2.0s)
+14:22:32   code=0 err=0.0270 worst j3 dq=[ 0.008 -0.005  0.027  0.003 -0.016 -0.014 -0.008]
+14:22:33 theta 70: tcp [-0.1304  0.0192  1.0185] gap 0.0226 err 0.0270
+14:22:48 trajectory code=0 err=0.0326 (dur 4.17s)
+14:22:48   re-sending final point (err 0.0326, 2.0s)
+14:22:56   code=0 err=0.0329 worst j3 dq=[ 0.008  0.     0.033 -0.001 -0.018 -0.004 -0.005]
+14:22:56   re-sending final point (err 0.0329, 2.0s)
+14:23:04   code=0 err=0.0326 worst j3 dq=[ 0.008 -0.     0.033 -0.001 -0.018 -0.004 -0.005]
+14:23:04   re-sending final point (err 0.0326, 2.0s)
+14:23:12   code=0 err=0.0325 worst j3 dq=[ 0.008 -0.     0.032 -0.001 -0.018 -0.004 -0.006]
+14:23:12   re-sending final point (err 0.0325, 2.0s)
+14:23:20   code=0 err=0.0324 worst j3 dq=[ 0.008 -0.     0.032 -0.001 -0.018 -0.004 -0.006]
+14:23:21 theta 80: tcp [-0.1735  0.0136  1.0189] gap 0.0218 err 0.0324
+14:23:40 trajectory code=0 err=0.0334 (dur 5.74s)
+14:23:40   re-sending final point (err 0.0334, 2.0s)
+14:23:48   code=0 err=0.0335 worst j3 dq=[ 0.008  0.006  0.034 -0.003 -0.02   0.008 -0.005]
+14:23:48   re-sending final point (err 0.0335, 2.0s)
+14:23:56   code=0 err=0.0334 worst j3 dq=[ 0.008  0.006  0.033 -0.003 -0.02   0.007 -0.006]
+14:23:56   re-sending final point (err 0.0334, 2.0s)
+14:24:04   code=0 err=0.0333 worst j3 dq=[ 0.008  0.006  0.033 -0.003 -0.02   0.007 -0.007]
+14:24:04   re-sending final point (err 0.0333, 2.0s)
+14:24:12   code=0 err=0.0042 worst j3 dq=[ 0.001  0.001  0.004 -0.001 -0.004  0.002 -0.003]
+14:24:13 theta 88: tcp [-0.2069 -0.0081  1.0196] gap 0.0018 err 0.0042
+14:24:13 !! lost the handle
+14:24:15 gripper -> 0.04: reached=True stalled=False gap=0.0713
+14:24:23 trajectory code=0 err=0.0023 (dur 1.2s)
+14:24:24 IK attempt 0: solution deviates 0.99 rad from seed
+14:24:24 IK attempt 1: solution deviates 2.39 rad from seed
+14:24:24 IK attempt 2: solution deviates 2.39 rad from seed
+14:24:24 IK attempt 3: solution deviates 2.38 rad from seed
+14:24:24 IK: returning best solution (dev 0.99)
+14:24:24 IK attempt 0: solution deviates 5.36 rad from seed
+14:24:24 IK attempt 1: solution deviates 4.96 rad from seed
+14:24:24 IK attempt 2: solution deviates 4.96 rad from seed
+14:24:24 IK attempt 3: solution deviates 4.96 rad from seed
+14:24:24 IK: returning best solution (dev 4.96)
+14:24:26 IK attempt 0: error -31
+14:24:28 IK attempt 1: error -31
+14:24:30 IK attempt 2: error -31
+14:24:32 IK attempt 3: error -31
+Traceback (most recent call last):
+  File "/workspace/phase2c_open_door.py", line 58, in <module>
+    r.move_line(np.array([back[0], back[1], 1.25]), Rt)
+  File "/workspace/rob.py", line 302, in move_line
+    raise RuntimeError(f"IK failed on line at {p}")
+RuntimeError: IK failed on line at [-0.26678065 -0.01296161  1.22115121]

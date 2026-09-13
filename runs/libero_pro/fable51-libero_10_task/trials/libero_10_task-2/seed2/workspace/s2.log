@@ -1,0 +1,5 @@
+grip -> pos=0.0000 reached=True stalled=False fingers=(0.03872920141715632, -0.038729141314950644)
+move done code=0 max_err=0.0022
+tcp now [-0.1974  0.2005  1.05  ] target [-0.197  0.201  1.05 ]
+goto knob_pre 0
+joints [ 0.236  0.192  0.168 -2.384 -0.059  2.571  0.454]

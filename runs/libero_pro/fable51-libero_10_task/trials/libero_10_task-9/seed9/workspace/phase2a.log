@@ -1,0 +1,58 @@
+14:00:23 gripper -> 0.0: reached=True stalled=False gap=0.0083
+14:00:23 IK attempt 0: solution deviates 3.30 rad from seed
+14:00:23 IK attempt 1: solution deviates 1.63 rad from seed
+14:00:23 IK attempt 2: solution deviates 2.00 rad from seed
+14:00:23 IK attempt 3: solution deviates 2.23 rad from seed
+14:00:23 IK: returning best solution (dev 1.63)
+14:00:41 trajectory code=-5 err=0.9429 (dur 5.43s)
+14:00:41   re-sending final point (err 0.9429, 3.1s)
+14:00:52   code=-5 err=0.3724 worst j7 dq=[-0.     0.001 -0.001  0.001  0.002 -0.002  0.372]
+14:00:52   re-sending final point (err 0.3724, 2.0s)
+14:01:01   code=0 err=0.0055 worst j7 dq=[-0.     0.001 -0.     0.001  0.002 -0.001  0.005]
+14:01:01   tcp now [-0.105   0.1096  1.1501] (target [-0.105  0.11   1.15 ]) joint err 0.0055
+14:01:10 trajectory code=-5 err=0.2460 (dur 2.0s)
+14:01:10   re-sending final point (err 0.2460, 2.0s)
+14:01:19   code=-5 err=0.2020 worst j3 dq=[-0.039  0.103  0.202  0.047  0.031  0.004 -0.122]
+14:01:19   re-sending final point (err 0.2020, 2.0s)
+14:01:27   code=-5 err=0.1965 worst j3 dq=[-0.033  0.101  0.196  0.048  0.032  0.014 -0.055]
+14:01:27   re-sending final point (err 0.1965, 2.0s)
+14:01:36   code=-5 err=0.1979 worst j3 dq=[-0.03   0.086  0.198  0.056  0.032  0.021 -0.032]
+14:01:36   re-sending final point (err 0.1979, 2.0s)
+14:01:44   code=-5 err=0.2015 worst j3 dq=[-0.029  0.067  0.202  0.068  0.031  0.023 -0.029]
+14:01:44   re-sending final point (err 0.2015, 2.0s)
+14:01:52   code=-5 err=0.2061 worst j3 dq=[-0.029  0.049  0.206  0.079  0.031  0.024 -0.026]
+14:01:52   re-sending final point (err 0.2061, 2.0s)
+14:02:00   code=-5 err=0.2052 worst j3 dq=[-0.025  0.043  0.205  0.086  0.029  0.026 -0.02 ]
+14:02:00   tcp now [-0.0474  0.1891  1.0661] (target [-0.105  0.11   0.95 ]) joint err 0.2052
+14:02:00 IK attempt 0: solution deviates 0.93 rad from seed
+14:02:00 IK attempt 1: solution deviates 0.95 rad from seed
+14:02:00 IK attempt 2: solution deviates 0.92 rad from seed
+14:02:00 IK attempt 3: solution deviates 0.92 rad from seed
+14:02:00 IK: returning best solution (dev 0.92)
+Traceback (most recent call last):
+  File "/workspace/phase2a_push_yellow.py", line 12, in <module>
+    q3, _ = r.move_to_pose(np.array([0.09, 0.11, 0.95]), R, seed=q2, speed=0.15, retries=8)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/rob.py", line 274, in move_to_pose
+    err = self.move_joints([q], speed=speed, retries=retries, tol=tol)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/rob.py", line 255, in move_joints
+    code = self._send_traj(waypoints, durations)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/rob.py", line 226, in _send_traj
+    rclpy.spin_until_future_complete(self.node, rf, timeout_sec=timeout)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 274, in spin_until_future_complete
+    executor.spin_until_future_complete(future, timeout_sec)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 393, in spin_until_future_complete
+    self._spin_once_until_future_complete(future, timeout_left)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 935, in _spin_once_until_future_complete
+    self._spin_once_impl(timeout_sec, future.done)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 907, in _spin_once_impl
+    handler, entity, node = self.wait_for_ready_callbacks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 877, in wait_for_ready_callbacks
+    return next(self._cb_iter)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 785, in _wait_for_ready_callbacks
+    raise ExternalShutdownException()
+rclpy.executors.ExternalShutdownException

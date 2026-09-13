@@ -1,0 +1,21 @@
+start tcp [0.   0.27 0.8 ] gap 0.0798
+above butter
+  move done code=0 max_joint_err=0.0028
+  [above] tcp now [0.0299 0.0613 0.6004] target [0.03  0.061 0.6  ] d=0.0005
+pre-grasp
+  move done code=0 max_joint_err=0.0024
+  [pre] tcp now [0.0295 0.0607 0.4801] target [0.03  0.061 0.48 ] d=0.0006
+descend
+  move done code=0 max_joint_err=0.0061
+  move done code=0 max_joint_err=0.0061
+  move done code=0 max_joint_err=0.0061
+  move done code=0 max_joint_err=0.0060
+  [grasp] tcp now [0.0296 0.0609 0.4391] target [0.03  0.061 0.437] d=0.0022
+close
+  gripper(0.0) reached=True stalled=False gap=0.0389
+gap after close 0.0389
+lift
+  move done code=0 max_joint_err=0.0024
+  [lift] tcp now [0.0305 0.0614 0.5999] target [0.03  0.061 0.6  ] d=0.0006
+gap after lift 0.0389
+PHASE3 DONE

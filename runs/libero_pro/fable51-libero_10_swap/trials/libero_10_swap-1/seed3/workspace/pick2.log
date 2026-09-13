@@ -1,0 +1,7 @@
+== move -0.0049 -0.2371 0.56 3.5
+IK ok -> [-0.222, 0.316, -0.216, -2.192, 0.111, 2.498, 0.27]
+FJT done error_code=-5 (13.6s wall)
+max joint err vs target: 0.3446 rad
+TCP world=(-0.0047,-0.2368,0.5604) link8 q=(0.8449,-0.5349,-0.0005,0.0001) fingers=(0.0400,-0.0400) joints=[-0.221, 0.315, -0.215, -2.191, 0.11, 2.496, 0.614]
+TCP err vs target: 0.0005 m
+move failed; stopping sequence

@@ -1,0 +1,15 @@
+tcp [-0.131 -0.148  0.498]
+== up
+  move_line: error_code=-5 max_joint_err=0.2962 tcp=[-0.106 -0.135  0.66 ] (target [-0.13 -0.15  0.65], off 30.0mm)
+  move_line: settling on final point
+  move_q: error_code=0 max_joint_err=0.0025
+True
+== to free spot
+  move_line: error_code=0 max_joint_err=0.0024 tcp=[-0.21 -0.26  0.6 ] (target [-0.21 -0.26  0.6 ], off 0.5mm)
+True
+== descend (dense waypoints)
+  move_line: error_code=-5 max_joint_err=0.2945 tcp=[-0.203 -0.258  0.463] (target [-0.21  -0.26   0.462], off 7.3mm)
+  move_line: settling on final point
+  move_q: error_code=0 max_joint_err=0.0025
+True
+wrench [ 4.34520520e-03 -4.21096751e-03 -5.10120827e+00]

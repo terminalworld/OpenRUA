@@ -1,0 +1,10 @@
+>>> joints
+{'panda_joint1': -0.6287, 'panda_joint2': -0.7072, 'panda_joint3': 0.6111, 'panda_joint4': -2.9747, 'panda_joint5': 0.5725, 'panda_joint6': 2.2971, 'panda_joint7': 0.1799}
+>>> goto -0.269 -0.173 0.62 0 4
+IK ok, max joint jump 0.76 rad
+traj code=-5 (16s) joint err 0.050 TCP world [-0.269 -0.173  0.62 ]
+>>> joints
+{'panda_joint1': -0.5699, 'panda_joint2': -0.5986, 'panda_joint3': -0.0661, 'panda_joint4': -3.005, 'panda_joint5': -0.0543, 'panda_joint6': 2.4058, 'panda_joint7': -0.5327}
+>>> pose
+TCP world [-0.2689 -0.1728  0.6203] hand z-axis [-0.     0.001 -1.   ] gap=0.0800
+DONE

@@ -1,0 +1,3 @@
+move done code=-5 max_joint_err=0.3416
+move done code=0 max_joint_err=0.0023
+fingers (0.03999172172479629, -0.03999830797333956)

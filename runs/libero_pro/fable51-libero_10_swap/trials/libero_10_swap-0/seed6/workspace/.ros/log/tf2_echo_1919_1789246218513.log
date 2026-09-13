@@ -1,0 +1,2 @@
+[INFO] [1789246218.531235959] [tf2_echo]: Waiting for transform world ->  robot0_eye_in_hand_optical_frame: Invalid frame ID "world" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789246238.331602135] [rclcpp]: signal_handler(SIGINT/SIGTERM)

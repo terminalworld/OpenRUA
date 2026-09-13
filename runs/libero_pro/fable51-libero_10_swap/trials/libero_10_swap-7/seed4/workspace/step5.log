@@ -1,0 +1,7 @@
+18:49:35 TF world->planning frame: [-0.51  0.    0.42]
+18:49:45 traj done code=0 max_joint_err=0.0026
+18:49:46 move_to [0.04 0.05 0.72] -> ok=True tcp_now=[0.04 0.05 0.72]
+18:49:46 waypoint ok= True
+18:49:55 traj done code=0 max_joint_err=0.0047
+18:49:56 move_to [ 0.09 -0.19  0.6 ] -> ok=True tcp_now=[ 0.09  -0.189  0.6  ]
+18:49:56 STEP5 above cream cheese ok= True

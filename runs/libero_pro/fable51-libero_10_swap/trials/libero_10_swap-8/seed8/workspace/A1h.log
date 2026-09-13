@@ -1,0 +1,22 @@
+pinch: p=[0.246 0.012 0.98 ] q=[-0.08  1.51  0.19 -0.62 -0.47  2.99  1.06]
+mid: p=[0.246 0.012 1.02 ] q=[-0.1   1.35  0.18 -0.81 -0.53  3.02  1.14]
+pre: p=[0.246 0.012 1.08 ] q=[-0.15  1.2   0.25 -0.94 -0.64  2.98  1.2 ]
+lift1: p=[0.246 0.012 1.05 ] q=[-0.13  1.27  0.2  -0.89 -0.58  3.    1.17]
+lift2: p=[0.16  0.012 1.15 ] q=[-0.11  0.73  0.06 -1.57 -0.69  3.18  1.4 ]
+dq pinch->mid: 0.20
+dq mid->pre: 0.15
+dq pre->lift1: 0.07
+dq lift1->lift2: 0.68
+[gripper] reached=True stalled=False fingers=(0.03587481528918139, -0.03587861564888367)
+[move_q] error_code=0 max_joint_err=0.0063
+== pre: code=0 jerr=0.0063 tcp=[0.246 0.013 1.08 ] fingers=[0.0399 0.04  ] F=[-0.   3.9 -3.3]
+[move_q] error_code=0 max_joint_err=0.0025
+== mid: code=0 jerr=0.0025 tcp=[0.246 0.013 1.02 ] fingers=[0.04 0.04] F=[ 0.   3.9 -3.3]
+[move_q] error_code=0 max_joint_err=0.0027
+== pinch: code=0 jerr=0.0027 tcp=[0.246 0.012 0.98 ] fingers=[0.04 0.04] F=[ 0.   3.9 -3.3]
+[gripper] reached=True stalled=False fingers=(0.0111735565396894, -0.011497754080874214)
+fingers after close: [0.01117356 0.01149775]
+[move_q] error_code=0 max_joint_err=0.0025
+== lift1: code=0 jerr=0.0025 tcp=[0.246 0.012 1.05 ] fingers=[0.0005 0.0005] F=[-0.   3.9 -3.3]
+fingers after lift1: [0.00050324 0.00049637]
+DROPPED

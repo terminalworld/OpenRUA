@@ -1,0 +1,6 @@
+gripper -> 0.04: reached=True stalled=False gap=0.0718
+pregrasp IK [ 2.319  1.763 -0.947 -2.683 -2.33   2.681  2.169]
+grasp IK [ 2.037  1.763 -1.065 -2.527 -2.434  2.559  2.14 ]
+lift IK [ 2.054  1.642 -1.314 -2.649 -2.801  2.527  2.258]
+move_q done code=-5 max_joint_err=1.9488
+tcp [-0.312  0.018  0.916] force [ 7.71  4.65 33.95]

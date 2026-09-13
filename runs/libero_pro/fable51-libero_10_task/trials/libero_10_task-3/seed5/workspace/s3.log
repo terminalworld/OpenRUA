@@ -1,0 +1,20 @@
+start q [ 0.000e+00 -1.300e-01 -0.000e+00 -2.480e+00 -1.000e-03  2.339e+00
+  7.880e-01] tcp [-0.202 -0.     1.146]
+  gripper -> reached=True stalled=False fingers=(0.0041244793799975425, -0.004126281974111027)
+== above neck
+  move done code=0 max_joint_err=0.0027
+  hand now at [-0.1819  0.1845  1.1498] (target [-0.1818  0.185   1.1499])
+  tcp [-0.1553  0.1844  1.0499] q [ 0.2   0.23  0.12 -2.42 -0.42  2.87  1.49]
+== descend
+  move done code=0 max_joint_err=0.0026
+  hand at [-0.182   0.185   1.0209] target [-0.1818  0.185   1.0209] poserr=0.0003
+  TCP now [-0.1554  0.1849  0.921 ] target [-0.155  0.185  0.921]
+== push -x
+  move done code=0 max_joint_err=0.0023
+  hand at [-0.2514  0.1852  1.0207] target [-0.2518  0.185   1.0209] poserr=0.0004
+  TCP now [-0.2247  0.1851  0.9208] target [-0.225  0.185  0.921]
+== retreat up
+  move done code=0 max_joint_err=0.0032
+  hand at [-0.2515  0.185   1.1795] target [-0.2518  0.185   1.1799] poserr=0.0005
+  TCP now [-0.2246  0.185   1.0796] target [-0.225  0.185  1.08 ]
+DONE

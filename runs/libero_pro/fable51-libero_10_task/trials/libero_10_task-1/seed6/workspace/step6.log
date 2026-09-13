@@ -1,0 +1,8 @@
+move: error_code=0 max_joint_err=0.0024
+  tcp now world=[-0.0401  0.0593  0.7593] target=[-0.04  0.06  0.76]
+fingers (0.03173198765916068, -0.03121096525764426)
+move: error_code=0 max_joint_err=0.0023
+  tcp now world=[0.0081 0.2713 0.7394] target=[0.008 0.272 0.74 ]
+fingers (0.03174029510263125, -0.03120121830799617)
+/workspace/agentview.png
+/workspace/robot0_eye_in_hand.png

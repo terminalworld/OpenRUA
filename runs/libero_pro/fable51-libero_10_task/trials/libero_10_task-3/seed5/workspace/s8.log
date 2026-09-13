@@ -1,0 +1,60 @@
+  gripper -> reached=True stalled=False fingers=(0.004122934141771649, -0.0041277255918548235)
+  [start] panel top y[0.056,0.215] n110
+== push p1: y 0.04->0.1 at z 0.95
+  move done code=0 max_joint_err=0.0025
+  hand now at [-0.0904  0.0401  1.1533] (target [-0.09    0.04    1.1534])
+  move done code=0 max_joint_err=0.0024
+  hand at [-0.0902  0.0397  1.0537] target [-0.09    0.04    1.0534] poserr=0.0005
+  TCP now [-0.0904  0.0397  0.9503] target [-0.09  0.04  0.95]
+  move done code=0 max_joint_err=0.0299
+  hand at [-0.0901  0.0749  1.0565] target [-0.09    0.1     1.0534] poserr=0.0253
+  move done code=0 max_joint_err=0.0299
+  move done code=0 max_joint_err=0.0300
+  move done code=0 max_joint_err=0.0301
+  TCP now [-0.0902  0.0732  0.9531] target [-0.09  0.1   0.95]
+  wrench before [ 0.15 -0.05 -4.93  0.01  0.    0.  ] after [-0.08 -0.   -5.1   0.   -0.01 -0.  ]
+  move done code=0 max_joint_err=0.0024
+  hand at [-0.0897  0.1002  1.1533] target [-0.09    0.1     1.1534] poserr=0.0004
+  TCP now [-0.0895  0.1003  1.0499] target [-0.09  0.1   1.05]
+  [p1] panel top y[0.101,0.215] n110
+== push p2: y 0.09->0.17 at z 0.95
+  move done code=-5 max_joint_err=1.1854
+  hand now at [-0.0942  0.0922  1.1496] (target [-0.08    0.09    1.1534])
+  move done code=-5 max_joint_err=1.1752
+  move done code=-5 max_joint_err=1.1699
+  move done code=-5 max_joint_err=1.1666
+  move done code=-5 max_joint_err=1.3537
+  hand at [-0.0883  0.0875  1.1273] target [-0.08    0.09    1.0534] poserr=0.0744
+  move done code=-5 max_joint_err=1.5091
+  move done code=-5 max_joint_err=1.3506
+  move done code=-5 max_joint_err=1.3309
+  TCP now [-0.0729  0.0786  0.9862] target [-0.08  0.09  0.95]
+Traceback (most recent call last):
+  File "/workspace/s8_close.py", line 30, in <module>
+    push(r, Qx, -0.08, 0.09, 0.17, 0.95, tag="p2")
+  File "/workspace/s8_close.py", line 19, in push
+    if rob.go_tcp(r, [x, y1, zp], Q, steps=4, seconds=6.0, max_jump=0.8) is None: sys.exit("fail")
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/rob.py", line 293, in go_tcp
+    q = move_cart(r, hand_from_tcp(tcp, quat), quat, steps=steps, seconds=seconds, max_jump=max_jump)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/rob.py", line 264, in move_cart
+    code, err = r.move_q(pts[-1][0], seconds, via=via)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/rob.py", line 159, in move_q
+    rclpy.spin_until_future_complete(self.node, res, timeout_sec=600)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 274, in spin_until_future_complete
+    executor.spin_until_future_complete(future, timeout_sec)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 393, in spin_until_future_complete
+    self._spin_once_until_future_complete(future, timeout_left)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 935, in _spin_once_until_future_complete
+    self._spin_once_impl(timeout_sec, future.done)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 907, in _spin_once_impl
+    handler, entity, node = self.wait_for_ready_callbacks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 877, in wait_for_ready_callbacks
+    return next(self._cb_iter)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 785, in _wait_for_ready_callbacks
+    raise ExternalShutdownException()
+rclpy.executors.ExternalShutdownException

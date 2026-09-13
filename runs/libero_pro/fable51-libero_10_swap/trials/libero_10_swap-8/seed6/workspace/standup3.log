@@ -1,0 +1,26 @@
+04:05:11 axis dir [ 0.516 -0.857] phi -58.9 deg; grasp at [-0.12  -0.261  0.939]
+04:05:11 R_F z-axis [ 0.516 -0.857 -0.   ] x-axis [ 0. -0.  1.]
+04:05:12 flip=1.0 hover: hand [-0.12  -0.261  1.202] ok, joint travel 1.35
+04:05:12 flip=1.0 grasp: hand [-0.12  -0.261  1.042] ok, joint travel 0.31
+04:05:12 flip=1.0 high_v: hand [-0.12  -0.261  1.222] ok, joint travel 0.33
+04:05:12 flip=1.0 high_h: hand [-0.173 -0.173  1.119] ok, joint travel 3.04
+04:05:12 flip=1.0 down: hand [-0.173 -0.173  0.971] ok, joint travel 0.34
+04:05:12 flip=1.0 retreat: hand [-0.204 -0.121  1.091] ok, joint travel 0.33
+04:05:15 gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0400
+04:05:16 joint travel [ 0.15  0.15 -0.2   0.1   0.14 -0.11  1.36]
+04:05:37 FJT error_code -5
+04:05:37 move done; max joint err 0.6501 rad
+04:05:37 retrying same goal (slower)
+04:06:07 move done; max joint err 0.0022 rad
+04:06:07 hand now at [-0.12   -0.2612  1.2024] (target [-0.1199 -0.2613  1.2024]) d=0.0001
+04:06:08 joint travel [-0.18  0.31  0.24  0.05  0.27  0.23 -0.16]
+04:06:24 FJT error_code -5
+04:06:25 move done; max joint err 0.0534 rad
+04:06:25 retrying same goal (slower)
+04:06:48 move done; max joint err 0.0377 rad
+04:06:48 hand now at [-0.1085 -0.2765  1.0768] (target [-0.1199 -0.2613  1.0424]) d=0.0393
+Traceback (most recent call last):
+  File "/workspace/standup.py", line 70, in <module>
+    assert r.move_pose(p_grasp, R_G, 3.0, flip_ok=False), "descend failed"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: descend failed

@@ -1,0 +1,11 @@
+20:15:50 move done code=0 max joint err=0.0023
+20:15:50 line end tcp [-0.1583  0.062   0.6995] (target [-0.1583  0.0617  0.7   ]) err 0.6 mm
+20:15:51 lifted True tcp [-0.158  0.062  0.7  ] fingers (0.021126575331713412, -0.02108877136064991)
+20:16:11 move done code=0 max joint err=0.0037
+20:16:11 line end tcp [0.011  0.2583 0.7198] (target [0.01 0.26 0.72]) err 2.0 mm
+20:16:12 over basket tcp [0.011  0.2583 0.7198] fingers (0.021165733299649103, -0.021051749257107313)
+20:16:14 gripper(0.04) reached=True stalled=False fingers=0.0363,-0.0363
+20:16:14 released; fingers (0.03627891924825728, -0.036276405550309816)
+20:16:28 move done code=0 max joint err=0.0022
+20:16:28 line end tcp [0.0103 0.26   0.8495] (target [0.01 0.26 0.85]) err 0.6 mm
+20:16:29 retreated tcp [0.01 0.26 0.85]

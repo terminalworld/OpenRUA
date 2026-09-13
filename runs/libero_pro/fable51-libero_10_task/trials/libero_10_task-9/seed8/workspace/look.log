@@ -1,0 +1,4 @@
+q1 [ 0.035  0.915 -0.235 -1.539  1.606  1.358  1.479]
+direct path valid: True
+  move: error_code=-5 max_joint_err=0.7170
+  [look pose] hand p=[-0.04   -0.01    1.1095] z_axis=[-0.457  0.767 -0.451] y_axis=[-0.882 -0.454  0.122] gap=0.0799

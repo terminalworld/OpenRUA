@@ -1,0 +1,11 @@
+PLACE on plate (0.011,-0.297), tcp y=-0.333
+  move_joints: code=0 max_err=0.0026
+  goto [ 0.011 -0.333  0.68 ] -> tcp [ 0.0108 -0.3328  0.6796] (|d|=0.0005) code=0
+  move_joints: code=0 max_err=0.0025
+  goto [ 0.011 -0.333  0.575] -> tcp [ 0.0108 -0.3329  0.5753] (|d|=0.0003) code=0
+  move_joints: code=0 max_err=0.0024
+  goto [ 0.011 -0.333  0.535] -> tcp [ 0.0103 -0.3328  0.5349] (|d|=0.0008) code=0
+  gripper(0.04): reached=True stalled=False fingers=(0.03589025443898878, -0.035888021925140255)
+  move_joints: code=0 max_err=0.0024
+  goto [ 0.011 -0.333  0.68 ] -> tcp [ 0.0112 -0.333   0.6795] (|d|=0.0006) code=0
+done in 35s wall

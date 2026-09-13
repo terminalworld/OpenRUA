@@ -1,0 +1,7 @@
+== move 0.005 0.27 0.78 4
+IK ok -> [0.2, 0.082, 0.292, -1.885, -0.026, 1.964, 1.286]
+FJT done error_code=0 (16.1s wall)
+max joint err vs target: 0.0026 rad
+TCP world=(0.0051,0.2698,0.7798) link8 q=(0.9241,-0.3821,-0.0001,-0.0008) fingers=(0.0400,-0.0400) joints=[0.2, 0.082, 0.291, -1.887, -0.024, 1.966, 1.284]
+TCP err vs target: 0.0003 m
+SEQUENCE COMPLETE

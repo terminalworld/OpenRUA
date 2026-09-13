@@ -1,0 +1,14 @@
+02:58:29 joint travel [-0.1   0.26  0.12 -0.08  0.24  0.18 -0.21]
+02:58:46 move done; max joint err 0.0023 rad
+02:58:47 hand now at [-0.1998 -0.3106  1.1535] (target [-0.1995 -0.3107  1.1537]) d=0.0004
+02:58:47 fingers (0.008910785729227487, -0.008066569997849184)
+02:58:48 joint travel [-0.04  0.09  0.06  0.01  0.08  0.05 -0.06]
+02:59:01 move done; max joint err 0.0261 rad
+02:59:01 retrying same goal (slower)
+02:59:18 move done; max joint err 0.0259 rad
+02:59:18 hand now at [-0.1926 -0.3206  1.126 ] (target [-0.1995 -0.3107  1.1087]) d=0.0211
+Traceback (most recent call last):
+  File "/workspace/setdown.py", line 10, in <module>
+    assert r.move_pose(hand((hx, hy, 1.015)), R, 2.0)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

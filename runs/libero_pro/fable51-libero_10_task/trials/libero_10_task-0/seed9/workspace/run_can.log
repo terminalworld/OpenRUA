@@ -1,0 +1,22 @@
+19:56:09 start joints [ 0.    -0.161  0.    -2.445  0.     2.227  0.785] tcp [-0.059 -0.     0.674]
+19:56:09 === can ===
+19:56:11   gripper(0.04) reached=True stalled=False fingers=0.0387,-0.0387
+19:56:12  goto tcp [-0.059 -0.     0.72 ]
+19:56:25   move done code=0 max_joint_err=0.0021 tcp=[-0.059 -0.     0.72 ]
+19:56:25  goto tcp [-0.067  0.07   0.64 ]
+19:56:42   move done code=0 max_joint_err=0.0022 tcp=[-0.067  0.069  0.64 ]
+19:56:42  goto tcp [-0.067  0.07   0.47 ]
+19:56:53   move done code=0 max_joint_err=0.0136 tcp=[-0.065  0.069  0.475]
+19:56:55   gripper(0.0) reached=True stalled=False fingers=0.0290,-0.0295
+19:56:55  goto tcp [-0.067  0.07   0.72 ]
+19:57:07   move done code=-5 max_joint_err=0.1624 tcp=[-0.036  0.073  0.719]
+19:57:18   move done code=0 max_joint_err=0.0023 tcp=[-0.067  0.07   0.719]
+19:57:19   after lift fingers=0.0279 (still holding: True)
+19:57:19  goto tcp [0.    0.265 0.72 ]
+19:57:35   move done code=0 max_joint_err=0.0026 tcp=[-0.     0.265  0.719]
+19:57:35  goto tcp [0.    0.265 0.7  ]
+19:57:45   move done code=0 max_joint_err=0.0023 tcp=[-0.     0.265  0.7  ]
+19:57:47   gripper(0.04) reached=True stalled=False fingers=0.0367,-0.0367
+19:57:47  goto tcp [0.    0.265 0.75 ]
+19:57:57   move done code=0 max_joint_err=0.0023 tcp=[0.    0.265 0.75 ]
+19:57:57 === can: OK

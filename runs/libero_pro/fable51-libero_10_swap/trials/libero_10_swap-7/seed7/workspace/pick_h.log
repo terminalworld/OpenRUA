@@ -1,0 +1,36 @@
+base in world: [-0.51  0.    0.42]
+== open, clear the can
+  gripper reached=True stalled=False fingers=(0.039996845393709665, -0.04000015351308282)
+  traj error_code=0 max_joint_err=0.0023 (attempt 1)
+  now at tcp [-0.2291 -0.1412  0.6195] (target [-0.2291 -0.1413  0.62  ], off 0.5 mm)
+== measure can
+  agentview: n=1926 xmid=-0.2333 (w 0.058) ymid=-0.1396 (w 0.062)
+  sideview: n=665 xmid=-0.2346 (w 0.062) ymid=-0.1376 (w 0.058)
+  frontview: n=146 xmid=-0.2301 (w 0.049) ymid=-0.1618 (w 0.022)
+can centre [-0.234  -0.1386]
+== high pre-pose, hand horizontal pointing +y
+  traj error_code=0 max_joint_err=0.0044 (attempt 1)
+  now at tcp [-0.2343 -0.2385  0.6194] (target [-0.234  -0.2386  0.62  ], off 0.7 mm)
+  finger axis now [0.711 0.001 0.703]
+  gripper extents at high pose (tcp [-0.234 -0.238  0.619] )
+  fingers: n=736 x=[-0.296,-0.171] y=[-0.268,-0.237] z=[0.610,0.632]
+  hand: n=10512 x=[-0.335,-0.134] y=[-0.438,-0.298] z=[0.582,0.739]
+== descend beside the can
+  traj error_code=0 max_joint_err=0.0023 (attempt 1)
+  now at tcp [-0.2338 -0.2383  0.4858] (target [-0.234  -0.2386  0.485 ], off 0.9 mm)
+== slide +y onto the can body
+  traj error_code=0 max_joint_err=0.0022 (attempt 1)
+  now at tcp [-0.2344 -0.139   0.485 ] (target [-0.234  -0.1386  0.485 ], off 0.6 mm)
+== close
+  gripper reached=True stalled=False fingers=(0.03104421697415817, -0.03197867609904937)
+finger gap (sum) = 0.063
+== lift
+  traj error_code=0 max_joint_err=0.0026 (attempt 1)
+  now at tcp [-0.2341 -0.139   0.7192] (target [-0.234  -0.1386  0.72  ], off 0.9 mm)
+fingers after lift [ 0.031 -0.032]
+== to basket
+Traceback (most recent call last):
+  File "/workspace/pick_soup_h.py", line 115, in <module>
+    assert done, "no basket IK"
+           ^^^^
+AssertionError: no basket IK

@@ -1,0 +1,4 @@
+gripper 0.04: reached=True stalled=False gap=0.0724
+goto (-0.1, 0.1, 0.75) yaw=0.00
+  move: error_code=0 max_joint_err=0.0023
+joints [0.427, -0.387, -0.175, -2.464, -0.074, 2.083, 1.089] gap 0.0799

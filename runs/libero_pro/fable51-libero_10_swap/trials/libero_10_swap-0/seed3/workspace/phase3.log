@@ -1,0 +1,20 @@
+18:39:37 robot ready
+18:39:57 traj code=-5 max_joint_err=0.4696
+18:39:57 retrying trajectory
+18:40:16 traj code=0 max_joint_err=0.0025
+18:40:16 tcp now [-0.023  -0.2737  0.6602] target [-0.023 -0.274  0.66 ] err=0.0004
+18:40:17 cam at [ 0.0272 -0.2738  0.7641]
+18:40:17 n=5610 centroid [-0.0179 -0.2725  0.5106] x[-0.050,0.016] y[-0.306,-0.236] ztop 0.5166
+18:40:17 refined center -0.0171,-0.2713 ztop 0.5161
+18:40:19 gripper -> 0.04: reached=True stalled=False fingers=(0.0400000161027121, -0.039992822379012326)
+18:40:20 fingers (0.0400000161027121, -0.039992822379012326)
+18:40:33 line traj code=0 max_joint_err=0.0025 tcp now [-0.0171 -0.2713  0.5605] target [-0.0171 -0.2713  0.56  ] err=0.0005
+18:40:33 wrench [ 0.   -0.01 -5.1 ]
+18:40:48 line traj code=0 max_joint_err=0.0212 tcp now [-0.0162 -0.272   0.4741] target [-0.0171 -0.2713  0.465 ] err=0.0092
+18:40:48 wrench [-4.71  6.42  8.97] ok True
+18:40:48 tcp before close [-0.0162 -0.272   0.4741]
+18:40:50 gripper -> 0.0: reached=True stalled=False fingers=(0.03142300951673561, -0.03077552356326543)
+18:40:51 finger gap after close = 0.0622
+18:41:07 line traj code=0 max_joint_err=0.0055 tcp now [-0.0162 -0.2712  0.8194] target [-0.0171 -0.2713  0.82  ] err=0.0010
+18:41:08 fingers after lift (0.03144203948922745, -0.030739555089548082) gap 0.062181594578775534 wrench [-0.01  0.03 -5.37]
+18:41:08 PHASE3 DONE

@@ -1,0 +1,9 @@
+
+== move 0.016 -0.244 0.70 0 2.5
+traj error_code=0 max_joint_err=0.0226
+arm: [-0.4322, 0.1442, -0.0019, -2.0163, 0.0016, 2.1798, 0.3525]
+hand world: [ 0.0182 -0.2448  0.8036] TCP world: [ 0.02   -0.2455  0.7002] hand z-axis: [ 0.018 -0.007 -1.   ]
+finger gap: 0.0422
+wrench force: -0.17 0.13 -5.15
+move -> TCP off-target by 4.3 mm
+STEP FAILED, stopping

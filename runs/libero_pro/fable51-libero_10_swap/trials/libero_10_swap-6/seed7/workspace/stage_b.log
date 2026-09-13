@@ -1,0 +1,29 @@
+== open gripper
+  gripper(0.04): reached=True stalled=False gap=0.0800
+== above mug wall
+  move_joints round 0: dur=5.7s code=0 max err 0.0024
+  move_joints: converged (max err 0.0024)
+  move_tcp: target [-0.118 -0.218  0.65 ] -> tcp at [-0.117 -0.218  0.65 ] (err 0.0006)
+== descend
+  line: target [-0.118 -0.218  0.52 ] -> tcp [-0.118 -0.218  0.52 ] (err 0.0006)
+   tcp now [-0.118  -0.2178  0.52  ]
+== close
+  gripper(0.0): reached=True stalled=False gap=0.0083
+   finger gap after close: 0.0083 (expect ~wall thickness, >0)
+== lift
+  line: target [-0.118 -0.218  0.66 ] -> tcp [-0.118 -0.218  0.659] (err 0.0007)
+   gap while lifted: 0.0057
+== over plate
+  move_joints round 0: dur=5.5s code=0 max err 0.0022
+  move_joints: converged (max err 0.0022)
+  move_tcp: target [ 0.141 -0.041  0.66 ] -> tcp at [ 0.141 -0.042  0.66 ] (err 0.0009)
+== lower to place z=0.544
+  line: target [ 0.141 -0.041  0.544] -> tcp [ 0.141 -0.041  0.544] (err 0.0003)
+== release
+  gripper(0.04): reached=True stalled=False gap=0.0718
+== retreat up
+  line: target [ 0.141 -0.041  0.68 ] -> tcp [ 0.141 -0.041  0.679] (err 0.0006)
+== back to ready
+  move_joints round 0: dur=8.5s code=0 max err 0.0023
+  move_joints: converged (max err 0.0023)
+STAGE B DONE

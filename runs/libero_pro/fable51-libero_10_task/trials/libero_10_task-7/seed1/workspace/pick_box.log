@@ -1,0 +1,5 @@
+state [ 0.    -0.161  0.    -2.445  0.     2.227  0.785] (0.020833, -0.020833)
+gripper reached=True stalled=False fingers=(0.03872920141715632, -0.038729141314950644)
+-> above box
+move done code=0 max_joint_err=0.0023
+hand [-0.1367  0.0556  0.6587] [ 1.0e+00  1.1e-03 -4.0e-04  3.0e-04]

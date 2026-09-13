@@ -1,0 +1,7 @@
+18:47:56 TF world->planning frame: [-0.51  0.    0.42]
+18:48:06 traj done code=0 max_joint_err=0.0024
+18:48:07 move_to [-0.09  0.06  0.72] -> ok=True tcp_now=[-0.09   0.059  0.719]
+18:48:07 waypoint ok= True fingers: (0.03144796924235051, -0.03149691749529873)
+18:48:18 traj done code=0 max_joint_err=0.0029
+18:48:19 move_to [-0.02  0.25  0.74] -> ok=True tcp_now=[-0.02   0.249  0.739]
+18:48:19 STEP3 above basket ok= True fingers: (0.03143623841082732, -0.03150733969987024)

@@ -1,0 +1,19 @@
+fingers (0.005369379898770342, -0.005320883481973197)
+== up to transport height
+traj done code=0 max_joint_err=0.0024
+tcp now [-0.223   0.0667  0.7191] target [-0.223  0.067  0.72 ]
+== via midpoint
+traj done code=0 max_joint_err=0.0033
+tcp now [-0.0508  0.0499  0.7405] target [-0.05  0.05  0.74]
+== hover over plate
+traj done code=0 max_joint_err=0.0150
+tcp now [0.1187 0.0304 0.7151] target [0.123 0.031 0.72 ]
+fingers (0.005100725466044828, -0.005057997440871497)
+== lower onto plate, target tcp z 0.5486
+traj done code=0 max_joint_err=0.0086
+tcp now [0.1261 0.0334 0.5557] target [0.123  0.031  0.5486]
+== release
+gripper reached=True stalled=False fingers=0.0359,-0.0359
+== retreat
+traj done code=0 max_joint_err=0.0024
+tcp now [0.1231 0.0313 0.6995] target [0.123 0.031 0.7  ]

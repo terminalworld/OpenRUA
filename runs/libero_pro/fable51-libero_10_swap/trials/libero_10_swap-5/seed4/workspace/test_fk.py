@@ -1,0 +1,10 @@
+from rob import *
+r = Robot()
+print("joints", r.joints())
+pos, quat, code, frame = r.fk_hand()
+print("FK hand world", pos, "quat", quat, "code", code, "frame", frame)
+print("hand R:\n", Rot.from_quat(quat).as_matrix().round(3))
+# test IK for the current pose (should reproduce)
+q, c = r.ik_world(pos, quat)
+print("IK roundtrip", c, q)
+print("neutral topdown quat theta=-90deg:", topdown_quat(-np.pi/2))

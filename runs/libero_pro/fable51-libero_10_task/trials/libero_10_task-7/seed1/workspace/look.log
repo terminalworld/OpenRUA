@@ -1,0 +1,4 @@
+gripper reached=True stalled=False fingers=(0.03587687743698649, -0.03587655114086017)
+move done code=-5 max_joint_err=0.6001
+move done code=0 max_joint_err=0.0024
+hand [-0.1099 -0.1696  0.8236] [ 1.    -0.001 -0.    -0.001]

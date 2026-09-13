@@ -1,0 +1,24 @@
+x_h [-0.796  0.606  0.   ] y_h [0.606 0.796 0.   ]
+== open
+  gripper -> reached=True stalled=False fingers=(0.035875169459827834, -0.0358782607939446)
+== above neck
+  move done code=-5 max_joint_err=0.9327
+  hand now at [-0.2403  0.1677  1.1533] (target [-0.24    0.168   1.1534])
+  move done code=-5 max_joint_err=0.5084
+  move done code=-5 max_joint_err=0.0939
+  move done code=0 max_joint_err=0.0023
+  tcp [-0.2404  0.1679  1.05  ] q [ 0.83  0.08 -0.44 -2.56  0.07  2.63 -1.37]
+== descend
+  move done code=0 max_joint_err=0.0025
+  hand at [-0.2402  0.1678  1.0165] target [-0.24    0.168   1.0164] poserr=0.0004
+  TCP now [-0.2404  0.1677  0.9131] target [-0.24   0.168  0.913]
+wrench before [ 0.01  0.   -5.1  -0.    0.   -0.  ]
+== close
+  gripper -> reached=True stalled=False fingers=(0.008146492773415889, -0.008059649476705765)
+wrench after [ 0.05  0.01 -5.13 -0.    0.01  0.  ]
+== lift 3cm
+  move done code=0 max_joint_err=0.0025
+  hand at [-0.2399  0.1682  1.0482] target [-0.24    0.168   1.0484] poserr=0.0003
+  TCP now [-0.2398  0.1683  0.9448] target [-0.24   0.168  0.945]
+fingers (0.007580095928274823, -0.007578423691143237) wrench [-0.01 -0.   -5.25  0.01 -0.    0.  ]
+DONE

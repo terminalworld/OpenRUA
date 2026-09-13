@@ -1,0 +1,2 @@
+  move done code=-5 max_joint_err=0.0877
+  tcp now [ 0.1196 -0.2134  0.62  ] target [ 0.12  -0.214  0.62 ] d=0.0008

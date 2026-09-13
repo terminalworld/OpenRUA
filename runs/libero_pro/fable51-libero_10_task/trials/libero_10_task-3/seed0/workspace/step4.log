@@ -1,0 +1,76 @@
+[gripper] target=0.0 reached=True stalled=False fingers=[ 0.0041 -0.0041]
+Rp
+ [[ 0.     1.     0.   ]
+ [ 0.643 -0.     0.766]
+ [ 0.766  0.    -0.643]]
+[move_q] code=-5 max_joint_err=2.1749
+[move_q] retrying (1/2)
+[move_q] code=-5 max_joint_err=2.1733
+[move_q] retrying (2/2)
+[move_q] code=-5 max_joint_err=2.1720
+[move_q] retrying (3/2)
+[move_tcp] tcp now [-0.3898 -0.2242  1.0584] z-axis [-0.816 -0.255 -0.518] (target [ 0.06 -0.02  1.15])
+[move_q] code=-5 max_joint_err=2.0894
+[move_q] retrying (1/2)
+[move_q] code=-5 max_joint_err=2.0755
+[move_q] retrying (2/2)
+[move_q] code=-5 max_joint_err=2.0748
+[move_q] retrying (3/2)
+[move_tcp] tcp now [-0.3856 -0.2894  1.076 ] z-axis [-0.743 -0.584 -0.327] (target [0.06  0.02  0.955])
+wrench pre [ 2.95 -3.81 -1.67]
+[move_q] code=-5 max_joint_err=2.0838
+[move_q] retrying (1/2)
+[move_q] code=-5 max_joint_err=2.0823
+[move_q] retrying (2/2)
+[move_q] code=-5 max_joint_err=2.0815
+[move_q] retrying (3/2)
+[move_tcp] tcp now [-0.3791 -0.2978  1.0681] z-axis [-0.693 -0.622 -0.363] (target [0.06  0.07  0.955])
+wrench [ 2.69 -3.92 -1.85]
+[move_q] code=-5 max_joint_err=2.0867
+[move_q] retrying (1/2)
+[move_q] code=-5 max_joint_err=2.0852
+[move_q] retrying (2/2)
+[move_q] code=-5 max_joint_err=2.0843
+[move_q] retrying (3/2)
+[move_tcp] tcp now [-0.3744 -0.304   1.0633] z-axis [-0.658 -0.65  -0.381] (target [0.06  0.11  0.955])
+wrench [ 2.47 -4.02 -1.94]
+[move_q] code=-5 max_joint_err=2.0707
+[move_q] retrying (1/2)
+[move_q] code=-5 max_joint_err=1.9078
+[move_q] retrying (2/2)
+[move_q] code=-5 max_joint_err=1.7898
+[move_q] retrying (3/2)
+[move_tcp] tcp now [-0.3682 -0.2635  0.9503] z-axis [-0.658 -0.371 -0.656] (target [0.06  0.15  0.955])
+wrench [ 2.86 -2.59 -3.34]
+[move_q] code=-5 max_joint_err=1.4906
+[move_q] retrying (1/2)
+[move_q] code=-5 max_joint_err=1.0514
+[move_q] retrying (2/2)
+[move_q] code=-5 max_joint_err=1.0275
+[move_q] retrying (3/2)
+[move_tcp] tcp now [-0.2915 -0.1025  0.913 ] z-axis [-0.397  0.296 -0.869] (target [0.06  0.19  0.955])
+wrench [-8.46 28.73 16.16]
+[move_q] code=-5 max_joint_err=1.0509
+[move_q] retrying (1/2)
+[move_q] code=-5 max_joint_err=1.0489
+[move_q] retrying (2/2)
+[move_q] code=-5 max_joint_err=1.0462
+[move_q] retrying (3/2)
+[move_tcp] tcp now [-0.2957 -0.1089  0.9135] z-axis [-0.419  0.271 -0.866] (target [0.06  0.23  0.955])
+wrench [-24.73  32.91  15.41]
+[move_q] code=-5 max_joint_err=1.0572
+[move_q] retrying (1/2)
+[move_q] code=-5 max_joint_err=1.0537
+[move_q] retrying (2/2)
+[move_q] code=-5 max_joint_err=1.0492
+[move_q] retrying (3/2)
+[move_tcp] tcp now [-0.2958 -0.1113  0.9143] z-axis [-0.433  0.262 -0.863] (target [0.06  0.245 0.955])
+wrench [-25.41  32.11  14.26]
+[move_q] code=-5 max_joint_err=0.1015
+[move_q] retrying (1/2)
+[move_q] code=-5 max_joint_err=0.0757
+[move_q] retrying (2/2)
+[move_q] code=-5 max_joint_err=0.0758
+[move_q] retrying (3/2)
+[move_tcp] tcp now [-0.281  -0.0914  0.9814] z-axis [-0.498  0.302 -0.813] (target [-0.2526 -0.1376  1.0006])
+[move_tcp] IK FAILED for [ 0.06 -0.05  1.2 ]

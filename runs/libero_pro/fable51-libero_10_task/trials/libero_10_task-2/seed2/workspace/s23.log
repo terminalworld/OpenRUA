@@ -1,0 +1,4 @@
+move done code=-5 max_err=0.5635
+move done code=0 max_err=0.0022
+joints [ 0.000e+00 -1.600e-01  0.000e+00 -2.444e+00 -1.000e-03  2.225e+00
+  7.830e-01] tcp [-0.209  0.     1.166]

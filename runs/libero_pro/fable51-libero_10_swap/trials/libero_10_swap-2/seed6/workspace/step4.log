@@ -1,0 +1,47 @@
+open
+  gripper -> reached=True stalled=False fingers=[ 0.04 -0.04]
+go above pot
+  ik pos_err=0.0mm rot_err=0.00deg q=[-0.339  0.396 -0.085 -1.579  0.036  1.973 -1.217]
+  move done code=-5 max_joint_err=0.8133
+  reached tcp=[-0.0452 -0.268   1.2199]
+  resend (lag)
+  ik pos_err=0.0mm rot_err=0.00deg q=[-0.426  0.395  0.018 -1.579 -0.007  1.974 -1.192]
+  move done code=-5 max_joint_err=0.0818
+  reached tcp=[-0.0451 -0.2681  1.2196]
+  resend (lag)
+  ik pos_err=0.0mm rot_err=0.00deg q=[-0.433  0.395  0.027 -1.579 -0.011  1.974 -1.189]
+  move done code=0 max_joint_err=0.0021
+  reached tcp=[-0.0449 -0.2678  1.2198]
+  lid: y∈[-0.3040,-0.2400] x∈[-0.0825,-0.0089] width_x=0.0736 center=(-0.0457,-0.2720) zmax=1.0532
+re-center
+  ik pos_err=0.0mm rot_err=0.00deg q=[-0.437  0.397  0.025 -1.576 -0.01   1.972 -1.196]
+  move done code=0 max_joint_err=0.0023
+  reached tcp=[-0.0458 -0.2714  1.2199]
+  lid: y∈[-0.3040,-0.2400] x∈[-0.0825,-0.0087] width_x=0.0738 center=(-0.0456,-0.2720) zmax=1.0532
+  second estimate (-0.0456,-0.2720)
+  wrench baseline [ 0.   0.  -5.1]
+descend to 1.08
+  ik pos_err=0.0mm rot_err=0.00deg q=[-0.436  0.549  0.022 -1.712 -0.015  2.261 -1.193]
+  move done code=0 max_joint_err=0.0034
+  reached tcp=[-0.0457 -0.2716  1.0804]
+  wrench [ 0.01  0.01 -5.1 ] delta [ 0.01  0.01 -0.  ]
+descend to 1.04
+  ik pos_err=0.0mm rot_err=0.00deg q=[-0.436  0.613  0.021 -1.721 -0.017  2.333 -1.192]
+  move done code=0 max_joint_err=0.0022
+  reached tcp=[-0.0455 -0.2717  1.0404]
+  wrench [ 0.    0.01 -5.1 ] delta [-0.    0.01 -0.  ]
+descend to 1.0
+  ik pos_err=0.0mm rot_err=0.00deg q=[-0.434  0.684  0.019 -1.716 -0.018  2.4   -1.191]
+  move done code=-5 max_joint_err=0.0501
+  reached tcp=[-0.0395 -0.2721  1.0336]
+  resend (lag)
+  ik pos_err=0.0mm rot_err=0.00deg q=[-0.434  0.684  0.019 -1.716 -0.018  2.4   -1.191]
+  move done code=0 max_joint_err=0.0489
+  reached tcp=[-0.039  -0.2726  1.0336]
+  resend (lag)
+  ik pos_err=0.0mm rot_err=0.00deg q=[-0.434  0.684  0.019 -1.716 -0.018  2.4   -1.191]
+  move done code=0 max_joint_err=0.0483
+  reached tcp=[-0.0388 -0.2732  1.0336]
+  resend (lag)
+  wrench [-10.85  -4.99  21.46] delta [-10.85  -4.99  26.56]
+CONTACT - abort before close

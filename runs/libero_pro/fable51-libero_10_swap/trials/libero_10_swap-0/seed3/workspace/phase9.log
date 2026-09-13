@@ -1,0 +1,20 @@
+19:18:27 robot ready
+19:18:42 traj code=0 max_joint_err=0.0020
+19:18:42 back at PRE True
+19:18:44 gripper -> 0.04: reached=True stalled=False fingers=(0.03999689058532298, -0.03999945278017631)
+19:19:04 traj code=0 max_joint_err=0.0188
+19:19:04 tcp now [0.0331 0.3022 0.7813] target [0.03 0.3  0.78] err=0.0040
+19:19:19 line traj code=0 max_joint_err=0.0025 tcp now [0.03   0.3001 0.5205] target [0.03 0.3  0.52] err=0.0005
+19:19:19 down ok True
+19:19:19 tcp [0.03 0.3  0.52]
+19:19:43 line traj code=0 max_joint_err=0.0165 tcp now [0.0437 0.512  0.5339] target [0.03 0.52 0.52] err=0.0211
+19:19:43 push ok True
+19:19:43 tcp [0.044 0.512 0.534]
+19:19:58 line traj code=0 max_joint_err=0.0023 tcp now [0.0304 0.4501 0.7995] target [0.03 0.45 0.8 ] err=0.0007
+19:19:58 up ok True
+19:20:19 traj code=-5 max_joint_err=0.4474
+19:20:19 retrying trajectory
+19:20:39 traj code=0 max_joint_err=0.0019
+19:20:39 tcp now [-0.2997 -0.1503  0.8503] target [-0.3  -0.15  0.85] err=0.0006
+19:20:39 parked True
+19:20:39 PHASE9 DONE

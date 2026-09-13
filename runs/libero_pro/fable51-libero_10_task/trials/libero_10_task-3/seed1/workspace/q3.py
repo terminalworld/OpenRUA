@@ -1,0 +1,11 @@
+import numpy as np
+P = np.load("agentview_xyz.npy")
+def at(u,v): print(f"px({u},{v}) -> {P[v,u].round(4)}")
+print("drawer interior floor / walls, column u=420:")
+for v in range(245,390,5): at(420,v)
+print("row v=320:")
+for u in range(350,500,5): at(u,320)
+print("cabinet top row v=200:")
+for u in range(470,640,10): at(u,200)
+print("handles: bottom drawer handle ~(355,310), mid (470,265), top (470,220)")
+for (u,v) in [(352,300),(355,310),(358,320),(468,260),(472,270),(468,215),(472,225)]: at(u,v)

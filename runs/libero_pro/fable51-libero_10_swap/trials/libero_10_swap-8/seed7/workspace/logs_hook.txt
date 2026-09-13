@@ -1,0 +1,11 @@
+fingers (0.040040814906860255, -0.038987534795560705) q [ 0.206  0.556 -0.089 -1.667  1.444  1.648  0.136]
+  gripper(0.04): reached=True stalled=False fingers=(0.04004085542569667, -0.03897224552841521)
+  move: code=0 max_joint_err=0.0021
+  above: tcp [-0.0035  0.2898  1.2496] err 0.0021
+  move: code=-5 max_joint_err=0.0917
+  retry
+  move: code=-5 max_joint_err=0.0956
+  retry
+  move: code=-5 max_joint_err=0.1205
+  pre: tcp [0.0424 0.2849 1.1383] err 0.1205
+  LARGE ERROR - stopping

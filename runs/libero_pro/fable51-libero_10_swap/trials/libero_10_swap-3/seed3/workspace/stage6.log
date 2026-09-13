@@ -1,0 +1,6 @@
+pick_xy [-0.2092  0.076 ] place_xy [-0.146 -0.142] GRASP_Z 0.933 RELEASE_Z 0.969
+  gripper reached=True stalled=False fingers=(0.03588777437960451, -0.03589388678143967)
+[opened] TCP world = [-0.1496 -0.1456  0.9706]  fingers = [ 0.0359 -0.0359]
+[before retreat] TCP world = [-0.1496 -0.1456  0.9706]  fingers = [ 0.0359 -0.0359]
+  traj done code=0 max_joint_err=0.0024
+[retreated] TCP world = [-0.1494 -0.1453  1.1196]  fingers = [ 0.0399 -0.0399]

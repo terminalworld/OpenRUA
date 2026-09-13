@@ -1,0 +1,7 @@
+== movq -0.045 0.189 0.64 0.9763 0 0 -0.2164 4
+IK ok -> [0.18, -0.011, 0.119, -2.423, 0.67, 2.431, 0.572]
+FJT done error_code=0 (15.9s wall)
+max joint err vs target: 0.0070 rad
+TCP world=(-0.0450,0.1893,0.6401) link8 q=(0.9016,-0.3751,-0.0837,-0.1987) fingers=(0.0400,-0.0396) joints=[0.18, -0.01, 0.119, -2.421, 0.667, 2.43, 0.579]
+TCP err vs target: 0.0003 m
+SEQUENCE COMPLETE

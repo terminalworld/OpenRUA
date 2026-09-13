@@ -1,0 +1,4 @@
+move: error_code=-5 max_joint_err=0.1686
+  tcp now world=[-0.0505 -0.0058  0.8194] target=[-0.1   0.    0.75]
+/workspace/birdview.png
+/workspace/agentview.png

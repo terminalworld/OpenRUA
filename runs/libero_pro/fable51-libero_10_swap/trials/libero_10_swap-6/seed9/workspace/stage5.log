@@ -1,0 +1,18 @@
+start tcp [-0.0952 -0.1966  0.72  ] fingers (0.039903540983675614, -0.040000412452209214)
+FJT code=0 max_joint_err=0.0031
+tcp now [-0.129  -0.2609  0.6804] target [-0.129 -0.261  0.68 ]
+pre-grasp hand quat [ 1.     0.002 -0.001  0.   ]
+FJT code=0 max_joint_err=0.0026
+tcp now [-0.1296 -0.2608  0.52  ] target [-0.129 -0.261  0.52 ]
+gripper -> 0.0: reached=True stalled=False fingers=(0.004134729593943097, -0.004165218995510985)
+FJT code=0 max_joint_err=0.0027
+tcp now [-0.129  -0.261   0.6993] target [-0.129 -0.261  0.7  ]
+after lift fingers (0.002846009707140257, -0.0028551379869112318)
+FJT code=0 max_joint_err=0.0023
+tcp now [ 0.1378 -0.0277  0.6996] target [ 0.138 -0.027  0.7  ]
+FJT code=0 max_joint_err=0.0024
+tcp now [ 0.1378 -0.0273  0.5451] target [ 0.138 -0.027  0.545]
+gripper -> 0.04: reached=True stalled=False fingers=(0.035887583301587256, -0.0358902481905055)
+FJT code=0 max_joint_err=0.0023
+tcp now [ 0.1382 -0.0267  0.7195] target [ 0.138 -0.027  0.72 ]
+done

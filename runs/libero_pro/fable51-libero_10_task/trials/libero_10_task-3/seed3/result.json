@@ -1,0 +1,137 @@
+{
+  "task_suite": "libero_10_task",
+  "task_id": 3,
+  "init_state_id": 3,
+  "started_utc": "2026-09-12T18:18:49.332936+00:00",
+  "workspace_template_sha256": "f5999634776108746bd4b5476c9e5643e49a4fbd3fda7c0a59d0411eb5f60836",
+  "containers": {
+    "sim": "rc-fable51-libero_10_task-t3-3-3-3bcf1f-sim",
+    "sandbox": "rc-fable51-libero_10_task-t3-3-3-3bcf1f-sandbox"
+  },
+  "ros_domain": 5,
+  "agent_version": "2.1.251 (Claude Code)",
+  "task_language": "put the bottle in the bottom drawer of the cabinet and close it",
+  "preflight": [
+    [
+      "shell_sh_provisioned",
+      true
+    ],
+    [
+      "credentials_readable",
+      true
+    ],
+    [
+      "sandbox_cli_matches_pin",
+      true
+    ],
+    [
+      "clock_topic",
+      true
+    ],
+    [
+      "joint_states_flow",
+      true
+    ],
+    [
+      "tf_flow",
+      true
+    ],
+    [
+      "joint_names_match_manual",
+      true
+    ],
+    [
+      "trajectory_action",
+      true
+    ],
+    [
+      "twist_subscribed",
+      true
+    ],
+    [
+      "gripper_action",
+      true
+    ],
+    [
+      "wrench_flow",
+      true
+    ],
+    [
+      "camera_frame_flow",
+      true
+    ],
+    [
+      "camera_depth_intrinsics_flow",
+      true
+    ],
+    [
+      "workspace_tools_importable",
+      true
+    ],
+    [
+      "moveit_ik_answers",
+      true
+    ]
+  ],
+  "success": false,
+  "success_end_state": false,
+  "steps_total": 12200,
+  "steps_semantics": "episode",
+  "operator_meta": {
+    "operator": "agent",
+    "agent": "claude-code",
+    "model": "claude-fable-5-1",
+    "options": {
+      "effort": "high",
+      "autocompact": "1M",
+      "bash_timeout_ms": 600000,
+      "bash_max_timeout_ms": 1800000
+    },
+    "session_id": "01f48225-64b3-4c82-884f-52e90858890a",
+    "resume_on_quota_wall": true,
+    "termination": "self_finished",
+    "launcher_returncode": 0,
+    "segments": 1,
+    "resumes": 0,
+    "quota_resolved": false,
+    "active_seconds": 6588.6,
+    "suspended_seconds": 0.0,
+    "segment_detail": [
+      {
+        "started_unix": 1789237168.6,
+        "ended_unix": 1789243757.1,
+        "active_s": 6588.6,
+        "turn_budget": 500,
+        "resumed": false
+      }
+    ],
+    "num_turns": 132,
+    "usage": {
+      "input_tokens": 260,
+      "cache_creation_input_tokens": 477296,
+      "cache_read_input_tokens": 12556546,
+      "output_tokens": 283905,
+      "output_tokens_details": {
+        "thinking_tokens": 213513
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 477296
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "cost_usd": 17.599987749999993,
+    "duration_ms": 6587867
+  },
+  "termination": "self_finished",
+  "anomaly": null,
+  "wall_seconds": 6639.7,
+  "active_wall_cap_min": 240.0
+}

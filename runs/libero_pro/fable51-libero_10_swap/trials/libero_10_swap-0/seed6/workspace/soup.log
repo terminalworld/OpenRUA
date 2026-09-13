@@ -1,0 +1,25 @@
+[soup] start tcp=[0.   0.26 0.8 ] fingers=(0.0398962444735961, -0.039897511331902516)
+[soup] target (-0.249,-0.148) top=0.51 grasp_z=0.461
+open gripper
+  (True, False, (0.03993279354006647, -0.03993416191121767))
+-> pre-grasp
+  move code=-5 joint_err=0.3835 tcp=[-0.096 -0.039  0.755]
+-> descend
+  move code=-5 joint_err=0.4403 tcp=[-0.256 -0.19   0.509]
+  WARNING: xy off by [-0.007 -0.042]
+close gripper
+  (True, False, (0.004083654701261278, -0.016612000813925578))
+  finger gap=0.0207
+-> lift
+  move code=-5 joint_err=0.4957 tcp=[-0.182 -0.217  0.743]
+  fingers after lift=(0.0003718786230406751, -0.0006276704425160584)
+-> over basket
+  move code=-5 joint_err=0.3762 tcp=[0.023 0.084 0.869]
+  fingers over basket=(0.0005977878622830996, -0.00040178482286573006)
+-> lower into basket
+  move code=0 joint_err=0.0273 tcp=[0.006 0.25  0.711]
+open gripper
+  (True, False, (0.03587881214367222, -0.03587460797381282))
+-> retreat
+  move code=0 joint_err=0.0024 tcp=[0.    0.26  0.799]
+[soup] DONE fingers=(0.039895691973983495, -0.039890039144645784)

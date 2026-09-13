@@ -1,0 +1,12 @@
+wrench before [-0.   -0.01 -5.1   0.   -0.   -0.  ]
+stage2
+  move_q[0]: error_code=0 max_joint_err=0.0025
+  tcp now [-0.1406 -0.1549  0.4475] quat [ 1.    -0.001 -0.001 -0.   ] (target [-0.14   -0.155   0.4475] [1. 0. 0. 0.])
+wrench at grasp height [ 0.   -0.01 -5.1   0.    0.   -0.  ]
+close
+  gripper: reached=True stalled=False gap=0.0578
+gap 0.0577503504837842
+lift
+  move_q[0]: error_code=0 max_joint_err=0.0030
+  tcp now [-0.1397 -0.1549  0.6192] quat [ 1.     0.001  0.    -0.   ] (target [-0.14  -0.155  0.62 ] [1. 0. 0. 0.])
+gap after lift 0.056505532101402176 wrench [ 0.   -0.   -5.32 -0.   -0.   -0.  ]

@@ -1,0 +1,2 @@
+[INFO] [1789228636.651435573] [tf2_echo]: Waiting for transform world ->  sideview_optical_frame: Invalid frame ID "world" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789228656.462145200] [rclcpp]: signal_handler(SIGINT/SIGTERM)

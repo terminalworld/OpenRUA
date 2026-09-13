@@ -1,0 +1,8 @@
+open
+  gripper -> 0.04: reached=True stalled=False gap=0.0718
+descend
+  move_q done code=-5 (final max joint error 0.4552 rad) max_joint_err=0.4552
+  retrying same goal
+  move_q done code=0 (final max joint error 0.0055 rad) max_joint_err=0.0055
+  tcp now [-0.1923 -0.1385  0.4725] target [-0.197 -0.139  0.47 ]
+DONE

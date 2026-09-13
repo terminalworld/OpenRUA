@@ -1,0 +1,17 @@
+fingers before: (0.04000119283094291, -0.039900666783570626)
+pregrasp sol [-0.163 -0.306 -0.246 -2.776 -0.263  2.053  0.575]
+traj done error_code=0 max_joint_err=0.0022
+tcp now [-0.2582 -0.1353  0.6003]
+traj done error_code=0 max_joint_err=0.0275
+  resending final point
+traj done error_code=0 max_joint_err=0.0256
+  resending final point
+traj done error_code=0 max_joint_err=0.0249
+  resending final point
+tcp at grasp [-0.238  -0.1378  0.481 ] target (-0.258, -0.135, 0.47)
+gripper reached=True stalled=False fingers=(0.029661447335781483, -0.03329373990587923)
+finger gap after close: 0.0630 m
+traj done error_code=0 max_joint_err=0.0023
+lifted; finger gap now 0.0629
+tcp after lift [-0.2575 -0.1348  0.5998]
+joints -0.1066,-0.3093,-0.3050,-2.7750,-0.2796,2.0502,0.5883

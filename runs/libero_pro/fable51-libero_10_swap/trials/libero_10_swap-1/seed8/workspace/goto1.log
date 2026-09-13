@@ -1,0 +1,4 @@
+base in world: [-0.51  0.    0.42]
+goto TCP world [-0.087  0.079  0.6  ]
+  traj error_code=0 max joint err=0.0022
+hand world [-0.0868  0.0786  0.7037] q [ 1.     0.001 -0.     0.   ]  TCP world [-0.0869  0.0785  0.6003]  finger gap 0.0800

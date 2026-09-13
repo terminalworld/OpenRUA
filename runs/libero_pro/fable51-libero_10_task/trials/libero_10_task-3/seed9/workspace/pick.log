@@ -1,0 +1,9 @@
+gripper -> 0.04: reached=True stalled=False gap=0.0795
+move_q done code=-5 max_joint_err=0.3220
+  tcp now [-0.1681  0.0747  1.1998] (target [-0.166  0.073  1.22 ])
+q1 [-0.652 -0.171  0.775 -2.261  0.141  2.134  0.218] force [ 0.33  0.   -5.06]
+move_q done code=0 max_joint_err=0.0035
+  tcp now [-0.166   0.0729  1.1053] (target [-0.166  0.073  1.105])
+force [ 0.  -0.  -5.1]
+gripper -> 0.0: reached=True stalled=False gap=0.0083
+gap after close 0.0083

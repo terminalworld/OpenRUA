@@ -1,0 +1,28 @@
+start tcp [4.000e-04 2.497e-01 7.995e-01] fingers (0.03989607220062956, -0.03989848758371144)
+[1] open gripper
+  gripper -> reached=True stalled=False fingers=0.0399,-0.0399
+[2] hover above object
+  move done code=-5 max_joint_err=0.2610
+  tcp now world=[ 0.0965 -0.2086  0.5799] target=[ 0.097 -0.209  0.58 ] err=0.0007
+[3] descend to grasp height
+  move done code=0 max_joint_err=0.0134
+  tcp now world=[ 0.0974 -0.2109  0.4391] target=[ 0.097 -0.209  0.432] err=0.0074
+[4] close gripper
+  gripper -> reached=True stalled=False fingers=0.0211,-0.0212
+  finger gap = 0.0422 m (0 => closed on air)
+[5] lift
+  move done code=0 max_joint_err=0.0397
+  tcp now world=[ 0.1043 -0.2124  0.7524] target=[ 0.097 -0.209  0.75 ] err=0.0084
+  after lift finger gap = 0.0422 wrench [-0.12  0.2  -5.16] was [-2.14  4.7   3.03]
+[6] move over basket
+  move done code=-5 max_joint_err=0.2652
+  tcp now world=[0.0475 0.1082 0.75  ] target=[0.   0.25 0.75] err=0.1496
+  move done code=0 max_joint_err=0.0022
+  tcp now world=[1.000e-04 2.493e-01 7.003e-01] target=[0.   0.25 0.7 ] err=0.0008
+  over basket finger gap = 0.0422
+[7] release
+  gripper -> reached=True stalled=False fingers=0.0363,-0.0363
+[8] retreat up
+  move done code=0 max_joint_err=0.0023
+  tcp now world=[1.000e-04 2.504e-01 7.995e-01] target=[0.   0.25 0.8 ] err=0.0006
+DONE

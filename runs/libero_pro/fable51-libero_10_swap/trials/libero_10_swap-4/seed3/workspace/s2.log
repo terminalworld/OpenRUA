@@ -1,0 +1,13 @@
+descend to just above rim
+  traj done code=0 max_joint_err=0.0026
+  tcp now [-0.1269 -0.2299  0.5843] (target [-0.127 -0.23   0.584])
+descend into pinch depth
+  traj done code=0 max_joint_err=0.0024
+  tcp now [-0.1271 -0.2303  0.5243] (target [-0.127 -0.23   0.524])
+wrench before close (0.00020412074979276514, -0.005313542121102514, -5.101671161132663)
+  gripper -> 0.0: reached=True stalled=False fingers=(0.004125421035733359, -0.004133898356669795)
+wrench after close (-0.051195777844500884, 0.0014967758175796334, -5.182356980789557)
+lift
+  traj done code=0 max_joint_err=0.0028
+  tcp now [-0.1268 -0.2296  0.6994] (target [-0.127 -0.23   0.7  ])
+fingers after lift (0.002859708085701997, -0.002868955081395327) wrench (0.004721954204434683, 0.015541668794480382, -5.269004341459403)

@@ -1,0 +1,12 @@
+pregrasp
+  traj done code=-5 max_joint_err=0.5476
+  tcp now [-0.045  0.012  0.69 ] (target [-0.171  0.033  0.66 ])
+descend
+  traj done code=-5 max_joint_err=0.0768
+  tcp now [-0.186  0.03   0.513] (target [-0.171  0.033  0.518])
+close
+  gripper -> fingers 0.0070 -0.0044
+lift
+  traj done code=-5 max_joint_err=0.1343
+  tcp now [-0.149  0.041  0.693] (target [-0.171  0.033  0.7  ])
+fingers after lift (0.0053295834854954005, -0.005364755783195138)

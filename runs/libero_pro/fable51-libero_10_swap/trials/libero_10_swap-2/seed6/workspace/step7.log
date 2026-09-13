@@ -1,0 +1,35 @@
+fingers [ 0.0057 -0.0057]
+raise
+  ik pos_err=0.0mm rot_err=0.00deg q=[-0.437  0.379  0.023 -1.5   -0.009  1.879 -1.198]
+  move done code=0 max_joint_err=0.0026
+  reached tcp=[-0.0457 -0.273   1.2581]
+over burner
+  ik pos_err=0.0mm rot_err=0.00deg q=[ 0.173  0.253  0.16  -1.686 -0.043  1.936  1.128]
+  move done code=-5 max_joint_err=1.4167
+  reached tcp=[-0.0574  0.1968  1.2587]
+  resend (lag)
+  ik pos_err=0.0mm rot_err=0.00deg q=[ 0.286  0.251  0.033 -1.686 -0.009  1.936  1.107]
+  move done code=-5 max_joint_err=0.5319
+  reached tcp=[-0.0576  0.197   1.2585]
+  resend (lag)
+  ik pos_err=0.0mm rot_err=0.00deg q=[ 0.328  0.251 -0.014 -1.686  0.004  1.937  1.099]
+  move done code=0 max_joint_err=0.0022
+  reached tcp=[-0.0577  0.1967  1.2583]
+fingers [ 0.0057 -0.0057] wrench [-0.01 -0.02 -5.77]
+lower to 1.1500
+  ik pos_err=0.0mm rot_err=0.00deg q=[ 0.327  0.347 -0.012 -1.838  0.005  2.185  1.098]
+  move done code=0 max_joint_err=0.0022
+  reached tcp=[-0.0576  0.1966  1.1492]
+  wrench [-0.01 -0.02 -5.77] delta [ 0.    0.01 -0.  ]
+lower to 1.0750
+  ik pos_err=0.0mm rot_err=0.00deg q=[ 0.326  0.454 -0.011 -1.884  0.007  2.339  1.097]
+  move done code=0 max_joint_err=0.0022
+  reached tcp=[-0.0576  0.1964  1.0742]
+  wrench [-0.01 -0.02 -5.77] delta [ 0.    0.01 -0.  ]
+release
+  gripper -> reached=True stalled=False fingers=[ 0.0359 -0.0359]
+retreat
+  ik pos_err=0.0mm rot_err=0.00deg q=[ 0.327  0.251 -0.013 -1.686  0.003  1.937  1.099]
+  move done code=0 max_joint_err=0.0022
+  reached tcp=[-0.0569  0.1974  1.2595]
+DONE

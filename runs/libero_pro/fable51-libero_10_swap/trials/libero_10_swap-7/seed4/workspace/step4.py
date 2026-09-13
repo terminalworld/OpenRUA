@@ -1,0 +1,6 @@
+ok = A.move_to([-0.01, 0.25, 0.70], DOWN, seconds=1.5)
+A.log("lowered ok=", ok)
+f = A.gripper(0.04)
+A.log("released, fingers:", f)
+ok = A.move_to([-0.01, 0.25, 0.78], DOWN, seconds=1.5)
+A.log("STEP4 retreat ok=", ok)

@@ -1,0 +1,8 @@
+grip -> pos=0.0000 reached=True stalled=False fingers=(0.035875375862431565, -0.03587805274846908)
+path done code=0 max_err=0.0024
+tcp [-0.0591 -0.1081  0.9302] fingers (0.03999279677758426, -0.03998880514184205)
+grip -> pos=0.0000 reached=True stalled=False fingers=(0.01312982761501056, -0.013113375461218081)
+move done code=0 max_err=0.0001
+fingers after settle (0.013065919754682787, -0.013177226271486176)
+path done code=0 max_err=0.0025
+tcp [-0.059  -0.1076  1.1186] fingers (0.013121519305224743, -0.013121650887079691)

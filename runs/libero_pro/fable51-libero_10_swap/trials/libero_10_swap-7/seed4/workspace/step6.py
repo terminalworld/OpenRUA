@@ -1,0 +1,7 @@
+ok = A.move_to([0.090, -0.190, 0.50], DOWN, seconds=2.0)
+ok = A.move_to([0.090, -0.190, 0.437], DOWN, seconds=2.0)
+A.log("STEP6 at grasp height ok=", ok)
+f = A.gripper(0.0)
+A.log("fingers after close:", f)
+ok = A.move_to([0.090, -0.190, 0.60], DOWN, seconds=2.0)
+A.log("lifted ok=", ok, "fingers:", A.fingers())

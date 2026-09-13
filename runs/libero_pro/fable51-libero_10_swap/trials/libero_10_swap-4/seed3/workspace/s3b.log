@@ -1,0 +1,8 @@
+start [-0.0042 -0.357   0.5472] wrench [ 2.000e-03 -9.000e-03 -5.263e+00]
+  traj done code=0 max_joint_err=0.0024
+  tcp now [-0.0045 -0.3569  0.5373] (target [-0.0042 -0.357   0.5372])
+z=0.537 wrench=[ 4.000e-03 -7.000e-03 -5.265e+00] dFz=-0.002 fingers=[ 0.0029 -0.0029]
+  traj done code=0 max_joint_err=0.0045
+  tcp now [-0.004  -0.3594  0.531 ] (target [-0.0042 -0.357   0.5272])
+z=0.527 wrench=[ 0.218  0.724 -2.65 ] dFz=+2.613 fingers=[ 0.0031 -0.0029]
+contact detected

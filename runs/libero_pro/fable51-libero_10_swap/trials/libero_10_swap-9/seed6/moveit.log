@@ -1,0 +1,1020 @@
+[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-13-05-18-18-878914-ae856126e1e1-186
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [robot_state_publisher-1]: process started with pid [189]
+[INFO] [move_group-2]: process started with pid [190]
+[robot_state_publisher-1] [WARN] [1789276699.082352630] [kdl_parser]: The root link panda_link0 has an inertia specified in the URDF, but KDL does not support a root link with an inertia.  As a workaround, you can add an extra dummy link to your URDF.
+[robot_state_publisher-1] [INFO] [1789276699.082498838] [robot_state_publisher]: Robot initialized
+[move_group-2] [INFO] [1789276699.105148101] [move_group.moveit.moveit.ros.rdf_loader]: Loaded robot model in 0 seconds
+[move_group-2] [INFO] [1789276699.105275685] [move_group.moveit.moveit.core.robot_model]: Loading robot model 'panda'...
+[move_group-2] [WARN] [1789276699.111130138] [kdl_parser]: The root link panda_link0 has an inertia specified in the URDF, but KDL does not support a root link with an inertia.  As a workaround, you can add an extra dummy link to your URDF.
+[move_group-2] [INFO] [1789276699.111212058] [move_group.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'panda_arm': 1 1 1 1 1 1 1
+[move_group-2] [INFO] [1789276699.132707589] [move_group.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[move_group-2] [INFO] [1789276699.132875973] [move_group.moveit.moveit.ros.moveit_cpp]: Listening to 'joint_states' for joint states
+[move_group-2] [INFO] [1789276699.133754472] [move_group.moveit.moveit.ros.current_state_monitor]: Listening to joint states on topic 'joint_states'
+[move_group-2] [INFO] [1789276699.134044521] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to '/attached_collision_object' for attached collision objects
+[move_group-2] [INFO] [1789276699.134073417] [move_group.moveit.moveit.ros.planning_scene_monitor]: Stopping existing planning scene publisher.
+[move_group-2] [INFO] [1789276699.134171978] [move_group.moveit.moveit.ros.planning_scene_monitor]: Stopped publishing maintained planning scene.
+[move_group-2] [INFO] [1789276699.134416586] [move_group.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[move_group-2] [INFO] [1789276699.134506667] [move_group.moveit.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[move_group-2] [INFO] [1789276699.135022189] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to '/planning_scene'
+[move_group-2] [INFO] [1789276699.135040557] [move_group.moveit.moveit.ros.planning_scene_monitor]: Starting world geometry update monitor for collision objects, attached objects, octomap updates.
+[move_group-2] [INFO] [1789276699.135314606] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to 'collision_object'
+[move_group-2] [INFO] [1789276699.135567438] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to 'planning_scene_world' for planning scene world geometry
+[move_group-2] [WARN] [1789276699.135689935] [move_group.moveit.moveit.ros.occupancy_map_monitor]: Resolution not specified for Octomap. Assuming resolution = 0.1 instead
+[move_group-2] [ERROR] [1789276699.135709263] [move_group.moveit.moveit.ros.occupancy_map_monitor]: No 3D sensor plugin(s) defined for octomap updates
+[move_group-2] [INFO] [1789276699.140004414] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'CHOMP'
+[move_group-2] [INFO] [1789276699.140670624] [move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789276699.141194082] [move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789276699.141217090] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789276699.141332835] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789276699.141345539] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789276699.141365603] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789276699.141371907] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789276699.141386019] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789276699.142005893] [move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789276699.143390346] [move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789276699.153258988] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'OMPL'
+[move_group-2] [INFO] [1789276699.153946798] [move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789276699.154025807] [move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789276699.154036911] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789276699.154206927] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789276699.154223439] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789276699.154243471] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789276699.154250095] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789276699.154261135] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789276699.154870898] [move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789276699.155122706] [move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789276699.155141554] [move_group]: Try loading adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789276699.156590263] [move_group]: Loaded adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789276699.156618744] [move_group]: Try loading adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789276699.156992441] [move_group]: Loaded adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789276699.158761695] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Reading limits from namespace robot_description_planning
+[move_group-2] [WARN] [1789276699.159327905] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [WARN] [1789276699.159358465] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [INFO] [1789276699.162070410] [move_group.moveit.moveit.planners.pilz.command_planner]: Available plugins: pilz_industrial_motion_planner/PlanningContextLoaderCIRC pilz_industrial_motion_planner/PlanningContextLoaderLIN pilz_industrial_motion_planner/PlanningContextLoaderPTP 
+[move_group-2] [INFO] [1789276699.162104971] [move_group.moveit.moveit.planners.pilz.command_planner]: About to load: pilz_industrial_motion_planner/PlanningContextLoaderCIRC
+[move_group-2] [INFO] [1789276699.162999150] [move_group.moveit.moveit.planners.pilz.command_planner]: Registered Algorithm [CIRC]
+[move_group-2] [INFO] [1789276699.163032078] [move_group.moveit.moveit.planners.pilz.command_planner]: About to load: pilz_industrial_motion_planner/PlanningContextLoaderLIN
+[move_group-2] [INFO] [1789276699.163614000] [move_group.moveit.moveit.planners.pilz.command_planner]: Registered Algorithm [LIN]
+[move_group-2] [INFO] [1789276699.163644880] [move_group.moveit.moveit.planners.pilz.command_planner]: About to load: pilz_industrial_motion_planner/PlanningContextLoaderPTP
+[move_group-2] [INFO] [1789276699.164218706] [move_group.moveit.moveit.planners.pilz.command_planner]: Registered Algorithm [PTP]
+[move_group-2] [INFO] [1789276699.164250258] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'Pilz Industrial Motion Planner'
+[move_group-2] [INFO] [1789276699.164889620] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789276699.165103189] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789276699.165123029] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789276699.165145685] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789276699.165153717] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789276699.165166997] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [WARN] [1789276699.165173621] [move_group.moveit.moveit.ros.planning_pipeline]: No planning response adapter names specified.
+[move_group-2] [INFO] [1789276699.167199164] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'STOMP'
+[move_group-2] [INFO] [1789276699.167824830] [move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789276699.167893823] [move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789276699.167903583] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789276699.168039103] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789276699.168063711] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789276699.168085887] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789276699.168092607] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789276699.168106335] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789276699.168700545] [move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789276699.168990210] [move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789276699.169006339] [move_group]: Try loading adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789276699.169251555] [move_group]: Loaded adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789276699.169268899] [move_group]: Try loading adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789276699.169454532] [move_group]: Loaded adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789276699.199468748] [move_group.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for panda_arm_controller
+[move_group-2] [INFO] [1789276699.199522573] [move_group.moveit.moveit.plugins.simple_controller_manager]: panda_hand_controller will command a max effort of: 0
+[move_group-2] [ERROR] [1789276699.201115954] [move_group.moveit.moveit.plugins.simple_controller_manager]: Parallel Gripper requires exactly two joints, 1 are specified
+[move_group-2] [INFO] [1789276699.203351482] [move_group.moveit.moveit.plugins.simple_controller_manager]: Returned 1 controllers in list
+[move_group-2] [INFO] [1789276699.203392058] [move_group.moveit.moveit.plugins.simple_controller_manager]: Returned 1 controllers in list
+[move_group-2] [INFO] [1789276699.203813147] [move_group.moveit.moveit.ros.trajectory_execution_manager]: Trajectory execution is managing controllers
+[move_group-2] [INFO] [1789276699.203843227] [move_group]: MoveGroup debug mode is ON
+[move_group-2] [INFO] [1789276699.216988681] [move_group.moveit.moveit.planners.pilz.move_group_sequence_action]: initialize move group sequence action
+[move_group-2] [INFO] [1789276699.218935120] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Reading limits from namespace robot_description_planning
+[move_group-2] [WARN] [1789276699.218985264] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [WARN] [1789276699.219003056] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [INFO] [1789276699.219148369] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Reading limits from namespace robot_description_planning
+[move_group-2] [WARN] [1789276699.219179441] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [WARN] [1789276699.219195857] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [INFO] [1789276699.219760051] [move_group.moveit.moveit.ros.move_group.executable]: 
+[move_group-2] 
+[move_group-2] ********************************************************
+[move_group-2] * MoveGroup using: 
+[move_group-2] *     - apply_planning_scene_service
+[move_group-2] *     - clear_octomap_service
+[move_group-2] *     - get_group_urdf
+[move_group-2] *     - load_geometry_from_file
+[move_group-2] *     - CartesianPathService
+[move_group-2] *     - execute_trajectory_action
+[move_group-2] *     - get_planning_scene_service
+[move_group-2] *     - kinematics_service
+[move_group-2] *     - move_action
+[move_group-2] *     - motion_plan_service
+[move_group-2] *     - query_planners_service
+[move_group-2] *     - state_validation_service
+[move_group-2] *     - save_geometry_to_file
+[move_group-2] *     - SequenceAction
+[move_group-2] *     - SequenceService
+[move_group-2] ********************************************************
+[move_group-2] 
+[move_group-2] [INFO] [1789276699.219814003] [move_group.moveit.moveit.ros.move_group.context]: MoveGroup context using pipeline ompl
+[move_group-2] [INFO] [1789276699.219829331] [move_group.moveit.moveit.ros.move_group.context]: MoveGroup context initialization complete
+[move_group-2] [WARN] [1789276699.275844245] [move_group.moveit.moveit.ros.current_state_monitor]: Unable to update multi-DOF joint 'virtual_joint':Failure to lookup transform between 'world'and 'panda_link0' with TF exception: "world" passed to lookupTransform argument target_frame does not exist. 
+[move_group-2] [ERROR] [1789276722.501978329] [move_group.moveit.moveit.core.robot_model]: Group '' not found in model 'panda'
+[move_group-2] [WARN] [1789277680.837246210] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'table', but it does not exist in this scene.
+[move_group-2] [WARN] [1789277680.837333187] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw', but it does not exist in this scene.
+[move_group-2] [WARN] [1789277680.837346691] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789277680.837359011] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789277680.837368003] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789277680.837379107] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789277680.837389827] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789277680.837401155] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'door', but it does not exist in this scene.
+[move_group-2] [WARN] [1789277680.837412003] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'handle', but it does not exist in this scene.
+[move_group-2] [WARN] [1789277680.837420963] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'gray_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789277680.837431907] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789277814.167433156] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789277814.167548452] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789277814.167837829] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789277814.167892933] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789277814.167902629] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789277814.167923205] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789277814.167962438] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789277814.168104230] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789277814.168754472] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789277814.168922249] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789277814.181938454] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789277814.184082525] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789277814.184322462] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789278097.667512600] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789278097.667665657] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789278097.667868473] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789278097.667904410] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789278097.667911514] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789278097.667931386] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789278097.667964026] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789278097.668101818] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789278097.668508860] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789278097.668604508] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789278097.681015015] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789278097.682307243] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789278097.682538636] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789278203.168562440] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789278203.168627752] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789278203.168638952] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789278203.168651208] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789278203.168663016] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789280867.169204062] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789280867.169277662] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789280867.169287646] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789280867.169298014] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789280867.169308798] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [INFO] [1789280869.668225265] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789280869.668363442] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789280869.668420466] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789280869.668445618] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789280869.668451378] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789280869.668469778] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789280869.668501746] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789280869.668579794] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789280869.668892979] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789280869.668987732] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789280869.681456831] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint1', actual value: -0.391243, desired value: -0.395337, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.681519071] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint2', actual value: 0.902348, desired value: 0.901371, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.681531135] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint3', actual value: -0.110434, desired value: -0.110684, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.681542719] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint4', actual value: -1.553697, desired value: -1.552504, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.681553535] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint5', actual value: 1.088551, desired value: 1.086514, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.681564543] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint6', actual value: 1.854636, desired value: 1.856644, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.681575103] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint7', actual value: 1.471166, desired value: 1.475329, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.681604895] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'mw' (type 'Object') and 'panda_link5' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[move_group-2] [INFO] [1789280869.681618207] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[move_group-2] [ERROR] [1789280869.689624635] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789280869.689732411] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789280869.689793659] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789280869.689855035] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [WARN] [1789280869.689937916] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.020880 seconds
+[move_group-2] [ERROR] [1789280869.690024412] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[move_group-2] [ERROR] [1789280869.690099836] [move_group]: Planner 'OMPL' failed with error code FAILURE
+[move_group-2] [ERROR] [1789280869.690121116] [move_group.moveit.moveit.ros.move_group.plan_service]: Generating a plan with planning pipeline failed.
+[move_group-2] [INFO] [1789280869.691495745] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789280869.691598593] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789280869.691730306] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789280869.691754914] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789280869.691762242] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789280869.691781122] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789280869.691806082] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789280869.691881762] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789280869.692120771] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789280869.692205700] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789280869.704608942] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint1', actual value: -0.398191, desired value: -0.395337, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.704679598] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint2', actual value: 0.901641, desired value: 0.901371, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.704692430] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint3', actual value: -0.110507, desired value: -0.110684, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.704705135] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint4', actual value: -1.556828, desired value: -1.552504, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.704716815] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint5', actual value: 1.089493, desired value: 1.086514, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.704728879] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint6', actual value: 1.853748, desired value: 1.856644, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.704740463] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint7', actual value: 1.471119, desired value: 1.475329, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.704765615] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'mw' (type 'Object') and 'panda_link5' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[move_group-2] [INFO] [1789280869.704779567] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[move_group-2] [ERROR] [1789280869.712586250] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789280869.712669642] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789280869.712735306] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789280869.712804106] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [WARN] [1789280869.712907307] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.020637 seconds
+[move_group-2] [ERROR] [1789280869.712977771] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[move_group-2] [ERROR] [1789280869.713064011] [move_group]: Planner 'OMPL' failed with error code FAILURE
+[move_group-2] [ERROR] [1789280869.713091883] [move_group.moveit.moveit.ros.move_group.plan_service]: Generating a plan with planning pipeline failed.
+[move_group-2] [INFO] [1789280869.714660529] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789280869.714757649] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789280869.714793297] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789280869.714811409] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789280869.714818321] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789280869.714835921] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789280869.714858833] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789280869.714914738] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789280869.715167443] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789280869.715247539] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789280869.727723102] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint1', actual value: -0.393019, desired value: -0.395337, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.727780766] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint2', actual value: 0.900420, desired value: 0.901371, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.727792414] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint3', actual value: -0.112071, desired value: -0.110684, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.727802846] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint4', actual value: -1.555833, desired value: -1.552504, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.727814910] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint5', actual value: 1.090092, desired value: 1.086514, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.727826430] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint6', actual value: 1.852403, desired value: 1.856644, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.727837822] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint7', actual value: 1.471680, desired value: 1.475329, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789280869.727863806] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'mw' (type 'Object') and 'panda_link5' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[move_group-2] [INFO] [1789280869.727877054] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[move_group-2] [ERROR] [1789280869.735596985] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789280869.735686841] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789280869.735747193] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789280869.735805114] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [WARN] [1789280869.735883834] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.020580 seconds
+[move_group-2] [ERROR] [1789280869.735963322] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[move_group-2] [ERROR] [1789280869.736033402] [move_group]: Planner 'OMPL' failed with error code FAILURE
+[move_group-2] [ERROR] [1789280869.736067162] [move_group.moveit.moveit.ros.move_group.plan_service]: Generating a plan with planning pipeline failed.
+[move_group-2] [WARN] [1789281220.169223311] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281220.169297712] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281220.169306928] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281220.169318896] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281220.169330288] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [INFO] [1789281222.666902896] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789281222.667028016] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789281222.667278193] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789281222.667316337] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789281222.667324625] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789281222.667342705] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789281222.667374833] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789281222.667461586] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789281222.667784243] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789281222.667872531] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789281222.681322818] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789281222.682259973] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789281222.682437478] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789281274.666986015] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789281274.667169152] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789281274.669199047] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 22 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789281304.668060904] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789281304.668233001] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789281304.670830738] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 33 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789281327.167334001] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789281327.167502866] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789281327.169498457] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 22 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789281417.669977323] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281417.670064972] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281417.670076940] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281417.670086732] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281417.670096652] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281417.670116108] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789281420.167661196] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789281420.167788172] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789281420.167846669] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789281420.167873997] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789281420.167881101] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789281420.167897709] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789281420.167927213] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789281420.167999661] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789281420.168291534] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789281420.168388686] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789281420.180666617] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789281420.181451036] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789281420.181619676] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789281444.667884831] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789281444.668029344] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789281444.669777062] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 18 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789281559.167846145] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789281559.168005281] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789281559.169106405] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 11 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789281579.167496515] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789281579.167642564] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789281579.168559719] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 9 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789281599.167590823] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789281599.167767015] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.002500 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789281599.169302317] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 22 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789281697.166988847] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789281697.167158863] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789281697.169076438] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 21 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789281784.668960732] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281784.669041469] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281784.669062173] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281784.669073821] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281784.669084157] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789281784.669104605] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789281785.667036953] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789281785.667202394] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789281785.667466139] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789281785.667502363] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789281785.667510523] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789281785.667529211] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789281785.667564219] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789281785.667653339] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789281785.667946524] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789281785.668060445] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789281785.680947369] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789281785.681424331] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789281785.681574379] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789281808.667622153] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789281808.667790185] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.002500 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789281808.669501551] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 26 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789282653.666862108] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789282653.667005532] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789282653.670185767] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 36 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789282766.168008818] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789282766.168090611] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789282766.168102739] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789282766.168113747] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789282766.168123411] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789282766.168152979] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789282768.667373155] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789282768.667515012] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789282768.667574212] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789282768.667601540] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789282768.667608900] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789282768.667626660] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789282768.667654564] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789282768.667733668] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789282768.668082502] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789282768.668181958] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789282768.680558769] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789282768.681273203] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789282768.681413972] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789282792.667458566] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789282792.667620966] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789282792.669528429] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 22 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789282814.167277173] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789282814.167434261] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789282814.168505945] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 11 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789282833.666939309] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789282833.667075694] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789282833.667137678] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789282833.667165966] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789282833.667173582] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789282833.667191310] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789282833.667217902] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789282833.667301455] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789282833.667616528] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789282833.667712944] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789282833.680412860] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789282833.680903677] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789282833.681021054] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789282854.167371299] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789282854.167517924] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789282854.168675304] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 12 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789282875.667111665] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789282875.667255314] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789282875.669148216] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 21 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789282933.168113032] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789282933.168186248] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789282933.168196488] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789282933.168207336] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789282933.168217672] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789282933.168235944] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789282934.167331936] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789282934.167462336] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789282934.167627041] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789282934.167661057] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789282934.167669505] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789282934.167688577] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789282934.167718977] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789282934.167790401] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789282934.168100706] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789282934.168196163] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789282934.180894319] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789282934.181928882] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789282934.182115923] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789282960.667030804] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789282960.667169364] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.002500 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789282960.669168379] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 26 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789283006.166930341] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789283006.167095014] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789283006.168508715] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 16 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789283054.168347055] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789283054.168416527] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789283054.168427343] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789283054.168436591] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789283054.168446703] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789283054.168463151] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789283055.167026981] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789283055.167162918] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789283055.167309862] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789283055.167338694] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789283055.167346406] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789283055.167364806] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789283055.167393190] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789283055.167479911] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789283055.167799368] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789283055.167893160] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789283055.181068757] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789283055.183331165] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789283055.183632446] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789283150.667217586] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789283150.667364434] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789283150.721279564] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 10 points (followed 56.250000% of requested trajectory)
+[move_group-2] [WARN] [1789283159.234515310] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw', but it does not exist in this scene.
+[move_group-2] [WARN] [1789283159.234604846] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789283161.667273592] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789283161.667412473] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789283161.667586394] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789283161.667616890] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789283161.667624346] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789283161.667641018] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789283161.667671034] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789283161.667767706] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789283161.668087323] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789283161.668181372] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789283161.680944744] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789283161.683191887] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789283161.683488080] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789283606.318824358] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789283606.318898054] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789283606.318908646] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789283606.318918790] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789283606.318930598] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789283606.318949286] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789283608.667399397] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789283608.667533381] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789283608.667707558] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789283608.667737574] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789283608.667743430] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789283608.667760838] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789283608.667792966] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789283608.667860454] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789283608.668187208] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789283608.668289096] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789283608.682608633] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789283608.685702116] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789283608.686368070] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789283673.166824685] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789283673.166987694] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.002500 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789283673.169212949] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 22 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789283731.667630578] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789283731.667800819] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789283731.668734422] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 9 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789284016.167323877] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789284016.167462725] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789284016.167522501] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789284016.167551942] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789284016.167560998] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789284016.167579462] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789284016.167607462] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789284016.167700934] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789284016.167997351] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789284016.168132168] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789284016.181969623] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789284016.184540128] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789284016.184999458] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789284094.167311602] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789284094.167475346] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.002500 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789284094.167900340] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 3 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789284116.167412134] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789284116.167558215] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789284116.169311149] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 22 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789284828.480699871] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789284828.480781279] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789284828.480791903] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789284828.480801631] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789284828.480810239] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789284828.480827008] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789284829.667242845] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789284829.667388318] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789284829.668178561] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789284858.852157092] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789284858.852241605] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789284858.852252837] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789284858.852261765] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789284858.852270373] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789284858.852286277] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789284860.167751317] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789284860.167896118] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789284860.168701401] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789284881.167570975] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789284881.167709504] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789284881.167973633] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789284881.168008257] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789284881.168016673] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789284881.168034625] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789284881.168099041] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789284881.168233250] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789284881.168564419] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789284881.168665731] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789284881.182306257] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789284881.184770905] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789284881.185113754] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789284957.167266172] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789284957.167391260] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789284957.169091426] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 14 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789285019.167809428] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789285019.167947956] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789285019.169228025] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 12 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789285081.666994044] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789285081.667151196] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789285081.668199552] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 9 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789285617.480994023] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285617.481085095] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285617.481098567] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285617.481110472] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285617.481119976] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285617.481139368] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789285620.668015644] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789285620.668222012] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789285620.682406285] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 95 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789285663.167993956] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789285663.168197093] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789285663.168756423] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 4 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789285683.167753168] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789285683.167920177] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789285683.168724436] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789285703.170547719] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789285703.170731368] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789285703.171534859] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789285723.169144624] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789285723.169330449] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789285723.170118707] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789285743.168352859] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789285743.168511451] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789285743.169319390] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789285763.168326824] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789285763.168477352] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789285763.169262315] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789285783.667693596] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789285783.667838525] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789285783.668694431] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 8 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789285836.900021404] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285836.900104092] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285836.900118588] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285836.900130428] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285836.900140476] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285836.900158364] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789285839.167578353] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789285839.167728465] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789285839.167788050] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789285839.167814802] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789285839.167821554] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789285839.167839154] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789285839.167870898] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789285839.167954290] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789285839.168311891] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789285839.168397684] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789285839.181311936] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789285839.181447520] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789285839.181507328] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789285858.167420459] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789285858.167604652] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789285858.169124145] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 17 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789285967.898780176] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285967.898854865] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285967.898867025] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285967.898876657] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285967.898886577] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789285967.898902321] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789286254.167075604] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789286254.167166164] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789286254.167176660] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789286254.167190068] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789286254.167200788] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789286254.167222645] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789286650.168227102] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789286650.168462751] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789286650.170004389] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 16 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789286669.668413583] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789286669.668563440] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 8 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789286669.683582147] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 47 points (followed 34.375000% of requested trajectory)
+[move_group-2] [INFO] [1789286789.667528963] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789286789.667682019] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789286789.668591206] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 8 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789286882.667868660] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789286882.668003476] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789286882.669388761] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 16 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789286913.600867017] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789286913.600942921] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789286913.600953289] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789286913.600963625] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789286913.600973961] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789286913.600990409] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789286916.667086587] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789286916.667231483] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789286916.668960225] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 20 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789286946.666885392] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789286946.667043824] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789286946.668495989] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 16 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789286966.167168802] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789286966.167305570] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 8 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789286966.178730825] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 97 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789287035.167290458] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789287035.167410491] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789287035.169304513] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 22 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789287097.668262597] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789287097.668415686] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789287097.669668842] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 10 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789287194.861632160] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287194.861708289] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287194.861721185] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287194.861733121] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287194.861742177] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287194.861760929] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789287195.667298507] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789287195.667415531] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789287195.667716460] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789287195.667754892] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789287195.667762860] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789287195.667781261] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789287195.667815533] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789287195.667942413] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789287195.668263630] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789287195.668365135] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789287195.680829689] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789287195.681902493] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789287195.682112958] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789287609.748063398] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287609.748133126] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287609.748145606] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287609.748156934] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287609.748167174] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287609.748186023] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287622.000562175] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287622.000627231] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287622.000637471] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287622.000648671] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287622.000659519] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287622.000677119] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789287624.667140618] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789287624.667260555] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789287624.667322571] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789287624.667347339] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789287624.667354603] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789287624.667370187] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789287624.667396715] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789287624.667486123] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789287624.667786700] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789287624.667887693] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789287624.680711865] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789287624.682199102] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789287624.682428543] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789287672.167234216] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789287672.167383144] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789287672.168915373] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 17 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789287699.877785216] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287699.877855521] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287699.877866721] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287699.877877473] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287699.877887905] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287699.877905473] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789287701.166959566] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789287701.167114287] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789287701.168072690] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 10 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789287721.667117821] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789287721.667265342] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 8 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789287721.679938185] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 122 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789287779.666848140] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789287779.667026700] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789287779.667938608] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 9 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789287801.667476607] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789287801.667603327] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789287801.668647843] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 10 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789287828.525113125] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287828.525182693] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287828.525194245] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287828.525203717] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287828.525212741] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287828.525231557] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789287829.166815586] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789287829.166917474] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789287829.166976162] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789287829.167002626] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789287829.167009698] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789287829.167029218] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789287829.167073155] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789287829.167169443] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789287829.167442212] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789287829.167537860] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789287829.179746222] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789287829.180202032] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789287829.180336400] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789287874.259098861] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287874.259165581] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287874.259176813] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287874.259188461] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287874.259199373] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287874.259216685] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287975.525323205] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287975.525385477] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287975.525396133] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287975.525405029] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287975.525413253] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789287975.525429573] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789287978.167736669] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789287978.167850301] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789287978.167910910] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789287978.167937662] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789287978.167946494] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789287978.167965182] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789287978.167995998] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789287978.168122942] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789287978.168426367] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789287978.168519712] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789287978.181800621] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789287978.183989397] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789287978.184261686] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789288038.668232861] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789288038.668388382] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789288038.669848867] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 17 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789288060.520945396] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288060.521008436] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288060.521019060] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288060.521029812] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288060.521038836] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288060.521067828] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789288061.667892057] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789288061.668077562] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789288061.669004733] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 10 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789288081.667893969] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789288081.668042770] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 8 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789288081.669647736] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 17 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789288110.167293505] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789288110.167436930] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789288110.168336869] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 9 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789288133.167459870] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789288133.167619551] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789288133.168670178] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 10 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789288176.824596262] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288176.824661734] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288176.824672166] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288176.824682566] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288176.824693542] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288176.824710982] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789288177.667398230] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789288177.667513590] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789288177.667576599] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789288177.667603319] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789288177.667611319] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789288177.667630039] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789288177.667659831] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789288177.667749623] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789288177.668034520] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789288177.668149849] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789288177.680952388] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789288177.683082380] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789288177.683348653] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789288285.458302211] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288285.458368579] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288285.458379267] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288285.458388547] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288285.458399427] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288285.458417219] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288444.641345929] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288444.641418185] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288444.641431753] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288444.641442249] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288444.641451977] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288444.641468969] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789288447.167206242] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789288447.167343650] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789288447.167604099] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789288447.167637187] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789288447.167646499] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789288447.167664196] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789288447.167698276] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789288447.167804388] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789288447.168118981] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789288447.168217477] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789288447.182250934] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789288447.188819949] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789288447.189236590] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789288530.667833051] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789288530.667978940] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789288530.669519105] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 17 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789288553.974856996] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288553.974924613] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288553.974936677] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288553.974947781] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288553.974957637] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288553.974974757] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789288555.166955691] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789288555.167139724] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789288555.168174415] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 10 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789288574.667129792] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789288574.667271649] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 8 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789288574.668988647] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 17 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789288604.667751931] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789288604.667911803] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789288604.668838623] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 9 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789288627.167203955] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789288627.167349107] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789288627.168426807] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 10 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789288663.565531100] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288663.565608060] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288663.565620604] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288663.565629596] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288663.565639644] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288663.565657244] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789288664.167785061] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789288664.167910789] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789288664.168235943] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789288664.168272775] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789288664.168280423] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789288664.168297511] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789288664.168333639] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789288664.168426375] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789288664.168731624] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789288664.168816393] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789288664.183014202] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789288664.187281609] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789288664.187612106] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789288755.134723175] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288755.134797191] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288755.134808935] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288755.134820551] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288755.134829159] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789288755.134847047] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289099.458296803] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289099.458377507] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289099.458389252] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289099.458397796] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289099.458405700] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289099.458423748] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789289102.167592184] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789289102.167724601] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789289102.167785017] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789289102.167812857] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789289102.167820665] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789289102.167837369] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789289102.167867705] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789289102.167950106] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789289102.168291643] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789289102.168380987] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789289102.181201768] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789289102.183280175] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789289102.183534000] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789289163.667930941] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289163.668116734] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289163.669649891] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 17 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789289196.291105120] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289196.291173504] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289196.291184512] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289196.291193856] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289196.291203008] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289196.291221728] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789289197.667445222] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289197.667598406] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289197.668599882] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 10 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789289217.167649051] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289217.167780571] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 8 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289217.191417421] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 185 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789289294.167711105] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289294.167854658] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.005000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289294.168788901] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 9 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789289316.167458868] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289316.167621301] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289316.168609336] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 9 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789289341.730455183] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289341.730525391] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289341.730536847] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289341.730546575] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289341.730556047] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289341.730573551] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289382.311350625] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289382.311424194] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289382.311435426] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289382.311445794] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289382.311455842] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289382.311472898] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789289384.667967433] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789289384.668147178] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789289384.668215882] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789289384.668243946] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789289384.668250282] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789289384.668267498] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789289384.668299242] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789289384.668384843] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789289384.668695756] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789289384.668793452] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789289384.681424024] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789289384.683421631] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789289384.683674240] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789289448.167308536] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289448.167468569] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289448.168984542] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 17 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789289469.512701689] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289469.512778457] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289469.512789497] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289469.512798233] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289469.512809241] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789289469.512827225] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789289470.667103161] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289470.667228474] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289470.668072285] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789289493.167283996] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289493.167434012] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289493.168293023] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789289514.666918871] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289514.667059896] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289514.667857371] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789289536.167503446] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289536.167642487] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289536.168409849] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789289556.668093456] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289556.668230609] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289556.668964275] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 7 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789289577.667639355] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289577.667775099] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289577.668667903] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 9 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789289600.668455954] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789289600.668607123] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789289600.670192088] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 12 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789290397.208780334] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290397.208854831] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290397.208865935] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290397.208874959] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290397.208884943] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290397.208902127] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789290398.167077634] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789290398.167203298] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789290398.167268706] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789290398.167293827] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789290398.167300035] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789290398.167317539] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789290398.167346883] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789290398.167440547] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789290398.167735300] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789290398.167829988] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789290398.179699982] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789290398.181901590] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789290398.182173335] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789290521.884883603] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290521.884950035] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290521.884962995] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290521.884974195] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290521.884984787] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290521.885002996] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789290524.667768535] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789290524.667919191] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789290524.667979800] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789290524.668007576] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789290524.668014648] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789290524.668030584] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789290524.668094840] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789290524.668185272] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789290524.668494457] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789290524.668590842] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789290524.682019496] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789290524.684950995] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789290524.685280052] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [INFO] [1789290599.167994262] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789290599.168256631] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.004000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789290599.169716668] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 16 points (followed 100.000000% of requested trajectory)
+[move_group-2] [WARN] [1789290661.967184555] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290661.967256524] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290661.967266636] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290661.967278156] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290661.967287372] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290661.967305772] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789290667.666971173] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Received request to compute Cartesian path
+[move_group-2] [INFO] [1789290667.667158661] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Attempting to follow 1 waypoints for link 'panda_hand' using a step of 0.010000 m and jump threshold 5.000000 (in global reference frame)
+[move_group-2] [INFO] [1789290667.668513962] [move_group.moveit.moveit.ros.move_group.cartesian_path_service_capability]: Computed Cartesian path with 14 points (followed 100.000000% of requested trajectory)
+[move_group-2] [INFO] [1789290687.667103213] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789290687.667240974] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789290687.667461007] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789290687.667491727] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789290687.667499791] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789290687.667517327] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789290687.667552207] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789290687.667674319] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789290687.667996016] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789290687.668102545] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789290687.681002302] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789290687.683840583] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789290687.684264841] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789290845.854153110] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_top', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290845.854223031] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_bottom', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290845.854234679] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_back', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290845.854244567] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_left', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290845.854254007] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mw_right', but it does not exist in this scene.
+[move_group-2] [WARN] [1789290845.854270999] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789290846.666904414] [move_group.moveit.moveit.ros.move_group.plan_service]: Received new planning service request...
+[move_group-2] [INFO] [1789290846.667046846] [move_group.moveit.moveit.ros.move_group.capability]: Using planning pipeline 'ompl'
+[move_group-2] [INFO] [1789290846.667330335] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789290846.667363968] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789290846.667372352] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789290846.667390592] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789290846.667423744] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [WARN] [1789290846.667510528] [move_group.moveit.moveit.planners.ompl.planning_context_manager]: Cannot find planning configuration for group 'panda_arm' using planner 'RRTConnect'. Will use defaults instead.
+[move_group-2] [INFO] [1789290846.667813089] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789290846.667897793] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789290846.679699402] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789290846.680528365] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789290846.680682894] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'

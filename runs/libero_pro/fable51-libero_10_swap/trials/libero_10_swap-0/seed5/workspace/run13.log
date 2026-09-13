@@ -1,0 +1,12 @@
+>>> goto 0.0136 -0.2324 0.76 0 4
+IK ok, max joint jump 0.56 rad
+traj code=0 (16s) joint err 0.002 TCP world [ 0.013 -0.233  0.759]
+>>> goto 0.0 0.0 0.76 0 4
+IK ok, max joint jump 0.66 rad
+traj code=0 (17s) joint err 0.002 TCP world [ 0.   -0.    0.76]
+>>> goto 0.006 0.277 0.76 0 4
+IK ok, max joint jump 0.41 rad
+traj code=0 (17s) joint err 0.002 TCP world [0.006 0.276 0.76 ]
+>>> pose
+TCP world [0.006  0.2762 0.7596] hand z-axis [ 0.    -0.001 -1.   ] gap=0.0643
+DONE

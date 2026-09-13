@@ -1,0 +1,12 @@
+from robot import *
+r = Robot()
+q = down_quat(0)  # fingers close along world y (box short side)
+PUD = np.array([-0.0767, 0.1018])
+r.gripper(True)
+print("pre-grasp"); r.move_tcp([*PUD, 0.56], q, 4.0)
+print("descend");   r.move_tcp([*PUD, 0.448], q, 3.0)
+print("tcp", r.tcp_pose()[0].round(4))
+r.gripper(False)
+f = r.fingers(); print("gap", round(f[0]-f[1],4))
+print("lift"); r.move_tcp([*PUD, 0.65], q, 3.0)
+print("fingers after lift", r.fingers())

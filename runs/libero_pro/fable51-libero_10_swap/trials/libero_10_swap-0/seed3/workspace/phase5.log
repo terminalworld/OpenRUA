@@ -1,0 +1,23 @@
+18:47:43 robot ready
+18:47:45 gripper -> 0.04: reached=True stalled=False fingers=(0.03996215869419057, -0.040000237105519594)
+18:48:03 traj code=-5 max_joint_err=0.7125
+18:48:03 retrying trajectory
+18:48:20 traj code=0 max_joint_err=0.0017
+18:48:20 tcp now [0.2189 0.3366 0.5998] target [0.219 0.337 0.6  ] err=0.0004
+18:48:20 cam at [0.2029 0.3275 0.7136]
+18:48:20 n=6057 centroid [0.2427 0.3575 0.4951] x[0.211,0.278] y[0.322,0.401] ztop 0.5015
+18:48:20 refined center 0.2427,0.3575 axis angle 120.0 deg (was 30.6)
+18:48:23 IK failed code=-31 for world 0.243,0.358,0.600
+18:48:23 wrench [-0.01  2.92 -4.18]
+18:48:26 IK failed code=-31 for world 0.231,0.347,0.550
+18:48:26 wrench [-0.01  2.92 -4.18] False
+18:48:29 IK failed code=-31 for world 0.231,0.347,0.522
+18:48:29 wrench [-0.01  2.92 -4.18] False
+18:48:29 tcp before close [0.2189 0.3366 0.5998]
+18:48:31 gripper -> 0.0: reached=True stalled=False fingers=(0.004122225876205736, -0.004128230432633435)
+18:48:32 finger gap after close = 0.0083
+18:48:35 IK failed code=-31 for world 0.231,0.347,0.650
+18:48:35 retry lift
+18:48:37 IK failed code=-31 for world 0.231,0.347,0.650
+18:48:38 fingers after lift (0.004122225876205736, -0.004128230432633435) gap 0.008250456308839171 wrench [-0.01  2.92 -4.18]
+18:48:38 PHASE5 DONE

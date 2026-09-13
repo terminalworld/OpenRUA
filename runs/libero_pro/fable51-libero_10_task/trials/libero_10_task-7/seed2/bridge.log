@@ -1,0 +1,150 @@
+[robosuite WARNING] No private macro file found! (__init__.py:7)
+[robosuite WARNING] It is recommended to use a private macro file (__init__.py:8)
+[robosuite WARNING] To setup, run: python /storage/home/yehe8/.openrua/simulators/cap-x/capx/third_party/libero_dependencies/robosuite/robosuite/scripts/setup_macros.py (__init__.py:9)
+Gym has been unmaintained since 2022 and does not support NumPy 2.0 amongst other critical functionality.
+Please upgrade to Gymnasium, the maintained drop-in replacement of Gym, or contact the authors of your software and request that they upgrade.
+See the migration guide at https://gymnasium.farama.org/introduction/migration_guide/ for additional information.
+[info] Using default task order for benchmark 'libero_10_task' (10 tasks).
+[Warning]: datasets path /storage/home/yehe8/.openrua/simulators/cap-x/capx/third_party/LIBERO-PRO/libero/datasets does not exist!
+[Warning]: datasets path /storage/home/yehe8/.openrua/simulators/cap-x/capx/third_party/LIBERO-PRO/libero/datasets does not exist!
+robot ready
+[Warning]: datasets path /storage/home/yehe8/.openrua/simulators/cap-x/capx/third_party/LIBERO-PRO/libero/datasets does not exist!
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0. 3.] times[-3:]=[0. 3.]
+[fjt] goal=[-0.215 -0.556 -0.187 -2.849 -0.132  2.297  0.499]
+[fjt] final=[-0.215 -0.555 -0.186 -2.848 -0.13   2.295  0.501]
+[fjt] err=[ 0.     0.001  0.001  0.001  0.002 -0.002  0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0.  2.5] times[-3:]=[0.  2.5]
+[fjt] goal=[-0.22   0.053 -0.153 -2.915  0.046  2.967  0.367]
+[fjt] final=[-0.217 -0.124 -0.142 -2.875  0.046  2.826  0.374]
+[fjt] err=[ 0.003 -0.177  0.011  0.04  -0.    -0.141  0.007]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0.  2.5] times[-3:]=[0.  2.5]
+[fjt] goal=[-0.22   0.053 -0.153 -2.915  0.046  2.967  0.367]
+[fjt] final=[-0.217  0.022 -0.145 -2.77   0.046  2.991  0.37 ]
+[fjt] err=[ 0.002 -0.031  0.008  0.146 -0.     0.024  0.003]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0.  2.5] times[-3:]=[0.  2.5]
+[fjt] goal=[-0.098 -0.342 -0.294 -2.716 -0.168  2.582  0.526]
+[fjt] final=[-0.098 -0.341 -0.293 -2.717 -0.166  2.584  0.524]
+[fjt] err=[-0.001  0.001  0.001 -0.001  0.002  0.002 -0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0. 3.] times[-3:]=[0. 3.]
+[fjt] goal=[-1.000e-03 -1.202e+00  1.000e-03 -2.814e+00  1.000e-03  1.612e+00
+  7.840e-01]
+[fjt] final=[-2.000e-03 -9.610e-01 -0.000e+00 -2.814e+00 -1.000e-03  1.974e+00
+  7.820e-01]
+[fjt] err=[-0.     0.241 -0.001  0.001 -0.002  0.362 -0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0. 3.] times[-3:]=[0. 3.]
+[fjt] goal=[-1.000e-03 -1.202e+00  1.000e-03 -2.814e+00  1.000e-03  1.612e+00
+  7.840e-01]
+[fjt] final=[-2.000e-03 -1.202e+00 -0.000e+00 -2.814e+00 -1.000e-03  1.614e+00
+  7.820e-01]
+[fjt] err=[-0.     0.001 -0.001  0.001 -0.001  0.002 -0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0. 3.] times[-3:]=[0. 3.]
+[fjt] goal=[-0.237 -0.171 -0.154 -2.702 -0.046  2.533  0.87 ]
+[fjt] final=[-0.237 -0.579 -0.154 -2.703 -0.044  2.223  0.868]
+[fjt] err=[ 0.    -0.408  0.001 -0.001  0.002 -0.31  -0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0. 3.] times[-3:]=[0. 3.]
+[fjt] goal=[-0.237 -0.171 -0.154 -2.702 -0.046  2.533  0.87 ]
+[fjt] final=[-0.237 -0.172 -0.154 -2.703 -0.044  2.531  0.868]
+[fjt] err=[ 0.    -0.001  0.001 -0.001  0.002 -0.002 -0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0. 3.] times[-3:]=[0. 3.]
+[fjt] goal=[-0.237 -0.171 -0.154 -2.702 -0.046  2.533  0.87 ]
+[fjt] final=[-0.237 -0.172 -0.154 -2.703 -0.044  2.531  0.868]
+[fjt] err=[ 0.    -0.001 -0.    -0.     0.001 -0.002 -0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=2
+[fjt] times[0..2]=[0.  0.5 1. ] times[-3:]=[0.  0.5 1. ]
+[fjt] goal=[-0.239 -0.16  -0.144 -2.69  -0.04   2.532  0.926]
+[fjt] final=[-0.239 -0.161 -0.145 -2.691 -0.041  2.531  0.924]
+[fjt] err=[-0.    -0.001 -0.001 -0.001 -0.001 -0.    -0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=8
+[fjt] times[0..2]=[0.         0.48404499 0.96808998] times[-3:]=[2.90426995 3.38831494 3.87235993]
+[fjt] goal=[-0.275  0.34  -0.068 -2.658  0.155  2.996  0.782]
+[fjt] final=[-0.275  0.339 -0.069 -2.659  0.153  2.994  0.785]
+[fjt] err=[ 0.    -0.001 -0.001 -0.001 -0.002 -0.002  0.003]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=10
+[fjt] times[0..2]=[0.         0.45816825 0.91633649] times[-3:]=[3.66534597 4.12351421 4.58168246]
+[fjt] goal=[-0.205 -0.401 -0.166 -2.558 -0.078  2.161  0.96 ]
+[fjt] final=[-0.205 -0.4   -0.167 -2.559 -0.077  2.176  0.957]
+[fjt] err=[ 0.     0.001 -0.001 -0.001  0.001  0.015 -0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0. 4.] times[-3:]=[0. 4.]
+[fjt] goal=[ 0.265  0.095  0.204 -2.026 -0.022  2.118  0.479]
+[fjt] final=[ 0.265  0.094  0.203 -2.028 -0.022  2.12   0.483]
+[fjt] err=[-0.    -0.    -0.001 -0.002  0.     0.002  0.003]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=3
+[fjt] times[0..2]=[0.         0.59623973 1.19247947] times[-3:]=[0.59623973 1.19247947 1.7887192 ]
+[fjt] goal=[ 0.271  0.215  0.197 -2.119 -0.058  2.329  0.504]
+[fjt] final=[ 0.27   0.215  0.198 -2.118 -0.056  2.326  0.501]
+[fjt] err=[-0.    -0.     0.001  0.     0.002 -0.002 -0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=4
+[fjt] times[0..2]=[0.         0.37522297 0.75044595] times[-3:]=[0.75044595 1.12566892 1.5008919 ]
+[fjt] goal=[ 0.264  0.095  0.205 -2.026 -0.023  2.118  0.48 ]
+[fjt] final=[ 0.264  0.095  0.204 -2.027 -0.024  2.121  0.482]
+[fjt] err=[ 0.     0.    -0.001 -0.001 -0.002  0.002  0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0.  3.5] times[-3:]=[0.  3.5]
+[fjt] goal=[ 0.42  -0.27  -0.288 -2.869 -0.149  2.605  1.055]
+[fjt] final=[ 0.42  -0.27  -0.287 -2.715 -0.148  2.604  1.047]
+[fjt] err=[-0.     0.     0.001  0.155  0.001 -0.    -0.008]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0.  3.5] times[-3:]=[0.  3.5]
+[fjt] goal=[ 0.42  -0.27  -0.288 -2.869 -0.149  2.605  1.055]
+[fjt] final=[ 0.42  -0.27  -0.287 -2.868 -0.148  2.605  1.053]
+[fjt] err=[-0.     0.     0.001  0.001  0.001 -0.    -0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=8
+[fjt] times[0..2]=[0.         0.43807712 0.87615424] times[-3:]=[2.62846272 3.06653983 3.50461695]
+[fjt] goal=[ 0.326  0.298 -0.058 -2.804  0.41   3.099  0.646]
+[fjt] final=[ 0.327  0.297 -0.06  -2.805  0.385  3.097  0.647]
+[fjt] err=[ 0.001 -0.001 -0.001 -0.001 -0.025 -0.002  0.001]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0.  1.5] times[-3:]=[0.  1.5]
+[fjt] goal=[ 0.326  0.298 -0.058 -2.804  0.41   3.099  0.646]
+[fjt] final=[ 0.326  0.298 -0.059 -2.805  0.409  3.097  0.647]
+[fjt] err=[ 0.    -0.001 -0.001 -0.001 -0.002 -0.002  0.001]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=10
+[fjt] times[0..2]=[0.         0.46662363 0.93324725] times[-3:]=[3.73298901 4.19961264 4.66623627]
+[fjt] goal=[ 0.571 -0.632 -0.391 -2.703 -0.263  2.093  1.168]
+[fjt] final=[ 0.57  -0.585 -0.392 -2.705 -0.262  2.243  1.167]
+[fjt] err=[-0.     0.046 -0.001 -0.001  0.001  0.15  -0.001]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0.  1.5] times[-3:]=[0.  1.5]
+[fjt] goal=[ 0.571 -0.632 -0.391 -2.703 -0.263  2.093  1.168]
+[fjt] final=[ 0.57  -0.631 -0.392 -2.704 -0.262  2.096  1.167]
+[fjt] err=[-0.     0.001 -0.    -0.001  0.001  0.002 -0.001]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0. 4.] times[-3:]=[0. 4.]
+[fjt] goal=[ 0.983  0.107 -0.534 -2.025  0.064  2.117  0.419]
+[fjt] final=[ 0.983  0.103 -0.534 -2.027  0.063  2.116  0.473]
+[fjt] err=[-0.001 -0.005  0.    -0.002 -0.001 -0.001  0.054]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0. 4.] times[-3:]=[0. 4.]
+[fjt] goal=[ 0.983  0.107 -0.534 -2.025  0.064  2.117  0.419]
+[fjt] final=[ 0.983  0.107 -0.534 -2.026  0.063  2.116  0.421]
+[fjt] err=[-0.    -0.001  0.    -0.001 -0.001 -0.001  0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=2
+[fjt] times[0..2]=[0.         0.5977001  1.19540021] times[-3:]=[0.         0.5977001  1.19540021]
+[fjt] goal=[ 0.972  0.191 -0.524 -2.093  0.123  2.255  0.378]
+[fjt] final=[ 0.972  0.19  -0.524 -2.093  0.121  2.253  0.381]
+[fjt] err=[ 0.    -0.    -0.001  0.001 -0.002 -0.002  0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=2
+[fjt] times[0..2]=[0.  0.5 1. ] times[-3:]=[0.  0.5 1. ]
+[fjt] goal=[ 0.986  0.108 -0.537 -2.025  0.064  2.117  0.418]
+[fjt] final=[ 0.986  0.108 -0.536 -2.026  0.066  2.119  0.416]
+[fjt] err=[-0.     0.     0.001 -0.001  0.002  0.002 -0.002]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0. 3.] times[-3:]=[0. 3.]
+[fjt] goal=[-0.066 -1.204  0.045 -2.814  0.042  1.611  0.733]
+[fjt] final=[ 0.36  -0.519  0.04  -2.636  0.043  1.614  0.73 ]
+[fjt] err=[ 0.426  0.685 -0.005  0.178  0.001  0.003 -0.003]
+[fjt] names=['panda_joint1', 'panda_joint2', 'panda_joint3', 'panda_joint4', 'panda_joint5', 'panda_joint6', 'panda_joint7'] pts=1
+[fjt] times[0..2]=[0. 3.] times[-3:]=[0. 3.]
+[fjt] goal=[-0.066 -1.204  0.045 -2.814  0.042  1.611  0.733]
+[fjt] final=[-0.066 -1.136  0.044 -2.814  0.043  1.61   0.731]
+[fjt] err=[ 0.     0.068 -0.001  0.     0.001 -0.001 -0.002]

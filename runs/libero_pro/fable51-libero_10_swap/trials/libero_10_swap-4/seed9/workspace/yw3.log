@@ -1,0 +1,50 @@
+grasp [-0.223  0.06   0.512] place [-0.006  0.327  0.554]
+[0] open gripper
+  gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0400
+[1] to pre-grasp [-0.223  0.06   0.7  ]
+  cart path: 15 pts, max dq step 0.112, T=3.4s
+  traj done code=-5 max_joint_err=0.1587
+  tcp now [-0.1914  0.1209  0.7292] target [-0.223  0.06   0.7  ] err 0.0746
+  off by 0.0746, correcting
+  cart path: 6 pts, max dq step 0.059, T=2.5s
+  traj done code=0 max_joint_err=0.0023
+  tcp now [-0.2226  0.06    0.7002] target [-0.223  0.06   0.7  ] err 0.0004
+  wrench [-9.09203008e-03  3.57161114e-03 -5.10119125e+00]
+[2] descend to just above rim
+  cart path: 10 pts, max dq step 0.092, T=2.1s
+  traj done code=0 max_joint_err=0.0024
+  tcp now [-0.223   0.0602  0.5722] target [-0.223  0.06   0.572] err 0.0003
+[2b] descend to grasp [-0.223  0.06   0.512]
+  cart path: 9 pts, max dq step 0.073, T=1.5s
+  traj done code=0 max_joint_err=0.0023
+  tcp now [-0.2234  0.0598  0.512 ] target [-0.223  0.06   0.512] err 0.0005
+  wrench [-4.16932246e-04 -8.01255438e-03 -5.10124495e+00] delta [ 0.01 -0.01 -0.  ]
+[3] close
+  gripper -> 0.0: reached=True stalled=False fingers=0.0045,-0.0090
+  finger gap 0.0134 (0 => closed on air)
+[4] lift [-0.223  0.06   0.7  ]
+  cart path: 13 pts, max dq step 0.110, T=3.1s
+  traj done code=0 max_joint_err=0.0251
+  tcp now [-0.2188  0.0582  0.7008] target [-0.223  0.06   0.7  ] err 0.0046
+  gap after lift 0.0106
+[5] transport [-0.006  0.327  0.7  ]
+  cart path: 15 pts, max dq step 0.115, T=4.3s
+  traj done code=-5 max_joint_err=0.0771
+  tcp now [-0.0143  0.2936  0.6783] target [-0.006  0.327  0.7  ] err 0.0407
+  off by 0.0407, correcting
+  cart path: 5 pts, max dq step 0.041, T=1.4s
+  traj done code=0 max_joint_err=0.0016
+  tcp now [-0.0062  0.3267  0.6994] target [-0.006  0.327  0.7  ] err 0.0007
+  gap after transport 0.0106
+[6] lower [-0.006  0.327  0.554]
+  cart path: 8 pts, max dq step 0.073, T=2.9s
+  traj done code=0 max_joint_err=0.0023
+  tcp now [-0.0064  0.3271  0.554 ] target [-0.006  0.327  0.554] err 0.0004
+  wrench [-4.19464844e-03 -1.02057176e-02 -5.40443443e+00]
+[7] release
+  gripper -> 0.04: reached=True stalled=False fingers=0.0359,-0.0359
+[8] retreat [-0.006  0.327  0.7  ]
+  cart path: 8 pts, max dq step 0.072, T=1.8s
+  traj done code=0 max_joint_err=0.0023
+  tcp now [-0.0058  0.327   0.6995] target [-0.006  0.327  0.7  ] err 0.0005
+DONE

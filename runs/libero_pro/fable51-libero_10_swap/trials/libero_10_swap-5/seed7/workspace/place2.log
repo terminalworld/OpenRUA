@@ -1,0 +1,19 @@
+start tcp [-0.4321 -0.1466  1.2491] yaw 90.14183729240618 fingers (0.014683080197664239, -0.014679234709476997)
+z=1.18: max joint delta 0.214
+move: error_code=0 max joint err=0.0024
+tcp now [-0.4318 -0.1459  1.1798] target [-0.4315 -0.1465  1.18  ] err 0.0007
+   yaw 90.11162319498952 fingers (0.014683805669439045, -0.014678509237734266)
+z=1.12: max joint delta 0.208
+move: error_code=0 max joint err=0.0024
+tcp now [-0.4319 -0.1461  1.1198] target [-0.4315 -0.1465  1.12  ] err 0.0006
+   yaw 89.97479957048198 fingers (0.014684027958510171, -0.014678286948720566)
+z=1.07: max joint delta 0.187
+move: error_code=0 max joint err=0.0025
+tcp now [-0.4319 -0.1463  1.0699] target [-0.4315 -0.1465  1.07  ] err 0.0005
+   yaw 89.94533910978215 fingers (0.014684620829221314, -0.014677694078200226)
+gripper(0.04): pos=0.0000 reached=True stalled=False fingers=(0.036037727260376407, -0.03603202173504218)
+fingers after open: (0.036037727260376407, -0.03603202173504218)
+move: error_code=-5 max joint err=0.1439
+move: error_code=0 max joint err=0.0023
+tcp now [-0.4312 -0.1466  1.2998] target [-0.4315 -0.1465  1.3   ] err 0.0004
+retreated; fingers (0.03994504606646724, -0.04000008860949033)

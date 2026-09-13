@@ -1,0 +1,142 @@
+{
+  "task_suite": "libero_10_swap",
+  "task_id": 2,
+  "init_state_id": 6,
+  "started_utc": "2026-09-12T21:10:24.842929+00:00",
+  "workspace_template_sha256": "f5999634776108746bd4b5476c9e5643e49a4fbd3fda7c0a59d0411eb5f60836",
+  "containers": {
+    "sim": "rc-fable51-libero_10_swap-t2-2-6-cf529d-sim",
+    "sandbox": "rc-fable51-libero_10_swap-t2-2-6-cf529d-sandbox"
+  },
+  "ros_domain": 0,
+  "agent_version": "2.1.251 (Claude Code)",
+  "task_language": "turn on the stove and put the moka pot on it",
+  "preflight": [
+    [
+      "shell_sh_provisioned",
+      true
+    ],
+    [
+      "credentials_readable",
+      true
+    ],
+    [
+      "sandbox_cli_matches_pin",
+      true
+    ],
+    [
+      "clock_topic",
+      true
+    ],
+    [
+      "joint_states_flow",
+      true
+    ],
+    [
+      "tf_flow",
+      true
+    ],
+    [
+      "joint_names_match_manual",
+      true
+    ],
+    [
+      "trajectory_action",
+      true
+    ],
+    [
+      "twist_subscribed",
+      true
+    ],
+    [
+      "gripper_action",
+      true
+    ],
+    [
+      "wrench_flow",
+      true
+    ],
+    [
+      "camera_frame_flow",
+      true
+    ],
+    [
+      "camera_depth_intrinsics_flow",
+      true
+    ],
+    [
+      "workspace_tools_importable",
+      true
+    ],
+    [
+      "moveit_ik_answers",
+      true
+    ]
+  ],
+  "success": true,
+  "success_end_state": true,
+  "success_at": {
+    "step": 2248,
+    "sim_time_s": 112.39999999991944,
+    "wall_unix": 1789248838.2465472
+  },
+  "steps_total": 2536,
+  "steps_semantics": "episode",
+  "operator_meta": {
+    "operator": "agent",
+    "agent": "claude-code",
+    "model": "claude-fable-5-1",
+    "options": {
+      "effort": "high",
+      "autocompact": "1M",
+      "bash_timeout_ms": 600000,
+      "bash_max_timeout_ms": 1800000
+    },
+    "session_id": "79241a88-f1b4-4da0-8c11-7b610e6e14cb",
+    "resume_on_quota_wall": true,
+    "termination": "self_finished",
+    "launcher_returncode": 0,
+    "segments": 1,
+    "resumes": 0,
+    "quota_resolved": false,
+    "active_seconds": 1520.7,
+    "suspended_seconds": 0.0,
+    "segment_detail": [
+      {
+        "started_unix": 1789247463.9,
+        "ended_unix": 1789248984.6,
+        "active_s": 1520.7,
+        "turn_budget": 500,
+        "resumed": false
+      }
+    ],
+    "num_turns": 74,
+    "usage": {
+      "input_tokens": 148,
+      "cache_creation_input_tokens": 101912,
+      "cache_read_input_tokens": 5669381,
+      "output_tokens": 47948,
+      "output_tokens_details": {
+        "thinking_tokens": 23969
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 101912
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "cost_usd": 4.6778155,
+    "duration_ms": 1519951
+  },
+  "termination": "self_finished",
+  "anomaly": null,
+  "wall_seconds": 1571.2,
+  "active_wall_cap_min": 240.0
+}

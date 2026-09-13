@@ -1,0 +1,13 @@
+  move done code=0 max_joint_err=0.0027
+  tcp now [ 0.1232 -0.2141  0.7594] target [ 0.1231 -0.2137  0.76  ] d=0.0007
+  move done code=-5 max_joint_err=0.2099
+  tcp now [0.     0.3049 0.76  ] target [0.    0.305 0.76 ] d=0.0001
+gap in transit 0.04221743300901845
+  move done code=0 max_joint_err=0.0026
+  tcp now [-3.000e-04  3.052e-01  6.554e-01] target [0.    0.305 0.655] d=0.0005
+gap before release 0.04221754333460867
+  gripper -> 0.04: reached=True stalled=False gap=0.0726
+  move done code=0 max_joint_err=0.0025
+  tcp now [4.000e-04 3.049e-01 7.995e-01] target [0.    0.305 0.8  ] d=0.0007
+  move done code=-5 max_joint_err=0.1375
+  tcp now [-0.1125  0.0021  0.8045] target [-0.15  0.    0.8 ] d=0.0378

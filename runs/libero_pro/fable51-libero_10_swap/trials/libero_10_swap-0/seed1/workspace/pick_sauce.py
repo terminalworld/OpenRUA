@@ -1,0 +1,23 @@
+from robo import *
+r = Robot()
+SAUCE = np.array([-0.0072, -0.2464])
+BASKET2 = np.array([-0.013, 0.295])
+print("open"); r.gripper(0.04)
+print("hover"); r.move_to([*SAUCE, 0.66], seconds=4)
+print("descend")
+for z in (0.58, 0.52, 0.485):
+    r.move_to([*SAUCE, z], seconds=1.5)
+print("wrench", r.wrench())
+print("close"); gap = r.gripper(0.0)
+print("GRASP_GAP", gap)
+if gap < 0.03:
+    print("GRASP FAILED"); raise SystemExit(1)
+print("lift"); r.move_to([*SAUCE, 0.76], seconds=3)
+print("gap", r.finger_gap())
+print("over basket"); r.move_to([*BASKET2, 0.76], seconds=4)
+print("gap", r.finger_gap())
+print("lower"); r.move_to([*BASKET2, 0.68], seconds=2)
+print("gap", r.finger_gap(), "wrench", r.wrench())
+print("release"); r.gripper(0.04)
+print("retreat"); r.move_to([-0.15, 0.10, 0.85], seconds=3)
+print("DONE")

@@ -1,0 +1,15 @@
+finger before 0.03872920141715632
+  gripper -> 0.04: reached=True stalled=False finger=0.0392
+-> above knob
+  move_q done code=0 max_joint_err=0.0027
+  tcp now [-0.2074  0.1904  1.02  ] target [-0.207  0.191  1.02 ]
+-> descend
+  move_q done code=0 max_joint_err=0.0025
+  tcp now [-0.2076  0.191   0.9321] target [-0.207  0.191  0.932]
+j7 at grasp 1.346117253478309
+  gripper -> 0.0: reached=True stalled=False finger=0.0119
+finger after close 0.011881095113275501
+-> rotate j7 by -1.0 to 0.34398866638696557
+  move_q done code=-5 max_joint_err=0.4696
+tcp after rotate [-0.2075  0.1894  0.9321] finger 0.013006001769072755
+DONE

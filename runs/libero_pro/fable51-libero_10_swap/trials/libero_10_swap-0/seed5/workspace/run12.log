@@ -1,0 +1,10 @@
+>>> goto 0.0136 -0.2324 0.48 0 3
+IK ok, max joint jump 0.25 rad
+traj code=0 (13s) joint err 0.002 TCP world [ 0.013 -0.232  0.48 ]
+>>> pose
+TCP world [ 0.0132 -0.232   0.4801] hand z-axis [-0.002  0.001 -1.   ] gap=0.0800
+>>> grip close
+gripper close: reached=True stalled=False gap=0.0644
+>>> pose
+TCP world [ 0.0139 -0.2323  0.4807] hand z-axis [ 0.  0. -1.] gap=0.0644
+DONE

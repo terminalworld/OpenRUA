@@ -1,0 +1,9 @@
+18:48:41 TF world->planning frame: [-0.51  0.    0.42]
+18:48:48 traj done code=0 max_joint_err=0.0022
+18:48:49 move_to [-0.01  0.25  0.7 ] -> ok=True tcp_now=[-0.011  0.25   0.7  ]
+18:48:49 lowered ok= True
+18:48:51 gripper(0.04) reached=True stalled=False fingers=(0.03720575760283177, -0.0372074760282012)
+18:48:51 released, fingers: (0.03720575760283177, -0.0372074760282012)
+18:48:58 traj done code=0 max_joint_err=0.0023
+18:48:59 move_to [-0.01  0.25  0.78] -> ok=True tcp_now=[-0.01  0.25  0.78]
+18:48:59 STEP4 retreat ok= True

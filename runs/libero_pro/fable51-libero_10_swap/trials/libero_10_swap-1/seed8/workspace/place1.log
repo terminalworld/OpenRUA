@@ -1,0 +1,6 @@
+base in world: [-0.51  0.    0.42]
+goto TCP world [0.02 0.29 0.62]
+  traj error_code=0 max joint err=0.0026
+hand world [0.0199 0.2896 0.7232] q [ 1.     0.001  0.    -0.001]  TCP world [0.02   0.2897 0.6198]  finger gap 0.0389
+gripper -> 0.04: reached=True stalled=False gap=0.0724
+hand world [0.0199 0.2896 0.7232] q [ 1.     0.001  0.    -0.001]  TCP world [0.02   0.2897 0.6198]  finger gap 0.0724

@@ -1,0 +1,25 @@
+19:44:31 base in world: [-0.51  0.    0.42]
+19:44:31 == pregrasp
+19:44:50 traj done code=-5 max_joint_err=0.1523
+19:44:50 retrying goal
+19:45:09 traj done code=0 max_joint_err=0.0022
+19:45:10 tcp now [-0.0821  0.0889  0.5813] (target [-0.0822  0.0894  0.581 ])
+19:45:10 finger axis 142.1 deg, want 142.0
+19:45:10 == straight descent
+19:45:24 traj done code=0 max_joint_err=0.0026
+19:45:25 line done tcp [-0.0827  0.0894  0.4621] (target [-0.0822  0.0894  0.462 ])
+19:45:25 == close
+19:45:27 gripper(0.0) reached=True stalled=False fingers=(0.0331314778924956, -0.031313275149223024)
+19:45:27 gap = 0.0644 (fingers 0.0331 -0.0313); expect ~0.065
+19:45:27 == lift straight
+19:45:44 traj done code=0 max_joint_err=0.0052
+19:45:45 line done tcp [-0.0817  0.0893  0.7194] (target [-0.0822  0.0894  0.72  ])
+19:45:45 gap after lift 0.0644
+19:45:45 == to basket
+19:46:05 traj done code=0 max_joint_err=0.0026
+19:46:05 tcp now [-2.000e-04  2.597e-01  7.194e-01] (target [0.   0.26 0.72])
+19:46:05 gap over basket 0.0644
+19:46:05 == release
+19:46:07 gripper(0.04) reached=True stalled=False fingers=(0.03748711730853197, -0.03716913736154205)
+19:46:21 traj done code=0 max_joint_err=0.0022
+19:46:22 tcp now [4.000e-04 2.598e-01 8.495e-01] (target [0.   0.26 0.85])

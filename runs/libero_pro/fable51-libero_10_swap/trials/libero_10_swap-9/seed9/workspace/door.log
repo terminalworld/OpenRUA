@@ -1,0 +1,162 @@
+start q [-0.991  1.289 -0.213 -0.922  1.387  1.035 -1.523] hand [-0.237 -0.549  1.038]
+    3 hand [-0.259 -0.486  0.917] tip [-0.198 -0.404  0.906] hand below table tip below table
+    4 hand [-0.28  -0.476  0.894] tip [-0.216 -0.397  0.875] hand below table hand in door zone tip below table
+    5 hand [-0.304 -0.472  0.882] tip [-0.238 -0.398  0.853] hand below table hand in door zone tip below table
+    6 hand [-0.329 -0.473  0.881] tip [-0.262 -0.405  0.841] hand below table hand in door zone tip below table
+    7 hand [-0.353 -0.478  0.891] tip [-0.285 -0.419  0.84 ] hand below table hand in door zone tip below table tip in door zone
+    8 hand [-0.375 -0.485  0.912] tip [-0.307 -0.436  0.85 ] hand below table hand in door zone tip below table tip in door zone
+    9 hand [-0.393 -0.493  0.943] tip [-0.326 -0.457  0.873] hand in door zone tip below table tip in door zone
+   10 hand [-0.408 -0.498  0.983] tip [-0.341 -0.476  0.907] hand in door zone tip below table tip in door zone
+   11 hand [-0.419 -0.5    1.031] tip [-0.352 -0.494  0.952] hand in door zone tip in door zone
+   12 hand [-0.427 -0.497  1.084] tip [-0.36  -0.506  1.006] hand in door zone tip in door zone
+   13 hand [-0.435 -0.486  1.14 ] tip [-0.366 -0.51   1.067] tip in door zone
+over_a  hand [-0.454 -0.443  1.25 ] -> [ 0.394  1.561 -1.718 -2.555  2.491  1.532 -0.723] dist 1.63 bad 11
+    6 hand [-0.454 -0.448  1.172] tip [-0.381 -0.501  1.121] tip in door zone
+    7 hand [-0.455 -0.448  1.159] tip [-0.382 -0.501  1.108] tip in door zone
+    8 hand [-0.455 -0.447  1.145] tip [-0.383 -0.5    1.095] tip in door zone
+    9 hand [-0.456 -0.445  1.132] tip [-0.384 -0.499  1.081] tip in door zone
+   10 hand [-0.457 -0.443  1.119] tip [-0.385 -0.498  1.068] hand in door zone tip in door zone
+   11 hand [-0.457 -0.44   1.105] tip [-0.386 -0.496  1.054] hand in door zone tip in door zone
+   12 hand [-0.458 -0.437  1.092] tip [-0.388 -0.493  1.041] hand in door zone tip in door zone
+   13 hand [-0.459 -0.434  1.078] tip [-0.389 -0.49   1.027] hand in door zone tip in door zone
+   14 hand [-0.46  -0.43   1.065] tip [-0.391 -0.487  1.014] hand in door zone tip in door zone
+   15 hand [-0.461 -0.425  1.052] tip [-0.393 -0.483  1.   ] hand in door zone tip in door zone
+pre     hand [-0.461 -0.425  1.052] -> [ 0.373  1.488 -1.216 -2.509  2.897  1.803 -0.972] dist 0.50 bad 10
+    0 hand [-0.461 -0.425  1.052] tip [-0.393 -0.483  1.   ] hand in door zone tip in door zone
+    1 hand [-0.461 -0.426  1.052] tip [-0.392 -0.483  1.   ] hand in door zone tip in door zone
+    2 hand [-0.46  -0.427  1.052] tip [-0.391 -0.484  1.   ] hand in door zone tip in door zone
+    3 hand [-0.46  -0.429  1.052] tip [-0.39  -0.485  1.   ] hand in door zone tip in door zone
+    4 hand [-0.459 -0.43   1.052] tip [-0.389 -0.486  1.   ] hand in door zone tip in door zone
+    5 hand [-0.459 -0.431  1.052] tip [-0.388 -0.486  1.   ] hand in door zone tip in door zone
+    6 hand [-0.458 -0.432  1.052] tip [-0.387 -0.487  1.   ] hand in door zone tip in door zone
+    7 hand [-0.458 -0.433  1.052] tip [-0.386 -0.488  1.   ] hand in door zone tip in door zone
+    8 hand [-0.457 -0.435  1.052] tip [-0.385 -0.488  1.   ] hand in door zone tip in door zone
+    9 hand [-0.457 -0.436  1.052] tip [-0.385 -0.489  1.   ] hand in door zone tip in door zone
+   10 hand [-0.456 -0.437  1.052] tip [-0.384 -0.49   1.   ] hand in door zone tip in door zone
+   11 hand [-0.456 -0.438  1.052] tip [-0.383 -0.49   1.   ] hand in door zone tip in door zone
+   12 hand [-0.455 -0.439  1.052] tip [-0.382 -0.491  1.   ] hand in door zone tip in door zone
+   13 hand [-0.455 -0.44   1.052] tip [-0.381 -0.491  1.   ] hand in door zone tip in door zone
+   14 hand [-0.454 -0.441  1.052] tip [-0.38  -0.492  1.   ] hand in door zone tip in door zone
+   15 hand [-0.454 -0.443  1.052] tip [-0.379 -0.493  1.   ] hand in door zone tip in door zone
+a236    hand [-0.454 -0.443  1.052] -> [ 0.317  1.523 -1.237 -2.463  2.864  1.69  -1.   ] dist 0.11 bad 16
+    0 hand [-0.454 -0.443  1.052] tip [-0.379 -0.493  1.   ] hand in door zone tip in door zone
+    1 hand [-0.452 -0.445  1.052] tip [-0.377 -0.494  1.   ] hand in door zone tip in door zone
+    2 hand [-0.45  -0.448  1.052] tip [-0.374 -0.496  1.   ] hand in door zone tip in door zone
+    3 hand [-0.448 -0.451  1.052] tip [-0.371 -0.497  1.   ] hand in door zone tip in door zone
+    4 hand [-0.446 -0.453  1.052] tip [-0.369 -0.499  1.   ] hand in door zone tip in door zone
+    5 hand [-0.444 -0.456  1.052] tip [-0.366 -0.5    1.001] hand in door zone tip in door zone
+    6 hand [-0.443 -0.459  1.052] tip [-0.364 -0.501  1.001] hand in door zone tip in door zone
+    7 hand [-0.441 -0.461  1.052] tip [-0.361 -0.502  1.001] hand in door zone tip in door zone
+    8 hand [-0.439 -0.464  1.052] tip [-0.359 -0.504  1.001] hand in door zone tip in door zone
+    9 hand [-0.438 -0.466  1.052] tip [-0.357 -0.505  1.001] hand in door zone tip in door zone
+   10 hand [-0.436 -0.468  1.052] tip [-0.355 -0.506  1.001] hand in door zone tip in door zone
+   11 hand [-0.435 -0.471  1.052] tip [-0.353 -0.507  1.001] hand in door zone tip in door zone
+   12 hand [-0.433 -0.473  1.052] tip [-0.35  -0.508  1.   ] hand in door zone tip in door zone
+   13 hand [-0.432 -0.475  1.052] tip [-0.348 -0.509  1.   ] hand in door zone tip in door zone
+   14 hand [-0.43  -0.478  1.052] tip [-0.347 -0.51   1.   ] hand in door zone tip in door zone
+   15 hand [-0.429 -0.48   1.052] tip [-0.345 -0.51   1.   ] hand in door zone tip in door zone
+a250    hand [-0.429 -0.48   1.052] -> [ 0.196  1.598 -1.29  -2.33   2.797  1.461 -1.064] dist 0.23 bad 16
+    0 hand [-0.429 -0.48   1.052] tip [-0.345 -0.51   1.   ] hand in door zone tip in door zone
+    1 hand [-0.426 -0.482  1.052] tip [-0.341 -0.511  1.   ] hand in door zone tip in door zone
+    2 hand [-0.424 -0.485  1.052] tip [-0.338 -0.512  1.   ] hand in door zone tip in door zone
+    3 hand [-0.421 -0.487  1.052] tip [-0.335 -0.513  1.   ] hand in door zone tip in door zone
+    4 hand [-0.418 -0.489  1.052] tip [-0.332 -0.514  1.001] hand in door zone tip in door zone
+    5 hand [-0.416 -0.492  1.052] tip [-0.329 -0.515  1.001] hand in door zone tip in door zone
+    6 hand [-0.413 -0.494  1.052] tip [-0.326 -0.516  1.001] hand in door zone tip in door zone
+    7 hand [-0.411 -0.496  1.052] tip [-0.324 -0.516  1.001] hand in door zone tip in door zone
+    8 hand [-0.409 -0.498  1.052] tip [-0.321 -0.517  1.001] hand in door zone tip in door zone
+    9 hand [-0.406 -0.5    1.052] tip [-0.318 -0.517  1.001] hand in door zone tip in door zone
+   10 hand [-0.404 -0.502  1.052] tip [-0.316 -0.518  1.001] hand in door zone tip in door zone
+   11 hand [-0.402 -0.504  1.052] tip [-0.313 -0.518  1.001] hand in door zone tip in door zone
+   12 hand [-0.399 -0.506  1.052] tip [-0.311 -0.519  1.001] hand in door zone tip in door zone
+   13 hand [-0.397 -0.508  1.052] tip [-0.308 -0.519  1.   ] hand in door zone tip in door zone
+   14 hand [-0.395 -0.51   1.052] tip [-0.306 -0.519  1.   ] hand in door zone tip in door zone
+   15 hand [-0.393 -0.512  1.052] tip [-0.304 -0.519  1.   ] hand in door zone tip in door zone
+a265    hand [-0.393 -0.512  1.052] -> [ 0.082  1.667 -1.35  -2.159  2.738  1.262 -1.132] dist 0.20 bad 16
+    0 hand [-0.393 -0.512  1.052] tip [-0.304 -0.519  1.   ] hand in door zone tip in door zone
+    1 hand [-0.39  -0.513  1.052] tip [-0.301 -0.52   1.   ] hand in door zone tip in door zone
+    2 hand [-0.387 -0.515  1.052] tip [-0.297 -0.52   1.   ] hand in door zone tip in door zone
+    3 hand [-0.384 -0.517  1.052] tip [-0.294 -0.52   1.001] hand in door zone tip in door zone
+    4 hand [-0.381 -0.518  1.052] tip [-0.291 -0.52   1.001] hand in door zone tip in door zone
+    5 hand [-0.378 -0.52   1.052] tip [-0.288 -0.52   1.001] hand in door zone tip in door zone
+    6 hand [-0.375 -0.522  1.052] tip [-0.285 -0.52   1.001] hand in door zone tip in door zone
+    7 hand [-0.372 -0.523  1.052] tip [-0.282 -0.52   1.001] hand in door zone tip in door zone
+    8 hand [-0.369 -0.525  1.052] tip [-0.28  -0.52   1.001] hand in door zone
+    9 hand [-0.366 -0.526  1.052] tip [-0.277 -0.52   1.001] hand in door zone
+   10 hand [-0.364 -0.527  1.052] tip [-0.274 -0.52   1.001] hand in door zone
+   11 hand [-0.361 -0.529  1.052] tip [-0.272 -0.519  1.001] hand in door zone
+   12 hand [-0.358 -0.53   1.052] tip [-0.269 -0.519  1.001] hand in door zone
+   13 hand [-0.356 -0.531  1.052] tip [-0.267 -0.519  1.   ] hand in door zone
+   14 hand [-0.353 -0.532  1.052] tip [-0.264 -0.518  1.   ] hand in door zone
+   15 hand [-0.35  -0.533  1.052] tip [-0.262 -0.518  1.   ] hand in door zone
+a280    hand [-0.35  -0.533  1.052] -> [-0.018  1.722 -1.414 -1.967  2.692  1.102 -1.199] dist 0.19 bad 16
+    0 hand [-0.35  -0.533  1.052] tip [-0.262 -0.518  1.   ] hand in door zone
+    1 hand [-0.347 -0.534  1.052] tip [-0.259 -0.517  1.   ] hand in door zone
+    2 hand [-0.344 -0.535  1.052] tip [-0.256 -0.517  1.   ] hand in door zone
+    3 hand [-0.34  -0.536  1.052] tip [-0.253 -0.516  1.001] hand in door zone
+    4 hand [-0.337 -0.537  1.052] tip [-0.25  -0.515  1.001] hand in door zone
+    5 hand [-0.334 -0.538  1.052] tip [-0.247 -0.515  1.001] hand in door zone
+    6 hand [-0.331 -0.538  1.052] tip [-0.244 -0.514  1.001] hand in door zone
+    7 hand [-0.327 -0.539  1.052] tip [-0.242 -0.513  1.001] hand in door zone
+    8 hand [-0.324 -0.54   1.052] tip [-0.239 -0.512  1.001] hand in door zone
+    9 hand [-0.321 -0.54   1.052] tip [-0.236 -0.511  1.001] hand in door zone
+   10 hand [-0.318 -0.541  1.052] tip [-0.234 -0.51   1.001] hand in door zone
+   11 hand [-0.315 -0.541  1.052] tip [-0.231 -0.509  1.001] hand in door zone
+   12 hand [-0.312 -0.542  1.052] tip [-0.229 -0.508  1.001] hand in door zone
+   13 hand [-0.309 -0.542  1.052] tip [-0.227 -0.507  1.   ] hand in door zone
+   14 hand [-0.306 -0.543  1.052] tip [-0.225 -0.506  1.   ] hand in door zone
+   15 hand [-0.304 -0.543  1.052] tip [-0.222 -0.505  1.   ] hand in door zone
+a295    hand [-0.304 -0.543  1.052] -> [-0.104  1.763 -1.479 -1.764  2.653  0.973 -1.269] dist 0.20 bad 16
+    0 hand [-0.304 -0.543  1.052] tip [-0.222 -0.505  1.   ] hand in door zone
+    1 hand [-0.301 -0.542  1.052] tip [-0.22  -0.503  1.   ] hand in door zone
+    2 hand [-0.298 -0.542  1.052] tip [-0.218 -0.501  1.   ] hand in door zone
+    3 hand [-0.295 -0.541  1.052] tip [-0.216 -0.499  1.   ] hand in door zone
+    4 hand [-0.292 -0.541  1.052] tip [-0.213 -0.497  1.   ] hand in door zone
+    5 hand [-0.289 -0.54   1.052] tip [-0.211 -0.495  1.   ] hand in door zone
+    6 hand [-0.286 -0.539  1.052] tip [-0.209 -0.493  1.   ] hand in door zone
+    7 hand [-0.283 -0.539  1.052] tip [-0.207 -0.491  1.   ] hand in door zone
+    8 hand [-0.28  -0.538  1.052] tip [-0.205 -0.489  1.   ] hand in door zone
+a310    hand [-0.262 -0.532  1.052] -> [-0.154  1.763 -1.521 -1.6    2.564  0.862 -1.382] dist 0.16 bad 9
+a325    hand [-0.227 -0.514  1.052] -> [-0.191  1.763 -1.562 -1.445  2.466  0.759 -1.511] dist 0.16 bad 0
+a338    hand [-0.212 -0.488  1.052] -> [-0.186  1.763 -1.593 -1.375  2.338  0.657 -1.677] dist 0.17 bad 0
+a348    hand [-0.211 -0.468  1.052] -> [-0.171  1.763 -1.615 -1.344  2.2    0.584 -1.851] dist 0.17 bad 0
+    1 hand [-0.21  -0.468  1.052] tip [-0.192 -0.38   1.   ] tip in microwave box
+    2 hand [-0.209 -0.467  1.052] tip [-0.192 -0.379  1.   ] tip in microwave box
+    3 hand [-0.208 -0.466  1.052] tip [-0.192 -0.378  1.   ] tip in microwave box
+    4 hand [-0.207 -0.466  1.052] tip [-0.192 -0.378  1.   ] tip in microwave box
+    5 hand [-0.206 -0.465  1.052] tip [-0.191 -0.377  1.   ] tip in microwave box
+    6 hand [-0.206 -0.464  1.052] tip [-0.191 -0.376  1.   ] tip in microwave box
+    7 hand [-0.205 -0.464  1.052] tip [-0.191 -0.375  1.   ] tip in microwave box
+    8 hand [-0.204 -0.463  1.052] tip [-0.191 -0.374  1.   ] tip in microwave box
+    9 hand [-0.203 -0.462  1.052] tip [-0.191 -0.373  1.   ] tip in microwave box
+   10 hand [-0.202 -0.461  1.052] tip [-0.191 -0.373  1.   ] tip in microwave box
+   11 hand [-0.201 -0.461  1.052] tip [-0.191 -0.372  1.   ] tip in microwave box
+   12 hand [-0.201 -0.46   1.052] tip [-0.191 -0.371  1.   ] tip in microwave box
+   13 hand [-0.2   -0.459  1.052] tip [-0.191 -0.37   1.   ] tip in microwave box
+   14 hand [-0.199 -0.459  1.052] tip [-0.19  -0.369  1.   ] tip in microwave box
+   15 hand [-0.198 -0.458  1.052] tip [-0.19  -0.369  1.   ] tip in microwave box
+a355    hand [-0.198 -0.458  1.052] -> [-0.18   1.763 -1.636 -1.266  2.134  0.56  -1.937] dist 0.09 bad 15
+    0 hand [-0.198 -0.458  1.052] tip [-0.19  -0.369  1.   ] tip in microwave box
+    1 hand [-0.197 -0.456  1.053] tip [-0.19  -0.368  0.999] tip in microwave box
+    2 hand [-0.197 -0.455  1.054] tip [-0.19  -0.367  0.999] tip in microwave box
+    3 hand [-0.196 -0.453  1.055] tip [-0.189 -0.367  0.998] tip in microwave box
+    4 hand [-0.195 -0.452  1.056] tip [-0.189 -0.366  0.998] tip in microwave box
+    5 hand [-0.194 -0.45   1.057] tip [-0.189 -0.366  0.998] tip in microwave box
+    6 hand [-0.194 -0.448  1.058] tip [-0.189 -0.365  0.998] tip in microwave box
+    7 hand [-0.193 -0.447  1.06 ] tip [-0.189 -0.364  0.998] tip in microwave box
+    8 hand [-0.193 -0.445  1.061] tip [-0.189 -0.364  0.998] tip in microwave box
+    9 hand [-0.192 -0.443  1.063] tip [-0.189 -0.363  0.998] tip in microwave box
+   10 hand [-0.192 -0.442  1.064] tip [-0.189 -0.363  0.998] tip in microwave box
+   11 hand [-0.191 -0.44   1.066] tip [-0.189 -0.362  0.998] tip in microwave box
+   12 hand [-0.191 -0.438  1.068] tip [-0.189 -0.362  0.998] tip in microwave box
+   13 hand [-0.191 -0.437  1.069] tip [-0.189 -0.361  0.999] tip in microwave box
+   14 hand [-0.19  -0.435  1.071] tip [-0.19  -0.361  0.999] tip in microwave box
+   15 hand [-0.19  -0.433  1.073] tip [-0.19 -0.36  1.  ] tip in microwave box
+a360    hand [-0.19  -0.433  1.073] -> [ 0.004  1.763 -1.682 -1.444  1.939  0.713 -2.125] dist 0.19 bad 16
+    0 hand [-0.19  -0.433  1.073] tip [-0.19 -0.36  1.  ] tip in microwave box
+    1 hand [-0.19  -0.439  1.069] tip [-0.189 -0.364  0.998] tip in microwave box
+    2 hand [-0.19  -0.445  1.066] tip [-0.189 -0.369  0.995] tip in microwave box
+    3 hand [-0.19  -0.45   1.062] tip [-0.189 -0.373  0.994] tip in microwave box
+    4 hand [-0.19  -0.456  1.06 ] tip [-0.188 -0.377  0.992] tip in microwave box
+back    hand [-0.198 -0.508  1.052] -> [-0.415  1.668 -1.531 -0.938  2.047  0.677 -1.866] dist 0.51 bad 5
+up      hand [-0.198 -0.508  1.25 ] -> [-0.434  1.391 -1.598 -0.924  2.008  0.478 -1.696] dist 0.28 bad 0

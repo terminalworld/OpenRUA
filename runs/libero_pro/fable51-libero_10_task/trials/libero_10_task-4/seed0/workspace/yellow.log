@@ -1,0 +1,23 @@
+start q [-0.769  1.203  1.803 -1.845 -1.153  1.462  1.93 ] tcp [0.015 0.25  0.749]
+gripper -> reached=True stalled=False fingers=(0.03997127747816474, -0.03997369095855737)
+traj done code=0 max_joint_err=0.0020
+pre-grasp: tcp world [-0.074  0.137  0.75 ] (target [-0.074  0.137  0.75 ])
+traj done code=0 max_joint_err=0.0024
+approach: tcp world [-0.074  0.137  0.572] (target [-0.074  0.137  0.572])
+traj done code=0 max_joint_err=0.0022
+grasp-height: tcp world [-0.075  0.137  0.512] (target [-0.074  0.137  0.512])
+gripper -> reached=True stalled=False fingers=(0.005190116433416208, -0.007135105093711769)
+finger gap after close: 0.0123
+traj done code=0 max_joint_err=0.0024
+lift: tcp world [-0.074  0.137  0.749] (target [-0.074  0.137  0.75 ])
+finger gap after lift: 0.0103
+traj done code=0 max_joint_err=0.0026
+transport: tcp world [-0.024 -0.278  0.75 ] (target [-0.024 -0.278  0.75 ])
+traj done code=0 max_joint_err=0.0023
+pre-place: tcp world [-0.024 -0.279  0.595] (target [-0.024 -0.278  0.595])
+traj done code=0 max_joint_err=0.0020
+place: tcp world [-0.024 -0.279  0.545] (target [-0.024 -0.278  0.545])
+gripper -> reached=True stalled=False fingers=(0.035904582958340016, -0.035905191378802014)
+traj done code=0 max_joint_err=0.0023
+retreat: tcp world [-0.024 -0.278  0.749] (target [-0.024 -0.278  0.75 ])
+done

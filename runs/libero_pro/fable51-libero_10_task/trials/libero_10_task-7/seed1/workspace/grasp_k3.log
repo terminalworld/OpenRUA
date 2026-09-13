@@ -1,0 +1,25 @@
+-> descend
+move done code=0 max_joint_err=0.0026
+hand [-0.1499 -0.1843  0.6237] tcp z 0.5203 [ 0.992  0.122 -0.    -0.   ]
+move done code=0 max_joint_err=0.0122
+move done code=0 max_joint_err=0.0103
+move done code=0 max_joint_err=0.0092
+hand [-0.1471 -0.1852  0.5578] tcp z 0.4544 [0.992 0.123 0.005 0.004]
+gripper reached=True stalled=False fingers=(0.0169293285719018, -0.017321117029656614)
+fingers after close (0.0169293285719018, -0.017321117029656614)
+-> lift
+IK branch far from current (max delta 1.16); retrying
+IK branch far from current (max delta 1.16); retrying
+IK branch far from current (max delta 1.16); retrying
+IK branch far from current (max delta 1.16); retrying
+IK branch far from current (max delta 1.16); retrying
+Traceback (most recent call last):
+  File "/workspace/grasp_k3.py", line 8, in <module>
+    print("-> lift",flush=True); a.go([G[0],G[1],0.70],Q,secs=3)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/arm.py", line 97, in go
+    code,err=self.move_tcp_world(pos,quat,secs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/arm.py", line 92, in move_tcp_world
+    raise RuntimeError(f"no nearby IK branch (delta {d:.2f})")
+RuntimeError: no nearby IK branch (delta 1.16)

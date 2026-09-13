@@ -1,0 +1,4 @@
+-> rotate above ketchup
+move done code=-5 max_joint_err=0.8538
+move done code=-5 max_joint_err=0.2078
+hand [-0.2001 -0.1481  0.7631] [ 0.777 -0.629  0.     0.001] fingers (0.039999125102598315, -0.04000002283751318)

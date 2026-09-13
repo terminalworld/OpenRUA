@@ -1,0 +1,16 @@
+05:32:29 plans ok: up 1 carry 3 down 5 ret 7; hand z at stove [ 0.886 -0.463 -0.005]
+05:32:49 move done; max joint err 0.0026 rad
+05:32:50 move_path (1 pts, 4.0s) ok=True; hand now [0.0287 0.0867 1.1589]
+05:32:50 up chunk ok=True gap 0.0113
+05:33:11 move done; max joint err 0.0032 rad
+05:33:11 move_path (3 pts, 4.0s) ok=True; hand now [0.1129 0.077  1.1586]
+05:33:11 carry chunk ok=True gap 0.0113
+05:33:32 move done; max joint err 0.0025 rad
+05:33:33 move_path (5 pts, 4.0s) ok=True; hand now [0.1126 0.0774 1.0892]
+05:33:33 down chunk ok=True gap 0.0113
+05:33:34 before release: pinch at [0.195  0.0343 1.0882] fingers (0.005679543978015178, -0.005667040150230286)
+05:33:36 gripper -> 0.04: reached=True stalled=False fingers=0.0359,-0.0359
+05:33:57 move done; max joint err 0.0021 rad
+05:33:58 move_path (7 pts, 4.0s) ok=True; hand now [0.0428 0.1138 1.1511]
+05:33:58 retreat ok=True
+05:33:58 PLACE DONE

@@ -1,0 +1,4 @@
+gripper reached=True stalled=False fingers=(0.03579764470136707, -0.036177815627518595)
+traj[0] error_code=-5 max joint err=0.0710
+traj[1] error_code=0 max joint err=0.0024
+tcp now [-0.1899 -0.1502  0.6598] target [-0.19 -0.15  0.66]

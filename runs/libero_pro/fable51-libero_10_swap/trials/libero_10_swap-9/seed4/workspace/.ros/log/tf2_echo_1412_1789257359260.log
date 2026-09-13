@@ -1,0 +1,2 @@
+[INFO] [1789257359.282099891] [tf2_echo]: Waiting for transform world ->  robot0_robotview_optical_frame: Invalid frame ID "world" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789257389.083347048] [rclcpp]: signal_handler(SIGINT/SIGTERM)

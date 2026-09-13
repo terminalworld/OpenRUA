@@ -1,0 +1,10 @@
+goto (-0.095, -0.128, 0.6) yaw=0.00
+  move: error_code=-5 max_joint_err=0.3613
+  retrying same goal
+  move: error_code=0 max_joint_err=0.0045
+goto (-0.095, -0.128, 0.465) yaw=0.00
+  move: error_code=0 max_joint_err=0.0260
+  retrying same goal
+  move: error_code=0 max_joint_err=0.0243
+gripper 0.0: reached=True stalled=False gap=0.0629
+joints [-0.151, 0.286, -0.119, -2.595, 0.148, 2.892, 0.378] gap 0.0629

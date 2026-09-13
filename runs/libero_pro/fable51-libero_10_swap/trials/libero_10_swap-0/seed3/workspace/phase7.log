@@ -1,0 +1,16 @@
+19:03:58 robot ready
+19:03:58 removed basket CO True
+19:04:00 gripper -> 0.04: reached=True stalled=False fingers=(0.03586158936841788, -0.03589132290154692)
+19:04:22 traj code=-5 max_joint_err=0.1933
+19:04:22 retrying trajectory
+19:04:44 traj code=0 max_joint_err=0.0022
+19:04:44 tcp now [2.000e-04 1.249e-01 7.499e-01] target [0.    0.125 0.75 ] err=0.0002
+19:05:00 line traj code=-5 max_joint_err=0.0935 tcp now [0.0059 0.1246 0.5395] target [0.    0.125 0.5  ] err=0.0399
+19:05:00 down ok False
+19:05:22 line traj code=-5 max_joint_err=0.0514 tcp now [0.0059 0.1246 0.5395] target [0.   0.37 0.5 ] err=0.2486
+19:05:22 push ok False
+19:05:22 retry push
+19:05:44 line traj code=-5 max_joint_err=0.0580 tcp now [0.0447 0.3637 0.5444] target [0.   0.37 0.5 ] err=0.0633
+19:05:59 line traj code=0 max_joint_err=0.0023 tcp now [4.000e-04 2.998e-01 7.795e-01] target [0.   0.3  0.78] err=0.0006
+19:05:59 up ok True
+19:05:59 PHASE7 DONE

@@ -1,0 +1,20 @@
+19:58:27 start joints [ 0.051  0.088  0.44  -1.964 -0.043  2.044  1.296] tcp [0.    0.265 0.75 ]
+19:58:27 === cream ===
+19:58:29   gripper(0.04) reached=True stalled=False fingers=0.0399,-0.0399
+19:58:30  goto tcp [ 0.107 -0.191  0.574]
+19:58:46   move done code=0 max_joint_err=0.0191 tcp=[ 0.107 -0.19   0.574]
+19:58:46  goto tcp [ 0.107 -0.191  0.437]
+19:58:57   move done code=0 max_joint_err=0.0048 tcp=[ 0.107 -0.191  0.439]
+19:58:58   gripper(0.0) reached=True stalled=False fingers=0.0210,-0.0211
+19:58:58  goto tcp [ 0.107 -0.191  0.72 ]
+19:59:09   move done code=0 max_joint_err=0.0163 tcp=[ 0.11  -0.192  0.721]
+19:59:10   after lift fingers=0.0210 (still holding: True)
+19:59:10  goto tcp [0.    0.265 0.72 ]
+19:59:26   move done code=0 max_joint_err=0.0471 tcp=[0.    0.265 0.72 ]
+19:59:43   move done code=0 max_joint_err=0.0023 tcp=[-0.     0.265  0.72 ]
+19:59:43  goto tcp [0.    0.265 0.68 ]
+19:59:53   move done code=0 max_joint_err=0.0024 tcp=[-0.     0.265  0.68 ]
+19:59:55   gripper(0.04) reached=True stalled=False fingers=0.0363,-0.0363
+19:59:55  goto tcp [0.    0.265 0.75 ]
+20:00:05   move done code=0 max_joint_err=0.0023 tcp=[0.    0.265 0.75 ]
+20:00:05 === cream: OK

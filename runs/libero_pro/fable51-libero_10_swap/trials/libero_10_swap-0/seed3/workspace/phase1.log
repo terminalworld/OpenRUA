@@ -1,0 +1,12 @@
+18:26:16 robot ready
+18:26:18 gripper -> 0.04: reached=True stalled=False fingers=(0.03872920141715632, -0.038729141314950644)
+18:26:35 traj code=-5 max_joint_err=0.0613
+18:26:35 retrying trajectory
+18:26:50 traj code=0 max_joint_err=0.0024
+18:26:50 tcp now [-0.2439 -0.1731  0.6202] target [-0.244 -0.173  0.62 ] err=0.0002
+18:27:02 line traj code=-5 max_joint_err=0.4531 tcp now [-0.2286 -0.2006  0.5154] target [-0.244 -0.173  0.455] err=0.0682
+Traceback (most recent call last):
+  File "/workspace/phase1.py", line 7, in <module>
+    assert r.move_tcp_line(SX, SY, 0.455, yaw=0.0, secs=3, n=4), "descent failed"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: descent failed

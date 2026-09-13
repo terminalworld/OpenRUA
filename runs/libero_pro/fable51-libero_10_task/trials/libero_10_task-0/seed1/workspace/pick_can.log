@@ -1,0 +1,14 @@
+fingers (0.039893847152216624, -0.03989411498287325)
+pregrasp
+  move: error_code=0 max joint err=0.0050
+  now hand=[-0.0775  0.0426  0.735 ] tcp=[-0.0775  0.0426  0.6316] target=[-0.079  0.042  0.63 ]
+descend
+  move: error_code=0 max joint err=0.0032
+  now hand=[-0.0788  0.0419  0.5787] tcp=[-0.0788  0.0419  0.4753] target=[-0.079  0.042  0.475]
+close
+  gripper(0.0): reached=True stalled=False pos=0.0000 fingers=(0.03154377983585971, -0.030663687609614732)
+fingers after close (0.03154377983585971, -0.030663687609614732)
+lift
+  move: error_code=-5 max joint err=0.1254
+  now hand=[-0.0651  0.0451  0.7987] tcp=[-0.0651  0.0451  0.6953] target=[-0.079  0.042  0.7  ]
+fingers after lift (0.031515592925113814, -0.030682896428524696)

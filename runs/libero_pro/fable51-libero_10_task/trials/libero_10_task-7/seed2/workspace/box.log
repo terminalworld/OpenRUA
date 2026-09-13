@@ -1,0 +1,47 @@
+hand world=(0.0001,0.2548,0.8229) q=(0.924,0.382,0.001,0.001)
+TCP  world=(0.0003,0.2548,0.7195)
+arm: [0.2641, 0.0951, 0.2044, -2.0268, -0.0241, 2.1208, 0.4819]
+fingers: 0.0398 -0.0398
+== open
+gripper open: reached=True stalled=False fingers=0.0399,-0.0399 gap=0.0798
+== hover [-0.163  0.058] 0.0
+traj done error_code=-5 max_joint_err=0.1548
+large tracking error, resending
+traj done error_code=0 max_joint_err=0.0022
+TCP now (-0.1626,0.0581,0.5802) target (-0.163, 0.058, 0.58) dist=0.0004
+   wrist: centre=(-0.0191,0.1913) ztop=0.485 n=8424 x[-0.076,0.067] y[0.179,0.302] axis=160.6deg L=0.172 W=0.115
+   wrist: centre=(0.0183,-0.1013) ztop=0.485 n=5031 x[0.003,0.057] y[-0.138,-0.089] axis=-138.9deg L=0.064 W=0.028
+   wrist: centre=(-0.1628,0.0582) ztop=0.455 n=6189 x[-0.204,-0.122] y[0.037,0.079] axis=-179.8deg L=0.082 W=0.042
+   refined (-0.1628,0.0582) yaw 0.2 W=0.042 L=0.082 (delta 0.0 cm)
+== descend
+traj_multi done error_code=0 max_joint_err=0.0250
+large tracking error, resending last point
+traj done error_code=0 max_joint_err=0.0018
+TCP now (-0.1634,0.0578,0.4400) target (-0.163, 0.058, 0.44) dist=0.0005
+== close
+gripper close: reached=True stalled=False fingers=0.0211,-0.0212 gap=0.0422
+== lift
+traj_multi done error_code=-5 max_joint_err=0.1496
+large tracking error, resending last point
+traj done error_code=0 max_joint_err=0.0023
+TCP now (-0.1629,0.0581,0.7195) target (-0.163, 0.058, 0.72) dist=0.0005
+   gap after lift 0.0422
+== to basket
+traj done error_code=-5 max_joint_err=0.0543
+large tracking error, resending
+traj done error_code=0 max_joint_err=0.0023
+TCP now (-0.0005,0.2548,0.7198) target (0.0, 0.255, 0.72) dist=0.0006
+   gap at basket 0.0422
+== lower
+traj_multi done error_code=0 max_joint_err=0.0024
+TCP now (-0.0000,0.2547,0.6604) target (0.0, 0.255, 0.66) dist=0.0005
+== release
+gripper open: reached=True stalled=False fingers=0.0363,-0.0363 gap=0.0726
+== retreat
+traj_multi done error_code=0 max_joint_err=0.0024
+TCP now (-0.0000,0.2553,0.7195) target (0.0, 0.255, 0.72) dist=0.0006
+hand world=(-0.0001,0.2552,0.8229) q=(0.924,0.383,0.000,-0.001)
+TCP  world=(-0.0000,0.2553,0.7195)
+arm: [0.9858, 0.1081, -0.5364, -2.0265, 0.066, 2.1194, 0.4158]
+fingers: 0.0397 -0.0397
+DONE

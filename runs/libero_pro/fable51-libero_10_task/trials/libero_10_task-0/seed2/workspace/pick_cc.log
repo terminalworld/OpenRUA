@@ -1,0 +1,28 @@
+start tcp [0.005 0.264 0.85 ] fingers (0.03995728693494628, -0.039961276318156776)
+open gripper
+  gripper -> reached=True stalled=False fingers=[ 0.04 -0.04]
+pregrasp
+  traj error_code=-5 max joint err=0.1370 rad
+  traj error_code=0 max joint err=0.0024 rad
+  TCP now [ 0.103 -0.187  0.6  ] (target [ 0.103 -0.187  0.6  ]) err=0.0004
+descend
+  traj error_code=0 max joint err=0.0190 rad
+  TCP now [ 0.11  -0.189  0.452] (target [ 0.103 -0.187  0.438]) err=0.0160
+close
+  gripper -> reached=True stalled=False fingers=[ 0.0065 -0.0084]
+lift
+  traj error_code=0 max joint err=0.0023 rad
+  TCP now [ 0.103 -0.187  0.699] (target [ 0.103 -0.187  0.7  ]) err=0.0006
+fingers after lift (0.0004942721711899272, -0.0005052655541561918)
+over basket
+  traj error_code=-5 max joint err=0.1512 rad
+  traj error_code=0 max joint err=0.0025 rad
+  TCP now [-0.009  0.3    0.76 ] (target [-0.01  0.3   0.76]) err=0.0006
+fingers over basket (0.0005002788360602755, -0.0004993056694855915)
+release
+  gripper -> reached=True stalled=False fingers=[ 0.0359 -0.0359]
+retreat
+  traj error_code=0 max joint err=0.0022 rad
+  TCP now [-0.01  0.3   0.85] (target [-0.01  0.3   0.85]) err=0.0006
+end tcp [-0.01  0.3   0.85] fingers (0.03995859050643778, -0.03995607726981756)
+DONE

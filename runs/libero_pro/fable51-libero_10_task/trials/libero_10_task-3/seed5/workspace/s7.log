@@ -1,0 +1,26 @@
+start tcp [0.0638 0.104  1.0982] fingers (0.007469578213699486, -0.007484209415175774)
+== descend to 0.99
+  move done code=0 max_joint_err=0.0024
+  hand at [0.0653 0.1042 1.0937] target [0.0653 0.1042 1.0934] poserr=0.0003
+  TCP now [0.0649 0.1039 0.9903] target [0.065 0.104 0.99 ]
+wrench [-0.02 -0.02 -5.25  0.01 -0.   -0.  ]
+== descend to 0.955
+  move done code=-5 max_joint_err=0.0611
+  hand at [0.0666 0.1057 1.0882] target [0.0653 0.1042 1.0584] poserr=0.0299
+  move done code=-5 max_joint_err=0.0606
+  move done code=-5 max_joint_err=0.0597
+  move done code=-5 max_joint_err=0.0588
+  TCP now [0.0655 0.1064 0.9848] target [0.065 0.104 0.955]
+wrench [-1.000e-02  1.980e+01  2.048e+01 -1.950e+00  5.600e-01 -3.600e-01] fingers (0.00747131632285329, -0.007483649615542234)
+== release
+  gripper -> reached=True stalled=False fingers=(0.033818109355755265, -0.03590661052290229)
+== retreat up
+  move done code=0 max_joint_err=0.0023
+  hand at [0.0654 0.1042 1.2529] target [0.0653 0.1042 1.2534] poserr=0.0005
+  TCP now [0.0652 0.1042 1.1495] target [0.065 0.104 1.15 ]
+== move away
+  move done code=-5 max_joint_err=0.1563
+  hand now at [-0.2065 -0.0659  1.3386] (target [-0.2497 -0.0498  1.3034])
+  move done code=0 max_joint_err=0.0020
+tcp [-0.25 -0.05  1.2 ]
+DONE

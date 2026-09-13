@@ -1,0 +1,13 @@
+fingers before (gap): 0.06286273024089788
+mid [ 0.109 -0.537  0.041 -2.463  0.022  1.926  0.922] 
+end [ 0.205  0.096  0.265 -2.026 -0.029  2.118  1.27 ]
+traj done error_code=0 max_joint_err=0.0024
+traj done error_code=0 max_joint_err=0.0219
+  resending final point
+traj done error_code=0 max_joint_err=0.0023
+tcp at release [-2.000e-04  2.546e-01  7.196e-01] target (0.0, 0.255, 0.72)
+gap before release 0.06287525977827257
+gripper reached=True stalled=False fingers=(0.037066594867362496, -0.03738206237369816)
+gap after release 0.07444865724106066
+traj done error_code=0 max_joint_err=0.0022
+joints 0.1973,0.0233,0.2693,-1.7783,-0.0077,1.8016,1.2558

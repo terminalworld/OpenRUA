@@ -1,0 +1,14 @@
+-> descend
+move done code=0 max_joint_err=0.0025
+hand [-0.1999 -0.1501  0.6637] tcp z 0.5603 [ 0.707 -0.707 -0.    -0.   ]
+move done code=-5 max_joint_err=0.1274
+move done code=-5 max_joint_err=0.1865
+move done code=-5 max_joint_err=0.1799
+hand [-0.1249 -0.1928  0.6373] tcp z 0.5339 [-0.702  0.703 -0.108  0.03 ]
+gripper reached=True stalled=False fingers=(0.004328776988257259, -0.0039137535409269255)
+fingers after close (0.004328776988257259, -0.0039137535409269255)
+-> lift
+move done code=-5 max_joint_err=0.4893
+move done code=0 max_joint_err=0.0020
+hand [-0.1997 -0.1502  0.8036] tcp z 0.7002 [ 0.708 -0.706  0.001  0.001]
+fingers after lift (0.0004997777308586531, -0.0004997723485418835)

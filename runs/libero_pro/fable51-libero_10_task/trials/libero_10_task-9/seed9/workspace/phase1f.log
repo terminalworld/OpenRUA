@@ -1,0 +1,54 @@
+13:53:03 rotation alpha=-89.0 deg -> dj7=1.553
+13:53:04 IK attempt 0: solution deviates 1.71 rad from seed
+13:53:04 IK attempt 1: solution deviates 1.71 rad from seed
+13:53:04 IK attempt 2: solution deviates 1.60 rad from seed
+13:53:04 IK attempt 3: solution deviates 1.68 rad from seed
+13:53:04 IK: returning best solution (dev 1.60)
+13:53:04 IK attempt 0: solution deviates 1.26 rad from seed
+13:53:04 IK attempt 1: solution deviates 1.24 rad from seed
+13:53:04 IK attempt 2: solution deviates 1.25 rad from seed
+13:53:04 IK attempt 3: solution deviates 1.33 rad from seed
+13:53:04 IK: returning best solution (dev 1.24)
+13:53:04 flipped yaw; j7 -1.088
+13:53:04 j7 -1.088 -> 0.466; hand y [1. 0. 0.]
+13:53:18 trajectory code=-5 err=0.5907 (dur 4.12s)
+13:53:18   re-sending final point (err 0.5907, 2.0s)
+13:53:26   code=-5 err=0.1708 worst j7 dq=[-0.     0.    -0.001  0.001  0.002 -0.002  0.171]
+13:53:26   re-sending final point (err 0.1708, 2.0s)
+13:53:35   code=0 err=0.0021 worst j7 dq=[-0.     0.    -0.     0.001  0.001 -0.002  0.002]
+13:53:35 above tcp [-0.2312 -0.1017  1.2203] y_hand [ 1.    -0.003 -0.001]
+13:53:45 trajectory code=-5 err=0.1858 (dur 2.22s)
+13:53:45   re-sending final point (err 0.1858, 2.0s)
+13:53:53   code=0 err=0.0024 worst j7 dq=[ 0.     0.    -0.001  0.001  0.001 -0.002 -0.002]
+13:53:53   tcp now [-0.2311 -0.102   0.9852] (target [-0.2311 -0.1017  0.985 ]) joint err 0.0024
+13:53:55 gripper -> 0.0: reached=True stalled=False gap=0.0083
+13:54:04 trajectory code=0 err=0.0025 (dur 2.0s)
+13:54:05   tcp now [-0.2308 -0.102   1.0298] (target [-0.2311 -0.1017  1.03  ]) joint err 0.0025
+13:54:05 gap after lift 0.0057
+13:54:15 trajectory code=-5 err=0.1260 (dur 2.0s)
+13:54:15   re-sending final point (err 0.1260, 2.0s)
+13:54:23   code=0 err=0.0022 worst j7 dq=[ 0.001 -0.001 -0.001 -0.001 -0.002  0.002  0.002]
+13:54:24   tcp now [-0.2313 -0.1021  1.2194] (target [-0.2311 -0.1017  1.22  ]) joint err 0.0022
+13:54:29 in air: gap 0.0057 handle az [('agentview', 391, 0.5), ('birdview', 32, 0.5)]
+13:54:59 trajectory code=0 err=0.0036 (dur 10.34s)
+13:55:05 rotated -88.8 deg; y_hand [ 0.022 -1.     0.001] gap 0.0057 handle az [('agentview', 311, -82.2), ('birdview', 20, -90.4)]
+13:55:05 place tcp xy [-0.2209 -0.086 ]
+13:55:13 trajectory code=0 err=0.0025 (dur 2.0s)
+13:55:14   tcp now [-0.2214 -0.0862  1.2196] (target [-0.2209 -0.086   1.22  ]) joint err 0.0025
+13:55:23 trajectory code=-5 err=0.1070 (dur 2.0s)
+13:55:23   re-sending final point (err 0.1070, 2.0s)
+13:55:31   code=0 err=0.0022 worst j6 dq=[ 0.     0.    -0.001  0.001  0.002 -0.002 -0.002]
+13:55:32   tcp now [-0.2211 -0.0862  1.0301] (target [-0.2209 -0.086   1.03  ]) joint err 0.0022
+13:55:40 trajectory code=0 err=0.0026 (dur 2.0s)
+13:55:41   tcp now [-0.2216 -0.0857  0.9909] (target [-0.2209 -0.086   0.991 ]) joint err 0.0026
+13:55:42 gripper -> 0.04: reached=True stalled=False gap=0.0718
+13:55:42 IK attempt 0: solution deviates 0.89 rad from seed
+13:55:52 trajectory code=-5 err=0.1827 (dur 2.21s)
+13:55:52   re-sending final point (err 0.1827, 2.0s)
+13:56:00   code=0 err=0.0023 worst j7 dq=[-0.    -0.    -0.001 -0.001 -0.002  0.002  0.002]
+13:56:01   tcp now [-0.221  -0.0865  1.1497] (target [-0.2209 -0.086   1.15  ]) joint err 0.0023
+13:56:09 trajectory code=-5 err=0.0594 (dur 2.0s)
+13:56:09   re-sending final point (err 0.0594, 2.0s)
+13:56:17   code=0 err=0.0023 worst j7 dq=[ 0.    -0.     0.001 -0.001  0.001  0.002  0.002]
+13:56:18   tcp now [-0.3495 -0.2997  1.2496] (target [-0.35 -0.3   1.25]) joint err 0.0023
+13:56:18 PHASE1F DONE

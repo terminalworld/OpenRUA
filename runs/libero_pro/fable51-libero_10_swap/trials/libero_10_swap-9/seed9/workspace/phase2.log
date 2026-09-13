@@ -1,0 +1,28 @@
+start q [-0.106 -1.213  0.395 -2.804  0.368  1.616 -0.76 ] hand [-0.45  0.1   1.38]
+high      [-0.208  0.069  1.15 ] -> [-0.364  0.269  0.277 -2.398  1.452  1.59  -1.868]  dist 1.48
+  bad steps: 0
+pregrasp  [-0.208  0.069  0.958] -> [-0.334  0.82   0.238 -2.158  1.372  1.709 -2.15 ]  dist 0.55
+  bad steps: 0
+grasp     [-0.208  0.149  0.958] -> [-0.244  0.842  0.33  -2.152  1.508  1.808 -2.17 ]  dist 0.14
+  bad steps: 0
+lift      [-0.208  0.149  1.03 ] -> [-0.277  0.634  0.375 -2.269  1.54   1.789 -2.084]  dist 0.21
+  bad steps: 0
+>> high
+  move_q: error_code=-5 max_joint_err=0.8567
+  retry 1: max_joint_err=0.857
+  move_q: error_code=-5 max_joint_err=0.2322
+  retry 2: max_joint_err=0.232
+  move_q: error_code=0 max_joint_err=0.0018
+   reached hand [-0.2081  0.0687  1.15  ]
+>> pregrasp
+  move_q: error_code=0 max_joint_err=0.0024
+   reached hand [-0.2077  0.0688  0.9591]
+>> grasp
+  move_q: error_code=0 max_joint_err=0.0022
+   reached hand [-0.2083  0.1482  0.9582]
+  gripper(0.0): reached=True stalled=False fingers=0.0093,-0.0092
+   fingers after close (0.009289891517059064, -0.009156278060572573)
+>> lift
+  move_q: error_code=0 max_joint_err=0.0027
+   reached hand [-0.2079  0.1481  1.0292]
+fingers after lift (0.00919094569020162, -0.009192448316966249)

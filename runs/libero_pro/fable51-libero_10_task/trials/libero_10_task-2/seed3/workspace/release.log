@@ -1,0 +1,5 @@
+  gripper -> 0.04: reached=True stalled=False finger=0.0360
+  move_q done code=0 max_joint_err=0.0022
+  tcp now [-0.0384  0.3741  1.0998] target [-0.039  0.374  1.1  ]
+  move_q done code=0 max_joint_err=0.0098
+  tcp now [-0.1495  0.3     1.2472] target [-0.15  0.3   1.25]

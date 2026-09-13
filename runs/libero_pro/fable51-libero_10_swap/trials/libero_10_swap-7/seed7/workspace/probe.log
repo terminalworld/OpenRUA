@@ -1,0 +1,22 @@
+base in world: [-0.51  0.    0.42]
+  gripper reached=True stalled=False fingers=(0.040014765594955946, -0.03962692531832885)
+  traj error_code=0 max_joint_err=0.0022 (attempt 1)
+  now at tcp [-0.2094 -0.1307  0.6201] (target [-0.21  -0.131  0.62 ], off 0.6 mm)
+z=0.62 ok=True wrench=[ 1.8 -1.8 -4.4] fingers=[ 0.04   -0.0396]
+  traj error_code=0 max_joint_err=0.0024 (attempt 1)
+  now at tcp [-0.2099 -0.1311  0.5504] (target [-0.21  -0.131  0.55 ], off 0.4 mm)
+z=0.55 ok=True wrench=[ 1.8 -1.8 -4.4] fingers=[ 0.04   -0.0396]
+  traj error_code=0 max_joint_err=0.0023 (attempt 1)
+  now at tcp [-0.21   -0.1314  0.5304] (target [-0.21  -0.131  0.53 ], off 0.6 mm)
+z=0.53 ok=True wrench=[ 1.8 -1.8 -4.4] fingers=[ 0.04   -0.0396]
+  traj error_code=0 max_joint_err=0.0023 (attempt 1)
+  now at tcp [-0.2103 -0.1312  0.5103] (target [-0.21  -0.131  0.51 ], off 0.5 mm)
+z=0.51 ok=True wrench=[ 1.8 -1.8 -4.4] fingers=[ 0.04   -0.0396]
+  traj error_code=0 max_joint_err=0.0024 (attempt 1)
+  now at tcp [-0.2106 -0.1311  0.4902] (target [-0.21  -0.131  0.49 ], off 0.7 mm)
+z=0.49 ok=True wrench=[ 1.8 -1.8 -4.4] fingers=[ 0.04   -0.0396]
+  traj error_code=-5 max_joint_err=0.0661 (attempt 1)
+  traj error_code=-5 max_joint_err=0.0583 (attempt 2)
+  traj error_code=0 max_joint_err=0.0442 (attempt 3)
+  now at tcp [-0.1988 -0.13    0.4851] (target [-0.21  -0.131  0.47 ], off 18.8 mm)
+z=0.47 ok=False wrench=[-15.4   9.   22.8] fingers=[ 0.04   -0.0405]

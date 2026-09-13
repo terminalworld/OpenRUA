@@ -1,0 +1,140 @@
+start q [-0.991  1.289 -0.213 -0.922  1.387  1.035 -1.523] hand [-0.237 -0.549  1.038]
+hi       hand [-0.237 -0.549  1.25 ] -> [-0.968  0.88  -0.231 -1.149  1.439  0.966 -1.323] dist 0.41 bad 0 door 9.000 
+over     hand [-0.222 -0.5    1.2  ] -> [-0.873  0.813 -0.247 -1.376  1.391  1.05  -1.484] dist 0.23 bad 0 door 9.000 
+behind   hand [-0.222 -0.5    0.98 ] -> [-0.907  1.283 -0.217 -1.083  1.375  1.119 -1.666] dist 0.47 bad 0 door 0.026 l6
+push1    hand [-0.214 -0.484  0.98 ] -> [-0.883  1.29  -0.22  -1.067  1.328  1.076 -1.682] dist 0.05 bad 0 door 0.017 tip-
+   10 hand [-0.208 -0.476  0.98 ] tip [-0.17 -0.38  0.98] tip in microwave box
+   11 hand [-0.207 -0.475  0.98 ] tip [-0.17  -0.379  0.98 ] tip in microwave box
+   12 hand [-0.207 -0.474  0.98 ] tip [-0.17  -0.378  0.98 ] tip in microwave box
+   13 hand [-0.206 -0.474  0.98 ] tip [-0.17  -0.377  0.98 ] tip in microwave box
+   14 hand [-0.206 -0.473  0.98 ] tip [-0.17  -0.376  0.98 ] tip in microwave box
+   15 hand [-0.205 -0.472  0.98 ] tip [-0.17  -0.375  0.98 ] tip in microwave box
+push2    hand [-0.205 -0.472  0.98 ] -> [-0.866  1.315 -0.22  -1.017  1.284  1.028 -1.683] dist 0.05 bad 6 door 0.011 tip-
+    0 hand [-0.205 -0.472  0.98 ] tip [-0.17  -0.375  0.98 ] tip in microwave box
+    1 hand [-0.205 -0.472  0.98 ] tip [-0.17  -0.374  0.98 ] tip in microwave box
+    2 hand [-0.204 -0.471  0.98 ] tip [-0.17  -0.374  0.98 ] tip in microwave box
+    3 hand [-0.203 -0.471  0.98 ] tip [-0.169 -0.373  0.98 ] tip in microwave box
+    4 hand [-0.202 -0.47   0.98 ] tip [-0.169 -0.372  0.98 ] tip in microwave box
+    5 hand [-0.202 -0.47   0.98 ] tip [-0.169 -0.372  0.98 ] tip in microwave box
+    6 hand [-0.201 -0.469  0.98 ] tip [-0.169 -0.371  0.98 ] tip in microwave box
+    7 hand [-0.2   -0.469  0.98 ] tip [-0.169 -0.37   0.98 ] tip in microwave box
+    8 hand [-0.199 -0.468  0.98 ] tip [-0.169 -0.37   0.98 ] tip in microwave box
+    9 hand [-0.199 -0.468  0.98 ] tip [-0.169 -0.369  0.98 ] tip in microwave box
+   10 hand [-0.198 -0.467  0.98 ] tip [-0.168 -0.368  0.98 ] tip in microwave box
+   11 hand [-0.197 -0.467  0.98 ] tip [-0.168 -0.368  0.98 ] tip in microwave box
+   12 hand [-0.197 -0.466  0.98 ] tip [-0.168 -0.367  0.98 ] tip in microwave box
+   13 hand [-0.196 -0.466  0.98 ] tip [-0.168 -0.366  0.98 ] tip in microwave box
+   14 hand [-0.195 -0.465  0.98 ] tip [-0.168 -0.366  0.98 ] tip in microwave box
+   15 hand [-0.195 -0.465  0.98 ] tip [-0.168 -0.365  0.98 ] tip in microwave box
+push3    hand [-0.195 -0.465  0.98 ] -> [-0.859  1.367 -0.214 -0.914  1.249  0.972 -1.661] dist 0.10 bad 16 door 0.009 tip-
+    0 hand [-0.195 -0.465  0.98 ] tip [-0.168 -0.365  0.98 ] tip in microwave box
+    1 hand [-0.194 -0.464  0.98 ] tip [-0.168 -0.364  0.98 ] tip in microwave box
+    2 hand [-0.193 -0.464  0.98 ] tip [-0.167 -0.364  0.98 ] tip in microwave box
+    3 hand [-0.192 -0.463  0.98 ] tip [-0.167 -0.363  0.98 ] tip in microwave box
+    4 hand [-0.191 -0.463  0.98 ] tip [-0.167 -0.362  0.98 ] tip in microwave box
+    5 hand [-0.191 -0.462  0.98 ] tip [-0.167 -0.362  0.98 ] tip in microwave box
+    6 hand [-0.19  -0.462  0.98 ] tip [-0.166 -0.361  0.98 ] tip in microwave box
+    7 hand [-0.189 -0.461  0.98 ] tip [-0.166 -0.36   0.98 ] tip in microwave box
+    8 hand [-0.188 -0.461  0.98 ] tip [-0.166 -0.36   0.98 ] tip in microwave box
+    9 hand [-0.187 -0.46   0.98 ] tip [-0.166 -0.359  0.98 ] tip in microwave box
+   10 hand [-0.187 -0.46   0.98 ] tip [-0.166 -0.358  0.98 ] tip in microwave box
+   11 hand [-0.186 -0.459  0.98 ] tip [-0.166 -0.358  0.98 ] tip in microwave box
+   12 hand [-0.185 -0.459  0.98 ] tip [-0.165 -0.357  0.98 ] tip in microwave box
+   13 hand [-0.184 -0.458  0.98 ] tip [-0.165 -0.356  0.98 ] tip in microwave box
+   14 hand [-0.184 -0.457  0.98 ] tip [-0.165 -0.356  0.98 ] tip in microwave box
+   15 hand [-0.183 -0.457  0.98 ] tip [-0.165 -0.355  0.98 ] tip in microwave box
+push4    hand [-0.183 -0.457  0.98 ] -> [-0.856  1.437 -0.202 -0.781  1.222  0.913 -1.624] dist 0.13 bad 16 door 0.009 tip-
+    0 hand [-0.183 -0.457  0.98 ] tip [-0.165 -0.355  0.98 ] tip in microwave box
+    1 hand [-0.182 -0.456  0.98 ] tip [-0.165 -0.354  0.98 ] tip in microwave box
+    2 hand [-0.182 -0.456  0.98 ] tip [-0.165 -0.354  0.98 ] tip in microwave box
+    3 hand [-0.181 -0.455  0.98 ] tip [-0.165 -0.353  0.98 ] tip in microwave box
+    4 hand [-0.181 -0.454  0.98 ] tip [-0.164 -0.352  0.98 ] tip in microwave box
+    5 hand [-0.18  -0.454  0.98 ] tip [-0.164 -0.352  0.98 ] tip in microwave box
+    6 hand [-0.18  -0.453  0.98 ] tip [-0.164 -0.351  0.98 ] tip in microwave box
+    7 hand [-0.179 -0.453  0.98 ] tip [-0.164 -0.35   0.98 ] tip in microwave box
+    8 hand [-0.179 -0.452  0.98 ] tip [-0.164 -0.35   0.98 ] tip in microwave box
+    9 hand [-0.178 -0.451  0.98 ] tip [-0.164 -0.349  0.98 ] tip in microwave box
+   10 hand [-0.178 -0.451  0.98 ] tip [-0.164 -0.348  0.98 ] tip in microwave box
+   11 hand [-0.177 -0.45   0.98 ] tip [-0.163 -0.348  0.98 ] tip in microwave box
+   12 hand [-0.177 -0.449  0.98 ] tip [-0.163 -0.347  0.98 ] tip in microwave box
+   13 hand [-0.177 -0.449  0.98 ] tip [-0.163 -0.346  0.98 ] tip in microwave box
+   14 hand [-0.176 -0.448  0.98 ] tip [-0.163 -0.346  0.98 ] tip in microwave box
+   15 hand [-0.176 -0.448  0.98 ] tip [-0.163 -0.345  0.98 ] tip in microwave box
+push5    hand [-0.176 -0.448  0.98 ] -> [-0.845  1.465 -0.197 -0.727  1.205  0.883 -1.614] dist 0.05 bad 16 door 0.008 tip-
+    0 hand [-0.176 -0.448  0.98 ] tip [-0.163 -0.345  0.98 ] tip in microwave box
+    1 hand [-0.175 -0.447  0.98 ] tip [-0.163 -0.344  0.98 ] tip in microwave box
+    2 hand [-0.175 -0.446  0.98 ] tip [-0.163 -0.344  0.98 ] tip in microwave box
+    3 hand [-0.174 -0.446  0.98 ] tip [-0.162 -0.343  0.98 ] tip in microwave box
+    4 hand [-0.174 -0.445  0.98 ] tip [-0.162 -0.342  0.98 ] tip in microwave box
+    5 hand [-0.173 -0.444  0.98 ] tip [-0.162 -0.342  0.98 ] tip in microwave box
+    6 hand [-0.173 -0.444  0.98 ] tip [-0.162 -0.341  0.98 ] tip in microwave box
+    7 hand [-0.172 -0.443  0.98 ] tip [-0.162 -0.34   0.98 ] tip in microwave box
+    8 hand [-0.172 -0.443  0.98 ] tip [-0.161 -0.34   0.98 ] tip in microwave box
+    9 hand [-0.172 -0.442  0.98 ] tip [-0.161 -0.339  0.98 ] tip in microwave box
+   10 hand [-0.171 -0.441  0.98 ] tip [-0.161 -0.338  0.98 ] tip in microwave box
+   11 hand [-0.171 -0.441  0.98 ] tip [-0.161 -0.338  0.98 ] tip in microwave box
+   12 hand [-0.17 -0.44  0.98] tip [-0.161 -0.337  0.98 ] tip in microwave box
+   13 hand [-0.17  -0.439  0.98 ] tip [-0.16  -0.336  0.98 ] tip in microwave box
+   14 hand [-0.169 -0.439  0.98 ] tip [-0.16  -0.336  0.98 ] tip in microwave box
+   15 hand [-0.169 -0.438  0.98 ] tip [-0.16  -0.335  0.98 ] tip in microwave box
+push6    hand [-0.169 -0.438  0.98 ] -> [-0.829  1.471 -0.196 -0.716  1.192  0.87  -1.618] dist 0.02 bad 16 door 0.006 tip-
+    0 hand [-0.169 -0.438  0.98 ] tip [-0.16  -0.335  0.98 ] tip in microwave box
+    1 hand [-0.171 -0.441  0.98 ] tip [-0.16  -0.339  0.98 ] tip in microwave box
+    2 hand [-0.172 -0.445  0.98 ] tip [-0.161 -0.342  0.98 ] tip in microwave box
+    3 hand [-0.174 -0.448  0.98 ] tip [-0.161 -0.346  0.98 ] tip in microwave box
+    4 hand [-0.176 -0.452  0.98 ] tip [-0.162 -0.349  0.98 ] tip in microwave box
+    5 hand [-0.177 -0.455  0.98 ] tip [-0.162 -0.353  0.98 ] tip in microwave box
+    6 hand [-0.179 -0.459  0.98 ] tip [-0.163 -0.357  0.98 ] tip in microwave box
+    7 hand [-0.181 -0.462  0.98 ] tip [-0.164 -0.36   0.98 ] tip in microwave box
+    8 hand [-0.183 -0.466  0.98 ] tip [-0.164 -0.364  0.98 ] tip in microwave box
+    9 hand [-0.185 -0.469  0.98 ] tip [-0.165 -0.368  0.98 ] tip in microwave box
+   10 hand [-0.187 -0.473  0.98 ] tip [-0.166 -0.371  0.98 ] tip in microwave box
+   11 hand [-0.189 -0.476  0.98 ] tip [-0.167 -0.375  0.98 ] tip in microwave box
+   12 hand [-0.191 -0.48   0.98 ] tip [-0.167 -0.379  0.98 ] tip in microwave box
+back1    hand [-0.197 -0.49   0.98 ] -> [-0.933  1.518 -0.178 -0.638  1.276  0.926 -1.532] dist 0.10 bad 13 door 0.022 tip-
+up       hand [-0.197 -0.49   1.2  ] -> [-0.874  0.964 -0.224 -1.107  1.304  0.85  -1.446] dist 0.55 bad 0 door 9.000 
+  gripper(0.0): reached=True stalled=False fingers=0.0005,-0.0005
+>> hi
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-0.2363 -0.549   1.2497] F [-0.   5.1 -0. ] |F| 5.1
+>> over
+  move_q: error_code=0 max_joint_err=0.0025
+   reached hand [-0.2215 -0.4996  1.2003] F [0.  5.1 0. ] |F| 5.1
+>> behind
+  move_q: error_code=0 max_joint_err=0.0068
+  retry 1: max_joint_err=0.007
+  move_q: error_code=0 max_joint_err=0.0120
+   reached hand [-0.2206 -0.501   0.9842] F [-0.   5.1 -0. ] |F| 5.1
+>> push1
+  move_q: error_code=0 max_joint_err=0.0024
+   reached hand [-0.2136 -0.484   0.9804] F [ 0.   5.1 -0. ] |F| 5.1
+>> push2
+  move_q: error_code=0 max_joint_err=0.0023
+   reached hand [-0.2052 -0.4723  0.98  ] F [0.  5.1 0. ] |F| 5.1
+>> push3
+  move_q: error_code=0 max_joint_err=0.0022
+   reached hand [-0.195  -0.4652  0.98  ] F [-0.   5.1 -0. ] |F| 5.1
+>> push4
+  move_q: error_code=0 max_joint_err=0.0149
+  retry 1: max_joint_err=0.015
+  move_q: error_code=0 max_joint_err=0.0277
+  retry 2: max_joint_err=0.013
+  move_q: error_code=0 max_joint_err=0.0381
+  retry 3: max_joint_err=0.010
+  move_q: error_code=0 max_joint_err=0.0468
+  retry 4: max_joint_err=0.009
+   NOT reached hand [-0.1805 -0.4579  0.9868] F [-0.   5.1 -0. ] |F| 5.1
+   large force / blocked -> stop pushing
+>> back1
+  move_q: error_code=0 max_joint_err=0.0279
+  retry 1: max_joint_err=0.028
+  move_q: error_code=-5 max_joint_err=0.0548
+  retry 2: max_joint_err=0.027
+  move_q: error_code=-5 max_joint_err=0.0872
+  retry 3: max_joint_err=0.032
+  move_q: error_code=-5 max_joint_err=0.1227
+  retry 4: max_joint_err=0.035
+   NOT reached hand [-0.193  -0.4984  1.0039] F [-0.1  5.1 -0.1] |F| 5.1
+>> up
+  move_q: error_code=0 max_joint_err=0.0022
+   reached hand [-0.1966 -0.49    1.1994] F [-0.   5.1 -0. ] |F| 5.1

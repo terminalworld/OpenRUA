@@ -1,0 +1,13 @@
+fingers [ 0.0399 -0.0399]
+  move: code=0 max_joint_err=0.0021
+  tcp now [-0.0538  0.1138  0.6201] (target [-0.054  0.114  0.62 ])
+   finger axis [ 0.    -1.     0.001]
+  move: code=0 max_joint_err=0.0030
+  tcp now [-0.0539  0.1141  0.5204] (target [-0.054  0.114  0.52 ])
+   z 0.52: tcp [-0.0539  0.1141  0.5204] dz=+0.0004 Fz=-5.10 dF=-0.00
+  move: code=0 max_joint_err=0.0025
+  tcp now [-0.0545  0.114   0.4801] (target [-0.054  0.114  0.48 ])
+   z 0.48: tcp [-0.0545  0.114   0.4801] dz=+0.0001 Fz=-5.10 dF=-0.00
+  move: code=0 max_joint_err=0.0025
+  tcp now [-0.0545  0.114   0.4461] (target [-0.054  0.114  0.446])
+   z 0.446: tcp [-0.0545  0.114   0.4461] dz=+0.0001 Fz=-5.10 dF=-0.00

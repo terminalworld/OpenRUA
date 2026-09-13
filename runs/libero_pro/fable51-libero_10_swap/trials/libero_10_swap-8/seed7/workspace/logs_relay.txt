@@ -1,0 +1,41 @@
+fingers (0.04000005516054792, -0.039991777885566675) q [-0.000e+00 -1.610e-01  1.000e-03 -2.444e+00  2.000e-03  2.228e+00
+  7.830e-01]
+pre    [-0.076  0.21   1.2  ] yaw 0.00 -> [ 0.26  0.25  0.09 -1.84 -0.03  2.09 -0.42] margin 1.23 jump 1.21
+grasp  [-0.076  0.21   1.032] yaw 0.00 -> [ 0.27  0.5   0.08 -1.95 -0.06  2.44 -0.4 ] margin 1.12 jump 0.35
+lift   [-0.076  0.21   1.2  ] yaw 0.00 -> [ 0.25  0.25  0.1  -1.84 -0.03  2.09 -0.42] margin 1.23 jump 0.35
+yaw45  [-0.076  0.21   1.2  ] yaw -0.79 -> [ 0.32  0.25  0.03 -1.84 -0.01  2.09  0.35] margin 1.23 jump 0.77
+yaw90  [-0.076  0.21   1.2  ] yaw -1.57 -> [ 0.39  0.25 -0.05 -1.84  0.01  2.09  1.12] margin 1.23 jump 0.77
+shift  [0.   0.21 1.2 ] yaw -1.57 -> [ 0.36  0.48 -0.06 -1.5   0.03  1.98  1.08] margin 1.28 jump 0.34
+down   [0.    0.21  1.062] yaw -1.57 -> [ 0.35  0.64 -0.05 -1.61  0.04  2.25  1.07] margin 1.12 jump 0.27
+set    [0.    0.21  1.034] yaw -1.57 -> [ 0.35  0.68 -0.05 -1.62  0.04  2.3   1.07] margin 1.08 jump 0.05
+up     [0.   0.21 1.2 ] yaw -1.57 -> [ 0.36  0.48 -0.06 -1.5   0.03  1.98  1.08] margin 1.28 jump 0.32
+  gripper(0.04): reached=True stalled=False fingers=(0.040000053455744956, -0.03999420271703588)
+  move: code=-5 max_joint_err=0.5397
+  retry
+  move: code=0 max_joint_err=0.0022
+  pre: tcp [-0.076   0.2099  1.1999]
+  move: code=0 max_joint_err=0.0024
+  grasp: tcp [-0.0761  0.2103  1.0324]
+  gripper(0.0): reached=True stalled=False fingers=(0.007299109015180161, -0.007203755784512674)
+  gap 14.5 mm
+  move: code=0 max_joint_err=0.0025
+  lift: tcp [-0.0763  0.2096  1.1982]
+  move: code=-5 max_joint_err=0.2747
+  retry
+  move: code=0 max_joint_err=0.0024
+  yaw45: tcp [-0.0764  0.2098  1.1983]
+  move: code=-5 max_joint_err=0.2792
+  retry
+  move: code=0 max_joint_err=0.0023
+  yaw90: tcp [-0.0765  0.2098  1.1983]
+  move: code=0 max_joint_err=0.0031
+  shift: tcp [-5.0000e-04  2.1010e-01  1.1985e+00]
+  move: code=0 max_joint_err=0.0023
+  down: tcp [-6.0000e-04  2.0950e-01  1.0611e+00]
+  move: code=0 max_joint_err=0.0025
+  set: tcp [-2.0000e-04  2.0950e-01  1.0345e+00]
+  gripper(0.04): reached=True stalled=False fingers=(0.035917140840118815, -0.03592089872963186)
+  fingers (0.035917140840118815, -0.03592089872963186)
+  move: code=0 max_joint_err=0.0023
+  up: tcp [1.0000e-04 2.1040e-01 1.1995e+00]
+done

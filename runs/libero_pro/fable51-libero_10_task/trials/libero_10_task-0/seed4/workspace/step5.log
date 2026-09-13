@@ -1,0 +1,10 @@
+gap 0.07998236274942616
+  move done code=0 max_joint_err=0.0022
+  tcp now [ 0.1231 -0.2137  0.5204] target [ 0.1231 -0.2137  0.52  ] d=0.0004
+  move done code=0 max_joint_err=0.0017
+  tcp now [ 0.1227 -0.2132  0.4431] target [ 0.1231 -0.2137  0.443 ] d=0.0006
+wrench at grasp height (0.009058327176551612, -0.006425623618843645, -5.1022395520579495)
+  gripper -> 0.0: reached=True stalled=False gap=0.0420
+  move done code=0 max_joint_err=0.0023
+  tcp now [ 0.1235 -0.2142  0.5998] target [ 0.1231 -0.2137  0.6   ] d=0.0006
+gap after lift 0.04221797157627836 wrench (-0.12522882835328997, 0.006486337761709907, -5.15963536965202)

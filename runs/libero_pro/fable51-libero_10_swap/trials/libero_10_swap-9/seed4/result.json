@@ -1,0 +1,112 @@
+{
+  "task_suite": "libero_10_swap",
+  "task_id": 9,
+  "init_state_id": 4,
+  "started_utc": "2026-09-12T23:44:01.399383+00:00",
+  "workspace_template_sha256": "f5999634776108746bd4b5476c9e5643e49a4fbd3fda7c0a59d0411eb5f60836",
+  "containers": {
+    "sim": "rc-fable51-libero_10_swap-t9-9-4-567034-sim",
+    "sandbox": "rc-fable51-libero_10_swap-t9-9-4-567034-sandbox"
+  },
+  "ros_domain": 2,
+  "agent_version": "2.1.251 (Claude Code)",
+  "task_language": "put the yellow and white mug in the microwave and close it",
+  "preflight": [
+    [
+      "shell_sh_provisioned",
+      true
+    ],
+    [
+      "credentials_readable",
+      true
+    ],
+    [
+      "sandbox_cli_matches_pin",
+      true
+    ],
+    [
+      "clock_topic",
+      true
+    ],
+    [
+      "joint_states_flow",
+      true
+    ],
+    [
+      "tf_flow",
+      true
+    ],
+    [
+      "joint_names_match_manual",
+      true
+    ],
+    [
+      "trajectory_action",
+      true
+    ],
+    [
+      "twist_subscribed",
+      true
+    ],
+    [
+      "gripper_action",
+      true
+    ],
+    [
+      "wrench_flow",
+      true
+    ],
+    [
+      "camera_frame_flow",
+      true
+    ],
+    [
+      "camera_depth_intrinsics_flow",
+      true
+    ],
+    [
+      "workspace_tools_importable",
+      true
+    ],
+    [
+      "moveit_ik_answers",
+      true
+    ]
+  ],
+  "success": false,
+  "success_end_state": false,
+  "steps_total": 25306,
+  "steps_semantics": "episode",
+  "operator_meta": {
+    "operator": "agent",
+    "agent": "claude-code",
+    "model": "claude-fable-5-1",
+    "options": {
+      "effort": "high",
+      "autocompact": "1M",
+      "bash_timeout_ms": 600000,
+      "bash_max_timeout_ms": 1800000
+    },
+    "session_id": "461f63bd-326f-4a0a-9851-73ec0ce43e0a",
+    "resume_on_quota_wall": true,
+    "termination": "wall_clock_cap",
+    "segments": 1,
+    "resumes": 0,
+    "quota_resolved": false,
+    "active_seconds": 14400.0,
+    "suspended_seconds": 0.0,
+    "segment_detail": [
+      {
+        "started_unix": 1789256677.5,
+        "ended_unix": 1789271077.5,
+        "active_s": 14400.0,
+        "turn_budget": 500,
+        "resumed": false
+      }
+    ]
+  },
+  "termination": "wall_clock_cap",
+  "anomaly": null,
+  "wall_seconds": 14447.9,
+  "active_wall_cap_min": 240.0
+}

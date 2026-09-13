@@ -1,0 +1,24 @@
+[sauce] start tcp=[-0.059 -0.     0.674] fingers=(0.020833, -0.020833)
+[sauce] target (-0.01,-0.242) top=0.521 grasp_z=0.465
+open gripper
+  (True, False, (0.03872920141715632, -0.038729141314950644))
+-> pre-grasp
+  move code=0 joint_err=0.0024 tcp=[-0.01  -0.242  0.621]
+-> descend
+  move code=0 joint_err=0.0205 tcp=[-0.01  -0.243  0.474]
+close gripper
+  (True, False, (0.030686745470152, -0.030851837757401693))
+  finger gap=0.0615
+-> lift
+  move code=-5 joint_err=0.1349 tcp=[ 0.015 -0.254  0.771]
+  fingers after lift=(0.030593076825796914, -0.031029712919928804)
+-> over basket
+  move code=-5 joint_err=0.1798 tcp=[-0.     0.26   0.759]
+  fingers over basket=(0.030724223783243083, -0.03089533637317654)
+-> lower into basket
+  move code=0 joint_err=0.0026 tcp=[-0.    0.26  0.7 ]
+open gripper
+  (True, False, (0.037110521766708995, -0.037118422182014374))
+-> retreat
+  move code=0 joint_err=0.0023 tcp=[0.   0.26 0.8 ]
+[sauce] DONE fingers=(0.0398962444735961, -0.039897511331902516)

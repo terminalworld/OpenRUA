@@ -1,0 +1,8 @@
+move done code=0 max_joint_err=0.0025
+hand [-0.0371  0.2249  0.7634] tcp z 0.66 [ 0.924  0.383 -0.001 -0.   ]
+fingers before release (0.017131178250199393, -0.017109531573185763)
+gripper reached=True stalled=False fingers=(0.03610525313671735, -0.036101658401343634)
+move done code=-5 max_joint_err=0.2490
+move done code=0 max_joint_err=0.0024
+hand [-0.0369  0.2251  0.883 ] tcp z 0.7796 [0.924 0.382 0.    0.001]
+fingers after (0.039994718241078815, -0.03999916716203825)

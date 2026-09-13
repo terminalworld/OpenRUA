@@ -1,0 +1,12 @@
+over plate
+  traj done code=0 max_joint_err=0.0050
+  tcp now [ 0.025 -0.325  0.7  ] (target [ 0.025 -0.325  0.7  ])
+fingers (0.0028567621442988946, -0.0028740290538678075)
+lower
+  traj done code=0 max_joint_err=0.0025
+  tcp now [ 0.025 -0.325  0.552] (target [ 0.025 -0.325  0.552])
+open
+  gripper -> fingers 0.0359 -0.0359
+retreat
+  traj done code=0 max_joint_err=0.0024
+  tcp now [ 0.025 -0.325  0.699] (target [ 0.025 -0.325  0.7  ])

@@ -1,0 +1,10 @@
+from robot import *
+r = Robot("grasppud")
+def tq(yaw, pitch): return (Rot.from_euler("y", pitch, degrees=True) * Rot.from_euler("z", yaw, degrees=True) * Rot.from_quat([1,0,0,0])).as_quat()
+Q = tq(0,0); BOX = np.array([-0.054, 0.114])
+r.gripper(0.0)
+f = r.fingers(); print("gap", round(abs(f[0])+abs(f[1]),4))
+q = r.goto([BOX[0], BOX[1], 0.52], Q, 2.0)
+print("fingers", np.round(r.fingers(),4), "wrench", np.round(r.wrench(),2))
+q = r.goto([BOX[0], BOX[1], 0.66], Q, 2.5, seed=q)
+print("fingers", np.round(r.fingers(),4), "wrench", np.round(r.wrench(),2))

@@ -1,0 +1,4 @@
+[INFO] [1789242050.057815326] [tf2_echo]: Waiting for transform world ->  panda_hand: Invalid frame ID "world" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789242052.042037722] [tf2_echo]: Waiting for transform world ->  panda_hand: Invalid frame ID "world" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789242053.042083078] [tf2_echo]: Waiting for transform world ->  panda_hand: Could not find a connection between 'world' and 'panda_hand' because they are not part of the same tree.Tf has two or more unconnected trees.
+[INFO] [1789242069.873863936] [rclcpp]: signal_handler(SIGINT/SIGTERM)

@@ -1,0 +1,4 @@
+# 上游根 .gitignore 忽略整个 runs/;本分支专门存轨迹,这里反向放开。
+!*
+__pycache__/
+*.pyc

@@ -1,0 +1,20 @@
+close
+  gripper -> 0.0: reached=True stalled=False gap=0.0420
+gap: 0.042
+lift
+  joint delta 0.901 rad -> 9.0s
+  move_q done code=0 (final max joint error 0.0023 rad) max_joint_err=0.0023
+  tcp now [-0.153   0.0463  0.6995] target [-0.153  0.046  0.7  ]
+gap after lift: 0.0422
+over basket
+  joint delta 0.701 rad -> 7.0s
+  move_q done code=0 (final max joint error 0.0023 rad) max_joint_err=0.0023
+  tcp now [-0.0098  0.2494  0.7497] target [-0.01  0.25  0.75]
+gap: 0.0422
+release
+  gripper -> 0.04: reached=True stalled=False gap=0.0726
+retreat
+  joint delta 0.327 rad -> 4.0s
+  move_q done code=0 (final max joint error 0.0022 rad) max_joint_err=0.0022
+  tcp now [-0.0096  0.2498  0.8796] target [-0.01  0.25  0.88]
+DONE

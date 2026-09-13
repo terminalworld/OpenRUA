@@ -1,0 +1,24 @@
+14:54:50 R y [1. 0. 0.] z [ 0.     0.766 -0.643] x [-0.     0.643  0.766]
+14:54:51 pre [-0.021 -0.3    1.04 ]
+14:55:00 trajectory code=0 err=0.0022 (dur 2.0s)
+14:55:00   tcp now [-0.0997 -0.3605  1.1196] (target [-0.1  -0.36  1.12]) joint err 0.0022
+14:55:14 trajectory code=0 err=0.0022 (dur 3.36s)
+14:55:33 trajectory code=0 err=0.0022 (dur 5.79s)
+14:55:46 trajectory code=0 err=0.0023 (dur 3.08s)
+14:55:46 at handle tcp [-0.0205 -0.2998  0.9802] z_hand [ 0.002  0.766 -0.642]
+14:55:48 gripper -> 0.0: reached=True stalled=False gap=0.0168
+14:55:48 gap on mug handle 0.0168
+14:55:57 trajectory code=0 err=0.0024 (dur 1.73s)
+14:55:57 lifted; gap 0.0168
+14:55:59 lifted: mug pts 4235 x[-0.067,0.028] y[-0.281,-0.198] z[0.957,1.069] (tcp z 1.037)
+14:56:31 trajectory code=0 err=0.0022 (dur 10.12s)
+14:56:33 in front of opening: mug pts 3903 x[-0.066,0.028] y[0.119,0.202] z[0.956,1.069] (tcp z 1.038)
+14:56:51 trajectory code=0 err=0.0021 (dur 5.4s)
+14:56:52 inserted; tcp [-0.0217  0.2623  1.0375] gap 0.0168
+14:56:58 trajectory code=0 err=0.0063 (dur 0.6s)
+14:56:58   re-sending final point (err 0.0063, 2.0s)
+14:57:07   code=0 err=0.0033 worst j4 dq=[-0.002 -0.003  0.001  0.003  0.002 -0.003  0.002]
+14:57:08 gripper -> 0.04: reached=True stalled=False gap=0.0719
+14:57:22 trajectory code=0 err=0.0023 (dur 3.6s)
+14:57:34 trajectory code=0 err=0.0023 (dur 3.0s)
+14:57:34 PHASE2D DONE

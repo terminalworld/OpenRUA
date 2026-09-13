@@ -1,0 +1,22 @@
+04:34:03 axis dir [-0.998 -0.057] phi -176.7 deg; grasp at [-0.2   -0.339  0.939]
+04:34:04 flip=+1 phi2=-60: no hover IK
+04:34:04 flip=-1 phi2=-60 feasible; hover q [-0.79  0.26  0.15 -2.13 -0.06  2.38  0.13]; down q [-0.51  0.7   0.07 -2.35 -2.55  1.62  0.7 ]; travel 5.05
+04:34:04 chosen plan with travel 5.05
+04:34:06 gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0400
+04:34:28 move done; max joint err 0.0022 rad
+04:34:28 move_path (1 pts, 4.0s) ok=True; hand now [-0.1995 -0.3387  1.2025]
+04:34:54 move done; max joint err 0.0180 rad
+04:34:54 move_path (11 pts, 5.0s) ok=True; hand now [-0.1974 -0.3432  1.0536]
+04:34:57 gripper -> 0.0: reached=True stalled=False fingers=0.0338,-0.0344
+04:34:57 gap after close 0.0682
+04:35:18 move done; max joint err 0.0024 rad
+04:35:19 move_path (12 pts, 4.0s) ok=True; hand now [-0.2006 -0.3386  1.2209]
+04:35:19 yawing pot
+04:35:45 FJT error_code -5
+04:35:45 move done; max joint err 1.1299 rad
+04:35:46 move_path (12 pts, 5.0s) ok=False; hand now [-0.2006 -0.3397  1.2197]
+Traceback (most recent call last):
+  File "/workspace/standup2.py", line 103, in <module>
+    assert r.move_path(yaw, 5.0), "yaw failed"
+           ^^^^^^^^^^^^^^^^^^^^^
+AssertionError: yaw failed

@@ -1,0 +1,7 @@
+[gripper] target=0.04 reached=True stalled=False fingers=[ 0.0359 -0.0359]
+wrench [-0.01 -4.62 -2.16]
+tcp [-0.0818  0.117   1.0338]
+[move_q] code=0 max_joint_err=0.0022
+[move_tcp] tcp now [-0.1387  0.0726  1.1174] z-axis [ 0.718  0.553 -0.422] (target [-0.1392  0.0726  1.1176])
+[move_q] code=0 max_joint_err=0.0069
+[move_tcp] tcp now [-0.1497  0.0497  1.2968] z-axis [ 0.716  0.554 -0.426] (target [-0.15  0.05  1.3 ])

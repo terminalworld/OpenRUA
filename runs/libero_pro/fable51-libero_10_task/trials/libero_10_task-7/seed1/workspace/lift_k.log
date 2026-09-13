@@ -1,0 +1,10 @@
+fingers (0.0169293285719018, -0.017321117029656614)
+move done code=0 max_joint_err=0.0025
+hand [-0.1499 -0.1841  0.6032] tcp z 0.4998 [0.993 0.121 0.    0.   ]
+move done code=0 max_joint_err=0.0026
+hand [-0.1499 -0.1842  0.6633] tcp z 0.5599 [0.993 0.121 0.    0.   ]
+move done code=0 max_joint_err=0.0025
+hand [-0.1502 -0.1838  0.7227] tcp z 0.6193 [ 0.993  0.121 -0.     0.   ]
+move done code=0 max_joint_err=0.0024
+hand [-0.1502 -0.184   0.8026] tcp z 0.6992 [ 0.993  0.121 -0.001  0.001]
+fingers after lift (0.017125318895481394, -0.01711538911631184)

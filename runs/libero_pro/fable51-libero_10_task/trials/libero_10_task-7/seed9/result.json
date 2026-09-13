@@ -1,0 +1,142 @@
+{
+  "task_suite": "libero_10_task",
+  "task_id": 7,
+  "init_state_id": 9,
+  "started_utc": "2026-09-12T20:35:55.403625+00:00",
+  "workspace_template_sha256": "f5999634776108746bd4b5476c9e5643e49a4fbd3fda7c0a59d0411eb5f60836",
+  "containers": {
+    "sim": "rc-fable51-libero_10_task-t7-7-9-8df947-sim",
+    "sandbox": "rc-fable51-libero_10_task-t7-7-9-8df947-sandbox"
+  },
+  "ros_domain": 9,
+  "agent_version": "2.1.251 (Claude Code)",
+  "task_language": "put both the ketchup and the cream cheese box in the basket",
+  "preflight": [
+    [
+      "shell_sh_provisioned",
+      true
+    ],
+    [
+      "credentials_readable",
+      true
+    ],
+    [
+      "sandbox_cli_matches_pin",
+      true
+    ],
+    [
+      "clock_topic",
+      true
+    ],
+    [
+      "joint_states_flow",
+      true
+    ],
+    [
+      "tf_flow",
+      true
+    ],
+    [
+      "joint_names_match_manual",
+      true
+    ],
+    [
+      "trajectory_action",
+      true
+    ],
+    [
+      "twist_subscribed",
+      true
+    ],
+    [
+      "gripper_action",
+      true
+    ],
+    [
+      "wrench_flow",
+      true
+    ],
+    [
+      "camera_frame_flow",
+      true
+    ],
+    [
+      "camera_depth_intrinsics_flow",
+      true
+    ],
+    [
+      "workspace_tools_importable",
+      true
+    ],
+    [
+      "moveit_ik_answers",
+      true
+    ]
+  ],
+  "success": true,
+  "success_end_state": true,
+  "success_at": {
+    "step": 1528,
+    "sim_time_s": 76.40000000000335,
+    "wall_unix": 1789246588.9263752
+  },
+  "steps_total": 1729,
+  "steps_semantics": "episode",
+  "operator_meta": {
+    "operator": "agent",
+    "agent": "claude-code",
+    "model": "claude-fable-5-1",
+    "options": {
+      "effort": "high",
+      "autocompact": "1M",
+      "bash_timeout_ms": 600000,
+      "bash_max_timeout_ms": 1800000
+    },
+    "session_id": "efce9208-38cc-4744-bc20-c8b4ed54f059",
+    "resume_on_quota_wall": true,
+    "termination": "self_finished",
+    "launcher_returncode": 0,
+    "segments": 1,
+    "resumes": 0,
+    "quota_resolved": false,
+    "active_seconds": 1307.1,
+    "suspended_seconds": 0.0,
+    "segment_detail": [
+      {
+        "started_unix": 1789245394.4,
+        "ended_unix": 1789246701.4,
+        "active_s": 1307.1,
+        "turn_budget": 500,
+        "resumed": false
+      }
+    ],
+    "num_turns": 89,
+    "usage": {
+      "input_tokens": 124,
+      "cache_creation_input_tokens": 107974,
+      "cache_read_input_tokens": 5512751,
+      "output_tokens": 50159,
+      "output_tokens_details": {
+        "thinking_tokens": 27403
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 107974
+      },
+      "inference_geo": "global",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "cost_usd": 4.692713000000001,
+    "duration_ms": 1306296
+  },
+  "termination": "self_finished",
+  "anomaly": null,
+  "wall_seconds": 1358.0,
+  "active_wall_cap_min": 240.0
+}

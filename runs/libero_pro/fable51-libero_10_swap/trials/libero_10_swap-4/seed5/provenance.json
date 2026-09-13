@@ -1,0 +1,282 @@
+{
+  "created_utc": "2026-09-12T17:30:33.343323+00:00",
+  "openrua_version": "0.0.6",
+  "openrua_commit": "7a9e080ec25c52fbf9e5cd277a48d3db6965eead",
+  "git_dirty": true,
+  "simulator_commit": "53e9966d7a8e2fa7494676772bccc35280f5c0ed",
+  "simulator_dirty": true,
+  "host": {
+    "hostname": "yehe8-login-0",
+    "cpu_count": 144
+  },
+  "ros_domain": null,
+  "sim_image_digest": "5b54a1c95d76079bf75e1891dbc0302f7a7ee413f8c0c4eeabebb5aec1d2d54c",
+  "sandbox_image_digest": "ac69cd743bea6b31b9edc76a8fb11d1f6dbee604e23da55d1ff644230f856285",
+  "proxy_image_digest": "d936945ea983d870d9dabccfae1c6c3af6691f7b75ca0a29da778480f1877d74",
+  "gpu_render": false,
+  "record": null,
+  "record_every": 1,
+  "container_engine": "podman version 4.9.3",
+  "sandbox_run_args": [
+    "--userns=keep-id:uid=1000,gid=1000"
+  ],
+  "config_file": "libero_pro-fable.yaml",
+  "config_sha256": "55a64aa6befc843318dc88ad6903377dece8e25d9e88e67811038ad3f6235ff0",
+  "prompt_sha256": "87e7452b0c1780ab741bda8ba4f1843df93140252101ff11c327a4bcaa5cfb08",
+  "resume_prompt_sha256": "3901ea0f942b7e3cf3b86e0decea2a135e474450e732676d2abda53fa4fac4d0",
+  "workspace_template_sha256": "f5999634776108746bd4b5476c9e5643e49a4fbd3fda7c0a59d0411eb5f60836",
+  "agent_cli": {
+    "name": "claude-code",
+    "version_pin": "2.1.251"
+  },
+  "operator": "agent",
+  "task_suite": "libero_10_swap",
+  "task_ids": [
+    4
+  ],
+  "seeds": [
+    0,
+    1,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "wall_clock_cap_min": 240.0,
+  "config": {
+    "task": {
+      "benchmark": "libero_pro",
+      "loader": "openrua.robot.sim.bridge.environments.libero",
+      "suites": [
+        "libero_goal_swap",
+        "libero_goal_task",
+        "libero_spatial_swap",
+        "libero_spatial_task",
+        "libero_object_swap",
+        "libero_object_task",
+        "libero_10_swap",
+        "libero_10_task"
+      ],
+      "init_states": "benchmark-files",
+      "split": "target",
+      "task_language": {}
+    },
+    "protocol": {
+      "trials_per_task": 10,
+      "max_turns": 500,
+      "active_wall_clock_minutes": 240.0,
+      "resume_on_quota_wall": true,
+      "max_quota_wait_minutes": 360.0,
+      "max_suspensions": 4,
+      "clock": {
+        "mode": "paused"
+      },
+      "horizon": 1000000000,
+      "base_cmd_policy": "queue",
+      "stall_probe_timeout_s": 600.0
+    },
+    "agent": {
+      "name": "claude-code",
+      "model": "claude-fable-5-1",
+      "version": "2.1.251",
+      "options": {
+        "effort": "high"
+      }
+    },
+    "machine": {
+      "backend": {
+        "kind": "sim",
+        "ros_distro": "jazzy",
+        "image": "openrua-sim-jazzy",
+        "sandbox_image": "openrua-sandbox-jazzy",
+        "gpus": false,
+        "simulator": {
+          "venv": "cap-x/.venv-libero",
+          "engine": "openrua.robot.sim.bridge.engines.robosuite"
+        }
+      },
+      "workspace_template": "workspace",
+      "engine_model": "Panda",
+      "controller": "JOINT_POSITION",
+      "controller_kp_scale": 10.0,
+      "cameras": {
+        "resolution": [
+          640,
+          480
+        ],
+        "rate_hz": 2.0,
+        "render_mode": "on_demand",
+        "record": [
+          "agentview",
+          "robot0_eye_in_hand"
+        ]
+      },
+      "control": {
+        "gripper": {
+          "open_threshold_m": 0.02,
+          "settle_steps": 10
+        },
+        "trajectory": {
+          "goal_tolerance_rad": 0.05,
+          "settle_steps": 20
+        }
+      },
+      "ports": {
+        "twist": "/servo_node/delta_twist_cmds",
+        "trajectory": "/panda_arm_controller/follow_joint_trajectory",
+        "gripper": "/franka_gripper/gripper_action",
+        "wrench": "/franka_robot_state_broadcaster/external_wrench"
+      },
+      "joint_name_map": {
+        "robot0_": "panda_",
+        "gripper0_": "panda_"
+      },
+      "robot": {
+        "model": "Franka Emika Panda",
+        "description": "7-joint robot arm with a parallel-jaw gripper"
+      },
+      "frames": {
+        "world": "world",
+        "base": "panda_link0",
+        "hand": "panda_hand"
+      },
+      "arm": {
+        "joints": [
+          "panda_joint1",
+          "panda_joint2",
+          "panda_joint3",
+          "panda_joint4",
+          "panda_joint5",
+          "panda_joint6",
+          "panda_joint7"
+        ],
+        "limits_rad": [
+          [
+            -2.9,
+            2.9
+          ],
+          [
+            -1.76,
+            1.76
+          ],
+          [
+            -2.9,
+            2.9
+          ],
+          [
+            -3.07,
+            -0.07
+          ],
+          [
+            -2.9,
+            2.9
+          ],
+          [
+            -0.02,
+            3.75
+          ],
+          [
+            -2.9,
+            2.9
+          ]
+        ]
+      },
+      "gripper": {
+        "open_m": 0.04,
+        "closed_m": 0.0,
+        "max_effort": 30.0,
+        "stops_at": [
+          "open",
+          "closed"
+        ]
+      },
+      "hand": {
+        "tcp_offset_m": 0.1034
+      },
+      "planning": {
+        "moveit": true,
+        "move_action": "/move_action",
+        "ik_service": "/compute_ik",
+        "group": "panda_arm",
+        "planning_frame": "panda_link0"
+      },
+      "tf": {
+        "hand": false,
+        "base_body": "robot0_base",
+        "hand_body": "robot0_right_hand"
+      },
+      "arms": [
+        {
+          "label": "",
+          "joints": [
+            "panda_joint1",
+            "panda_joint2",
+            "panda_joint3",
+            "panda_joint4",
+            "panda_joint5",
+            "panda_joint6",
+            "panda_joint7"
+          ],
+          "limits_rad": [
+            [
+              -2.9,
+              2.9
+            ],
+            [
+              -1.76,
+              1.76
+            ],
+            [
+              -2.9,
+              2.9
+            ],
+            [
+              -3.07,
+              -0.07
+            ],
+            [
+              -2.9,
+              2.9
+            ],
+            [
+              -0.02,
+              3.75
+            ],
+            [
+              -2.9,
+              2.9
+            ]
+          ],
+          "gripper": {
+            "open_m": 0.04,
+            "closed_m": 0.0,
+            "max_effort": 30.0,
+            "stops_at": [
+              "open",
+              "closed"
+            ]
+          },
+          "ports": {
+            "trajectory": "/panda_arm_controller/follow_joint_trajectory",
+            "gripper": "/franka_gripper/gripper_action",
+            "twist": "/servo_node/delta_twist_cmds",
+            "wrench": "/franka_robot_state_broadcaster/external_wrench"
+          },
+          "hand_body": "robot0_right_hand",
+          "tf_base_body": "robot0_base",
+          "base_frame": "panda_link0",
+          "hand_frame": "panda_hand"
+        }
+      ]
+    },
+    "sandbox": {
+      "run_args": [
+        "--userns=keep-id:uid=1000,gid=1000"
+      ]
+    },
+    "suite_overrides": {}
+  }
+}

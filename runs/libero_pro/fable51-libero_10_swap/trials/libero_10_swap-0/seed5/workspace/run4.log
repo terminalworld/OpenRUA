@@ -1,0 +1,6 @@
+>>> goto -0.269 -0.173 0.45 0 2
+IK ok, max joint jump 0.11 rad
+traj code=-5 (10s) joint err 0.110 TCP world [-0.263 -0.176  0.476]
+>>> joints
+{'panda_joint1': -0.6246, 'panda_joint2': 0.0826, 'panda_joint3': -0.0025, 'panda_joint4': -3.0308, 'panda_joint5': -0.0272, 'panda_joint6': 3.1808, 'panda_joint7': -0.6051}
+DONE

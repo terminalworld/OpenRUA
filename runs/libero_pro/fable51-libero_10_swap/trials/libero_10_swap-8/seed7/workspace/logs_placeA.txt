@@ -1,0 +1,17 @@
+fingers (0.007027950549681609, -0.00703423088049681) q [ 0.024 -0.022 -0.544 -2.203 -0.014  2.183 -1.299]
+-> tcp [0.12 0.   1.2 ] yaw -1.57 q [ 0.12   0.933 -0.272 -0.76   0.219  1.673  0.718]
+  move: code=-5 max_joint_err=1.1417
+  retry move
+  move: code=-5 max_joint_err=0.3256
+  fk tcp now [ 1.1910e-01 -4.0000e-04  1.1984e+00]  (err 1.9 mm)
+fingers at carry (0.007049802729637705, -0.007004083794543872)
+-> tcp [0.12 0.   1.06] yaw -1.57 q [ 0.168  1.    -0.297 -1.012  0.271  1.978  0.68 ]
+  move: code=0 max_joint_err=0.0228
+  retry move
+  move: code=0 max_joint_err=0.0216
+  fk tcp now [0.1273 0.0028 1.0853]  (err 26.5 mm)
+  gripper(0.04): reached=True stalled=False fingers=(0.035917258188291425, -0.035921749510826176)
+-> tcp [0.12 0.   1.2 ] yaw -1.57 q [ 0.137  0.937 -0.311 -0.759  0.25   1.67   0.709]
+  move: code=0 max_joint_err=0.0022
+  fk tcp now [1.2030e-01 4.0000e-04 1.1995e+00]  (err 0.7 mm)
+done

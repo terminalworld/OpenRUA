@@ -1,0 +1,18 @@
+02:51:29 start joints [ 0.239  0.241 -0.772 -1.958  0.526  1.757  0.024] fingers (0.04001828151027766, -0.03956178711229638)
+02:51:31 gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0395
+02:51:32 joint travel [-0.02 -0.01 -0.14  0.   -0.    0.    0.65]
+02:51:53 move done; max joint err 0.0060 rad
+02:51:54 hand now at [-0.1993 -0.3102  1.2936] (target [-0.1995 -0.3107  1.2937]) d=0.0006
+02:51:54 joint travel [-0.09  0.26  0.11 -0.08  0.23  0.19 -0.21]
+02:52:10 move done; max joint err 0.0025 rad
+02:52:10 hand now at [-0.1994 -0.3108  1.1543] (target [-0.1995 -0.3107  1.1537]) d=0.0006
+02:52:11 joint travel [-0.06  0.13  0.08  0.01  0.11  0.07 -0.09]
+02:52:24 move done; max joint err 0.0023 rad
+02:52:24 hand now at [-0.1999 -0.3106  1.0929] (target [-0.1995 -0.3107  1.0927]) d=0.0005
+02:52:27 gripper -> 0.0: reached=True stalled=False fingers=0.0134,-0.0136
+02:52:27 finger gap after close = 0.0269 m
+02:52:27 joint travel [ 0.19 -0.37 -0.24  0.07 -0.32 -0.26  0.28]
+02:52:44 move done; max joint err 0.0032 rad
+02:52:45 hand now at [-0.1996 -0.3105  1.2922] (target [-0.1995 -0.3107  1.2937]) d=0.0015
+02:52:45 after lift finger gap = 0.0220
+02:52:45 PICK DONE

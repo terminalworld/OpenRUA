@@ -1,0 +1,34 @@
+13:40:29 rotation alpha=-73.0 deg -> dj7=1.274
+13:40:30 start q [ 1.517  0.839 -1.771 -2.415  0.922  1.986  1.307] gap 0.08
+13:40:30 hand y axis (finger opening): [-1.  0.  0.]
+13:40:30 j7 0.885 -> 2.159
+13:40:39 trajectory code=0 err=0.0338 (dur 2.0s)
+13:40:39   re-sending final point (err 0.0338, 2.0s)
+13:40:48   code=0 err=0.0020 worst j7 dq=[ 0.001  0.001 -0.001 -0.001  0.001 -0.002  0.002]
+13:40:48 above tcp [-0.1354 -0.0569  1.1199]
+13:40:57 trajectory code=0 err=0.0052 (dur 2.0s)
+13:40:57   re-sending final point (err 0.0052, 2.0s)
+13:41:06   code=0 err=0.0023 worst j7 dq=[ 0.    -0.001 -0.002 -0.001 -0.002 -0.001  0.002]
+13:41:06   tcp now [-0.1352 -0.0575  0.9855] (target [-0.135 -0.057  0.985]) joint err 0.0023
+13:41:08 gripper -> 0.0: reached=True stalled=False gap=0.0179
+13:41:17 trajectory code=0 err=0.0023 (dur 2.0s)
+13:41:18   tcp now [-0.1346 -0.0569  1.0297] (target [-0.135 -0.057  1.03 ]) joint err 0.0023
+13:41:18 gap after lift 0.0103
+13:41:19 rotate j7 -> 2.097
+13:41:44 trajectory code=0 err=0.0031 (dur 8.51s)
+13:41:45 after rotation tcp [-0.1348 -0.0568  1.0297] y_hand [-0.884  0.467 -0.001] gap 0.0101 err 0.0031
+13:41:46 alpha_done=-72.8 deg; place tcp xy [-0.213 -0.078]
+13:41:56 trajectory code=-5 err=0.2801 (dur 2.66s)
+13:41:56   re-sending final point (err 0.2801, 2.0s)
+13:42:04   code=0 err=0.0024 worst j7 dq=[-0.     0.001  0.001  0.     0.001 -0.002  0.002]
+13:42:05   tcp now [-0.2131 -0.0776  1.0297] (target [-0.213 -0.078  1.03 ]) joint err 0.0024
+13:42:13 trajectory code=0 err=0.0024 (dur 2.0s)
+13:42:14   tcp now [-0.2137 -0.0779  0.9909] (target [-0.213 -0.078  0.991]) joint err 0.0024
+13:42:15 gripper -> 0.04: reached=True stalled=False gap=0.0718
+13:42:15 IK attempt 0: solution deviates 0.92 rad from seed
+13:42:15 IK attempt 1: solution deviates 0.93 rad from seed
+13:42:26 trajectory code=-5 err=0.2383 (dur 2.64s)
+13:42:26   re-sending final point (err 0.2383, 2.0s)
+13:42:34   code=0 err=0.0022 worst j7 dq=[-0.     0.     0.001 -0.001  0.002  0.002 -0.002]
+13:42:35   tcp now [-0.213  -0.078   1.1496] (target [-0.213 -0.078  1.15 ]) joint err 0.0022
+13:42:35 PHASE1D DONE

@@ -1,0 +1,31 @@
+wrench [ 0.02 -0.06 -5.06  0.03  0.01 -0.  ]
+open gripper
+  gripper reached=True stalled=False fingers=[ 0.04 -0.04]
+-> pre_high [-0.174 -0.144  1.215]
+  8 waypoints ok, final q [-0.1   0.06 -0.13 -2.44 -2.48  2.11  0.42]
+  traj error_code=-5 max_joint_err=1.4241
+  hand now [-0.2233 -0.1453  1.1792] (target [-0.1741 -0.1439  1.215 ]) err=60.9mm quat_err=0.2437
+-> pre [-0.174 -0.144  0.965]
+  6 waypoints ok, final q [ 0.08  0.77 -0.23 -2.23 -2.43  1.79  0.81]
+  traj error_code=-5 max_joint_err=0.6214
+  hand now [-0.22   -0.1679  0.9637] (target [-0.1741 -0.1439  0.965 ]) err=51.8mm quat_err=0.0480
+wrench [-0.67 -5.07 -0.14  0.72 -0.08  0.01]
+fingers (0.03975896565572769, -0.040005907726015144)
+q now [ 0.077  0.768 -0.228 -2.235 -1.813  1.789  0.81 ]
+resend pre q
+  traj error_code=0 max_joint_err=0.0016
+q now [ 0.08   0.769 -0.229 -2.231 -2.428  1.789  0.81 ] target [0.08, 0.77, -0.23, -2.23, -2.43, 1.79, 0.81]
+hand [-0.1726 -0.1438  0.9662] quat err 4.93660349132341e-06
+wrench [-0.02 -5.1   0.01  0.72 -0.    0.  ]
+advance 0.06 -> [-0.1302 -0.1863  0.965 ]
+wrench before [-0.02 -5.1   0.01  0.72 -0.    0.  ]
+  3 waypoints ok, final q [ 0.02  0.84 -0.26 -2.06 -2.49  1.89  0.78]
+  traj error_code=0 max_joint_err=0.0030
+  hand now [-0.1311 -0.1861  0.9649] (target [-0.1302 -0.1863  0.965 ]) err=1.0mm quat_err=0.0000
+wrench after [-0.31 -4.88  0.45  0.71 -0.05  0.01]
+advance 0.015 -> [-0.1205 -0.1968  0.965 ]
+wrench before [-0.31 -4.88  0.45  0.71 -0.05  0.01]
+  3 waypoints ok, final q [ 0.    0.86 -0.27 -2.02 -2.5   1.92  0.78]
+  traj error_code=0 max_joint_err=0.0056
+  hand now [-0.1215 -0.1953  0.9655] (target [-0.1205 -0.1968  0.965 ]) err=1.8mm quat_err=0.0000
+wrench after [-0.23 -3.5   2.24  0.61 -0.03  0.01]

@@ -1,0 +1,32 @@
+grasp [-0.088 -0.233  0.52 ] place [ 0.017 -0.342  0.562]
+[0] open gripper
+  gripper -> 0.04: reached=True stalled=False fingers=0.0392,-0.0392
+[1] to pre-grasp [-0.088 -0.233  0.7  ]
+  traj done code=-5 max_joint_err=0.1408
+  tcp now [-0.0867 -0.2303  0.6999] target [-0.088 -0.233  0.7  ] err 0.0030
+  wrench [ 0.03692706  0.01840848 -5.10119752]
+[2] descend [-0.088 -0.233  0.52 ]
+  traj done code=0 max_joint_err=0.0122
+  tcp now [-0.0896 -0.232   0.5199] target [-0.088 -0.233  0.52 ] err 0.0019
+  wrench [ 0.04491398 -0.06455523 -5.09973629] delta [ 0.01 -0.08  0.  ]
+[3] close
+  gripper -> 0.0: reached=True stalled=False fingers=0.0041,-0.0041
+  finger gap 0.0083 (0 => closed on air)
+[4] lift [-0.088 -0.233  0.7  ]
+  traj done code=0 max_joint_err=0.0096
+  tcp now [-0.0867 -0.2338  0.6999] target [-0.088 -0.233  0.7  ] err 0.0015
+  gap after lift 0.0057
+[5] transport [ 0.017 -0.342  0.7  ]
+  traj done code=-5 max_joint_err=0.2494
+  tcp now [-0.0515 -0.3017  0.6719] target [ 0.017 -0.342  0.7  ] err 0.0843
+  gap after transport 0.0057
+[6] lower [ 0.017 -0.342  0.562]
+  traj done code=0 max_joint_err=0.0054
+  tcp now [ 0.0171 -0.3421  0.5647] target [ 0.017 -0.342  0.562] err 0.0027
+  wrench [-0.00915779  0.02631869 -5.30705978]
+[7] release
+  gripper -> 0.04: reached=True stalled=False fingers=0.0359,-0.0359
+[8] retreat [ 0.017 -0.342  0.7  ]
+  traj done code=0 max_joint_err=0.0036
+  tcp now [ 0.0175 -0.342   0.6996] target [ 0.017 -0.342  0.7  ] err 0.0007
+DONE

@@ -1,0 +1,10 @@
+from rob import *
+r = Robot()
+print("gap before", r.finger_gap())
+r.gripper(0.04)
+print("moving above ketchup")
+r.move_tcp([-0.19, -0.138, 0.68], Q_DOWN_Y, seconds=4.0)
+print("q", np.round(r.arm_q(),3))
+r.snap("birdview", "/workspace/bird2.png")
+r.snap("agentview", "/workspace/agent2.png")
+print("DONE")

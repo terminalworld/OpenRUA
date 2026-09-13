@@ -1,0 +1,12 @@
+gripper -> 0.04: reached=True stalled=False fingers=(0.03481232025624633, -0.03623649273025805)
+FJT code=0 max_joint_err=0.0169 (secs=4.0)
+  -> re-sending goal
+FJT code=0 max_joint_err=0.0170 (secs=4.0)
+  -> re-sending goal
+FJT code=0 max_joint_err=0.0171 (secs=4.0)
+  -> re-sending goal
+FJT code=0 max_joint_err=0.0171 (secs=4.0)
+tcp now [-0.0181  0.1208  0.5384] quat [0.716 0.001 0.005 0.699]
+at grasp: tcp [-0.0181  0.1208  0.5384] quat [0.716 0.001 0.005 0.699]
+gripper -> 0.0: reached=True stalled=False fingers=(0.003046609977915408, -0.005205062238275227)
+fingers (0.003046609977915408, -0.005205062238275227)

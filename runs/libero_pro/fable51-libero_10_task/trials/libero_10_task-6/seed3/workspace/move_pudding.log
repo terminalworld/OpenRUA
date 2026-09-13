@@ -1,0 +1,24 @@
+gripper reached=True stalled=False fingers=0.0398,-0.0400
+== hover over pudding
+traj done code=0 max_joint_err=0.0024
+tcp now [-0.0449  0.1146  0.5804] target [-0.045  0.115  0.58 ]
+== descend
+traj done code=0 max_joint_err=0.0065
+tcp now [-0.045   0.1151  0.4392] target [-0.045  0.115  0.437]
+== close
+gripper reached=True stalled=False fingers=0.0229,-0.0229
+== lift
+traj done code=0 max_joint_err=0.0025
+tcp now [-0.0446  0.1154  0.6199] target [-0.045  0.115  0.62 ]
+fingers after lift (0.022945961822779522, -0.022892310653441543)
+== carry to target
+traj done code=0 max_joint_err=0.0044
+tcp now [0.1198 0.1154 0.6188] target [0.121 0.116 0.62 ]
+== lower
+traj done code=-5 max_joint_err=0.1411
+tcp now [0.1928 0.1573 0.5345] target [0.121 0.116 0.442]
+== release
+gripper reached=True stalled=False fingers=0.0364,-0.0363
+== retreat
+traj done code=0 max_joint_err=0.0023
+tcp now [0.1216 0.1164 0.6499] target [0.121 0.116 0.65 ]

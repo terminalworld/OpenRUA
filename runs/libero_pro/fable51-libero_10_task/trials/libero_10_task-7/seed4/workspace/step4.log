@@ -1,0 +1,7 @@
+lift clear
+  joint delta 1.345 rad -> 4.5s
+  move_q done code=-5 (final max joint error 0.4926 rad) max_joint_err=0.4926
+  retrying same goal
+  move_q done code=0 (final max joint error 0.0018 rad) max_joint_err=0.0018
+  tcp now [-0.2995 -0.1388  0.7503] target [-0.3   -0.139  0.75 ]
+DONE

@@ -1,0 +1,21 @@
+   grasp hand z: [ 0.706 -0.046 -0.707] hand y (fingers): [ 0.706 -0.046  0.707]
+   lowest finger corner: [0.199 0.    0.932]
+  gripper -> 0.04: reached=True stalled=False fingers=0.0400,-0.0400
+[grasp: above] 1 waypoints, 4.0s
+   q=[ 0.012  0.909 -0.088 -1.493 -0.657  3.196 -0.064] tcp=[0.158 0.012 1.046] minlinkz=1.119
+  traj done code=-5 max_joint_err=0.2896
+   retrying final waypoint (code=-5, err=0.2896)
+  traj done code=0 max_joint_err=0.0021
+   TCP now [0.1578 0.0119 1.0457] (target [0.1581 0.0121 1.0458]) err=0.0003
+[grasp: descend] 1 waypoints, 3.0s
+   q=[-0.075  1.351  0.101 -0.87  -0.532  2.987 -0.32 ] tcp=[0.229 0.007 0.975] minlinkz=1.048
+  traj done code=0 max_joint_err=0.0117
+   TCP now [0.2326 0.011  0.9871] (target [0.2286 0.0075 0.9751]) err=0.0132
+   descend shortfall along z: 5.6 mm
+!! descent blocked, backing off
+[abort: retreat] 1 waypoints, 3.0s
+   q=[ 0.043  0.897 -0.114 -1.511 -0.548  3.225 -0.147] tcp=[0.16  0.015 1.056] minlinkz=1.128
+  traj done code=0 max_joint_err=0.0408
+   retrying final waypoint (code=0, err=0.0408)
+  traj done code=0 max_joint_err=0.0024
+   TCP now [0.1607 0.015  1.0563] (target [0.1604 0.0149 1.0562]) err=0.0003

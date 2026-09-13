@@ -1,0 +1,5 @@
+target [ 0.253  0.275 -0.4   -1.973  0.134  2.223 -1.   ]
+move done code=-5 max_err=1.3981
+move done code=-5 max_err=0.6798
+move done code=0 max_err=0.0084
+tcp [-0.0631 -0.0752  1.1499] finger axis [ 1.    -0.008  0.001] joints [ 0.253  0.275 -0.4   -1.974  0.133  2.224 -0.992]

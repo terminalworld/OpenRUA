@@ -1,0 +1,15 @@
+from rob import *
+r = Robot()
+PRE = [0.312, 0.714, 0.121, -1.749, -0.0, 2.978, 0.627]
+ok = r.move_joints(PRE, secs=4); log("back at PRE", ok)
+r.gripper(0.04)
+ok = r.move_tcp(0.03, 0.30, 0.78, yaw=math.pi/2, secs=6)
+if not ok: log("retry"); r.move_tcp(0.03, 0.30, 0.78, yaw=math.pi/2, secs=6)
+ok = r.move_tcp_line(0.03, 0.30, 0.52, yaw=math.pi/2, secs=4, n=3); log("down ok", ok)
+_, _, tcp = r.hand_pose(); log("tcp", tcp.round(3))
+ok = r.move_tcp_line(0.03, 0.52, 0.52, yaw=math.pi/2, secs=7, n=4); log("push ok", ok)
+if not ok: log("retry push"); r.move_tcp_line(0.03, 0.52, 0.52, yaw=math.pi/2, secs=6, n=2)
+_, _, tcp = r.hand_pose(); log("tcp", tcp.round(3))
+ok = r.move_tcp_line(0.03, 0.45, 0.80, yaw=math.pi/2, secs=4, n=2); log("up ok", ok)
+ok = r.move_tcp(-0.30, -0.15, 0.85, yaw=0.0, secs=6); log("parked", ok)
+log("PHASE9 DONE")

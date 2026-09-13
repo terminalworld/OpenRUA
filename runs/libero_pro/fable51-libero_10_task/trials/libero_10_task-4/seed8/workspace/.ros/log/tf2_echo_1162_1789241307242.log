@@ -1,0 +1,4 @@
+[INFO] [1789241307.261295893] [tf2_echo]: Waiting for transform panda_hand ->  robot0_eye_in_hand_optical_frame: Invalid frame ID "panda_hand" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789241309.244044313] [tf2_echo]: Waiting for transform panda_hand ->  robot0_eye_in_hand_optical_frame: Invalid frame ID "panda_hand" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789241310.244074699] [tf2_echo]: Waiting for transform panda_hand ->  robot0_eye_in_hand_optical_frame: Could not find a connection between 'panda_hand' and 'robot0_eye_in_hand_optical_frame' because they are not part of the same tree.Tf has two or more unconnected trees.
+[INFO] [1789241322.054796139] [rclcpp]: signal_handler(SIGINT/SIGTERM)

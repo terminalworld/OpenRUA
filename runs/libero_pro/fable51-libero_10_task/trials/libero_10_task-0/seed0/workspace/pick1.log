@@ -1,0 +1,18 @@
+open gripper
+gripper reached=True stalled=False gap=0.0775
+pre-grasp
+move done code=0 max_joint_err=0.0022
+TCP now (world): [-0.1017  0.0426  0.6501]
+descend 1
+move done code=0 max_joint_err=0.0026
+TCP now (world): [-0.1018  0.0428  0.5503]
+descend 2
+move done code=0 max_joint_err=0.0132
+TCP now (world): [-0.1017  0.043   0.4742]
+close
+gripper reached=True stalled=False gap=0.0622
+gap 0.06219887184675103
+lift
+move done code=-5 max_joint_err=0.1008
+TCP now (world): [-0.0915  0.0432  0.7048]
+gap after lift 0.06218539649812389

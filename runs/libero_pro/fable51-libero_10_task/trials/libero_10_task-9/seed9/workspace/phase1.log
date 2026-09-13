@@ -1,0 +1,43 @@
+13:21:48 start q [ 0.    -0.161  0.    -2.445  0.     2.227  0.785] gap 0.0775
+13:21:48 move above mug [-0.1225 -0.2965  1.12  ]
+13:21:48 IK attempt 0: solution deviates 1.38 rad from seed
+13:21:48 IK attempt 1: solution deviates 1.35 rad from seed
+13:21:48 IK attempt 2: solution deviates 1.43 rad from seed
+13:21:48 IK attempt 3: solution deviates 1.29 rad from seed
+13:21:48 IK: returning best solution (dev 1.29)
+13:22:02 trajectory done code=-5 max_joint_err=0.5342
+13:22:02 tcp now [-0.1231 -0.2962  1.12  ]
+13:22:02 descend to grasp [-0.1225 -0.2965  0.99  ]
+13:22:13 trajectory done code=0 max_joint_err=0.0069
+13:22:13 tcp now [-0.1223 -0.2964  0.9904]
+13:22:15 gripper -> 0.0: reached=True stalled=False gap=0.0097
+13:22:15 closed; gap 0.0097
+13:22:15 lift [-0.1225 -0.2965  1.13  ]
+13:22:25 trajectory done code=0 max_joint_err=0.0023
+13:22:26 tcp now [-0.1227 -0.2967  1.1293] gap 0.0057
+13:22:26 rotate j7 -> 2.64
+13:22:39 trajectory done code=-5 max_joint_err=2.4206
+13:22:40 tcp now [-0.1226 -0.2965  1.1294] y_hand [ 0.065 -0.998  0.001] gap 0.0057
+13:22:40 move over staging [-0.2   -0.106  1.13 ]
+13:22:40 IK attempt 0: solution deviates 3.83 rad from seed
+13:22:40 IK attempt 1: solution deviates 2.59 rad from seed
+13:22:40 IK attempt 2: solution deviates 3.04 rad from seed
+13:22:40 IK attempt 3: solution deviates 3.14 rad from seed
+13:22:40 IK: returning best solution (dev 2.59)
+13:22:53 trajectory done code=-5 max_joint_err=0.9572
+13:22:54 tcp now [-0.2928 -0.2009  0.9985]
+13:22:54 lower [-0.2   -0.106  0.994]
+13:22:54 IK attempt 0: solution deviates 0.86 rad from seed
+13:22:54 IK attempt 1: solution deviates 0.86 rad from seed
+13:22:54 IK attempt 2: solution deviates 0.92 rad from seed
+13:23:04 trajectory done code=0 max_joint_err=0.0026
+13:23:05 tcp now [-0.2009 -0.1063  0.9936]
+13:23:06 gripper -> 0.04: reached=True stalled=False gap=0.0718
+13:23:06 IK attempt 0: solution deviates 0.95 rad from seed
+13:23:06 IK attempt 1: solution deviates 0.98 rad from seed
+13:23:06 IK attempt 2: solution deviates 0.99 rad from seed
+13:23:06 IK attempt 3: solution deviates 0.82 rad from seed
+13:23:06 IK: returning best solution (dev 0.82)
+13:23:17 trajectory done code=-5 max_joint_err=0.2068
+13:23:17 retreated; tcp now [-0.2245 -0.1513  1.1057]
+13:23:17 PHASE1 DONE

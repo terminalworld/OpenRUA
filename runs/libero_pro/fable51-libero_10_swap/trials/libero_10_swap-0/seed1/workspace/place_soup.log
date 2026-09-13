@@ -1,0 +1,20 @@
+gap 0.06424082961396224
+raise
+  traj error_code=0 max_joint_err=0.0091
+  tcp now [-0.1797 -0.1791  0.7599] (target [-0.1812 -0.1788  0.76  ])
+over basket
+  traj error_code=-5 max_joint_err=0.2680
+  resending (controller lag)
+  traj error_code=0 max_joint_err=0.0025
+  tcp now [-0.0132  0.2516  0.7594] (target [-0.013  0.252  0.76 ])
+gap 0.06419432779612377
+lower
+  traj error_code=0 max_joint_err=0.0025
+  tcp now [-0.0134  0.252   0.6301] (target [-0.013  0.252  0.63 ])
+gap 0.06418622656070372 wrench [ 0.00605456 -0.00863403 -5.35590829]
+release
+  gripper reached=True stalled=False gap=0.0746
+retreat
+  traj error_code=0 max_joint_err=0.0024
+  tcp now [-0.0126  0.2517  0.7996] (target [-0.013  0.252  0.8  ])
+DONE

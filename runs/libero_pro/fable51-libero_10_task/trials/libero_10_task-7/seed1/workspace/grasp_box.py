@@ -1,0 +1,12 @@
+from arm import *
+a=Arm()
+BOX=np.array([-0.137,0.056])
+print("-> descend",flush=True)
+a.move_tcp_world([BOX[0],BOX[1],0.434],DOWN,secs=2.5)
+p,q=a.hand_pose_world(); print("hand",p.round(4),"tcp z",round(p[2]-TCP,4),flush=True)
+a.gripper(0.0)
+print("fingers after close",a.fingers(),flush=True)
+print("-> lift",flush=True)
+a.move_tcp_world([BOX[0],BOX[1],0.60],DOWN,secs=2.5)
+p,q=a.hand_pose_world(); print("hand",p.round(4),flush=True)
+print("fingers after lift",a.fingers(),flush=True)

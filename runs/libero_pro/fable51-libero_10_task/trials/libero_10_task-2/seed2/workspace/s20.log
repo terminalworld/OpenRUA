@@ -1,0 +1,13 @@
+target ik [ 0.853  0.913 -0.422 -1.493  0.453  2.308 -0.516]
+wp 1 jump=0.087
+wp 2 jump=0.083
+wp 3 jump=0.078
+wp 4 jump=0.073
+wp 5 jump=0.069
+wp 6 jump=0.065
+wp 7 jump=0.068
+wp 8 jump=0.085
+wp 9 jump=0.104
+wp 10 jump=0.129
+path done code=0 max_err=0.0028
+tcp [-0.0425  0.3474  1.199 ] fingers (0.013125171002282424, -0.013117999190260963)

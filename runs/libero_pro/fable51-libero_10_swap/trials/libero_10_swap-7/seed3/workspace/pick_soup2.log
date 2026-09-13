@@ -1,0 +1,13 @@
+tcp [-0.1979 -0.1357  0.6065] gap 0.07995857328240555
+== align above can at z=0.60
+  move_line: error_code=0 max_joint_err=0.0023 tcp=[-0.211 -0.135  0.6  ] (target [-0.212 -0.135  0.6  ], off 0.6mm)
+== straight descent to grasp height
+  move_line: error_code=-5 max_joint_err=0.8130 tcp=[-0.165 -0.159  0.518] (target [-0.212 -0.135  0.462], off 76.9mm)
+  move_line: settling on final point
+  move_q: error_code=-5 max_joint_err=0.3690
+  move_q: error_code=-5 max_joint_err=0.1262
+Traceback (most recent call last):
+  File "/workspace/pick_soup2.py", line 11, in <module>
+    assert r.move_line([*SOUP, 0.462], 0.0, seconds=3.0, step=0.015)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

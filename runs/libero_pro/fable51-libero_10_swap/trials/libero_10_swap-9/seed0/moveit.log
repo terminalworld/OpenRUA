@@ -1,0 +1,686 @@
+[INFO] [launch]: All log files can be found below /root/.ros/log/2026-09-13-11-53-08-367384-167484b98152-186
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [robot_state_publisher-1]: process started with pid [189]
+[INFO] [move_group-2]: process started with pid [190]
+[robot_state_publisher-1] [WARN] [1789300388.557895417] [kdl_parser]: The root link panda_link0 has an inertia specified in the URDF, but KDL does not support a root link with an inertia.  As a workaround, you can add an extra dummy link to your URDF.
+[robot_state_publisher-1] [INFO] [1789300388.558006873] [robot_state_publisher]: Robot initialized
+[move_group-2] [INFO] [1789300388.586026777] [move_group.moveit.moveit.ros.rdf_loader]: Loaded robot model in 0 seconds
+[move_group-2] [INFO] [1789300388.586148538] [move_group.moveit.moveit.core.robot_model]: Loading robot model 'panda'...
+[move_group-2] [WARN] [1789300388.591474252] [kdl_parser]: The root link panda_link0 has an inertia specified in the URDF, but KDL does not support a root link with an inertia.  As a workaround, you can add an extra dummy link to your URDF.
+[move_group-2] [INFO] [1789300388.591557004] [move_group.moveit.moveit.kinematics.kdl_kinematics_plugin]: Joint weights for group 'panda_arm': 1 1 1 1 1 1 1
+[move_group-2] [INFO] [1789300388.612113651] [move_group.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[move_group-2] [INFO] [1789300388.612287763] [move_group.moveit.moveit.ros.moveit_cpp]: Listening to 'joint_states' for joint states
+[move_group-2] [INFO] [1789300388.613063030] [move_group.moveit.moveit.ros.current_state_monitor]: Listening to joint states on topic 'joint_states'
+[move_group-2] [INFO] [1789300388.613341239] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to '/attached_collision_object' for attached collision objects
+[move_group-2] [INFO] [1789300388.613360663] [move_group.moveit.moveit.ros.planning_scene_monitor]: Stopping existing planning scene publisher.
+[move_group-2] [INFO] [1789300388.613476247] [move_group.moveit.moveit.ros.planning_scene_monitor]: Stopped publishing maintained planning scene.
+[move_group-2] [INFO] [1789300388.613744312] [move_group.moveit.moveit.ros.planning_scene_monitor]: Publishing maintained planning scene on 'monitored_planning_scene'
+[move_group-2] [INFO] [1789300388.613841849] [move_group.moveit.moveit.ros.planning_scene_monitor]: Starting planning scene monitor
+[move_group-2] [INFO] [1789300388.614318714] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to '/planning_scene'
+[move_group-2] [INFO] [1789300388.614338906] [move_group.moveit.moveit.ros.planning_scene_monitor]: Starting world geometry update monitor for collision objects, attached objects, octomap updates.
+[move_group-2] [INFO] [1789300388.614552571] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to 'collision_object'
+[move_group-2] [INFO] [1789300388.614784924] [move_group.moveit.moveit.ros.planning_scene_monitor]: Listening to 'planning_scene_world' for planning scene world geometry
+[move_group-2] [WARN] [1789300388.614920604] [move_group.moveit.moveit.ros.occupancy_map_monitor]: Resolution not specified for Octomap. Assuming resolution = 0.1 instead
+[move_group-2] [ERROR] [1789300388.614940508] [move_group.moveit.moveit.ros.occupancy_map_monitor]: No 3D sensor plugin(s) defined for octomap updates
+[move_group-2] [INFO] [1789300388.619230635] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'CHOMP'
+[move_group-2] [INFO] [1789300388.619867917] [move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789300388.620417999] [move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789300388.620442191] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789300388.620565264] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789300388.620577296] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789300388.620595312] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789300388.620599888] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789300388.620613264] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789300388.621200754] [move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789300388.622649495] [move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789300388.632493753] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'OMPL'
+[move_group-2] [INFO] [1789300388.633206235] [move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789300388.633286075] [move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789300388.633295323] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789300388.633410428] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789300388.633423612] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789300388.633442780] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789300388.633449244] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789300388.633460700] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789300388.634047390] [move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789300388.634291967] [move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789300388.634307903] [move_group]: Try loading adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789300388.635796580] [move_group]: Loaded adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789300388.635821764] [move_group]: Try loading adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789300388.636178597] [move_group]: Loaded adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789300388.637826091] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Reading limits from namespace robot_description_planning
+[move_group-2] [WARN] [1789300388.638408621] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [WARN] [1789300388.638440589] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [INFO] [1789300388.641066998] [move_group.moveit.moveit.planners.pilz.command_planner]: Available plugins: pilz_industrial_motion_planner/PlanningContextLoaderCIRC pilz_industrial_motion_planner/PlanningContextLoaderLIN pilz_industrial_motion_planner/PlanningContextLoaderPTP 
+[move_group-2] [INFO] [1789300388.641100278] [move_group.moveit.moveit.planners.pilz.command_planner]: About to load: pilz_industrial_motion_planner/PlanningContextLoaderCIRC
+[move_group-2] [INFO] [1789300388.641967513] [move_group.moveit.moveit.planners.pilz.command_planner]: Registered Algorithm [CIRC]
+[move_group-2] [INFO] [1789300388.641999833] [move_group.moveit.moveit.planners.pilz.command_planner]: About to load: pilz_industrial_motion_planner/PlanningContextLoaderLIN
+[move_group-2] [INFO] [1789300388.642581819] [move_group.moveit.moveit.planners.pilz.command_planner]: Registered Algorithm [LIN]
+[move_group-2] [INFO] [1789300388.642612475] [move_group.moveit.moveit.planners.pilz.command_planner]: About to load: pilz_industrial_motion_planner/PlanningContextLoaderPTP
+[move_group-2] [INFO] [1789300388.643128989] [move_group.moveit.moveit.planners.pilz.command_planner]: Registered Algorithm [PTP]
+[move_group-2] [INFO] [1789300388.643160381] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'Pilz Industrial Motion Planner'
+[move_group-2] [INFO] [1789300388.643774655] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789300388.643972768] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789300388.643989216] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789300388.644009984] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789300388.644015904] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789300388.644027328] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [WARN] [1789300388.644033856] [move_group.moveit.moveit.ros.planning_pipeline]: No planning response adapter names specified.
+[move_group-2] [INFO] [1789300388.645983303] [move_group.moveit.moveit.ros.planning_pipeline]: Successfully loaded planner 'STOMP'
+[move_group-2] [INFO] [1789300388.646610217] [move_group]: Try loading adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789300388.646683785] [move_group]: Loaded adapter 'default_planning_request_adapters/ResolveConstraintFrames'
+[move_group-2] [INFO] [1789300388.646693097] [move_group]: Try loading adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789300388.646829994] [move_group]: Loaded adapter 'default_planning_request_adapters/ValidateWorkspaceBounds'
+[move_group-2] [INFO] [1789300388.646844874] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789300388.646863242] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateBounds'
+[move_group-2] [INFO] [1789300388.646868458] [move_group]: Try loading adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789300388.646879978] [move_group]: Loaded adapter 'default_planning_request_adapters/CheckStartStateCollision'
+[move_group-2] [INFO] [1789300388.647481612] [move_group]: Try loading adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789300388.647770829] [move_group]: Loaded adapter 'default_planning_response_adapters/AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789300388.647790765] [move_group]: Try loading adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789300388.648070350] [move_group]: Loaded adapter 'default_planning_response_adapters/ValidateSolution'
+[move_group-2] [INFO] [1789300388.648090734] [move_group]: Try loading adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789300388.648312111] [move_group]: Loaded adapter 'default_planning_response_adapters/DisplayMotionPath'
+[move_group-2] [INFO] [1789300388.676982257] [move_group.moveit.moveit.plugins.simple_controller_manager]: Added FollowJointTrajectory controller for panda_arm_controller
+[move_group-2] [INFO] [1789300388.677034865] [move_group.moveit.moveit.plugins.simple_controller_manager]: panda_hand_controller will command a max effort of: 0
+[move_group-2] [ERROR] [1789300388.678615479] [move_group.moveit.moveit.plugins.simple_controller_manager]: Parallel Gripper requires exactly two joints, 1 are specified
+[move_group-2] [INFO] [1789300388.680795838] [move_group.moveit.moveit.plugins.simple_controller_manager]: Returned 1 controllers in list
+[move_group-2] [INFO] [1789300388.680838366] [move_group.moveit.moveit.plugins.simple_controller_manager]: Returned 1 controllers in list
+[move_group-2] [INFO] [1789300388.681262080] [move_group.moveit.moveit.ros.trajectory_execution_manager]: Trajectory execution is managing controllers
+[move_group-2] [INFO] [1789300388.681289600] [move_group]: MoveGroup debug mode is ON
+[move_group-2] [INFO] [1789300388.694268716] [move_group.moveit.moveit.planners.pilz.move_group_sequence_action]: initialize move group sequence action
+[move_group-2] [INFO] [1789300388.696137075] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Reading limits from namespace robot_description_planning
+[move_group-2] [WARN] [1789300388.696193843] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [WARN] [1789300388.696214099] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [INFO] [1789300388.696360404] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Reading limits from namespace robot_description_planning
+[move_group-2] [WARN] [1789300388.696390100] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [WARN] [1789300388.696404564] [move_group.moveit.moveit.planners.pilz.joint_limits_aggregator]: Multi-DOF-Joint 'virtual_joint' not supported.
+[move_group-2] [INFO] [1789300388.696962582] [move_group.moveit.moveit.ros.move_group.executable]: 
+[move_group-2] 
+[move_group-2] ********************************************************
+[move_group-2] * MoveGroup using: 
+[move_group-2] *     - apply_planning_scene_service
+[move_group-2] *     - clear_octomap_service
+[move_group-2] *     - get_group_urdf
+[move_group-2] *     - load_geometry_from_file
+[move_group-2] *     - CartesianPathService
+[move_group-2] *     - execute_trajectory_action
+[move_group-2] *     - get_planning_scene_service
+[move_group-2] *     - kinematics_service
+[move_group-2] *     - move_action
+[move_group-2] *     - motion_plan_service
+[move_group-2] *     - query_planners_service
+[move_group-2] *     - state_validation_service
+[move_group-2] *     - save_geometry_to_file
+[move_group-2] *     - SequenceAction
+[move_group-2] *     - SequenceService
+[move_group-2] ********************************************************
+[move_group-2] 
+[move_group-2] [INFO] [1789300388.697014038] [move_group.moveit.moveit.ros.move_group.context]: MoveGroup context using pipeline ompl
+[move_group-2] [INFO] [1789300388.697027510] [move_group.moveit.moveit.ros.move_group.context]: MoveGroup context initialization complete
+[move_group-2] [WARN] [1789300388.908354602] [move_group.moveit.moveit.ros.current_state_monitor]: Unable to update multi-DOF joint 'virtual_joint':Failure to lookup transform between 'world'and 'panda_link0' with TF exception: "world" passed to lookupTransform argument target_frame does not exist. 
+[move_group-2] [ERROR] [1789300439.803854672] [move_group.moveit.moveit.core.robot_model]: Group '' not found in model 'panda'
+[move_group-2] [INFO] [1789301268.167590312] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789301268.168093674] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789301268.168315563] [move_group.moveit.moveit.ros.move_group.move_action]: Combined planning and execution request received for MoveGroup action. Forwarding to planning and execution pipeline.
+[move_group-2] [WARN] [1789301268.168355755] [move_group.moveit.moveit.ros.move_group.capability]: Execution of motions should always start at the robot's current state. Ignoring the state supplied as start state in the motion planning request
+[move_group-2] [WARN] [1789301268.168369323] [move_group.moveit.moveit.ros.move_group.capability]: Execution of motions should always start at the robot's current state. Ignoring the state supplied as difference in the planning scene diff
+[move_group-2] [INFO] [1789301268.168387243] [move_group.moveit.moveit.ros.plan_execution]: Planning attempt 1 of at most 1
+[move_group-2] [INFO] [1789301268.168644428] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789301268.168692652] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789301268.168702444] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789301268.168720940] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789301268.168749772] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789301268.169424943] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789301268.169581231] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789301268.184287074] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789301268.185453510] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789301268.185703814] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789301268.185773351] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789301268.185945223] [move_group.moveit.moveit.plugins.simple_controller_manager]: Returned 1 controllers in list
+[move_group-2] [INFO] [1789301268.185975047] [move_group.moveit.moveit.plugins.simple_controller_manager]: Returned 1 controllers in list
+[move_group-2] [INFO] [1789301268.186045736] [move_group.moveit.moveit.ros.trajectory_execution_manager]: Validating trajectory with allowed_start_tolerance 0.05
+[move_group-2] [INFO] [1789301268.186161352] [move_group.moveit.moveit.ros.trajectory_execution_manager]: Starting trajectory execution ...
+[move_group-2] [INFO] [1789301268.186212040] [move_group.moveit.moveit.plugins.simple_controller_manager]: Returned 1 controllers in list
+[move_group-2] [INFO] [1789301268.186226952] [move_group.moveit.moveit.plugins.simple_controller_manager]: Returned 1 controllers in list
+[move_group-2] [INFO] [1789301268.186369097] [moveit.simple_controller_manager.follow_joint_trajectory_controller_handle]: sending trajectory to panda_arm_controller
+[move_group-2] [INFO] [1789301268.188947122] [moveit.simple_controller_manager.follow_joint_trajectory_controller_handle]: panda_arm_controller started execution
+[move_group-2] [INFO] [1789301268.188967538] [moveit.simple_controller_manager.follow_joint_trajectory_controller_handle]: Goal request accepted!
+[move_group-2] [WARN] [1789301277.982338872] [moveit.simple_controller_manager.follow_joint_trajectory_controller_handle]: Controller 'panda_arm_controller' failed with error GOAL_TOLERANCE_VIOLATED: final max joint error 0.5859 rad
+[move_group-2] [WARN] [1789301277.982429976] [move_group.moveit.moveit.ros.trajectory_execution_manager]: Controller handle panda_arm_controller reports status ABORTED
+[move_group-2] [INFO] [1789301277.982546169] [move_group.moveit.moveit.ros.trajectory_execution_manager]: Completed trajectory execution with status ABORTED ...
+[move_group-2] [INFO] [1789301277.986559431] [move_group.moveit.moveit.ros.move_group.move_action]: CONTROL_FAILED
+[move_group-2] [INFO] [1789301313.668848401] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789301313.669252531] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789301313.669470707] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789301313.669684980] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789301313.669719444] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789301313.669726612] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789301313.669743604] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789301313.669773460] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789301313.670167030] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789301313.670249750] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789301313.684326758] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789301313.685031817] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789301313.685240138] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789301313.685293354] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789301313.685338026] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789301461.168405628] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789301461.168764734] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789301461.169002942] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789301461.169219583] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789301461.169251135] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789301461.169257887] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789301461.169274527] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789301461.169304479] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789301461.169638273] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789301461.169721537] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789301461.184293363] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789301461.186900060] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789301461.187195517] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789301461.187258141] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789301461.187311773] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789301674.168297415] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789301674.168668616] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789301674.168903177] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789301674.169138474] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789301674.169175018] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789301674.169183658] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789301674.169203050] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789301674.169233034] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789301674.169564971] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789301674.169648812] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789301674.183758172] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789301674.186896231] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789301674.187214728] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789301674.187286696] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789301674.187338600] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789302948.167679679] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789302948.168103073] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789302948.168342273] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789302948.168593346] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789302948.168633634] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789302948.168641090] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789302948.168659074] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789302948.168690115] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789302948.169022596] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789302948.169114852] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789302948.184954909] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789302948.188955403] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789302948.189284748] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789302948.189351565] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789302948.189404813] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789303282.168282310] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789303282.168638024] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789303282.168838920] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789303282.168985961] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789303282.169018761] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789303282.169027465] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789303282.169044841] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789303282.169091081] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789303282.169454443] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789303282.169536171] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789303282.181872727] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint1', actual value: -0.261101, desired value: -0.257844, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303282.181926167] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint2', actual value: 0.630674, desired value: 0.627464, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303282.181940023] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint3', actual value: 0.103791, desired value: 0.101446, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303282.181951671] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint4', actual value: -1.803761, desired value: -1.800694, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303282.181963351] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint5', actual value: 0.390808, desired value: 0.394190, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303282.181973847] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint6', actual value: 2.327606, desired value: 2.323542, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303282.181984567] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint7', actual value: -1.247160, desired value: -1.245168, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303282.182017208] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'microwave' (type 'Object') and 'panda_link7' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[move_group-2] [INFO] [1789303282.182031192] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[move_group-2] [ERROR] [1789303282.189946260] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303282.190096852] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303282.190165717] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303282.190222709] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [WARN] [1789303282.190305589] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.020665 seconds
+[move_group-2] [ERROR] [1789303282.190460598] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303282.190597974] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303282.190665111] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303282.190713815] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303282.190777719] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000400 seconds
+[move_group-2] [ERROR] [1789303282.190933207] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303282.190992984] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303282.191067800] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000237 seconds
+[move_group-2] [ERROR] [1789303282.191119864] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[move_group-2] [ERROR] [1789303282.191178680] [move_group]: Planner 'OMPL' failed with error code FAILURE
+[move_group-2] [ERROR] [1789303282.191197144] [move_group.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[move_group-2] [INFO] [1789303282.191220409] [move_group.moveit.moveit.ros.move_group.move_action]: FAILURE
+[move_group-2] [INFO] [1789303305.667481492] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789303305.667878742] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789303305.668165463] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789303305.668395383] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789303305.668430712] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789303305.668439320] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789303305.668457784] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789303305.668489720] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789303305.668828889] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789303305.668911129] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789303305.681447878] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint1', actual value: -0.245141, desired value: -0.245623, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303305.681509094] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint2', actual value: 0.634729, desired value: 0.635528, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303305.681522438] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint3', actual value: 0.110925, desired value: 0.106960, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303305.681533031] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint4', actual value: -1.803120, desired value: -1.807871, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303305.681543591] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint5', actual value: 0.401365, desired value: 0.397894, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303305.681554151] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint6', actual value: 2.342119, desired value: 2.343462, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303305.681565351] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint7', actual value: -1.241321, desired value: -1.236455, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303305.681593415] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'microwave' (type 'Object') and 'panda_link7' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[move_group-2] [INFO] [1789303305.681606855] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[move_group-2] [ERROR] [1789303305.689349442] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303305.689455683] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303305.689514147] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303305.689572899] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [WARN] [1789303305.689657156] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.020695 seconds
+[move_group-2] [ERROR] [1789303305.689830052] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303305.689960805] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303305.690034917] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303305.690096773] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303305.690161029] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000417 seconds
+[move_group-2] [ERROR] [1789303305.690289254] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303305.690353126] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303305.690406854] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000191 seconds
+[move_group-2] [ERROR] [1789303305.690456454] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[move_group-2] [ERROR] [1789303305.690528263] [move_group]: Planner 'OMPL' failed with error code FAILURE
+[move_group-2] [ERROR] [1789303305.690552071] [move_group.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[move_group-2] [INFO] [1789303305.690578023] [move_group.moveit.moveit.ros.move_group.move_action]: FAILURE
+[move_group-2] [INFO] [1789303306.667075698] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789303306.667447987] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789303306.667675540] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789303306.667911541] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789303306.667940309] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789303306.667948181] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789303306.667966965] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789303306.667997461] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789303306.668343031] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789303306.668423447] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789303306.684016911] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789303306.688112733] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789303306.688512799] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789303306.688584063] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789303306.688643135] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789303393.668064381] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789303393.668599455] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789303393.668869375] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789303393.669310753] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789303393.669357153] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789303393.669369377] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789303393.669392353] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789303393.669444834] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789303393.670046212] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789303393.670156516] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789303393.682691473] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint1', actual value: -0.249804, desired value: -0.245623, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303393.682741041] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint2', actual value: 0.631221, desired value: 0.635528, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303393.682756497] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint3', actual value: 0.108182, desired value: 0.106960, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303393.682770929] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint4', actual value: -1.810024, desired value: -1.807871, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303393.682783953] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint5', actual value: 0.398365, desired value: 0.397894, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303393.682795505] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint6', actual value: 2.342673, desired value: 2.343462, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303393.682808049] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint7', actual value: -1.240542, desired value: -1.236455, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303393.682836914] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'microwave' (type 'Object') and 'panda_link7' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[move_group-2] [INFO] [1789303393.682855090] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[move_group-2] [ERROR] [1789303393.690816110] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303393.690914159] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303393.690978543] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303393.691038735] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [WARN] [1789303393.691143823] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.020801 seconds
+[move_group-2] [ERROR] [1789303393.691277136] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303393.691373264] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303393.691472177] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303393.691531921] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303393.691616753] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000400 seconds
+[move_group-2] [ERROR] [1789303393.691731313] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303393.691810354] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303393.691890834] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000226 seconds
+[move_group-2] [ERROR] [1789303393.691962834] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[move_group-2] [ERROR] [1789303393.692032979] [move_group]: Planner 'OMPL' failed with error code FAILURE
+[move_group-2] [ERROR] [1789303393.692070291] [move_group.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[move_group-2] [INFO] [1789303393.692099411] [move_group.moveit.moveit.ros.move_group.move_action]: FAILURE
+[move_group-2] [INFO] [1789303798.167890168] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789303798.168324954] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789303798.168534490] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789303798.168788571] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789303798.168833691] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789303798.168841275] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789303798.168861212] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789303798.168893052] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789303798.169243805] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789303798.169330365] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789303798.181411879] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint1', actual value: -1.383915, desired value: -1.379832, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303798.181462567] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint2', actual value: 1.761744, desired value: 1.762800, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303798.181473799] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint3', actual value: 1.157041, desired value: 1.158274, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303798.181484903] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint4', actual value: -1.937131, desired value: -1.934527, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303798.181496775] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint5', actual value: -0.220380, desired value: -0.218588, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303798.181507591] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint6', actual value: 2.211761, desired value: 2.213716, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303798.181518567] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint7', actual value: -1.106177, desired value: -1.101252, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303798.181544071] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'microwave' (type 'Object') and 'panda_link5' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[move_group-2] [INFO] [1789303798.181558407] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[move_group-2] [ERROR] [1789303798.189710467] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303798.189804100] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303798.189856420] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303798.189910628] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [WARN] [1789303798.189995332] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.020605 seconds
+[move_group-2] [ERROR] [1789303798.190189573] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303798.190300293] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303798.190396006] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303798.190452326] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303798.190524742] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000441 seconds
+[move_group-2] [ERROR] [1789303798.190686215] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303798.190747559] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303798.190816807] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000239 seconds
+[move_group-2] [ERROR] [1789303798.190864135] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[move_group-2] [ERROR] [1789303798.190922440] [move_group]: Planner 'OMPL' failed with error code FAILURE
+[move_group-2] [ERROR] [1789303798.190943080] [move_group.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[move_group-2] [INFO] [1789303798.190965032] [move_group.moveit.moveit.ros.move_group.move_action]: FAILURE
+[move_group-2] [INFO] [1789303799.167923340] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789303799.168353358] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789303799.168575983] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789303799.168807376] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789303799.168836528] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789303799.168844304] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789303799.168861040] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789303799.168890416] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789303799.169253777] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789303799.169340657] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789303799.181379003] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint1', actual value: 0.100192, desired value: 0.097542, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303799.181427867] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint2', actual value: 0.940592, desired value: 0.937583, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303799.181439035] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint3', actual value: -0.378983, desired value: -0.377127, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303799.181449403] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint4', actual value: -1.826167, desired value: -1.830169, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303799.181461307] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint5', actual value: 1.534787, desired value: 1.532156, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303799.181472315] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint6', actual value: 1.319316, desired value: 1.323277, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303799.181483515] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint7', actual value: -1.978216, desired value: -1.977856, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303799.181507483] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'microwave' (type 'Object') and 'panda_link5' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[move_group-2] [INFO] [1789303799.181520091] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[move_group-2] [ERROR] [1789303799.189668471] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303799.189761560] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303799.189823064] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303799.189879064] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [WARN] [1789303799.189957624] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.020562 seconds
+[move_group-2] [ERROR] [1789303799.190137209] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303799.190269049] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303799.190344314] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303799.190397370] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303799.190469018] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000435 seconds
+[move_group-2] [ERROR] [1789303799.190618203] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303799.190720827] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303799.190788955] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000268 seconds
+[move_group-2] [ERROR] [1789303799.190835195] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[move_group-2] [ERROR] [1789303799.190891228] [move_group]: Planner 'OMPL' failed with error code FAILURE
+[move_group-2] [ERROR] [1789303799.190910492] [move_group.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[move_group-2] [INFO] [1789303799.190931932] [move_group.moveit.moveit.ros.move_group.move_action]: FAILURE
+[move_group-2] [INFO] [1789303800.167557023] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789303800.167915073] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789303800.168134881] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789303800.168359170] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789303800.168386018] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789303800.168394114] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789303800.168412002] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789303800.168442146] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789303800.168778372] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789303800.168860100] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789303800.180894573] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint1', actual value: -0.991611, desired value: -0.987921, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303800.180943949] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint2', actual value: 1.167110, desired value: 1.165064, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303800.180957390] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint3', actual value: 0.809623, desired value: 0.809390, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303800.180969710] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint4', actual value: -1.898834, desired value: -1.899433, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303800.180980974] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint5', actual value: 0.685291, desired value: 0.684983, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303800.180992174] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint6', actual value: 2.062279, desired value: 2.061619, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303800.181002702] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint7', actual value: -1.680058, desired value: -1.681899, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303800.181027118] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'microwave' (type 'Object') and 'panda_link5' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[move_group-2] [INFO] [1789303800.181039886] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[move_group-2] [ERROR] [1789303800.189336202] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303800.189419755] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303800.189470475] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303800.189523595] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [WARN] [1789303800.189601995] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.020691 seconds
+[move_group-2] [ERROR] [1789303800.189822988] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303800.189907852] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303800.189997261] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303800.190071949] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303800.190143501] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000464 seconds
+[move_group-2] [ERROR] [1789303800.190270766] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303800.190347982] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303800.190397998] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000207 seconds
+[move_group-2] [ERROR] [1789303800.190442478] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[move_group-2] [ERROR] [1789303800.190501902] [move_group]: Planner 'OMPL' failed with error code FAILURE
+[move_group-2] [ERROR] [1789303800.190522894] [move_group.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[move_group-2] [INFO] [1789303800.190545487] [move_group.moveit.moveit.ros.move_group.move_action]: FAILURE
+[move_group-2] [INFO] [1789303801.167955285] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789303801.168459031] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789303801.168682743] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789303801.168904600] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789303801.168933976] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789303801.168942200] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789303801.168959480] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789303801.168991417] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789303801.169350010] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789303801.169430042] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789303801.181502340] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint1', actual value: 1.824095, desired value: 1.821767, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303801.181553348] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint2', actual value: -1.629328, desired value: -1.632833, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303801.181563940] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint3', actual value: -2.030319, desired value: -2.029988, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303801.181574052] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint4', actual value: -1.937697, desired value: -1.938872, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303801.181585220] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint5', actual value: -0.026670, desired value: -0.027768, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303801.181596516] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint6', actual value: 2.229247, desired value: 2.229687, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303801.181608772] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint7', actual value: -1.224983, desired value: -1.227613, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303801.181637060] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'microwave' (type 'Object') and 'panda_link5' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[move_group-2] [INFO] [1789303801.181650052] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[move_group-2] [ERROR] [1789303801.189878656] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303801.189958145] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303801.190009569] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303801.190067745] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [WARN] [1789303801.190148961] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.020667 seconds
+[move_group-2] [ERROR] [1789303801.190311266] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303801.190407842] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303801.190489763] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303801.190558435] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303801.190625507] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000403 seconds
+[move_group-2] [ERROR] [1789303801.190784516] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303801.190844804] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303801.190908228] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000233 seconds
+[move_group-2] [ERROR] [1789303801.190952740] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[move_group-2] [ERROR] [1789303801.191008676] [move_group]: Planner 'OMPL' failed with error code FAILURE
+[move_group-2] [ERROR] [1789303801.191029092] [move_group.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[move_group-2] [INFO] [1789303801.191063044] [move_group.moveit.moveit.ros.move_group.move_action]: FAILURE
+[move_group-2] [INFO] [1789303802.167373575] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789303802.167766505] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789303802.167985769] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789303802.168216554] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789303802.168247306] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789303802.168254730] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789303802.168271082] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789303802.168302154] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789303802.168644876] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789303802.168725068] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789303802.180842421] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint1', actual value: -1.136274, desired value: -1.133231, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303802.180888630] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint2', actual value: 1.328028, desired value: 1.325673, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303802.180901270] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint3', actual value: 0.953207, desired value: 0.952259, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303802.180913846] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint4', actual value: -1.921835, desired value: -1.921521, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303802.180924918] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint5', actual value: 0.439066, desired value: 0.441014, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303802.180936022] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint6', actual value: 2.163601, desired value: 2.162533, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303802.180947062] [move_group.moveit.moveit.core.kinematic_constraints]: Constraint satisfied:: Joint name: 'panda_joint7', actual value: -1.536636, desired value: -1.534466, tolerance_above: 0.005000, tolerance_below: 0.005000
+[move_group-2] [INFO] [1789303802.180972086] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Found a contact between 'microwave' (type 'Object') and 'panda_link5' (type 'Robot link'), which constitutes a collision. Contact information is not stored.
+[move_group-2] [INFO] [1789303802.180983638] [move_group.moveit.moveit.core.moveit_collision_detection_fcl]: Collision checking is considered complete (collision was found and 0 contacts are stored)
+[move_group-2] [ERROR] [1789303802.189059698] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303802.189138834] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303802.189188818] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [ERROR] [1789303802.189242354] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:265 - panda_arm/panda_arm: Unable to sample any valid states for goal tree
+[move_group-2] [WARN] [1789303802.189323251] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.020549 seconds
+[move_group-2] [ERROR] [1789303802.189546227] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303802.189604180] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303802.189689140] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303802.189740244] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303802.189802580] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000406 seconds
+[move_group-2] [ERROR] [1789303802.189938197] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [ERROR] [1789303802.190025173] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/geometric/planners/rrt/src/RRTConnect.cpp:225 - panda_arm/panda_arm: Insufficient states in sampleable goal region
+[move_group-2] [WARN] [1789303802.190111925] [move_group.moveit.moveit.planners.ompl.planner_manager]: ./src/ompl/tools/multiplan/src/ParallelPlan.cpp:138 - ParallelPlan::solve(): Unable to find solution by any of the threads in 0.000259 seconds
+[move_group-2] [ERROR] [1789303802.190157270] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Unable to solve the planning problem
+[move_group-2] [ERROR] [1789303802.190208598] [move_group]: Planner 'OMPL' failed with error code FAILURE
+[move_group-2] [ERROR] [1789303802.190229014] [move_group.moveit.moveit.ros.move_group.move_action]: Generating a plan with planning pipeline failed.
+[move_group-2] [INFO] [1789303802.190252470] [move_group.moveit.moveit.ros.move_group.move_action]: FAILURE
+[move_group-2] [INFO] [1789304075.167387713] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789304075.167753922] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789304075.167961475] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789304075.168167875] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789304075.168206180] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789304075.168215044] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789304075.168234532] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789304075.168264420] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789304075.168620101] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789304075.168703333] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789304075.175133340] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789304075.181626738] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789304075.182085524] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789304075.182178996] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789304075.182245876] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789304076.167288805] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789304076.167633766] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789304076.167861863] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789304076.168093224] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789304076.168125320] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789304076.168132680] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789304076.168150056] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789304076.168181544] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789304076.168503561] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789304076.168584553] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789304076.184824481] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789304076.191224728] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789304076.191659481] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789304076.191737497] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789304076.191801626] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [WARN] [1789306471.677929332] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789306472.666965267] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789306472.667381205] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789306472.667591957] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789306472.668004631] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789306472.668041591] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789306472.668059095] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789306472.668077847] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789306472.668109303] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789306472.668474457] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789306472.668568217] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789306472.682275721] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789306472.683533261] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789306472.683751502] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789306472.683810350] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789306472.683858958] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789306523.167558469] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789306523.167949062] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789306523.168197927] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789306523.168679816] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789306523.168716361] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789306523.168725001] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789306523.168742985] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789306523.168776425] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789306523.169171146] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789306523.169256331] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789306523.185413539] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789306523.187952268] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789306523.188294157] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789306523.188354317] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789306523.188405709] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [WARN] [1789306806.457516356] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'yellow_mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789306812.667758501] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789306812.668168870] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789306812.668448135] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789306812.668983945] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789306812.669021897] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789306812.669029641] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789306812.669047081] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789306812.669097033] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789306812.669569547] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789306812.669667211] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789306812.685412034] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789306812.686206469] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789306812.686539142] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789306812.686598790] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789306812.686651334] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789307128.667852276] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789307128.668223221] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789307128.668454134] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789307128.668649047] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789307128.668681399] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789307128.668690039] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789307128.668705879] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789307128.668739735] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789307128.669180184] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789307128.669272217] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789307128.687616120] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789307128.690975140] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789307128.691571206] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789307128.691655334] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789307128.691729094] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789307835.167573200] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789307835.167944849] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789307835.168188722] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789307835.168722740] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789307835.168759636] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789307835.168768116] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789307835.168786676] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789307835.168821812] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789307835.169220661] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789307835.169305046] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789307835.183106725] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789307835.184187305] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789307835.184359114] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789307835.184408266] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789307835.184449322] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789307836.167527764] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789307836.167847413] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789307836.168084694] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789307836.168599543] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789307836.168628759] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789307836.168635639] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789307836.168651736] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789307836.168686680] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789307836.168999353] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789307836.169095129] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789307836.182774216] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789307836.184302062] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789307836.184501102] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789307836.184556303] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789307836.184602479] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789308152.667935766] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789308152.668299863] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789308152.668534072] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789308152.669108314] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789308152.669146010] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789308152.669155354] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789308152.669174746] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789308152.669209498] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789308152.669610748] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789308152.669704444] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789308152.691201766] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789308152.699148098] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789308152.699886308] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789308152.699984357] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789308152.700081797] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [ERROR] [1789310051.176897693] [move_group.moveit.moveit.core.robot_state]: Attached body 'mug' not found
+[move_group-2] [WARN] [1789310051.177018718] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mug', but it does not exist in this scene.
+[move_group-2] [ERROR] [1789310104.177040075] [move_group.moveit.moveit.core.robot_state]: Attached body 'mug' not found
+[move_group-2] [WARN] [1789310104.177160747] [move_group.moveit.moveit.core.planning_scene]: Tried to remove world object 'mug', but it does not exist in this scene.
+[move_group-2] [INFO] [1789310105.167557864] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789310105.167892265] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789310105.168087914] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789310105.168281099] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789310105.168307179] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789310105.168314507] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789310105.168331211] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789310105.168359403] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789310105.168806828] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789310105.168895053] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789310105.183914657] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789310105.185496230] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789310105.185748935] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789310105.185807175] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789310105.185855111] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.
+[move_group-2] [INFO] [1789311778.667590120] [move_group.moveit.moveit.ros.move_group.move_action]: MoveGroupMoveAction: Received request
+[move_group-2] [INFO] [1789311778.667984522] [move_group.moveit.moveit.ros.move_group.move_action]: executing..
+[move_group-2] [INFO] [1789311778.668276235] [move_group.moveit.moveit.ros.move_group.move_action]: Planning request received for MoveGroup action. Forwarding to planning pipeline.
+[move_group-2] [INFO] [1789311778.668913581] [move_group]: Calling PlanningRequestAdapter 'ResolveConstraintFrames'
+[move_group-2] [INFO] [1789311778.668948109] [move_group]: Calling PlanningRequestAdapter 'ValidateWorkspaceBounds'
+[move_group-2] [WARN] [1789311778.668956365] [move_group.moveit.moveit.ros.validate_workspace_bounds]: It looks like the planning volume was not specified. Using default values.
+[move_group-2] [INFO] [1789311778.668975341] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateBounds'
+[move_group-2] [INFO] [1789311778.669010893] [move_group]: Calling PlanningRequestAdapter 'CheckStartStateCollision'
+[move_group-2] [INFO] [1789311778.669422159] [move_group.moveit.moveit.planners.ompl.model_based_planning_context]: Planner configuration 'panda_arm' will use planner 'geometric::RRTConnect'. Additional configuration parameters will be set when the planner is constructed.
+[move_group-2] [INFO] [1789311778.669509647] [move_group]: Calling Planner 'OMPL'
+[move_group-2] [INFO] [1789311778.687280365] [move_group]: Calling PlanningResponseAdapter 'AddTimeOptimalParameterization'
+[move_group-2] [INFO] [1789311778.690814745] [move_group]: Calling PlanningResponseAdapter 'ValidateSolution'
+[move_group-2] [INFO] [1789311778.691181242] [move_group]: Calling PlanningResponseAdapter 'DisplayMotionPath'
+[move_group-2] [WARN] [1789311778.691255258] [move_group.moveit.moveit.ros.planning_pipeline]: The planner plugin did not fill out the 'planner_id' field of the MotionPlanResponse. Setting it to the planner ID name of the MotionPlanRequest assuming that the planner plugin does warn you if it does not use the requested planner.
+[move_group-2] [INFO] [1789311778.691315866] [move_group.moveit.moveit.ros.move_group.move_action]: Motion plan was computed successfully.

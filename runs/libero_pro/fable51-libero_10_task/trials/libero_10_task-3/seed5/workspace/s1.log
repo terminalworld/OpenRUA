@@ -1,0 +1,40 @@
+start q [-0.271  0.752  0.09  -1.595  1.007  1.841 -1.535] fingers (0.039996922959865934, -0.03998603306507176)
+== lift
+  move done code=0 max_joint_err=0.0024
+  hand at [ 1.100e-03 -5.960e-02  1.245e+00] target [ 1.0000e-03 -5.9900e-02  1.2455e+00] poserr=0.0006
+== to staging
+  move done code=-5 max_joint_err=3.0156
+  hand now at [-0.0943  0.0239  1.0226] (target [-0.4234  0.046   1.15  ])
+  move done code=-5 max_joint_err=2.5438
+  move done code=-5 max_joint_err=2.1955
+  move done code=-5 max_joint_err=1.8658
+  TCP [-0.2874 -0.0471  1.0492]
+  gripper -> reached=True stalled=False fingers=(0.040038496384641624, -0.03904533885500996)
+== pre-grasp
+Traceback (most recent call last):
+  File "/workspace/s1_grasp.py", line 18, in <module>
+    if rob.go_tcp(r, [-0.25, 0.046, 1.03], Q, steps=4, seconds=4.0) is None: sys.exit("pregrasp failed")
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/rob.py", line 293, in go_tcp
+    q = move_cart(r, hand_from_tcp(tcp, quat), quat, steps=steps, seconds=seconds, max_jump=max_jump)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/rob.py", line 264, in move_cart
+    code, err = r.move_q(pts[-1][0], seconds, via=via)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/rob.py", line 159, in move_q
+    rclpy.spin_until_future_complete(self.node, res, timeout_sec=600)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 274, in spin_until_future_complete
+    executor.spin_until_future_complete(future, timeout_sec)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 393, in spin_until_future_complete
+    self._spin_once_until_future_complete(future, timeout_left)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 935, in _spin_once_until_future_complete
+    self._spin_once_impl(timeout_sec, future.done)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 907, in _spin_once_impl
+    handler, entity, node = self.wait_for_ready_callbacks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 877, in wait_for_ready_callbacks
+    return next(self._cb_iter)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 785, in _wait_for_ready_callbacks
+    raise ExternalShutdownException()
+rclpy.executors.ExternalShutdownException

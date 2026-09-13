@@ -1,0 +1,11 @@
+from rob import *
+r = Robot()
+N = np.array([-0.06, -0.146])   # ketchup neck (lying bottle)
+print("pre-grasp above neck, fingers along Y")
+r.move_tcp([N[0], N[1], 0.60], Q_DOWN_Y)
+print("open"); r.gripper(0.04)
+print("descend")
+r.move_tcp([N[0], N[1], 0.44], Q_DOWN_Y)
+r.snap("robot0_eye_in_hand", "/workspace/eih_k2.png")
+r.snap("agentview", "/workspace/agent_k4.png")
+print("DONE")

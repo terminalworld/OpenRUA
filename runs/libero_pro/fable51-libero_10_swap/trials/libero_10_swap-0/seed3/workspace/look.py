@@ -1,0 +1,10 @@
+from rob import *
+r = Robot()
+CX, CY, ang = 0.230, 0.342, math.radians(31.0)
+c = np.array([math.cos(ang), math.sin(ang), 0.0]); f = np.array([-math.sin(ang), math.cos(ang), 0.0])
+t = math.radians(30); a = math.sin(t) * c + np.array([0, 0, -math.cos(t)])
+q = quat_from_axes(a, -f)
+sol = r.solve_ik(CX, CY, 0.45, q)
+log("target q", np.round(sol,3))
+r.move_joints(sol, 3, retries=0)
+log("now q", np.round(r.arm_q(),3))

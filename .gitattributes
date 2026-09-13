@@ -1,0 +1,8 @@
+# 轨迹里体积大的部分走 Git LFS。transcript.jsonl 是轨迹主体(单文件最大 56 MB,
+# 总计 3.4 GB);workspace 里 agent 存的深度图与相机图合计 5.5 GB。
+# 其余(result.json / commands.sh / provenance.json / config.yaml / ops.jsonl /
+# 机器人日志)都是文本且只有约 42 MB,保持普通 git 对象,便于直接 diff 和检索。
+runs/**/transcript.jsonl        filter=lfs diff=lfs merge=lfs -text
+runs/**/transcript.jsonl.stderr filter=lfs diff=lfs merge=lfs -text
+runs/**/*.npy                   filter=lfs diff=lfs merge=lfs -text
+runs/**/*.png                   filter=lfs diff=lfs merge=lfs -text

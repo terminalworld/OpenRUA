@@ -1,0 +1,13 @@
+fingers before (0.03872920141715632, -0.038729141314950644)
+== hover
+traj done code=0 max_joint_err=0.0022
+tcp now [-0.2229  0.0667  0.6502] target [-0.223  0.067  0.65 ]
+== descend
+traj done code=-5 max_joint_err=0.0641
+tcp now [-0.2067  0.0714  0.5371] target [-0.223  0.067  0.517]
+== close
+gripper reached=True stalled=False fingers=0.0062,-0.0062
+== lift
+traj done code=0 max_joint_err=0.0051
+tcp now [-0.2227  0.0674  0.6496] target [-0.223  0.067  0.65 ]
+fingers after lift (0.005369379898770342, -0.005320883481973197)

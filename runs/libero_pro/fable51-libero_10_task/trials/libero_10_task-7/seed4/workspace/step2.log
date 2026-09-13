@@ -1,0 +1,14 @@
+pre-grasp above ketchup, fingers along X
+  move_q done code=-5 max_joint_err=0.8714
+  tcp now [-0.197  -0.139   0.6204] target [-0.197 -0.139  0.62 ]
+descend
+  move_q done code=-5 max_joint_err=0.9146
+  tcp now [-0.1645 -0.12    0.4902] target [-0.197 -0.139  0.47 ]
+close
+  gripper -> 0.0: reached=True stalled=False gap=0.0083
+gap after close: 0.008250740279831862
+lift
+  move_q done code=-5 max_joint_err=0.5792
+  tcp now [-0.0951 -0.0976  0.6956] target [-0.197 -0.139  0.75 ]
+gap after lift: 0.0009995470308635976
+DONE

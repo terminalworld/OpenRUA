@@ -1,0 +1,12 @@
+14:26:15 start tcp [-0.2664 -0.0129  1.0192] z_hand [ 0.999  0.038 -0.004]
+14:26:26 trajectory code=0 err=0.0024 (dur 2.58s)
+14:26:26 IK attempt 0: solution deviates 3.60 rad from seed
+14:26:26 IK attempt 1: solution deviates 2.97 rad from seed
+14:26:26 IK attempt 2: solution deviates 2.87 rad from seed
+14:26:26 IK attempt 3: solution deviates 2.14 rad from seed
+14:26:26 IK: returning best solution (dev 2.14)
+14:26:57 trajectory code=-5 err=0.3820 (dur 10.71s)
+14:26:57   re-sending final point (err 0.3820, 2.0s)
+14:27:05   code=0 err=0.0072 worst j7 dq=[ 0.     0.    -0.    -0.     0.001 -0.001 -0.007]
+14:27:06   tcp now [-0.3    -0.1996  1.2499] (target [-0.3  -0.2   1.25]) joint err 0.0072
+14:27:06 q [-1.672 -0.831  0.982 -2.431  0.687  1.815 -0.3  ]

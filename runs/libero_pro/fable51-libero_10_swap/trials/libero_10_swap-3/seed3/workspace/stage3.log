@@ -1,0 +1,4 @@
+pick_xy [-0.2092  0.076 ] place_xy [-0.1462 -0.12  ] GRASP_Z 0.933 RELEASE_Z 0.965
+[before lift] TCP world = [-0.2097  0.0759  0.9331]  fingers = [ 0.0049 -0.0049]
+  traj done code=0 max_joint_err=0.0067
+[lifted] TCP world = [-0.2093  0.0757  1.1179]  fingers = [ 0.0033 -0.0033]

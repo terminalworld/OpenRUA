@@ -1,0 +1,14 @@
+open gripper
+  gripper reached=True stalled=False fingers=(0.0399,-0.0399)
+above object
+  traj code=-5 max_joint_err=0.2777
+  traj code=0 max_joint_err=0.0021
+  TCP now world=(-0.012,-0.257,0.560) target=(-0.012, -0.257, 0.56)
+descend
+  traj code=-5 max_joint_err=0.0512
+  traj code=0 max_joint_err=0.0242
+  traj code=0 max_joint_err=0.0236
+  TCP now world=(0.002,-0.269,0.455) target=(-0.012, -0.257, 0.436)
+close
+  gripper reached=True stalled=False fingers=(0.0041,-0.0062)
+GRASP FAILED: fingers closed on air

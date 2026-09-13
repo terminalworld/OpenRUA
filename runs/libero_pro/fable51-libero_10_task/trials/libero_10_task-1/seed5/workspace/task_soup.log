@@ -1,0 +1,28 @@
+== soup: open gripper
+  gripper(0.04) reached=True stalled=False fingers=(0.03999955837365222, -0.039997123935027495)
+== soup: pre-grasp above
+    retry 0: code=-5 jerr=1.2033
+    retry 1: code=-5 jerr=0.7205
+    retry 2: code=-5 jerr=0.3688
+    retry 3: code=0 jerr=0.0296
+  move -> traj code=0 jerr=0.0296 tcp_now=[-0.078  -0.1741  0.6002] target=[-0.078 -0.174  0.6  ]
+  refine: n=7348 top-face centroid [-0.0765 -0.1739] (prior [-0.078 -0.174]) x[-0.106,-0.047] y[-0.202,-0.135]
+  move -> traj code=0 jerr=0.0024 tcp_now=[-0.0771 -0.1741  0.5999] target=[-0.0765 -0.1739  0.6   ]
+== soup: descend
+  move -> traj code=0 jerr=0.0025 tcp_now=[-0.0765 -0.174   0.5203] target=[-0.0765 -0.1739  0.52  ]
+  move -> traj code=0 jerr=0.0025 tcp_now=[-0.0771 -0.1738  0.475 ] target=[-0.0765 -0.1739  0.475 ]
+== soup: close
+  gripper(0.0) reached=True stalled=False fingers=(0.03145122789615796, -0.0316032947131991)
+  finger gap 0.0631
+== soup: lift
+    retry 0: code=-5 jerr=0.0571
+  move -> traj code=0 jerr=0.0022 tcp_now=[-0.0765 -0.1735  0.7193] target=[-0.0765 -0.1739  0.72  ]
+  fingers after lift (0.03125322944104526, -0.031795848618694125)
+== soup: over basket
+  move -> traj code=0 jerr=0.0031 tcp_now=[0.0051 0.2492 0.7194] target=[0.005 0.25  0.72 ]
+  fingers over basket (0.031186336865552607, -0.0318625512664187)
+== soup: release
+  gripper(0.04) reached=True stalled=False fingers=(0.03716746002409076, -0.0372437145081697)
+  move -> traj code=0 jerr=0.0023 tcp_now=[0.0051 0.2503 0.7795] target=[0.005 0.25  0.78 ]
+#### soup: OK
+#### DONE

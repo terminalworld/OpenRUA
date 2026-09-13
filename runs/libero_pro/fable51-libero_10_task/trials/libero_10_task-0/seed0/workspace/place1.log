@@ -1,0 +1,13 @@
+gap 0.06218539649812389
+to basket high
+move done code=0 max_joint_err=0.0026
+TCP now (world): [-0.0031  0.2596  0.7594]
+gap 0.062178459003086085
+lower
+move done code=0 max_joint_err=0.0024
+TCP now (world): [-0.0032  0.26    0.72  ]
+release
+gripper reached=True stalled=False gap=0.0743
+retreat
+move done code=0 max_joint_err=0.0022
+TCP now (world): [-0.0027  0.2599  0.8495]

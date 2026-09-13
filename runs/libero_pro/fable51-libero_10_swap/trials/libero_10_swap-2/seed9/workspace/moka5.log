@@ -1,0 +1,12 @@
+traj done code=0 max_joint_err=0.0040
+  tcp [-0.0708  0.2151  1.0567] fingers [ 0.0212 -0.0215]
+traj done code=0 max_joint_err=0.0036
+  tcp [-0.0719  0.2151  1.0183] fingers [ 0.0191 -0.0192]
+traj done code=0 max_joint_err=0.0032
+  tcp [-0.0718  0.2164  1.0041] fingers [ 0.018  -0.0182]
+gripper -> 0.04: reached=True stalled=False fingers=(0.03615072219679416, -0.03613539849662854)
+fingers (0.03615072219679416, -0.03613539849662854)
+traj done code=0 max_joint_err=0.0024
+  tcp [-0.1338  0.2788  1.0031] fingers [ 0.0399 -0.0399]
+traj done code=0 max_joint_err=0.0022
+  tcp [-0.1552  0.3002  1.1497] fingers [ 0.04 -0.04]

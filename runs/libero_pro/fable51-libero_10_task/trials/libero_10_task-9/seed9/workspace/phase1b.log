@@ -1,0 +1,61 @@
+13:26:57 need CCW rotation alpha=136.5 deg
+13:26:58 start q [-1.907  0.477  1.575 -2.407 -0.595  2.209  0.146] gap 0.0799
+13:26:59 psi=-90: j7=0.199 -> -2.183 ok=True
+13:26:59 move above [-0.2201 -0.1138]
+13:27:08 trajectory code=0 err=0.0026 (dur 2.0s)
+13:27:08 IK attempt 0: solution deviates 0.85 rad from seed
+13:27:08 IK attempt 1: solution deviates 1.04 rad from seed
+13:27:08 IK attempt 2: solution deviates 0.81 rad from seed
+13:27:08 IK attempt 3: solution deviates 0.87 rad from seed
+13:27:08 IK: returning best solution (dev 0.81)
+13:27:17 trajectory code=-5 err=0.3576 (dur 2.0s)
+13:27:17   re-sending final point (err 0.3576, 2.0s)
+13:27:25   code=0 err=0.0023
+13:27:26   tcp now [-0.2197 -0.1135  0.9903] (target [-0.2201 -0.1138  0.99  ]) joint err 0.0023
+13:27:27 gripper -> 0.0: reached=True stalled=False gap=0.0113
+13:27:27 IK attempt 0: solution deviates 1.13 rad from seed
+13:27:27 IK attempt 1: solution deviates 1.26 rad from seed
+13:27:27 IK attempt 2: solution deviates 0.92 rad from seed
+13:27:27 IK attempt 3: solution deviates 0.98 rad from seed
+13:27:27 IK: returning best solution (dev 0.92)
+13:27:36 trajectory code=-5 err=0.4650 (dur 2.0s)
+13:27:36   re-sending final point (err 0.4650, 2.0s)
+13:27:45   code=0 err=0.0217
+13:27:45   re-sending final point (err 0.0217, 2.0s)
+13:27:53   code=0 err=0.0021
+13:27:54   tcp now [-0.22   -0.114   1.1299] (target [-0.2201 -0.1138  1.13  ]) joint err 0.0021
+13:27:54 gap after lift 0.0057
+13:27:54 rotate j7 by -2.382 -> -2.274
+13:28:08 trajectory code=-5 err=1.6750 (dur 3.97s)
+13:28:08   re-sending final point (err 1.6750, 2.8s)
+13:28:19   code=-5 err=1.1316
+13:28:19   re-sending final point (err 1.1316, 2.0s)
+13:28:27   code=-5 err=0.7048
+13:28:27   re-sending final point (err 0.7048, 2.0s)
+13:28:36   code=-5 err=0.2835
+13:28:37 tcp [-0.2202 -0.1141  1.1298] y_hand [0.255 0.967 0.   ] gap 0.0057
+13:28:37 place: tcp xy [-0.1797 -0.0581] mug centre [-0.21 -0.09]
+13:28:46 trajectory code=-5 err=0.2769 (dur 2.0s)
+13:28:46   re-sending final point (err 0.2769, 2.0s)
+13:28:54   code=0 err=0.0026
+13:28:55   tcp now [-0.1799 -0.0579  1.1297] (target [-0.1797 -0.0581  1.13  ]) joint err 0.0026
+13:28:55 IK attempt 0: solution deviates 0.96 rad from seed
+13:29:04 trajectory code=-5 err=0.2910 (dur 2.0s)
+13:29:04   re-sending final point (err 0.2910, 2.0s)
+13:29:12   code=-5 err=0.1422
+13:29:12   re-sending final point (err 0.1422, 2.0s)
+13:29:21   code=-5 err=0.1366
+13:29:21   re-sending final point (err 0.1366, 2.0s)
+13:29:29   code=-5 err=0.1245
+13:29:30   tcp now [-0.1057 -0.022   1.0632] (target [-0.1797 -0.0581  0.994 ]) joint err 0.1245
+13:29:31 gripper -> 0.04: reached=True stalled=False gap=0.0717
+13:29:31 IK attempt 0: solution deviates 1.21 rad from seed
+13:29:31 IK attempt 1: solution deviates 0.81 rad from seed
+13:29:31 IK attempt 2: solution deviates 0.97 rad from seed
+13:29:31 IK attempt 3: solution deviates 1.21 rad from seed
+13:29:31 IK: returning best solution (dev 0.81)
+13:29:40 trajectory code=-5 err=0.2493 (dur 2.0s)
+13:29:40   re-sending final point (err 0.2493, 2.0s)
+13:29:48   code=0 err=0.0022
+13:29:49   tcp now [-0.1793 -0.0584  1.1501] (target [-0.1797 -0.0581  1.15  ]) joint err 0.0022
+13:29:49 PHASE1B DONE

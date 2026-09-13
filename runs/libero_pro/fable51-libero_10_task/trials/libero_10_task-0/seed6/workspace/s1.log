@@ -1,0 +1,5 @@
+18:48:55 start tcp=[-0.0589 -0.      0.6744] q=[ 0.9996 -0.     -0.0284  0.    ] gap=0.0417
+18:48:57 gripper cmd=0.04 reached=True stalled=False pos=0.0000 gap=0.0775
+18:49:14 move done code=0 max_joint_err=0.0022
+18:49:14 tcp now world=[-0.1059  0.0355  0.6501] target=[-0.106  0.036  0.65 ]
+18:49:15 end tcp=[-0.1059  0.0355  0.6501] q=[ 1.0e+00  1.1e-03 -6.0e-04  4.0e-04] gap=0.0800

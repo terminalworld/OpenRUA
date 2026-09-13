@@ -1,0 +1,3 @@
+pick_xy [-0.2092  0.076 ] place_xy [-0.1462 -0.12  ] GRASP_Z 0.933 RELEASE_Z 0.965
+  gripper reached=True stalled=False fingers=(0.00488998438401896, -0.004930471511648145)
+[closed] TCP world = [-0.2097  0.0759  0.9331]  fingers = [ 0.0049 -0.0049]

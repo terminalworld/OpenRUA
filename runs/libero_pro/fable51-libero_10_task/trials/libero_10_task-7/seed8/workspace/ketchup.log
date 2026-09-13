@@ -1,0 +1,32 @@
+[ketchup] start tcp=[-0.059 -0.     0.674] fingers=[ 0.0208 -0.0208]
+[ketchup] open gripper
+  gripper -> 0.04: reached=True stalled=False fingers=[ 0.0387 -0.0387]
+[ketchup] pre-grasp above object
+  traj done code=-5 max_joint_err=0.5036
+  tcp now [-0.2177 -0.1486  0.6202] target [-0.218 -0.149  0.62 ] q=[ 0.861 -0.508 -0.001  0.   ]
+[ketchup] descend
+  traj done code=-5 max_joint_err=0.2274
+  tcp now [-0.1611 -0.1688  0.5532] target [-0.218 -0.149  0.47 ] q=[ 0.708 -0.701  0.083 -0.035]
+[ketchup] close
+  gripper -> 0.0: reached=True stalled=False fingers=[ 0.0185 -0.0181]
+[ketchup] finger gap after close = 0.0366 m (HOLDING)
+[ketchup] lift
+  traj done code=0 max_joint_err=0.0172
+  tcp now [-0.2145 -0.1503  0.6215] target [-0.218 -0.149  0.62 ] q=[ 0.708 -0.706  0.008 -0.003]
+[ketchup] lift check fingers=[ 0.0155 -0.0153]
+[ketchup] lift to transport height
+  traj done code=-5 max_joint_err=0.0503
+  tcp now [-0.2091 -0.1538  0.7638] target [-0.218 -0.149  0.76 ] q=[ 0.708 -0.706  0.023 -0.008]
+[ketchup] move over basket
+  traj done code=-5 max_joint_err=0.2032
+  tcp now [0.0219 0.1937 0.7646] target [0.   0.25 0.76] q=[ 0.74  -0.672  0.011  0.002]
+[ketchup] check fingers=[ 0.0129 -0.0128]
+[ketchup] lower over basket
+  traj done code=0 max_joint_err=0.0026
+  tcp now [-3.000e-04  2.498e-01  6.802e-01] target [0.   0.25 0.68] q=[ 0.708 -0.707 -0.001  0.001]
+[ketchup] release
+  gripper -> 0.04: reached=True stalled=False fingers=[ 0.036 -0.036]
+[ketchup] retreat up
+  traj done code=0 max_joint_err=0.0023
+  tcp now [3.000e-04 2.498e-01 7.595e-01] target [0.   0.25 0.76] q=[-0.706  0.708 -0.001  0.   ]
+[ketchup] DONE tcp=[0.   0.25 0.76]

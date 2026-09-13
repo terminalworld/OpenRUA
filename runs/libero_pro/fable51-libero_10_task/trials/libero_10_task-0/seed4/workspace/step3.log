@@ -1,0 +1,11 @@
+  move done code=0 max_joint_err=0.0025
+  tcp now [-0.0947  0.032   0.7591] target [-0.0947  0.0319  0.76  ] d=0.0009
+  move done code=0 max_joint_err=0.0026
+  tcp now [-2.000e-04  2.347e-01  7.594e-01] target [0.    0.235 0.76 ] d=0.0007
+gap in transit 0.06213422555832113
+  move done code=0 max_joint_err=0.0024
+  tcp now [-4.000e-04  2.351e-01  6.000e-01] target [0.    0.235 0.6  ] d=0.0004
+gap before release 0.06213973977946793 wrench (0.0008964877826311812, -0.0112558513939857, -5.36375086287841)
+  gripper -> 0.04: reached=True stalled=False gap=0.0743
+  move done code=0 max_joint_err=0.0026
+  tcp now [4.000e-04 2.348e-01 7.795e-01] target [0.    0.235 0.78 ] d=0.0006

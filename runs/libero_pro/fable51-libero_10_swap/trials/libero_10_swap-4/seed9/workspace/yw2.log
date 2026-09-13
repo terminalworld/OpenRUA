@@ -1,0 +1,22 @@
+grasp [-0.223  0.067  0.512] place [-0.006  0.327  0.554] tilt 20.0
+[0] open gripper
+  gripper -> 0.04: reached=True stalled=False fingers=0.0399,-0.0399
+[1] to pre-grasp (tilted) [-0.223  0.067  0.7  ]
+  traj done code=-5 max_joint_err=0.3420
+  tcp now [-0.2331  0.0865  0.6464] target [-0.223  0.067  0.7  ] err 0.0579
+  wrench [ 0.39964678 -2.9283367  -4.19977927]
+[2] descend [-0.223  0.067  0.512]
+  traj done code=-5 max_joint_err=0.3873
+  tcp now [-0.3018  0.0566  0.528 ] target [-0.223  0.067  0.512] err 0.0811
+  wrench [ 3.59604222 16.91140831  8.42253869] delta [ 3.2  19.84 12.62]
+  retrying descent for accuracy
+  traj done code=-5 max_joint_err=0.3722
+  tcp now [-0.3102  0.0594  0.5232] target [-0.223  0.067  0.512] err 0.0882
+[3] close
+  gripper -> 0.0: reached=True stalled=False fingers=0.0056,-0.0042
+  finger gap 0.0098 (0 => closed on air)
+[4] lift [-0.223  0.067  0.7  ]
+  traj done code=0 max_joint_err=0.0021
+  tcp now [-0.2232  0.0673  0.6993] target [-0.223  0.067  0.7  ] err 0.0008
+  gap after lift 0.0010
+LOST OBJECT during lift

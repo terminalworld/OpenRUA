@@ -1,0 +1,30 @@
+start tcp [ 0.1123 -0.1928  0.6995] gap 0.001
+1. open gripper
+  gripper(0.04): reached=True stalled=False gap=0.0718
+2. pre-grasp above target
+  move: code=0 max_joint_err=0.0490
+  move: retry 1 (err=0.0490)
+  move: code=0 max_joint_err=0.0020
+  tcp now [ 0.1119 -0.1929  0.6503] target [ 0.112 -0.193  0.65 ]
+3. descend to grasp height
+  move: code=0 max_joint_err=0.0025
+  tcp now [ 0.112  -0.1932  0.4404] target [ 0.112 -0.193  0.44 ]
+4. close gripper
+  gripper(0.0): reached=True stalled=False gap=0.0421
+grasp evidence: gap=0.0421
+5. lift
+  move: code=0 max_joint_err=0.0023
+  tcp now [ 0.1122 -0.1928  0.6993] target [ 0.112 -0.193  0.7  ]
+gap after lift 0.0422
+6. move over basket
+  move: code=-5 max_joint_err=0.0937
+  move: retry 1 (err=0.0937)
+  move: code=0 max_joint_err=0.0024
+  tcp now [-0.0045  0.2551  0.76  ] target [-0.005  0.255  0.76 ]
+gap over basket 0.0422
+7. release
+  gripper(0.04): reached=True stalled=False gap=0.0726
+8. retreat up
+  move: code=0 max_joint_err=0.0024
+  tcp now [-0.0048  0.2551  0.8396] target [-0.005  0.255  0.84 ]
+DONE

@@ -1,0 +1,17 @@
+== up/away
+  move done code=0 max_joint_err=0.0024
+  hand at [-0.0999  0.0068  1.2925] target [-0.1     0.0069  1.2931] poserr=0.0006
+  TCP now [-0.0997  0.08    1.2194] target [-0.1   0.08  1.22]
+  move done code=0 max_joint_err=0.0025
+  hand at [-0.2793 -0.1331  1.3232] target [-0.28   -0.1331  1.3231] poserr=0.0007
+  TCP now [-0.2792 -0.06    1.25  ] target [-0.28 -0.06  1.25]
+== hand down
+  move done code=-5 max_joint_err=0.2455
+  hand at [-0.2799 -0.0601  1.3535] target [-0.28   -0.06    1.3534] poserr=0.0002
+  move done code=0 max_joint_err=0.0024
+  TCP now [-0.2797 -0.0602  1.2501] target [-0.28 -0.06  1.25]
+q [ 1.526  1.366 -2.121 -2.448  1.012  1.4    2.895] wrench [ 0.   -0.01 -5.1   0.    0.   -0.  ]
+saved bv_final.png
+saved av_final.png
+saved fv_final.png
+DONE

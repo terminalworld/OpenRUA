@@ -1,0 +1,6 @@
+tcp [-0.166  0.073  1.105]
+move_q done code=0 max_joint_err=0.0025
+  tcp now [-0.1657  0.0729  1.3195] (target [-0.166   0.0729  1.32  ])
+gap 0.001 force [-0.  -0.  -5.1]
+bottle-region points left on table (should be ~0): 899
+points 1.05-1.35 (bottle hanging): 298 zmin 1.0501056472445245

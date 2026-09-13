@@ -1,0 +1,14 @@
+
+== move -0.01 0.27 0.72 0 3
+traj error_code=0 max_joint_err=0.0026
+arm: [0.1206, 0.0931, 0.3829, -2.0354, -0.0396, 2.1218, 1.307]
+hand world: [-0.0102  0.2695  0.8229] TCP world: [-0.0102  0.2696  0.7195] hand z-axis: [-0.     0.001 -1.   ]
+finger gap: 0.0389
+wrench force: -0.11 -0.01 -5.15
+move -> TCP off-target by 0.7 mm
+
+== state
+arm: [0.1206, 0.0931, 0.3829, -2.0354, -0.0396, 2.1218, 1.307]
+hand world: [-0.0102  0.2695  0.8229] TCP world: [-0.0102  0.2696  0.7195] hand z-axis: [-0.     0.001 -1.   ]
+finger gap: 0.0389
+wrench force: -0.11 -0.01 -5.15

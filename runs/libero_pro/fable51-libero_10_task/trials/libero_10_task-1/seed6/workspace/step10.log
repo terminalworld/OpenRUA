@@ -1,0 +1,6 @@
+gripper: reached=True stalled=False fingers=(0.019355052583972066, -0.019440441364320528)
+wrench [-5.000e-03 -8.000e-03 -5.153e+00  1.000e-03 -1.000e-03  0.000e+00]
+move: error_code=0 max_joint_err=0.0024
+  tcp now world=[0.0595 0.0541 0.5999] target=[0.059  0.0537 0.6   ]
+fingers (0.019472286629427203, -0.019474123833304963)
+/workspace/agentview.png

@@ -1,0 +1,28 @@
+  q=[0.231, 0.133, -0.096, -2.471, 0.026, 2.604, -0.674]
+  hand=[-0.1848, 0.0632, 1.1533] tcp=[-0.1847, 0.0633, 1.0499] finger=0.0032
+  hand Z=[0.001, 0.001, -1.0] Y(finger axis)=[1.0, 0.001, 0.001]
+pre valid (True, [])
+pre tcp [-0.14  -0.155  1.15 ] Z [ 0.    -0.423 -0.906] Y [ 1. -0.  0.]
+  move: max joint path 0.590 rad over 4.9s
+  move done code=0 max_joint_err=0.0023
+  q=[0.205, 0.085, -0.401, -2.256, -0.562, 2.34, -0.585]
+  hand=[-0.14, -0.1108, 1.2432] tcp=[-0.14, -0.1543, 1.1494] finger=0.0025
+  hand Z=[0.001, -0.421, -0.907] Y(finger axis)=[1.0, 0.002, -0.0]
+finger 0.00253412731638937
+descend frac 1.0 final valid (True, [])
+  move: max joint path 0.405 rad over 3.4s
+  move done code=-5 max_joint_err=0.1892
+  -> re-sending final target to converge
+  move: max joint path 0.189 rad over 1.6s
+  move done code=0 max_joint_err=0.0416
+  q=[0.186, 0.448, -0.409, -2.239, -0.624, 2.713, -0.391]
+  hand=[-0.1267, -0.1058, 1.0937] tcp=[-0.1215, -0.1494, 1.0001] finger=0.0051
+  hand Z=[0.05, -0.421, -0.906] Y(finger axis)=[0.999, 0.006, 0.052]
+finger 0.005108537565524212 wrench [-7.18  0.38 21.56 -1.31  0.05 -0.44]
+  gripper -> pos=0.0000 reached=True stalled=False finger=0.0358
+  cartesian fraction=1.000 points=14
+  move: max joint path 0.375 rad over 3.1s
+  move done code=0 max_joint_err=0.0024
+  q=[0.201, 0.084, -0.398, -2.256, -0.566, 2.34, -0.581]
+  hand=[-0.1401, -0.1116, 1.2433] tcp=[-0.14, -0.1553, 1.1496] finger=0.0399
+  hand Z=[0.001, -0.423, -0.906] Y(finger axis)=[1.0, -0.001, 0.002]

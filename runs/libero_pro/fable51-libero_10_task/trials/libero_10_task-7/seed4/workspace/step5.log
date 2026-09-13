@@ -1,0 +1,11 @@
+pre-grasp above neck, fingers along Y
+  joint delta 0.404 rad -> 4.0s
+  move_q done code=0 (final max joint error 0.0023 rad) max_joint_err=0.0023
+  tcp now [-0.0602 -0.1463  0.6001] target [-0.06  -0.146  0.6  ]
+open
+  gripper -> 0.04: reached=True stalled=False gap=0.0800
+descend
+  joint delta 0.442 rad -> 4.4s
+  move_q done code=0 (final max joint error 0.0025 rad) max_joint_err=0.0025
+  tcp now [-0.0605 -0.146   0.4401] target [-0.06  -0.146  0.44 ]
+DONE

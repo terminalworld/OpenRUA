@@ -1,0 +1,82 @@
+{
+  "task_suite": "libero_10_task",
+  "task_id": 9,
+  "init_state_id": 0,
+  "started_utc": "2026-09-12T17:18:02.588198+00:00",
+  "workspace_template_sha256": "f5999634776108746bd4b5476c9e5643e49a4fbd3fda7c0a59d0411eb5f60836",
+  "containers": {
+    "sim": "rc-fable51-t10task-L5-9-0-4907da-sim",
+    "sandbox": "rc-fable51-t10task-L5-9-0-4907da-sandbox"
+  },
+  "ros_domain": 3,
+  "agent_version": "2.1.251 (Claude Code)",
+  "task_language": "put the white mug in the microwave and close it",
+  "preflight": [
+    [
+      "shell_sh_provisioned",
+      true
+    ],
+    [
+      "credentials_readable",
+      true
+    ],
+    [
+      "sandbox_cli_matches_pin",
+      true
+    ],
+    [
+      "clock_topic",
+      true
+    ],
+    [
+      "joint_states_flow",
+      false
+    ],
+    [
+      "tf_flow",
+      true
+    ],
+    [
+      "joint_names_match_manual",
+      true
+    ],
+    [
+      "trajectory_action",
+      true
+    ],
+    [
+      "twist_subscribed",
+      true
+    ],
+    [
+      "gripper_action",
+      true
+    ],
+    [
+      "wrench_flow",
+      true
+    ],
+    [
+      "camera_frame_flow",
+      true
+    ],
+    [
+      "camera_depth_intrinsics_flow",
+      true
+    ],
+    [
+      "workspace_tools_importable",
+      true
+    ],
+    [
+      "moveit_ik_answers",
+      true
+    ]
+  ],
+  "success": false,
+  "termination": "anomaly",
+  "anomaly": "RuntimeError: preflight failed: joint_states_flow",
+  "anomaly_traceback": "Traceback (most recent call last):\n  File \"/storage/home/yehe8/OpenRUA/openrua/runner/trial.py\", line 255, in run_trial\n    raise RuntimeError(f\"preflight failed: {','.join(conf['failed'])}\")\nRuntimeError: preflight failed: joint_states_flow\n",
+  "wall_seconds": 46.9,
+  "active_wall_cap_min": 240.0
+}

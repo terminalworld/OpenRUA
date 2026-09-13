@@ -1,0 +1,14 @@
+fingers before: (0.03995591714782717, -0.03993400084855629)
+gripper(0.04): pos=0.0000 reached=True stalled=False fingers=(0.03997172315045318, -0.0399572648545019)
+move: error_code=0 max joint err=0.0026
+tcp now [-0.096  -0.0207  1.1999] target [-0.096 -0.021  1.2  ] err 0.0003
+move: error_code=0 max joint err=0.0024
+tcp now [-0.096  -0.021   1.0805] target [-0.096 -0.021  1.08 ] err 0.0005
+move: error_code=0 max joint err=0.0024
+tcp now [-0.096  -0.0213  0.9904] target [-0.096 -0.021  0.99 ] err 0.0005
+gripper(0.0): pos=0.0000 reached=True stalled=False fingers=(0.02335977444981064, -0.023401994296398596)
+fingers after close: (0.02335977444981064, -0.023401994296398596) gap ~ 0.04671954889962128
+move: error_code=0 max joint err=0.0431
+tcp now [-0.0873 -0.0209  1.3026] target [-0.096 -0.021  1.3  ] err 0.0090
+fingers after lift: (0.019164880476224992, -0.01951844119081735)
+arm q: [-0.0247  0.3064 -0.0085 -1.507   0.0038  1.8539  0.1186]

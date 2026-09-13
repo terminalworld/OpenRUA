@@ -1,0 +1,9 @@
+wrench before [-2.000e-03 -6.000e-03 -5.102e+00  1.000e-03 -0.000e+00 -0.000e+00]
+move: error_code=0 max_joint_err=0.0025
+  tcp now world=[-0.0901 -0.154   0.495 ] target=[-0.0895 -0.154   0.495 ]
+wrench at 0.495 [ 0.000e+00 -9.000e-03 -5.102e+00  1.000e-03  0.000e+00 -0.000e+00]
+move: error_code=0 max_joint_err=0.0361
+  tcp now world=[-0.0885 -0.1545  0.4738] target=[-0.0895 -0.154   0.462 ]
+wrench at 0.462 [-3.738 10.512 19.326 -0.936 -0.304 -0.024]
+fingers (0.04000001212133439, -0.03999961726311445)
+/workspace/agentview.png

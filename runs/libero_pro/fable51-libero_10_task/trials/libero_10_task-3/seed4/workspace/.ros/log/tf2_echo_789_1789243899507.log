@@ -1,0 +1,3 @@
+[INFO] [1789243899.525703536] [tf2_echo]: Waiting for transform world ->  panda_link0: Invalid frame ID "world" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789243901.509373034] [tf2_echo]: Waiting for transform world ->  panda_link0: Invalid frame ID "world" passed to canTransform argument target_frame - frame does not exist
+[INFO] [1789243919.337115845] [rclcpp]: signal_handler(SIGINT/SIGTERM)

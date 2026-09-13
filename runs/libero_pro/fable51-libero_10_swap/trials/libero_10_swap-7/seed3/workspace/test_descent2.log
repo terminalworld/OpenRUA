@@ -1,0 +1,11 @@
+== up
+  move_line: error_code=0 max_joint_err=0.0482 tcp=[-0.209 -0.258  0.6  ] (target [-0.21 -0.26  0.6 ], off 2.3mm)
+  move_line: settling on final point
+  move_q: error_code=0 max_joint_err=0.0020
+True
+== descend slow 6s step 0.01
+  move_line: error_code=0 max_joint_err=0.0025 tcp=[-0.21  -0.26   0.462] (target [-0.21  -0.26   0.462], off 0.5mm)
+True
+== up 4s
+  move_line: error_code=0 max_joint_err=0.0031 tcp=[-0.21 -0.26  0.6 ] (target [-0.21 -0.26  0.6 ], off 0.4mm)
+True

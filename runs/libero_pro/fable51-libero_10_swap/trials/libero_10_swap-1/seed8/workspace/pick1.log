@@ -1,0 +1,16 @@
+base in world: [-0.51  0.    0.42]
+gripper -> 0.04: reached=True stalled=False gap=0.0800
+goto TCP world [-0.086  0.077  0.6  ]
+  traj error_code=0 max joint err=0.0019
+hand world [-0.0865  0.0772  0.7033] q [ 1.    -0.    -0.001  0.   ]  TCP world [-0.0866  0.0772  0.5999]  finger gap 0.0800
+goto TCP world [-0.086  0.077  0.52 ]
+  traj error_code=0 max joint err=0.0024
+hand world [-0.0858  0.0773  0.6237] q [ 1.     0.001 -0.    -0.   ]  TCP world [-0.0859  0.0774  0.5203]  finger gap 0.0800
+goto TCP world [-0.086  0.077  0.44 ]
+  traj error_code=0 max joint err=0.0025
+hand world [-0.0864  0.0771  0.5435] q [ 1.     0.001 -0.001 -0.   ]  TCP world [-0.0866  0.0771  0.4401]  finger gap 0.0800
+gripper -> 0.0: reached=True stalled=False gap=0.0389
+goto TCP world [-0.086  0.077  0.6  ]
+  traj error_code=0 max joint err=0.0032
+hand world [-0.0857  0.0769  0.7025] q [ 1.    -0.001 -0.     0.   ]  TCP world [-0.0857  0.0769  0.5991]  finger gap 0.0389
+PICK RESULT: gap after close 0.0389, after lift 0.0389 (HOLDING)

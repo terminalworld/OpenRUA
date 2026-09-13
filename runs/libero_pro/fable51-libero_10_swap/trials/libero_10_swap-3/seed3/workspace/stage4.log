@@ -1,0 +1,4 @@
+pick_xy [-0.2092  0.076 ] place_xy [-0.146 -0.142] GRASP_Z 0.933 RELEASE_Z 0.969
+transfer above place point [-0.146 -0.142]
+  traj done code=0 max_joint_err=0.0028
+[above drawer] TCP world = [-0.1466 -0.1404  1.1196]  fingers = [ 0.0019 -0.0022]

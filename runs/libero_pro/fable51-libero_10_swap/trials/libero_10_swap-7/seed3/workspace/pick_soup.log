@@ -1,0 +1,13 @@
+== pre-grasp above soup
+  move_q: error_code=-5 max_joint_err=0.3420
+  move_q: error_code=0 max_joint_err=0.0022
+  tcp now [-0.217 -0.135  0.62 ]
+== descend to grasp height
+  move_q: error_code=-5 max_joint_err=0.2170
+  move_q: error_code=-5 max_joint_err=0.2224
+  move_q: error_code=-5 max_joint_err=0.2191
+Traceback (most recent call last):
+  File "/workspace/pick_soup.py", line 19, in <module>
+    assert r.move_q(q_g, 3.0)
+           ^^^^^^^^^^^^^^^^^^
+AssertionError

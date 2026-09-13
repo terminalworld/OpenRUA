@@ -1,0 +1,5 @@
+goto (-0.095, -0.128, 0.6) yaw=0.00
+  move: error_code=-5 max_joint_err=0.3227
+  retrying same goal
+  move: error_code=0 max_joint_err=0.0022
+joints [-0.068, -0.086, -0.235, -2.604, -0.033, 2.519, -0.272] gap 0.08

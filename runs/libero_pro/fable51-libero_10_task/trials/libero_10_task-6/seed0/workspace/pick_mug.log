@@ -1,0 +1,13 @@
+wrench before [ 0.   -0.29 -5.09  0.04  0.    0.  ]
+1. pre-grasp high
+  move: code=-5 max_joint_err=0.1109
+  tcp now [-0.1953  0.0555  0.7201] (target [-0.196  0.056  0.72 ])
+   wrench [ 0.55 -0.69 -5.03  0.1   0.08  0.02]
+2. descend to rim height +1cm (tips just above rim)
+  move: code=0 max_joint_err=0.0026
+  tcp now [-0.196   0.0556  0.5954] (target [-0.196  0.056  0.595])
+   wrench [ 0.63 -0.63 -5.02  0.09  0.09  0.  ]
+3. descend into rim
+  move: code=0 max_joint_err=0.0368
+  tcp now [-0.1722  0.0596  0.5725] (target [-0.196  0.056  0.555])
+   wrench [ 0.68 -1.57  9.48  0.12  0.87  0.06]

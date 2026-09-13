@@ -1,0 +1,139 @@
+task:
+  benchmark: libero_pro
+  loader: openrua.robot.sim.bridge.environments.libero
+  suites:
+  - libero_goal_swap
+  - libero_goal_task
+  - libero_spatial_swap
+  - libero_spatial_task
+  - libero_object_swap
+  - libero_object_task
+  - libero_10_swap
+  - libero_10_task
+  init_states: benchmark-files
+  split: target
+  task_language: {}
+protocol:
+  trials_per_task: 10
+  max_turns: 500
+  active_wall_clock_minutes: 240.0
+  resume_on_quota_wall: true
+  max_quota_wait_minutes: 360.0
+  max_suspensions: 4
+  clock:
+    mode: paused
+  horizon: 1000000000
+  base_cmd_policy: queue
+  stall_probe_timeout_s: 600.0
+agent:
+  name: claude-code
+  model: claude-fable-5-1
+  version: 2.1.251
+  options:
+    effort: high
+machine:
+  backend:
+    kind: sim
+    ros_distro: jazzy
+    image: openrua-sim-jazzy
+    sandbox_image: openrua-sandbox-jazzy
+    gpus: false
+    simulator:
+      venv: cap-x/.venv-libero
+      engine: openrua.robot.sim.bridge.engines.robosuite
+  workspace_template: workspace
+  engine_model: Panda
+  controller: JOINT_POSITION
+  controller_kp_scale: 10.0
+  cameras:
+    resolution:
+    - 640
+    - 480
+    rate_hz: 2.0
+    render_mode: on_demand
+    record:
+    - agentview
+    - robot0_eye_in_hand
+  control:
+    gripper:
+      open_threshold_m: 0.02
+      settle_steps: 10
+    trajectory:
+      goal_tolerance_rad: 0.05
+      settle_steps: 20
+  ports:
+    twist: /servo_node/delta_twist_cmds
+    trajectory: /panda_arm_controller/follow_joint_trajectory
+    gripper: /franka_gripper/gripper_action
+    wrench: /franka_robot_state_broadcaster/external_wrench
+  joint_name_map:
+    robot0_: panda_
+    gripper0_: panda_
+  robot:
+    model: Franka Emika Panda
+    description: 7-joint robot arm with a parallel-jaw gripper
+  frames:
+    world: world
+    base: panda_link0
+    hand: panda_hand
+  arm:
+    joints: &id001
+    - panda_joint1
+    - panda_joint2
+    - panda_joint3
+    - panda_joint4
+    - panda_joint5
+    - panda_joint6
+    - panda_joint7
+    limits_rad: &id002
+    - - -2.9
+      - 2.9
+    - - -1.76
+      - 1.76
+    - - -2.9
+      - 2.9
+    - - -3.07
+      - -0.07
+    - - -2.9
+      - 2.9
+    - - -0.02
+      - 3.75
+    - - -2.9
+      - 2.9
+  gripper: &id003
+    open_m: 0.04
+    closed_m: 0.0
+    max_effort: 30.0
+    stops_at:
+    - open
+    - closed
+  hand:
+    tcp_offset_m: 0.1034
+  planning:
+    moveit: true
+    move_action: /move_action
+    ik_service: /compute_ik
+    group: panda_arm
+    planning_frame: panda_link0
+  tf:
+    hand: false
+    base_body: robot0_base
+    hand_body: robot0_right_hand
+  arms:
+  - label: ''
+    joints: *id001
+    limits_rad: *id002
+    gripper: *id003
+    ports:
+      trajectory: /panda_arm_controller/follow_joint_trajectory
+      gripper: /franka_gripper/gripper_action
+      twist: /servo_node/delta_twist_cmds
+      wrench: /franka_robot_state_broadcaster/external_wrench
+    hand_body: robot0_right_hand
+    tf_base_body: robot0_base
+    base_frame: panda_link0
+    hand_frame: panda_hand
+sandbox:
+  run_args:
+  - --userns=keep-id:uid=1000,gid=1000
+suite_overrides: {}
