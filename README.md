@@ -185,7 +185,7 @@ launch it); everything else is optional. Pass yours as a path
 
 ## Results
 
-Success rate, the benchmark's own predicate. The paper is in preparation.
+Detailed results will be released with the paper.
 
 | Benchmark | Agent | Model (reasoning effort) | Success |
 |---|---|---|---|
@@ -193,7 +193,6 @@ Success rate, the benchmark's own predicate. The paper is in preparation.
 | LIBERO-PRO | Claude Code | Claude Opus 5 (high) | 87.0% |
 | LIBERO-10 (LIBERO-PRO) | Claude Code | Claude Opus 5 (high) | 72.5% |
 | LIBERO-10 (LIBERO-PRO) | Codex | GPT-6 Astra (medium) | 62.5% |
-| RoboCasa365 | Claude Code | Claude Opus 5 (high) | in progress |
 
 ## Use your own robot
 
