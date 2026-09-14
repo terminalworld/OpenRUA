@@ -47,6 +47,7 @@ def up(
     record: str | None = None,
     record_cameras: tuple[str, ...] = (),
     record_every: int = 1,
+    record_size: str | None = None,
     mounts: tuple[str, ...] = (),
 ) -> BridgeClient:
     """docker-run the container with the bridge as its first process.
@@ -60,7 +61,8 @@ def up(
     ``record`` is a host directory for the bridge's camera frames (under
     the config directory, so the same mount carries it); ``record_cameras``
     narrows the cameras to the names given; ``record_every`` records one
-    sim step in that many.
+    sim step in that many; ``record_size`` (WxH) renders the frames at
+    that size instead of the profile's camera resolution.
     """
     # The simulator venvs' python is a symlink into uv's interpreter
     # store; mount it read-only at the same path. Derived from the
@@ -118,6 +120,7 @@ def up(
         *(["--record", str(record)] if record else []),
         *(["--record-cameras", ",".join(record_cameras)] if record_cameras else []),
         *(["--record-every", str(record_every)] if record and record_every != 1 else []),
+        *(["--record-size", record_size] if record and record_size else []),
     ]
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     proc = subprocess.Popen(
@@ -188,6 +191,8 @@ def main() -> int:
                     help="comma-separated camera names for --record")
     ap.add_argument("--record-every", type=int, default=1, metavar="N",
                     help="record one sim step in N")
+    ap.add_argument("--record-size", default=None, metavar="WxH",
+                    help="frame size for --record (default: the profile's)")
     args = ap.parse_args()
 
     proc = up(
@@ -199,7 +204,7 @@ def main() -> int:
         moveit_log=args.moveit_log, network=args.network,
         ros_domain=args.ros_domain, gpus=args.gpus, record=args.record,
         record_cameras=tuple(c for c in args.record_cameras.split(",") if c),
-        record_every=args.record_every,
+        record_every=args.record_every, record_size=args.record_size,
     )
 
     def pump_answers() -> None:

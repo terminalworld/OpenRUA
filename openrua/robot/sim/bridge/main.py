@@ -23,10 +23,11 @@ import time
 
 
 def recording(cfg: dict, directory: str | None, cameras: str | None,
-              every: int = 1):
+              every: int = 1, size: str | None = None):
     """The monitor's Recording from the arguments, or None. Camera names
     come from the flag, else the profile's ``cameras.record``; the
-    resolution is the profile's; ``every`` is the step stride."""
+    resolution is ``size`` (WxH), else the profile's; ``every`` is the
+    step stride."""
     if not directory:
         return None
     from .rpc import Recording
@@ -37,7 +38,7 @@ def recording(cfg: dict, directory: str | None, cameras: str | None,
     if not names:
         raise ValueError("--record needs camera names: pass --record-cameras "
                          "or set machine.cameras.record in the robot profile")
-    w, h = cam_cfg.get("resolution", [640, 480])
+    w, h = size.lower().split("x") if size else cam_cfg.get("resolution", [640, 480])
     return Recording(directory, [(n, int(w), int(h)) for n in names], every=every)
 
 
@@ -76,6 +77,10 @@ def main() -> None:
                     "(default: the config's machine.cameras.record)")
     ap.add_argument("--record-every", type=int, default=1, metavar="N",
                     help="record one sim step in N (default 1: every step)")
+    ap.add_argument("--record-size", default=None, metavar="WxH",
+                    help="frame size for --record (default: the config's "
+                    "machine.cameras.resolution). Rendering only: the graph's "
+                    "cameras keep their resolution")
     args = ap.parse_args()
 
     with open(args.config) as f:
@@ -107,7 +112,7 @@ def main() -> None:
     arms = cfg["machine"].get("arms") or [{}]
     monitor = Monitor(env, task_ctx, loader, engine, sim, on_reset=node.refresh,
                       record=recording(cfg, args.record, args.record_cameras,
-                                       args.record_every),
+                                       args.record_every, args.record_size),
                       hand_body=arms[0].get("hand_body", "robot0_right_hand"))
 
     stop = {"flag": False}

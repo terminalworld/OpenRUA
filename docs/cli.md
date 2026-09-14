@@ -309,7 +309,8 @@ usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
                      --task-suite TASK_SUITE [--task-ids TASK_IDS]
                      [--seeds SEEDS] [--operator {agent,none,script}]
                      [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
-                     [--record-every N] [--wall-clock-min WALL_CLOCK_MIN]
+                     [--record-every N] [--record-size WxH]
+                     [--wall-clock-min WALL_CLOCK_MIN]
                      [--ros-domain ROS_DOMAIN]
                      [--credentials-dir CREDENTIALS_DIR]
                      [--token-file TOKEN_FILE] [--runs-root RUNS_ROOT]
@@ -352,6 +353,10 @@ options:
                         in software; a demo played at --speed N shows nothing
                         of the steps between, so N here cuts the replay's time
                         by about that factor at no cost to the video
+  --record-size WxH     with --record, render the frames at this size instead
+                        of the profile's camera resolution (the graph's
+                        cameras keep theirs, so a replay is unaffected); a
+                        sharper demo costs render time per step
   --wall-clock-min WALL_CLOCK_MIN
                         override of the config's
                         protocol.active_wall_clock_minutes (the config is the

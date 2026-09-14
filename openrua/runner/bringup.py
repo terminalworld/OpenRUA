@@ -201,7 +201,7 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
              mounts: tuple[str, ...], ros_domain: int | None, robot_log: Path,
              home: Path | None = None,
              record_cameras: tuple[str, ...] | None = None,
-             record_every: int = 1
+             record_every: int = 1, record_size: str | None = None
              ) -> tuple[Path, robot.Handle, int]:
     """Write the config, start the sandbox, then the robot.
 
@@ -222,7 +222,8 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     propagates: the caller never inherits half a bring-up.
     ``record_cameras`` (camera names; empty = the profile's
     ``cameras.record``) makes the robot write its frames to
-    ``dest/frames``, one step in ``record_every``; None records nothing.
+    ``dest/frames``, one step in ``record_every``, at ``record_size``
+    (WxH; default the profile's camera resolution); None records nothing.
     """
     resolve_robot_files(cfg, dest, home)
     config_path = record.write_config(dest, cfg)
@@ -269,6 +270,7 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             record=str(dest / "frames") if record_cameras is not None else None,
             record_cameras=record_cameras or (),
             record_every=record_every,
+            record_size=record_size,
             # A venv's editable installs may point into sibling checkouts
             # (a LIBERO fork's venv uses cap-x's robosuite): the whole
             # simulators directory is visible, by its real path.

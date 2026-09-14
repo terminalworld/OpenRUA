@@ -75,6 +75,12 @@ def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> Non
         "replay's time by about that factor at no cost to the video",
     )
     ap.add_argument(
+        "--record-size", default=None, metavar="WxH",
+        help="with --record, render the frames at this size instead of the "
+        "profile's camera resolution (the graph's cameras keep theirs, so a "
+        "replay is unaffected); a sharper demo costs render time per step",
+    )
+    ap.add_argument(
         "--wall-clock-min", type=float, default=None,
         help="override of the config's protocol.active_wall_clock_minutes "
         "(the config is the default's single source)",
@@ -143,6 +149,10 @@ def run(args: argparse.Namespace) -> int:
                          "cameras.record to the profile")
     if args.record_every < 1:
         raise UsageError("--record-every must be at least 1")
+    if args.record_size is not None:
+        w, _, h = args.record_size.lower().partition("x")
+        if not (w.isdigit() and h.isdigit()):
+            raise UsageError("--record-size takes WxH, like 1280x960")
     if args.wall_clock_min is None:
         args.wall_clock_min = resolve_wall_clock_min(cfg)
     # The per-suite view, computed exactly once; everyone downstream
@@ -174,6 +184,7 @@ def run(args: argparse.Namespace) -> int:
                     account_alias=args.account_alias, script=args.script,
                     token_file=args.token_file, home=home, task=args.task,
                     record_cameras=record_cameras, record_every=args.record_every,
+                    record_size=args.record_size,
                 )
             except lock.TrialLocked as e:
                 # Not a failure of this trial: someone else is doing it.
