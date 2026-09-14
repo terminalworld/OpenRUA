@@ -14,11 +14,9 @@
 [![Forks](https://img.shields.io/github/forks/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/forks)
 [![Watchers](https://img.shields.io/github/watchers/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/watchers)
 
-<!-- hero: docs/media/hero.gif (a recorded trial rendered by `openrua demo`:
-     the commands typed on the left, the robot's cameras on the right) -->
-<img src="docs/media/hero.gif" alt="A coding agent operating a robot through its ROS 2 terminal" width="800">
+https://github.com/user-attachments/assets/4cc91a6f-86d2-4929-8b8d-44a04650db4c
 
-*Task sentence here, model here, outcome here. More in [docs/demos.md](docs/demos.md).*
+*Codex (GPT-6 Astra) on LIBERO-10, "put the yellow and white mug on the left plate and put the white mug on the right plate": the commands it typed on the left, the robot's cameras on the right, task success. More in [docs/demos.md](docs/demos.md).*
 
 </div>
 
