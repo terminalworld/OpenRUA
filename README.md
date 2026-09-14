@@ -250,21 +250,6 @@ may import whom is enforced by CI (import-linter and
 | [docs/architecture.md](docs/architecture.md) | the units and the layering contract |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | conventions for code, names and docs |
 
-## Results
-
-Claude Code with Claude Opus 5 (effort high), one trial per task and seed,
-the benchmark's own success predicate, 240 minutes of active wall clock
-per trial. Details, protocol and per-model runs in [docs/demos.md](docs/demos.md)
-and the paper.
-
-| Benchmark | Trials | Success |
-|:---|---:|---:|
-| CaP-Bench (7 tasks × 100 seeded resets) | 700 | 693 (99.0%) |
-| LIBERO-PRO (8 cells × 10 tasks × 10 initial states) | 800 | 696 (87.0%) |
-| RoboCasa365 (50 tasks × 10 seeds) | 500 | in progress |
-
-Runs dated 2026-08 to 2026-09.
-
 ## Citation
 
 The paper will be released soon; until then, cite the software:
