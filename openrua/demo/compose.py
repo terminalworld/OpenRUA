@@ -204,9 +204,12 @@ def pick_cameras(cameras: tuple[str, ...], recorded: list[str]) -> tuple[str, st
 class Terminal:
     """Scrollback of (text, color) lines, wrapped to the panel's columns."""
 
+    KEEP = 400  # lines of scrollback kept; older ones are dropped
+
     def __init__(self, cols: int, rows: int):
         self.cols, self.rows = cols, rows
         self.lines: list[tuple[str, tuple]] = []
+        self.dropped = 0  # lines trimmed off the top so far
         self.version = 0  # bumps on every change; the painter's cache key
 
     def add(self, text: str, color: tuple) -> None:
@@ -215,14 +218,19 @@ class Terminal:
                 self.lines.append((raw[: self.cols], color))
                 raw = raw[self.cols:]
             self.lines.append((raw, color))
-        self.lines = self.lines[-400:]
+        excess = len(self.lines) - self.KEEP
+        if excess > 0:
+            del self.lines[:excess]
+            self.dropped += excess
         self.version += 1
 
     def mark(self) -> int:
-        return len(self.lines)
+        """A position to reset to: absolute, so trimming the scrollback
+        in between (add drops old lines) does not move it."""
+        return self.dropped + len(self.lines)
 
     def reset(self, mark: int) -> None:
-        del self.lines[mark:]
+        del self.lines[max(0, mark - self.dropped):]
         self.version += 1
 
     def visible(self) -> list[tuple[str, tuple]]:

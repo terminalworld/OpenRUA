@@ -225,3 +225,24 @@ def test_thinning_keeps_where_every_motion_ended():
     assert steps == [0, 3, 11, 13, 15]     # 0 and 11 by stride; 3, 13 before an output; 15 last of all
     assert [e[1] for e in kept if e[1] != "frame"] == ["command", "output", "command", "output"]
     assert demo.thin(events, 1) == events   # stride 1 changes nothing
+
+
+def test_terminal_reset_survives_scrollback_trimming():
+    """Typing resets to a mark taken before the partial command; a
+    scrollback trimmed in between (long demos) must not move that mark,
+    or every partial stays on screen."""
+    from openrua.demo.compose import Terminal
+
+    term = Terminal(cols=80, rows=10)
+    for i in range(Terminal.KEEP - 2):
+        term.add(f"line {i}", (0, 0, 0))
+    mark = term.mark()
+    for k in range(1, 6):  # partial prefixes that push past KEEP
+        term.reset(mark)
+        term.add("\n".join(["$ python3 -c"] * k), (0, 0, 0))
+    term.reset(mark)
+    term.add("$ python3 -c final", (0, 0, 0))
+    texts = [t for t, _ in term.lines]
+    assert texts.count("$ python3 -c") == 0
+    assert texts[-1] == "$ python3 -c final"
+    assert texts[-2] == f"line {Terminal.KEEP - 3}"
