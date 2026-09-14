@@ -34,6 +34,7 @@ def up(backend: dict, *, name: str, config_path: str, task_suite: str,
        code_root: str | None = None, moveit_log: str | None = None,
        probe_argv: list[str] | None = None, record: str | None = None,
        record_cameras: tuple[str, ...] = (), record_every: int = 1,
+       record_size: str | None = None,
        mounts: tuple[str, ...] = ()) -> Handle:
     """Bring the robot up and return its handle (not yet waited for).
 
@@ -61,7 +62,7 @@ def up(backend: dict, *, name: str, config_path: str, task_suite: str,
             static_peer=static_peer, peers_xml=peers_xml, ros_domain=ros_domain,
             gpus=bool(backend.get("gpus", False)), resources=backend.get("resources"),
             record=record, record_cameras=record_cameras,
-            record_every=record_every, mounts=mounts)
+            record_every=record_every, record_size=record_size, mounts=mounts)
     if kind == "real":
         return real_up(name=name, launch=backend.get("launch"), log_path=log_path,
                        probe_argv=probe_argv, image=backend.get("image"))
