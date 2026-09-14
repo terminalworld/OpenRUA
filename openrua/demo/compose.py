@@ -51,6 +51,7 @@ class Style:
     typing_chars_per_s: float = 80.0
     typing_max_s: float = 2.5
     output_lines: int = 8
+    command_lines: int = 12
     hold_s: float = 0.7
     closing_s: float = 2.0
     font: str | None = None
@@ -454,7 +455,11 @@ def render(trial: Path, out: Path | None = None, *, cameras: tuple[str, ...] = (
             encoder.add(canvas.paint(frame, cursor))
 
     def type_command(text: str) -> None:
-        shown = text if len(text) <= 3 * canvas.cols else text[: 3 * canvas.cols - 3] + "..."
+        lines = text.split("\n")
+        shown = text
+        if len(lines) > style.command_lines:
+            shown = "\n".join(lines[: style.command_lines]
+                              + [f"... ({len(lines) - style.command_lines} more lines)"])
         if style.typing:
             n = max(4, int(style.fps * min(len(shown) / style.typing_chars_per_s,
                                            style.typing_max_s)))
