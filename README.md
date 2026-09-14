@@ -183,6 +183,18 @@ launch it); everything else is optional. Pass yours as a path
 `openrua agents` lists what is available and what each can do. See
 [docs/agents.md](docs/agents.md).
 
+## Results
+
+Success rate, the benchmark's own predicate. The paper is in preparation.
+
+| Benchmark | Agent | Model (reasoning effort) | Success |
+|---|---|---|---|
+| CaP-Bench | Claude Code | Claude Opus 5 (high) | 99.0% |
+| LIBERO-PRO | Claude Code | Claude Opus 5 (high) | 87.0% |
+| LIBERO-10 (LIBERO-PRO) | Claude Code | Claude Opus 5 (high) | 72.5% |
+| LIBERO-10 (LIBERO-PRO) | Codex | GPT-6 Astra (medium) | 62.5% |
+| RoboCasa365 | Claude Code | Claude Opus 5 (high) | in progress |
+
 ## Use your own robot
 
 Draft a profile from the robot's live graph, finish the `TODO` lines,
