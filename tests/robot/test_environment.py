@@ -101,9 +101,19 @@ def test_libero_family_loaders_write_the_settings_before_importing_the_fork():
     """Every loader over a LIBERO fork pre-empts the fork's import-time
     stdin prompt (the bridge's stdin is the control line: the prompt
     would eat the first request and the runner would wait forever)."""
-    import inspect
+    import ast, inspect, textwrap
     from openrua.robot.sim.bridge.environments import libero, robocerebra
     for mod in (libero, robocerebra):
-        src = inspect.getsource(mod.LOADER.create)
-        assert "write_libero_settings()" in src, mod.__name__
-        assert src.index("write_libero_settings()") < src.index("import libero"), mod.__name__
+        fn = ast.parse(textwrap.dedent(inspect.getsource(mod.LOADER.create))).body[0]
+
+        def harmless(s):          # a docstring, or an import that is not the fork
+            if isinstance(s, ast.Expr) and isinstance(s.value, ast.Constant):
+                return True
+            if isinstance(s, (ast.Import, ast.ImportFrom)):
+                names = [a.name for a in s.names] + [getattr(s, "module", None) or ""]
+                return not any("libero" in n for n in names)
+            return False
+
+        first = next(s for s in fn.body if not harmless(s))
+        assert (isinstance(first, ast.Expr) and isinstance(first.value, ast.Call)
+                and getattr(first.value.func, "id", None) == "write_libero_settings"), mod.__name__
