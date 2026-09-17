@@ -119,7 +119,7 @@ def render(install: dict, name: str, code_root: Path) -> tuple[str, dict[str, Pa
     else:
         lines.append(f"RUN {cache} uv pip install -q --python {PYTHON} --no-deps "
                      f"openrua=={__version__}")
-    lines.append(f"ENV OPENRUA_SIMULATORS={ROOT} PATH={VENV}/bin:$PATH")
+    lines.append(f"ENV PATH={VENV}/bin:$PATH")
     return "\n".join(lines) + "\n", files
 
 

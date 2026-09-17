@@ -47,14 +47,13 @@ def up(
     record_cameras: tuple[str, ...] = (),
     record_every: int = 1,
     record_size: str | None = None,
-    mounts: tuple[str, ...] = (),
 ) -> BridgeClient:
     """docker-run the container with the bridge as its first process.
     Returns the handle (not yet waited for).
 
     One host directory is mounted at its own path: the one holding the
     resolved config file (the robot's config and any file it names by
-    path), plus whatever ``mounts`` adds. ``record`` is a host directory
+    path). ``record`` is a host directory
     for the bridge's camera frames (under the config directory, so the
     same mount carries it); ``record_cameras`` narrows the cameras to
     the names given; ``record_every`` records one sim step in that many;
@@ -118,7 +117,7 @@ def up(
         [
             "docker", "run", "-i", "--rm", "--name", name,
             *net, *gpu_args, *env, *(extra_env or []),
-            *_mounts(str(config_dir), *mounts),
+            "-v", f"{config_dir}:{config_dir}",
             image, *bridge,
         ],
         stdin=subprocess.PIPE,
@@ -133,17 +132,6 @@ def up(
     return BridgeClient(proc, name)
 
 
-def _mounts(*dirs: str) -> list[str]:
-    """``-v d:d`` for each distinct directory, outermost first (docker
-    accepts nested mounts; the order only keeps the command readable)."""
-    seen: list[str] = []
-    for d in sorted(str(Path(d).resolve()) for d in dirs):
-        if d not in seen:
-            seen.append(d)
-    out: list[str] = []
-    for d in seen:
-        out += ["-v", f"{d}:{d}"]
-    return out
 
 
 def main() -> int:
