@@ -80,3 +80,18 @@ def test_libero_settings_are_written_without_importing_libero(tmp_path, monkeypa
     assert "libero" not in sys.modules
     got = yaml.safe_load(path.read_text())
     assert got["bddl_files"] == str(pkg / "libero" / "bddl_files")
+
+
+def test_libero_settings_find_a_fork_whose_top_level_is_a_namespace_package(tmp_path, monkeypatch):
+    """LIBERO-Plus and LIBERO-Mem ship libero/ without an __init__.py."""
+    import sys
+    pkg = tmp_path / "site" / "libero"
+    (pkg / "libero").mkdir(parents=True)                # no top-level __init__.py
+    (pkg / "libero" / "__init__.py").write_text("")
+    monkeypatch.syspath_prepend(str(tmp_path / "site"))
+    monkeypatch.delitem(sys.modules, "libero", raising=False)
+    monkeypatch.setenv("LIBERO_CONFIG_PATH", str(tmp_path / "cfg"))
+    from openrua.robot.sim.bridge.environments.libero import write_libero_settings
+    import yaml
+    got = yaml.safe_load(write_libero_settings().read_text())
+    assert got["bddl_files"] == str(pkg / "libero" / "bddl_files")

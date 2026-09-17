@@ -44,11 +44,18 @@ def write_libero_settings() -> Path:
     level package is located by name only (``find_spec`` of a dotted
     name imports the parent, which is the very import being pre-empted),
     and the inner package directory, where upstream's layout keeps
-    ``bddl_files``, is found on disk."""
+    ``bddl_files``, is found on disk. Some forks ship the top-level
+    ``libero/`` without an ``__init__.py`` (a namespace package: no
+    origin, only search locations); the directory is the same."""
     spec = importlib.util.find_spec("libero")
-    if spec is None or spec.origin is None:
+    if spec is None:
         raise ImportError("libero is not installed in this simulator image")
-    root = Path(spec.origin).parent
+    if spec.origin is not None:
+        root = Path(spec.origin).parent
+    elif spec.submodule_search_locations:
+        root = Path(next(iter(spec.submodule_search_locations)))
+    else:
+        raise ImportError("libero is not installed in this simulator image")
     if (root / "libero" / "__init__.py").exists():   # upstream: libero.libero
         root = root / "libero"
     settings_dir = Path(os.environ.get("LIBERO_CONFIG_PATH", "~/.libero")).expanduser()
