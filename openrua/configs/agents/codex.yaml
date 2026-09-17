@@ -35,13 +35,14 @@ version_argv: [codex, --version]
 instruction_file: AGENTS.md
 # Knobs a config may override under agent.options:
 # - effort: reasoning effort (model_reasoning_effort). Always passed, so a
-#   run never depends on the CLI's model table. medium is gpt-6-astra's own
-#   default there (the table the CLI fetches on login also says gpt-5.6-sol
-#   low, gpt-5.6-terra/luna medium, gpt-5.5 medium, gpt-5.3-codex-spark
-#   high); another model's default effort is a config override.
+#   run never depends on the CLI's model table, whose per-model defaults
+#   differ (gpt-6-astra medium, gpt-5.6-sol low, gpt-5.5 medium,
+#   gpt-5.3-codex-spark high). high, the same level the claude-code manifest
+#   pins, so runs across agents share one setting; a model's own default
+#   is a config override.
 # - web_search: disabled | cached | live; disabled because server-side
 #   search cannot be routed through the proxy
 default_options:
-  effort: medium
+  effort: high
   web_search: disabled
 entry_point: codex
