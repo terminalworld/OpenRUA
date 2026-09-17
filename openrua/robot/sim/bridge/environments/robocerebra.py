@@ -18,6 +18,8 @@ import os
 import re
 from pathlib import Path
 
+from .libero import write_libero_settings
+
 
 def _bench_root(cfg: dict) -> Path:
     spec = cfg.get("task", {}).get("dataset_root") or os.environ.get("ROBOCEREBRA_BENCH")
@@ -59,6 +61,9 @@ class RoboCerebraLoader:
                 for i, case in enumerate(_cases(_bench_root(cfg), task_suite))]
 
     def create(self, cfg: dict, task_suite: str, task_id: int):
+        # Before anything imports the fork: its first import asks on
+        # stdin where to keep datasets, and stdin is the control line.
+        write_libero_settings()
         import h5py
         import libero.libero.envs  # noqa: F401; registers TASK_MAPPING
         from libero.libero.envs import OffScreenRenderEnv

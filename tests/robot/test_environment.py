@@ -95,3 +95,15 @@ def test_libero_settings_find_a_fork_whose_top_level_is_a_namespace_package(tmp_
     import yaml
     got = yaml.safe_load(write_libero_settings().read_text())
     assert got["bddl_files"] == str(pkg / "libero" / "bddl_files")
+
+
+def test_libero_family_loaders_write_the_settings_before_importing_the_fork():
+    """Every loader over a LIBERO fork pre-empts the fork's import-time
+    stdin prompt (the bridge's stdin is the control line: the prompt
+    would eat the first request and the runner would wait forever)."""
+    import inspect
+    from openrua.robot.sim.bridge.environments import libero, robocerebra
+    for mod in (libero, robocerebra):
+        src = inspect.getsource(mod.LOADER.create)
+        assert "write_libero_settings()" in src, mod.__name__
+        assert src.index("write_libero_settings()") < src.index("import libero"), mod.__name__
