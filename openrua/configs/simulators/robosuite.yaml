@@ -7,10 +7,9 @@ engine: robosuite 1.5 on MuJoCo
 entry_point: robosuite       # bridge engine: joint addressing, poses, cameras, actions over a robosuite env
 
 install:                     # the stock engine: robosuite 1.5.1 in the CaP-X checkout
-  venv: cap-x/.venv-capbench # relative to ~/.openrua/simulators/; py3.10 == Humble
   ros_distro: humble         # names the robot and sandbox images (openrua-sim-humble, openrua-sandbox-humble)
   python: "3.10"
-  checkouts:                 # openrua install --sim robosuite clones these at the pinned commits
+  checkouts:                 # cloned into the image at the pinned commits (openrua build --sim robosuite)
     - path: cap-x
       repo: https://github.com/capgym/cap-x.git
       commit: 53e9966d7a8e2fa7494676772bccc35280f5c0ed

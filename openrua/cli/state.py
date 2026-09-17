@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 from pathlib import Path
 
 import yaml
@@ -18,11 +19,11 @@ def container_names(name: str) -> tuple[str, str]:
 
 
 def path(name: str, home: Path) -> Path:
-    return paths.state_dir(home) / f"{name}.yaml"
+    return paths.sandbox_dir(name, home) / "state.yaml"
 
 
 def save(name: str, home: Path, **facts) -> None:
-    paths.state_dir(home).mkdir(parents=True, exist_ok=True)
+    paths.sandbox_dir(name, home).mkdir(parents=True, exist_ok=True)
     path(name, home).write_text(yaml.safe_dump(facts, sort_keys=False))
 
 
@@ -35,4 +36,6 @@ def load(name: str, home: Path) -> dict:
 
 
 def forget(name: str, home: Path) -> None:
-    path(name, home).unlink(missing_ok=True)
+    """The sandbox is gone: so is everything it left (workspace,
+    profile copy, state)."""
+    shutil.rmtree(paths.sandbox_dir(name, home), ignore_errors=True)

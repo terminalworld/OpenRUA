@@ -24,7 +24,7 @@ from pydantic import BaseModel, ValidationError
 
 from openrua.config import paths
 from openrua.config.schema import (Benchmark, Machine, ResolvedConfig, RobotInstance,
-                                   RobotType, SimulatorProfile, UserConfig)
+                                   RobotType, SimulatorProfile, UserConfig, sim_image)
 from openrua.errors import ConfigError, UsageError
 
 
@@ -166,10 +166,13 @@ def load_benchmark(bench: str) -> tuple[Path, dict]:
 
 def _absolutize_install(install: dict, declared_in: Path) -> None:
     """Files an install section names relative to its own yaml
-    (``requirements``, a checkout's ``patch``) become absolute, and
-    ``{here}`` in ``shell`` becomes that directory, so the section can
-    be merged with another file's and rendered anywhere."""
-    here = Path(declared_in).expanduser().resolve().parent
+    (``requirements``, a checkout's ``patch``) become absolute, and a
+    ``shell`` gets ``here``: the declaration's own directory of files,
+    ``<name>/`` next to ``<name>.yaml`` (the renderer copies it into the
+    image for ``{here}``), so the section can be merged with another
+    file's and rendered anywhere."""
+    declared_in = Path(declared_in).expanduser().resolve()
+    here = declared_in.parent
 
     def absolute(rel: str) -> str:
         q = Path(rel).expanduser()
@@ -181,7 +184,7 @@ def _absolutize_install(install: dict, declared_in: Path) -> None:
         if c.get("patch"):
             c["patch"] = absolute(c["patch"])
     if install.get("shell"):
-        install["shell"] = install["shell"].replace("{here}", str(here))
+        install["here"] = str(here / declared_in.stem)
 
 
 def install_for(sim: str, bench: str | None = None) -> dict:
@@ -190,30 +193,43 @@ def install_for(sim: str, bench: str | None = None) -> dict:
     install = copy.deepcopy(load_simulator(sim)["install"])
     if bench:
         _, b = load_benchmark(bench)
-        if b.get("install"):
-            install.update({k: v for k, v in b["install"].items() if v is not None})
+        install.update(_written(b.get("install")))
     return install
 
 
+def _written(overrides: dict | None) -> dict:
+    """The keys a benchmark's install section actually writes."""
+    return {k: v for k, v in (overrides or {}).items() if v is not None}
+
+
+def image_owner(sim: str, bench: str | None = None) -> str:
+    """Whose image a composition runs in: the benchmark's when its
+    install writes anything of its own, else the simulator's. The name
+    is the declaration's (a bundled name, or a file's stem)."""
+    if bench:
+        p, b = load_benchmark(bench)
+        if _written(b.get("install")):
+            return p.stem
+    return paths.find("simulators", sim).stem
+
+
 def assemble(robot_type: dict, embodiments: list[dict], install: dict,
-             cameras: dict | None, source: str, engine: str | None = None) -> dict:
+             cameras: dict | None, source: str, engine: str | None = None,
+             image: str = "") -> dict:
     """robot type + embodiments (simulator's, then the benchmark's) +
-    install + the resolved engine -> the ``machine:`` dict (Machine,
-    validated). Later embodiments write over earlier ones, key by key."""
+    install + the resolved engine + the image -> the ``machine:`` dict
+    (Machine, validated). Later embodiments write over earlier ones,
+    key by key."""
     m = copy.deepcopy(robot_type)
     for e in embodiments:
         _merge(m, e)
     if cameras is not None:
         m["cameras"] = copy.deepcopy(cameras)
     backend = {"kind": "sim", "ros_distro": install["ros_distro"],
-               "gpus": install.get("gpus", False),
-               "simulator": {"venv": install["venv"], "engine": engine}}
-    for k in ("container",):
-        if install.get(k):
-            backend["simulator"][k] = install[k]
-    for k in ("image", "sandbox_image", "resources"):
-        if install.get(k) is not None:
-            backend[k] = install[k]
+               "gpus": install.get("gpus", False), "image": image,
+               "simulator": {"engine": engine}}
+    if install.get("resources") is not None:
+        backend["resources"] = install["resources"]
     m["backend"] = backend
     return dump(validate(Machine, m, source))
 
@@ -312,8 +328,7 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                 raise ConfigError(f"simulator {sim} does not embody {robot} (it has: "
                                   f"{', '.join(sorted(s['robots'])) or 'none'})", hint=hint)
             install = copy.deepcopy(s["install"])
-            if b and b.get("install"):
-                install.update({k: v for k, v in b["install"].items() if v is not None})
+            install.update(_written((b or {}).get("install")))
             composed_install = install
             cameras = ((b or {}).get("scenes", {}).get("cameras")
                        or (s.get("native") or {}).get("cameras"))
@@ -323,7 +338,8 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
             machine = assemble(r, embodiments, install, cameras,
                                f"{robot} on {sim}" + (f" for {bench}" if bench else ""),
                                engine=paths.entry_point("simulators", s["entry_point"],
-                                                        paths.find("simulators", sim)))
+                                                        paths.find("simulators", sim)),
+                               image=sim_image(image_owner(sim, bench)))
             simulator = sim
     if b is not None:
         cfg = {k: copy.deepcopy(v) for k, v in b.items()

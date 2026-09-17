@@ -148,25 +148,17 @@ def test_provenance_pins_the_whole_chain(tmp_path):
     code_root = Path(__file__).resolve().parents[2]
     cfg_path = tmp_path / "config.yaml"
     cfg_path.write_text("machine: {}\n")
-    # a simulator is a git checkout holding the simulator venv; stand one up
-    simulator = tmp_path / "simulators" / "cap-x"
-    (simulator / ".venv-libero").mkdir(parents=True)
-    import subprocess
-    subprocess.run(["git", "init", "-q", str(simulator)], check=True)
-    subprocess.run(["git", "-C", str(simulator), "-c", "user.name=t",
-                    "-c", "user.email=t@t", "commit", "-q", "--allow-empty",
-                    "-m", "x"], check=True)
     cfg = {"machine": {"backend": {
         "kind": "sim",
         "image": "openrua-definitely-missing",
-        "simulator": {"venv": str(simulator / ".venv-libero")},
+        "simulator": {"engine": "x"},
         "gpus": False}}}
     prov = provenance(cfg_path, cfg, _Args(), _Agent(), "tplhash",
-                      "prompt text", code_root, proxy_image="openrua-proxy",
-                      simulator_venv=simulator / ".venv-libero")
+                      "prompt text", code_root, proxy_image="openrua-proxy")
     assert prov["openrua_version"]
     assert len(prov["openrua_commit"]) == 40
-    assert len(prov["simulator_commit"]) == 40  # the cap-x checkout is git
+    # the simulator content is in the robot image: name recorded, digest probed
+    assert prov["sim_image"] == "openrua-definitely-missing"
     assert prov["host"]["hostname"] and prov["host"]["cpu_count"] >= 1
     assert prov["ros_domain"] == 44 and prov["gpu_render"] is False
     assert prov["agent_cli"] == {"name": "stub", "version_pin": None}

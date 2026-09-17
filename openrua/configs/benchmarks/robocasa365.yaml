@@ -113,7 +113,6 @@ robot: panda-omron        # configs/robots/panda-omron.yaml
 simulator: robosuite      # configs/simulators/robosuite.yaml; RoboCasa builds on it
 
 install:                  # RoboCasa's world: robosuite 1.5.2 plus the kitchens
-  venv: robocasa365/.venv-robocasa   # a venv of its own
   ros_distro: humble
   python: "3.10"
   checkouts:

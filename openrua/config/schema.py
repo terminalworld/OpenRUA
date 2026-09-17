@@ -11,13 +11,13 @@ direction only, benchmark -> simulator -> robot:
   carrying its ``real`` backend (and optionally ``type:`` naming the
   robot type it is an instance of);
 - a simulator (``simulators/<engine>.yaml``): the engine, its install
-  (venv, ROS distro), the native scene ``openrua run`` loads when no
+  (what its image is made of, and the ROS distro), the native scene ``openrua run`` loads when no
   benchmark is named, and ``robots:``, how it drives each robot type it
   embodies (controller, gains, joint-name map);
 - a benchmark (``benchmarks/<name>.yaml``): ``task:``, ``protocol:``,
   ``agent:``, which ``robot:`` and ``simulator:`` it runs on, and what
-  it brings along: ``install:`` (its own venv and distro over the
-  simulator's) and ``scenes:`` (scene cameras, and robot embodiments
+  it brings along: ``install:`` (its own image contents and distro over
+  the simulator's) and ``scenes:`` (scene cameras, and robot embodiments
   the benchmark's own assets add or adjust);
 - the user's ``~/.openrua/config.yaml``: defaults for the ``agent:``
   section and a default robot, applied under whatever the benchmark
@@ -142,22 +142,20 @@ class AgentFacts(Strict):
 # --------------------------------------------------------------- machine
 
 class Simulator(Strict):
-    venv: str = Field(description="simulator venv: absolute, ~, or relative to "
-                      "~/.openrua/simulators/")
     engine: str | None = Field(default=None, description="the bridge engine module "
                                "(resolved from the simulator's entry_point: a module "
                                "path, or an absolute .py file copied next to the config)")
-    container: str | None = Field(default=None, description="which sim image family "
-                                  "(sim-jazzy | sim-humble); documentation")
 
 
 Distro = Literal["jazzy", "humble"]
 
 
-def sim_image(distro: str) -> str:
-    """The simulated robot image for a ROS 2 distro; openrua build robot
-    tags it so."""
-    return f"openrua-sim-{distro}"
+def sim_image(name: str) -> str:
+    """The simulated robot image of a simulator or benchmark declaration:
+    ``openrua build`` renders the declaration's ``install:`` into it and
+    tags it so. A benchmark that writes no install key of its own runs
+    in its simulator's image."""
+    return f"openrua-sim-{name}"
 
 
 def sandbox_image(distro: str) -> str:
@@ -168,22 +166,22 @@ def sandbox_image(distro: str) -> str:
 
 
 class SimBackend(Strict):
-    """A simulated robot: a container running the bridge over a simulator venv."""
+    """A simulated robot: a container running the bridge in the image
+    its declaration was built into."""
     kind: Literal["sim"] = Field(description="a simulated robot")
     ros_distro: Distro = Field(default="jazzy", description="the ROS 2 distro the robot "
-                               "runs; the robot and sandbox images are named after it")
-    image: str | None = Field(default=None, description="simulated robot image; default: "
-                              "openrua-sim-<ros_distro>")
+                               "runs; the sandbox image is named after it")
+    image: str = Field(description="the simulated robot image, openrua-sim-<name> for "
+                       "the simulator or benchmark whose install: it was built from")
     sandbox_image: str | None = Field(default=None, description="agent terminal image; "
                                       "default: openrua-sandbox-<ros_distro>")
     gpus: bool = Field(default=False, description="render on the GPU (needs nvidia toolkit)")
     resources: dict[str, Any] | None = Field(
         default=None, description="render_threads: int | off | auto")
-    simulator: Simulator = Field(description="the simulator venv the bridge runs in")
+    simulator: Simulator = Field(description="the bridge engine")
 
     @model_validator(mode="after")
     def _derive_images(self):
-        self.image = self.image or sim_image(self.ros_distro)
         self.sandbox_image = self.sandbox_image or sandbox_image(self.ros_distro)
         return self
 
@@ -454,8 +452,9 @@ class Embodiment(Strict):
 
 
 class Checkout(Strict):
-    """One repository ``openrua install`` clones at a pinned commit."""
-    path: str = Field(description="where it lands, relative to ~/.openrua/simulators/")
+    """One repository the image clones at a pinned commit."""
+    path: str = Field(description="where it lands, relative to the image's simulators "
+                      "directory ({root} in shell)")
     repo: str = Field(description="git URL")
     commit: str = Field(description="the commit checked out (a full hash)")
     submodules: list[str] = Field(default_factory=list, description="submodule paths to "
@@ -465,33 +464,27 @@ class Checkout(Strict):
 
 
 class Install(Strict):
-    """A simulator install: the venv the bridge runs in, the ROS distro
-    that goes with its Python, and the recipe ``openrua install`` renders
-    to a script and runs to build it."""
-    venv: str = Field(description="simulator venv: absolute, ~, or relative to "
-                      "~/.openrua/simulators/")
+    """What a simulator image is made of: the ROS distro (which base
+    image), the Python that goes with it, and the recipe ``openrua
+    build`` renders into the image's layers."""
     ros_distro: Distro = Field(default="jazzy", description="the ROS 2 distro the robot "
-                               "runs; the robot and sandbox images are named after it")
-    python: str | None = Field(default=None, description="the venv's Python (3.12 goes "
-                               "with Jazzy, 3.10 with Humble); required to install")
+                               "runs; the base image and the sandbox image are named "
+                               "after it")
+    python: str | None = Field(default=None, description="the image's Python (3.12 goes "
+                               "with Jazzy, 3.10 with Humble); required to build")
     checkouts: list[Checkout] = Field(default_factory=list, description="repositories "
                                       "cloned at pinned commits")
     requirements: str | None = Field(default=None, description="a pip requirements lock "
-                                     "installed into the venv, relative to the file "
-                                     "naming it")
+                                     "installed into the image's venv, relative to the "
+                                     "file naming it")
     editable: list[str] = Field(default_factory=list, description="checkouts installed "
                                 "editable with --no-deps (the lock has their "
-                                "dependencies), relative to ~/.openrua/simulators/")
-    shell: str | None = Field(default=None, description="shell run last, in the venv, "
-                              "for what the fields above cannot say (asset downloads); "
-                              "{root} = ~/.openrua/simulators, {venv} = the venv, "
-                              "{here} = the directory of the file naming it")
-    container: str | None = Field(default=None, description="which sim image family "
-                                  "(sim-jazzy | sim-humble); documentation")
-    image: str | None = Field(default=None, description="simulated robot image; default: "
-                              "openrua-sim-<ros_distro>")
-    sandbox_image: str | None = Field(default=None, description="agent terminal image; "
-                                      "default: openrua-sandbox-<ros_distro>")
+                                "dependencies), relative to the simulators directory")
+    shell: str | None = Field(default=None, description="shell run last, as an image "
+                              "layer, for what the fields above cannot say (asset "
+                              "downloads); {root} = the simulators directory, {venv} = "
+                              "the venv, {here} = the declaration's own files, the "
+                              "<name>/ directory next to <name>.yaml, copied into the image")
     gpus: bool = Field(default=False, description="render on the GPU (needs nvidia toolkit)")
     resources: dict[str, Any] | None = Field(
         default=None, description="render_threads: int | off | auto")
@@ -501,16 +494,12 @@ class InstallOverrides(Strict):
     """A benchmark's install section: same keys as Install, none required;
     only what is written replaces the simulator's, key by key. A
     benchmark with a venv of its own writes the whole recipe."""
-    venv: str | None = Field(default=None, description="see Install")
     ros_distro: Distro | None = Field(default=None, description="see Install")
     python: str | None = Field(default=None, description="see Install")
     checkouts: list[Checkout] | None = Field(default=None, description="see Install")
     requirements: str | None = Field(default=None, description="see Install")
     editable: list[str] | None = Field(default=None, description="see Install")
     shell: str | None = Field(default=None, description="see Install")
-    container: str | None = Field(default=None, description="see Install")
-    image: str | None = Field(default=None, description="see Install")
-    sandbox_image: str | None = Field(default=None, description="see Install")
     gpus: bool | None = Field(default=None, description="see Install")
     resources: dict[str, Any] | None = Field(default=None, description="see Install")
 

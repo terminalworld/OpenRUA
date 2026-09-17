@@ -7,7 +7,6 @@ engine: VLABench on dm_control (MuJoCo 3.2)
 entry_point: vlabench        # bridge engine over a VLABench dm_control env; MuJoCo reads shared with robosuite's
 
 install:
-  venv: vlabench/.venv       # relative to ~/.openrua/simulators/; py3.10 == Humble
   ros_distro: humble
   python: "3.10"
   checkouts:

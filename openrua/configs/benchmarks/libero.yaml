@@ -32,7 +32,6 @@ robot: panda              # configs/robots/panda.yaml
 simulator: robosuite      # configs/simulators/robosuite.yaml; LIBERO ships its own fork of it
 
 install:                  # the same install as libero_pro: one venv, one lock
-  venv: cap-x/.venv-libero
   ros_distro: jazzy
   python: "3.12"
   checkouts:

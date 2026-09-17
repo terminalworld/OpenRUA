@@ -192,7 +192,6 @@ def write_ops(trial_dir: Path, ops: Iterable[dict]) -> Path:
 
 def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
                prompt: str, code_root: Path, proxy_image: str,
-               simulator_venv: Path | None = None,
                resume_prompt: str | None = None) -> dict:
     """The reproduction record. ``prompt`` is the same string the launcher
     formats (one source: the runner passes agents.PROMPT); ``resume_prompt``
@@ -209,15 +208,12 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
 
     # The images this trial actually ran in: the agent's toolchain
     # (sandbox) and the proxy are experiment conditions as much as the
-    # robot image.
+    # robot image, and the robot image holds the benchmark content
+    # itself (tasks, predicates, the vendored forks at their pinned
+    # commits): its digest pins that whole chain.
     backend = cfg.get("machine", {}).get("backend", {})
     image = backend.get("image") or ""
     sandbox_image = backend.get("sandbox_image") or ""
-    # The benchmark content itself (tasks, predicates, the vendored
-    # forks) lives in the simulator checkout; its commit is as much a
-    # link in the reproduction chain as our own. The checkout root is
-    # the directory holding the simulator venv (resolved by the caller).
-    simulator = str(simulator_venv.parent) if simulator_venv else ""
     return {
         "created_utc": datetime.now(timezone.utc).isoformat(),
         "openrua_version": openrua_version,
@@ -226,16 +222,11 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
         # is the pin.
         "openrua_commit": sh(["git", "-C", str(code_root), "rev-parse", "HEAD"]),
         "git_dirty": bool(sh(["git", "-C", str(code_root), "status", "--porcelain"])),
-        "simulator_commit": (
-            sh(["git", "-C", simulator, "rev-parse", "HEAD"])
-            if simulator else "unavailable"),
-        "simulator_dirty": bool(
-            sh(["git", "-C", simulator, "status", "--porcelain"])
-            if simulator else False),
         # Software rendering runs at host speed (llvmpipe scales with
         # cores); where a trial ran is a condition.
         "host": {"hostname": platform.node(), "cpu_count": os.cpu_count()},
         "ros_domain": getattr(args, "ros_domain", None),
+        "sim_image": image,
         "sim_image_digest": sh(
             ["docker", "image", "inspect", "--format", "{{.Id}}", image]
         ),
@@ -352,9 +343,9 @@ def write_run_summary(run_dir: Path) -> Path | None:
              f"{model}, operator {prov.get('operator', '?')}",
              f"- code: openrua {prov.get('openrua_version', '?')} @ "
              f"{str(prov.get('openrua_commit', ''))[:12]}"
-             f"{' (dirty)' if prov.get('git_dirty') else ''}; "
-             f"simulator @ {str(prov.get('simulator_commit', ''))[:12]}",
-             f"- images: robot {str(prov.get('sim_image_digest', ''))[:19]}, sandbox "
+             f"{' (dirty)' if prov.get('git_dirty') else ''}",
+             f"- images: robot {prov.get('sim_image', '?')} "
+             f"{str(prov.get('sim_image_digest', ''))[:19]}, sandbox "
              f"{str(prov.get('sandbox_image_digest', ''))[:19]}, proxy "
              f"{str(prov.get('proxy_image_digest', ''))[:19]}",
              f"- trials: {len(rows)} recorded; "

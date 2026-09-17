@@ -10,7 +10,9 @@ when the parent exits the bridge sees EOF and shuts itself down.
 
 Consumes data only: ``config_path`` is the trial's resolved config file
 and ``peers_xml`` the rendered DDS peers profile, both computed once by
-the runner and handed in.
+the runner and handed in. The simulator, its venv and this package are
+inside the image (openrua build); the only host directory the container
+sees is the one holding the config file.
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ import threading
 from pathlib import Path
 
 from openrua.robot.sim.client import BridgeClient
+from openrua.robot.sim.install import PYTHON
 
 
 def up(
@@ -31,10 +34,6 @@ def up(
     config_path: str,
     task_suite: str,
     task_id: int,
-    simulator: str,
-    code_root: str,
-    venv: str | None = None,
-    uv_dir: str | None = None,
     log_path: Path | None = None,
     moveit_log: str | None = None,
     network: str | None = None,
@@ -53,22 +52,15 @@ def up(
     """docker-run the container with the bridge as its first process.
     Returns the handle (not yet waited for).
 
-    Four host directories are mounted at their own paths: the openrua
-    code (``code_root``, so the simulator venv imports the same package),
-    uv's interpreter store (the venv python is a symlink into it), the
-    simulator checkout (venv + simulator), and the directory holding the
-    resolved config file (the robot's config and any file it names by path).
-    ``record`` is a host directory for the bridge's camera frames (under
-    the config directory, so the same mount carries it); ``record_cameras``
-    narrows the cameras to the names given; ``record_every`` records one
-    sim step in that many; ``record_size`` (WxH) renders the frames at
-    that size instead of the profile's camera resolution.
+    One host directory is mounted at its own path: the one holding the
+    resolved config file (the robot's config and any file it names by
+    path), plus whatever ``mounts`` adds. ``record`` is a host directory
+    for the bridge's camera frames (under the config directory, so the
+    same mount carries it); ``record_cameras`` narrows the cameras to
+    the names given; ``record_every`` records one sim step in that many;
+    ``record_size`` (WxH) renders the frames at that size instead of the
+    profile's camera resolution.
     """
-    # The simulator venvs' python is a symlink into uv's interpreter
-    # store; mount it read-only at the same path. Derived from the
-    # current user's home, never hardcoded (runs move across machines
-    # and accounts).
-    uv_dir = uv_dir or str(Path("~/.local/share/uv").expanduser())
     if static_peer and not peers_xml:
         raise ValueError(
             "static_peer needs the rendered peers profile too; the "
@@ -107,13 +99,12 @@ def up(
         rt = max(4, min(16, (os.cpu_count() or 8) // 4))
     if rt != "off":
         env += ["-e", f"LP_NUM_THREADS={int(rt)}"]
-    venv = venv or f"{simulator}/.venv-libero"
     # The image's entrypoint (ros_entrypoint.sh, from the ros base
     # image) sources ROS and execs this command. The bridge writes its
     # own simulator settings; nothing about the simulator's layout
     # lives here.
     bridge = [
-        f"{venv}/bin/python", "-m", "openrua.robot.sim.bridge.main",
+        PYTHON, "-m", "openrua.robot.sim.bridge.main",
         "--config", str(config_path),
         "--task-suite", task_suite, "--task-id", str(task_id),
         *(["--moveit-log", moveit_log] if moveit_log else []),
@@ -127,8 +118,7 @@ def up(
         [
             "docker", "run", "-i", "--rm", "--name", name,
             *net, *gpu_args, *env, *(extra_env or []),
-            *_mounts(code_root, simulator, str(config_dir), *mounts),
-            "-v", f"{uv_dir}:{uv_dir}:ro",
+            *_mounts(str(config_dir), *mounts),
             image, *bridge,
         ],
         stdin=subprocess.PIPE,
@@ -172,13 +162,6 @@ def main() -> int:
                     help="resolved config yaml (the trial's suite view)")
     ap.add_argument("--task-suite", required=True)
     ap.add_argument("--task-id", type=int, required=True)
-    ap.add_argument("--simulator", required=True,
-                    help="simulator checkout root (the dir holding .venv-*)")
-    ap.add_argument("--venv", default=None,
-                    help="simulator venv path (default <simulator>/.venv-libero)")
-    ap.add_argument("--code-root", required=True,
-                    help="directory holding the openrua package (mounted "
-                    "so the simulator venv imports the same code)")
     ap.add_argument("--log", default=None,
                     help="bridge.log path (default: stderr discarded)")
     ap.add_argument("--moveit-log", default=None)
@@ -198,8 +181,6 @@ def main() -> int:
     proc = up(
         name=args.name, image=args.image, config_path=args.config,
         task_suite=args.task_suite, task_id=args.task_id,
-        simulator=args.simulator, venv=args.venv,
-        code_root=args.code_root,
         log_path=Path(args.log) if args.log else None,
         moveit_log=args.moveit_log, network=args.network,
         ros_domain=args.ros_domain, gpus=args.gpus, record=args.record,

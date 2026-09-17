@@ -1,18 +1,17 @@
-# Sim container for the CaP-Bench leg (py3.10 == Humble native; the cap-x
-# robosuite stack for this leg lives in its OWN py3.10 venv, .venv-capbench,
-# volume-mounted like the simulator; NEVER the pilot's .venv-libero).
-# Hosts: bridge process (robosuite env + rclpy node), MoveIt (graph-side),
-# original predicates (in-process; ground truth never reaches the graph).
+# The ROS 2 Humble base of every py3.10 simulator image (robosuite 1.5
+# for CaP-Bench and RoboCasa, CALVIN, VLABench). Mirror of
+# Dockerfile.jazzy with Humble package names; see that file.
 FROM ros:humble
 
-# Mirror of sim-jazzy.Dockerfile (P0/P1-verified package set), Humble names.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.10-venv \
+    python3.10-venv python3.10-dev build-essential git unzip curl ca-certificates \
     libegl1 libgl1 libgles2 libglvnd0 libglx0 \
     libgl1-mesa-dri libvulkan1 mesa-vulkan-drivers libglx-mesa0 libegl-mesa0 \
     ros-humble-control-msgs ros-humble-tf2-ros-py \
     ros-humble-moveit ros-humble-moveit-resources-panda-moveit-config \
     ros-humble-robot-state-publisher \
     && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:0.11.30 /uv /usr/local/bin/uv
 
 ENV MUJOCO_GL=egl PYOPENGL_PLATFORM=egl

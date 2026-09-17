@@ -28,24 +28,27 @@ def test_one_task_per_suite_and_the_seed_meaning(tmp_path, capsys, monkeypatch):
     assert "100 seeds per task" in out and "only numbers the episode" in out
 
 
-def test_sentences_from_the_loader_are_asked_in_the_simulator_venv(tmp_path, capsys, monkeypatch):
+def test_sentences_from_the_loader_are_asked_in_the_simulator_image(tmp_path, capsys, monkeypatch):
     asked = {}
 
     def fake_catalog(cfg, home):
-        asked["venv"] = cfg["machine"]["backend"]["simulator"]["venv"]
+        asked["image"] = cfg["machine"]["backend"]["image"]
         return {s: [{"task_id": i, "language": f"{s} #{i}"} for i in range(3)]
                 for s in cfg["task"]["suites"]}, ""
 
     monkeypatch.setattr(listing, "benchmark_catalog", fake_catalog)
     assert _run(["--home", str(tmp_path), "benchmarks", "libero_pro", "--json"]) == 0
     info = json.loads(capsys.readouterr().out)
-    assert asked["venv"] == "cap-x/.venv-libero"
+    assert asked["image"] == "openrua-sim-libero_pro"
     assert info["init_states"] == "benchmark-files" and info["trials_per_task"] == 10
     assert info["suites"]["libero_goal_task"][2] == {"task_id": 2, "language": "libero_goal_task #2"}
 
 
-def test_without_the_install_the_suites_still_list_and_the_note_says_how(tmp_path, capsys):
+def test_without_the_image_the_suites_still_list_and_the_note_says_how(tmp_path, capsys, monkeypatch):
+    import subprocess
+    monkeypatch.setattr(listing.subprocess, "run",
+                        lambda *a, **k: subprocess.CompletedProcess(a, 1, "", ""))
     assert _run(["--home", str(tmp_path), "benchmarks", "libero_pro"]) == 0
     out = capsys.readouterr().out
     assert "libero_goal_task\n" in out
-    assert "openrua install --bench libero_pro" in out
+    assert "openrua build --bench libero_pro" in out

@@ -228,7 +228,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     # A token file is the sandbox's whole auth story, so the login
     # profile need not carry credentials then (see agents.prepare_profile).
     cfg_dir, creds_file = agents.prepare_profile(
-        creds_home, agent, require_credentials=token_file is None)
+        creds_home, agent, paths.sandbox_dir(stem, home) / "profile",
+        require_credentials=token_file is None)
     secrets = record.secret_strings(creds_home)  # pre-trial token values
     if token_file:
         # The token never reaches the record: it is as much a secret as
@@ -306,7 +307,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         try:
             record.finalize_trial(trial_dir, agent, secrets, profile_dir=cfg_dir)
         finally:
-            shutil.rmtree(cfg_dir, ignore_errors=True)
+            shutil.rmtree(paths.sandbox_dir(stem, home), ignore_errors=True)
         held.release()
     # wall_seconds spans the whole harness (boot, preflight, operator,
     # teardown). The wall cap is enforced only on the operator and its

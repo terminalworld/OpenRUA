@@ -25,9 +25,6 @@ def test_up_dispatches_on_backend_kind(tmp_path):
     with pytest.raises(ConfigError, match="kind"):
         robot.up({"kind": "hover"}, name="x", config_path="c.yaml", task_suite="s",
                  task_id=0, log_path=tmp_path / "log")
-    with pytest.raises(ValueError, match="venv"):
-        robot.up({"kind": "sim"}, name="x", config_path="c.yaml", task_suite="s",
-                 task_id=0, log_path=tmp_path / "log")
     # a real robot with nothing to launch and nothing to probe is ready at once
     h = robot.up({"kind": "real", "discovery": {"network": "host"}}, name="r",
                  config_path="c.yaml", task_suite="s", task_id=0, log_path=tmp_path / "log")
@@ -52,7 +49,7 @@ def test_sim_up_requires_rendered_peers_with_static_peer():
 
     with pytest.raises(ValueError, match="peers_xml"):
         up(name="x", image="img", config_path="c.yaml", task_suite="s",
-           task_id=0, simulator="/s", code_root="/r", static_peer="peer")
+           task_id=0, static_peer="peer")
 
 
 def test_real_launch_runs_in_the_driver_image_when_one_is_named():

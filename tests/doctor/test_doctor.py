@@ -25,17 +25,9 @@ def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
     want_pi = hashlib.sha256(a.install.encode()).hexdigest()
     monkeypatch.setattr(doctor.checks, "docker_inspect", _fake_docker({
         "openrua-proxy": {"openrua.whitelist_sha256": want_wl},
-        "openrua-sim-jazzy": {},
+        "openrua-sim-libero_pro": {},
         "openrua-sandbox-jazzy": {"openrua.preinstall_sha256": want_pi}}))
     monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
-    venv = tmp_path / "simulators" / "cap-x" / ".venv-libero"
-    (venv / "bin").mkdir(parents=True)
-    (venv / "bin" / "python").write_text("")
-    from openrua import config
-    declared = config.install_for("robosuite", "libero_pro")
-    monkeypatch.setattr(doctor.checks, "_python_version", lambda v: declared["python"])
-    monkeypatch.setattr(doctor.checks, "_imports_openrua", lambda v: True)
-    monkeypatch.setattr(doctor.checks, "_git_head", lambda d: declared["checkouts"][0]["commit"])
     creds = paths.credentials_dir(tmp_path) / a.name
     creds.mkdir(parents=True)
     (creds / a.credentials.filename).write_text("{}")
@@ -44,7 +36,7 @@ def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
     assert r.summary["error"] == 0 and r.summary["warning"] == 0
     ids = [c.id for c in r.checks]
     assert ids[:2] == ["docker", "home"]
-    assert {"proxy-image", "robot-image", "sandbox-image", "simulator", "login-claude-code"} <= set(ids)
+    assert {"proxy-image", "robot-image", "sandbox-image", "login-claude-code"} <= set(ids)
 
 
 def test_rootless_podman_wants_keep_id_in_the_defaults_file(tmp_path, monkeypatch):
@@ -77,10 +69,9 @@ def test_missing_pieces_are_errors_with_a_fix_and_stale_labels_are_warnings(tmp_
     r = doctor.run(robot="panda", home=tmp_path, bench="libero_pro")
     by = {c.id: c for c in r.checks}
     assert by["docker"].severity == "error" and "docs.docker.com" in by["docker"].hint
-    assert by["robot-image"].severity == "error" and by["robot-image"].hint == "openrua build robot --distro jazzy"
+    assert by["robot-image"].severity == "error" and by["robot-image"].hint == "openrua build --bench libero_pro"
     assert by["proxy-image"].severity == "warning" and "build proxy --agent" in by["proxy-image"].hint
     assert by["sandbox-image"].severity == "warning" and "build sandbox --distro jazzy" in by["sandbox-image"].hint
-    assert by["simulator"].severity == "error" and str(tmp_path / "simulators") in by["simulator"].hint
     assert by["login-claude-code"].severity == "error"
     assert "claude login" in by["login-claude-code"].hint
     assert "setup-token" in by["login-claude-code"].hint        # the token route too
@@ -125,23 +116,28 @@ def test_json_and_text_are_the_same_report(tmp_path, monkeypatch, capsys):
     assert json.loads(capsys.readouterr().out)["ok"] is False
 
 
-def test_simulator_check_reads_the_declaration(tmp_path, monkeypatch):
-    import subprocess
+def test_robot_image_is_checked_against_the_declaration_it_was_rendered_from(tmp_path, monkeypatch):
+    from openrua import config
     from openrua.doctor import checks
-    venv = tmp_path / "simulators" / "cap-x" / ".venv-libero"
-    (venv / "bin").mkdir(parents=True)
-    (venv / "bin" / "python").write_text("")
-    monkeypatch.setattr(checks, "_python_version", lambda v: "3.10")
-    monkeypatch.setattr(checks, "_imports_openrua", lambda v: False)
-    monkeypatch.setattr(checks, "_git_head", lambda d: "b" * 40 if d.name == "cap-x" else None)
-    cfg = {"machine": {"backend": {"kind": "sim", "simulator": {"venv": "cap-x/.venv-libero"}}}}
-    inst = {"python": "3.12", "checkouts": [{"path": "cap-x", "commit": "a" * 40},
-                                            {"path": "other", "commit": "c" * 40}]}
-    by = {c.id: c for c in checks.check_simulator(
-        checks.Context(home=tmp_path, agents=[], cfg=cfg, robot="panda", install=inst))}
-    assert by["simulator"].severity == "ok"
-    assert by["simulator-python"].severity == "error" and "3.12" in by["simulator-python"].label
-    assert by["simulator-package"].severity == "error"
-    assert by["checkout-cap-x"].severity == "warning" and "bbbbbbbbbbbb" in by["checkout-cap-x"].label
-    assert by["checkout-other"].severity == "error"
-    assert all("openrua install" in c.hint for c in by.values() if c.severity != "ok")
+    from openrua.robot.sim import build as sim_build, install as installer
+    inst = config.install_for("robosuite", "libero_pro")
+    dockerfile, files = installer.render(inst, "openrua-sim-libero_pro", paths.code_root())
+    want = installer.fingerprint(dockerfile, files)
+    cfg = {"machine": {"backend": {"kind": "sim", "ros_distro": "jazzy",
+                                   "image": "openrua-sim-libero_pro",
+                                   "sandbox_image": "openrua-sandbox-jazzy"}}}
+    ctx = checks.Context(home=tmp_path, agents=[], cfg=cfg, robot="panda", install=inst,
+                         bench="libero_pro")
+    monkeypatch.setattr(checks, "docker_inspect", _fake_docker({
+        "openrua-sim-libero_pro": {sim_build.LABEL_FINGERPRINT: want,
+                                   sim_build.LABEL_VERSION: "0.0.7"},
+        "openrua-sandbox-jazzy": {}}))
+    by = {c.id: c for c in checks.check_robot_images(ctx)}
+    assert by["robot-image"].severity == "ok" and "0.0.7" in by["robot-image"].detail
+    monkeypatch.setattr(checks, "docker_inspect", _fake_docker({
+        "openrua-sim-libero_pro": {sim_build.LABEL_FINGERPRINT: "stale"},
+        "openrua-sandbox-jazzy": {}}))
+    by = {c.id: c for c in checks.check_robot_images(ctx)}
+    assert by["robot-image"].severity == "warning"
+    assert "declaration changed" in by["robot-image"].detail
+    assert by["robot-image"].hint == "openrua build --bench libero_pro"

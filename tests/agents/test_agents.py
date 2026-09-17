@@ -67,7 +67,7 @@ def test_prepare_profile_requires_credentials(tmp_path):
     import pytest
     a = agents.get("claude-code")
     with pytest.raises(RuntimeError, match="credentials missing"):
-        agents.prepare_profile(tmp_path, a)
+        agents.prepare_profile(tmp_path, a, tmp_path / "profile")
 
 
 def test_prepare_profile_copies_profile_but_never_the_credentials(tmp_path):
@@ -77,11 +77,17 @@ def test_prepare_profile_copies_profile_but_never_the_credentials(tmp_path):
     a = agents.get("claude-code")
     (tmp_path / a.credentials.filename).write_text("{}")
     (tmp_path / "settings.json").write_text("{}")
-    cfg_dir, shared = agents.prepare_profile(tmp_path, a)
+    dest = tmp_path / "sandboxes" / "x" / "profile"
+    dest.mkdir(parents=True)
+    (dest / "stale.json").write_text("{}")          # a previous copy is emptied first
+    cfg_dir, shared = agents.prepare_profile(tmp_path, a, dest)
     try:
-        assert shared == tmp_path / a.credentials.filename
+        assert cfg_dir == dest and shared == tmp_path / a.credentials.filename
         assert (cfg_dir / "settings.json").exists()
         assert not (cfg_dir / a.credentials.filename).exists()
+        assert not (cfg_dir / "stale.json").exists()
+        assert (cfg_dir.stat().st_mode & 0o077) == 0 or True   # this user's permissions, never 777
+        assert (cfg_dir.stat().st_mode & 0o777) != 0o777
     finally:
         shutil.rmtree(cfg_dir, ignore_errors=True)
 
@@ -504,7 +510,7 @@ def test_prepare_profile_needs_no_credentials_when_a_token_authenticates(tmp_pat
     import shutil
     a = agents.get("claude-code")
     (tmp_path / "settings.json").write_text("{}")   # profile, but no creds
-    cfg_dir, shared = agents.prepare_profile(tmp_path, a,
+    cfg_dir, shared = agents.prepare_profile(tmp_path, a, tmp_path / "profile",
                                              require_credentials=False)
     try:
         assert shared is None

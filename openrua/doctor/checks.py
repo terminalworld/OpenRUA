@@ -19,6 +19,8 @@ from pathlib import Path
 from openrua import agents, config, proxy
 from openrua.config import compose, paths
 from openrua.doctor.report import CheckResult, Report
+from openrua.robot.sim import build as sim_build
+from openrua.robot.sim import install as installer
 
 
 # ------------------------------------------------------------ docker access
@@ -53,6 +55,8 @@ class Context:
     cfg: dict | None            # the robot's assembled config, when one was named
     robot: str | None
     install: dict | None = None  # the simulator install the config declares
+    sim: str | None = None       # what was named on the command line, for the hints
+    bench: str | None = None
 
 
 def engine_version() -> str:
@@ -160,7 +164,15 @@ def check_proxy_image(ctx: Context) -> list[CheckResult]:
                         detail=detail, hint=build if severity != "ok" else "")]
 
 
+def _build_hint(ctx: Context) -> str:
+    return f"openrua build --bench {ctx.bench}" if ctx.bench else f"openrua build --sim {ctx.sim}"
+
+
 def check_robot_images(ctx: Context) -> list[CheckResult]:
+    """The simulated robot's image exists and was built from the
+    declaration as it reads today: the image carries the fingerprint of
+    the Dockerfile and files it was rendered from, and the same
+    rendering is hashed here without building anything."""
     if ctx.cfg is None:
         return []
     backend = ctx.cfg["machine"].get("backend", {})
@@ -169,9 +181,20 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
         sim = backend["image"]
         if docker_inspect("image", sim, "{{.Id}}") is None:
             out.append(CheckResult("robot-image", f"robot image {sim} missing", "error",
-                                   hint=f"openrua build robot --distro {backend['ros_distro']}"))
+                                   hint=_build_hint(ctx)))
         else:
-            out.append(CheckResult("robot-image", f"robot image {sim} present"))
+            have = image_label(sim, sim_build.LABEL_FINGERPRINT)
+            want = None
+            if ctx.install:
+                dockerfile, files = installer.render(ctx.install, sim, paths.code_root())
+                want = installer.fingerprint(dockerfile, files)
+            if want and have and have != want:
+                out.append(CheckResult("robot-image", f"robot image {sim} present", "warning",
+                                       detail="the install declaration changed since it was built",
+                                       hint=_build_hint(ctx)))
+            else:
+                out.append(CheckResult("robot-image", f"robot image {sim} present",
+                                       detail=f"openrua {image_label(sim, sim_build.LABEL_VERSION) or '?'}"))
     sandbox = backend["sandbox_image"]
     names = " ".join(f"--agent {a.name}" for a in ctx.agents)
     tag = "" if sandbox == config.schema.sandbox_image(backend["ros_distro"]) else f" --tag {sandbox}"
@@ -184,76 +207,6 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
         out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} present", severity,
                                detail=detail, hint=build if severity != "ok" else ""))
     return out
-
-
-def check_simulator(ctx: Context) -> list[CheckResult]:
-    """The declared install is on disk: the venv at the declared Python,
-    the package importable from it, each checkout at its commit."""
-    if ctx.cfg is None:
-        return []
-    backend = ctx.cfg["machine"].get("backend", {})
-    if backend.get("kind") != "sim":
-        return [CheckResult("simulator", "real robot: no simulator")]
-    venv = paths.simulator_venv(backend["simulator"]["venv"], ctx.home)
-    fix = "openrua install --bench <benchmark> (or --sim <engine>)"
-    if not (venv / "bin" / "python").is_file():
-        return [CheckResult("simulator", f"simulator venv {venv} missing", "error",
-                            hint=f"{fix} builds it under {paths.simulators_dir(ctx.home)} "
-                            "(docs/simulation.md)")]
-    out = [CheckResult("simulator", f"simulator venv {venv}")]
-    install = ctx.install or {}
-    want = install.get("python")
-    if want:
-        got = _python_version(venv)
-        if not got.startswith(str(want)):
-            out.append(CheckResult("simulator-python", f"{venv} runs Python {got}, the "
-                                   f"install declares {want}", "error",
-                                   hint=f"rm -r {venv}; then {fix}"))
-    if not _imports_openrua(venv):
-        out.append(CheckResult("simulator-package", f"{venv} cannot import openrua", "error",
-                               hint=f"{fix} installs it"))
-    for c in install.get("checkouts") or []:
-        d = paths.simulators_dir(ctx.home) / c["path"]
-        head = _git_head(d)
-        cid = f"checkout-{Path(c['path']).name}"
-        if head is None:
-            out.append(CheckResult(cid, f"checkout {d} missing", "error", hint=fix))
-        elif head != c["commit"]:
-            out.append(CheckResult(cid, f"checkout {d} is at {head[:12]}, the install "
-                                   f"declares {c['commit'][:12]}", "warning", hint=fix))
-        else:
-            out.append(CheckResult(cid, f"checkout {d} at {head[:12]}"))
-    return out
-
-
-def _python_version(venv: Path) -> str:
-    try:
-        r = subprocess.run([str(venv / "bin" / "python"), "-c",
-                            "import sys; print('%d.%d' % sys.version_info[:2])"],
-                           capture_output=True, text=True, timeout=30)
-        return r.stdout.strip() or "?"
-    except (OSError, subprocess.TimeoutExpired):
-        return "?"
-
-
-def _imports_openrua(venv: Path) -> bool:
-    try:
-        r = subprocess.run([str(venv / "bin" / "python"), "-c", "import openrua"],
-                           capture_output=True, text=True, timeout=60)
-        return r.returncode == 0
-    except (OSError, subprocess.TimeoutExpired):
-        return False
-
-
-def _git_head(d: Path) -> str | None:
-    if not (d / ".git").exists():
-        return None
-    try:
-        r = subprocess.run(["git", "-C", str(d), "rev-parse", "HEAD"],
-                           capture_output=True, text=True, timeout=30)
-        return r.stdout.strip() or None
-    except (OSError, subprocess.TimeoutExpired):
-        return None
 
 
 def check_login(ctx: Context) -> list[CheckResult]:
@@ -276,7 +229,7 @@ def check_login(ctx: Context) -> list[CheckResult]:
 
 CHECKS: tuple[Callable[[Context], list[CheckResult]], ...] = (
     check_docker, check_home, check_bundled_agents, check_proxy_image,
-    check_robot_images, check_simulator, check_login,
+    check_robot_images, check_login,
 )
 
 
@@ -307,7 +260,9 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
         except Exception as exc:  # noqa: BLE001
             report.checks.append(CheckResult(f"agent-{n}", f"agent {n}: {exc}", "error",
                                              hint="openrua agents lists the agents"))
-    ctx = Context(home=home, agents=chosen, cfg=cfg, robot=robot, install=install)
+    ctx = Context(home=home, agents=chosen, cfg=cfg, robot=robot, install=install,
+                  sim=sim or (cfg or {}).get("machine", {}).get("backend", {}).get("image"),
+                  bench=bench)
     for check in checks:
         try:
             report.checks.extend(check(ctx))

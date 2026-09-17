@@ -83,7 +83,8 @@ def open_session(args) -> Session:
     apply_suite_overrides(cfg, suite)
     normalize_arms(cfg)
     sim_name, sandbox_name = state.container_names(args.name)
-    workdir = Path(args.workspace or paths.workspaces_dir(args.home) / args.name).resolve()
+    sandbox_dir = paths.sandbox_dir(args.name, args.home)
+    workdir = Path(args.workspace or sandbox_dir / "workspace").resolve()
     if workdir.exists():
         shutil.rmtree(workdir)  # a fresh workspace every time (seeding merges)
     workdir.mkdir(parents=True)
@@ -96,7 +97,7 @@ def open_session(args) -> Session:
     model = getattr(args, "model", None) or cfg_agent.get("model") or adapter.default_model
     creds_home = Path(cfg.get("agent", {}).get("credentials_dir")
                       or paths.credentials_dir(args.home) / adapter.name).expanduser()
-    cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter)
+    cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter, sandbox_dir / "profile")
     print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
           flush=True)
     try:
@@ -105,7 +106,7 @@ def open_session(args) -> Session:
             adapter.sandbox_mounts(cfg_dir, creds_file), args.ros_domain,
             robot_log=workdir / "robot.log", home=args.home)
     except Exception as e:  # noqa: BLE001
-        shutil.rmtree(cfg_dir, ignore_errors=True)
+        # The sandbox directory stays for the read below; openrua clean sweeps it.
         raise UnavailableError(f"[up] robot failed to come up: {e}",
                                hint=f"read {workdir / 'robot.log'}") from e
 
@@ -114,7 +115,6 @@ def open_session(args) -> Session:
         sandbox_down(sandbox_name)
         machine.shutdown()
         state.forget(args.name, args.home)
-        shutil.rmtree(cfg_dir, ignore_errors=True)
 
     try:
         if cfg["machine"]["backend"]["kind"] == "sim":
@@ -124,7 +124,6 @@ def open_session(args) -> Session:
     except Exception as e:  # noqa: BLE001
         sandbox_down(sandbox_name)
         machine.shutdown()
-        shutil.rmtree(cfg_dir, ignore_errors=True)
         raise UnavailableError(f"[up] robot failed to reset: {e}",
                                hint=f"read {workdir / 'robot.log'}") from e
     state.save(args.name, args.home, sim=sim_name, sandbox=sandbox_name,
@@ -176,7 +175,7 @@ def add_options(p) -> None:
                    help=f"handle for this robot, for agent/down (default: {DEFAULT_NAME})")
     p.add_argument("--agent", default=None, help="agent to open (default: the config's)")
     p.add_argument("--workspace", default=None,
-                   help="working directory (default: <home>/workspaces/<name>)")
+                   help="working directory (default: <home>/sandboxes/<name>/workspace)")
     p.add_argument("--ros-domain", type=int, default=None,
                    help="ROS_DOMAIN_ID (default: the lowest one no running robot "
                         "uses, so concurrent robots never share a graph; a real "

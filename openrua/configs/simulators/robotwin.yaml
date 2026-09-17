@@ -9,7 +9,6 @@ engine: RoboTwin 2.0 on SAPIEN 3 (PhysX CPU)
 entry_point: robotwin        # bridge engine over a RoboTwin task
 
 install:
-  venv: robotwin/.venv       # relative to ~/.openrua/simulators/; py3.12 == Jazzy
   ros_distro: jazzy
   python: "3.12"
   checkouts:

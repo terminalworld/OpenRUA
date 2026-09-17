@@ -1,7 +1,7 @@
 # LIBERO-PRO benchmark config: the only place this benchmark's specifics live.
 # Sections: task (what runs), protocol (how trials run and when they
 # stop), agent (who operates), robot + simulator (what it runs on),
-# install (the venv and distro this benchmark brings), scenes (what it
+# install (the image contents and distro this benchmark brings), scenes (what it
 # puts in the world).
 
 entry_point: libero   # the bridge loader: bundled name, or ./path to a module of your own
@@ -62,7 +62,6 @@ robot: panda              # configs/robots/panda.yaml
 simulator: robosuite      # configs/simulators/robosuite.yaml; LIBERO ships its own fork of it
 
 install:                  # LIBERO's world: its robosuite 1.4 fork in the CaP-X checkout
-  venv: cap-x/.venv-libero   # relative to ~/.openrua/simulators/; py3.12 == Jazzy
   ros_distro: jazzy       # names the robot and sandbox images (openrua-sim-jazzy, openrua-sandbox-jazzy)
   python: "3.12"
   checkouts:              # the same CaP-X checkout the simulator declares (install is idempotent)
@@ -78,7 +77,7 @@ install:                  # LIBERO's world: its robosuite 1.4 fork in the CaP-X 
   # (bddl and init files, CC-BY like the benchmark); unpacked once.
   shell: |
     LIBERO={root}/cap-x/capx/third_party/LIBERO-PRO/libero/libero
-    [ -d "$LIBERO/bddl_files/libero_goal_task" ] || run tar xzf {here}/libero_pro/libero-pro-suites.tar.gz -C "$LIBERO"
+    [ -d "$LIBERO/bddl_files/libero_goal_task" ] || run tar xzf {here}/libero-pro-suites.tar.gz -C "$LIBERO"
 
 scenes:
   default_suite: libero_goal_task  # what `openrua run --bench libero_pro` loads (the

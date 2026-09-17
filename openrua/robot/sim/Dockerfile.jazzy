@@ -1,19 +1,25 @@
-# Sim container for the py3.12 (Jazzy-native) simulators: the LIBERO family
-# on robosuite and ManiSkill on SAPIEN. Hosts: bridge process (env + rclpy
-# node), MoveIt (graph-side), original predicates (in-process; ground
-# truth never reaches the graph).
-# The simulator checkout (cap-x clone + venvs) is volume-mounted, not baked in.
+# The ROS 2 Jazzy base of every py3.12 simulator image (the LIBERO family
+# on robosuite, ManiSkill on SAPIEN): ROS, MoveIt, software rendering,
+# and the tools the simulator layers need (git, uv, compilers). A
+# simulator image is rendered on top of this by openrua build from the
+# simulator's or benchmark's install: declaration; nothing simulator
+# specific lives here.
+# Hosts at run time: bridge process (env + rclpy node), MoveIt (graph
+# side), original predicates (in-process; ground truth never reaches
+# the graph).
 FROM ros:jazzy
 
 # Package set:
-# - python3.12-venv: base image lacks ensurepip (venv creation fails without it)
+# - python3.12-venv, python3.12-dev: venv creation and source builds
 # - Mesa GL/EGL stack: MUJOCO_GL=egl + PYOPENGL_PLATFORM=egl software rendering
 #   (llvmpipe, no GPU); both libegl + libgl dispatchers and the mesa DRI
 #   drivers are required; PyOpenGL EGL fails with a partial set.
 # - Mesa Vulkan (lavapipe): SAPIEN renders through Vulkan; with no GPU the
 #   software device is what it finds.
+# - git, build-essential, unzip, curl: what install layers clone, compile
+#   and unpack with.
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.12-venv \
+    python3.12-venv python3.12-dev build-essential git unzip curl ca-certificates \
     libegl1 libgl1 libgles2 libglvnd0 libglx0 \
     libgl1-mesa-dri libglx-mesa0 libegl-mesa0 \
     libvulkan1 mesa-vulkan-drivers \
@@ -22,5 +28,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ros-jazzy-robot-state-publisher \
     libmagickwand-6.q16-7t64 \
     && rm -rf /var/lib/apt/lists/*
+
+# uv: venvs and installs in the simulator layers, pinned by image.
+COPY --from=ghcr.io/astral-sh/uv:0.11.30 /uv /usr/local/bin/uv
 
 ENV MUJOCO_GL=egl PYOPENGL_PLATFORM=egl

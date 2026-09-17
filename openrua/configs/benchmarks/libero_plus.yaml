@@ -3,7 +3,7 @@
 # seven axes (object layout, camera viewpoint, robot initial state, language,
 # lighting, background texture, sensor noise). Their protocol runs each
 # variant once. Their fork installs as the ``libero`` package, so it has a
-# venv of its own. The sensor-noise axis is applied by their env wrapper to
+# image of its own. The sensor-noise axis is applied by their env wrapper to
 # the observation images; the bridge publishes the renderer's frames, so
 # that axis does not reach the agent's cameras here.
 
@@ -33,7 +33,6 @@ robot: panda
 simulator: robosuite
 
 install:
-  venv: libero-plus/.venv
   ros_distro: jazzy
   python: "3.12"
   checkouts:

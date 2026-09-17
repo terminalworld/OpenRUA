@@ -97,12 +97,6 @@ def graph_probe(sandbox_name: str) -> list[str]:
             "ros2 node list 2>/dev/null | grep -q ."]
 
 
-def simulator_venv(backend: dict, home: Path | None = None) -> Path:
-    """The simulator venv named by machine.backend.simulator.venv (see
-    paths.simulator_venv for how relative names resolve)."""
-    return paths.simulator_venv(backend["simulator"]["venv"], home)
-
-
 # ROS_DOMAIN_ID values that keep DDS on its default ports (ROS 2 documents
 # 0-101 as safe on Linux); the higher range is reserved for hand-picked ids.
 DOMAINS = range(0, 102)
@@ -248,18 +242,12 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     ros_domain = claim_domain(network, ros_domain, start_sandbox, sandbox_down)
     machine = None
     try:
-        # The container mounts and runs the venv by this string, and a
-        # host symlink means nothing inside it: hand over the real path.
-        venv = (simulator_venv(backend, home).resolve()
-                if backend.get("kind") == "sim" else None)
         machine = robot.up(
             backend,
             name=sim_name,
             config_path=str(config_path),
             task_suite=task_suite,
             task_id=task_id,
-            venv=str(venv) if venv else None,
-            code_root=str(paths.code_root()),
             log_path=robot_log,
             moveit_log=str(robot_log.with_name("moveit.log")),
             network=network,
@@ -271,10 +259,6 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             record_cameras=record_cameras or (),
             record_every=record_every,
             record_size=record_size,
-            # A venv's editable installs may point into sibling checkouts
-            # (a LIBERO fork's venv uses cap-x's robosuite): the whole
-            # simulators directory is visible, by its real path.
-            mounts=(str(paths.simulators_dir(home).resolve()),),
         )
         machine.wait_ready()
     except BaseException:

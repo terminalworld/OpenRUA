@@ -11,6 +11,7 @@ import yaml
 
 from openrua import agents
 from openrua.cli.output import add_json, print_listing
+from openrua.robot.sim.install import PYTHON
 from openrua.config import compose, paths
 
 
@@ -69,17 +70,23 @@ _EPISODES = {
 
 def benchmark_catalog(cfg: dict, home: Path | None) -> tuple[dict | None, str]:
     """``{suite: [{task_id, language}] | None}`` from the loader, run in the
-    simulator's venv, and a note; (None, why) when it could not be asked."""
-    venv = paths.simulator_venv(cfg["machine"]["backend"]["simulator"]["venv"], home)
-    python = venv / "bin" / "python"
-    if not python.exists():
-        return None, (f"task sentences need the simulator install: "
-                      f"openrua install --bench {cfg['task']['benchmark']}")
+    simulator's image, and a note; (None, why) when it could not be asked."""
+    del home
+    image = cfg["machine"]["backend"]["image"]
+    try:
+        present = subprocess.run(["docker", "image", "inspect", image],
+                                 capture_output=True).returncode == 0
+    except OSError:
+        present = False
+    if not present:
+        return None, (f"task sentences need the simulator image {image}: "
+                      f"openrua build --bench {cfg['task']['benchmark']}")
     with tempfile.TemporaryDirectory() as tmp:
         cfg_file, out = Path(tmp) / "config.yaml", Path(tmp) / "tasks.json"
         cfg_file.write_text(yaml.safe_dump(cfg))
         # The answer travels by file: a benchmark's imports print freely.
-        r = subprocess.run([str(python), "-m", "openrua.robot.sim.bridge.catalog",
+        r = subprocess.run(["docker", "run", "--rm", "-v", f"{tmp}:{tmp}", image,
+                            PYTHON, "-m", "openrua.robot.sim.bridge.catalog",
                             "--config", str(cfg_file), "--out", str(out)],
                            capture_output=True, text=True, timeout=600)
         if r.returncode != 0:

@@ -1,4 +1,12 @@
-"""``openrua build robot | sandbox | proxy``: the three images.
+"""``openrua build [--bench B ...] [--sim S ...] [--all]`` and
+``openrua build sandbox | proxy | base``: the images.
+
+A simulated robot's image is rendered from a declaration: the
+simulator's ``install:`` with the benchmark's over it, one image per
+declaration that writes install keys (``openrua-sim-<name>``). Bare
+``openrua build`` makes what the defaults need: the sandbox and proxy
+images for the default agent and the simulator image of the default
+benchmark; ``--all`` builds every bundled benchmark's.
 
 The sandbox and proxy images are agent-parameterised: the install line
 and the whitelist come from the manifests of the agents named with
@@ -12,8 +20,9 @@ from pathlib import Path
 
 from openrua import agents, config, proxy
 from openrua.config import paths
+from openrua.config.schema import sim_image
 from openrua.proxy.build import build as build_proxy
-from openrua.robot.sim.build import build as build_robot
+from openrua.robot.sim.build import build_base, build_simulator
 from openrua.sandbox.build import build as build_sandbox
 
 
@@ -45,15 +54,49 @@ def agent_labels(manifests: list[agents.Manifest], kind: str) -> dict[str, str]:
             for m in manifests}
 
 
+def simulator_targets(benches: list[str], sims: list[str], every: bool,
+                      home: Path | None) -> list[tuple[str, dict, str]]:
+    """``(name, install, tag)`` per simulator image to build, deduplicated:
+    two benchmarks that add nothing to their simulator share its image."""
+    if every:
+        benches = [e.name for e in paths.available("benchmarks")]
+    if not benches and not sims:
+        user = config.load_user_config(paths.config_path(home))
+        defaults = config.load_user_config(paths.package_config_path())
+        bench = user.benchmark or defaults.benchmark
+        if not bench:
+            return []
+        benches = [bench]
+    seen: dict[str, tuple[str, dict, str]] = {}
+    for b in benches:
+        _, decl = config.load_benchmark(b)
+        owner = config.image_owner(decl["simulator"], b)
+        seen.setdefault(owner, (owner, config.install_for(decl["simulator"], b), sim_image(owner)))
+    for s in sims:
+        owner = config.image_owner(s)
+        seen.setdefault(owner, (owner, config.install_for(s), sim_image(owner)))
+    return list(seen.values())
+
+
 def run(args) -> int:
-    if args.unit is None:
-        # bare `openrua build`: the three images with their defaults
-        built = [build_robot(distro="jazzy", tag=None),
-                 _sandbox(None, None, "jazzy", None, None, args.home),
-                 _proxy(None, None, proxy.IMAGE, proxy.PORT, args.home)]
-    elif args.unit == "robot":
-        built = [build_robot(distro=args.distro, tag=args.tag)]
-    elif args.unit == "sandbox":
+    unit = getattr(args, "unit", None)
+    if unit is None:
+        built = []
+        if not (args.bench or args.sim or args.all):
+            # bare `openrua build`: the agent images too
+            built += [_sandbox(None, None, "jazzy", None, None, args.home),
+                      _proxy(None, None, proxy.IMAGE, proxy.PORT, args.home)]
+        targets = simulator_targets(args.bench or [], args.sim or [], args.all, args.home)
+        if not targets:
+            print("[build] no default benchmark, so no simulator image: openrua build "
+                  "--bench <name> builds one (openrua benchmarks lists them; openrua config "
+                  "set --bench <name> makes one the default)", flush=True)
+        for name, install, tag in targets:
+            print(f"[build] {tag} from the {name} declaration", flush=True)
+            built.append(build_simulator(install, name, paths.code_root(), tag=tag))
+    elif unit == "base":
+        built = [build_base(distro=args.distro, tag=args.tag)]
+    elif unit == "sandbox":
         built = [_sandbox(args.agent, args.preinstall, args.distro, args.robot_uid,
                           args.tag, args.home)]
     else:
@@ -78,16 +121,26 @@ def _proxy(agent, whitelist, tag, port, home):
 
 
 def add_parser(sub) -> None:
-    p = sub.add_parser("build", help="build the robot, sandbox and proxy images",
-                       description="Build the three images (bare `openrua build`: all "
-                       "of them with their defaults), or one of them with its options. "
-                       "The sandbox and proxy images take their install line and "
+    p = sub.add_parser("build", help="build the images: simulators, sandbox, proxy",
+                       description="Build simulator images from their declarations "
+                       "(--bench / --sim, repeatable; --all: every bundled benchmark), "
+                       "or one of the agent-side images (sandbox, proxy) or the ROS "
+                       "base. Bare `openrua build` makes the sandbox and proxy images "
+                       "for the default agent and the default benchmark's simulator "
+                       "image. The sandbox and proxy take their install line and "
                        "whitelist from the manifests of the agents named with --agent.")
+    p.add_argument("--bench", action="append", default=None, metavar="NAME",
+                   help="benchmark whose simulator image to build (openrua benchmarks); "
+                        "repeatable")
+    p.add_argument("--sim", action="append", default=None, metavar="NAME",
+                   help="simulator whose image to build, for its native scene "
+                        "(openrua simulators); repeatable")
+    p.add_argument("--all", action="store_true", help="every bundled benchmark's image")
     units = p.add_subparsers(dest="unit", metavar="[<unit>]", required=False)
 
-    r = units.add_parser("robot", help="the simulated robot image (Dockerfile.<distro>)")
-    r.add_argument("--distro", default="jazzy", help="ROS 2 distro: jazzy | humble")
-    r.add_argument("--tag", default=None, help="image tag (default: openrua-sim-<distro>)")
+    b = units.add_parser("base", help="the ROS base image simulator images build on")
+    b.add_argument("--distro", default="jazzy", help="ROS 2 distro: jazzy | humble")
+    b.add_argument("--tag", default=None, help="image tag (default: openrua-sim-base-<distro>)")
 
     s = units.add_parser("sandbox", help="the agent terminal image")
     s.add_argument("--agent", action="append", default=None, metavar="NAME[@VERSION]",
@@ -96,7 +149,7 @@ def add_parser(sub) -> None:
     s.add_argument("--preinstall", default=None,
                    help="install line to bake instead of the agents' manifests")
     s.add_argument("--distro", default="jazzy", help="ROS 2 distro: jazzy | humble "
-                   "(the robot's; profiles name it as ros_distro)")
+                   "(the robot's; declarations name it as ros_distro)")
     s.add_argument("--robot-uid", type=int, default=None,
                    help="container uid (default: the current user)")
     s.add_argument("--tag", default=None, help="image tag (default: openrua-sandbox-<distro>)")

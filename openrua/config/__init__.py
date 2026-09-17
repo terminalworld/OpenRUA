@@ -5,7 +5,7 @@ naturally at call sites."""
 
 from openrua.config.loader import (  # noqa: F401
     DEFAULT_WALL_CLOCK_MIN, Composed, ConfigError, apply_suite_overrides, assemble,
-    compose, default_agent_name, dump, install_for, layer_agent, load_benchmark, load_config, load_robot, load_simulator,
+    compose, default_agent_name, dump, image_owner, install_for, layer_agent, load_benchmark, load_config, load_robot, load_simulator,
     load_user_config, load_yaml, normalize_arms, resolve_wall_clock_min, validate,
 )
 from openrua.config.schema import (  # noqa: F401

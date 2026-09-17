@@ -27,7 +27,6 @@ def test_dispatcher_passes_record_size_to_the_simulated_robot(monkeypatch, tmp_p
     monkeypatch.setattr(robot, "sim_up", lambda **kw: seen.update(kw) or "handle")
     robot.up({"kind": "sim", "image": "img"}, name="n",
              config_path=str(tmp_path / "config.yaml"), task_suite="s", task_id=0,
-             log_path=tmp_path / "bridge.log", venv=str(tmp_path / "sim/.venv"),
-             code_root=str(tmp_path), record=str(tmp_path / "frames"),
+             log_path=tmp_path / "bridge.log", record=str(tmp_path / "frames"),
              record_cameras=("agentview",), record_size="1280x960")
     assert seen["record_size"] == "1280x960"

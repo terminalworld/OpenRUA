@@ -9,10 +9,13 @@ file of your own. There is no lookup in the user directory: extensions
 enter the repository or travel as a path.
 
 The user directory, ``~/.openrua`` unless overridden, holds only what
-the tool writes: ``config.yaml`` (openrua config set), ``credentials/``
-(logins), ``simulators/`` (openrua install), ``workspaces/``, ``state/``.
-It reaches this module as a parameter (``home=``); the CLI entry point
-reads ``OPENRUA_HOME`` and ``--home`` once and passes the result down.
+the tool writes, in two kinds: what you would not want deleted,
+``config.yaml`` (openrua config set) and ``credentials/`` (logins); and
+what any sandbox leaves while it lives, ``sandboxes/<name>/`` (its
+workspace, its copy of the agent's profile, what ``up`` remembers),
+which ``down`` removes and ``openrua clean`` sweeps. It reaches this
+module as a parameter (``home=``); the CLI entry point reads
+``OPENRUA_HOME`` and ``--home`` once and passes the result down.
 Nothing here reads the environment.
 
 Imports only openrua.errors. Nothing in ``openrua.robot.sim.bridge``
@@ -66,26 +69,23 @@ def credentials_dir(home_dir: Path | None = None) -> Path:
     return home(home_dir) / "credentials"
 
 
-def simulators_dir(home_dir: Path | None = None) -> Path:
-    """Simulator checkouts (each holding its ``.venv-*``)."""
-    return home(home_dir) / "simulators"
+def sandboxes_dir(home_dir: Path | None = None) -> Path:
+    """One directory per live sandbox, by name: ``workspace/`` (what
+    ``openrua up`` seeds), ``profile/`` (the sandbox's copy of the
+    agent's profile), ``state.yaml`` (what ``up`` remembers for
+    ``agent`` and ``down``). Disposable: gone with the sandbox."""
+    return home(home_dir) / "sandboxes"
 
 
-def workspaces_dir(home_dir: Path | None = None) -> Path:
-    """Working directories of robots brought up with ``openrua up``."""
-    return home(home_dir) / "workspaces"
-
-
-def state_dir(home_dir: Path | None = None) -> Path:
-    """What ``openrua up`` remembers about a live robot, one file per name."""
-    return home(home_dir) / "state"
+def sandbox_dir(name: str, home_dir: Path | None = None) -> Path:
+    return sandboxes_dir(home_dir) / name
 
 
 def code_root() -> Path:
     """The directory holding the installed ``openrua`` package: the git
     checkout under an editable install, site-packages under a wheel.
-    Bind-mounted into the simulated robot so its venv can import the same
-    code; also where provenance looks for a git commit."""
+    A checkout goes into the simulator images as source (openrua build)
+    and is where provenance looks for a git commit."""
     return Path(str(resources.files("openrua"))).resolve().parent
 
 
@@ -150,15 +150,3 @@ def entry_point(kind: str, spec: str, declared_in: Path) -> str:
         return str(p.resolve())
     return f"{ENTRY_POINT_PACKAGES[kind]}.{spec}"
 
-
-def simulator_venv(spec: str | Path, home_dir: Path | None = None) -> Path:
-    """The simulator venv a robot profile names: absolute or ``~`` paths
-    as written, anything else relative to ``<home>/simulators/``."""
-    p = Path(spec).expanduser()
-    return p if p.is_absolute() else simulators_dir(home_dir) / p
-
-
-def simulator_root(venv: Path) -> Path:
-    """The simulator checkout holding a venv (the directory above
-    ``.venv-*``)."""
-    return venv.parent

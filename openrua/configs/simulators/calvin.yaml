@@ -7,7 +7,6 @@ engine: calvin_env on PyBullet
 entry_point: calvin          # bridge engine over a calvin_env PlayTableSimEnv
 
 install:
-  venv: calvin/.venv         # relative to ~/.openrua/simulators/; py3.10 == Humble
   ros_distro: humble
   python: "3.10"
   checkouts:

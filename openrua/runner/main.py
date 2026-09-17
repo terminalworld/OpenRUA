@@ -16,7 +16,6 @@ from openrua.config import paths
 from openrua.errors import UsageError
 from openrua.runner import lock
 from openrua.runner import record
-from openrua.runner.bringup import simulator_venv
 from openrua.runner.operators import OPERATORS
 from openrua.runner.trial import run_trial
 from openrua.sandbox import workspace
@@ -169,7 +168,6 @@ def run(args: argparse.Namespace) -> int:
         template_hash=workspace.template_hash(cfg),
         prompt=agents.PROMPT, resume_prompt=agents.RESUME_PROMPT,
         code_root=paths.code_root(), proxy_image=proxy.IMAGE,
-        simulator_venv=simulator_venv(cfg["machine"].get("backend", {}), home),
     ), "config": cfg}
     record.write_run_config(run_dir, prov)
 

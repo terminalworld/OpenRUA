@@ -28,9 +28,9 @@ agent:
     effort: high
 
 robot: widowx             # configs/robots/widowx.yaml
-simulator: maniskill      # configs/simulators/maniskill.yaml; same venv as the maniskill benchmark
+simulator: maniskill      # configs/simulators/maniskill.yaml
 
-install:                  # the maniskill venv plus the Bridge scenes and the WidowX asset
+install:                  # the maniskill image plus the Bridge scenes and the WidowX asset
   shell: |
     MS_ASSET_DIR={root}/maniskill/data {venv}/bin/python -m mani_skill.utils.download_asset bridge_v2_real2sim -y
     MS_ASSET_DIR={root}/maniskill/data {venv}/bin/python -m mani_skill.utils.download_asset widowx250s -y

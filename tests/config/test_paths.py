@@ -11,7 +11,8 @@ def test_home_defaults_and_overrides(tmp_path):
     assert paths.home() == Path("~/.openrua").expanduser()
     assert paths.home(tmp_path) == tmp_path
     assert paths.credentials_dir(tmp_path) == tmp_path / "credentials"
-    assert paths.simulators_dir(tmp_path) == tmp_path / "simulators"
+    assert paths.sandboxes_dir(tmp_path) == tmp_path / "sandboxes"
+    assert paths.sandbox_dir("x", tmp_path) == tmp_path / "sandboxes" / "x"
     assert paths.config_path(tmp_path) == tmp_path / "config.yaml"
 
 
@@ -52,13 +53,6 @@ def test_entry_point_short_name_or_path_relative_to_the_yaml(tmp_path):
         paths.entry_point("benchmarks", "./gone.py", yaml_file)
     with pytest.raises(KeyError):
         paths.entry_point("robots", "x", yaml_file)
-
-
-def test_simulator_venv_relative_names_live_under_home(tmp_path):
-    assert paths.simulator_venv("cap-x/.venv-libero", tmp_path) == \
-        tmp_path / "simulators" / "cap-x" / ".venv-libero"
-    assert paths.simulator_venv("/abs/.venv-x", tmp_path) == Path("/abs/.venv-x")
-    assert paths.simulator_root(Path("/s/cap-x/.venv-libero")) == Path("/s/cap-x")
 
 
 def test_code_root_holds_the_package():

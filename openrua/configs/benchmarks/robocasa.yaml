@@ -3,7 +3,7 @@
 # robosuite.make with the kwargs of their create_env verbatim (see
 # environments/robocasa.py); only controller_configs is swapped to the
 # JOINT_POSITION composite. The successor, RoboCasa365, is a separate
-# benchmark with its own venv: the two releases are not API-compatible.
+# benchmark with an image of its own: the two releases are not API-compatible.
 
 entry_point: robocasa
 task:
@@ -38,7 +38,6 @@ robot: panda-omron
 simulator: robosuite
 
 install:
-  venv: robocasa/.venv
   ros_distro: humble
   python: "3.10"
   checkouts:

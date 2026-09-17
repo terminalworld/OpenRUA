@@ -53,12 +53,14 @@ def test_assembly_folds_type_simulator_and_benchmark(tmp_path):
     assert m["engine_model"] == "Panda"                          # simulators/robosuite.yaml
     assert m["joint_name_map"] == {"robot0_": "panda_", "gripper0_": "panda_"}
     assert m["controller_kp_scale"] == 10                        # libero_pro's scenes.robots.panda
-    assert m["backend"]["simulator"]["venv"] == "cap-x/.venv-libero"   # libero_pro's install
-    assert m["backend"]["ros_distro"] == "jazzy" and m["backend"]["image"] == "openrua-sim-jazzy"
+    assert m["backend"]["image"] == "openrua-sim-libero_pro"     # libero_pro's own install
+    assert m["backend"]["ros_distro"] == "jazzy" and m["backend"]["simulator"] == {
+        "engine": "openrua.robot.sim.bridge.engines.robosuite"}
     assert m["cameras"]["record"] == ["agentview", "robot0_eye_in_hand"]  # scenes.cameras
     cap = load_config("capbench", home=tmp_path)["machine"]
     assert cap["controller_kp_scale"] == 1                       # the engine's own value
     assert cap["backend"]["ros_distro"] == "humble"
+    assert cap["backend"]["image"] == "openrua-sim-robosuite"     # nothing of its own: the engine's
 
 
 def test_native_scene_without_a_benchmark(tmp_path):
@@ -67,7 +69,7 @@ def test_native_scene_without_a_benchmark(tmp_path):
     assert c.cfg["task"] == {"benchmark": "robosuite", "suites": ["Lift"],
                              "init_states": "seeded-reset", "split": "target", "task_language": {},
                              "loader": "openrua.robot.sim.bridge.environments.robosuite"}
-    assert c.cfg["machine"]["backend"]["simulator"]["venv"] == "cap-x/.venv-capbench"
+    assert c.cfg["machine"]["backend"]["image"] == "openrua-sim-robosuite"
     assert c.cfg["agent"]["name"] == "claude-code"              # the defaults files
 
 
@@ -140,17 +142,19 @@ def test_defaults_match_the_reported_runs():
     assert (p.max_turns, p.active_wall_clock_minutes, p.trials_per_task) == (500, 240, 10)
     assert p.resume_on_quota_wall is False          # scale-only switch, off by default
     assert p.clock.mode == "paused"
-    m = config.Machine(backend={"kind": "sim", "simulator": {"venv": "x/.venv"}})
+    m = config.Machine(backend={"kind": "sim", "image": "openrua-sim-x", "simulator": {}})
     assert m.controller == "JOINT_POSITION" and m.cameras.rate_hz == 2.0
     assert m.control.gripper.open_threshold_m == 0.02
-    assert m.backend.image == "openrua-sim-jazzy"
+    assert m.backend.image == "openrua-sim-x"
     assert m.backend.sandbox_image == "openrua-sandbox-jazzy"
-    h = config.Machine(backend={"kind": "sim", "ros_distro": "humble",
-                                "simulator": {"venv": "x/.venv"}})
-    assert (h.backend.image, h.backend.sandbox_image) == ("openrua-sim-humble", "openrua-sandbox-humble")
+    h = config.Machine(backend={"kind": "sim", "ros_distro": "humble", "image": "openrua-sim-x",
+                                "simulator": {}})
+    assert h.backend.sandbox_image == "openrua-sandbox-humble"
     o = config.Machine(backend={"kind": "sim", "ros_distro": "humble", "sandbox_image": "mine",
-                                "simulator": {"venv": "x/.venv"}})
-    assert (o.backend.image, o.backend.sandbox_image) == ("openrua-sim-humble", "mine")
+                                "image": "openrua-sim-x", "simulator": {}})
+    assert o.backend.sandbox_image == "mine"
+    with pytest.raises(Exception):                    # the image is the composition's, never guessed
+        config.Machine(backend={"kind": "sim", "simulator": {}})
 
 
 def test_backend_union_is_strict():

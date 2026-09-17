@@ -30,8 +30,7 @@ agent:
 robot: panda              # the tasks mount ManiSkill's panda_wristcam
 simulator: maniskill      # configs/simulators/maniskill.yaml
 
-install:                  # its own venv: the MIKASA package over ManiSkill 3.0.1, plus the YCB objects
-  venv: mikasa/.venv
+install:                  # its own image: the MIKASA package over ManiSkill 3.0.1, plus the YCB objects
   ros_distro: jazzy
   python: "3.12"
   checkouts:

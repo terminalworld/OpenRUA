@@ -33,7 +33,6 @@ robot: panda
 simulator: robosuite
 
 install:
-  venv: robocerebra/.venv
   ros_distro: jazzy
   python: "3.12"
   checkouts:
