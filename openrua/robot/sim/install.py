@@ -99,15 +99,6 @@ def render(install: dict, name: str, code_root: Path) -> tuple[str, dict[str, Pa
         # same-named subpackage (the LIBERO forks: libero/libero).
         lines.append(f"RUN {cache} CUDA_HOME=/usr uv pip install -q --python {PYTHON} "
                      "--no-deps --config-setting editable_mode=compat " + " ".join(editables))
-    if (code_root / "pyproject.toml").is_file():
-        for item in ("pyproject.toml", "README.md", "LICENSE", "openrua"):
-            if (code_root / item).exists():
-                files[f"src/{item}"] = code_root / item
-        lines.append(f"COPY src {FILES}/src")
-        lines.append(f"RUN {cache} uv pip install -q --python {PYTHON} --no-deps {FILES}/src")
-    else:
-        lines.append(f"RUN {cache} uv pip install -q --python {PYTHON} --no-deps "
-                     f"openrua=={__version__}")
     if install.get("shell"):
         tail = install["shell"]
         if "{here}" in tail:
@@ -118,6 +109,16 @@ def render(install: dict, name: str, code_root: Path) -> tuple[str, dict[str, Pa
         tail = tail.replace("{root}", ROOT).replace("{venv}", VENV)
         lines.append("# the declaration's shell tail")
         lines.append(f"RUN bash <<'{_HEREDOC}'\n{_PRELUDE}{tail.strip(chr(10))}\n{_HEREDOC}")
+    # This package last: it changes most often, and nothing above needs it.
+    if (code_root / "pyproject.toml").is_file():
+        for item in ("pyproject.toml", "README.md", "LICENSE", "openrua"):
+            if (code_root / item).exists():
+                files[f"src/{item}"] = code_root / item
+        lines.append(f"COPY src {FILES}/src")
+        lines.append(f"RUN {cache} uv pip install -q --python {PYTHON} --no-deps {FILES}/src")
+    else:
+        lines.append(f"RUN {cache} uv pip install -q --python {PYTHON} --no-deps "
+                     f"openrua=={__version__}")
     lines.append(f"ENV OPENRUA_SIMULATORS={ROOT} PATH={VENV}/bin:$PATH")
     return "\n".join(lines) + "\n", files
 
