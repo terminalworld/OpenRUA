@@ -113,6 +113,7 @@ in `examples/`.
 
 Bump `version` in `pyproject.toml`, commit, tag the commit `v<version>` and
 push the tag: the Release workflow builds the package, checks that the tag
-matches the version, and publishes a GitHub Release with the sdist and wheel
-attached and notes generated from the commits. Uploading to PyPI is a
-separate step (`python -m build && twine upload dist/*`).
+matches the version, publishes a GitHub Release with the sdist and wheel
+attached and notes generated from the commits, and uploads the same files to
+PyPI through trusted publishing (PyPI trusts the workflow's identity; no
+token anywhere).

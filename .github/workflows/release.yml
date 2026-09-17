@@ -1,15 +1,15 @@
 name: Release
-# A pushed version tag (v0.0.8) becomes a GitHub Release: the package
-# is built and checked, the sdist and wheel are attached, and the notes
-# are generated from the commits since the previous tag. Publishing to
-# PyPI stays a separate, deliberate step.
+# A pushed version tag (v0.0.8) becomes a release: the package is built
+# and checked, the tag is matched against pyproject's version, a GitHub
+# Release is published with the sdist and wheel attached and notes
+# generated from the commits, and the same files go to PyPI through
+# trusted publishing (no token: PyPI trusts this workflow, in the
+# `pypi` environment, by its OpenID Connect identity).
 on:
   push:
     tags: ["v[0-9]*"]
-permissions:
-  contents: write
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +22,33 @@ jobs:
       - run: |
           test "$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')" = "${GITHUB_REF_NAME#v}" \
             || { echo "tag $GITHUB_REF_NAME does not match pyproject version" >&2; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+  github-release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
       - run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes
         env:
           GH_TOKEN: ${{ github.token }}
+  pypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
