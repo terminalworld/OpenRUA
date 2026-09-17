@@ -35,6 +35,13 @@ Podman needs a subordinate uid range for your user (`grep $USER
 administrator can add one with `usermod --add-subuids
 100000-165535 --add-subgids 100000-165535 $USER`.
 
+## Building images
+
+`openrua build` writes Dockerfiles that use two BuildKit features,
+heredocs (`RUN bash <<'EOF'`) and cache mounts (`RUN
+--mount=type=cache`); Podman 4.4 or newer (Buildah 1.29) reads both.
+The `# syntax=` line at the top is Docker's and Podman ignores it.
+
 ## 2. Keep your uid in the sandbox
 
 The agent runs in the sandbox as the user `robot`, built with your own

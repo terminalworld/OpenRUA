@@ -122,4 +122,4 @@ your robot to the simulator file (`openrua/configs/simulators/<engine>.yaml`
 in a pull request, or your own copy passed with `--sim ./<engine>.yaml`); a benchmark whose
 assets bring the body declares it under `scenes.robots` instead, as
 `robocasa365` does for `panda-omron`. [simulation.md](simulation.md)
-has the files and where the installs live.
+has the files and what the images hold.

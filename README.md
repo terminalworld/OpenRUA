@@ -51,8 +51,7 @@ Install, choose a simulator and an agent once, name a robot, run:
 ```bash
 pip install openrua
 openrua config set --sim robosuite --agent claude-code   # your defaults
-openrua build                                       # the three images, once
-openrua install --sim robosuite                     # the simulator's checkout and venv, once
+openrua build --sim robosuite                       # the images, once: the simulator's, the agent's terminal, the proxy
 openrua run panda "pick up the red cube"
 ```
 
@@ -61,8 +60,8 @@ terminal with that sentence, and the robot powers off when you leave;
 `run` first prints which robot, scene and agent it picked.
 
 `openrua doctor` tells you what is missing before the first `run`
-(Docker, the three images, the simulator install, an agent login); the
-details are in [docs/install.md](docs/install.md).
+(Docker, the images, an agent login); the details are in
+[docs/install.md](docs/install.md).
 
 ## Choosing what to run
 
@@ -141,16 +140,17 @@ it, come from the other two kinds of file.
 | `vlabench` | [VLABench](https://github.com/OpenMOSS/VLABench)'s dm_control environments on MuJoCo 3.2 | `panda` | none: name the benchmark |
 
 A simulator file knows the engine and how it drives each robot it
-embodies; it knows no benchmark. Its install (a venv under
-`~/.openrua/simulators/`) and the benchmarks' own are described in
-[docs/simulation.md](docs/simulation.md).
+embodies; it knows no benchmark. Its install, and the benchmarks' own
+over it, is what `openrua build` renders into one image per declaration
+(`openrua-sim-<name>`: ROS 2, the checkouts, the assets, the Python
+environment); [docs/simulation.md](docs/simulation.md) describes them.
 
 ## Supported benchmarks
 
 | Benchmark | Robot | Simulator | Brings |
 |---|---|---|---|
 | [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) (`libero`) | `panda` | `robosuite` | the four standard suites and LIBERO-90, on LIBERO's robosuite 1.4 fork, ROS&nbsp;2 Jazzy |
-| [LIBERO-PRO](https://github.com/Zxy-MLlab/LIBERO-PRO) (`libero_pro`) | `panda` | `robosuite` | LIBERO's scenes under five perturbation axes, same fork and venv as `libero` |
+| [LIBERO-PRO](https://github.com/Zxy-MLlab/LIBERO-PRO) (`libero_pro`) | `panda` | `robosuite` | LIBERO's scenes under five perturbation axes, same fork as `libero` |
 | [LIBERO-Plus](https://github.com/sylvestf/LIBERO-plus) (`libero_plus`) | `panda` | `robosuite` | ~10,000 perturbed variants of the four suites, its own fork and assets, ROS&nbsp;2 Jazzy |
 | [LIBERO-Mem](https://github.com/libero-mem/libero-mem) (`libero_mem`) | `panda` | `robosuite` | ten non-Markovian tasks with subgoal sequences, its own fork, ROS&nbsp;2 Jazzy |
 | [RoboCerebra](https://github.com/qiuboxiang/RoboCerebra) (`robocerebra`) | `panda` | `robosuite` | long-horizon tabletop cases on its LIBERO fork, the `Ideal` protocol, ROS&nbsp;2 Jazzy |
@@ -159,14 +159,14 @@ embodies; it knows no benchmark. Its install (a venv under
 | [RoboCasa365](https://robocasa.ai) (`robocasa365`) | `panda-omron` | `robosuite` | the 365-task release's kitchens and the Panda-Omron body, ROS&nbsp;2 Humble |
 | [ManiSkill](https://maniskill.ai) (`maniskill`) | `panda` | `maniskill` | the eleven table-top Panda tasks that ship with ManiSkill 3, seeded resets, ROS&nbsp;2 Jazzy |
 | [SimplerEnv](https://simpler-env.github.io) (`simpler`) | `widowx` | `maniskill` | the four WidowX Bridge tasks as their authors ported them to ManiSkill 3 (the SAPIEN 2 original needs a GPU; its Google Robot tasks are not ported), the visual-matching placement grid, ROS&nbsp;2 Jazzy |
-| [MIKASA-Robo](https://github.com/CognitiveAISystems/MIKASA-Robo) (`mikasa`) | `panda` | `maniskill` | the 90 language-conditioned memory tasks (remember, shell game, intercept, ...), its own venv on ManiSkill 3.0.1, ROS&nbsp;2 Jazzy |
+| [MIKASA-Robo](https://github.com/CognitiveAISystems/MIKASA-Robo) (`mikasa`) | `panda` | `maniskill` | the 90 language-conditioned memory tasks (remember, shell game, intercept, ...), its own image on ManiSkill 3.0.1, ROS&nbsp;2 Jazzy |
 | [RoboTwin 2.0](https://robotwin-platform.github.io) (`robotwin`) | `aloha-agilex` | `robotwin` | the fifty dual-arm tasks under the Easy protocol (`demo_clean`); the Hard protocol needs its 11 GB textures and is not declared; ROS&nbsp;2 Jazzy |
 | [CALVIN](https://github.com/mees/calvin) (`calvin`) | `panda` | `calvin` | the 1000 five-subtask chains of the long-horizon evaluation on play table D, each with its fixed initial condition and the benchmark's task oracle, ROS&nbsp;2 Humble |
 | [VLABench](https://github.com/OpenMOSS/VLABench) (`vlabench`) | `panda` | `vlabench` | every task registered in the pinned checkout (5 GB of objects and scenes), seeded resets, the task's own termination as success, ROS&nbsp;2 Humble |
 
 A benchmark names its robot and simulator and brings its own world:
-`install:` (its venv and ROS distro) and `scenes:` (scene cameras, and
-robot embodiments its assets add). `openrua benchmarks` prints this
+`install:` (its image contents and ROS distro) and `scenes:` (scene
+cameras, and robot embodiments its assets add). `openrua benchmarks` prints this
 list; `openrua bench --config <name>` runs one.
 
 ## Supported agents

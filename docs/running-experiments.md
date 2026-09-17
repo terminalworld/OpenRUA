@@ -20,7 +20,7 @@ A run is one benchmark config, one task suite, and a set of task ids
 and seeds; each (task, seed) pair is one trial, run in sequence.
 `openrua benchmarks <name>` shows what there is to choose from: the
 suites, each suite's task ids with their sentences (read from the
-benchmark's own files in its simulator install), and what a seed means
+benchmark's own files, in its simulator image), and what a seed means
 there (an index into fixed initial-state files, the seed of the
 benchmark's own reset, or, where the benchmark's reset is unseeded,
 only the episode's number). `--config`
@@ -109,8 +109,9 @@ was waited out), `active_seconds`, `suspended_seconds`,
 
 ## provenance.json
 
-`openrua_version` and `openrua_commit` (with `git_dirty`),
-`simulator_commit` (with `simulator_dirty`), the three image digests,
+`openrua_version` and `openrua_commit` (with `git_dirty`), `sim_image`
+and the three image digests (the simulator image's pins the simulator,
+its patches and its assets),
 `config_file` and `config_sha256`, the prompt's hash and the workspace
 template's hash, `agent_cli` (name and version pin), `container_engine`
 and `sandbox_run_args`, `gpu_render`, `record` (the cameras recorded,

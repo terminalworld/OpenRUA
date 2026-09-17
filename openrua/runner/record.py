@@ -75,13 +75,26 @@ def secret_strings_from_env_file(path: Path) -> list[str]:
 
 def scrub_file(path: Path, secrets: list[str]) -> None:
     """Redact known secret strings before anything enters the record (the
-    agent can print its own configuration)."""
-    if not path.exists() or not secrets:
+    agent can print its own configuration). Byte-wise, so a binary file
+    that carries none is left as it is."""
+    if not path.is_file() or not secrets:
         return
-    text = path.read_text(errors="replace")
+    data = path.read_bytes()
+    out = data
     for s in secrets:
-        text = text.replace(s, "[REDACTED]")
-    path.write_text(text)
+        out = out.replace(s.encode(), b"[REDACTED]")
+    if out != data:
+        path.write_bytes(out)
+
+
+def scrub_tree(root: Path, secrets: list[str]) -> None:
+    """scrub_file over every file under ``root`` (the archived workspace:
+    the agent can copy its own environment into a file there)."""
+    if not root.is_dir():
+        return
+    for p in root.rglob("*"):
+        if p.is_file() and not p.is_symlink():
+            scrub_file(p, secrets)
 
 
 def _heredoc_marker(content: str) -> str:
@@ -405,6 +418,7 @@ def finalize_trial(trial_dir: Path, agent, secrets: list[str],
         scrub_file(Path(path), secrets)
     scrub_file(transcript, secrets)
     scrub_file(trial_dir / "bridge.log", secrets)
+    scrub_tree(trial_dir / "workspace", secrets)
     if transcript.exists():
         extract_commands(transcript, trial_dir / "commands.sh", agent)
         write_ops(trial_dir, agent.replay_ops(transcript))

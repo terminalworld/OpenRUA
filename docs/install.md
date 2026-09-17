@@ -1,5 +1,5 @@
 ---
-summary: Requirements, installing the package, building the three images, logging an agent in, and the doctor that checks it all
+summary: Requirements, installing the package, building the images, logging an agent in, and the doctor that checks it all
 read_when:
   - You are setting OpenRUA up on a machine for the first time
   - openrua doctor is red and you want to know what a row means
@@ -13,8 +13,7 @@ read_when:
 | | |
 |---|---|
 | OS | Linux. Docker Engine, or rootless Podman providing the `docker` command ([podman.md](podman.md)) |
-| Python | 3.10 or newer on the host; ROS 2 itself lives in the containers |
-| Simulated robots | `git` and [uv](https://docs.astral.sh/uv/) on the host for `openrua install` ([simulation.md](simulation.md)); a real robot needs neither |
+| Python | 3.10 or newer on the host; everything else (ROS 2, the simulators, the agent CLIs) lives in the images |
 | Agent | a Claude Code login (Claude subscription or API key) or a Codex login (ChatGPT subscription or OpenAI API key) |
 
 ## The package
@@ -29,28 +28,39 @@ The command is `openrua`; `openrua --help` lists the verbs and
 demo`) needs the `demo` extra: `pip install
 'openrua[demo] @ git+https://github.com/terminalworld/OpenRUA'`.
 
-## The three images
+## The images
 
 OpenRUA runs three containers: the robot (when simulated), the sandbox
 (the agent's terminal: `ros2`, `rclpy`, the docs, the agent's CLI) and
 the proxy (the sandbox's only route out, limited to the agent's model
-API). Build them once; `build` never runs on its own.
+API). Each is an image; build them once, `build` never runs on its own.
 
 ```bash
-openrua build                            # all three with their defaults (Jazzy, Claude Code)
-openrua build robot --distro humble      # or one at a time: --distro jazzy (default) | humble
-openrua build sandbox --agent codex      # --distro likewise; --agent claude-code (default), repeatable
+openrua build                            # sandbox + proxy for the default agent, and the default benchmark's simulator image
+openrua build --bench libero_pro         # one simulator image; --bench / --sim repeatable, --all: every bundled benchmark
+openrua build sandbox --agent codex      # --distro jazzy (default) | humble; --agent claude-code (default), repeatable
 openrua build proxy                      # the whitelist comes from the same manifests
 ```
 
-Images are named after the ROS 2 distro (`openrua-sim-jazzy`,
-`openrua-sandbox-humble`), and a robot profile names its distro once
-as `ros_distro`; the robot and sandbox images follow from it, so a
-Humble robot needs `build robot --distro humble` and `build sandbox
---distro humble` and nothing else. The sandbox and proxy images take
-the agent's install line and host whitelist from its manifest and
-carry a label per agent with the hash of what went in, which is how
-`doctor` later knows whether an image is stale.
+A simulated robot's image holds the whole environment: ROS 2, the
+simulator checkouts at their pinned commits, the assets, the Python
+environment and this package. It is rendered from the simulator file's
+`install:` (and a benchmark's over it) and named after the declaration
+it came from, `openrua-sim-<name>`: `--bench libero_pro` makes
+`openrua-sim-libero_pro`; a benchmark that adds nothing to its
+simulator, like CaP-Bench on robosuite, runs in the simulator's
+`openrua-sim-robosuite`. The first build of a distro also makes the
+ROS base it stacks on (`openrua-sim-base-jazzy`); Docker's layer cache
+makes an unchanged rebuild a no-op. Sizes and what each image carries
+are in [simulation.md](simulation.md).
+
+The sandbox and proxy images are named after the ROS 2 distro
+(`openrua-sandbox-humble`), which a robot's declaration names once as
+`ros_distro`; they take the agent's install line and host whitelist
+from its manifest and carry a label per agent with the hash of what
+went in. A simulator image carries the fingerprint of the declaration
+it was rendered from. Those labels are how `doctor` later knows
+whether an image is stale.
 
 A manifest pins no version, so `build sandbox` installs the agent's
 current release. To pin one, say so where you build and where you run:
@@ -77,17 +87,6 @@ a `claude setup-token` value as `CLAUDE_CODE_OAUTH_TOKEN`, for Codex an
 `OPENAI_API_KEY`) that docker hands to the agent process only. The
 token is scrubbed from the trial record like every other secret.
 
-## The simulator
-
-```bash
-openrua install --bench libero_pro     # or --sim robosuite; no flags: your default benchmark
-```
-
-Builds what the simulator file and the benchmark declare: the
-checkouts at their pinned commits and the venv the bridge runs in. The
-script it renders is printed and saved, and rerunning is cheap
-([simulation.md](simulation.md)).
-
 ## Your defaults
 
 `~/.openrua/config.yaml` holds what is true on this machine and nowhere
@@ -104,6 +103,18 @@ when that agent runs; `--agent` switching to another agent takes that
 agent's facts and default model. The keys are listed in
 [config.md](config.md#userconfig).
 
+## The user directory
+
+`~/.openrua` (`$OPENRUA_HOME`, `--home`) is written by the tool, never
+by hand, and holds two kinds of thing. Yours: `config.yaml` and
+`credentials/`. A sandbox's: `sandboxes/<name>/`, one directory per
+live sandbox with its workspace, its copy of the agent's profile and
+what `up` remembers for `agent` and `down`; it goes when the sandbox
+goes. A crashed sandbox, or a bring-up that failed, leaves its
+directory for you to read; `openrua clean` removes every one whose
+containers are not running, `openrua clean --all` powers the running
+ones off first. Neither touches `config.yaml` or `credentials/`.
+
 ## Check it
 
 ```bash
@@ -111,17 +122,18 @@ openrua doctor panda --bench libero_pro
 ```
 
 Read-only. One row per fact: the container engine, each image and
-whether its label still matches the manifests, the simulator install
-against its declaration (the venv and its Python, the package in it,
-each checkout's commit), the agent login, the user directory. An error row
-carries the command that fixes it; the exit code is 1 only when an
-error is present, and on a pipe the report is JSON.
+whether its label still matches the manifests (sandbox, proxy) or the
+declaration it was rendered from (the simulator image), the agent
+login, the user directory. An error row carries the command that fixes
+it; the exit code is 1 only when an error is present, and on a pipe
+the report is JSON.
 
 ## Update or remove
 
 ```bash
-pip install -U git+https://github.com/terminalworld/OpenRUA   # then rebuild the sandbox if an agent manifest changed
+pip install -U openrua                   # then rebuild: a simulator image carries the package too
+openrua build --all                      # rebuild every simulator image (cached layers make it quick)
 pip uninstall openrua
-rm -r ~/.openrua                                              # profiles, logins, simulators, workspaces
-docker rmi openrua-sim-jazzy openrua-sandbox-jazzy openrua-proxy
+rm -r ~/.openrua                         # defaults, logins, sandboxes
+docker image rm $(docker image ls -q 'openrua-*')
 ```

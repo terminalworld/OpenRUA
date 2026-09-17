@@ -1,8 +1,8 @@
 ---
-summary: Simulator files, the benchmarks' installs under ~/.openrua/simulators, GPU rendering
+summary: Simulator files, the simulator images openrua build makes from them, GPU rendering
 read_when:
-  - openrua doctor says a simulator venv is missing
-  - You keep simulators somewhere other than ~/.openrua/simulators
+  - openrua doctor says a robot image is missing or stale
+  - You want to know what a simulator image holds, or how big it is
   - You want GPU rendering or a simulator of your own
 ---
 
@@ -13,75 +13,78 @@ direction only: a benchmark names a simulator, a simulator embodies
 robots, a robot knows neither.
 
 - `simulators/<engine>.yaml` (`openrua simulators`): the engine, its
-  install (a venv and the ROS distro that goes with its Python), the
-  native scene `openrua run <robot> --sim <engine>` loads with no
-  benchmark, and `robots:`, how the engine drives each robot type it
-  embodies (controller, gains, joint-name map). The bundled `robosuite`
-  embodies `panda` and loads its `Lift` scene; `maniskill` (SAPIEN 3,
-  PhysX on the CPU, Vulkan rendering through lavapipe when there is no
-  GPU) embodies `panda` and `widowx` and loads `PickCube-v1`; `robotwin`
-  (RoboTwin's own harness on SAPIEN 3) embodies its dual-arm
-  `aloha-agilex` and has no native scene; `calvin` (calvin_env on
-  PyBullet, CPU rendering) embodies `panda` for the CALVIN benchmark;
-  `vlabench` (dm_control on MuJoCo) embodies `panda` as VLABench's
-  `franka`.
+  install (what its image is made of, and the ROS distro that goes
+  with its Python), the native scene `openrua run <robot> --sim
+  <engine>` loads with no benchmark, and `robots:`, how the engine
+  drives each robot type it embodies (controller, gains, joint-name
+  map). The bundled `robosuite` embodies `panda` and loads its `Lift`
+  scene; `maniskill` (SAPIEN 3, PhysX on the CPU, Vulkan rendering
+  through lavapipe when there is no GPU) embodies `panda` and `widowx`
+  and loads `PickCube-v1`; `robotwin` (RoboTwin's own harness on SAPIEN
+  3) embodies its dual-arm `aloha-agilex` and has no native scene;
+  `calvin` (calvin_env on PyBullet, CPU rendering) embodies `panda` for
+  the CALVIN benchmark; `vlabench` (dm_control on MuJoCo) embodies
+  `panda` as VLABench's `franka`.
 - `benchmarks/<name>.yaml`: names its `robot:` and `simulator:` and
-  brings its own world: `install:` (its venv and distro, over the
-  simulator's) and `scenes:` (scene cameras, a default suite, and robot
-  embodiments its assets add or adjust). LIBERO-PRO ships LIBERO's fork
-  of robosuite 1.4 under Jazzy; CaP-Bench and RoboCasa365 run on
-  robosuite 1.5 under Humble; RoboCasa's assets bring the `panda-omron`
-  body robosuite's own lack.
+  brings its own world: `install:` (its own image contents and distro,
+  over the simulator's) and `scenes:` (scene cameras, a default suite,
+  and robot embodiments its assets add or adjust). LIBERO-PRO ships
+  LIBERO's fork of robosuite 1.4 under Jazzy; CaP-Bench and RoboCasa365
+  run on robosuite 1.5 under Humble; RoboCasa's assets bring the
+  `panda-omron` body robosuite's own lack.
 
-## Installing
+## The image
 
-Each install is a checkout plus a Python venv, mounted into the robot
-container at `up`. What it is made of is declared in the simulator file
-(and a benchmark's `install:` over it): repositories at pinned commits
-(`checkouts`, with submodules and a patch), the venv's `python` (3.12
-goes with Jazzy, 3.10 with Humble), a `requirements` lock, checkouts
-installed `editable`, and a `shell` tail for what those cannot say
-(asset downloads). `openrua install` renders that to one bash script,
-prints it, saves it and runs it:
+A simulated robot runs in one image that holds its whole environment:
+the ROS 2 base (ROS, MoveIt, software rendering), the simulator
+checkouts at their pinned commits with their patches applied, the
+assets, a Python venv with the requirements lock and the checkouts
+installed, and this package. What goes in is declared in the simulator
+file (and a benchmark's `install:` over it, key by key): repositories
+at pinned commits (`checkouts`, with submodules and a patch), the
+`python` the image runs (3.12 goes with Jazzy, 3.10 with Humble), a
+`requirements` lock, checkouts installed `editable`, and a `shell` tail
+for what those cannot say (asset downloads). `openrua build` renders
+that into a Dockerfile over the base image and builds it:
 
 ```bash
-openrua install --bench libero_pro     # or --sim robosuite; no flags: your default benchmark
+openrua build --bench libero_pro     # openrua-sim-libero_pro; --sim robosuite: the engine's own image
+openrua build --all                  # every bundled benchmark
 ```
 
-Every step checks before it acts, so rerunning is cheap, and the saved
-script (`~/.openrua/simulators/install-<name>.sh`) can be read or rerun
-by hand. It needs `uv` and `git` on the host. The installs are large
-(tens of GB with assets) and land under the user directory:
+An image is named after the declaration it came from,
+`openrua-sim-<name>`. A benchmark that writes no install key of its
+own runs in its simulator's image (`capbench` in `openrua-sim-robosuite`,
+`calvin` in `openrua-sim-calvin`); one that brings anything, a fork or
+an asset download, gets its own. Every LIBERO-family benchmark installs
+its fork as the `libero` package, so each has an image of its own, and
+one loader serves them all (`entry_point: libero`).
 
-```
-~/.openrua/simulators/
-  cap-x/            LIBERO, LIBERO-PRO and CaP-Bench (.venv-libero, .venv-capbench); also robosuite's own scenes
-  libero-plus/      LIBERO-Plus (.venv; its fork and 6.4 GB of assets)
-  libero-mem/       LIBERO-Mem (.venv; its fork with its own robosuite and robomimic)
-  robocerebra/      RoboCerebra (.venv; its LIBERO fork and the RoboCerebra_Bench cases)
-  robocasa/         RoboCasa v0.2 on robosuite 1.5.0 (.venv; its kitchen assets)
-  robocasa365/      RoboCasa365 (.venv-robocasa)
-  maniskill/        ManiSkill 3 and SimplerEnv's Bridge tasks (.venv; assets they download land in data/)
-  mikasa/           MIKASA-Robo (.venv; its checkout over ManiSkill 3.0.1, the YCB objects in data/)
-  robotwin/         RoboTwin 2.0 (.venv on SAPIEN 3.0.3; its checkout with 9 GB of objects and embodiments)
-  calvin/           CALVIN (.venv; the calvin checkout with calvin_env, py3.10 == Humble)
-  vlabench/         VLABench (.venv; its checkout with 5 GB of objects and scenes, py3.10 == Humble)
-  install-*.sh      the rendered scripts
-```
+Inside the image the checkouts live under `/opt/openrua/simulators/`
+(`{root}` in a shell tail) and the venv at `/opt/openrua/venv/`
+(`{venv}`); a file the shell needs from the declaration's own
+directory, `<name>/` next to `<name>.yaml`, is copied in as `{here}`.
+The package in the venv is your checkout when `openrua` runs from one,
+else the release at the same version from PyPI. The container mounts
+one host directory, the trial's own (config, logs, frames); nothing
+else crosses the boundary.
 
-Every LIBERO-family benchmark installs its fork as the `libero`
-package, so each fork gets a venv of its own; one loader serves them
-all (`entry_point: libero`).
+Builds are large: the LIBERO family and ManiSkill a few GB each,
+RoboTwin about 12 GB, VLABench about 9 GB, RoboCasa365 about 25 GB
+with its kitchens. Docker's layer cache keeps a rebuild cheap when the
+declaration has not changed, and the requirements layer is cached
+across images (`uv`'s cache mount), so the second LIBERO fork builds
+faster than the first. A download that breaks mid-way fails the build
+loudly; rerun it.
 
-`install.venv` is relative to that directory (`cap-x/.venv-libero`); an
-absolute path or `~` works too if you keep simulators elsewhere. The
-venv has `openrua` installed by the script (the container starts the
-bridge with `python -m openrua.robot.sim.bridge.main` from it): an
-editable install of your checkout when the package runs from one, else
-the released package at the same version. `openrua doctor <robot>
---bench <benchmark>` (or `--sim <engine>`) compares what is on disk with
-the declaration: the venv and its Python, the package in it, each
-checkout's commit.
+Each image carries a label with the fingerprint of the Dockerfile and
+files it was rendered from (`openrua.install_sha256`), the package
+version and, from a checkout, the commit. `openrua doctor <robot>
+--bench <benchmark>` renders the declaration again and compares: a
+changed lock, patch or shell tail is reported as a stale image with
+the build command that refreshes it. A trial's `provenance.json`
+records the image's name and digest, which pins the simulator, its
+patches and its assets in one number.
 
 ## Rendering
 
@@ -103,14 +106,17 @@ loader with a name missing, and `openrua benchmarks <name>` prints
 what `tasks` returns). Bundled, the two live under
 `openrua/configs/benchmarks/` and `openrua/robot/sim/bridge/environments/`;
 yours sit side by side (`entry_point: ./my_bench.py`) and are passed
-with `--bench ./my-bench.yaml`. A new engine is a simulator file plus
-the engine module its `entry_point` names: a module exposing `ENGINE`,
-a callable `ENGINE(env, cfg)` whose result answers every name in
-`ENGINE_INTERFACE` (`openrua/robot/sim/bridge/engines/__init__.py`
-lists them with their units and conventions: joint addressing, poses,
-camera renders and intrinsics, action assembly, FK). Bundled engines
-live under `openrua/robot/sim/bridge/engines/` (`robosuite`); yours
-sits next to your simulator file (`entry_point: ./my_engine.py`) and
-is passed with `--sim ./my-sim.yaml`. A robot the engine's own assets
-lack is declared under the benchmark's `scenes.robots`, as RoboCasa365
-does for `panda-omron`.
+with `--bench ./my-bench.yaml`, and `openrua build --bench
+./my-bench.yaml` makes `openrua-sim-my-bench` from its `install:`
+(its lock, patches and `my-bench/` directory next to the yaml). A new
+engine is a simulator file plus the engine module its `entry_point`
+names: a module exposing `ENGINE`, a callable `ENGINE(env, cfg)` whose
+result answers every name in `ENGINE_INTERFACE`
+(`openrua/robot/sim/bridge/engines/__init__.py` lists them with their
+units and conventions: joint addressing, poses, camera renders and
+intrinsics, action assembly, FK). Bundled engines live under
+`openrua/robot/sim/bridge/engines/` (`robosuite`); yours sits next to
+your simulator file (`entry_point: ./my_engine.py`) and is passed with
+`--sim ./my-sim.yaml`. A robot the engine's own assets lack is
+declared under the benchmark's `scenes.robots`, as RoboCasa365 does
+for `panda-omron`.

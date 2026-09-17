@@ -47,11 +47,11 @@ files under `runs/`.
 ```
 openrua/configs/{robots,simulators,benchmarks,agents}/   bundled declarations, ship in the wheel
 openrua/plugins/agents/, openrua/robot/sim/bridge/{environments,engines}/   the code bundled entry_points name
+openrua-sim-<name>, openrua-sandbox-<distro>, openrua-proxy   the images (openrua build): a simulator's whole environment, the agent's terminal, the proxy
 ~/.openrua/                                             the user directory ($OPENRUA_HOME, --home); written by the tool, not by hand
   config.yaml                                            your defaults (openrua config set)
   credentials/<agent>/                                   login profiles
-  simulators/<name>/.venv-*                              simulator checkouts (openrua install)
-  workspaces/<name>/  state/<name>.yaml                  what `openrua up` / `run` keep
+  sandboxes/<name>/                                      a live sandbox's workspace, profile copy and state; gone with it (openrua clean sweeps leftovers)
 ./runs/                                                 trial data (--runs-root)
 ```
 

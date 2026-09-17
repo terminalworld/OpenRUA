@@ -20,8 +20,7 @@ usage: openrua [-h] [--version] [--home HOME] <verb> ...
 | `simulators` | list the bundled simulators |
 | `benchmarks` | list the bundled benchmarks (or one benchmark's suites and tasks) |
 | `agents` | list the bundled agents |
-| `build` | build the robot, sandbox and proxy images |
-| `install` | build a simulator install (checkouts and venv) |
+| `build` | build the images: simulators, sandbox, proxy |
 | `run` | bring a robot up, open the agent on it, power off after |
 | `up` | bring a robot up with a sandbox terminal on it |
 | `agent` | open a coding agent on the robot's terminal |
@@ -31,6 +30,7 @@ usage: openrua [-h] [--version] [--home HOME] <verb> ...
 | `demo` | render a recorded trial as a video (terminal + cameras) |
 | `probe` | draft a robot profile from a live ROS 2 graph |
 | `config` | your defaults (robot, simulator, benchmark, agent) |
+| `clean` | remove what sandboxes left under <home>/sandboxes |
 | `doctor` | check the install: docker, images, simulator, login |
 
 Global options: `--home` (the user directory, default `$OPENRUA_HOME` or `~/.openrua`), `--version`.
@@ -95,32 +95,39 @@ options:
 ## openrua build
 
 ```
-usage: openrua build [-h] [<unit>] ...
+usage: openrua build [-h] [--bench NAME] [--sim NAME] [--all] [<unit>] ...
 
-Build the three images (bare `openrua build`: all of them with their
-defaults), or one of them with its options. The sandbox and proxy images take
-their install line and whitelist from the manifests of the agents named with
---agent.
+Build simulator images from their declarations (--bench / --sim, repeatable;
+--all: every bundled benchmark), or one of the agent-side images (sandbox,
+proxy) or the ROS base. Bare `openrua build` makes the sandbox and proxy
+images for the default agent and the default benchmark's simulator image. The
+sandbox and proxy take their install line and whitelist from the manifests of
+the agents named with --agent.
 
 positional arguments:
   [<unit>]
-    robot     the simulated robot image (Dockerfile.<distro>)
-    sandbox   the agent terminal image
-    proxy     the whitelist proxy image
+    base        the ROS base image simulator images build on
+    sandbox     the agent terminal image
+    proxy       the whitelist proxy image
 
 options:
-  -h, --help  show this help message and exit
+  -h, --help    show this help message and exit
+  --bench NAME  benchmark whose simulator image to build (openrua benchmarks);
+                repeatable
+  --sim NAME    simulator whose image to build, for its native scene (openrua
+                simulators); repeatable
+  --all         every bundled benchmark's image
 ```
 
-### openrua build robot
+### openrua build base
 
 ```
-usage: openrua build robot [-h] [--distro DISTRO] [--tag TAG]
+usage: openrua build base [-h] [--distro DISTRO] [--tag TAG]
 
 options:
   -h, --help       show this help message and exit
   --distro DISTRO  ROS 2 distro: jazzy | humble
-  --tag TAG        image tag (default: openrua-sim-<distro>)
+  --tag TAG        image tag (default: openrua-sim-base-<distro>)
 ```
 
 ### openrua build sandbox
@@ -138,8 +145,8 @@ options:
                         configured default)
   --preinstall PREINSTALL
                         install line to bake instead of the agents' manifests
-  --distro DISTRO       ROS 2 distro: jazzy | humble (the robot's; profiles
-                        name it as ros_distro)
+  --distro DISTRO       ROS 2 distro: jazzy | humble (the robot's;
+                        declarations name it as ros_distro)
   --robot-uid ROBOT_UID
                         container uid (default: the current user)
   --tag TAG             image tag (default: openrua-sandbox-<distro>)
@@ -160,26 +167,6 @@ options:
                         manifests
   --tag TAG
   --port PORT           listen port, baked in and labelled
-```
-
-## openrua install
-
-```
-usage: openrua install [-h] [--sim SIM] [--bench BENCH] [--print]
-
-Build what a simulator file, and a benchmark's install: over it, declare:
-repositories at pinned commits, a venv at the declared Python with the
-requirements lock, editable checkouts, and the package itself. The script is
-printed, saved under <home>/simulators/ and run; rerunning is cheap. Needs uv
-and git.
-
-options:
-  -h, --help     show this help message and exit
-  --sim SIM      simulator to install (openrua simulators); default: the
-                 benchmark's, else the user config's
-  --bench BENCH  benchmark whose install to build (openrua benchmarks);
-                 default: the user config's default benchmark, if any
-  --print        print the script and stop
 ```
 
 ## openrua run
@@ -221,7 +208,8 @@ options:
                         openrua)
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
-                        working directory (default: <home>/workspaces/<name>)
+                        working directory (default:
+                        <home>/sandboxes/<name>/workspace)
   --ros-domain ROS_DOMAIN
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
@@ -265,7 +253,8 @@ options:
                         openrua)
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
-                        working directory (default: <home>/workspaces/<name>)
+                        working directory (default:
+                        <home>/sandboxes/<name>/workspace)
   --ros-domain ROS_DOMAIN
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
@@ -514,6 +503,23 @@ options:
   --credentials-dir CREDENTIALS_DIR
                         the agent's login profile directory
                         (agents.<agent>.credentials_dir)
+```
+
+## openrua clean
+
+```
+usage: openrua clean [-h] [--all]
+
+Every sandbox writes under ``<home>/sandboxes/<name>/`` (workspace, profile
+copy, state) and removes it when it goes down; a sandbox that crashed, or a
+bring-up that failed, leaves its directory behind. This verb removes every
+such directory whose containers are not running; ``--all`` powers the running
+ones off first. ``config.yaml`` and ``credentials/`` are yours and never
+touched.
+
+options:
+  -h, --help  show this help message and exit
+  --all       power running sandboxes off and remove theirs too
 ```
 
 ## openrua doctor

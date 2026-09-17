@@ -194,25 +194,23 @@ How the sandbox reaches a real robot's ROS 2 graph; exactly one key.
 
 ## SimBackend
 
-A simulated robot: a container running the bridge over a simulator venv.
+A simulated robot: a container running the bridge in the image its declaration was built into.
 
 | key | type | default | meaning |
 |---|---|---|---|
 | `kind` | 'sim' | **required** | a simulated robot |
-| `ros_distro` | 'jazzy' \| 'humble' | 'jazzy' | the ROS 2 distro the robot runs; the robot and sandbox images are named after it |
-| `image` | str \| null | None | simulated robot image; default: openrua-sim-<ros_distro> |
+| `ros_distro` | 'jazzy' \| 'humble' | 'jazzy' | the ROS 2 distro the robot runs; the sandbox image is named after it |
+| `image` | str | **required** | the simulated robot image, openrua-sim-<name> for the simulator or benchmark whose install: it was built from |
 | `sandbox_image` | str \| null | None | agent terminal image; default: openrua-sandbox-<ros_distro> |
 | `gpus` | bool | False | render on the GPU (needs nvidia toolkit) |
 | `resources` | dict[str, Any] \| null | None | render_threads: int \| off \| auto |
-| `simulator` | [Simulator](#simulator) | **required** | the simulator venv the bridge runs in |
+| `simulator` | [Simulator](#simulator) | **required** | the bridge engine |
 
 ## Simulator
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `venv` | str | **required** | simulator venv: absolute, ~, or relative to ~/.openrua/simulators/ |
 | `engine` | str \| null | None | the bridge engine module (resolved from the simulator's entry_point: a module path, or an absolute .py file copied next to the config) |
-| `container` | str \| null | None | which sim image family (sim-jazzy \| sim-humble); documentation |
 
 ## Cameras
 
@@ -263,36 +261,32 @@ A simulators/<engine>.yaml: the engine, its install, its native scene, and how i
 |---|---|---|---|
 | `engine` | str | **required** | the engine, as a person would name it (robosuite 1.5 on MuJoCo) |
 | `entry_point` | str | **required** | the bridge engine: a bundled name (robosuite) or a path to a module of your own, relative to this file |
-| `install` | [Install](#install) | **required** | the venv and distro the bridge runs with |
+| `install` | [Install](#install) | **required** | what its image is made of, and the ROS distro |
 | `native` | [NativeScene](#nativescene) \| null | None | scene loaded with no benchmark; null = a benchmark is required |
 | `robots` | dict[str, [Embodiment](#embodiment)] | {} | robot type name -> how this engine drives it |
 
 ## Install
 
-A simulator install: the venv the bridge runs in, the ROS distro that goes with its Python, and the recipe ``openrua install`` renders to a script and runs to build it.
+What a simulator image is made of: the ROS distro (which base image), the Python that goes with it, and the recipe ``openrua build`` renders into the image's layers.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `venv` | str | **required** | simulator venv: absolute, ~, or relative to ~/.openrua/simulators/ |
-| `ros_distro` | 'jazzy' \| 'humble' | 'jazzy' | the ROS 2 distro the robot runs; the robot and sandbox images are named after it |
-| `python` | str \| null | None | the venv's Python (3.12 goes with Jazzy, 3.10 with Humble); required to install |
+| `ros_distro` | 'jazzy' \| 'humble' | 'jazzy' | the ROS 2 distro the robot runs; the base image and the sandbox image are named after it |
+| `python` | str \| null | None | the image's Python (3.12 goes with Jazzy, 3.10 with Humble); required to build |
 | `checkouts` | list[[Checkout](#checkout)] | [] | repositories cloned at pinned commits |
-| `requirements` | str \| null | None | a pip requirements lock installed into the venv, relative to the file naming it |
-| `editable` | list[str] | [] | checkouts installed editable with --no-deps (the lock has their dependencies), relative to ~/.openrua/simulators/ |
-| `shell` | str \| null | None | shell run last, in the venv, for what the fields above cannot say (asset downloads); {root} = ~/.openrua/simulators, {venv} = the venv, {here} = the directory of the file naming it |
-| `container` | str \| null | None | which sim image family (sim-jazzy \| sim-humble); documentation |
-| `image` | str \| null | None | simulated robot image; default: openrua-sim-<ros_distro> |
-| `sandbox_image` | str \| null | None | agent terminal image; default: openrua-sandbox-<ros_distro> |
+| `requirements` | str \| null | None | a pip requirements lock installed into the image's venv, relative to the file naming it |
+| `editable` | list[str] | [] | checkouts installed editable with --no-deps (the lock has their dependencies), relative to the simulators directory |
+| `shell` | str \| null | None | shell run last, as an image layer, for what the fields above cannot say (asset downloads); {root} = the simulators directory, {venv} = the venv, {here} = the declaration's own files, the <name>/ directory next to <name>.yaml, copied into the image |
 | `gpus` | bool | False | render on the GPU (needs nvidia toolkit) |
 | `resources` | dict[str, Any] \| null | None | render_threads: int \| off \| auto |
 
 ## Checkout
 
-One repository ``openrua install`` clones at a pinned commit.
+One repository the image clones at a pinned commit.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `path` | str | **required** | where it lands, relative to ~/.openrua/simulators/ |
+| `path` | str | **required** | where it lands, relative to the image's simulators directory ({root} in shell) |
 | `repo` | str | **required** | git URL |
 | `commit` | str | **required** | the commit checked out (a full hash) |
 | `submodules` | list[str] | [] | submodule paths to initialise, relative to the checkout |
@@ -336,7 +330,7 @@ A benchmarks/<name>.yaml as written.
 | `agent` | [AgentConfig](#agentconfig) |  | which agent, over the defaults files |
 | `robot` | str \| null | None | robot type (or instance) name or path; --robot overrides it |
 | `simulator` | str \| null | None | simulator name or path; --sim overrides it; null with a real-robot instance |
-| `install` | [InstallOverrides](#installoverrides) \| null | None | this benchmark's own venv and distro, over the simulator's |
+| `install` | [InstallOverrides](#installoverrides) \| null | None | this benchmark's own image contents and distro, over the simulator's |
 | `scenes` | [Scenes](#scenes) |  | what the benchmark brings into the world |
 | `machine` | [Machine](#machine) \| null | None | a robot written inline instead of assembled |
 | `suite_overrides` | dict[str, dict[str, Any]] | {} | per-suite deep merge into the config; null deletes a key |
@@ -386,20 +380,16 @@ A benchmarks/<name>.yaml as written.
 
 ## InstallOverrides
 
-A benchmark's install section: same keys as Install, none required; only what is written replaces the simulator's, key by key. A benchmark with a venv of its own writes the whole recipe.
+A benchmark's install section: same keys as Install, none required; only what is written replaces the simulator's, key by key. A benchmark with an image of its own writes the whole recipe.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `venv` | str \| null | None | see Install |
 | `ros_distro` | 'jazzy' \| 'humble' \| null | None | see Install |
 | `python` | str \| null | None | see Install |
 | `checkouts` | list[[Checkout](#checkout)] \| null | None | see Install |
 | `requirements` | str \| null | None | see Install |
 | `editable` | list[str] \| null | None | see Install |
 | `shell` | str \| null | None | see Install |
-| `container` | str \| null | None | see Install |
-| `image` | str \| null | None | see Install |
-| `sandbox_image` | str \| null | None | see Install |
 | `gpus` | bool \| null | None | see Install |
 | `resources` | dict[str, Any] \| null | None | see Install |
 

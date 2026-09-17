@@ -37,10 +37,11 @@ per unit (`tests/<unit>/`).
   naming its robot and simulator, its loader (`entry_point`, a module
   under `openrua/robot/sim/bridge/environments/` exposing `LOADER`: how
   its scenes are built, reset and scored) and its world (`install:` with
-  pinned checkouts, a Python version and a requirements lock next to the
-  yaml, so `openrua install --bench <name>` builds it; `scenes:`).
+  pinned checkouts, a Python version and a requirements lock in the
+  `<name>/` directory next to the yaml, so `openrua build --bench <name>`
+  renders it into `openrua-sim-<name>`; `scenes:`).
   `tests/config/test_install.py` checks every bundled declaration is
-  complete and its files ship.
+  complete, its files ship and it renders.
 - **A config key**: add it to `openrua/config/schema.py` with a default and a
   description; unknown keys are errors everywhere, so the schema is
   the single place a key exists.

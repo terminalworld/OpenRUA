@@ -172,3 +172,16 @@ def test_run_config_is_write_once(tmp_path):
     write_run_config(tmp_path, {"gen": 1})
     write_run_config(tmp_path, {"gen": 2})  # concurrent runner: no rewrite
     assert json.loads((tmp_path / "config.json").read_text()) == {"gen": 1}
+
+
+def test_scrub_covers_the_archived_workspace_and_leaves_binaries_alone(tmp_path):
+    from openrua.runner.record import scrub_file, scrub_tree
+    ws = tmp_path / "workspace"
+    (ws / "notes").mkdir(parents=True)
+    (ws / "notes" / "env.txt").write_text("TOKEN=sk-secret-value\n")
+    png = bytes([0x89, 0x50, 0x4E, 0x47, 0, 255, 13, 10])
+    (ws / "shot.png").write_bytes(png)
+    scrub_tree(ws, ["sk-secret-value"])
+    assert (ws / "notes" / "env.txt").read_text() == "TOKEN=[REDACTED]\n"
+    assert (ws / "shot.png").read_bytes() == png
+    scrub_file(tmp_path / "absent.log", ["x"])          # nothing there: nothing to do

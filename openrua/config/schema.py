@@ -493,7 +493,7 @@ class Install(Strict):
 class InstallOverrides(Strict):
     """A benchmark's install section: same keys as Install, none required;
     only what is written replaces the simulator's, key by key. A
-    benchmark with a venv of its own writes the whole recipe."""
+    benchmark with an image of its own writes the whole recipe."""
     ros_distro: Distro | None = Field(default=None, description="see Install")
     python: str | None = Field(default=None, description="see Install")
     checkouts: list[Checkout] | None = Field(default=None, description="see Install")
@@ -520,7 +520,7 @@ class SimulatorProfile(Strict):
                         "(robosuite 1.5 on MuJoCo)")
     entry_point: str = Field(description="the bridge engine: a bundled name (robosuite) "
                              "or a path to a module of your own, relative to this file")
-    install: Install = Field(description="the venv and distro the bridge runs with")
+    install: Install = Field(description="what its image is made of, and the ROS distro")
     native: NativeScene | None = Field(default=None, description="scene loaded with no "
                                        "benchmark; null = a benchmark is required")
     robots: dict[str, Embodiment] = Field(default_factory=dict, description="robot type "
@@ -563,7 +563,7 @@ class Benchmark(Strict):
     simulator: str | None = Field(default=None, description="simulator name or path; "
                                   "--sim overrides it; null with a real-robot instance")
     install: InstallOverrides | None = Field(default=None, description="this benchmark's "
-                                             "own venv and distro, over the simulator's")
+                                              "own image contents and distro, over the simulator's")
     scenes: Scenes = Field(default_factory=Scenes, description="what the benchmark brings "
                            "into the world")
     machine: Machine | None = Field(default=None, description="a robot written inline "
