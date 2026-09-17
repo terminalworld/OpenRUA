@@ -115,7 +115,7 @@ class MikasaLoader:
         return [{"task_id": i, "language": s} for i, (_, s) in enumerate(SUITES[task_suite])]
 
     def create(self, cfg: dict, task_suite: str, task_id: int):
-        _assets_next_to_the_venv()
+        _assets_next_to_the_venv("mikasa")
         import gymnasium as gym
         import mani_skill.envs  # noqa: F401
         import mikasa_robo_suite.vla.memory_envs  # noqa: F401  registers the -VLA-v0 tasks

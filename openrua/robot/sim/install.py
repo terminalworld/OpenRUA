@@ -28,7 +28,8 @@ from pathlib import Path
 from openrua import __version__
 
 ROOT = "/opt/openrua/simulators"   # checkouts, inside the image
-VENV = "/opt/openrua/venv"         # the one venv the bridge runs in
+VENV = f"{ROOT}/.venv"             # the one venv the bridge runs in, next to the checkouts:
+                                   # a loader finds its checkout at Path(sys.prefix).parent / <path>
 FILES = "/opt/openrua/build"       # where the context's files land
 PYTHON = f"{VENV}/bin/python"
 BASE_IMAGE = "openrua-sim-base"    # + "-<distro>": openrua build base
@@ -70,8 +71,9 @@ def render(install: dict, name: str, code_root: Path) -> tuple[str, dict[str, Pa
         f'RUN test "$(python3 -c \'import sys; print("%d.%d" % sys.version_info[:2])\')" '
         f'= {shlex.quote(str(python))} || {{ echo "the {distro} image runs $(python3 --version), '
         f'the {name} install declares Python {python}" >&2; exit 1; }}',
-        f"RUN UV_PYTHON_DOWNLOADS=never uv venv -q {VENV} --python /usr/bin/python3",
     ]
+    # Checkouts first: they change least, so a change below (the lock, the
+    # package) rebuilds from the venv layer, not from the clones.
     for i, c in enumerate(install.get("checkouts") or []):
         dst = c["path"]
         clone = (f"git clone -q {shlex.quote(c['repo'])} {shlex.quote(dst)} && "
@@ -84,6 +86,7 @@ def render(install: dict, name: str, code_root: Path) -> tuple[str, dict[str, Pa
             p = stage(c["patch"], f"checkout{i}")
             lines.append(f"COPY {_ctx(p)} {p}")
             lines.append(f"RUN git -C {shlex.quote(dst)} apply {p}")
+    lines.append(f"RUN UV_PYTHON_DOWNLOADS=never uv venv -q {VENV} --python /usr/bin/python3")
     cache = "--mount=type=cache,target=/root/.cache/uv"
     if install.get("requirements"):
         p = stage(install["requirements"], "requirements")

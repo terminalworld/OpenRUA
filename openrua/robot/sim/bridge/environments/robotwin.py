@@ -35,7 +35,8 @@ PHYSICS_STEPS_PER_TICK = 10
 
 
 def _root() -> Path:
-    return Path(sys.prefix).parent / "RoboTwin"
+    """The checkout, ``robotwin/RoboTwin`` from the root the venv sits at."""
+    return Path(sys.prefix).parent / "robotwin" / "RoboTwin"
 
 
 def _task_names(root: Path) -> list[str]:

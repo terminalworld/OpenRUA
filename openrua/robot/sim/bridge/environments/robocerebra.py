@@ -34,7 +34,7 @@ def _cases(root: Path, task_type: str) -> list[Path]:
     if not d.is_dir():
         have = sorted(p.name for p in root.iterdir() if p.is_dir()) if root.is_dir() else []
         raise FileNotFoundError(f"RoboCerebra task type {task_type!r} not found under {root} "
-                                f"(have: {', '.join(have) or 'nothing; run openrua install'})")
+                                f"(have: {', '.join(have) or 'nothing; openrua build --bench robocerebra'})")
 
     def key(p: Path):
         m = re.search(r"(\d+)$", p.name)

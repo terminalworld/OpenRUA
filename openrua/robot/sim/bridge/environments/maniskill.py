@@ -37,8 +37,10 @@ TASKS = [
 SUITES = {"tabletop": TASKS}
 
 
-def _assets_next_to_the_venv() -> None:
-    root = Path(sys.prefix).parent / "data"
+def _assets_next_to_the_venv(checkout: str = "maniskill") -> None:
+    """The assets the install downloaded into ``<checkout>/data``; the
+    venv sits at the root the checkouts hang from."""
+    root = Path(sys.prefix).parent / checkout / "data"
     os.environ.setdefault("MS_ASSET_DIR", str(root))
 
 

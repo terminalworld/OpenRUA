@@ -1,7 +1,7 @@
 # LIBERO-Mem benchmark config (libero-mem/libero-mem, arXiv 2511.11478):
 # ten non-Markovian kitchen tasks whose goals are sequences of subgoals
 # over visually identical objects. Their fork installs as the ``libero``
-# package, with its own robosuite and robomimic, so it has a venv of its
+# package, with its own robosuite and robomimic, so it has an image of its
 # own. Their predicate advances a subgoal state machine when called with
 # inc=True; the bridge calls it that way on every step, as their loop does.
 # The fork ships init-state files for four of the ten tasks; the other six

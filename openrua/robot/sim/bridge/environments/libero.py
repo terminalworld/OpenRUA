@@ -47,7 +47,7 @@ def write_libero_settings() -> Path:
     ``bddl_files``, is found on disk."""
     spec = importlib.util.find_spec("libero")
     if spec is None or spec.origin is None:
-        raise ImportError("libero is not installed in this simulator venv")
+        raise ImportError("libero is not installed in this simulator image")
     root = Path(spec.origin).parent
     if (root / "libero" / "__init__.py").exists():   # upstream: libero.libero
         root = root / "libero"

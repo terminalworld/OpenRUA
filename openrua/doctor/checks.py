@@ -57,6 +57,7 @@ class Context:
     install: dict | None = None  # the simulator install the config declares
     sim: str | None = None       # what was named on the command line, for the hints
     bench: str | None = None
+    owner: str | None = None     # the declaration the robot image is rendered from
 
 
 def engine_version() -> str:
@@ -185,8 +186,8 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
         else:
             have = image_label(sim, sim_build.LABEL_FINGERPRINT)
             want = None
-            if ctx.install:
-                dockerfile, files = installer.render(ctx.install, sim, paths.code_root())
+            if ctx.install and ctx.owner:
+                dockerfile, files = installer.render(ctx.install, ctx.owner, paths.code_root())
                 want = installer.fingerprint(dockerfile, files)
             if want and have and have != want:
                 out.append(CheckResult("robot-image", f"robot image {sim} present", "warning",
@@ -239,12 +240,14 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
         home: Path | None = None, checks=CHECKS, sim: str | None = None,
         bench: str | None = None) -> Report:
     home = paths.home(home)
-    cfg = install = None
+    cfg = install = owner = None
     report = Report()
     if robot or bench:
         try:
             composed = compose(robot, sim, bench, home)
             cfg, install = composed.cfg, composed.install
+            if composed.simulator:
+                owner = config.image_owner(composed.simulator, bench)
         except Exception as exc:  # noqa: BLE001
             what = " ".join(x for x in (robot, sim and f"--sim {sim}", bench and f"--bench {bench}") if x)
             report.checks.append(CheckResult("robot-profile", f"{what}: {exc}", "error",
@@ -261,8 +264,7 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
             report.checks.append(CheckResult(f"agent-{n}", f"agent {n}: {exc}", "error",
                                              hint="openrua agents lists the agents"))
     ctx = Context(home=home, agents=chosen, cfg=cfg, robot=robot, install=install,
-                  sim=sim or (cfg or {}).get("machine", {}).get("backend", {}).get("image"),
-                  bench=bench)
+                  sim=sim, bench=bench, owner=owner)
     for check in checks:
         try:
             report.checks.extend(check(ctx))

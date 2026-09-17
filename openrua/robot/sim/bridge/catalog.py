@@ -1,8 +1,8 @@
 """The tasks a benchmark's suites hold, from the loader, as JSON.
 
-Run in the simulator's venv by ``openrua benchmarks <name>`` (host
+Run in the simulator's image by ``openrua benchmarks <name>`` (host
 side, no container): the loader is the one party that knows how a
-benchmark enumerates its tasks, and its imports live in that venv.
+benchmark enumerates its tasks, and its imports live in that image.
 Writes ``{suite: [{task_id, language}, ...]}`` to ``--out`` (a file: a
 benchmark's imports may write anything to stdout and stderr).
 

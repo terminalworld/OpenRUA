@@ -13,3 +13,6 @@ substrates/
 runs/
 workspaces/
 data/
+
+# gate runs written by the image gate
+.gate-runs/

@@ -121,13 +121,13 @@ def test_robot_image_is_checked_against_the_declaration_it_was_rendered_from(tmp
     from openrua.doctor import checks
     from openrua.robot.sim import build as sim_build, install as installer
     inst = config.install_for("robosuite", "libero_pro")
-    dockerfile, files = installer.render(inst, "openrua-sim-libero_pro", paths.code_root())
+    dockerfile, files = installer.render(inst, "libero_pro", paths.code_root())
     want = installer.fingerprint(dockerfile, files)
     cfg = {"machine": {"backend": {"kind": "sim", "ros_distro": "jazzy",
                                    "image": "openrua-sim-libero_pro",
                                    "sandbox_image": "openrua-sandbox-jazzy"}}}
     ctx = checks.Context(home=tmp_path, agents=[], cfg=cfg, robot="panda", install=inst,
-                         bench="libero_pro")
+                         bench="libero_pro", owner="libero_pro")
     monkeypatch.setattr(checks, "docker_inspect", _fake_docker({
         "openrua-sim-libero_pro": {sim_build.LABEL_FINGERPRINT: want,
                                    sim_build.LABEL_VERSION: "0.0.7"},

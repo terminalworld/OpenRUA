@@ -37,7 +37,7 @@ def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
     ap.add_argument("--version", action="version", version=f"openrua {__version__}")
     ap.add_argument("--home", default=default_home, type=paths.home,
                     help="the user directory: your robots/, benchmarks/, agents/, "
-                    "credentials/, simulators/ (default: $OPENRUA_HOME or ~/.openrua)")
+                    "credentials/, sandboxes/ (default: $OPENRUA_HOME or ~/.openrua)")
     sub = ap.add_subparsers(dest="verb", metavar="<verb>")
     for command in COMMANDS:
         command.add_parser(sub)

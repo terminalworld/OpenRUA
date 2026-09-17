@@ -23,7 +23,8 @@ from pathlib import Path
 
 
 def _root() -> Path:
-    return Path(sys.prefix).parent / "VLABench" / "VLABench"
+    """The checkout, ``vlabench/VLABench`` from the root the venv sits at."""
+    return Path(sys.prefix).parent / "vlabench" / "VLABench" / "VLABench"
 
 
 def _prepare() -> None:

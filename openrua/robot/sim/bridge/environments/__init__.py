@@ -20,7 +20,7 @@ protocol, ``task_info`` reads their task sentence. The state returned by
 
 ``tasks`` answers without an env: the suite's task ids and sentences,
 which ``openrua benchmarks <name>`` prints (through ``catalog.py``, run
-in the simulator's venv); an empty sentence means the benchmark writes
+in the simulator's image); an empty sentence means the benchmark writes
 it at reset.
 
 Zero ROS imports; simulator imports live inside ``create`` (the registry
