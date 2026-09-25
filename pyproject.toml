@@ -9,7 +9,7 @@ description = "Let your Claude Code or Codex control any robot, real or simulate
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
-authors = [{ name = "Zhaoyang Chu", email = "zhaoyang.chu.25@ucl.ac.uk" }]
+authors = [{ name = "Anonymous Authors" }]
 keywords = ["robotics", "ros2", "claude-code", "codex", "coding-agent", "llm"]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -30,10 +30,6 @@ dependencies = [
 [project.optional-dependencies]
 demo = ["pillow", "numpy", "imageio", "imageio-ffmpeg"]
 dev = ["pytest", "import-linter", "pillow", "numpy", "imageio", "imageio-ffmpeg"]
-
-[project.urls]
-Homepage = "https://github.com/terminalworld/OpenRUA"
-Repository = "https://github.com/terminalworld/OpenRUA"
 
 [project.scripts]
 openrua = "openrua.cli:main"

@@ -19,14 +19,13 @@ read_when:
 ## The package
 
 ```bash
-pip install openrua
+pip install -e .            # from the root of this source tree
 openrua --version
 ```
 
 The command is `openrua`; `openrua --help` lists the verbs and
 [cli.md](cli.md) has every flag. Rendering demo videos (`openrua
-demo`) needs the `demo` extra: `pip install
-'openrua[demo] @ git+https://github.com/terminalworld/OpenRUA'`.
+demo`) needs the `demo` extra: `pip install -e '.[demo]'`.
 
 ## The images
 
@@ -131,7 +130,7 @@ the report is JSON.
 ## Update or remove
 
 ```bash
-pip install -U openrua                   # then rebuild: a simulator image carries the package too
+pip install -e .                         # after pulling new source; then rebuild: a simulator image carries the package too
 openrua build --all                      # rebuild every simulator image (cached layers make it quick)
 pip uninstall openrua
 rm -r ~/.openrua                         # defaults, logins, sandboxes

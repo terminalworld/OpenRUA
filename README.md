@@ -6,17 +6,11 @@
 
 *Through the standard ROS&nbsp;2 CLI and client library, without relying on any VLA model.*
 
-[![CI](https://github.com/terminalworld/OpenRUA/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/OpenRUA/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![ROS 2](https://img.shields.io/badge/ROS%202-22314E?logo=ros&logoColor=white)](docs/architecture.md)
-[![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)<br>
-[![Stars](https://img.shields.io/github/stars/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/stargazers)
-[![Forks](https://img.shields.io/github/forks/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/forks)
-[![Watchers](https://img.shields.io/github/watchers/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/watchers)
+[![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)
 
-https://github.com/user-attachments/assets/3b134c51-a949-44dd-9474-5249c3879aa0
-
-*Codex (GPT-6 Astra) on LIBERO-10, "put the yellow and white mug on the left plate and put the white mug on the right plate": the commands it typed on the left, the robot's cameras on the right, task success. More in [docs/demos.md](docs/demos.md).*
+*Demo videos are in the supplementary material; [docs/demos.md](docs/demos.md) lists the trials they show.*
 
 </div>
 
@@ -49,7 +43,7 @@ OpenRUA gives you one command for three things:
 Install, choose a simulator and an agent once, name a robot, run:
 
 ```bash
-pip install openrua
+pip install -e .                                    # from the root of this source tree
 openrua config set --sim robosuite --agent claude-code   # your defaults
 openrua build --sim robosuite                       # the images, once: the simulator's, the agent's terminal, the proxy
 openrua run panda "pick up the red cube"
@@ -263,17 +257,7 @@ may import whom is enforced by CI (import-linter and
 
 ## Citation
 
-The paper will be released soon; until then, cite the software:
-
-```bibtex
-@software{openrua,
-  author  = {{Terminal World Labs}},
-  title   = {OpenRUA},
-  year    = {2026},
-  url     = {https://github.com/terminalworld/OpenRUA},
-  license = {Apache-2.0}
-}
-```
+The paper is under review; a citation entry will be added when it is published.
 
 ## License
 

@@ -3,7 +3,7 @@
 ## Setting up
 
 ```bash
-git clone https://github.com/terminalworld/OpenRUA && cd OpenRUA
+cd OpenRUA                                   # the root of this source tree
 python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest -q && .venv/bin/lint-imports
 ```
