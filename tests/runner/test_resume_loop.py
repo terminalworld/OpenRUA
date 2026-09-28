@@ -96,6 +96,52 @@ def test_wall_suspends_and_the_same_session_resumes(harness):
     assert "--resume" in second and "--resume" not in first
 
 
+def test_resumed_trial_that_runs_out_the_clock_is_resolved(harness, monkeypatch):
+    # Regression (2026-09-28): the first segment met a wall and was waited
+    # out; the second ran until the active wall clock expired. The loop
+    # broke on the timeout before re-reading the segment, so the first
+    # segment's wall stood as the last one, quota_resolved came out False,
+    # and a complete 240-minute trial was voided and run again.
+    real = R.run_segment
+    calls = []
+
+    def run_segment(cmd, trial_dir, env, timeout_s, meta):
+        calls.append(cmd)
+        t0, t1, _ = real(cmd, trial_dir, env, timeout_s, meta)
+        if len(calls) == 2:
+            meta["termination"] = "wall_clock_cap"
+            return t0, t1, True
+        return t0, t1, False
+
+    monkeypatch.setattr(R, "run_segment", run_segment)
+    meta = harness([[INIT, WALL, _result(4, "error_during_execution")],
+                    [INIT, {"type": "assistant"}]])
+    assert meta["segments"] == 2 and meta["resumes"] == 1
+    assert meta["termination"] == "wall_clock_cap"
+    assert meta["quota_resolved"] is True
+
+
+def test_segment_that_times_out_at_its_own_wall_stays_unresolved(harness, monkeypatch):
+    # The other side of the same line: if the timed-out segment itself
+    # carries a wall, the trial ended at that wall and is not resolved.
+    real = R.run_segment
+    calls = []
+
+    def run_segment(cmd, trial_dir, env, timeout_s, meta):
+        calls.append(cmd)
+        t0, t1, _ = real(cmd, trial_dir, env, timeout_s, meta)
+        if len(calls) == 2:
+            meta["termination"] = "wall_clock_cap"
+            return t0, t1, True
+        return t0, t1, False
+
+    monkeypatch.setattr(R, "run_segment", run_segment)
+    meta = harness([[INIT, WALL, _result(4, "error_during_execution")],
+                    [INIT, WALL]])
+    assert meta["resumes"] == 1
+    assert meta["quota_resolved"] is False
+
+
 def test_turn_budget_is_carried_not_restarted(harness):
     # The CLI restarts --max-turns on every resume, so
     # a loop that passed the full budget again would hand a resumed trial

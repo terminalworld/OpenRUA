@@ -232,13 +232,16 @@ def agent_operator(ctx: dict) -> dict:
         fin_so_far = agent.read_final(transcript)
         if fin_so_far.get("num_turns") is not None:
             turns_used = fin_so_far["num_turns"]
-        if timed_out:
-            break
         # A quota rejection is the one reason to wait rather than
         # finish; success, max turns and a dead CLI all end the trial.
         # Read this segment only: a whole-file verdict would re-suspend a
-        # trial that already finished.
+        # trial that already finished. Read it before the timeout check:
+        # a resumed segment that runs out the wall clock must not keep the
+        # previous segment's wall as its own, or a trial that ended at the
+        # clock is voided as quota-limited and run again.
         last_quota = agent.quota_since(transcript, mark) or {}
+        if timed_out:
+            break
         resets_at = last_quota.get("resets_at")
         if not resets_at:
             break
