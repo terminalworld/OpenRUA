@@ -17,7 +17,7 @@ PKG = Path(__file__).resolve().parents[2] / "openrua"
 
 _BRIDGE = {"openrua.robot.sim.bridge"}
 _HOST = {"openrua.runner.preflight", "openrua.runner.record", "openrua.sandbox",
-         "openrua.proxy", "openrua.agents", "openrua.runner"}
+         "openrua.proxy", "openrua.agents", "openrua.runner", "openrua.sessions"}
 # The bridge is self-contained: nothing from openrua outside itself (the
 # resolved config arrives as data), including the robot package's own
 # host side.
@@ -57,9 +57,9 @@ FORBIDDEN = {
     "runner/record.py": {"openrua.robot", "openrua.sandbox", "openrua.proxy",
                   "openrua.agents", "openrua.runner", "openrua.config"} | _TOP,
     "proxy": {"openrua.robot", "openrua.config"} | _LAYERS | _TOP,
-    "agents": {"openrua.robot", "openrua.plugins"} | _LAYERS | _TOP,
+    "agents": {"openrua.robot", "openrua.plugins", "openrua.sessions"} | _LAYERS | _TOP,
     # hooks modules see the contract and nothing else of openrua
-    "plugins": _HOST_LEAVES | _BRIDGE | _TOP | {
+    "plugins": _HOST_LEAVES | _BRIDGE | _TOP | {"openrua.sessions",
         "openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.runner",
         "openrua.agents.registry", "openrua.agents.launcher",
         "openrua.agents.credentials", "openrua.agents.prompts"},
@@ -69,6 +69,8 @@ FORBIDDEN = {
     # demo renders a trial's files; it sees errors and nothing else
     "demo": _HOST | _BRIDGE | _TOP | {"openrua.robot", "openrua.config"},
     # doctor sits with cli above the units; nothing below imports it
+    "sessions": _TOP | _BRIDGE | {"openrua.plugins", "openrua.robot", "openrua.sandbox",
+                                     "openrua.proxy", "openrua.runner", "openrua.config"},
     "doctor": _BRIDGE | {"openrua.testing"},
     "cli": _BRIDGE | {"openrua.testing"},
 }

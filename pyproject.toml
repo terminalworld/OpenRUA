@@ -164,3 +164,18 @@ name = "units read validated dicts, never the config schema"
 type = "forbidden"
 source_modules = ["openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.runner.preflight", "openrua.runner.record"]
 forbidden_modules = ["openrua.config"]
+
+
+[[tool.importlinter.contracts]]
+name = "session coordination sees contracts, not robot resources or vendor plugins"
+type = "forbidden"
+source_modules = ["openrua.sessions"]
+forbidden_modules = ["openrua.cli", "openrua.doctor", "openrua.testing", "openrua.plugins",
+                     "openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.runner", "openrua.config"]
+
+[[tool.importlinter.contracts]]
+name = "agent plugins and leaves never coordinate user sessions"
+type = "forbidden"
+source_modules = ["openrua.agents", "openrua.plugins", "openrua.robot", "openrua.sandbox",
+                  "openrua.proxy", "openrua.config", "openrua.errors"]
+forbidden_modules = ["openrua.sessions"]

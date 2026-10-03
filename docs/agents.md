@@ -194,3 +194,7 @@ native cancellation expires it. The protocol follows the
 [Anthropic's control-protocol implementation](https://github.com/anthropics/claude-agent-sdk-python/blob/main/src/claude_agent_sdk/_internal/query.py),
 checked with Claude Code 2.1.284. Control-handshake checks send no model task;
 active cancellation, message echo and tool execution still need live validation.
+
+The shared queue and execution owner consume this contract without vendor
+branches; their boundaries and current validation scope are described in
+[sessions.md](sessions.md).
