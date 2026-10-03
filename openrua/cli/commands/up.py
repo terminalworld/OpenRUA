@@ -46,15 +46,19 @@ class Session(LiveRobot):
      Ctrl-C here powers the robot off and keeps the workspace."""
 
 
-def open_session(args) -> Session:
-    """Translate command-line options into the shared resource request."""
-    live = open_robot(RobotRequest(
+def robot_request(args) -> RobotRequest:
+    """Translate CLI options into the shared, explicit resource request."""
+    return RobotRequest(
         home=args.home, name=args.name, robot=args.robot, simulator=args.sim,
         benchmark=args.bench, agent=args.agent, model=getattr(args, "model", None),
         task_suite=args.task_suite, task_id=args.task_id, task=args.task,
         init_state=args.init_state,
         workspace=Path(args.workspace) if args.workspace else None,
-        ros_domain=args.ros_domain))
+        ros_domain=args.ros_domain)
+
+
+def open_session(args) -> Session:
+    live = open_robot(robot_request(args))
     return Session(**vars(live))
 
 

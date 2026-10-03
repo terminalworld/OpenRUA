@@ -125,6 +125,7 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         state.save(request.name, request.home, status="running", sim=sim_name, sandbox=sandbox_name,
                    backend=cfg["machine"]["backend"]["kind"],
                    network=network, proxy=proxy_url, agent=adapter.name,
+                   agent_spec=cfg_agent["name"], agent_version=cfg_agent.get("version"),
                    model=model,
                    options={**adapter.default_options,
                             **cfg.get("agent", {}).get("options", {})},

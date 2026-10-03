@@ -7,6 +7,7 @@ the local implementation; clients never access its SQL or database connection.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 import time
@@ -29,6 +30,10 @@ class Store(Protocol):
 class SQLiteStore:
     def __init__(self, path: Path, initial: dict):
         path.parent.mkdir(parents=True, exist_ok=True)
+        # Create privately before SQLite opens it; journals inherit its mode.
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT, 0o600)
+        os.close(fd)
+        path.chmod(0o600)
         self._lock = threading.RLock()
         self._db = sqlite3.connect(path, isolation_level=None, timeout=30, check_same_thread=False)
         self._db.execute("PRAGMA journal_mode=WAL")
@@ -37,6 +42,15 @@ class SQLiteStore:
         self._db.execute("CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT, "
                          "at REAL NOT NULL, body TEXT NOT NULL)")
         self._db.execute("INSERT OR IGNORE INTO state VALUES (1, ?)", (json.dumps(initial),))
+
+    @classmethod
+    def open_readonly(cls, path: Path) -> SQLiteStore:
+        """Read retained records without creating a database or modifying its schema."""
+        instance = cls.__new__(cls)
+        instance._lock = threading.RLock()
+        instance._db = sqlite3.connect(path.resolve().as_uri() + "?mode=ro", uri=True,
+                                       isolation_level=None, timeout=30, check_same_thread=False)
+        return instance
 
     def update(self, change: Change) -> Any:
         with self._lock:

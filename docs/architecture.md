@@ -123,3 +123,10 @@ conversation queue in `sessions`: closing a client is neither a robot shutdown
 nor a conversation deletion. Shutdown attempts both sandbox and machine and
 marks the resource session stopped only if both calls succeed. A failure to
 save resource facts after startup also triggers resource cleanup.
+
+`runner.managed` combines a live robot with the plugin's native conversation
+and the session execution owner. The `serve` CLI supplies a local HTTP front
+end; `chat` and `session` consume that API. HTTP connection loss does not close
+the execution owner. `down` routes managed sessions through their owner, and
+`clean` refuses to delete a directory while its service endpoint remains.
+Agent-specific frames and launch commands remain in the existing agent plugins.

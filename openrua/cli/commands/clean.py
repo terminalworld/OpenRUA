@@ -44,6 +44,10 @@ def run(args) -> int:
         if not directory.exists():
             print(f"nothing at {directory}")
             continue
+        if (directory / "endpoint.json").exists():
+            raise UnavailableError(
+                f"session {directory.name!r} has a shared service endpoint; files kept",
+                hint=f"openrua session --name {directory.name} end; if the host crashed, inspect its resources before removing the stale endpoint")
         if running(directory.name):
             if not args.all:
                 print(f"[clean] {directory.name}: containers running, kept (--all powers them off)")

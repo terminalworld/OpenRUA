@@ -23,6 +23,9 @@ usage: openrua [-h] [--version] [--home HOME] <verb> ...
 | `build` | build the images: simulators, sandbox, proxy |
 | `run` | bring a robot up, open the agent on it, power off after |
 | `up` | bring a robot up with a sandbox terminal on it |
+| `serve` | own a robot and shared native conversation for local clients |
+| `chat` | chat with an existing shared agent, or reconnect to its events |
+| `session` | inspect, queue messages, pause/resume or end a shared session |
 | `agent` | open a coding agent on the robot's terminal |
 | `down` | power a robot and its terminal off, retaining session files |
 | `bench` | run a benchmark: one trial per task and seed |
@@ -259,6 +262,211 @@ options:
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
+```
+
+## openrua serve
+
+```
+usage: openrua serve [-h] [--sim SIM] [--bench BENCH]
+                     [--task-suite TASK_SUITE] [--task-id TASK_ID]
+                     [--init-state INIT_STATE] [--task TASK] [--name NAME]
+                     [--agent AGENT] [--workspace WORKSPACE]
+                     [--ros-domain ROS_DOMAIN] [--model MODEL] [--port PORT]
+                     [robot]
+
+Run a local shared session independently of its connected clients.
+
+positional arguments:
+  robot
+
+options:
+  -h, --help            show this help message and exit
+  --sim SIM             simulator that embodies the robot (openrua
+                        simulators); default: the benchmark's; a real robot's
+                        file needs none
+  --bench BENCH         benchmark whose world to load (openrua benchmarks);
+                        default: the simulator's native scene
+  --task-suite TASK_SUITE
+                        scene suite (default: the profile's)
+  --task-id TASK_ID     scene index (default: the profile's)
+  --init-state INIT_STATE
+                        episode seed / init state (simulated robots)
+  --task TASK           task sentence to show the agent (real robots; a
+                        simulated robot's comes from the scene)
+  --name NAME           handle for this robot, for agent/down (default:
+                        openrua)
+  --agent AGENT         agent to open (default: the config's)
+  --workspace WORKSPACE
+                        new or empty working directory, retained after
+                        shutdown (default: <home>/sandboxes/<name>/workspace)
+  --ros-domain ROS_DOMAIN
+                        ROS_DOMAIN_ID (default: the lowest one no running
+                        robot uses, so concurrent robots never share a graph;
+                        a real robot: its own domain, 0)
+  --model MODEL         model (default: the configured agent's)
+  --port PORT           local port (default: choose a free port)
+```
+
+## openrua chat
+
+```
+usage: openrua chat [-h] [--name NAME] [--follow] [--after AFTER] [message]
+
+Chat with a shared native agent; leaving this client does not end its session.
+
+positional arguments:
+  message        one message; omit for a conversation
+
+options:
+  -h, --help     show this help message and exit
+  --name NAME
+  --follow       observe events without submitting anything
+  --after AFTER  event cursor for --follow (default: from the beginning)
+```
+
+## openrua session
+
+```
+usage: openrua session [-h] [--name NAME]
+                       {status,events,send,interrupt,withdraw,resume,edit,resolve_unknown,respond,end} ...
+
+positional arguments:
+  {status,events,send,interrupt,withdraw,resume,edit,resolve_unknown,respond,end}
+    status              snapshot, pending questions and message IDs
+    events              read retained events after a cursor
+    send                enqueue a message without waiting for its result
+    resume              release the currently confirmed pause
+    resolve_unknown     record checking an uncertain execution, without
+                        replaying it
+    respond             answer a pending agent question
+    end                 stop owned resources and retain messages and workspace
+
+options:
+  -h, --help            show this help message and exit
+  --name NAME
+```
+
+### openrua session status
+
+```
+usage: openrua session status [-h]
+
+options:
+  -h, --help  show this help message and exit
+```
+
+### openrua session events
+
+```
+usage: openrua session events [-h] [--after AFTER] [--limit LIMIT]
+
+options:
+  -h, --help     show this help message and exit
+  --after AFTER
+  --limit LIMIT
+```
+
+### openrua session send
+
+```
+usage: openrua session send [-h] [--client-id CLIENT_ID]
+                            [--request-id REQUEST_ID]
+                            text
+
+positional arguments:
+  text
+
+options:
+  -h, --help            show this help message and exit
+  --client-id CLIENT_ID
+                        reuse with request ID for safe retry
+  --request-id REQUEST_ID
+                        unique for this message; reuse only for retries
+```
+
+### openrua session interrupt
+
+```
+usage: openrua session interrupt [-h] message_id
+
+positional arguments:
+  message_id
+
+options:
+  -h, --help  show this help message and exit
+```
+
+### openrua session withdraw
+
+```
+usage: openrua session withdraw [-h] message_id
+
+positional arguments:
+  message_id
+
+options:
+  -h, --help  show this help message and exit
+```
+
+### openrua session resume
+
+```
+usage: openrua session resume [-h] pause_id
+
+positional arguments:
+  pause_id    copy the current pause_id from status
+
+options:
+  -h, --help  show this help message and exit
+```
+
+### openrua session edit
+
+```
+usage: openrua session edit [-h] --revision REVISION message_id text
+
+positional arguments:
+  message_id
+  text
+
+options:
+  -h, --help           show this help message and exit
+  --revision REVISION
+```
+
+### openrua session resolve_unknown
+
+```
+usage: openrua session resolve_unknown [-h] message_id note
+
+positional arguments:
+  message_id
+  note
+
+options:
+  -h, --help  show this help message and exit
+```
+
+### openrua session respond
+
+```
+usage: openrua session respond [-h] request_id answers
+
+positional arguments:
+  request_id
+  answers     JSON mapping question IDs to lists of answers
+
+options:
+  -h, --help  show this help message and exit
+```
+
+### openrua session end
+
+```
+usage: openrua session end [-h]
+
+options:
+  -h, --help  show this help message and exit
 ```
 
 ## openrua agent

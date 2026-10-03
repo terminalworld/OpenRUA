@@ -140,7 +140,7 @@ session_id=None)` in addition to batch execution and the native terminal.
 The default returns `None`; existing plugins need no migration. The hook
 returns a `Conversation` containing a piped native-process command and a
 `ConversationProtocol`. Construction starts no process. This capability is
-a building block for shared sessions, not yet a unified-chat CLI or web UI.
+consumed by the experimental shared `serve` / `chat` CLI; a web UI is not yet included.
 
 The protocol is independent of transport and contains all vendor-specific
 message knowledge. An execution owner serializes calls, writes each returned

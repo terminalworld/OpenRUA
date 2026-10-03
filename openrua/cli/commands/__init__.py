@@ -4,6 +4,6 @@ Registration order is the ``--help`` order.
 """
 
 from openrua.cli.commands import (agent, bench, build, clean, config, demo, doctor, down,
-                                  list, probe, ps, run, up)
+                                  list, probe, ps, run, up, serve, session, chat)
 
-COMMANDS = (list, build, run, up, agent, down, bench, ps, demo, probe, config, clean, doctor)
+COMMANDS = (list, build, run, up, serve, chat, session, agent, down, bench, ps, demo, probe, config, clean, doctor)

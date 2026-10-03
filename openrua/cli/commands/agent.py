@@ -8,9 +8,14 @@ from openrua import agents
 from openrua.cli import state
 from openrua.cli.state import DEFAULT_NAME
 from openrua.errors import UnavailableError
+from openrua.config import paths
 
 
 def run(args) -> int:
+    if (paths.sandbox_dir(args.name, args.home) / "endpoint.json").exists():
+        raise UnavailableError(
+            "this robot has a managed conversation; direct terminal input would bypass its queue",
+            hint=f"openrua chat --name {args.name}; use a separate up session for a native terminal")
     st = state.load(args.name, args.home)
     agent = agents.get(args.agent or st["agent"], args.home)
     argv = agent.interactive_argv(
