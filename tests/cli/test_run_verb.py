@@ -9,6 +9,7 @@ from openrua.cli import build_parser
 from openrua.cli.commands import build as build_cmd
 from openrua.cli.commands import run as run_cmd
 from openrua.cli.commands import up as up_cmd
+from openrua.runner import live, live_state
 
 
 class _Adapter:
@@ -126,19 +127,19 @@ def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path):
         assert (suite, task_id) == (None, None)
         return dest / "config.yaml", machine, 7
 
-    monkeypatch.setattr(up_cmd, "bring_up", bring_up)
-    monkeypatch.setattr(up_cmd, "ensure_internal_network", lambda: "internal")
-    monkeypatch.setattr(up_cmd, "ensure_proxy", lambda _: "http://proxy")
-    monkeypatch.setattr(up_cmd.agents, "prepare_profile", lambda *a: (tmp_path / "profile", None))
-    monkeypatch.setattr(up_cmd, "sandbox_down", lambda _: calls.append("sandbox down"))
-    monkeypatch.setattr(up_cmd, "start_episode", lambda *a: pytest.fail("must not reset a real robot"))
+    monkeypatch.setattr(live, "bring_up", bring_up)
+    monkeypatch.setattr(live, "ensure_internal_network", lambda: "internal")
+    monkeypatch.setattr(live, "ensure_proxy", lambda _: "http://proxy")
+    monkeypatch.setattr(live.agents, "prepare_profile", lambda *a: (tmp_path / "profile", None))
+    monkeypatch.setattr(live, "sandbox_down", lambda _: calls.append("sandbox down"))
+    monkeypatch.setattr(live, "start_episode", lambda *a: pytest.fail("must not reset a real robot"))
     args = build_parser().parse_args(["--home", str(tmp_path / "home"), "up", str(profile),
                                       "--ros-domain", "7", "--task", "inspect the table"])
     session = up_cmd.open_session(args)
     assert session.task == "inspect the table"
     assert session.suite is None and session.scene() == "(none)"
-    assert up_cmd.state.load(args.name, args.home)["task"] == "inspect the table"
+    assert live_state.load(args.name, args.home)["task"] == "inspect the table"
     session.power_off()
     assert calls == ["sandbox down", "shutdown"]
-    assert up_cmd.state.load(args.name, args.home, require_running=False)["status"] == "stopped"
+    assert live_state.load(args.name, args.home, require_running=False)["status"] == "stopped"
     assert (args.home / "sandboxes" / args.name / "workspace").is_dir()

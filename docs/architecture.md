@@ -107,3 +107,19 @@ the workspace from the profile. The handle's rpc answers not applicable,
 so a trial records no verdict on hardware. `openrua probe` drafts the
 profile from the graph. The agent cannot tell the difference, which is
 the point.
+
+### Interactive resource ownership
+
+`runner.live.open_robot(RobotRequest(...))` creates a live robot and sandbox
+through the existing `bring_up` path and returns a `LiveRobot` handle. The
+caller retains this handle and calls `power_off()` when it ends the resource
+session. `up` and `run` translate their CLI arguments into this same request;
+service hosts can use it without importing the CLI. Terminal formatting stays
+in the CLI.
+
+`runner.live_state` owns the retained resource facts. The old `cli.state`
+imports remain available for callers. Resource state is separate from the
+conversation queue in `sessions`: closing a client is neither a robot shutdown
+nor a conversation deletion. Shutdown attempts both sandbox and machine and
+marks the resource session stopped only if both calls succeed. A failure to
+save resource facts after startup also triggers resource cleanup.

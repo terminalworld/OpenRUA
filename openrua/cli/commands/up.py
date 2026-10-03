@@ -10,40 +10,14 @@ one-command form (up, agent, down).
 from __future__ import annotations
 
 import signal
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
-from openrua import agents
-from openrua.cli import state
-from openrua.cli.state import DEFAULT_NAME
-from openrua.config import apply_suite_overrides, compose, normalize_arms
-from openrua.config import paths
-from openrua.errors import UnavailableError, UsageError
-from openrua.proxy.up import ensure as ensure_proxy
-from openrua.runner.bringup import bring_up, ensure_internal_network, start_episode
-from openrua.sandbox.down import down as sandbox_down
+from openrua.runner.live import LiveRobot, RobotRequest, open_robot
+from openrua.runner.live_state import DEFAULT_NAME
 
 
-@dataclass
-class Session:
-    """A robot that is up, with the sandbox terminal on it, and the one
-    call that powers both off. The fields are what the user should see
-    named: which robot, where it runs, which scene, which agent."""
-
-    name: str
-    sim: str
-    sandbox: str
-    robot: str            # the robot as named on the command line (or by the benchmark)
-    robot_model: str      # machine.robot.model
-    backend: str          # "simulated by robosuite (ROS 2 jazzy)" or "real"
-    benchmark: str | None
-    suite: str | None
-    task_id: int | None
-    task: str             # the scene's own task sentence, if any
-    agent: str
-    model: str
-    power_off: Callable[[], None]
+class Session(LiveRobot):
+    """CLI presentation of the shared live robot handle."""
 
     def scene(self) -> str:
         if not self.suite:
@@ -73,79 +47,15 @@ class Session:
 
 
 def open_session(args) -> Session:
-    """Bring the robot and its sandbox up and record them under
-    ``args.name``; the returned session's ``power_off`` takes them down."""
-    composed = compose(args.robot, args.sim, args.bench, args.home, agent=args.agent)
-    cfg = composed.cfg
-    suite = args.task_suite or composed.suite
-    task_id = args.task_id if args.task_id is not None else composed.task_id
-    if suite is not None:
-        apply_suite_overrides(cfg, suite)
-    normalize_arms(cfg)
-    sim_name, sandbox_name = state.container_names(args.name)
-    sandbox_dir = paths.sandbox_dir(args.name, args.home)
-    workdir = Path(args.workspace or sandbox_dir / "workspace").resolve()
-    if workdir.exists() and (not workdir.is_dir() or any(workdir.iterdir())):
-        raise UsageError(f"working directory is not empty: {workdir}",
-                         hint="use --workspace <new-empty-directory>; existing files are retained")
-    state.reserve(args.name, args.home)
-    workdir.mkdir(parents=True, exist_ok=True)
-    network = ensure_internal_network()
-    proxy_url = ensure_proxy(network)
-    # cfg["agent"] is already the chosen agent's (compose took --agent):
-    # its model, version, login directory and options are that agent's.
-    cfg_agent = cfg["agent"]
-    adapter = agents.get(cfg_agent["name"], args.home, version=cfg_agent.get("version"))
-    model = getattr(args, "model", None) or cfg_agent.get("model") or adapter.default_model
-    creds_home = Path(cfg.get("agent", {}).get("credentials_dir")
-                      or paths.credentials_dir(args.home) / adapter.name).expanduser()
-    cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter, sandbox_dir / "profile")
-    print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
-          flush=True)
-    try:
-        _, machine, _ = bring_up(
-            cfg, workdir, sim_name, sandbox_name, suite, task_id, network, proxy_url,
-            adapter.sandbox_mounts(cfg_dir, creds_file), args.ros_domain,
-            robot_log=workdir / "robot.log", home=args.home)
-    except Exception as e:  # noqa: BLE001
-        # The sandbox directory stays for the read below; openrua clean sweeps it.
-        raise UnavailableError(f"[up] robot failed to come up: {e}",
-                               hint=f"read {workdir / 'robot.log'}") from e
-
-    def power_off() -> None:
-        print("\n[down] powering off", flush=True)
-        sandbox_down(sandbox_name)
-        machine.shutdown()
-        state.stopped(args.name, args.home)
-        print(f"[down] files retained at {sandbox_dir}; workspace: {workdir / 'workspace'}")
-
-    try:
-        if cfg["machine"]["backend"]["kind"] == "sim":
-            task = start_episode(machine, args.init_state).get("language", "")
-        else:
-            task = args.task or ""
-    except Exception as e:  # noqa: BLE001
-        sandbox_down(sandbox_name)
-        machine.shutdown()
-        raise UnavailableError(f"[up] robot failed to reset: {e}",
-                               hint=f"read {workdir / 'robot.log'}") from e
-    state.save(args.name, args.home, status="running", sim=sim_name, sandbox=sandbox_name,
-               backend=cfg["machine"]["backend"]["kind"],
-               network=network, proxy=proxy_url, agent=adapter.name,
-               model=model,
-               options={**adapter.default_options,
-                        **cfg.get("agent", {}).get("options", {})},
-               workspace=str(workdir / "workspace"), task=task)
-    backend = cfg["machine"]["backend"]
-    where = (f"simulated by {composed.simulator} (ROS 2 {backend.get('ros_distro', '?')})"
-             if backend["kind"] == "sim" else "real")
-    robot = cfg["machine"].get("robot", {})
-    return Session(
-        name=args.name, sim=sim_name, sandbox=sandbox_name,
-        robot=composed.robot, robot_model=robot.get("model", "?"), backend=where,
-        benchmark=composed.benchmark,
-        suite=suite, task_id=task_id, task=task,
-        agent=adapter.name, model=model, power_off=power_off)
+    """Translate command-line options into the shared resource request."""
+    live = open_robot(RobotRequest(
+        home=args.home, name=args.name, robot=args.robot, simulator=args.sim,
+        benchmark=args.bench, agent=args.agent, model=getattr(args, "model", None),
+        task_suite=args.task_suite, task_id=args.task_id, task=args.task,
+        init_state=args.init_state,
+        workspace=Path(args.workspace) if args.workspace else None,
+        ros_domain=args.ros_domain))
+    return Session(**vars(live))
 
 
 def run(args) -> int:

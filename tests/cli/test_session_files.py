@@ -7,6 +7,7 @@ import pytest
 from openrua.cli import build_parser, state
 from openrua.cli.commands import clean, down, up
 from openrua.config import paths
+from openrua.runner import live
 from openrua.errors import NotFound, UnavailableError, UsageError
 
 
@@ -65,7 +66,7 @@ def test_up_preserves_nonempty_external_directory_before_launch(monkeypatch, tmp
     program.write_text("keep")
     profile = tmp_path / "robot.yaml"
     profile.write_text("type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n")
-    monkeypatch.setattr(up, "ensure_internal_network", lambda: pytest.fail("must not start"))
+    monkeypatch.setattr(live, "ensure_internal_network", lambda: pytest.fail("must not start"))
     args = build_parser().parse_args(["--home", str(tmp_path / "home"), "up", str(profile),
                                       "--workspace", str(external)])
     with pytest.raises(UsageError, match="not empty"):
