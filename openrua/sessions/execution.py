@@ -30,12 +30,13 @@ class StdioTransport:
 
     @classmethod
     async def start(cls, argv: list[str], stderr_path: Path,
-                    max_frame_bytes: int = 4 * 1024 * 1024) -> StdioTransport:
+                    max_frame_bytes: int = 4 * 1024 * 1024,
+                    cwd: Path | None = None) -> StdioTransport:
         stderr_path.parent.mkdir(parents=True, exist_ok=True)
         with stderr_path.open("ab") as errors:
             process = await asyncio.create_subprocess_exec(
                 *argv, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
-                stderr=errors, start_new_session=True, limit=max_frame_bytes)
+                stderr=errors, start_new_session=True, limit=max_frame_bytes, cwd=cwd)
         return cls(process)
 
     async def read(self) -> dict | None:

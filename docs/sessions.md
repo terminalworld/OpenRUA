@@ -186,6 +186,8 @@ ownership. Execution tests use a fake native transport to inject failures.
 Local HTTP tests cover concurrent clients, a connection dropped before its
 response, request timeouts, cursor replay, request validation and explicit end.
 A CLI integration test exercises serve/chat/down through actual local HTTP with
-a controlled native transport. These checks do not establish live model
-cancellation or robot task execution through the new service. See [agents.md](agents.md#structured-conversations-experimental)
+a controlled native transport. The network tests use a controlled native transport. Separate live Codex
+checks verified consecutive turns, a file task, native-thread resume and active
+interruption followed by explicit queue resume. Robot execution through the new
+service and successful Claude model turns remain unverified. See [agents.md](agents.md#structured-conversations-experimental)
 for the native plugin protocol and handshake checks.

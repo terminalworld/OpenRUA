@@ -173,8 +173,13 @@ thread. Protocol tests cover early notifications, cancellation races, foreign
 thread events and input responses. The wire fields were checked against
 Codex CLI 0.159.1's generated schemas and the
 [official App Server documentation](https://learn.chatgpt.com/docs/app-server).
-Actual model turns, cancellation of running tools, and robot tasks require
-separate integration validation; these tests do not establish those behaviors.
+Live host-side checks with Codex CLI 0.159.1 and `gpt-5.6-sol` completed two
+consecutive turns, including reading two integers and writing their sum to a
+file. A subsequent check resumed the exact native thread, interrupted a running
+shell tool, kept the next client message queued while paused, then completed it
+after explicit resume. These checks used the public protocol and execution
+owner with an isolated host workspace. They do not establish robot execution
+or sandbox-container compatibility through the new service.
 
 
 Claude Code implements the same optional contract through its original CLI's
@@ -192,8 +197,11 @@ Claude tool approvals and `AskUserQuestion` are converted to the same
 native cancellation expires it. The protocol follows the
 [CLI reference](https://code.claude.com/docs/en/cli-reference) and
 [Anthropic's control-protocol implementation](https://github.com/anthropics/claude-agent-sdk-python/blob/main/src/claude_agent_sdk/_internal/query.py),
-checked with Claude Code 2.1.284. Control-handshake checks send no model task;
-active cancellation, message echo and tool execution still need live validation.
+checked with Claude Code 2.1.284. A live check confirmed initialization, the
+user-message echo and failure reporting: the account returned a weekly quota
+limit, which the owner recorded as a failed turn and a paused queue. Successful
+model turns, tools and active cancellation remain unverified for this adapter;
+the quota failure is not evidence of those capabilities.
 
 The shared queue and execution owner consume this contract without vendor
 branches; their boundaries and current validation scope are described in

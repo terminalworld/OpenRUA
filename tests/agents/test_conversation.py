@@ -182,3 +182,10 @@ def test_unsupported_requests_are_visible_without_fabricated_reply():
     update = input_request(protocol, "future/request")
     assert update.events[0].kind == "unsupported_request"
     assert not update.outbound
+
+
+def test_native_workspace_is_an_explicit_protocol_parameter():
+    protocol = CodexConversation("model", workspace="/tmp/isolated-workspace")
+    request = protocol.begin().outbound[0]
+    request = protocol.receive({"id": request["id"], "result": {}}).outbound[-1]
+    assert request["params"]["cwd"] == "/tmp/isolated-workspace"

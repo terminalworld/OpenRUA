@@ -13,8 +13,9 @@ from openrua.agents.conversation import ConversationProtocol, Event, Update
 
 
 class CodexConversation(ConversationProtocol):
-    def __init__(self, model: str, session_id: str | None = None, effort: str = "high"):
+    def __init__(self, model: str, session_id: str | None = None, effort: str = "high", workspace: str = "/workspace"):
         self.model = model
+        self.workspace = workspace
         self.effort = effort
         self.thread_id = session_id
         self.ready = False
@@ -113,7 +114,7 @@ class CodexConversation(ConversationProtocol):
                                         {"operation": method, "error": frame["error"]})])
         result = frame.get("result", {})
         if method == "initialize":
-            params = {"model": self.model, "cwd": "/workspace",
+            params = {"model": self.model, "cwd": self.workspace,
                       "approvalPolicy": "never", "sandbox": "danger-full-access"}
             verb = "thread/start"
             if self.thread_id:

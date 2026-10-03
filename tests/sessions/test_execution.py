@@ -165,3 +165,19 @@ def test_owner_lock_is_released_even_if_transport_cleanup_fails(tmp_path):
             await next_owner.close()
             store.close()
     asyncio.run(run())
+
+
+def test_stdio_transport_starts_in_explicit_workspace(tmp_path):
+    import sys
+    from openrua.sessions.execution import StdioTransport
+    async def run():
+        transport = await StdioTransport.start(
+            [sys.executable, "-c", "import os,json; print(json.dumps({'cwd':os.getcwd()}))"],
+            tmp_path / "stderr.log", cwd=tmp_path)
+        try:
+            frame = await transport.read()
+            assert frame == {"cwd": str(tmp_path.resolve())}
+            assert await transport.read() is None
+        finally:
+            await transport.close()
+    asyncio.run(run())
