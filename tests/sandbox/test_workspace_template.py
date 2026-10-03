@@ -4,7 +4,7 @@ every trial and compared across campaigns)."""
 from openrua.config import load_config
 from openrua.sandbox import workspace
 
-PINNED = "f5999634776108746bd4b5476c9e5643e49a4fbd3fda7c0a59d0411eb5f60836"
+PINNED = "812f5dd51bc6fd49e7ae5012ff02808b7421b7f6186e4eb5d482d58ffcabb277"
 
 
 def test_workspace_template_hash_is_unchanged():

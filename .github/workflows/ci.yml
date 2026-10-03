@@ -7,6 +7,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python: ["3.10", "3.12"]
     steps:
@@ -18,3 +19,14 @@ jobs:
       - run: lint-imports
       - run: pytest -q
       - run: python scripts/render_docs.py --check
+
+  browser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e '.[browser-test]'
+      - run: python -m playwright install --with-deps chromium
+      - run: pytest -q tests/web

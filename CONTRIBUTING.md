@@ -8,8 +8,24 @@ python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest -q && .venv/bin/lint-imports
 ```
 
-Both commands must pass before a pull request. `pytest` includes the
-layering contract (`tests/architecture/test_layering.py`) and the agent
+Both commands must pass before a pull request. After pushing, check the
+GitHub Actions run for that commit; local checks do not replace the remote
+Python matrix. CI also runs browser tests in Chromium. To run them locally:
+
+```bash
+.venv/bin/pip install -e ".[browser-test]"
+.venv/bin/python -m playwright install chromium
+.venv/bin/pytest -q tests/web
+```
+
+The workspace template hash is pinned in
+`tests/sandbox/test_workspace_template.py`. An intentional change to the
+agent-facing documentation or tools changes the experimental artifact.
+Review the template diff before updating that pin in the same commit;
+never change it merely to silence a failing test. Historical trial hashes
+remain unchanged.
+
+`pytest` includes the layering contract (`tests/architecture/test_layering.py`) and the agent
 boundary (`tests/agents/test_agent_boundary.py`); `lint-imports` checks
 the same contract from `pyproject.toml`. Tests live in one directory
 per unit (`tests/<unit>/`).
