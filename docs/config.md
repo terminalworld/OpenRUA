@@ -471,7 +471,7 @@ The resolved config every party reads (``<trial>/config.yaml``).
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `task` | [Task](#task) | **required** | what is run |
+| `task` | [Task](#task) \| null | None | the benchmark task or native simulation scene; absent for a real robot used freely |
 | `protocol` | [Protocol](#protocol) |  | budgets and clock |
 | `agent` | [AgentConfig](#agentconfig) |  | the agent, layered over the defaults files |
 | `machine` | [Machine](#machine) | **required** | the robot |

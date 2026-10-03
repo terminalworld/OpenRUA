@@ -80,7 +80,8 @@ def open_session(args) -> Session:
     cfg = composed.cfg
     suite = args.task_suite or composed.suite
     task_id = args.task_id if args.task_id is not None else composed.task_id
-    apply_suite_overrides(cfg, suite)
+    if suite is not None:
+        apply_suite_overrides(cfg, suite)
     normalize_arms(cfg)
     sim_name, sandbox_name = state.container_names(args.name)
     sandbox_dir = paths.sandbox_dir(args.name, args.home)

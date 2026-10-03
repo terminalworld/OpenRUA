@@ -110,3 +110,33 @@ def test_build_one_unit_still_works(monkeypatch, tmp_path):
     args = build_parser().parse_args(["--home", str(tmp_path), "build", "base",
                                       "--distro", "humble"])
     assert args.fn(args) == 0 and built == [("humble", None)]
+
+
+def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+
+    profile = tmp_path / "robot.yaml"
+    profile.write_text("type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n")
+    calls = []
+    machine = SimpleNamespace(shutdown=lambda: calls.append("shutdown"))
+
+    def bring_up(cfg, dest, sim, sandbox, suite, task_id, *args, **kwargs):
+        assert cfg["machine"]["backend"]["kind"] == "real"
+        assert "task" not in cfg
+        assert (suite, task_id) == (None, None)
+        return dest / "config.yaml", machine, 7
+
+    monkeypatch.setattr(up_cmd, "bring_up", bring_up)
+    monkeypatch.setattr(up_cmd, "ensure_internal_network", lambda: "internal")
+    monkeypatch.setattr(up_cmd, "ensure_proxy", lambda _: "http://proxy")
+    monkeypatch.setattr(up_cmd.agents, "prepare_profile", lambda *a: (tmp_path / "profile", None))
+    monkeypatch.setattr(up_cmd, "sandbox_down", lambda _: calls.append("sandbox down"))
+    monkeypatch.setattr(up_cmd, "start_episode", lambda *a: pytest.fail("must not reset a real robot"))
+    args = build_parser().parse_args(["--home", str(tmp_path / "home"), "up", str(profile),
+                                      "--ros-domain", "7", "--task", "inspect the table"])
+    session = up_cmd.open_session(args)
+    assert session.task == "inspect the table"
+    assert session.suite is None and session.scene() == "(none)"
+    assert up_cmd.state.load(args.name, args.home)["task"] == "inspect the table"
+    session.power_off()
+    assert calls == ["sandbox down", "shutdown"]

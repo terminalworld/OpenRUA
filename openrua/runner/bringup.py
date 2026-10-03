@@ -191,7 +191,7 @@ def claim_domain(network: str, requested: int | None,
 
 
 def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
-             task_suite: str, task_id: int, network: str, proxy_url: str,
+             task_suite: str | None, task_id: int | None, network: str, proxy_url: str,
              mounts: tuple[str, ...], ros_domain: int | None, robot_log: Path,
              home: Path | None = None,
              record_cameras: tuple[str, ...] | None = None,

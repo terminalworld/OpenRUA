@@ -87,9 +87,11 @@ def test_real_instance_brings_its_machine_over_its_type(tmp_path):
         "  backend: {kind: real, ros_distro: humble, discovery: {network: host}}\n"
         "  cameras: {list: [wrist]}\n"
         "  robot: {model: Our lab Panda}\n")
-    # a real robot alone has no scene to load; with a benchmark it runs its tasks
-    with pytest.raises(UsageError):
-        compose(str(lab), None, None, tmp_path)
+    # Free use has no invented benchmark, loader, suite or task index.
+    free = compose(str(lab), home=tmp_path)
+    assert "task" not in free.cfg
+    assert (free.simulator, free.benchmark, free.suite, free.task_id) == (None,) * 4
+    assert free.cfg["machine"]["robot"]["model"] == "Our lab Panda"
     c = compose(str(lab), None, "libero_pro", tmp_path)
     m = c.cfg["machine"]
     assert c.simulator is None and m["backend"]["kind"] == "real"
@@ -268,3 +270,10 @@ def test_agent_and_model_arguments_win_over_the_file(tmp_path):
     assert cfg["agent"]["model"] == "gpt-6-astra"
     cfg = load_config("libero_pro", home=tmp_path, model="claude-sonnet-5")
     assert cfg["agent"] ["name"] == "claude-code" and cfg["agent"]["model"] == "claude-sonnet-5"
+
+
+def test_simulation_still_requires_a_task(tmp_path):
+    cfg = compose("panda", "robosuite", home=tmp_path).cfg
+    del cfg["task"]
+    with pytest.raises(config.ConfigError, match="requires a benchmark task or native scene"):
+        config.validate(config.ResolvedConfig, cfg, "missing scene")

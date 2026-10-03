@@ -584,7 +584,8 @@ class SandboxConfig(Strict):
 
 class ResolvedConfig(Strict):
     """The resolved config every party reads (``<trial>/config.yaml``)."""
-    task: Task = Field(description="what is run")
+    task: Task | None = Field(default=None, description="the benchmark task or native "
+                              "simulation scene; absent for a real robot used freely")
     protocol: Protocol = Field(default_factory=Protocol, description="budgets and clock")
     agent: AgentConfig = Field(default_factory=AgentConfig, description="the agent, "
                                "layered over the defaults files")
@@ -593,6 +594,12 @@ class ResolvedConfig(Strict):
                                    "defaults files")
     suite_overrides: dict[str, dict[str, Any]] = Field(
         default_factory=dict, description="as written; applied for the suite that runs")
+
+    @model_validator(mode="after")
+    def simulation_needs_a_task(self):
+        if self.machine.backend.kind == "sim" and self.task is None:
+            raise ValueError("a simulated robot requires a benchmark task or native scene")
+        return self
 
 
 class UserConfig(Strict):

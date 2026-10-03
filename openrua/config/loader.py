@@ -264,11 +264,11 @@ def _who_embodies(robot: str, home: Path | None) -> list[str]:
 class Composed:
     """One resolved config and where it came from."""
     cfg: dict
-    suite: str
-    task_id: int
+    suite: str | None
+    task_id: int | None
     robot: str
     simulator: str | None      # None for a real-robot instance
-    benchmark: str | None      # None for an engine's native scene
+    benchmark: str | None      # None for native scenes or free use of a real robot
     install: dict | None = None  # the simulator's install with the benchmark's over it
 
 
@@ -283,7 +283,7 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
     a simulator that embodies it (its ``robots:``) or a benchmark whose
     ``scenes.robots`` does; a robot instance (a real robot) brings its
     own machine and takes no simulator. Without a benchmark the
-    simulator's native scene is loaded.
+    simulator's native scene is loaded; a real robot has no task catalog.
     """
     defaults = load_user_config(paths.package_config_path())
     user = load_user_config(paths.config_path(home))
@@ -346,14 +346,16 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                if k in ("task", "protocol", "agent", "suite_overrides")}
         cfg["task"]["loader"] = paths.entry_point("benchmarks", b["entry_point"], bench_path)
         source = bench_path
+    elif machine["backend"]["kind"] == "real":
+        cfg = {}
+        source = str(robot)
     else:
         sim_path, native = (None, None)
         if simulator:
             sim_path = paths.find("simulators", sim)
             native = load_simulator(sim, home).get("native")
         if native is None:
-            raise UsageError(f"{robot} is a real robot: name a benchmark (--bench) to "
-                             "run, or use openrua up / openrua agent with --task")
+            raise UsageError(f"{robot} has no native scene: name a benchmark (--bench)")
         cfg = {"task": {"benchmark": sim_path.stem, "suites": [native["scene"]],
                         "init_states": "seeded-reset",
                         "loader": paths.entry_point("benchmarks", native["entry_point"],
@@ -365,10 +367,11 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
         cfg["agent"]["model"] = model
     cfg["sandbox"] = layer_sandbox(defaults, user)
     cfg = dump(validate(ResolvedConfig, cfg, source))
-    suite = (b or {}).get("scenes", {}).get("default_suite") or cfg["task"]["suites"][0]
-    if suite not in cfg["task"]["suites"]:
+    suites = cfg.get("task", {}).get("suites", [])
+    suite = (b or {}).get("scenes", {}).get("default_suite") or (suites[0] if suites else None)
+    if suite is not None and suite not in suites:
         raise ConfigError(f"{source}: scenes.default_suite {suite!r} is not in task.suites")
-    return Composed(cfg, suite, 0, robot, simulator,
+    return Composed(cfg, suite, 0 if suite is not None else None, robot, simulator,
                     (b or {}).get("task", {}).get("benchmark") if b else None,
                     composed_install)
 
