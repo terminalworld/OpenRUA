@@ -63,6 +63,10 @@ the current turn, confirm queue continuation, and answer native agent questions.
 If the execution result is unknown, record what you checked before continuing.
 Ending waits for the resource owner and displays the resulting retained state;
 a failed shutdown is not displayed as a successful end.
+If either native-process cleanup or robot-resource shutdown fails, the session
+remains open for inspection and an explicit end retry. Its queue stays paused;
+an unfinished turn is marked unknown. The owner retains its execution lock
+until native cleanup succeeds, and retries skip resources already stopped.
 
 Closing the page or selecting **Disconnect** leaves the execution host running.
 Reconnecting reloads the retained conversation without submitting old messages.

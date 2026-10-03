@@ -38,20 +38,33 @@ def test_end_failure_keeps_records_open_and_allows_retry(tmp_path):
     asyncio.run(run())
 
 
-def test_native_cleanup_error_still_attempts_robot_shutdown(tmp_path):
+def test_native_cleanup_error_retains_open_paused_session_until_retry(tmp_path):
     async def run():
         store, session, native, execution = await setup(tmp_path)
-        calls = []
-        async def fail_close():
-            raise RuntimeError("pipe cleanup failed")
-        native.close = fail_close
-        owner = ManagedSession(SimpleNamespace(power_off=lambda: calls.append("robot stopped")), execution, store)
+        failed, calls = [True], []
+        async def close_native():
+            calls.append("native")
+            if failed[0]:
+                raise RuntimeError("pipe cleanup failed")
+        native.close = close_native
+        owner = ManagedSession(SimpleNamespace(power_off=lambda: calls.append("robot")), execution, store)
         try:
+            await execution.command("enqueue", client_id="cli", request_id="a", text="inspect")
+            await execution.command("enqueue", client_id="web", request_id="b", text="grasp")
             with pytest.raises(UnavailableError, match="pipe cleanup failed"):
                 await owner.end()
-            assert calls == ["robot stopped"]
+            state = store.snapshot()["state"]
+            assert calls == ["native", "robot"]
+            assert not state["closed"] and state["paused"] and not state["connected"]
+            assert [m["status"] for m in state["messages"]] == ["unknown", "queued"]
+            failed[0] = False
+            await owner.end()
+            await owner.end()
+            assert calls == ["native", "robot", "native"]
             assert store.snapshot()["state"]["closed"]
         finally:
+            failed[0] = False
+            await execution.close()
             store.close()
     asyncio.run(run())
 
@@ -100,4 +113,74 @@ def test_start_keeps_custom_plugin_spec_and_native_configuration(tmp_path, monke
             assert calls == ["stopped"]
         finally:
             owner.store.close()
+    asyncio.run(run())
+
+
+def test_http_end_retries_a_live_native_process_after_cleanup_failure(tmp_path):
+    import sys
+    from openrua.agents.conversation import Conversation
+    from openrua.sessions.client import Client
+    from openrua.sessions.core import Session, initial_state
+    from openrua.sessions.execution import Execution, StdioTransport
+    from openrua.sessions.http import LocalServer
+    from openrua.sessions.store import SQLiteStore
+    from tests.sessions.test_execution import FakeProtocol, until
+
+    async def run():
+        # A real child process stands in for the native CLI. It only exchanges
+        # lifecycle frames and exits when its owner closes stdin.
+        program = """
+import json, sys
+for line in sys.stdin:
+    frame = json.loads(line)
+    if 'begin' in frame:
+        reply = {'kind': 'ready', 'data': {'session_id': 'native-child'}}
+    else:
+        reply = {'kind': 'turn_started', 'turn_id': frame['submit']}
+    print(json.dumps(reply), flush=True)
+"""
+        store = SQLiteStore(tmp_path / "conversation.sqlite", initial_state())
+        session = Session(store)
+        transport = await StdioTransport.start([sys.executable, "-u", "-c", program], tmp_path / "native.log")
+        original_close = transport.close
+        failed, stops = [True], []
+        async def fail_once():
+            if failed[0]:
+                raise OSError("native cleanup unavailable")
+            await original_close()
+        transport.close = fail_once
+        async def factory():
+            return transport
+        execution = Execution(session, Conversation([], FakeProtocol()), factory, tmp_path / "owner.lock")
+        owner = ManagedSession(SimpleNamespace(power_off=lambda: stops.append("robot")), execution, store)
+        server = None
+        try:
+            await execution.start()
+            await until(lambda: store.snapshot()["state"]["connected"])
+            server = LocalServer(execution, owner.end, "test-token")
+            server.start()
+            client = Client(server.url, server.token)
+            await asyncio.to_thread(client.command, "enqueue", client_id="cli", request_id="1", text="inspect")
+            await asyncio.to_thread(client.command, "enqueue", client_id="web", request_id="1", text="grasp")
+            with pytest.raises(RuntimeError, match="native cleanup unavailable"):
+                await asyncio.to_thread(client.request, "/api/end", {})
+            snapshot = await asyncio.to_thread(Client(server.url, server.token).snapshot)
+            assert not snapshot["state"]["closed"] and snapshot["state"]["paused"]
+            assert [m["status"] for m in snapshot["state"]["messages"]] == ["unknown", "queued"]
+            assert transport.process.returncode is None
+            assert not server.ended.is_set()
+            with pytest.raises(RuntimeError, match="not accepting commands"):
+                await asyncio.to_thread(client.command, "enqueue", client_id="web", request_id="2", text="place")
+            failed[0] = False
+            result = await asyncio.to_thread(client.request, "/api/end", {})
+            assert result["result"]["state"]["closed"]
+            await asyncio.wait_for(server.ended.wait(), 2)
+            assert transport.process.returncode == 0
+            assert stops == ["robot"]
+        finally:
+            failed[0] = False
+            if server:
+                await server.close()
+            await owner.end()
+            store.close()
     asyncio.run(run())

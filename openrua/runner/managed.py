@@ -23,6 +23,8 @@ class ManagedSession:
         self.artifacts = artifacts
         self._end_lock = asyncio.Lock()
         self._ended = False
+        self._native_stopped = False
+        self._robot_stopped = False
 
     async def end(self) -> None:
         """Stop owned execution resources and retain all conversation materials."""
@@ -30,19 +32,24 @@ class ManagedSession:
             if self._ended:
                 return
             errors = []
-            try:
-                await self.execution.close()
-            except Exception as exc:
-                errors.append(f"native process: {exc}")
-            try:
-                await asyncio.to_thread(self.robot.power_off)
-            except Exception as exc:
-                errors.append(f"robot resources: {exc}")
-            else:
-                self.execution.session.close()
-                self._ended = True
+            if not self._native_stopped:
+                try:
+                    await self.execution.close()
+                except Exception as exc:
+                    errors.append(f"native process: {exc}")
+                else:
+                    self._native_stopped = True
+            if not self._robot_stopped:
+                try:
+                    await asyncio.to_thread(self.robot.power_off)
+                except Exception as exc:
+                    errors.append(f"robot resources: {exc}")
+                else:
+                    self._robot_stopped = True
             if errors:
                 raise UnavailableError("; ".join(errors), hint="inspect the service log and retry ending the session")
+            self.execution.session.close()
+            self._ended = True
 
 
 async def start(request: RobotRequest) -> ManagedSession:

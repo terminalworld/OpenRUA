@@ -147,21 +147,35 @@ def test_second_owner_is_rejected_before_starting_native_process(tmp_path):
     asyncio.run(run())
 
 
-def test_owner_lock_is_released_even_if_transport_cleanup_fails(tmp_path):
+def test_failed_transport_cleanup_keeps_owner_lock_until_retry(tmp_path):
     async def run():
         store, session, transport, execution = await setup(tmp_path)
-        async def fail_close():
-            raise OSError("transport cleanup failed")
-        transport.close = fail_close
-        with pytest.raises(OSError, match="cleanup"):
-            await execution.close()
+        failed = [True]
+        async def close():
+            if failed[0]:
+                raise OSError("transport cleanup failed")
+        transport.close = close
         async def replacement():
             return FakeTransport(session)
         next_owner = Execution(session, Conversation(["fake"], FakeProtocol()),
                                replacement, tmp_path / "owner.lock")
         try:
+            await execution.command("enqueue", client_id="cli", request_id="a", text="inspect")
+            with pytest.raises(OSError, match="cleanup"):
+                await execution.close()
+            state = store.snapshot()["state"]
+            assert state["paused"] and not state["connected"]
+            assert state["messages"][0]["status"] == "unknown"
+            with pytest.raises(RuntimeError, match="already has an execution owner"):
+                await next_owner.start()
+            with pytest.raises(RuntimeError, match="not accepting"):
+                await execution.command("enqueue", client_id="web", request_id="b", text="grasp")
+            failed[0] = False
+            await execution.close()
             await next_owner.start()
         finally:
+            failed[0] = False
+            await execution.close()
             await next_owner.close()
             store.close()
     asyncio.run(run())

@@ -196,9 +196,15 @@ class Execution:
         session closure. A native connection ending is not a physical stop.
         """
         async with self._gate:
+            first_close = not self._closing
             self._closing = True
             self._usable = False
             try:
+                # Record uncertainty even if stopping the native process fails.
+                # Later clients must not see a still-running, connected session.
+                if first_close and self._owner:
+                    self.session.disconnected("native connection closing by its owner")
+            finally:
                 try:
                     if self._reader:
                         self._reader.cancel()
@@ -206,12 +212,13 @@ class Execution:
                             await self._reader
                         except asyncio.CancelledError:
                             pass
+                        self._reader = None
                 finally:
                     if self._transport:
                         await self._transport.close()
+                        self._transport = None
+                    # Keep ownership on cleanup failure. A retry closes the same
+                    # transport before another owner may start a native process.
                     if self._owner:
-                        self.session.disconnected("native connection closed by its owner")
-            finally:
-                if self._owner:
-                    self._owner.close()
-                    self._owner = None
+                        self._owner.close()
+                        self._owner = None
