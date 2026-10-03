@@ -192,3 +192,9 @@ name = "session coordination does not select browser assets"
 type = "forbidden"
 source_modules = ["openrua.sessions"]
 forbidden_modules = ["openrua.web"]
+
+[[tool.importlinter.contracts]]
+name = "workspace artifact readers are independent leaves"
+type = "forbidden"
+source_modules = ["openrua.artifacts"]
+forbidden_modules = ["openrua.sessions", "openrua.agents", "openrua.plugins", "openrua.runner", "openrua.robot", "openrua.sandbox", "openrua.config", "openrua.cli", "openrua.web", "openrua.proxy", "openrua.doctor", "openrua.testing", "openrua.demo", "openrua.errors"]

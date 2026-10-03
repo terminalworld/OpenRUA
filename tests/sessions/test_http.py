@@ -172,3 +172,31 @@ def test_browser_assets_do_not_expose_session_files_or_bypass_api_auth(tmp_path)
         finally:
             await stop(store, execution, server)
     asyncio.run(run())
+
+
+def test_workspace_api_is_authenticated_read_only_and_scoped(tmp_path):
+    from openrua.artifacts import WorkspaceFiles
+    async def run():
+        workspace = tmp_path / "workspace"
+        workspace.mkdir()
+        (workspace / "notes.txt").write_text("hello")
+        (workspace / "escape").symlink_to(tmp_path)
+        store, session, native, execution, server = await running_server(tmp_path, artifacts=WorkspaceFiles(workspace))
+        client = Client(server.url, server.token)
+        try:
+            with pytest.raises(RuntimeError, match="token"):
+                await asyncio.to_thread(Client(server.url, "wrong").request, "/api/workspace/read?path=notes.txt")
+            listing = await asyncio.to_thread(client.request, "/api/workspace/list?path=")
+            assert {e["name"] for e in listing["entries"]} == {"notes.txt", "escape"}
+            value = await asyncio.to_thread(client.request, "/api/workspace/read?path=notes.txt")
+            assert value["text"] == "hello"
+            for path in ("../conversation.sqlite", "escape/conversation.sqlite", "/etc/passwd", "missing"):
+                with pytest.raises(RuntimeError):
+                    await asyncio.to_thread(client.request, "/api/workspace/read?path=" + path)
+            with pytest.raises(RuntimeError, match="one relative"):
+                await asyncio.to_thread(client.request, "/api/workspace/list?path=a&path=b")
+            assert store.snapshot()["state"]["messages"] == []
+            assert not any("submit" in f for f in native.writes)
+        finally:
+            await stop(store, execution, server)
+    asyncio.run(run())

@@ -64,8 +64,11 @@ def test_start_keeps_custom_plugin_spec_and_native_configuration(tmp_path, monke
     async def run():
         calls = []
         directory = tmp_path / "sandboxes/custom"
+        workspace = tmp_path / "custom-workspace"
+        workspace.mkdir()
+        (workspace / "README.md").write_text("Robot documentation")
         live_state.save("custom", tmp_path, agent="display-name", agent_spec="/plugins/custom.yaml",
-                        agent_version="1.2", sandbox="box", model="model", proxy="proxy", options={"effort": "high"})
+                        workspace=str(workspace), agent_version="1.2", sandbox="box", model="model", proxy="proxy", options={"effort": "high"})
         monkeypatch.setattr(managed, "open_robot", lambda request: SimpleNamespace(power_off=lambda: calls.append("stopped")))
         def conversation(*args, **kwargs):
             assert args == ("box", "model", "proxy")
@@ -92,6 +95,7 @@ def test_start_keeps_custom_plugin_spec_and_native_configuration(tmp_path, monke
         owner = await managed.start(RobotRequest(home=tmp_path, name="custom"))
         try:
             await until(lambda: owner.store.snapshot()["state"]["connected"])
+            assert owner.artifacts.read("README.md")["text"] == "Robot documentation"
             await owner.end()
             assert calls == ["stopped"]
         finally:

@@ -437,3 +437,54 @@ dialog::backdrop {
     scroll-behavior: auto;
   }
 }
+
+.files-navigation {
+  display: flex;
+  gap: 6px;
+}
+.files-navigation input {
+  min-width: 0;
+}
+#files-form label {
+  font-size: 12px;
+}
+#files-list {
+  max-height: 250px;
+  overflow: auto;
+}
+#files-list button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+#file-dialog {
+  width: min(900px, 94vw);
+  max-height: 90vh;
+  overflow: auto;
+}
+#file-title {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+#file-close {
+  flex-shrink: 0;
+}
+#file-content img {
+  display: block;
+  max-width: 100%;
+  max-height: 65vh;
+  margin: auto;
+  object-fit: contain;
+}
+#file-content pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.6;
+}
+#file-download {
+  color: var(--accent);
+}

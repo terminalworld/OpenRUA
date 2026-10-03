@@ -27,7 +27,7 @@ async def serve(args) -> None:
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, stopped.set)
             signals.append(sig)
-        server = LocalServer(owned.execution, owned.end, secrets.token_urlsafe(32), port=args.port, assets=assets())
+        server = LocalServer(owned.execution, owned.end, secrets.token_urlsafe(32), port=args.port, assets=assets(), artifacts=owned.artifacts)
         write_endpoint(endpoint, server.url, server.token)
         published = True
         server.start()

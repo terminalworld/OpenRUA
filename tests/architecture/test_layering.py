@@ -29,6 +29,7 @@ _BRIDGE_BAN = _HOST | _ROBOT_HOST | _TOP | _HOST_LEAVES
 _LAYERS = _BRIDGE | {"openrua.runner.preflight", "openrua.runner.record",
                      "openrua.sandbox"}
 FORBIDDEN = {
+    "artifacts.py": {"openrua"},
     # inside the bridge: the three parts never see each other; main may
     # import all three; nothing imports outward
     "robot/sim/bridge/environments": _BRIDGE_BAN | {

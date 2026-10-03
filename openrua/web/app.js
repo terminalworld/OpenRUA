@@ -1,3 +1,4 @@
+import { workspaceBrowser } from "/workspace.js";
 const $ = (id) => document.getElementById(id);
 const make = (tag, text, className) => {
   const e = document.createElement(tag);
@@ -54,6 +55,7 @@ async function api(path, body) {
     throw new Error(value.error || `Request failed (${response.status})`);
   return value;
 }
+const files = workspaceBrowser(api);
 async function command(operation, params) {
   return (await api("/api/commands", { operation, params })).result;
 }
@@ -338,6 +340,7 @@ $("connect-form").onsubmit = async (e) => {
     $("disconnect").hidden = false;
     $("login-error").textContent = "";
     if (pending) $("message").value = pending.text;
+    files.connect();
     await sync();
     clearInterval(timer);
     timer = setInterval(sync, 800);
@@ -347,6 +350,7 @@ $("connect-form").onsubmit = async (e) => {
   }
 };
 $("disconnect").onclick = () => {
+  files.disconnect();
   generation++;
   clearInterval(timer);
   token = "";
@@ -407,6 +411,7 @@ $("end").onclick = async () => {
     clearInterval(timer);
     state = closed.state;
     for (const message of state.messages) turn(message);
+    files.disconnect();
     connection("Session ended", true);
     notice("Session ended. Your conversation and workspace are retained.");
   } catch (e) {

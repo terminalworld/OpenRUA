@@ -67,9 +67,27 @@ a failed shutdown is not displayed as a successful end.
 Closing the page or selecting **Disconnect** leaves the execution host running.
 Reconnecting reloads the retained conversation without submitting old messages.
 The layout supports narrow screens, but the service is still local-only; this
-is not a remotely hosted app or a native mobile app. It does not yet display
-robot camera streams or workspace files. Agent text is rendered as plain text,
-not executable HTML.
+is not a remotely hosted app or a native mobile app. Agent text is rendered as
+plain text, not executable HTML.
+
+### Workspace files
+
+The **Workspace files** panel lists the agent's actual workspace, including an
+explicitly selected workspace directory. Select a directory or enter its relative
+path, then use **Refresh** to see new artifacts. Images saved by the agent can
+be previewed with their file modification time; these are saved observations,
+not a live camera feed. UTF-8 files such as Python programs and notes appear as
+plain text. Other files, including numerical arrays, can be downloaded for local
+inspection. Browsing never sends a message to the agent or requests robot data.
+
+The reader is restricted to the recorded workspace root, not the surrounding
+native profile, session database or credentials. It does not follow symlinks or
+open special files. The initial local reader limits each file to 16 MiB and each
+directory listing to 1,000 entries; a truncated listing is marked. For larger
+files, use the terminal. If a file changes while being read, refresh and try
+again. A preview reflects the bytes read at that time, not subsequent changes.
+File browsing is available while the service is running; after ending, retained
+files remain accessible on disk.
 
 ## Pause, input and end
 
@@ -127,9 +145,10 @@ with mode `0600`. The client reads that file; tokens are not placed in URLs or
 printed in startup messages. Native records and the SQLite journal are private
 session data. Do not publish them as application assets.
 
-All API requests require `Authorization: Bearer TOKEN`. The three bundled
-browser assets (`/`, `/app.js`, `/style.css`) are public on the local origin;
-no workspace or journal files are served. The server checks the Host
+All API requests require `Authorization: Bearer TOKEN`. The bundled
+browser assets (`/`, `/app.js`, `/workspace.js`, `/style.css`) are public on the
+local origin. Workspace reads require the same token as other API requests;
+journal and profile files are not exposed through the file reader. The server checks the Host
 and browser Origin, sends no CORS allowance, and rejects oversized bodies.
 There is no remote/public hosting option or built-in TLS in this initial local
 transport. The API is independent of agent vendors:
@@ -138,6 +157,8 @@ transport. The API is independent of agent vendors:
 |---|---|
 | `GET /api/session` | State snapshot and matching event cursor |
 | `GET /api/events?after=N&limit=1000` | Ordered retained events after N |
+| `GET /api/workspace/list?path=snaps` | Bounded directory entries with kind, size and modification time |
+| `GET /api/workspace/read?path=snaps/image.png` | File metadata, preview kind, MIME type and base64 bytes; UTF-8 text when available |
 | `POST /api/commands` | `{ "operation": "enqueue", "params": { ... } }` and other session operations |
 | `POST /api/end` with `{}` | Stop owned resources and return the final state snapshot in `result` |
 
@@ -160,6 +181,10 @@ none adds a task-specific robot action API.
   consumes the existing agent plugin's optional `Conversation` capability.
   Its transport is supplied through a factory. `StdioTransport` starts the
   plugin's command using pipes and saves native stderr to the specified file.
+- `ArtifactReader` exposes only relative directory listing and file reading.
+  The local `WorkspaceFiles` implementation receives an explicit root and limits;
+  the resource owner supplies it to the HTTP adapter. Readers have no session,
+  agent, robot or browser dependencies.
 - Robot creation and shutdown remain outside this package. A resource owner
   reuses OpenRUA's existing bring-up path, supplies the conversation, and stops
   its resources before recording session closure. Closing a native connection
@@ -236,6 +261,10 @@ utility during an extra artifact check; the saved image and text record were
 independently verified. This was a bounded integration check, not a benchmark
 score, physical-robot test or guarantee for other image/agent versions.
 
+The file browser was also checked against the retained camera image (640 × 480)
+and gripper record from that run. This read-only replay used no new model call
+or robot process; it verifies artifact display, not live camera streaming.
+
 Successful Claude model turns remain unverified. See
 [agents.md](agents.md#structured-conversations-experimental) for native protocol,
 handshake and quota-failure checks.
@@ -252,6 +281,8 @@ These optional tests use Chromium, the actual local HTTP server and SQLite,
 with a controlled native transport. They exercise shared CLI/browser messages,
 streamed output, edits, withdrawals, interrupted queues, explicit resumption,
 questions, lost acknowledgements, page reloads, disconnection, uncertain
-execution and failed shutdown. They also check text escaping and a narrow
-viewport. They do not run models or robots and do not replace the native and
+execution and failed shutdown. Workspace checks exercise image decoding,
+text escaping, byte-exact downloads, refresh and reconnection without submitting
+agent tasks, including a narrow viewport. File-reader tests cover traversal,
+symlink replacement, special files, read limits and files changing during reads. They do not run models or robots and do not replace the native and
 robot integration checks described above.

@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 
 from openrua import agents
+from openrua.artifacts import ArtifactReader, WorkspaceFiles
 from openrua.config import paths
 from openrua.errors import UnavailableError
 from openrua.runner import live_state
@@ -15,8 +17,10 @@ from openrua.sessions.store import SQLiteStore
 
 
 class ManagedSession:
-    def __init__(self, robot: LiveRobot, execution: Execution, store: SQLiteStore):
+    def __init__(self, robot: LiveRobot, execution: Execution, store: SQLiteStore,
+                 artifacts: ArtifactReader | None = None):
         self.robot, self.execution, self.store = robot, execution, store
+        self.artifacts = artifacts
         self._end_lock = asyncio.Lock()
         self._ended = False
 
@@ -67,7 +71,7 @@ async def start(request: RobotRequest) -> ManagedSession:
             return await StdioTransport.start(conversation.argv, directory / "agent.stderr.log")
         execution = Execution(session, conversation, transport, directory / "conversation.lock")
         await execution.start()
-        return ManagedSession(robot, execution, store)
+        return ManagedSession(robot, execution, store, WorkspaceFiles(Path(facts["workspace"])))
     except BaseException:
         try:
             if execution is not None:

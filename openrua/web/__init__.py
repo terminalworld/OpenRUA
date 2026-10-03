@@ -8,5 +8,6 @@ def assets() -> dict[str, tuple[str, bytes]]:
     return {route: (mime, root.joinpath(name).read_bytes()) for route, name, mime in (
         ("/", "index.html", "text/html; charset=utf-8"),
         ("/app.js", "app.js", "text/javascript; charset=utf-8"),
+        ("/workspace.js", "workspace.js", "text/javascript; charset=utf-8"),
         ("/style.css", "style.css", "text/css; charset=utf-8"),
     )}

@@ -16,6 +16,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Awaitable, Callable
 from urllib.parse import parse_qs, urlsplit
 
+from openrua.artifacts import ArtifactReader
 from openrua.sessions.execution import Execution
 
 # Validate external input before invoking state transitions. These are public
@@ -54,10 +55,12 @@ class LocalServer:
     def __init__(self, execution: Execution, end: Callable[[], Awaitable[None]],
                  token: str, port: int = 0, request_timeout: float = 120,
                  max_body_bytes: int = 1024 * 1024,
-                 assets: dict[str, tuple[str, bytes]] | None = None):
+                 assets: dict[str, tuple[str, bytes]] | None = None,
+                 artifacts: ArtifactReader | None = None):
         if not token or request_timeout <= 0 or max_body_bytes <= 0:
             raise ValueError("token and positive request limits are required")
         self.execution, self.end = execution, end
+        self.artifacts = artifacts
         self.token = token
         self.request_timeout, self.max_body_bytes = request_timeout, max_body_bytes
         self.loop = asyncio.get_running_loop()
@@ -132,12 +135,23 @@ class LocalServer:
                             raise ValueError("use one after cursor and one limit")
                         value = owner.execution.session.store.events(
                             int(query.get("after", ["0"])[0]), int(query.get("limit", ["1000"])[0]))
+                    elif target.path in ("/api/workspace/list", "/api/workspace/read") and owner.artifacts is not None:
+                        query = parse_qs(target.query, strict_parsing=True, keep_blank_values=True)
+                        if set(query) - {"path"} or any(len(v) != 1 for v in query.values()):
+                            raise ValueError("use one relative workspace path")
+                        path = query.get("path", [""])[0]
+                        value = (owner.artifacts.list(path) if target.path.endswith("/list")
+                                 else owner.artifacts.read(path))
                     else:
                         self.reply(404, {"error": "unknown endpoint"})
                         return
                     self.reply(200, value)
                 except ValueError as exc:
                     self.reply(400, {"error": str(exc)})
+                except FileNotFoundError:
+                    self.reply(404, {"error": "workspace path no longer exists; refresh the directory"})
+                except OSError:
+                    self.reply(400, {"error": "workspace path cannot be read; symlinks and special files are not supported"})
                 except Exception as exc:
                     self.reply(500, {"error": str(exc)})
 

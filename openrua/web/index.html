@@ -77,6 +77,24 @@
             </form>
           </section>
           <aside>
+            <section class="card">
+              <h2>Workspace files</h2>
+              <p class="hint">
+                Inspect saved observations, programs and notes.
+              </p>
+              <form id="files-form">
+                <label for="files-path">Directory</label>
+                <div class="files-navigation">
+                  <input
+                    id="files-path"
+                    placeholder="Workspace root"
+                    autocomplete="off"
+                  /><button>Refresh</button>
+                </div>
+              </form>
+              <p id="files-status" class="hint" role="status"></p>
+              <div id="files-list" aria-label="Workspace files"></div>
+            </section>
             <section class="card controls">
               <div class="section-heading">
                 <h2>Execution</h2>
@@ -120,6 +138,16 @@
       <span>Native agent. Native robot interface.</span
       ><span>Local session · OpenRUA</span>
     </footer>
+    <dialog id="file-dialog" aria-labelledby="file-title">
+      <div class="section-heading">
+        <h2 id="file-title"></h2>
+        <button id="file-close">Close preview</button>
+      </div>
+      <p id="file-meta" class="hint"></p>
+      <div id="file-content"></div>
+      <p id="file-note" class="hint"></p>
+      <a id="file-download" download>Download file</a>
+    </dialog>
     <dialog id="edit-dialog">
       <form id="edit-form">
         <h2 id="edit-title">Edit queued message</h2>

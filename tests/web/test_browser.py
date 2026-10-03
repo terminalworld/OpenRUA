@@ -16,8 +16,8 @@ from tests.sessions.test_execution import until
 from tests.sessions.test_http import running_server, stop
 
 
-async def browser_case(tmp_path, check):
-    store, session, native, execution, server = await running_server(tmp_path, assets=assets())
+async def browser_case(tmp_path, check, **options):
+    store, session, native, execution, server = await running_server(tmp_path, assets=assets(), **options)
     try:
         async with playwright.async_playwright() as driver:
             browser = await driver.chromium.launch()
@@ -171,3 +171,62 @@ def test_browser_does_not_claim_shutdown_on_error_and_keeps_unknown_queue_paused
         await playwright.expect(page.locator("#state")).to_have_text("Ended")
         assert store.snapshot()["state"]["messages"][1]["status"] == "queued"
     asyncio.run(browser_case(tmp_path, check))
+
+
+def test_browser_previews_saved_files_without_submitting_tasks(tmp_path):
+    import base64
+    from openrua.artifacts import WorkspaceFiles
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "snaps").mkdir()
+    image = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=")
+    (workspace / "snaps/camera.png").write_bytes(image)
+    code = '<script>window.injected=true</script>'
+    (workspace / "control.py").write_text(code)
+    (workspace / "depth.npy").write_bytes(b"\x93NUMPY\0bytes")
+    async def check(page, store, native, server):
+        await page.locator("#files-list").get_by_role("button", name="control.py", exact=True).click()
+        await playwright.expect(page.locator("#file-content pre")).to_have_text(code)
+        assert await page.evaluate("window.injected") is None
+        await page.get_by_role("button", name="Close preview").click()
+        # A slow listing must not overwrite a directory the user is typing.
+        held, release = asyncio.Event(), asyncio.Event()
+        async def delayed_directory(route):
+            response = await route.fetch()
+            held.set()
+            await release.wait()
+            await route.fulfill(response=response)
+        await page.route("**/api/workspace/list?path=", delayed_directory)
+        await page.get_by_role("button", name="Refresh", exact=True).click()
+        await asyncio.wait_for(held.wait(), 2)
+        await page.locator("#files-path").fill("snaps")
+        release.set()
+        await playwright.expect(page.locator("#files-status")).to_contain_text("Select a file")
+        await playwright.expect(page.locator("#files-path")).to_have_value("snaps")
+        await page.unroute("**/api/workspace/list?path=")
+        await page.get_by_role("button", name="Refresh", exact=True).click()
+        await page.locator("#files-list").get_by_role("button", name="camera.png", exact=True).click()
+        await playwright.expect(page.locator("#file-note")).to_contain_text("not a live camera feed")
+        await page.wait_for_function("document.querySelector('#file-content img')?.naturalWidth === 1")
+        async with page.expect_download() as download:
+            await page.locator("#file-download").click()
+        downloaded = await download.value
+        assert downloaded.suggested_filename == "camera.png"
+        from pathlib import Path
+        assert Path(await downloaded.path()).read_bytes() == image
+        await page.set_viewport_size({"width": 390, "height": 844})
+        assert await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+        await page.screenshot(path=str(tmp_path / "workspace-mobile.png"), full_page=True)
+        await page.get_by_role("button", name="Close preview").click()
+        (workspace / "snaps/new.txt").write_text("New observation")
+        await page.get_by_role("button", name="Refresh", exact=True).click()
+        await page.locator("#files-list").get_by_role("button", name="new.txt", exact=True).click()
+        await playwright.expect(page.locator("#file-content pre")).to_have_text("New observation")
+        await page.get_by_role("button", name="Close preview").click()
+        await page.locator("#disconnect").click()
+        await page.locator("#token").fill(server.token)
+        await page.get_by_role("button", name="Connect", exact=True).click()
+        await playwright.expect(page.locator("#files-list")).to_contain_text("new.txt")
+        assert store.snapshot()["state"]["messages"] == []
+        assert not any("submit" in f for f in native.writes)
+    asyncio.run(browser_case(tmp_path, check, artifacts=WorkspaceFiles(workspace)))
