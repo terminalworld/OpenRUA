@@ -313,7 +313,8 @@ options:
 ## openrua chat
 
 ```
-usage: openrua chat [-h] [--name NAME] [--follow] [--after AFTER] [message]
+usage: openrua chat [-h] [--name NAME] [--tui] [--follow] [--after AFTER]
+                    [message]
 
 Chat with a shared native agent; leaving this client does not end its session.
 
@@ -323,6 +324,8 @@ positional arguments:
 options:
   -h, --help     show this help message and exit
   --name NAME
+  --tui          open the experimental chat-first terminal interface (requires
+                 openrua[tui])
   --follow       observe events without submitting anything
   --after AFTER  event cursor for --follow (default: from the beginning)
 ```

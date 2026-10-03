@@ -48,8 +48,9 @@ class Client:
     def command(self, operation: str, **params):
         return self.request("/api/commands", {"operation": operation, "params": params})["result"]
 
-    def end(self) -> None:
-        self.request("/api/end", {})
+    def end(self) -> dict:
+        """Return final state before the execution owner closes its HTTP server."""
+        return self.request("/api/end", {})["result"]
 
 
 def write_endpoint(path: Path, url: str, token: str) -> None:

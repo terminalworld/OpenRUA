@@ -7,7 +7,7 @@ import time
 from uuid import uuid4
 
 from openrua.cli.commands.session import connect
-from openrua.errors import UnavailableError
+from openrua.errors import UnavailableError, UsageError
 from openrua.runner.live_state import DEFAULT_NAME
 
 
@@ -66,6 +66,20 @@ def watch(client, after: int, message_id: str | None = None) -> None:
 
 
 def run(args) -> int:
+    if args.tui:
+        if args.message is not None or args.follow or args.after:
+            raise UsageError("--tui cannot be combined with a message, --follow, or --after")
+        try:
+            from openrua.tui.app import ChatApp
+        except ModuleNotFoundError as exc:
+            if exc.name != "textual":
+                raise
+            raise UnavailableError("terminal UI dependencies are not installed",
+                                   hint="from the OpenRUA source checkout, run: pip install -e '.[tui]'") from exc
+        client = connect(args)
+        client.timeout = 5
+        ChatApp(client, name=args.name).run()
+        return 0
     client = connect(args)
     client_id = str(uuid4())
     try:
@@ -104,6 +118,7 @@ def add_parser(sub) -> None:
                        description=__doc__)
     p.add_argument("message", nargs="?", help="one message; omit for a conversation")
     p.add_argument("--name", default=DEFAULT_NAME)
+    p.add_argument("--tui", action="store_true", help="open the experimental chat-first terminal interface (requires openrua[tui])")
     p.add_argument("--follow", action="store_true", help="observe events without submitting anything")
     p.add_argument("--after", type=int, default=0, help="event cursor for --follow (default: from the beginning)")
     p.set_defaults(fn=run)

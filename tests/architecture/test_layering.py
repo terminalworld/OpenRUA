@@ -23,12 +23,16 @@ _HOST = {"openrua.runner.preflight", "openrua.runner.record", "openrua.sandbox",
 # host side.
 _ROBOT_HOST = {"openrua.robot.base", "openrua.robot.real", "openrua.robot.sim.build",
                "openrua.robot.sim.up", "openrua.robot.sim.down", "openrua.robot.sim.client"}
-_TOP = {"openrua.cli", "openrua.doctor", "openrua.testing"}
+_TOP = {"openrua.tui", "openrua.cli", "openrua.doctor", "openrua.testing"}
 _HOST_LEAVES = {"openrua.config", "openrua.errors"}
 _BRIDGE_BAN = _HOST | _ROBOT_HOST | _TOP | _HOST_LEAVES
 _LAYERS = _BRIDGE | {"openrua.runner.preflight", "openrua.runner.record",
                      "openrua.sandbox"}
 FORBIDDEN = {
+    "tui": {"openrua.robot", "openrua.runner", "openrua.sandbox", "openrua.proxy",
+            "openrua.agents", "openrua.plugins", "openrua.config", "openrua.cli",
+            "openrua.sessions.core", "openrua.sessions.execution", "openrua.sessions.store",
+            "openrua.sessions.http"},
     "artifacts.py": {"openrua"},
     # inside the bridge: the three parts never see each other; main may
     # import all three; nothing imports outward

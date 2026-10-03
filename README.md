@@ -71,6 +71,10 @@ terminal with that sentence, and the robot powers off when you leave;
 
 ## Browser and shared CLI chat (experimental)
 
+An optional [chat-first TUI](docs/terminal.md) supports streaming replies and an
+expandable queue: install `pip install -e '.[tui]'` from this checkout, then
+attach to a running service with `openrua chat --tui --name shared`.
+
 Use `run` for the agent's original terminal, or `serve` for a shared conversation
 that stays active while browser and CLI clients disconnect and reconnect:
 

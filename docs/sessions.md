@@ -19,6 +19,9 @@ connections. It does not plan robot actions or replace the coding agent's own
 workflow. The experimental local service connects the existing robot startup path to
 this coordinator. CLI and browser clients use the same HTTP API.
 
+For a chat-first terminal with streamed replies, collapsible tools and an
+editable queue, see [Terminal chat](terminal.md). It uses this same service.
+
 ## Start and connect
 
 Use the same robot, simulator, benchmark and agent selections as `up`. The

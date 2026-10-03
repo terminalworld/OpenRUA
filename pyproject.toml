@@ -28,6 +28,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+tui = ["textual>=8.2.8,<9"]
 browser-test = ["pytest", "playwright>=1.50,<2"]
 demo = ["pillow", "numpy", "imageio", "imageio-ffmpeg"]
 dev = ["pytest", "import-linter", "pillow", "numpy", "imageio", "imageio-ffmpeg"]
@@ -198,3 +199,19 @@ name = "workspace artifact readers are independent leaves"
 type = "forbidden"
 source_modules = ["openrua.artifacts"]
 forbidden_modules = ["openrua.sessions", "openrua.agents", "openrua.plugins", "openrua.runner", "openrua.robot", "openrua.sandbox", "openrua.config", "openrua.cli", "openrua.web", "openrua.proxy", "openrua.doctor", "openrua.testing", "openrua.demo", "openrua.errors"]
+
+[[tool.importlinter.contracts]]
+name = "terminal UI consumes the session client, never execution or vendor implementations"
+type = "forbidden"
+source_modules = ["openrua.tui"]
+forbidden_modules = ["openrua.robot", "openrua.runner", "openrua.sandbox", "openrua.proxy",
+                     "openrua.agents", "openrua.plugins", "openrua.config", "openrua.cli",
+                     "openrua.sessions.core", "openrua.sessions.execution", "openrua.sessions.store",
+                     "openrua.sessions.http"]
+
+[[tool.importlinter.contracts]]
+name = "execution and plugins never depend on terminal presentation"
+type = "forbidden"
+source_modules = ["openrua.sessions", "openrua.runner", "openrua.agents", "openrua.plugins",
+                  "openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.config", "openrua.errors"]
+forbidden_modules = ["openrua.tui"]
