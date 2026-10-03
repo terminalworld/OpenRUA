@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import webbrowser
 from uuid import uuid4
 
 from openrua.config import paths
@@ -38,6 +39,12 @@ def run(args) -> int:
         return 0
     client = connect(args)
     try:
+        if operation == "web":
+            client.snapshot()
+            print(f"Open {client.url} and paste this session access token:\n{client.token}")
+            if not args.no_open:
+                webbrowser.open(client.url)
+            return 0
         if operation == "status":
             result = client.snapshot()
         elif operation == "events":
@@ -68,6 +75,8 @@ def add_parser(sub) -> None:
     p = sub.add_parser("session", help="inspect, queue messages, pause/resume or end a shared session")
     p.add_argument("--name", default=DEFAULT_NAME)
     actions = p.add_subparsers(dest="action", required=True)
+    browser = actions.add_parser("web", help="open the browser client and explicitly show its access token")
+    browser.add_argument("--no-open", action="store_true", help="print connection instructions without opening a browser")
     actions.add_parser("status", help="snapshot, pending questions and message IDs")
     events = actions.add_parser("events", help="read retained events after a cursor")
     events.add_argument("--after", type=int, default=0)

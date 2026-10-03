@@ -53,7 +53,8 @@ def validate_command(body: dict) -> tuple[str, dict]:
 class LocalServer:
     def __init__(self, execution: Execution, end: Callable[[], Awaitable[None]],
                  token: str, port: int = 0, request_timeout: float = 120,
-                 max_body_bytes: int = 1024 * 1024):
+                 max_body_bytes: int = 1024 * 1024,
+                 assets: dict[str, tuple[str, bytes]] | None = None):
         if not token or request_timeout <= 0 or max_body_bytes <= 0:
             raise ValueError("token and positive request limits are required")
         self.execution, self.end = execution, end
@@ -64,6 +65,7 @@ class LocalServer:
         self._pending: set[concurrent.futures.Future] = set()
         self._pending_lock = threading.Lock()
         owner = self
+        public_assets = dict(assets or {})
 
         class Handler(BaseHTTPRequestHandler):
             # One response per connection. Clients reconnect with an event cursor.
@@ -76,24 +78,34 @@ class LocalServer:
                 pass
 
             def reply(self, status, value):
-                raw = json.dumps(value, ensure_ascii=False).encode()
+                self.reply_bytes(status, "application/json; charset=utf-8", json.dumps(value, ensure_ascii=False).encode())
+
+            def reply_bytes(self, status, mime, raw):
                 try:
                     self.send_response(status)
-                    self.send_header("Content-Type", "application/json; charset=utf-8")
+                    self.send_header("Content-Type", mime)
                     self.send_header("Content-Length", str(len(raw)))
                     self.send_header("Cache-Control", "no-store")
                     self.send_header("X-Content-Type-Options", "nosniff")
+                    self.send_header("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+                    self.send_header("Referrer-Policy", "no-referrer")
+                    self.send_header("Cross-Origin-Resource-Policy", "same-origin")
                     self.end_headers()
                     self.wfile.write(raw)
                     self.wfile.flush()
                 except (BrokenPipeError, ConnectionResetError, TimeoutError):
                     pass
 
-            def authorized(self):
+            def same_origin(self):
                 host = self.headers.get("Host", "")
                 origin = self.headers.get("Origin")
                 if host != owner.address or (origin is not None and origin != owner.url):
                     self.reply(403, {"error": "use the local service address and same origin"})
+                    return False
+                return True
+
+            def authorized(self):
+                if not self.same_origin():
                     return False
                 supplied = self.headers.get("Authorization", "")
                 if not hmac.compare_digest(supplied.encode(), ("Bearer " + owner.token).encode()):
@@ -102,6 +114,12 @@ class LocalServer:
                 return True
 
             def do_GET(self):
+                target = urlsplit(self.path)
+                if target.path in public_assets:
+                    if self.same_origin():
+                        mime, content = public_assets[target.path]
+                        self.reply_bytes(200, mime, content)
+                    return
                 if not self.authorized():
                     return
                 target = urlsplit(self.path)
@@ -147,6 +165,8 @@ class LocalServer:
                         self.reply(404, {"error": "unknown endpoint"})
                         return
                     result = future.result(timeout=owner.request_timeout)
+                    if self.path == "/api/end":
+                        result = owner.execution.session.store.snapshot()
                     self.reply(200, {"result": result})
                     if self.path == "/api/end":
                         owner.loop.call_soon_threadsafe(owner.ended.set)

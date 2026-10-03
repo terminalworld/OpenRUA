@@ -106,3 +106,19 @@ def test_serve_chat_and_down_share_one_resource_owner(tmp_path, monkeypatch, cap
                 await asyncio.gather(serving, return_exceptions=True)
     asyncio.run(run())
     assert "inspection complete" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("no_open", [True, False])
+def test_web_opens_only_local_url_and_explicitly_shows_token(tmp_path, monkeypatch, capsys, no_open):
+    from openrua.cli.commands import session
+    endpoint(tmp_path)
+    opened = []
+    monkeypatch.setattr(session.Client, "snapshot", lambda self: {})
+    monkeypatch.setattr(session.webbrowser, "open", opened.append)
+    argv = ["--home", str(tmp_path), "session", "--name", "managed", "web"]
+    if no_open:
+        argv.append("--no-open")
+    assert session.run(build_parser().parse_args(argv)) == 0
+    assert opened == ([] if no_open else ["http://127.0.0.1:1234"])
+    output = capsys.readouterr().out
+    assert "private" in output and "http://127.0.0.1:1234" in output

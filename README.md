@@ -258,7 +258,7 @@ may import whom is enforced by CI (import-linter and
 | [docs/cli.md](docs/cli.md) | every verb and flag, exit codes (generated) |
 | [docs/config.md](docs/config.md) | every config key (generated) |
 | [docs/agents.md](docs/agents.md) | adding a coding agent |
-| [docs/sessions.md](docs/sessions.md) | experimental shared chat, queued messages and client reconnection |
+| [docs/sessions.md](docs/sessions.md) | experimental CLI/browser chat, queued messages and client reconnection |
 | [docs/architecture.md](docs/architecture.md) | the units and the layering contract |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | conventions for code, names and docs |
 

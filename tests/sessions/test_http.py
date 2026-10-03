@@ -102,7 +102,9 @@ def test_http_end_waits_for_shutdown_and_retains_records(tmp_path):
         client = Client(server.url, server.token)
         try:
             message = await asyncio.to_thread(client.command, "enqueue", client_id="a", request_id="1", text="inspect")
-            await asyncio.to_thread(client.end)
+            closed = await asyncio.to_thread(client.request, "/api/end", {})
+            assert closed["result"]["state"]["closed"]
+            assert closed["result"]["state"]["messages"][0]["status"] == "unknown"
             await asyncio.wait_for(server.ended.wait(), 2)
             snapshot = await asyncio.to_thread(client.snapshot)
             assert snapshot["state"]["closed"]
@@ -138,6 +140,35 @@ def test_http_timeout_does_not_cancel_accepted_command(tmp_path):
                 await asyncio.to_thread(client.command, "enqueue", client_id="web", request_id="one", text="inspect")
             await until(lambda: bool(store.snapshot()["state"]["messages"]))
             assert len([f for f in native.writes if "submit" in f]) == 1
+        finally:
+            await stop(store, execution, server)
+    asyncio.run(run())
+
+
+def test_browser_assets_do_not_expose_session_files_or_bypass_api_auth(tmp_path):
+    from openrua.web import assets
+    async def run():
+        store, session, native, execution, server = await running_server(tmp_path, assets=assets())
+        def get(path, headers=None):
+            connection = http.client.HTTPConnection(server.address)
+            try:
+                connection.request("GET", path, headers=headers or {})
+                response = connection.getresponse()
+                return response.status, dict(response.getheaders()), response.read()
+            finally:
+                connection.close()
+        try:
+            for path, (mime, expected) in assets().items():
+                status, headers, body = await asyncio.to_thread(get, path)
+                assert status == 200 and body == expected
+                assert headers["Content-Type"] == mime
+                assert "frame-ancestors 'none'" in headers["Content-Security-Policy"]
+                assert server.token.encode() not in body
+            assert (await asyncio.to_thread(get, "/api/session"))[0] == 401
+            assert (await asyncio.to_thread(get, "/", {"Origin": "https://elsewhere.example"}))[0] == 403
+            auth = {"Authorization": "Bearer " + server.token}
+            for path in ("/../session.sqlite", "/endpoint.json", "/assets/workspace/README.md"):
+                assert (await asyncio.to_thread(get, path, auth))[0] == 404
         finally:
             await stop(store, execution, server)
     asyncio.run(run())

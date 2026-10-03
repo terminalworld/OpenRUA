@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenRUA · Robot workspace</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/">OpenRUA<span>ROBOT WORKSPACE</span></a>
+      <div class="connection">
+        <span id="connection-light"></span
+        ><span id="connection">Not connected</span>
+      </div>
+      <button id="disconnect" hidden>Disconnect</button>
+    </header>
+    <main>
+      <section id="login" class="login card">
+        <p class="eyebrow">YOUR ROBOT, ONE CONVERSATION</p>
+        <h1>Connect to your workspace.</h1>
+        <p>
+          Chat, inspect progress and guide the agent. Your session keeps running
+          when you leave.
+        </p>
+        <form id="connect-form">
+          <label for="token">Session access token</label
+          ><input
+            id="token"
+            type="password"
+            required
+            autocomplete="off"
+            placeholder="Paste the token from your terminal"
+          /><button class="primary">Connect</button>
+        </form>
+        <p class="hint">
+          Run <code>openrua session --name NAME web</code> in your terminal to
+          open this page and get the token. It stays in this tab's memory.
+        </p>
+      </section>
+      <section id="workspace" hidden>
+        <div class="workspace-heading">
+          <div>
+            <p class="eyebrow">SHARED SESSION</p>
+            <h1>Robot workspace</h1>
+            <p id="summary">Waiting for session state</p>
+          </div>
+          <button id="end" class="danger">End session</button>
+        </div>
+        <div id="notice" role="status" aria-live="polite" hidden></div>
+        <div class="layout">
+          <section class="conversation card">
+            <div class="section-heading">
+              <h2>Conversation</h2>
+              <span id="cursor" class="hint"></span>
+            </div>
+            <div id="thread" aria-label="Conversation history">
+              <div class="empty">
+                Give the agent a task.<br /><small
+                  >Messages from every connected client appear here.</small
+                >
+              </div>
+            </div>
+            <form id="compose">
+              <label class="sr-only" for="message">Message to the agent</label
+              ><textarea
+                id="message"
+                rows="3"
+                placeholder="What would you like the robot to do?"
+                required
+              ></textarea>
+              <div class="compose-footer">
+                <span id="send-hint">New messages join the shared queue.</span
+                ><button id="send" class="primary">Send message ↑</button>
+              </div>
+            </form>
+          </section>
+          <aside>
+            <section class="card controls">
+              <div class="section-heading">
+                <h2>Execution</h2>
+                <span id="state" class="badge">Starting</span>
+              </div>
+              <p id="execution-description"></p>
+              <button id="interrupt" disabled>Interrupt current turn</button
+              ><button id="resume" class="primary" disabled>
+                Continue queued messages
+              </button>
+              <p class="hint">
+                Interrupt pauses the agent and queue. It is not a robot
+                emergency stop.
+              </p>
+            </section>
+            <section id="questions" class="card" hidden>
+              <h2>Agent needs your input</h2>
+              <div id="question-list"></div>
+            </section>
+            <section class="card">
+              <div class="section-heading">
+                <h2>Queue</h2>
+                <span id="queue-count" class="badge">0</span>
+              </div>
+              <div id="queue"></div>
+            </section>
+            <section id="unknown-panel" class="card" hidden>
+              <h2>Check uncertain execution</h2>
+              <p class="hint">
+                Inspect the robot and workspace before confirming what happened.
+                Confirmation does not replay the task.
+              </p>
+              <div id="unknown"></div>
+            </section>
+          </aside>
+        </div>
+      </section>
+      <p id="login-error" role="alert"></p>
+    </main>
+    <footer>
+      <span>Native agent. Native robot interface.</span
+      ><span>Local session · OpenRUA</span>
+    </footer>
+    <dialog id="edit-dialog">
+      <form id="edit-form">
+        <h2 id="edit-title">Edit queued message</h2>
+        <label for="edit-text" id="edit-label">Instruction</label
+        ><textarea id="edit-text" rows="5" required></textarea>
+        <div class="dialog-actions">
+          <button type="button" id="edit-cancel">Cancel</button
+          ><button class="primary">Save</button>
+        </div>
+      </form>
+    </dialog>
+  </body>
+</html>

@@ -22,7 +22,7 @@ is visible to the agent.
 | `openrua/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, the module each names under `entry_point`), the launcher, credentials staging, the prompts. | `python -m openrua.agents launch` |
 | `openrua/runner/` | running trials: `main.py` (`openrua bench`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua bench` |
 | `openrua/demo/` | a video from a recorded trial's files (`frames/`, `ops.jsonl`): `compose.py` renders the terminal beside the cameras. Reads files, imports `errors` only; its libraries are the `demo` extra. | `openrua demo` |
-| `openrua/sessions/` | shared user-message queue, durable events and native connection ownership through injected storage/transport contracts; independent of robot task planning. See [sessions.md](sessions.md). | Python API (experimental) |
+| `openrua/sessions/` | shared user-message queue, durable events and native connection ownership through injected storage/transport contracts; independent of robot task planning. See [sessions.md](sessions.md). | `serve`, `chat`, `session` (experimental) |
 | `openrua/cli/` | the command line: one module per verb under `commands/` (`robots / benchmarks / agents / build / up / agent / down / run / demo / probe / config / doctor`), `output.py`, `state.py`. | `openrua` |
 | `openrua/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, login, the user directory), `report.py`. | `openrua doctor` |
 
@@ -126,7 +126,9 @@ save resource facts after startup also triggers resource cleanup.
 
 `runner.managed` combines a live robot with the plugin's native conversation
 and the session execution owner. The `serve` CLI supplies a local HTTP front
-end; `chat` and `session` consume that API. HTTP connection loss does not close
+end; `chat`, `session` and the bundled browser client consume that API.
+Browser assets live in `openrua.web`, a leaf supplied explicitly to the HTTP
+adapter; session coordination never imports it. HTTP connection loss does not close
 the execution owner. `down` routes managed sessions through their owner, and
 `clean` refuses to delete a directory while its service endpoint remains.
 Agent-specific frames and launch commands remain in the existing agent plugins.

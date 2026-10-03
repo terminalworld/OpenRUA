@@ -7,6 +7,7 @@ import secrets
 import signal
 
 from openrua.cli.commands import up
+from openrua.web import assets
 from openrua.config import paths
 from openrua.errors import UnavailableError
 from openrua.runner import managed
@@ -26,12 +27,13 @@ async def serve(args) -> None:
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, stopped.set)
             signals.append(sig)
-        server = LocalServer(owned.execution, owned.end, secrets.token_urlsafe(32), port=args.port)
+        server = LocalServer(owned.execution, owned.end, secrets.token_urlsafe(32), port=args.port, assets=assets())
         write_endpoint(endpoint, server.url, server.token)
         published = True
         server.start()
         print(f"[serve] {args.name} at {server.url}\n"
               f"[serve] open another terminal: openrua --home {args.home} chat --name {args.name}\n"
+              f"[serve] browser: openrua --home {args.home} session --name {args.name} web\n"
               "[serve] closing a chat client keeps this session running; Ctrl-C here ends it", flush=True)
         while True:
             ending = [asyncio.create_task(stopped.wait()), asyncio.create_task(server.ended.wait())]

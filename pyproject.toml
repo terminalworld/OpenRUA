@@ -28,6 +28,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+browser-test = ["pytest", "playwright>=1.50,<2"]
 demo = ["pillow", "numpy", "imageio", "imageio-ffmpeg"]
 dev = ["pytest", "import-linter", "pillow", "numpy", "imageio", "imageio-ffmpeg"]
 
@@ -179,3 +180,15 @@ type = "forbidden"
 source_modules = ["openrua.agents", "openrua.plugins", "openrua.robot", "openrua.sandbox",
                   "openrua.proxy", "openrua.config", "openrua.errors"]
 forbidden_modules = ["openrua.sessions"]
+
+[[tool.importlinter.contracts]]
+name = "browser assets are a leaf, supplied explicitly to the HTTP adapter"
+type = "forbidden"
+source_modules = ["openrua.web"]
+forbidden_modules = ["openrua.sessions", "openrua.agents", "openrua.plugins", "openrua.runner", "openrua.robot", "openrua.sandbox", "openrua.config", "openrua.cli"]
+
+[[tool.importlinter.contracts]]
+name = "session coordination does not select browser assets"
+type = "forbidden"
+source_modules = ["openrua.sessions"]
+forbidden_modules = ["openrua.web"]

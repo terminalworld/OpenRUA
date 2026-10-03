@@ -328,10 +328,12 @@ options:
 
 ```
 usage: openrua session [-h] [--name NAME]
-                       {status,events,send,interrupt,withdraw,resume,edit,resolve_unknown,respond,end} ...
+                       {web,status,events,send,interrupt,withdraw,resume,edit,resolve_unknown,respond,end} ...
 
 positional arguments:
-  {status,events,send,interrupt,withdraw,resume,edit,resolve_unknown,respond,end}
+  {web,status,events,send,interrupt,withdraw,resume,edit,resolve_unknown,respond,end}
+    web                 open the browser client and explicitly show its access
+                        token
     status              snapshot, pending questions and message IDs
     events              read retained events after a cursor
     send                enqueue a message without waiting for its result
@@ -344,6 +346,16 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --name NAME
+```
+
+### openrua session web
+
+```
+usage: openrua session web [-h] [--no-open]
+
+options:
+  -h, --help  show this help message and exit
+  --no-open   print connection instructions without opening a browser
 ```
 
 ### openrua session status

@@ -47,7 +47,7 @@ class FakeTransport:
         if "submit" in frame:
             state = self.session.store.snapshot()["state"]
             assert state["active"] == frame["submit"]
-            assert state["messages"][-1]["status"] == "dispatching"
+            assert next(m for m in state["messages"] if m["id"] == frame["submit"])["status"] == "dispatching"
             if self.fail_send:
                 raise OSError("lost write acknowledgement")
         self.writes.append(frame)

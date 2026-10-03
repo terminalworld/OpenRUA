@@ -3,7 +3,7 @@
 The `openrua.sessions` package coordinates user messages and native agent
 connections. It does not plan robot actions or replace the coding agent's own
 workflow. The experimental local service connects the existing robot startup path to
-this coordinator. CLI clients use its HTTP API; a browser UI is not yet included.
+this coordinator. CLI and browser clients use the same HTTP API.
 
 ## Start and connect
 
@@ -40,6 +40,36 @@ The cursor is an event sequence number. Raw and normalized events are both
 retained; reconnecting never reruns old commands. `send` prints its client and
 request IDs before sending. After a lost acknowledgement, inspect status or
 retry the same text using both `--client-id` and `--request-id`.
+
+## Browser client
+
+With `serve` running, open its browser client from another terminal:
+
+```sh
+openrua session --name shared web
+# Print the address and access token without launching a browser:
+openrua session --name shared web --no-open
+```
+
+Paste the displayed token into the page. This command explicitly prints a
+credential; keep it private. The browser keeps the token only in memory, never
+in the URL or browser storage. Reloading requires pasting it again. The client
+and any unacknowledged outgoing message IDs are kept in tab session storage,
+so a retry after a lost response uses the original request identity.
+
+The page shows messages from all clients, streamed agent text, tool activity,
+and queued instructions. You can edit or withdraw queued messages, interrupt
+the current turn, confirm queue continuation, and answer native agent questions.
+If the execution result is unknown, record what you checked before continuing.
+Ending waits for the resource owner and displays the resulting retained state;
+a failed shutdown is not displayed as a successful end.
+
+Closing the page or selecting **Disconnect** leaves the execution host running.
+Reconnecting reloads the retained conversation without submitting old messages.
+The layout supports narrow screens, but the service is still local-only; this
+is not a remotely hosted app or a native mobile app. It does not yet display
+robot camera streams or workspace files. Agent text is rendered as plain text,
+not executable HTML.
 
 ## Pause, input and end
 
@@ -97,7 +127,9 @@ with mode `0600`. The client reads that file; tokens are not placed in URLs or
 printed in startup messages. Native records and the SQLite journal are private
 session data. Do not publish them as application assets.
 
-All requests require `Authorization: Bearer TOKEN`. The server checks the Host
+All API requests require `Authorization: Bearer TOKEN`. The three bundled
+browser assets (`/`, `/app.js`, `/style.css`) are public on the local origin;
+no workspace or journal files are served. The server checks the Host
 and browser Origin, sends no CORS allowance, and rejects oversized bodies.
 There is no remote/public hosting option or built-in TLS in this initial local
 transport. The API is independent of agent vendors:
@@ -107,11 +139,13 @@ transport. The API is independent of agent vendors:
 | `GET /api/session` | State snapshot and matching event cursor |
 | `GET /api/events?after=N&limit=1000` | Ordered retained events after N |
 | `POST /api/commands` | `{ "operation": "enqueue", "params": { ... } }` and other session operations |
-| `POST /api/end` with `{}` | Stop owned resources before acknowledging closure |
+| `POST /api/end` with `{}` | Stop owned resources and return the final state snapshot in `result` |
 
 A response timeout does not cancel an accepted command. Clients inspect the
 journal or use the original request identity to resolve uncertain acceptance.
-Storage, native transport and the HTTP front end each consume narrow contracts;
+Browser assets are passed explicitly to the HTTP adapter by the CLI. The browser
+consumes the same API as other clients and contains no vendor protocol or robot
+control implementation. Storage, native transport and the HTTP front end each consume narrow contracts;
 none adds a task-specific robot action API.
 
 ## Boundaries
@@ -191,3 +225,19 @@ checks verified consecutive turns, a file task, native-thread resume and active
 interruption followed by explicit queue resume. Robot execution through the new
 service and successful Claude model turns remain unverified. See [agents.md](agents.md#structured-conversations-experimental)
 for the native plugin protocol and handshake checks.
+
+### Browser regression checks
+
+```sh
+pip install -e '.[browser-test]'
+python -m playwright install chromium
+pytest -q tests/web
+```
+
+These optional tests use Chromium, the actual local HTTP server and SQLite,
+with a controlled native transport. They exercise shared CLI/browser messages,
+streamed output, edits, withdrawals, interrupted queues, explicit resumption,
+questions, lost acknowledgements, page reloads, disconnection, uncertain
+execution and failed shutdown. They also check text escaping and a narrow
+viewport. They do not run models or robots and do not replace the native and
+robot integration checks described above.
