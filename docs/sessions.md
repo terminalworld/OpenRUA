@@ -220,11 +220,25 @@ ownership. Execution tests use a fake native transport to inject failures.
 Local HTTP tests cover concurrent clients, a connection dropped before its
 response, request timeouts, cursor replay, request validation and explicit end.
 A CLI integration test exercises serve/chat/down through actual local HTTP with
-a controlled native transport. The network tests use a controlled native transport. Separate live Codex
-checks verified consecutive turns, a file task, native-thread resume and active
-interruption followed by explicit queue resume. Robot execution through the new
-service and successful Claude model turns remain unverified. See [agents.md](agents.md#structured-conversations-experimental)
-for the native plugin protocol and handshake checks.
+a controlled native transport. Separate live Codex checks verified consecutive
+turns, a file task, native-thread resume and active interruption followed by
+explicit queue resume.
+
+A Docker integration check used the existing RoboCasa365 NavigateKitchen scene,
+Codex CLI 0.153.4 and `gpt-5.6-sol` at medium reasoning effort. A CLI instruction
+read ROS topics and saved a camera image; a browser instruction opened the
+simulated gripper and read joint-state feedback; a second CLI instruction waited
+in the same queue and completed while the browser was disconnected. Reconnection
+showed all three turns with the same native thread identity. Browser-initiated
+end stopped the service and removed both session containers while retaining the
+workspace and journal. The observation turn also reported a missing `file`
+utility during an extra artifact check; the saved image and text record were
+independently verified. This was a bounded integration check, not a benchmark
+score, physical-robot test or guarantee for other image/agent versions.
+
+Successful Claude model turns remain unverified. See
+[agents.md](agents.md#structured-conversations-experimental) for native protocol,
+handshake and quota-failure checks.
 
 ### Browser regression checks
 

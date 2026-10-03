@@ -130,7 +130,9 @@ and their fresh-workspace protocol are unaffected.
 openrua doctor panda --bench libero_pro
 ```
 
-Read-only. One row per fact: the container engine, each image and
+Read-only. Each selected agent is checked against its own configured login
+directory and version, including when `--agent` selects a different agent from
+the benchmark default. Repeat `--agent` to check several agents. One row per fact: the container engine, each image and
 whether its label still matches the manifests (sandbox, proxy) or the
 declaration it was rendered from (the simulator image), the agent
 login, the user directory. An error row carries the command that fixes

@@ -141,3 +141,58 @@ def test_robot_image_is_checked_against_the_declaration_it_was_rendered_from(tmp
     assert by["robot-image"].severity == "warning"
     assert "declaration changed" in by["robot-image"].detail
     assert by["robot-image"].hint == "openrua build --bench libero_pro"
+
+
+def test_each_selected_agent_uses_its_own_login_and_version(tmp_path):
+    import yaml
+    from openrua.doctor.checks import check_login
+    locations = {name: tmp_path / name for name in ("claude-code", "codex")}
+    for name, location in locations.items():
+        location.mkdir()
+        (location / agents.get(name).credentials.filename).write_text("{}")
+    (tmp_path / "config.yaml").write_text(yaml.safe_dump({
+        "agent": "claude-code",
+        "agents": {name: {"credentials_dir": str(location), "version": version}
+                   for (name, location), version in zip(locations.items(), ("2.1.251", "0.153.4"))},
+    }))
+    seen = []
+    def inspect_context(ctx):
+        seen.extend((a.name, a.version) for a in ctx.agents)
+        return check_login(ctx)
+    report = doctor.run(robot="panda", sim="robosuite", home=tmp_path,
+                        agent_names=["claude-code", "codex"], checks=(inspect_context,))
+    assert report.ok, report.render()
+    assert seen == [("claude-code", "2.1.251"), ("codex", "0.153.4")]
+    assert all(str(locations[row.id.removeprefix("login-")]) in row.label for row in report.checks)
+    seen.clear()
+    report = doctor.run(home=tmp_path, agent_names=["codex@0.159.1"], checks=(inspect_context,))
+    assert report.ok
+    assert seen == [("codex", "0.159.1")]
+
+
+def test_doctor_without_robot_honors_selected_default_and_custom_manifest(tmp_path):
+    import yaml
+    from openrua.doctor.checks import check_login
+    manifest = tmp_path / "custom.yaml"
+    data = yaml.safe_load(paths.find("agents", "codex").read_text())
+    data["name"] = "custom-agent"
+    manifest.write_text(yaml.safe_dump(data))
+    login = tmp_path / "custom-login"
+    login.mkdir()
+    (login / data["credentials"]["filename"]).write_text("{}")
+    (tmp_path / "config.yaml").write_text(yaml.safe_dump({
+        "agent": str(manifest),
+        "agents": {str(manifest): {"credentials_dir": str(login)}},
+    }))
+    report = doctor.run(home=tmp_path, checks=(check_login,))
+    assert report.ok, report.render()
+    assert report.checks[0].id == "login-custom-agent"
+    assert str(login) in report.checks[0].label
+
+
+def test_invalid_user_config_is_a_finding_not_a_traceback(tmp_path):
+    (tmp_path / "config.yaml").write_text("unknown_setting: true\n")
+    report = doctor.run(home=tmp_path)
+    assert not report.ok
+    assert report.checks[0].id == "configuration"
+    assert "unknown_setting" in report.checks[0].detail

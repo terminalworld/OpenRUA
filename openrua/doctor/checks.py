@@ -13,7 +13,7 @@ import os
 import shutil
 import subprocess
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 
@@ -59,6 +59,7 @@ class Context:
     sim: str | None = None       # what was named on the command line, for the hints
     bench: str | None = None
     owner: str | None = None     # the declaration the robot image is rendered from
+    login_directories: dict[agents.Agent, Path] = field(default_factory=dict)
 
 
 def engine_version() -> str:
@@ -213,12 +214,11 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
 
 def check_login(ctx: Context) -> list[CheckResult]:
     out: list[CheckResult] = []
-    configured = (ctx.cfg or {}).get("agent", {}).get("credentials_dir")
     for a in ctx.agents:
         if a.credentials is None:
             out.append(CheckResult(f"login-{a.name}", f"{a.name}: no profile login to check"))
             continue
-        home = Path(configured or paths.credentials_dir(ctx.home) / a.name).expanduser()
+        home = ctx.login_directories.get(a, paths.credentials_dir(ctx.home) / a.name)
         if (home / a.credentials.filename).exists():
             out.append(CheckResult(f"login-{a.name}", f"{a.name} login at {home}"))
         else:
@@ -243,6 +243,13 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
     home = paths.home(home)
     cfg = install = owner = None
     report = Report()
+    try:
+        defaults = config.load_user_config(paths.package_config_path())
+        user = config.load_user_config(paths.config_path(home))
+    except Exception as exc:  # noqa: BLE001
+        report.checks.append(CheckResult("configuration", "invalid configuration", "error",
+                                         detail=str(exc), hint="openrua config schema lists supported keys"))
+        return report
     if robot or bench:
         try:
             composed = compose(robot, sim, bench, home)
@@ -254,18 +261,24 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
             report.checks.append(CheckResult("robot-profile", f"{what}: {exc}", "error",
                                              hint="openrua robots / simulators / benchmarks "
                                                   "list what there is"))
-    names = agent_names or [(cfg or {}).get("agent", {}).get("name")
-                     or config.load_user_config(paths.package_config_path()).agent]
-    pin = (cfg or {}).get("agent", {}).get("version")
+    configured = (cfg or {}).get("agent", {})
+    names = agent_names or [configured.get("name") or config.default_agent_name(defaults, user)]
     chosen: list[agents.Agent] = []
+    login_directories = {}
     for n in names:
         try:
-            chosen.append(agents.get(n, home, version=pin))
+            spec, _ = agents.split_pin(n)
+            settings = config.layer_agent(configured, defaults, user, agent=spec)
+            adapter = agents.get(n, home, version=settings.get("version"))
+            chosen.append(adapter)
+            login_directories[adapter] = Path(
+                settings.get("credentials_dir") or paths.credentials_dir(home) / adapter.name
+            ).expanduser()
         except Exception as exc:  # noqa: BLE001
             report.checks.append(CheckResult(f"agent-{n}", f"agent {n}: {exc}", "error",
                                              hint="openrua agents lists the agents"))
     ctx = Context(home=home, agents=chosen, cfg=cfg, robot=robot, install=install,
-                  sim=sim, bench=bench, owner=owner)
+                  sim=sim, bench=bench, owner=owner, login_directories=login_directories)
     for check in checks:
         try:
             report.checks.extend(check(ctx))

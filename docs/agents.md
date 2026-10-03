@@ -179,8 +179,11 @@ consecutive turns, including reading two integers and writing their sum to a
 file. A subsequent check resumed the exact native thread, interrupted a running
 shell tool, kept the next client message queued while paused, then completed it
 after explicit resume. These checks used the public protocol and execution
-owner with an isolated host workspace. They do not establish robot execution
-or sandbox-container compatibility through the new service.
+owner with an isolated host workspace. A separate Docker integration check
+with Codex CLI 0.153.4 and the same model exercised ROS topic discovery, camera
+acquisition and a simulated gripper command through `serve`, the browser and
+CLI, followed by retained-state shutdown. See [sessions.md](sessions.md#validation-scope)
+for the scope and limitations of that check.
 
 
 Claude Code implements the same optional contract through its original CLI's
