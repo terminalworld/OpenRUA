@@ -109,7 +109,7 @@ ros2 topic echo /joint_states --once
 
 `Ctrl-C` in the first terminal powers the robot off and removes both
 containers. The workspace the agent left behind, snapshots and scripts
-included, stays under `~/.openrua/workspaces/openrua/`.
+included, stays under `~/.openrua/sandboxes/openrua/workspace/workspace/`.
 
 ## Next
 

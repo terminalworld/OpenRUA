@@ -1,11 +1,11 @@
-"""``openrua clean [--all]``: sweep what sandboxes left in the user directory.
+"""``openrua clean [--name <name>] [--all]``: explicitly delete session files.
 
-Every sandbox writes under ``<home>/sandboxes/<name>/`` (workspace,
-profile copy, state) and removes it when it goes down; a sandbox that
-crashed, or a bring-up that failed, leaves its directory behind. This
-verb removes every such directory whose containers are not running;
-``--all`` powers the running ones off first. ``config.yaml`` and
-``credentials/`` are yours and never touched.
+Sessions retain their workspace, native agent profile and state after
+shutdown. This command deletes those materials under ``<home>/sandboxes/``:
+by default all stopped sessions, or just ``--name``. ``--all`` also stops
+running containers before deletion. User-supplied workspace directories
+outside the session directory, ``config.yaml`` and ``credentials/`` are
+never deleted.
 """
 
 from __future__ import annotations
@@ -16,45 +16,58 @@ import subprocess
 from openrua import robot
 from openrua.cli import state
 from openrua.config import paths
+from openrua.errors import UnavailableError, UsageError
 from openrua.sandbox.down import down as sandbox_down
 
 
 def running(name: str) -> bool:
-    """Whether either container of a named sandbox is up."""
-    for c in state.container_names(name):
-        r = subprocess.run(["docker", "inspect", "--format", "{{.State.Running}}", c],
-                           capture_output=True, text=True)
-        if r.returncode == 0 and r.stdout.strip() == "true":
-            return True
-    return False
+    """Whether either session container is up; an unreachable daemon is an error."""
+    result = subprocess.run(["docker", "ps", "--format", "{{.Names}}"],
+                            capture_output=True, text=True)
+    if result.returncode:
+        raise UnavailableError(result.stderr.strip() or "cannot inspect running containers",
+                               hint="check docker info before deleting session files")
+    return bool(set(state.container_names(name)) & set(result.stdout.splitlines()))
 
 
 def run(args) -> int:
     root = paths.sandboxes_dir(args.home)
+    selected = paths.sandbox_dir(args.name, args.home) if args.name else None
     if not root.is_dir():
         print(f"nothing under {root}")
         return 0
-    kept = 0
-    for d in sorted(p for p in root.iterdir() if p.is_dir()):
-        if running(d.name):
+    directories = ([selected] if selected else sorted(p for p in root.iterdir() if p.is_dir()))
+    for directory in directories:
+        if directory.is_symlink():
+            raise UsageError(f"refusing to delete a session symlink: {directory}",
+                             hint="inspect the link and remove it explicitly if intended")
+        if not directory.exists():
+            print(f"nothing at {directory}")
+            continue
+        if running(directory.name):
             if not args.all:
-                print(f"[clean] {d.name}: containers running, kept (--all powers them off)")
-                kept += 1
+                print(f"[clean] {directory.name}: containers running, kept (--all powers them off)")
                 continue
-            sim_name, sandbox_name = state.container_names(d.name)
+            sim_name, sandbox_name = state.container_names(directory.name)
             sandbox_down(sandbox_name)
-            robot.down(sim_name, (state.load(d.name, args.home).get("backend", "sim")
-                                  if state.path(d.name, args.home).is_file() else "sim"))
-        shutil.rmtree(d, ignore_errors=True)
-        print(f"[clean] removed {d}")
-    if not kept and not any(root.iterdir()):
+            kind = (state.load(directory.name, args.home, require_running=False).get("backend", "sim")
+                    if state.path(directory.name, args.home).is_file() else "sim")
+            robot.down(sim_name, kind)
+            if running(directory.name):
+                raise UnavailableError(f"session {directory.name!r} still has running containers",
+                                       hint=f"openrua down --name {directory.name}")
+        shutil.rmtree(directory)
+        print(f"[clean] removed {directory}")
+    if not any(root.iterdir()):
         root.rmdir()
     return 0
 
 
 def add_parser(sub) -> None:
-    p = sub.add_parser("clean", help="remove what sandboxes left under <home>/sandboxes",
+    p = sub.add_parser("clean", help="explicitly delete retained session files",
                        description=__doc__.split("\n\n")[1])
+    p.add_argument("--name", default=None,
+                   help="delete only this session (default: all stopped sessions)")
     p.add_argument("--all", action="store_true",
-                   help="power running sandboxes off and remove theirs too")
+                   help="also power running containers off and delete their session files")
     p.set_defaults(fn=run)

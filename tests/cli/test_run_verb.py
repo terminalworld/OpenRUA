@@ -140,3 +140,5 @@ def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path):
     assert up_cmd.state.load(args.name, args.home)["task"] == "inspect the table"
     session.power_off()
     assert calls == ["sandbox down", "shutdown"]
+    assert up_cmd.state.load(args.name, args.home, require_running=False)["status"] == "stopped"
+    assert (args.home / "sandboxes" / args.name / "workspace").is_dir()

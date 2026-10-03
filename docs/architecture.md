@@ -51,7 +51,7 @@ openrua-sim-<name>, openrua-sandbox-<distro>, openrua-proxy   the images (openru
 ~/.openrua/                                             the user directory ($OPENRUA_HOME, --home); written by the tool, not by hand
   config.yaml                                            your defaults (openrua config set)
   credentials/<agent>/                                   login profiles
-  sandboxes/<name>/                                      a live sandbox's workspace, profile copy and state; gone with it (openrua clean sweeps leftovers)
+  sandboxes/<name>/                                      session workspace, profile copy and state; retained until explicitly deleted with openrua clean
 ./runs/                                                 trial data (--runs-root)
 ```
 

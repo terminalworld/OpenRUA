@@ -13,7 +13,9 @@ import subprocess
 
 
 def down(name: str) -> None:
-    subprocess.run(["docker", "rm", "-f", name], capture_output=True)
+    result = subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True)
+    if result.returncode and "No such container" not in result.stderr:
+        raise RuntimeError(f"could not remove {name}: {result.stderr.strip()}; check docker info")
 
 
 def main() -> int:  # standalone: remove one robot container by name

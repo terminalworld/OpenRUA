@@ -2,8 +2,8 @@
 
 The profile directory (settings and other non-rotating state) is always
 a fresh per-sandbox copy, made where the caller says (the sandbox's own
-directory under ``~/.openrua/sandboxes/``; it goes when the sandbox
-goes). The credentials file is never copied: OAuth refresh tokens
+directory under ``~/.openrua/sandboxes/``; interactive sessions retain
+it after shutdown until explicitly deleted). The credentials file is never copied: OAuth refresh tokens
 rotate, and two copies of the file invalidate each other, so the one
 file is bind-mounted into every sandbox that needs it. A sandbox that
 authenticates with a token of its own needs no credentials file at all.

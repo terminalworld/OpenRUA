@@ -9,7 +9,6 @@ one-command form (up, agent, down).
 
 from __future__ import annotations
 
-import shutil
 import signal
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,7 +19,7 @@ from openrua.cli import state
 from openrua.cli.state import DEFAULT_NAME
 from openrua.config import apply_suite_overrides, compose, normalize_arms
 from openrua.config import paths
-from openrua.errors import UnavailableError
+from openrua.errors import UnavailableError, UsageError
 from openrua.proxy.up import ensure as ensure_proxy
 from openrua.runner.bringup import bring_up, ensure_internal_network, start_episode
 from openrua.sandbox.down import down as sandbox_down
@@ -70,7 +69,7 @@ class Session:
      openrua agent --name {self.name}            # your coding agent, on the robot
      docker exec -it -u robot -w /workspace {self.sandbox} bash   # or you
 
-     Ctrl-C here powers the robot off."""
+     Ctrl-C here powers the robot off and keeps the workspace."""
 
 
 def open_session(args) -> Session:
@@ -86,9 +85,11 @@ def open_session(args) -> Session:
     sim_name, sandbox_name = state.container_names(args.name)
     sandbox_dir = paths.sandbox_dir(args.name, args.home)
     workdir = Path(args.workspace or sandbox_dir / "workspace").resolve()
-    if workdir.exists():
-        shutil.rmtree(workdir)  # a fresh workspace every time (seeding merges)
-    workdir.mkdir(parents=True)
+    if workdir.exists() and (not workdir.is_dir() or any(workdir.iterdir())):
+        raise UsageError(f"working directory is not empty: {workdir}",
+                         hint="use --workspace <new-empty-directory>; existing files are retained")
+    state.reserve(args.name, args.home)
+    workdir.mkdir(parents=True, exist_ok=True)
     network = ensure_internal_network()
     proxy_url = ensure_proxy(network)
     # cfg["agent"] is already the chosen agent's (compose took --agent):
@@ -115,7 +116,8 @@ def open_session(args) -> Session:
         print("\n[down] powering off", flush=True)
         sandbox_down(sandbox_name)
         machine.shutdown()
-        state.forget(args.name, args.home)
+        state.stopped(args.name, args.home)
+        print(f"[down] files retained at {sandbox_dir}; workspace: {workdir / 'workspace'}")
 
     try:
         if cfg["machine"]["backend"]["kind"] == "sim":
@@ -127,7 +129,7 @@ def open_session(args) -> Session:
         machine.shutdown()
         raise UnavailableError(f"[up] robot failed to reset: {e}",
                                hint=f"read {workdir / 'robot.log'}") from e
-    state.save(args.name, args.home, sim=sim_name, sandbox=sandbox_name,
+    state.save(args.name, args.home, status="running", sim=sim_name, sandbox=sandbox_name,
                backend=cfg["machine"]["backend"]["kind"],
                network=network, proxy=proxy_url, agent=adapter.name,
                model=model,
@@ -176,7 +178,7 @@ def add_options(p) -> None:
                    help=f"handle for this robot, for agent/down (default: {DEFAULT_NAME})")
     p.add_argument("--agent", default=None, help="agent to open (default: the config's)")
     p.add_argument("--workspace", default=None,
-                   help="working directory (default: <home>/sandboxes/<name>/workspace)")
+                   help="new or empty working directory, retained after shutdown (default: <home>/sandboxes/<name>/workspace)")
     p.add_argument("--ros-domain", type=int, default=None,
                    help="ROS_DOMAIN_ID (default: the lowest one no running robot "
                         "uses, so concurrent robots never share a graph; a real "

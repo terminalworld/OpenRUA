@@ -105,15 +105,24 @@ agent's facts and default model. The keys are listed in
 
 ## The user directory
 
-`~/.openrua` (`$OPENRUA_HOME`, `--home`) is written by the tool, never
-by hand, and holds two kinds of thing. Yours: `config.yaml` and
-`credentials/`. A sandbox's: `sandboxes/<name>/`, one directory per
-live sandbox with its workspace, its copy of the agent's profile and
-what `up` remembers for `agent` and `down`; it goes when the sandbox
-goes. A crashed sandbox, or a bring-up that failed, leaves its
-directory for you to read; `openrua clean` removes every one whose
-containers are not running, `openrua clean --all` powers the running
-ones off first. Neither touches `config.yaml` or `credentials/`.
+`~/.openrua` (`$OPENRUA_HOME`, `--home`) holds your defaults in
+`config.yaml`, logins in `credentials/`, and session files in
+`sandboxes/<name>/`. Ending `run`, interrupting `up`, or calling `down`
+stops the session's resources but retains its workspace, native agent
+profile (including any conversation records written by the agent), logs
+and state. This does not resume a stopped robot or agent conversation.
+
+Start a new session with a new `--name` to keep the earlier one. An
+existing session directory or nonempty `--workspace` is never overwritten.
+The default workspace is `sandboxes/<name>/workspace/workspace/`;
+`--workspace <directory>` places it at `<directory>/workspace/` instead.
+
+Deletion is explicit: `openrua clean --name <name>` deletes one stopped
+session; `openrua clean` deletes all stopped sessions. Adding `--all` also
+stops running containers before deleting their files. Check your saved
+work before using these commands. They never delete external workspace
+directories, `config.yaml`, or `credentials/`. Benchmark trial directories
+and their fresh-workspace protocol are unaffected.
 
 ## Check it
 

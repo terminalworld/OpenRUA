@@ -24,13 +24,13 @@ usage: openrua [-h] [--version] [--home HOME] <verb> ...
 | `run` | bring a robot up, open the agent on it, power off after |
 | `up` | bring a robot up with a sandbox terminal on it |
 | `agent` | open a coding agent on the robot's terminal |
-| `down` | power a robot and its terminal off |
+| `down` | power a robot and its terminal off, retaining session files |
 | `bench` | run a benchmark: one trial per task and seed |
 | `ps` | list the attempts running under a runs root (--all: stale claims too) |
 | `demo` | render a recorded trial as a video (terminal + cameras) |
 | `probe` | draft a robot profile from a live ROS 2 graph |
 | `config` | your defaults (robot, simulator, benchmark, agent) |
-| `clean` | remove what sandboxes left under <home>/sandboxes |
+| `clean` | explicitly delete retained session files |
 | `doctor` | check the install: docker, images, simulator, login |
 
 Global options: `--home` (the user directory, default `$OPENRUA_HOME` or `~/.openrua`), `--version`.
@@ -208,8 +208,8 @@ options:
                         openrua)
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
-                        working directory (default:
-                        <home>/sandboxes/<name>/workspace)
+                        new or empty working directory, retained after
+                        shutdown (default: <home>/sandboxes/<name>/workspace)
   --ros-domain ROS_DOMAIN
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
@@ -253,8 +253,8 @@ options:
                         openrua)
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
-                        working directory (default:
-                        <home>/sandboxes/<name>/workspace)
+                        new or empty working directory, retained after
+                        shutdown (default: <home>/sandboxes/<name>/workspace)
   --ros-domain ROS_DOMAIN
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
@@ -508,18 +508,19 @@ options:
 ## openrua clean
 
 ```
-usage: openrua clean [-h] [--all]
+usage: openrua clean [-h] [--name NAME] [--all]
 
-Every sandbox writes under ``<home>/sandboxes/<name>/`` (workspace, profile
-copy, state) and removes it when it goes down; a sandbox that crashed, or a
-bring-up that failed, leaves its directory behind. This verb removes every
-such directory whose containers are not running; ``--all`` powers the running
-ones off first. ``config.yaml`` and ``credentials/`` are yours and never
-touched.
+Sessions retain their workspace, native agent profile and state after
+shutdown. This command deletes those materials under ``<home>/sandboxes/``: by
+default all stopped sessions, or just ``--name``. ``--all`` also stops running
+containers before deletion. User-supplied workspace directories outside the
+session directory, ``config.yaml`` and ``credentials/`` are never deleted.
 
 options:
-  -h, --help  show this help message and exit
-  --all       power running sandboxes off and remove theirs too
+  -h, --help   show this help message and exit
+  --name NAME  delete only this session (default: all stopped sessions)
+  --all        also power running containers off and delete their session
+               files
 ```
 
 ## openrua doctor

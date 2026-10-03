@@ -11,9 +11,9 @@ enter the repository or travel as a path.
 The user directory, ``~/.openrua`` unless overridden, holds only what
 the tool writes, in two kinds: what you would not want deleted,
 ``config.yaml`` (openrua config set) and ``credentials/`` (logins); and
-what any sandbox leaves while it lives, ``sandboxes/<name>/`` (its
+retained session materials, ``sandboxes/<name>/`` (its
 workspace, its copy of the agent's profile, what ``up`` remembers),
-which ``down`` removes and ``openrua clean`` sweeps. It reaches this
+which ``down`` preserves and ``openrua clean`` explicitly deletes. It reaches this
 module as a parameter (``home=``); the CLI entry point reads
 ``OPENRUA_HOME`` and ``--home`` once and passes the result down.
 Nothing here reads the environment.
@@ -25,11 +25,12 @@ config file.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from importlib import resources
 from pathlib import Path
 
-from openrua.errors import NotFound
+from openrua.errors import NotFound, UsageError
 
 DEFAULT_HOME = "~/.openrua"
 CONFIG_FILENAME = "config.yaml"
@@ -70,14 +71,18 @@ def credentials_dir(home_dir: Path | None = None) -> Path:
 
 
 def sandboxes_dir(home_dir: Path | None = None) -> Path:
-    """One directory per live sandbox, by name: ``workspace/`` (what
+    """One directory per session, by name: ``workspace/`` (what
     ``openrua up`` seeds), ``profile/`` (the sandbox's copy of the
     agent's profile), ``state.yaml`` (what ``up`` remembers for
-    ``agent`` and ``down``). Disposable: gone with the sandbox."""
+    ``agent`` and ``down``). Retained after the sandbox stops."""
     return home(home_dir) / "sandboxes"
 
 
 def sandbox_dir(name: str, home_dir: Path | None = None) -> Path:
+    if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_.-]*", name):
+        raise UsageError(f"invalid session name: {name!r}",
+                         hint="use --name with a letter or digit first, followed by "
+                              "letters, digits, underscores, dots or hyphens")
     return sandboxes_dir(home_dir) / name
 
 

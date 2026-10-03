@@ -16,6 +16,8 @@ def down(name: str) -> bool:
     """Remove the container; True if it existed."""
     r = subprocess.run(["docker", "rm", "-f", name],
                        capture_output=True, text=True)
+    if r.returncode and "No such container" not in r.stderr:
+        raise RuntimeError(f"could not remove {name}: {r.stderr.strip()}; check docker info")
     return r.returncode == 0
 
 
