@@ -27,13 +27,17 @@ Claude Code or Codex opens in a terminal on the robot's ROS&nbsp;2 graph,
 lists the topics, reads the docs in its workspace, writes a script with
 `rclpy`, runs it, and checks the camera.
 
-OpenRUA gives you one command for three things:
+OpenRUA supports these workflows:
 
 - **Play in simulation.** `openrua run` brings up a Franka Panda in
   MuJoCo; the agent drives it the same way it would a real one.
 - **Put an agent on your robot.** Draft its file from the robot's live
   graph, finish the `TODO` lines, `openrua run <name>`. See
   [docs/your-own-robot.md](docs/your-own-robot.md).
+- **Chat from a browser and terminal.** `openrua serve` keeps a robot and
+  agent conversation running while clients share a message queue and browse
+  saved observations. This experimental feature is available from source;
+  follow [Your first shared robot session](examples/shared-session.md).
 - **Run experiments.** `openrua bench` plays a benchmark across tasks and
   seeds with a fresh sandbox per trial and archives every command the
   agent ran. See [docs/running-experiments.md](docs/running-experiments.md).
@@ -51,7 +55,9 @@ Install, choose a simulator and an agent once, name a robot, run:
 ```bash
 pip install openrua
 openrua config set --sim robosuite --agent claude-code   # your defaults
-openrua build --sim robosuite                       # the images, once: the simulator's, the agent's terminal, the proxy
+openrua build --sim robosuite                          # simulator image
+openrua build sandbox --distro humble --agent claude-code
+openrua build proxy --agent claude-code
 openrua run panda "pick up the red cube"
 ```
 
@@ -62,6 +68,27 @@ terminal with that sentence, and the robot powers off when you leave;
 `openrua doctor` tells you what is missing before the first `run`
 (Docker, the images, an agent login); the details are in
 [docs/install.md](docs/install.md).
+
+## Browser and shared CLI chat (experimental)
+
+Use `run` for the agent's original terminal, or `serve` for a shared conversation
+that stays active while browser and CLI clients disconnect and reconnect:
+
+```sh
+# Terminal A; selected agent images and login must already be ready
+openrua serve panda --sim robosuite --name shared --agent codex
+# Terminal B, on the same execution host
+openrua session --name shared web
+openrua chat --name shared "Inspect the scene without moving the robot."
+```
+
+Messages share one queue. You can inspect saved images and programs, edit queued
+instructions, interrupt and review before continuing, and end the session while
+retaining its files. Start with the [step-by-step tutorial](examples/shared-session.md)
+for installation from source, image preparation, SSH access, expected results,
+and shutdown. The [session manual](docs/sessions.md) covers every operation.
+The original agent terminal cannot yet attach to the same shared conversation;
+remote hosting and a native mobile app are not implemented.
 
 ## Choosing what to run
 
@@ -248,7 +275,9 @@ may import whom is enforced by CI (import-linter and
 | page | read when |
 |---|---|
 | [docs/install.md](docs/install.md) | setting a machine up: images, logins, doctor |
-| [examples/first-task.md](examples/first-task.md) | your first task on the simulated Panda |
+| [examples/first-task.md](examples/first-task.md) | your first task on the simulated Panda in the original agent terminal |
+| [examples/shared-session.md](examples/shared-session.md) | browser and CLI chat, queue checks, reconnection, saved images and shutdown |
+| [docs/sessions.md](docs/sessions.md) | shared-session operations, API, architecture and validation scope |
 | [docs/your-own-robot.md](docs/your-own-robot.md) | describing your robot in one profile |
 | [examples/real-robot.md](examples/real-robot.md) | the same flow on a real ROS&nbsp;2 arm |
 | [docs/simulation.md](docs/simulation.md) | the simulator checkouts and GPU rendering |
@@ -258,7 +287,6 @@ may import whom is enforced by CI (import-linter and
 | [docs/cli.md](docs/cli.md) | every verb and flag, exit codes (generated) |
 | [docs/config.md](docs/config.md) | every config key (generated) |
 | [docs/agents.md](docs/agents.md) | adding a coding agent |
-| [docs/sessions.md](docs/sessions.md) | experimental CLI/browser chat, queued messages and client reconnection |
 | [docs/architecture.md](docs/architecture.md) | the units and the layering contract |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | conventions for code, names and docs |
 

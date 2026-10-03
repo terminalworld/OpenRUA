@@ -28,6 +28,16 @@ The command is `openrua`; `openrua --help` lists the verbs and
 demo`) needs the `demo` extra: `pip install
 'openrua[demo] @ git+https://github.com/terminalworld/OpenRUA'`.
 
+For the experimental shared CLI/browser session features on `main`, install
+from source instead of assuming the current PyPI release contains them:
+
+```bash
+pip install -U 'openrua @ git+https://github.com/terminalworld/OpenRUA.git'
+```
+
+Then follow [Your first shared robot session](../examples/shared-session.md)
+for the full build, login, connection and shutdown sequence.
+
 ## The images
 
 OpenRUA runs three containers: the robot (when simulated), the sandbox
@@ -119,7 +129,9 @@ The default workspace is `sandboxes/<name>/workspace/workspace/`;
 
 Deletion is explicit: `openrua clean --name <name>` deletes one stopped
 session; `openrua clean` deletes all stopped sessions. Adding `--all` also
-stops running containers before deleting their files. Check your saved
+stops eligible running containers before deleting their files. Sessions with a
+resource-owner endpoint must be ended with `down` first; real sessions without
+a confirmed shutdown are retained. Check your saved
 work before using these commands. They never delete external workspace
 directories, `config.yaml`, or `credentials/`. Benchmark trial directories
 and their fresh-workspace protocol are unaffected.

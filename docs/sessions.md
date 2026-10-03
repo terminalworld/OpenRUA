@@ -1,4 +1,18 @@
-# Shared session coordination
+---
+summary: Shared browser and CLI chat, queue operations, retained files, and session API contracts
+read_when:
+  - You want to manage a shared robot conversation or inspect saved observations
+  - You are implementing a client or checking session lifecycle and validation limits
+---
+
+# Shared robot sessions
+
+For a first run, follow [Your first shared robot session](../examples/shared-session.md).
+It covers preparation, browser and CLI input, expected results, SSH forwarding,
+and shutdown. The commands below are the operation reference; implementation
+boundaries and validation evidence follow the user-facing instructions.
+These features are available from repository source; older PyPI versions may
+not include them.
 
 The `openrua.sessions` package coordinates user messages and native agent
 connections. It does not plan robot actions or replace the coding agent's own
