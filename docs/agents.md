@@ -131,3 +131,45 @@ segment.
 Images carry one label per agent baked in (the hash of its install line
 or whitelist); `openrua doctor` reads them, so one sandbox image can
 carry several agents and doctor still says which manifest changed.
+
+
+## Structured conversations (experimental)
+
+A plugin may implement `conversation(sandbox, model, proxy, options=None,
+session_id=None)` in addition to batch execution and the native terminal.
+The default returns `None`; existing plugins need no migration. The hook
+returns a `Conversation` containing a piped native-process command and a
+`ConversationProtocol`. Construction starts no process. This capability is
+a building block for shared sessions, not yet a unified-chat CLI or web UI.
+
+The protocol is independent of transport and contains all vendor-specific
+message knowledge. An execution owner serializes calls, writes each returned
+`Update.outbound` frame in order, and feeds native frames to `receive`.
+`Update.events` carries normalized events alongside diagnostic `native`
+events. The owner records raw frames, owns the queue and keeps the process
+alive independently of client connections.
+
+- `begin()` initializes or resumes the native conversation. A `ready` event
+  carries its actual `session_id`; save this identity for a later connection.
+- `can_submit` indicates readiness for one turn. `submit(turn_id, text)` uses
+  a new caller-assigned identity; subsequent messages wait in the owner's queue.
+- `turn_started`, `text_delta`, `item`, and `turn_finished` events retain that
+  identity. A completed agent turn is not proof of robot task success.
+- `interrupt(turn_id)` targets the current turn. `interrupt_acknowledged`
+  does not mean it has stopped; only a terminal event ends the turn.
+- `input_required` supplies questions and choices. `respond(request_id,
+  answers)` maps question IDs to lists of strings; replies are separate from
+  ordinary queued messages. Unknown requests emit `unsupported_request` and
+  never receive a fabricated approval.
+- After `protocol_error`, malformed output, or transport loss, the owner must
+  pause and reconcile outstanding work. It must not retry an uncertain action
+  or interpret a disconnected client as cancellation.
+
+The first implementation uses the original Codex app-server and its existing
+sandbox login profile. It resumes the exact recorded thread, never the latest
+thread. Protocol tests cover early notifications, cancellation races, foreign
+thread events and input responses. The wire fields were checked against
+Codex CLI 0.159.1's generated schemas and the
+[official App Server documentation](https://learn.chatgpt.com/docs/app-server).
+Actual model turns, cancellation of running tools, and robot tasks require
+separate integration validation; these tests do not establish those behaviors.

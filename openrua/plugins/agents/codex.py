@@ -35,6 +35,8 @@ from pathlib import Path
 from typing import Any
 
 from openrua.agents.base import Agent
+from openrua.agents.conversation import Conversation
+from openrua.plugins.agents.codex_conversation import CodexConversation
 
 QUOTA_PHRASES = ("rate limit", "usage limit", "quota")
 _ACTION_ITEMS = ("command_execution", "file_change", "agent_message")
@@ -87,6 +89,16 @@ class Codex(Agent):
             "-C", "/workspace", "--model", model, *self._config_flags(opts),
             *([prompt] if prompt else []),
         ]
+
+    def conversation(self, sandbox: str, model: str, proxy: str,
+                     options: dict[str, Any] | None = None,
+                     session_id: str | None = None, **_: Any) -> Conversation:
+        opts = self._opts(options)
+        argv = [*self.exec_argv(sandbox, self._env(proxy), stdin=True),
+                self.binary, "app-server", "--listen", "stdio://",
+                *self._config_flags(opts)]
+        return Conversation(argv, CodexConversation(model, session_id=session_id,
+                                                    effort=opts["effort"]))
 
     def sandbox_cli_check(self) -> tuple[str, str] | None:
         """The CLI inside the sandbox is the pinned version; no check

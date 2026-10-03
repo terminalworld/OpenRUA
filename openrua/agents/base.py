@@ -17,14 +17,17 @@ Hooks take ``**_`` so the harness can pass new keyword arguments without
 breaking older hooks modules. ``openrua.testing.check_agent`` is the
 conformance test.
 
-Leaf module: imports nothing from openrua.
+Leaf contract: only type annotations refer to the optional conversation contract.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from openrua.agents.conversation import Conversation
 
 
 @dataclass(frozen=True)
@@ -49,7 +52,7 @@ class Credentials:
 # The optional hooks, in the order they are documented below. An agent
 # "has" a capability when its hooks class overrides the hook.
 HOOK_NAMES = (
-    "interactive_argv", "sandbox_cli_check", "login_hint", "token_hint",
+    "interactive_argv", "conversation", "sandbox_cli_check", "login_hint", "token_hint",
     "quota_probe_argv", "quota_window_open", "matches_quota_anomaly",
     "read_rate_limits", "quota_since", "read_final", "scan_transcript",
     "assistant_turns_before", "replay_ops", "collect",
@@ -106,13 +109,13 @@ class Agent:
     # ---- generic behaviour derived from the declarations ------------
     @staticmethod
     def exec_argv(sandbox: str, env: list[str] = (), token_file: str | None = None,
-                  interactive: bool = False) -> list[str]:
+                  interactive: bool = False, stdin: bool = False) -> list[str]:
         """The ``docker exec`` prefix every hook shares: the ``robot`` user
         in /workspace, ``env`` as ``-e`` pairs already rendered, the
         token file handed to the process by ``--env-file``, a terminal
         when ``interactive``. Append the agent's own command."""
         return [
-            "docker", "exec", *(["-it"] if interactive else []),
+            "docker", "exec", *(["-it"] if interactive else ["-i"] if stdin else []),
             "-u", "robot", "-w", "/workspace",
             *(["--env-file", token_file] if token_file else []),
             *env,
@@ -154,6 +157,17 @@ class Agent:
         """docker-exec command that opens the agent interactively in the
         sandbox (a person at the keyboard). Default: None, meaning
         ``openrua agent`` refuses with "no interactive mode"."""
+        return None
+
+    def conversation(self, sandbox: str, model: str, proxy: str,
+                     options: dict[str, Any] | None = None,
+                     session_id: str | None = None, **_: Any) -> Conversation | None:
+        """Optional structured native connection; None means unsupported.
+
+        session_id is a native identity previously emitted by this capability,
+        not a new caller-generated identifier. No process starts in this hook.
+        Existing batch and terminal-only plugins need not implement it.
+        """
         return None
 
     def sandbox_cli_check(self) -> tuple[str, str] | None:

@@ -76,6 +76,14 @@ def check_agent(agent: Agent) -> None:
     p = Path("/nonexistent/transcript.jsonl")
     if "interactive_argv" not in agent.capabilities:
         assert agent.interactive_argv("box", "m", "http://w") is None
+    if "conversation" not in agent.capabilities:
+        assert agent.conversation("box", "m", "http://w") is None
+    else:
+        from openrua.agents.conversation import Conversation, ConversationProtocol
+        connection = agent.conversation("box", agent.default_model, "http://w")
+        assert isinstance(connection, Conversation)
+        assert connection.argv and all(isinstance(x, str) for x in connection.argv)
+        assert isinstance(connection.protocol, ConversationProtocol)
     if "read_final" not in agent.capabilities:
         assert agent.read_final(p) == {}
     if "read_rate_limits" not in agent.capabilities:
