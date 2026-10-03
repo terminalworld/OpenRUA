@@ -44,10 +44,16 @@ def run(args) -> int:
         if not directory.exists():
             print(f"nothing at {directory}")
             continue
-        if (directory / "endpoint.json").exists():
+        if any((directory / name).exists() for name in ("endpoint.json", "control.json")):
             raise UnavailableError(
-                f"session {directory.name!r} has a shared service endpoint; files kept",
-                hint=f"openrua session --name {directory.name} end; if the host crashed, inspect its resources before removing the stale endpoint")
+                f"session {directory.name!r} has a resource owner endpoint; files kept",
+                hint=f"openrua down --name {directory.name}; if the host crashed, inspect its resources before removing the stale endpoint")
+        facts = (state.load(directory.name, args.home, require_running=False)
+                 if state.path(directory.name, args.home).is_file() else {})
+        if facts.get("backend") == "real" and facts.get("status") != "stopped":
+            raise UnavailableError(
+                f"real session {directory.name!r} has no confirmed shutdown; files kept",
+                hint="inspect and stop its original resource owner and driver before deleting the session")
         if running(directory.name):
             if not args.all:
                 print(f"[clean] {directory.name}: containers running, kept (--all powers them off)")

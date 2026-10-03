@@ -24,5 +24,5 @@ class Handle:
         raise NotImplementedError
 
     def shutdown(self) -> None:
-        """Stop the robot; never raises."""
+        """Stop owned robot resources; report any unconfirmed shutdown."""
         raise NotImplementedError

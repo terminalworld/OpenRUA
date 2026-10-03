@@ -52,14 +52,18 @@ def validate_command(body: dict) -> tuple[str, dict]:
 
 
 class LocalServer:
-    def __init__(self, execution: Execution, end: Callable[[], Awaitable[None]],
+    def __init__(self, execution: Execution | None, end: Callable[[], Awaitable[None]],
                  token: str, port: int = 0, request_timeout: float = 120,
                  max_body_bytes: int = 1024 * 1024,
                  assets: dict[str, tuple[str, bytes]] | None = None,
-                 artifacts: ArtifactReader | None = None):
+                 artifacts: ArtifactReader | None = None,
+                 snapshot: Callable[[], dict] | None = None):
         if not token or request_timeout <= 0 or max_body_bytes <= 0:
             raise ValueError("token and positive request limits are required")
         self.execution, self.end = execution, end
+        if execution is None and snapshot is None:
+            raise ValueError("a session or explicit resource snapshot is required")
+        self.snapshot = snapshot if snapshot is not None else execution.session.store.snapshot
         self.artifacts = artifacts
         self.token = token
         self.request_timeout, self.max_body_bytes = request_timeout, max_body_bytes
@@ -128,8 +132,8 @@ class LocalServer:
                 target = urlsplit(self.path)
                 try:
                     if target.path == "/api/session" and not target.query:
-                        value = owner.execution.session.store.snapshot()
-                    elif target.path == "/api/events":
+                        value = owner.snapshot()
+                    elif target.path == "/api/events" and owner.execution is not None:
                         query = parse_qs(target.query, strict_parsing=True)
                         if set(query) - {"after", "limit"} or any(len(v) != 1 for v in query.values()):
                             raise ValueError("use one after cursor and one limit")
@@ -169,6 +173,8 @@ class LocalServer:
                         raise ValueError("Content-Type must be application/json")
                     body = json.loads(self.rfile.read(size))
                     if self.path == "/api/commands":
+                        if owner.execution is None:
+                            raise RuntimeError("this endpoint controls resources only; use the native terminal for input")
                         operation, params = validate_command(body)
                         future = owner.submit(owner.execution.command(operation, **params))
                     elif self.path == "/api/end":
@@ -180,7 +186,7 @@ class LocalServer:
                         return
                     result = future.result(timeout=owner.request_timeout)
                     if self.path == "/api/end":
-                        result = owner.execution.session.store.snapshot()
+                        result = owner.snapshot()
                     self.reply(200, {"result": result})
                     if self.path == "/api/end":
                         owner.loop.call_soon_threadsafe(owner.ended.set)

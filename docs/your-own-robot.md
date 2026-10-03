@@ -107,6 +107,20 @@ with `verdict: not_applicable`; preflight, the agent, the transcript and
 the provenance are the same as in simulation. A real robot takes no
 `--sim`; it may take `--bench` to run a benchmark's task list on it.
 
+For an independently controlled native terminal, keep `openrua up` running and
+use `openrua agent --name <name>` in another terminal. `openrua down --name <name>`
+asks that resource owner to stop the sandbox and any driver it launched. The
+same external stop works while `openrua run` is open. Driver launch commands
+must stay in the foreground so their owner can wait for shutdown; omit `launch`
+to join an externally managed graph, which OpenRUA leaves running.
+
+Stopping retains the workspace and native profile. A failed shutdown is reported
+and can be retried; it is not marked stopped. If the owner has crashed, inspect
+and stop its remaining resources explicitly. OpenRUA does not signal a saved PID
+or infer that a host driver stopped just because the sandbox container is gone.
+Delete retained materials separately with `openrua clean --name <name>` after
+shutdown. This lifecycle handling does not constitute a physical emergency stop.
+
 One difference from simulation to know about: a sandbox on the host
 network is not on an internal docker network, so the proxy is the route
 the agent is told to use, not a wall it cannot get around. For a scored

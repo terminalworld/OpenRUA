@@ -184,3 +184,27 @@ def test_a_failed_verification_stops_the_container_it_started(monkeypatch):
     with pytest.raises(RuntimeError, match="hiccup"):
         bringup.claim_domain("net", None, lambda d: "me-sandbox", stops.append)
     assert stops == ["me-sandbox"]
+
+
+def test_failed_driver_shutdown_still_cleans_sandbox_after_startup_error(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    import pytest
+    from openrua.runner import bringup
+    calls = []
+    def fail_ready():
+        raise TimeoutError("graph unavailable")
+    def fail_shutdown():
+        calls.append("driver")
+        raise RuntimeError("driver cleanup failed")
+    monkeypatch.setattr(bringup, "resolve_robot_files", lambda *a: None)
+    monkeypatch.setattr(bringup.record, "write_config", lambda *a: tmp_path / 'config.yaml')
+    monkeypatch.setattr(bringup, "sandbox_reachability", lambda *a: {})
+    monkeypatch.setattr(bringup, "claim_domain", lambda *a: 0)
+    monkeypatch.setattr(bringup.robot, "up", lambda *a, **k: SimpleNamespace(
+        wait_ready=fail_ready, shutdown=fail_shutdown))
+    monkeypatch.setattr(bringup, "sandbox_down", lambda name: calls.append(name))
+    with pytest.raises(RuntimeError, match="driver cleanup failed"):
+        bringup.bring_up({'machine': {'backend': {'kind': 'real'}}}, tmp_path,
+                         'robot', 'sandbox', None, None, 'network', 'proxy', (), None,
+                         tmp_path / 'robot.log')
+    assert calls == ['driver', 'sandbox']

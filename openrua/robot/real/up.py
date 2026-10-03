@@ -7,15 +7,16 @@ import time
 from pathlib import Path
 
 from openrua.robot.base import Handle
-from openrua.robot.real.down import container_name, down, remember
+from openrua.robot.real.down import container_name, down
 
 
 class RealHandle(Handle):
     def __init__(self, name: str, proc: subprocess.Popen | None,
-                 probe_argv: list[str] | None):
+                 probe_argv: list[str] | None, container: str | None = None):
         self.name = name
         self.proc = proc
         self._probe = probe_argv
+        self._container = container
 
     def wait_ready(self, timeout_s: float = 300.0) -> None:
         """Poll ``probe_argv`` until it exits 0 (the graph is visible), or
@@ -39,7 +40,7 @@ class RealHandle(Handle):
         return {"ok": True, "not_applicable": True, "cmd": obj.get("cmd")}
 
     def shutdown(self) -> None:
-        down(self.name)
+        down(self.proc, self._container)
 
 
 def launch_argv(name: str, launch: str, image: str | None) -> list[str]:
@@ -65,5 +66,4 @@ def up(name: str, launch: str | None, log_path: Path | None = None,
             launch_argv(name, launch, image), stdin=subprocess.DEVNULL,
             stdout=(open(log_path, "w") if log_path else subprocess.DEVNULL),
             stderr=subprocess.STDOUT, start_new_session=True)
-        remember(name, proc, container=container_name(name) if image else None)
-    return RealHandle(name, proc, probe_argv)
+    return RealHandle(name, proc, probe_argv, container_name(name) if launch and image else None)

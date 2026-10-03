@@ -19,7 +19,6 @@ from pathlib import Path
 
 from openrua.errors import ConfigError
 from openrua.robot.base import Handle  # noqa: F401  re-exported
-from openrua.robot.real.down import down as real_down
 from openrua.robot.real.up import up as real_up
 from openrua.robot.sim.down import down as sim_down
 from openrua.robot.sim.up import up as sim_up
@@ -64,6 +63,7 @@ def down(name: str, kind: str = "sim") -> None:
     if kind == "sim":
         sim_down(name)
     elif kind == "real":
-        real_down(name)
+        raise ConfigError("a real robot must be stopped through its owning handle or session",
+                          hint="use openrua down --name <session> while its up/run/serve owner is running")
     else:
         raise ConfigError(f"machine.backend.kind must be one of {KINDS}, got {kind!r}")

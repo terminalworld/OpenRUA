@@ -290,3 +290,17 @@ text escaping, byte-exact downloads, refresh and reconnection without submitting
 agent tasks, including a narrow viewport. File-reader tests cover traversal,
 symlink replacement, special files, read limits and files changing during reads. They do not run models or robots and do not replace the native and
 robot integration checks described above.
+
+## Native terminal resource owners
+
+`up` and `run` publish a separate, authenticated resource-control endpoint so
+`down` can reach the process holding the robot handle, including a host-side
+driver process. This endpoint supports status and end only. It does not create a
+managed agent conversation or change native terminal input. `agent` remains
+available for these sessions; the shared conversation queue still requires
+`serve` and its supported clients.
+
+`clean` preserves sessions with an owner endpoint until they are ended. A real
+session without a confirmed shutdown is also retained even if no container is
+running, because its driver may be a host process. Inspect a crashed owner's
+resources before removing stale records. See [your-own-robot.md](your-own-robot.md).

@@ -1,8 +1,7 @@
-"""Stop a real robot's launch process started by ``up``.
+"""Stop the launch resources held by a real robot handle.
 
-The process (and its driver container, when the launch ran in one) is
-remembered by name in this process; ``down(name)`` stops it. A graph that
-was already running is left alone.
+A graph that was already running has no owned process and is left alone.
+No process identity is looked up by name or stored in module globals.
 """
 
 from __future__ import annotations
@@ -11,28 +10,32 @@ import os
 import signal
 import subprocess
 
-_LAUNCHED: dict[str, tuple[subprocess.Popen, str | None]] = {}
-
 
 def container_name(name: str) -> str:
     return f"{name}-driver"
 
 
-def remember(name: str, proc: subprocess.Popen, container: str | None = None) -> None:
-    _LAUNCHED[name] = (proc, container)
-
-
-def down(name: str) -> None:
-    proc, container = _LAUNCHED.pop(name, (None, None))
+def down(proc: subprocess.Popen | None, container: str | None = None) -> None:
+    failures = []
     if container:
-        subprocess.run(["docker", "rm", "-f", container], capture_output=True)
-    if proc is None or proc.poll() is not None:
-        return
-    try:
-        os.killpg(proc.pid, signal.SIGINT)
-        proc.wait(timeout=30)
-    except Exception:  # noqa: BLE001
+        result = subprocess.run(["docker", "rm", "-f", container], capture_output=True, text=True)
+        if result.returncode and "No such container" not in result.stderr:
+            failures.append(f"could not remove {container}: {result.stderr.strip()}")
+    if proc is not None and proc.poll() is None:
         try:
-            os.killpg(proc.pid, signal.SIGKILL)
-        except OSError:
-            pass
+            try:
+                os.killpg(proc.pid, signal.SIGINT)
+            except ProcessLookupError:
+                pass
+            try:
+                proc.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                proc.wait(timeout=5)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            failures.append(f"launch process {proc.pid}: {exc}")
+    if failures:
+        raise RuntimeError("; ".join(failures) + "; inspect the driver log and retry shutdown")

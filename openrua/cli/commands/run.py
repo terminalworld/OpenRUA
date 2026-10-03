@@ -9,17 +9,20 @@ a robot that should stay up between sessions.
 
 from __future__ import annotations
 
+import asyncio
 import subprocess
 
 from openrua import agents
+from openrua.config import paths
+from openrua.runner.control import serve_control
 from openrua.cli import state
 from openrua.cli.commands import up
 from openrua.errors import UnavailableError
 
 
-def run(args) -> int:
+async def _run(args) -> int:
     session = up.open_session(args)
-    try:
+    async with serve_control(session.power_off, paths.sandbox_dir(args.name, args.home)):
         st = state.load(args.name, args.home)
         adapter = agents.get(st.get("agent_spec", st["agent"]), args.home,
                              version=st.get("agent_version"))
@@ -33,9 +36,11 @@ def run(args) -> int:
                      f"docker exec -it -u robot -w /workspace {st['sandbox']} bash")
         print(session.header("run", args.prompt), flush=True)
         print("[run] the robot powers off when the agent exits", flush=True)
-        return subprocess.call(argv)
-    finally:
-        session.power_off()
+        return await asyncio.to_thread(subprocess.call, argv)
+
+
+def run(args) -> int:
+    return asyncio.run(_run(args))
 
 
 def add_parser(sub) -> None:

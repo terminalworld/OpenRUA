@@ -262,9 +262,11 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
         )
         machine.wait_ready()
     except BaseException:
-        if machine is not None:
-            machine.shutdown()
-        sandbox_down(sandbox_name)
+        try:
+            if machine is not None:
+                machine.shutdown()
+        finally:
+            sandbox_down(sandbox_name)
         raise
     return config_path, machine, ros_domain
 

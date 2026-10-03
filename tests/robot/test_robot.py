@@ -31,7 +31,8 @@ def test_up_dispatches_on_backend_kind(tmp_path):
     h.wait_ready()
     assert h.rpc({"cmd": "success"}) == {"ok": True, "not_applicable": True, "cmd": "success"}
     h.shutdown()
-    robot.down("r", "real")
+    with pytest.raises(ConfigError, match="owning handle"):
+        robot.down("r", "real")
 
 
 def test_real_probe_failure_is_a_timeout(tmp_path):
@@ -67,3 +68,32 @@ def test_real_launch_is_remembered_and_stopped(tmp_path):
     assert h.proc is not None and h.proc.poll() is None
     h.shutdown()
     assert h.proc.poll() is not None
+
+
+def test_real_driver_container_cleanup_reports_errors_and_can_retry(monkeypatch):
+    import importlib
+    from types import SimpleNamespace
+    from openrua.robot.real.up import RealHandle
+    module = importlib.import_module("openrua.robot.real.down")
+    replies = iter([
+        SimpleNamespace(returncode=1, stderr="daemon unavailable"),
+        SimpleNamespace(returncode=0, stderr=""),
+    ])
+    monkeypatch.setattr(module.subprocess, "run", lambda *a, **k: next(replies))
+    handle = RealHandle("real", None, None, "real-driver")
+    with pytest.raises(RuntimeError, match="daemon unavailable"):
+        handle.shutdown()
+    handle.shutdown()
+
+
+def test_real_handles_own_their_processes_even_with_the_same_display_name(tmp_path):
+    handles = [robot.up({'kind': 'real', 'launch': 'sleep 120'}, name='same',
+                        config_path='', task_suite='', task_id=0, log_path=tmp_path / f'log-{i}')
+               for i in range(2)]
+    try:
+        handles[0].shutdown()
+        assert handles[0].proc.poll() is not None
+        assert handles[1].proc.poll() is None
+    finally:
+        for handle in handles:
+            handle.shutdown()

@@ -9,9 +9,12 @@ one-command form (up, agent, down).
 
 from __future__ import annotations
 
+import asyncio
 import signal
 from pathlib import Path
 
+from openrua.config import paths
+from openrua.runner.control import serve_control
 from openrua.runner.live import LiveRobot, RobotRequest, open_robot
 from openrua.runner.live_state import DEFAULT_NAME
 
@@ -62,14 +65,41 @@ def open_session(args) -> Session:
     return Session(**vars(live))
 
 
-def run(args) -> int:
+async def _run(args) -> int:
     session = open_session(args)
-    print(session.banner(), flush=True)
-    try:
-        signal.sigwait([signal.SIGINT, signal.SIGTERM])
-    finally:
-        session.power_off()
+    async with serve_control(session.power_off, paths.sandbox_dir(args.name, args.home)) as (control, server):
+        print(session.banner(), flush=True)
+        loop = asyncio.get_running_loop()
+        stopped = asyncio.Event()
+        installed = []
+        try:
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                loop.add_signal_handler(sig, stopped.set)
+                installed.append(sig)
+            while True:
+                waiters = [asyncio.create_task(stopped.wait()), asyncio.create_task(server.ended.wait())]
+                try:
+                    await asyncio.wait(waiters, return_when=asyncio.FIRST_COMPLETED)
+                finally:
+                    for task in waiters:
+                        task.cancel()
+                    await asyncio.gather(*waiters, return_exceptions=True)
+                if server.ended.is_set():
+                    break
+                try:
+                    await control.end()
+                    break
+                except Exception as exc:
+                    print(f"[up] shutdown incomplete: {exc}; retry Ctrl-C or openrua down", flush=True)
+                    stopped.clear()
+        finally:
+            for sig in installed:
+                loop.remove_signal_handler(sig)
     return 0
+
+
+def run(args) -> int:
+    return asyncio.run(_run(args))
 
 
 def add_options(p) -> None:
