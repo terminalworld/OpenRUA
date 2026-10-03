@@ -109,9 +109,6 @@ the agents named with --agent.
 
 positional arguments:
   [<unit>]
-    base        the ROS base image simulator images build on
-    sandbox     the agent terminal image
-    proxy       the whitelist proxy image
 
 options:
   -h, --help    show this help message and exit
@@ -121,6 +118,12 @@ options:
                 simulators); repeatable
   --all         every bundled benchmark's image
 ```
+
+| command | does |
+|---|---|
+| `base` | the ROS base image simulator images build on |
+| `sandbox` | the agent terminal image |
+| `proxy` | the whitelist proxy image |
 
 ### openrua build base
 
@@ -331,24 +334,25 @@ usage: openrua session [-h] [--name NAME] ACTION ...
 
 positional arguments:
   ACTION
-    web              open the browser client and explicitly show its access
-                     token
-    status           snapshot, pending questions and message IDs
-    events           read retained events after a cursor
-    send             enqueue a message without waiting for its result
-    interrupt        interrupt a message and pause the queue
-    withdraw         withdraw a queued message
-    resume           release the currently confirmed pause
-    edit             edit a queued message at its current revision
-    resolve_unknown  record checking an uncertain execution, without replaying
-                     it
-    respond          answer a pending agent question
-    end              stop owned resources and retain messages and workspace
 
 options:
-  -h, --help         show this help message and exit
+  -h, --help   show this help message and exit
   --name NAME
 ```
+
+| command | does |
+|---|---|
+| `web` | open the browser client and explicitly show its access token |
+| `status` | snapshot, pending questions and message IDs |
+| `events` | read retained events after a cursor |
+| `send` | enqueue a message without waiting for its result |
+| `interrupt` | interrupt a message and pause the queue |
+| `withdraw` | withdraw a queued message |
+| `resume` | release the currently confirmed pause |
+| `edit` | edit a queued message at its current revision |
+| `resolve_unknown` | record checking an uncertain execution, without replaying it |
+| `respond` | answer a pending agent question |
+| `end` | stop owned resources and retain messages and workspace |
 
 ### openrua session web
 

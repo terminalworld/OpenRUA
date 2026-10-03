@@ -10,6 +10,7 @@ CI runs --check, so the pages cannot drift from the code they describe.
 from __future__ import annotations
 
 import argparse
+import copy
 import sys
 from pathlib import Path
 from typing import Any, get_args, get_origin
@@ -47,6 +48,23 @@ same information as JSON Schema.
 """
 
 
+def _parser_reference(parser: argparse.ArgumentParser) -> str:
+    # argparse versions measure nested command columns differently. Render
+    # their help separately, using the same Markdown table as the top level.
+    printable = copy.deepcopy(parser)
+    groups = [a for a in printable._actions if isinstance(a, argparse._SubParsersAction)]
+    tables = []
+    for group in groups:
+        descriptions = {a.dest: a.help for a in group._choices_actions}
+        rows = ["\n| command | does |\n|---|---|\n"]
+        for name in group.choices:
+            rows.append(f"| `{name}` | {descriptions.get(name, '')} |\n")
+        tables.append("".join(rows))
+        group._choices_actions = []
+        group.metavar = group.metavar or "COMMAND"
+    return f"```\n{printable.format_help().rstrip()}\n```\n" + "".join(tables)
+
+
 def render_cli() -> str:
     sys.argv[0] = "openrua"  # argparse derives every prog from it
     from openrua.cli import build_parser
@@ -62,11 +80,11 @@ def render_cli() -> str:
     out.append("\nGlobal options: `--home` (the user directory, default `$OPENRUA_HOME` "
                "or `~/.openrua`), `--version`.\n")
     for name, sub in verbs.choices.items():
-        out.append(f"\n## openrua {name}\n\n```\n{sub.format_help().rstrip()}\n```\n")
+        out.append(f"\n## openrua {name}\n\n" + _parser_reference(sub))
         nested = [a for a in sub._actions if isinstance(a, argparse._SubParsersAction)]
         for group in nested:
             for unit, p in group.choices.items():
-                out.append(f"\n### openrua {name} {unit}\n\n```\n{p.format_help().rstrip()}\n```\n")
+                out.append(f"\n### openrua {name} {unit}\n\n" + _parser_reference(p))
     out.append("\n## Exit codes\n\n| code | meaning |\n|---|---|\n")
     notes = {"ok": "done", "error": "any other failure", "usage": "bad arguments",
              "noinput": "a named robot, benchmark, agent or file does not exist",
