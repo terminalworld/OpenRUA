@@ -74,7 +74,7 @@ def run(args) -> int:
 def add_parser(sub) -> None:
     p = sub.add_parser("session", help="inspect, queue messages, pause/resume or end a shared session")
     p.add_argument("--name", default=DEFAULT_NAME)
-    actions = p.add_subparsers(dest="action", required=True)
+    actions = p.add_subparsers(dest="action", required=True, metavar="ACTION")
     browser = actions.add_parser("web", help="open the browser client and explicitly show its access token")
     browser.add_argument("--no-open", action="store_true", help="print connection instructions without opening a browser")
     actions.add_parser("status", help="snapshot, pending questions and message IDs")
@@ -85,12 +85,14 @@ def add_parser(sub) -> None:
     send.add_argument("text")
     send.add_argument("--client-id", default="cli", help="reuse with request ID for safe retry")
     send.add_argument("--request-id", default=None, help="unique for this message; reuse only for retries")
-    for action in ("interrupt", "withdraw"):
-        item = actions.add_parser(action)
+    for action, help_text in (
+            ("interrupt", "interrupt a message and pause the queue"),
+            ("withdraw", "withdraw a queued message")):
+        item = actions.add_parser(action, help=help_text)
         item.add_argument("message_id")
     resume = actions.add_parser("resume", help="release the currently confirmed pause")
     resume.add_argument("pause_id", help="copy the current pause_id from status")
-    edit = actions.add_parser("edit")
+    edit = actions.add_parser("edit", help="edit a queued message at its current revision")
     edit.add_argument("message_id")
     edit.add_argument("text")
     edit.add_argument("--revision", type=int, required=True)

@@ -327,24 +327,26 @@ options:
 ## openrua session
 
 ```
-usage: openrua session [-h] [--name NAME]
-                       {web,status,events,send,interrupt,withdraw,resume,edit,resolve_unknown,respond,end} ...
+usage: openrua session [-h] [--name NAME] ACTION ...
 
 positional arguments:
-  {web,status,events,send,interrupt,withdraw,resume,edit,resolve_unknown,respond,end}
-    web                 open the browser client and explicitly show its access
-                        token
-    status              snapshot, pending questions and message IDs
-    events              read retained events after a cursor
-    send                enqueue a message without waiting for its result
-    resume              release the currently confirmed pause
-    resolve_unknown     record checking an uncertain execution, without
-                        replaying it
-    respond             answer a pending agent question
-    end                 stop owned resources and retain messages and workspace
+  ACTION
+    web              open the browser client and explicitly show its access
+                     token
+    status           snapshot, pending questions and message IDs
+    events           read retained events after a cursor
+    send             enqueue a message without waiting for its result
+    interrupt        interrupt a message and pause the queue
+    withdraw         withdraw a queued message
+    resume           release the currently confirmed pause
+    edit             edit a queued message at its current revision
+    resolve_unknown  record checking an uncertain execution, without replaying
+                     it
+    respond          answer a pending agent question
+    end              stop owned resources and retain messages and workspace
 
 options:
-  -h, --help            show this help message and exit
+  -h, --help         show this help message and exit
   --name NAME
 ```
 
