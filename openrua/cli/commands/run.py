@@ -21,7 +21,8 @@ def run(args) -> int:
     session = up.open_session(args)
     try:
         st = state.load(args.name, args.home)
-        adapter = agents.get(args.agent or st["agent"], args.home)
+        adapter = agents.get(st.get("agent_spec", st["agent"]), args.home,
+                             version=st.get("agent_version"))
         argv = adapter.interactive_argv(
             st["sandbox"], args.model or st["model"], st["proxy"],
             options=st.get("options"), prompt=args.prompt)

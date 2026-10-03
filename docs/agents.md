@@ -22,6 +22,10 @@ the agent through `openrua.agents.get(name)`:
   `HOOKS`.
 
 Selecting, pinning and logging an agent in is in [install.md](install.md).
+When opening a native terminal with `openrua agent` or `openrua run`,
+OpenRUA reuses the plugin manifest and version recorded at robot startup.
+An explicit `agent --agent` selection uses the replacement plugin's own
+version rather than inheriting the previous plugin's pin.
 A test (`tests/agents/test_agent_boundary.py`) fails the build if agent-specific
 knowledge appears anywhere else.
 

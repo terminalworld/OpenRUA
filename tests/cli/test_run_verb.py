@@ -39,7 +39,7 @@ def test_run_brings_up_opens_the_agent_and_powers_off(monkeypatch, tmp_path, cap
     monkeypatch.setattr(run_cmd.up, "open_session", _session(calls))
     monkeypatch.setattr(run_cmd.state, "load", lambda name, home: {
         "agent": "fake", "sandbox": "box", "model": "m", "proxy": "http://p", "options": {}})
-    monkeypatch.setattr(run_cmd.agents, "get", lambda name, home: _Adapter(["agent-cli"]))
+    monkeypatch.setattr(run_cmd.agents, "get", lambda name, home, **kwargs: _Adapter(["agent-cli"]))
     monkeypatch.setattr(run_cmd.subprocess, "call",
                         lambda argv: calls.append(("agent", argv)) or 3)
     args = build_parser().parse_args(["--home", str(tmp_path), "run", "panda", "hello"])
@@ -57,7 +57,7 @@ def test_run_powers_off_when_the_agent_cannot_open(monkeypatch, tmp_path):
     monkeypatch.setattr(run_cmd.up, "open_session", _session(calls))
     monkeypatch.setattr(run_cmd.state, "load", lambda name, home: {
         "agent": "fake", "sandbox": "box", "model": "m", "proxy": "http://p"})
-    monkeypatch.setattr(run_cmd.agents, "get", lambda name, home: _Adapter(None))
+    monkeypatch.setattr(run_cmd.agents, "get", lambda name, home, **kwargs: _Adapter(None))
     args = build_parser().parse_args(["--home", str(tmp_path), "run", "panda"])
     with pytest.raises(run_cmd.UnavailableError):
         args.fn(args)

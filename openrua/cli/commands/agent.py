@@ -17,7 +17,8 @@ def run(args) -> int:
             "this robot has a managed conversation; direct terminal input would bypass its queue",
             hint=f"openrua chat --name {args.name}; use a separate up session for a native terminal")
     st = state.load(args.name, args.home)
-    agent = agents.get(args.agent or st["agent"], args.home)
+    agent = agents.get(args.agent or st.get("agent_spec", st["agent"]), args.home,
+                       version=None if args.agent else st.get("agent_version"))
     argv = agent.interactive_argv(
         st["sandbox"], args.model or st["model"], st["proxy"],
         options=st.get("options"), prompt=args.prompt)
