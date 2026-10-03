@@ -25,8 +25,11 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from openrua.agents.base import Agent
+from openrua.agents.conversation import Conversation
+from openrua.plugins.agents.claude_conversation import ClaudeConversation
 
 QUOTA_PHRASES = ("session limit", "rate limit", "weekly limit", "usage limit")
 _REPLAY_TOOLS = ("Bash", "Write", "Edit")
@@ -86,6 +89,21 @@ class ClaudeCode(Agent):
             "claude", "--model", model, "--effort", str(opts["effort"]),
             *([prompt] if prompt else []),
         ]
+
+    def conversation(self, sandbox: str, model: str, proxy: str,
+                     options: dict[str, Any] | None = None,
+                     session_id: str | None = None, **_: Any) -> Conversation:
+        opts = self._opts(options)
+        native_id = session_id or str(uuid4())
+        argv = [*self.exec_argv(sandbox, self._env(proxy, opts), stdin=True),
+                self.binary, "-p", "--model", model,
+                "--effort", str(opts["effort"]), "--autocompact", str(opts["autocompact"]),
+                "--resume" if session_id else "--session-id", native_id,
+                "--input-format", "stream-json", "--output-format", "stream-json",
+                "--verbose", "--replay-user-messages", "--include-partial-messages",
+                "--permission-prompt-tool", "stdio", "--dangerously-skip-permissions",
+                "--disallowedTools", "WebSearch", "WebFetch"]
+        return Conversation(argv, ClaudeConversation(native_id))
 
     def sandbox_cli_check(self) -> tuple[str, str] | None:
         """The CLI inside the sandbox is the pinned version; no check

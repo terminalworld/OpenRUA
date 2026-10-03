@@ -150,7 +150,9 @@ events. The owner records raw frames, owns the queue and keeps the process
 alive independently of client connections.
 
 - `begin()` initializes or resumes the native conversation. A `ready` event
-  carries its actual `session_id`; save this identity for a later connection.
+  carries its `session_id`; save this identity for a later connection.
+  A CLI that accepts an explicit ID at creation may report it with
+  `identity_confirmed: false` until a native `session` event confirms it.
 - `can_submit` indicates readiness for one turn. `submit(turn_id, text)` uses
   a new caller-assigned identity; subsequent messages wait in the owner's queue.
 - `turn_started`, `text_delta`, `item`, and `turn_finished` events retain that
@@ -173,3 +175,22 @@ Codex CLI 0.159.1's generated schemas and the
 [official App Server documentation](https://learn.chatgpt.com/docs/app-server).
 Actual model turns, cancellation of running tools, and robot tasks require
 separate integration validation; these tests do not establish those behaviors.
+
+
+Claude Code implements the same optional contract through its original CLI's
+bidirectional JSON mode. It retains native workspace instructions, settings,
+login and session persistence. Unlike Codex, its interrupt request has no
+native turn target: the plugin validates the caller's turn ID, permits one
+outstanding turn, and keeps `can_submit` false until both the result and
+interrupt acknowledgement arrive. The owner still pauses its queue after any
+user interruption, regardless of whether the native result reports completion
+or failure. A result without the expected echoed user message is treated as
+uncertain, not silently assigned to the current input.
+
+Claude tool approvals and `AskUserQuestion` are converted to the same
+`input_required` questions. Replies apply only to the pending request; a
+native cancellation expires it. The protocol follows the
+[CLI reference](https://code.claude.com/docs/en/cli-reference) and
+[Anthropic's control-protocol implementation](https://github.com/anthropics/claude-agent-sdk-python/blob/main/src/claude_agent_sdk/_internal/query.py),
+checked with Claude Code 2.1.284. Control-handshake checks send no model task;
+active cancellation, message echo and tool execution still need live validation.
