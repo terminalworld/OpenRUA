@@ -127,9 +127,21 @@ in `examples/`.
 
 ## Releasing
 
-Bump `version` in `pyproject.toml`, commit, tag the commit `v<version>` and
-push the tag: the Release workflow builds the package, checks that the tag
-matches the version, publishes a GitHub Release with the sdist and wheel
-attached and notes generated from the commits, and uploads the same files to
-PyPI through trusted publishing (PyPI trusts the workflow's identity; no
-token anywhere).
+Each release archives a tested batch of useful changes. We currently use one
+release channel; experimental features retain explicit documentation of their
+limits. Add an entry to `CHANGELOG.md` with features, behavior changes, upgrade
+instructions, and validation scope, then bump `version` in `pyproject.toml`.
+
+Commit and push the release preparation, check its CI, then tag that commit
+`v<version>` and push the tag. The Release workflow reruns the shared CI jobs
+against the tagged commit, builds and checks the sdist and wheel, matches the
+tag to the package version, and installs the wheel in an isolated environment.
+It publishes the same artifacts to GitHub Releases and PyPI through trusted
+publishing, using the changelog entry as the release notes. Verify both
+publication jobs and installation from PyPI before declaring the release done.
+Keep published tags immutable; subsequent fixes receive a new version.
+
+The local artifact check is `python scripts/check_dist.py --dist dist
+--version <version>` after `python -m build`. It installs the base package and
+TUI extra outside the checkout, checks bundled resources, and mounts the TUI
+headlessly without a robot or model call.

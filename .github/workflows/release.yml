@@ -1,15 +1,13 @@
 name: Release
-# A pushed version tag (v0.0.8) becomes a release: the package is built
-# and checked, the tag is matched against pyproject's version, a GitHub
-# Release is published with the sdist and wheel attached and notes
-# generated from the commits, and the same files go to PyPI through
-# trusted publishing (no token: PyPI trusts this workflow, in the
-# `pypi` environment, by its OpenID Connect identity).
+# Version tags publish one tested milestone to GitHub and PyPI.
 on:
   push:
     tags: ["v[0-9]*"]
 jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
   build:
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +20,7 @@ jobs:
       - run: |
           test "$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')" = "${GITHUB_REF_NAME#v}" \
             || { echo "tag $GITHUB_REF_NAME does not match pyproject version" >&2; exit 1; }
+      - run: python scripts/check_dist.py --dist dist --version "${GITHUB_REF_NAME#v}"
       - uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -37,7 +36,20 @@ jobs:
         with:
           name: dist
           path: dist/
-      - run: gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes
+      - name: Extract release notes
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import Path
+          version = os.environ["GITHUB_REF_NAME"].removeprefix("v")
+          changelog = Path("CHANGELOG.md").read_text()
+          marker = f"## {version}\n"
+          if marker not in changelog:
+              raise SystemExit(f"CHANGELOG.md has no entry for {version}")
+          notes = changelog.split(marker, 1)[1].split("\n## ", 1)[0].strip()
+          Path("release-notes.md").write_text(notes + "\n")
+          PY
+      - run: gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --title "$GITHUB_REF_NAME" --notes-file release-notes.md
         env:
           GH_TOKEN: ${{ github.token }}
   pypi:

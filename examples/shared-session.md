@@ -12,8 +12,8 @@ clients: a browser and a terminal. Both clients talk to the same agent
 conversation and queue. OpenRUA manages delivery and resources; the agent
 still decides which ROS commands and programs to execute.
 
-Shared chat is experimental and available on the repository's `main` branch.
-An older PyPI install may not include these commands. The walkthrough starts
+Shared chat is experimental and available from OpenRUA 0.1.0.
+Earlier releases do not include these commands. The walkthrough starts
 with Codex, for which live conversation and simulation checks have completed.
 Claude Code also has a conversation adapter; its successful model turns have
 not yet been validated. See [validation scope](../docs/sessions.md#validation-scope).
@@ -21,11 +21,11 @@ not yet been validated. See [validation scope](../docs/sessions.md#validation-sc
 ## 1. Prepare the package, login, and images
 
 Use a Linux execution host with Docker available, as described in
-[Install](../docs/install.md). Install the current source in your Python
-environment, or use `pip install -e .` inside an existing OpenRUA checkout:
+[Install](../docs/install.md). Install the release in your Python environment,
+or use `pip install -e .` inside an OpenRUA source checkout:
 
 ```sh
-pip install -U 'openrua @ git+https://github.com/terminalworld/OpenRUA.git'
+pip install -U 'openrua>=0.1.0'
 openrua serve --help
 openrua session --help
 ```

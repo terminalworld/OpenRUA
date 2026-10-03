@@ -75,7 +75,7 @@ def run(args) -> int:
             if exc.name != "textual":
                 raise
             raise UnavailableError("terminal UI dependencies are not installed",
-                                   hint="from the OpenRUA source checkout, run: pip install -e '.[tui]'") from exc
+                                   hint="install with: pip install -U 'openrua[tui]>=0.1.0'") from exc
         client = connect(args)
         client.timeout = 5
         ChatApp(client, name=args.name).run()

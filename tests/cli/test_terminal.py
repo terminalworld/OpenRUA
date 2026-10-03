@@ -29,5 +29,5 @@ assert main(["--version"]) is None
     result = subprocess.run([sys.executable, "-c", code.replace('assert main(["--version"]) is None',
                             'raise SystemExit(main(["chat", "--tui"]))')], capture_output=True, text=True)
     assert result.returncode == 69
-    assert "pip install -e '.[tui]'" in result.stderr
+    assert "pip install -U 'openrua[tui]>=0.1.0'" in result.stderr
     assert "Traceback" not in result.stderr

@@ -14,10 +14,10 @@ It does not implement a new agent loop.
 
 ## Try it
 
-From your OpenRUA source checkout, install the optional interface:
+Install OpenRUA 0.1.0 or later with the optional terminal interface:
 
 ```sh
-pip install -e '.[tui]'
+pip install -U 'openrua[tui]>=0.1.0'
 ```
 
 Prepare the robot images and native agent login as described in
@@ -34,7 +34,7 @@ In a client terminal, open the TUI:
 openrua chat --tui --name shared
 ```
 
-This preview attaches to an existing service. It does not yet make bare
+This interface attaches to an existing service. It does not yet make bare
 `openrua` launch a session or start a background service automatically.
 `openrua run` retains the native agent terminal, and `openrua chat` without
 `--tui` retains the plain text interface.
@@ -72,7 +72,7 @@ from a disconnected client: reopening the TUI does not restart the agent.
 
 Agent and model selection still happens when starting `serve`. Changing them
 inside a running conversation, a workspace file panel, terminal image previews,
-and saved layout preferences are not implemented in this preview. The browser
+and saved layout preferences are not implemented in this release. The browser
 can display saved workspace images. Use a terminal at least 60 columns wide and
 28 rows high for the tested narrow layout.
 

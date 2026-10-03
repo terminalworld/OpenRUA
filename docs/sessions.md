@@ -11,8 +11,8 @@ For a first run, follow [Your first shared robot session](../examples/shared-ses
 It covers preparation, browser and CLI input, expected results, SSH forwarding,
 and shutdown. The commands below are the operation reference; implementation
 boundaries and validation evidence follow the user-facing instructions.
-These features are available from repository source; older PyPI versions may
-not include them.
+These experimental features are included in OpenRUA 0.1.0 and later.
+Upgrade older installations before following this guide.
 
 The `openrua.sessions` package coordinates user messages and native agent
 connections. It does not plan robot actions or replace the coding agent's own

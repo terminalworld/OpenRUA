@@ -36,7 +36,7 @@ OpenRUA supports these workflows:
   [docs/your-own-robot.md](docs/your-own-robot.md).
 - **Chat from a browser and terminal.** `openrua serve` keeps a robot and
   agent conversation running while clients share a message queue and browse
-  saved observations. This experimental feature is available from source;
+  saved observations. This experimental feature is included from version 0.1.0;
   follow [Your first shared robot session](examples/shared-session.md).
 - **Run experiments.** `openrua bench` plays a benchmark across tasks and
   seeds with a fresh sandbox per trial and archives every command the
@@ -72,7 +72,7 @@ terminal with that sentence, and the robot powers off when you leave;
 ## Browser and shared CLI chat (experimental)
 
 An optional [chat-first TUI](docs/terminal.md) supports streaming replies and an
-expandable queue: install `pip install -e '.[tui]'` from this checkout, then
+expandable queue: install `pip install -U 'openrua[tui]>=0.1.0'`, then
 attach to a running service with `openrua chat --tui --name shared`.
 
 Use `run` for the agent's original terminal, or `serve` for a shared conversation
@@ -89,7 +89,7 @@ openrua chat --name shared "Inspect the scene without moving the robot."
 Messages share one queue. You can inspect saved images and programs, edit queued
 instructions, interrupt and review before continuing, and end the session while
 retaining its files. Start with the [step-by-step tutorial](examples/shared-session.md)
-for installation from source, image preparation, SSH access, expected results,
+for installation, image preparation, SSH access, expected results,
 and shutdown. The [session manual](docs/sessions.md) covers every operation.
 The original agent terminal cannot yet attach to the same shared conversation;
 remote hosting and a native mobile app are not implemented.

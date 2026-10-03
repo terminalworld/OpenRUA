@@ -28,11 +28,11 @@ The command is `openrua`; `openrua --help` lists the verbs and
 demo`) needs the `demo` extra: `pip install
 'openrua[demo] @ git+https://github.com/terminalworld/OpenRUA'`.
 
-For the experimental shared CLI/browser session features on `main`, install
-from source instead of assuming the current PyPI release contains them:
+Shared CLI/browser sessions are included from version 0.1.0. Upgrade an older
+installation, optionally including the terminal UI:
 
 ```bash
-pip install -U 'openrua @ git+https://github.com/terminalworld/OpenRUA.git'
+pip install -U 'openrua[tui]>=0.1.0'
 ```
 
 Then follow [Your first shared robot session](../examples/shared-session.md)
