@@ -2,11 +2,15 @@ import {Container, Markdown, Spacer, Text} from '@earendil-works/pi-tui';
 
 // Control bytes must not become terminal instructions, including OSC clipboard writes.
 export const plain = value => String(value ?? '').replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, '');
-const identity = text => text;
-export const selectTheme = Object.fromEntries(['selectedPrefix', 'selectedText', 'description', 'scrollInfo', 'noMatch'].map(key => [key, identity]));
-export const editorTheme = {borderColor: identity, selectList: selectTheme};
-const markdownTheme = Object.fromEntries(['heading', 'link', 'linkUrl', 'code', 'codeBlock', 'codeBlockBorder',
-  'quote', 'quoteBorder', 'hr', 'listBullet', 'bold', 'italic', 'strikethrough', 'underline'].map(key => [key, identity]));
+const style = (open, close) => text => `\x1b[${open}m${text}\x1b[${close}m`;
+const bold = style(1, 22), muted = style(90, 39), accent = style(36, 39);
+export const selectTheme = {selectedPrefix: accent, selectedText: bold, description: muted,
+  scrollInfo: muted, noMatch: muted};
+export const editorTheme = {borderColor: muted, selectList: selectTheme};
+const markdownTheme = {heading: bold, link: accent, linkUrl: muted, code: accent,
+  codeBlock: text => text, codeBlockBorder: muted, quote: muted, quoteBorder: muted,
+  hr: muted, listBullet: accent, bold, italic: style(3, 23), strikethrough: style(9, 29), underline: style(4, 24)};
+
 
 export class Transcript extends Container {
   constructor() { super(); this.turns = new Map(); this.tools = new Map(); }

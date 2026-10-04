@@ -15,8 +15,9 @@ usage: openrua [-h] [--version] [--home HOME] [--robot ROBOT] [--sim SIM]
                [--bench BENCH] [--task-suite TASK_SUITE] [--task-id TASK_ID]
                [--init-state INIT_STATE] [--task TASK] [--name NAME]
                [--agent AGENT] [--workspace WORKSPACE]
-               [--ros-domain ROS_DOMAIN] [--model MODEL] [--gui | --cli]
-               [--port PORT] [--setup] [--resume [ID]]
+               [--ros-domain ROS_DOMAIN] [--model MODEL] [--gui |
+               --tui {textual,pi} | --cli] [--port PORT] [--setup]
+               [--resume [ID]]
                <verb> ...
 
 Open a robot conversation, or use ``openrua <verb> ...``.
@@ -59,6 +60,8 @@ start or reconnect (without a subcommand):
   --model MODEL         model for a new session (default: the agent's
                         configuration)
   --gui                 open the browser instead of terminal chat
+  --tui {textual,pi}    terminal frontend (default: textual; pi requires
+                        openrua[pi])
   --cli                 use plain text chat instead of the TUI
   --port PORT           local service port for a new session (default: a free
                         port)

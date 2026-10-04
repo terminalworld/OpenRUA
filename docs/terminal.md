@@ -118,9 +118,20 @@ imports from robot backends, agent plugins, or the session execution internals.
 CLI code selects and launches this presentation module; replacing its UI toolkit
 does not require changing agent plugins or the shared session protocol.
 
-## Pi client prototype (source checkout)
+## Pi terminal (optional)
 
-An opt-in [Pi terminal prototype](../ui/terminal/README.md) explores a
-keyboard-first coding-agent interface on the same session service. It uses Pi's
-editor, completion, Markdown, and keyboard selectors. See its README for setup,
-commands, tests, and current limits. It does not replace the installed default.
+OpenRUA 0.4.0 includes a keyboard-first Pi frontend alongside the existing default:
+
+```sh
+pip install -U 'openrua[pi]>=0.4.0'
+openrua --tui pi
+```
+
+This starts the same configuration and background-session flow in one terminal.
+Pip installs the frontend runtime; no separate Node/npm installation is needed.
+Use `openrua --tui pi --resume` or `/resume` in chat for history. The Pi interface
+uses Enter to send, Ctrl+J for a newline, and slash commands for queue management,
+questions, interruption, and ending execution. Ctrl+D on an empty input detaches.
+The [Pi guide](../ui/terminal/README.md) describes its controls, installation,
+verification, and current limits. Selecting Pi does not change the agent or
+robot execution protocol; the default frontend remains available.

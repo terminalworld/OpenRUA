@@ -16,3 +16,6 @@ data/
 
 # gate runs written by the image gate
 .gate-runs/
+
+# Prepared from the locked terminal dependencies for wheels and source archives.
+/openrua/terminal/assets/

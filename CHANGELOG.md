@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.4.0
+
+### Added
+
+- Optional Pi terminal, started with `openrua --tui pi` after installing
+  `openrua[pi]`. The default Textual frontend remains available.
+- Keyboard configuration and searchable `/resume` history, reusing the existing
+  configuration, readiness checks, background launcher, and retained sessions.
+- Pi slash commands for tool expansion, queue edits/withdrawal, agent questions,
+  interruption, queue continuation, explicit end, and client detachment.
+- Prepared frontend resources and licenses in wheels and source archives;
+  the optional Node runtime is installed by pip, without a system Node requirement.
+- Build manifest verification and clean-install pseudo-terminal checks alongside
+  session integration tests and the existing Python/browser CI jobs.
+
+### Scope
+
+Pi uses the shared execution service and native agent plugins; it does not add
+an agent loop. Linux x86_64 packaging, simulated keyboard input, and local
+pseudo-terminal startup are verified. Real-terminal IME/SSH behavior and live
+model/robot interaction still need user trials. Secret inputs and resolving
+unknown execution results use existing clients. Agent/model hot switching
+and persistent multi-panel layouts remain deferred.
+
 ## 0.3.0
 
 ### Added

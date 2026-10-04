@@ -174,3 +174,81 @@ test('Pi keyboard editor submits, queues, confirms interruption and detaches', {
   assert.equal(state.paused, true);
   assert.equal(terminal.stopped, true);
 });
+
+test('queued edits and question replies use the existing owner contracts', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20, history: true});
+  t.after(() => chat.stop());
+  const running = chat.run();
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  await chat.submit('Inspect');
+  const id = (await client.snapshot()).state.active;
+  await call({op: 'frame', frame: {kind: 'turn_started', turn_id: id, data: {}}});
+  await chat.submit('Later');
+  await chat.submit('/queue');
+  terminal.input('\r'); await new Promise(r => setTimeout(r, 10));
+  terminal.input('\x1b[B'); terminal.input('\r'); await new Promise(r => setTimeout(r, 10));
+  terminal.input('\x15'); terminal.input('Inspect only'); terminal.input('\r');
+  await until(client, s => s.messages[1].text === 'Inspect only');
+  await call({op: 'frame', frame: {kind: 'input_required', turn_id: id, data: {
+    request_id: 'q', questions: [{id: 'target', text: 'Which target?', choices: ['cup', 'bowl']}]}}});
+  await until(client, s => !!s.requests.q);
+  await chat.refresh(); await chat.submit('/questions');
+  terminal.input('\r'); await new Promise(r => setTimeout(r, 10));
+  terminal.input('\x1b[B'); terminal.input('\r'); await new Promise(r => setTimeout(r, 10));
+  // Answers are collected, then explicitly confirmed.
+  assert.equal((await call({op: 'writes'})).writes.filter(w => w.reply).length, 0);
+  terminal.input('\x1b[B'); terminal.input('\r');
+  await until(client, s => s.requests.q?.status !== 'pending');
+  assert.deepEqual((await call({op: 'writes'})).writes.find(w => w.reply), {reply: 'q', answers: {target: ['bowl']}});
+  await chat.submit('/resume');
+  assert.deepEqual(await running, {action: 'history'});
+});
+
+test('archive mode cannot enqueue or end a session', async () => {
+  const {ArchiveClient} = await import('../src/screens.mjs');
+  const client = new ArchiveClient({snapshot: {state: {messages: [], requests: {}, closed: true}}, events: [], reason: 'Ended'});
+  await assert.rejects(client.command('enqueue', {text: 'Move'}), /Read-only/);
+  await assert.rejects(client.end(), /Read-only/);
+});
+
+test('keyboard configuration and filtered history use Pi selectors', async () => {
+  const {Setup, History} = await import('../src/screens.mjs');
+  const terminal = new Terminal();
+  const spec = {values: {robot: 'panda', sim: 'robosuite', bench: '', agent: 'one', model: 'm1', name: 'id'},
+    choices: {robot: ['panda', 'ur5'], agent: ['one', 'two']}, models: {two: 'm2'}, location: 'config.yaml', notice: ''};
+  const setup = new Setup(spec, terminal);
+  const running = setup.run();
+  terminal.input('\r'); terminal.input('\x1b[B'); terminal.input('\r');
+  assert.equal(setup.values.robot, 'ur5');
+  // Robot, simulator, benchmark, then agent.
+  for (let i = 0; i < 3; i++) terminal.input('\x1b[B');
+  terminal.input('\r'); terminal.input('\x1b[B'); terminal.input('\r');
+  assert.equal(setup.values.model, 'm2');
+  // Select Save and check after reviewing all fields.
+  for (let i = 0; i < 7; i++) terminal.input('\x1b[B');
+  terminal.input('\r');
+  assert.deepEqual(await running, {action: 'check', values: {...spec.values, robot: 'ur5', agent: 'two', model: 'm2'}});
+  const historyTerminal = new Terminal();
+  const history = new History({rows: [{id: 'a', title: 'Cup', status: 'Ended', time: ''},
+    {id: 'b', title: 'Bowl', status: 'Service recorded', time: ''}]}, historyTerminal);
+  const selected = history.run();
+  historyTerminal.input('Bowl'); historyTerminal.input('\r');
+  assert.deepEqual(await selected, {action: 'select', id: 'b'});
+});
+
+test('end requires confirmation and releases execution through the service', {timeout: 15000}, async t => {
+  const {client} = await fixture(t);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20});
+  t.after(() => chat.stop());
+  const running = chat.run();
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  await chat.submit('/end'); terminal.input('\r');
+  await new Promise(r => setTimeout(r, 10));
+  assert.equal((await client.snapshot()).state.closed, false);
+  await chat.submit('/end'); terminal.input('\x1b[B'); terminal.input('\r');
+  assert.deepEqual(await running, {action: 'quit'});
+  assert.equal(terminal.stopped, true);
+});

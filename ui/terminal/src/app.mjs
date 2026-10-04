@@ -6,7 +6,10 @@ import {Transcript, editorTheme, plain, selectTheme} from './view.mjs';
 const commands = [
   {name: 'help', description: 'Keyboard shortcuts and commands'},
   {name: 'tools', description: 'Expand or collapse a tool result'},
-  {name: 'queue', description: 'Inspect the shared queue'},
+  {name: 'queue', description: 'Inspect, edit or withdraw queued messages'},
+  {name: 'questions', description: 'Answer pending agent questions'},
+  {name: 'resume', description: 'Find an existing conversation'},
+  {name: 'end', description: 'End execution while retaining the workspace and history'},
   {name: 'interrupt', description: 'Interrupt the current turn and pause the queue'},
   {name: 'continue', description: 'Confirm continuation of the paused queue'},
   {name: 'retry', description: 'Retry an unconfirmed send with the same request ID'},
@@ -16,8 +19,9 @@ const commands = [
 // The component composition follows Pi's chat-simple example and interactive UI:
 // transcript, status, editor, completion; application actions stay callbacks.
 export class Chat {
-  constructor(client, {terminal = new ProcessTerminal(), pollMs = 350} = {}) {
+  constructor(client, {terminal = new ProcessTerminal(), pollMs = 350, history = false, name = ''} = {}) {
     this.client = client;
+    this.history = history; this.result = {action: 'quit'};
     this.ui = new TuiMainScreen(terminal);
     this.transcript = new Transcript();
     this.controller = new Controller(client, this.transcript);
@@ -34,7 +38,7 @@ export class Chat {
     this.pollMs = pollMs;
     this.done = false;
     this.busy = false;
-    this.ui.addChild(new Text('\x1b[1mOpenRUA\x1b[22m · terminal prototype', 0, 0));
+    this.ui.addChild(new Text(`\x1b[1mOpenRUA\x1b[22m · ${plain(name) || 'robot conversation'}`, 0, 0));
     this.ui.addChild(this.transcript);
     this.ui.addChild(new Spacer(1)); this.ui.addChild(this.status);
     this.ui.addChild(this.notice); this.ui.addChild(this.editor);
@@ -70,7 +74,66 @@ export class Chat {
 
   confirm(title, action) {
     this.picker(title, [{value: 'cancel', label: 'Cancel'}, {value: 'confirm', label: 'Confirm'}],
-      async value => { if (value === 'confirm') { await action(); await this.refresh(); } });
+      async value => { if (value === 'confirm') { await action(); if (!this.done) await this.refresh(); } });
+  }
+
+  editText(title, initial, apply) {
+    const editor = new Editor(this.ui, editorTheme);
+    editor.setText(initial);
+    const box = new Container(); box.addChild(new Text(plain(title), 1, 1)); box.addChild(editor);
+    box.addChild(new Text('Enter submit · Ctrl+J newline · Esc cancel', 1, 1));
+    Object.defineProperty(box, 'focused', {get: () => editor.focused, set: value => { editor.focused = value; }});
+    const handle = this.ui.showOverlay(box, {width: '85%', maxHeight: '80%'});
+    box.handleInput = data => {
+      if (matchesKey(data, 'escape')) handle.hide(); else editor.handleInput(data);
+    };
+    editor.onSubmit = text => {
+      if (!text.trim()) return;
+      handle.hide();
+      Promise.resolve().then(() => apply(text)).catch(error => this.say(error.message));
+    };
+  }
+
+  queue() {
+    const messages = this.controller.state?.messages.filter(m => m.status === 'queued') ?? [];
+    this.picker('Queued instructions', messages.map(m => ({value: m.id, label: plain(m.text)})), id => {
+      const message = messages.find(m => m.id === id);
+      if (this.client.readOnly) { this.say(message.text); return; }
+      this.picker(plain(message.text), [{value: 'back', label: 'Back'}, {value: 'edit', label: 'Edit'},
+        {value: 'withdraw', label: 'Withdraw this queued message'}], async action => {
+        if (action === 'edit') this.editText('Edit queued instruction', message.text, async text => {
+          await this.client.command('edit', {message_id: id, revision: message.revision, text}); await this.refresh();
+        });
+        if (action === 'withdraw') this.confirm('Withdraw this queued instruction?', async () => {
+          await this.client.command('withdraw', {message_id: id});
+        });
+      });
+    });
+  }
+
+  questions() {
+    if (this.client.readOnly) throw new Error('This is read-only history.');
+    const pending = Object.values(this.controller.state?.requests ?? {}).filter(r => r.status === 'pending');
+    this.picker('Pending agent questions', pending.map(r => ({value: r.request_id,
+      label: plain(r.questions.map(q => q.text).join(' / '))})), id => {
+      const request = pending.find(r => r.request_id === id);
+      if (request.questions.some(q => q.secret)) {
+        this.say('This request contains secret input. Answer it through the browser or existing CLI.'); return;
+      }
+      const answers = {};
+      const next = index => {
+        if (index === request.questions.length) {
+          this.confirm('Send these answers to the agent?', () => this.client.command('respond', {request_id: id, answers}));
+          return;
+        }
+        const question = request.questions[index];
+        const accept = value => { answers[question.id] = [value]; next(index + 1); };
+        if (question.choices?.length) this.picker(question.text,
+          question.choices.map(value => ({value, label: plain(value)})), accept);
+        else this.editText(question.text, '', accept);
+      };
+      next(0);
+    });
   }
 
   async refresh() {
@@ -78,10 +141,10 @@ export class Chat {
     if (this.done) return;
     const state = this.controller.state;
     const queued = state.messages.filter(message => message.status === 'queued').length;
-    const requests = Object.keys(state.requests).length;
-    this.status.setText(`${state.closed ? 'Closed' : state.paused ? 'Paused' : state.active ? 'Working' : 'Ready'} · ${queued} queued` +
+    const requests = Object.values(state.requests).filter(r => r.status === 'pending').length;
+    this.status.setText(`${this.client.readOnly ? 'Read-only history' : state.closed ? 'Closed' : state.paused ? 'Paused' : state.active ? 'Working' : 'Ready'} · ${queued} queued` +
       (state.connected ? '' : ' · agent disconnected') +
-      (requests ? ` · ${requests} question(s): answer through the existing browser or CLI` : '') +
+      (requests ? ` · ${requests} question(s): /questions` : '') +
       (this.controller.pending ? ' · send unconfirmed (/retry)' : ''));
     this.ui.requestRender();
   }
@@ -106,13 +169,22 @@ export class Chat {
           case '/help':
             this.say(commands.map(c => `/${c.name}: ${c.description}`).join('\n')); break;
           case '/quit': this.stop(); break;
+          case '/resume':
+            if (!this.history) throw new Error('Use openrua --tui pi --resume to select history.');
+            if (this.controller.pending) throw new Error('Resolve the unconfirmed send before changing conversations.');
+            this.result = {action: 'history'}; this.stop(); break;
+          case '/end':
+            if (this.client.readOnly) throw new Error('This is read-only history.');
+            this.confirm('End execution and release resources? The workspace and history will be retained.',
+              async () => { await this.client.end(); this.stop(); }); break;
+          case '/questions': this.questions(); break;
           case '/retry': await this.controller.retry(); await this.refresh(); break;
           case '/tools':
             this.picker('Tool results', [...this.transcript.tools].map(([key, tool]) => ({value: key,
               label: `${tool.expanded ? '▾' : '▸'} ${tool.phase} ${tool.label}`})),
               key => { this.transcript.toggleTool(key); this.ui.requestRender(); }); break;
           case '/queue':
-            this.say(state ? state.messages.filter(m => m.status === 'queued').map((m, i) => `${i + 1}. ${m.text}`).join('\n') || 'Queue is empty.' : 'Connecting…'); break;
+            this.queue(); break;
           case '/interrupt': {
             const id = state?.active;
             if (!id) throw new Error('No active turn.');
@@ -140,10 +212,11 @@ export class Chat {
 
   async run() {
     await this.refresh();
-    if (this.done) return;
+    if (this.done) return this.result;
     this.ui.setFocus(this.editor);
     this.ui.start();
     await new Promise(resolve => { this.finished = resolve; void this.poll(); });
+    return this.result;
   }
 
   stop() {

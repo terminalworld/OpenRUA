@@ -3,10 +3,44 @@
 from __future__ import annotations
 
 import argparse
+import os
+import select
+import time
 from pathlib import Path
 import subprocess
 import tempfile
 import venv
+
+
+def terminal_smoke(executable: Path, home: Path, environment: dict) -> None:
+    """Exercise real TTY startup and detachment without starting robot resources."""
+    import pty
+    master, slave = pty.openpty()
+    child = subprocess.Popen([str(executable), '--home', str(home), '--tui', 'pi'],
+                             stdin=slave, stdout=slave, stderr=slave, env=environment)
+    os.close(slave)
+    output = bytearray()
+    sent = False
+    try:
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline and child.poll() is None:
+            if select.select([master], [], [], 0.1)[0]:
+                try:
+                    output.extend(os.read(master, 65536))
+                except OSError:
+                    break
+            if not sent and b'Configure a new robot conversation' in output:
+                os.write(master, b'\x04')
+                sent = True
+        if child.poll() is None:
+            child.wait(timeout=5)
+        assert sent and child.returncode == 0, output.decode(errors='replace')
+        assert not (home / 'sandboxes').exists(), 'Setup cancellation started resources'
+    finally:
+        if child.poll() is None:
+            child.kill()
+        child.wait()
+        os.close(master)
 
 
 def check(dist: Path, version: str) -> None:
@@ -50,6 +84,18 @@ async def check():
         assert setup.query_one('#robot') and setup.query_one('#start')
 asyncio.run(check())
 """)
+
+        # Pi remains opt-in, but the same wheel already contains its JS assets.
+        run("-m", "pip", "install", str(wheels[0]) + "[pi]")
+        run("-c", """
+import os, shutil
+from openrua.terminal.launcher import entrypoint, runtime
+env = dict(os.environ, PATH=os.path.dirname(__import__('sys').executable))
+assert shutil.which('node', path=env['PATH']) is None
+assert runtime()([str(entrypoint()), '--help'], env=env, return_completed_process=True).returncode == 0
+""")
+        terminal_smoke(environment / 'bin' / 'openrua', root / 'empty-home',
+                       dict(os.environ, PATH=str(environment / 'bin')))
 
 
 def main() -> None:

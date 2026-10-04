@@ -24,6 +24,8 @@ def add_options(parser) -> None:
     group.add_argument('--model', default=None, help="model for a new session (default: the agent's configuration)")
     interface = group.add_mutually_exclusive_group()
     interface.add_argument('--gui', action='store_true', help='open the browser instead of terminal chat')
+    interface.add_argument('--tui', choices=['textual', 'pi'], default='textual',
+                           help='terminal frontend (default: textual; pi requires openrua[pi])')
     interface.add_argument('--cli', action='store_true', help='use plain text chat instead of the TUI')
     group.add_argument('--port', type=int, default=None, help='local service port for a new session (default: a free port)')
     group.add_argument('--setup', action='store_true', help='edit shared defaults in the terminal setup form')
@@ -99,7 +101,11 @@ def launch(args, values: dict[str, str]):
     return service.start(argv, directory / 'endpoint.json', logs / 'service.log', logs / 'start.lock')
 
 
-def open_terminal(home, client, name: str) -> int:
+def open_terminal(home, client, name: str, frontend: str = 'textual') -> int:
+    if frontend == 'pi':
+        from openrua.terminal.launcher import chat as pi_chat
+        return pi_chat(client, name, lambda: history.entries(home),
+                       lambda name: history.open_session(home, name))
     from openrua.tui.app import ChatApp
     while True:
         client.timeout = 5
@@ -110,7 +116,10 @@ def open_terminal(home, client, name: str) -> int:
         client, name = selected
 
 
-def choose_history(home):
+def choose_history(home, frontend: str = 'textual'):
+    if frontend == 'pi':
+        from openrua.terminal.launcher import choose_history as pi_history
+        return pi_history(lambda: history.entries(home), lambda name: history.open_session(home, name))
     from textual.app import App
     from openrua.tui.history import History
     class Picker(App):
@@ -129,10 +138,28 @@ def open_interface(args, client, name: str) -> int:
             return session.run(argparse.Namespace(home=args.home, name=name, action='web', no_open=False))
         return chat.run(argparse.Namespace(home=args.home, name=name, tui=False,
                                            message=None, follow=False, after=0))
-    return open_terminal(args.home, client, name)
+    return open_terminal(args.home, client, name, args.tui)
 
 
 def run(args) -> int:
+    try:
+        return _run(args)
+    except (RuntimeError, OSError, ValueError) as exc:
+        if args.tui != 'pi':
+            raise
+        raise UnavailableError(str(exc), hint='the session may still be running; inspect it with --resume') from exc
+
+
+def _run(args) -> int:
+    if args.tui == 'pi':
+        if not sys.stdin.isatty() or not sys.stdout.isatty():
+            raise UsageError('Pi needs an interactive terminal', hint='use --cli for plain text interaction')
+        from openrua.terminal.launcher import entrypoint, runtime
+        try:
+            runtime()
+            entrypoint()
+        except RuntimeError as exc:
+            raise UnavailableError(str(exc)) from exc
     if args.resume is not None:
         if args.name is not None or args.setup or any(getattr(args, key) is not None for key in SELECTION + RESOURCE_OPTIONS):
             raise UsageError('--resume cannot be combined with new-session settings', hint='resume by ID, or start a new session separately')
@@ -144,7 +171,7 @@ def run(args) -> int:
         else:
             if not sys.stdin.isatty() or not sys.stdout.isatty():
                 raise UsageError('history selection needs an interactive terminal', hint='use openrua --resume ID to select a conversation explicitly')
-            selected = choose_history(args.home)
+            selected = choose_history(args.home, args.tui)
         return open_interface(args, *selected) if selected else 0
     if args.name is None:
         args.name = history.new_id()
@@ -164,16 +191,25 @@ def run(args) -> int:
         if not sys.stdin.isatty() or not sys.stdout.isatty():
             raise UsageError('terminal setup needs an interactive terminal',
                              hint='use openrua config set or edit config.yaml, then use --gui or --cli')
-        from openrua.tui.setup import SetupApp
         choices = {field: [entry.name for entry in paths.available(kind)] for field, kind in
                    [('robot', 'robots'), ('sim', 'simulators'), ('bench', 'benchmarks'), ('agent', 'agents')]}
-        app = SetupApp(values, choices, str(paths.config_path(args.home)),
-                       lambda values: save_values(args.home, values),
-                       lambda values: check_values(args.home, values),
-                       lambda values: launch(args, values), agent_models=models,
-                       list_sessions=lambda: history.entries(args.home),
-                       open_session=lambda name: history.open_session(args.home, name))
-        result = app.run()
+        if args.tui == 'pi':
+            from openrua.terminal.launcher import setup as pi_setup
+            result = pi_setup(values, choices, str(paths.config_path(args.home)),
+                              lambda values: save_values(args.home, values),
+                              lambda values: check_values(args.home, values),
+                              lambda values: launch(args, values), models,
+                              lambda: history.entries(args.home),
+                              lambda name: history.open_session(args.home, name))
+        else:
+            from openrua.tui.setup import SetupApp
+            app = SetupApp(values, choices, str(paths.config_path(args.home)),
+                           lambda values: save_values(args.home, values),
+                           lambda values: check_values(args.home, values),
+                           lambda values: launch(args, values), agent_models=models,
+                           list_sessions=lambda: history.entries(args.home),
+                           open_session=lambda name: history.open_session(args.home, name))
+            result = app.run()
         if result is None:
             return 0
         client, name = result

@@ -44,6 +44,9 @@ jobs:
           node-version: "22"
           cache: npm
           cache-dependency-path: ui/terminal/package-lock.json
-      - run: pip install -e '.[dev]'
+      - run: pip install -e '.[dev,pi]' build
       - run: npm ci --prefix ui/terminal --ignore-scripts
       - run: npm test --prefix ui/terminal
+      - run: python scripts/terminal_assets.py prepare
+      - run: python -m build
+      - run: python scripts/check_dist.py --dist dist --version "$(python -c 'from openrua import __version__; print(__version__)')"

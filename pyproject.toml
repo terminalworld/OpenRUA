@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openrua"
-version = "0.3.0"
+version = "0.4.0"
 description = "Let your Claude Code or Codex control any robot, real or simulated, through the standard ROS 2 CLI and client library."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -29,6 +29,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+pi = ["nodejs-wheel-binaries>=22.20,<23"]
 tui = []  # Compatibility extra; the terminal interface is installed by default.
 browser-test = ["pytest", "playwright>=1.50,<2"]
 demo = ["pillow", "numpy", "imageio", "imageio-ffmpeg"]
@@ -41,6 +42,12 @@ Repository = "https://github.com/terminalworld/OpenRUA"
 [project.scripts]
 openrua = "openrua.cli:main"
 openrua-bridge = "openrua.robot.sim.bridge.main:main"
+
+[tool.hatch.build]
+artifacts = ["/openrua/terminal/assets/**"]
+
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["openrua"]
@@ -224,3 +231,18 @@ type = "forbidden"
 source_modules = ["openrua.sessions", "openrua.runner", "openrua.agents", "openrua.plugins",
                   "openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.config", "openrua.errors"]
 forbidden_modules = ["openrua.tui"]
+
+[[tool.importlinter.contracts]]
+name = "Pi launcher consumes injected operations, never product internals"
+type = "forbidden"
+source_modules = ["openrua.terminal"]
+forbidden_modules = ["openrua.robot", "openrua.runner", "openrua.sandbox", "openrua.proxy",
+                     "openrua.agents", "openrua.plugins", "openrua.config", "openrua.cli",
+                     "openrua.sessions", "openrua.tui"]
+
+[[tool.importlinter.contracts]]
+name = "execution never depends on Pi presentation"
+type = "forbidden"
+source_modules = ["openrua.sessions", "openrua.runner", "openrua.agents", "openrua.plugins",
+                  "openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.config", "openrua.errors"]
+forbidden_modules = ["openrua.terminal"]

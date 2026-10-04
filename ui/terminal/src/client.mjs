@@ -60,6 +60,7 @@ export class Client {
 
   close() { for (const request of this.requests) request.destroy(); }
 
+  async end() { return (await this.request('/api/end', {})).result; }
   snapshot() { return this.request('/api/session'); }
   events(after = 0) { return this.request(`/api/events?after=${after}&limit=1000`); }
   async command(operation, params) { return (await this.request('/api/commands', {operation, params})).result; }

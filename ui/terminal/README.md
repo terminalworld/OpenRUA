@@ -1,43 +1,43 @@
-# Pi terminal prototype
+# Pi terminal client
 
 A keyboard-first OpenRUA client built with
 [`@earendil-works/pi-tui`](https://github.com/earendil-works/pi/tree/main/packages/tui).
 It reuses Pi's main-screen renderer, multiline editor, slash-command completion,
-Markdown, and keyboard selection lists. It connects to the existing OpenRUA
-session API; the execution service continues to own the native agent, robot,
-queue, and durable history. No Pi agent runtime or model provider is imported.
+Markdown, and keyboard selectors. The existing OpenRUA service owns execution,
+the native coding agent, robot resources, queue, and durable history. No Pi
+agent runtime or model provider is imported.
 
-This source-only prototype does not change the default `openrua` interface and
-is not included in the current PyPI wheel.
+## Start
 
-## Try it
-
-Use Node 22.19 or newer. From the repository root:
+Pi is an opt-in frontend in OpenRUA 0.4.0; the default remains Textual:
 
 ```sh
-npm ci --prefix ui/terminal --ignore-scripts
-npm start --prefix ui/terminal -- --help
+pip install -U 'openrua[pi]>=0.4.0'
+openrua --tui pi
 ```
 
-Start a shared session through the existing OpenRUA CLI or TUI. For example,
-after completing the installation, image build, and agent login instructions:
+The wheel includes the frontend and its dependency resources. The `pi` extra
+installs a packaged Node runtime through pip, so users need neither a separate
+Node/npm install nor a second terminal. This distribution path has been tested
+on Linux x86_64. Other runtime platforms and terminal IMEs need further trials.
+
+The keyboard setup shows the same robot, simulator, benchmark, agent, and model
+configuration as the existing clients. Use arrows and Enter to edit fields or
+choose available profiles. **Save and check** reports missing images or login;
+**Save and start** starts the existing background service only after checks pass.
+Neither operation builds images or logs in automatically. CLI configuration
+and direct edits to `config.yaml` remain supported.
 
 ```sh
-openrua serve panda --sim robosuite --name pi-demo --agent claude-code
+openrua --tui pi --setup
+openrua --tui pi --resume
+openrua --tui pi --resume ID
 ```
 
-Attach from another terminal:
-
-```sh
-npm start --prefix ui/terminal -- --endpoint "$HOME/.openrua/sandboxes/pi-demo/endpoint.json"
-```
-
-The endpoint belongs to the running session. If you changed OpenRUA's home,
-supply that session's actual endpoint path. The file contains a private token;
-pass the path, never copy its contents into a URL or a public report.
-
-The two-terminal setup is for this isolated prototype. It is not a proposal to
-make the finished product require two terminals or a separate Node install.
+You can also reconnect to a named running session using `--name NAME`. New
+sessions receive automatic IDs. History selection reconnects to the original
+execution owner; ended or unavailable conversations open read-only, without
+restarting a robot or replaying instructions.
 
 ## Keyboard interaction
 
@@ -47,52 +47,79 @@ make the finished product require two terminals or a separate Node install.
 | Ctrl+J | Insert a newline |
 | `/` | Complete available commands |
 | `/tools` | Select a tool result to expand or collapse |
-| `/queue` | Show waiting instructions |
-| Esc or `/interrupt` | Open an interruption confirmation |
+| `/queue` | Select a queued instruction to inspect, edit, or withdraw |
+| `/questions` | Answer pending agent questions, then confirm submission |
+| `/resume` | Find another retained conversation |
+| Esc or `/interrupt` | Confirm interruption of the current turn |
 | `/continue` | Confirm continuation of the paused queue |
 | `/retry` | Retry an unconfirmed send using its original request ID |
+| `/end` | Confirm ending execution while keeping history and workspace |
 | Ctrl+D on an empty input, or `/quit` | Detach without ending the session |
 | Ctrl+C | Clear a draft; detach if the input is empty |
 
-Selection lists use arrows, Enter, and Escape. Interruption and continuation
-select Cancel initially. Reconnecting replays the server's events, not robot
-actions. Messages from another client appear in the same transcript.
+Selection lists use arrows, Enter, and Escape. Interruption, queue continuation,
+withdrawal, answering questions, and ending execution require explicit choices.
+Edits carry the message revision, so another client's change is not overwritten.
+A disconnected client never automatically resends a robot instruction.
 
-Setup, `/resume` selection, queue editing, answering agent questions, and ending
-a session still use the existing clients. Unknown execution results also need
-those clients for explicit resolution. This prototype does not auto-resume a
-paused queue or start a second native agent.
+Requests containing secret inputs and resolution of unknown execution results
+still use the existing clients. In-session agent/model switching and a persistent
+multi-panel layout are not implemented. Automated tests do not establish
+real-terminal IME, SSH, clipboard, or long-transcript usability.
 
-## Verify
+## Develop and verify
 
-Install the Python development environment first, then:
+From the repository root, prepare the existing Python development environment:
 
 ```sh
 . .venv/bin/activate
+pip install -e '.[dev,pi]' build
 npm ci --prefix ui/terminal --ignore-scripts
 npm test --prefix ui/terminal
+python scripts/terminal_assets.py prepare
+openrua --tui pi
 ```
 
-Tests run against the real local HTTP service and SQLite store, with a controlled
-native-agent transport. They cover shared input, event replay, tool expansion,
-interruption, detachment, and idempotent retries. A keyboard test exercises Pi's
-editor and selection list through a terminal test double. No model credentials,
-paid calls, simulator, or robot are required.
+Frontend developers need Node 22.19 or newer for npm. Re-run asset preparation
+after changing frontend source. No npm command or download runs when a user
+starts OpenRUA. A source-only client can still attach to an already running
+service with `npm start --prefix ui/terminal -- --endpoint PATH`.
 
-These checks do not establish real-terminal IME behavior, SSH latency handling,
-or usability with long real-agent transcripts. Those need interactive trials
-before changing the default UI.
+```sh
+python -m build
+python scripts/check_dist.py --dist dist --version 0.4.0
+```
+
+Distribution builds check the asset manifest, source hashes, and locked
+versions. The source archive carries prepared dependencies and can build its
+wheel without npm. Upstream resources and license files remain intact. The
+clean-install check exercises both the default frontend and Pi, including
+pseudo-terminal configuration startup and detachment with no Node on PATH.
+
+Session tests use the actual local HTTP service and SQLite store, with
+controlled native-agent events. They cover shared input, event replay, tool
+expansion, keyboard configuration and history, queue edits, agent questions,
+interruption, detachment, and idempotent retries. They use no model credentials,
+paid calls, simulator, or robot.
 
 ## Boundaries and upstream
 
 - `src/client.mjs`: existing authenticated local HTTP API only.
-- `src/controller.mjs`: journal cursor and unconfirmed request identity.
-- `src/view.mjs`: session events presented with Pi components.
-- `src/app.mjs`: keyboard actions and component composition.
-- `src/main.mjs`: executable entry point; owns process exit handling.
+- `src/controller.mjs`: event cursor and unconfirmed request identity.
+- `src/view.mjs`: event presentation using Pi components.
+- `src/app.mjs`, `src/screens.mjs`: keyboard chat, configuration, and history.
+- `openrua/terminal/launcher.py`: private input/output handoff and injected callbacks.
+- `openrua/cli/commands/start.py`: connects these callbacks to existing product operations.
+
+The launcher passes temporary private files to the child UI, keeping stdin and
+stdout available for the terminal. Credentials are not placed in command-line
+arguments. It uses a Python-packaged Node runtime, not a guessed system path.
+History and setup return explicit choices; the CLI performs the existing
+operations. No extra HTTP server or replacement execution loop is introduced.
 
 Pi is pinned to 1.0.2 in `package-lock.json`. Its
 [chat-simple example](https://github.com/earendil-works/pi/blob/main/packages/tui/examples/chat-simple.ts)
-and interactive UI informed the component composition. Pi is MIT-licensed;
-its license remains in the installed dependency. A future bundled distribution
-must retain Pi and transitive dependency notices alongside the runtime notices.
+and interactive UI informed the component composition. Pi and its dependencies
+are MIT-licensed; their license files are included in the prepared resources.
+The Node runtime is supplied by
+[nodejs-wheel-binaries](https://github.com/njzjz/nodejs-wheel), under its own notices.

@@ -182,3 +182,11 @@ pip uninstall openrua
 rm -r ~/.openrua                         # defaults, logins, sandboxes
 docker image rm $(docker image ls -q 'openrua-*')
 ```
+
+## Optional Pi terminal
+
+For the keyboard-first Pi frontend, use `pip install -U 'openrua[pi]>=0.4.0'`
+and `openrua --tui pi`. Pip installs the required runtime; a system Node/npm
+installation is unnecessary. See the [terminal guide](terminal.md#pi-terminal-optional).
+This path is verified on Linux x86_64; the existing default frontend remains
+included in the ordinary installation.

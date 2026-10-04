@@ -19,11 +19,19 @@ Python matrix. CI also runs browser tests in Chromium. To run them locally:
 .venv/bin/pytest -q tests/web
 ```
 
-The source-only [Pi terminal prototype](ui/terminal/README.md) has a separate
-Node test job. With the Python development environment activated, run
+The optional [Pi terminal](ui/terminal/README.md) has a separate Node test job.
+With the Python development environment activated, install `.[dev,pi]`, then run
 `npm ci --prefix ui/terminal --ignore-scripts` and
 `npm test --prefix ui/terminal`. Its tests use the actual session service and
 controlled agent events without paid model calls.
+
+Before building a wheel or source archive, run
+`python scripts/terminal_assets.py prepare` after `npm ci`. Builds verify the
+prepared resources against source and lockfile hashes. The source archive
+includes these assets and can build its wheel without npm. Editable installs
+remain possible without asset preparation; selecting Pi requires prepared
+assets and the `pi` runtime extra. Release CI builds both distributions and
+checks clean installation, including Pi startup without a system Node.
 
 The workspace template hash is pinned in
 `tests/sandbox/test_workspace_template.py`. An intentional change to the

@@ -37,6 +37,7 @@ Its queue orders user instructions, not individual robot movements.
 | `openrua/tui/` | setup form with injected configuration/readiness/launch callbacks; Textual chat client, expandable tool output and queue controls. Imports the common session client, not execution or vendor implementations. | `openrua chat --tui` |
 | `openrua/web/` | bundled browser assets, supplied to the HTTP server by its caller. The browser consumes the session API. | `openrua session --name NAME web` |
 | `openrua/artifacts.py` | bounded, read-only workspace file access; the owner supplies the root and reader to the HTTP server. | file operations in the session API |
+| `openrua/terminal/` and `ui/terminal/` | Pi launcher and frontend. The launcher receives configuration/history operations as callbacks; chat consumes the same local session API. Private temporary files carry screen input/output. Prepared JS resources ship in the wheel; the optional runtime is a pip dependency. | `openrua --tui pi` |
 | `openrua/cli/` | the command line: one module per verb under `commands/` including discovery, builds, native sessions, shared chat, trials, and cleanup. `output.py` formats output; `state.py` retains compatibility imports for resource state. | `openrua` |
 | `openrua/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, login, the user directory), `report.py`. | `openrua doctor` |
 

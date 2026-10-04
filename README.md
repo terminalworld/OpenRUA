@@ -101,6 +101,12 @@ its resources while preserving files; deleting them is a separate operation.
 For development, `openrua serve` still runs the service in the foreground.
 Stopping that process ends its session, unlike closing one of its clients.
 
+For an optional **keyboard-first Pi terminal**, install
+`pip install -U 'openrua[pi]>=0.4.0'` and run `openrua --tui pi`.
+It provides keyboard configuration, `/resume`, queue management, and tool
+expansion on the same shared sessions, with no separate Node install.
+See the [Pi guide](ui/terminal/README.md) for controls and current limits.
+
 ## How it works
 
 ```text

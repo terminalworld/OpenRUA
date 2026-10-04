@@ -109,3 +109,39 @@ def test_resume_does_not_load_config_or_launch_resources(tmp_path, monkeypatch):
     assert opened == [(selected, 'old')]
     with pytest.raises(UsageError):
         start.run(args(tmp_path, '--resume', 'old', '--robot', 'panda'))
+
+
+def test_pi_uses_same_launcher_after_keyboard_setup(tmp_path, monkeypatch):
+    from openrua.terminal import launcher
+    monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+    monkeypatch.setattr('sys.stdout.isatty', lambda: True)
+    monkeypatch.setattr(launcher, 'runtime', lambda: None)
+    monkeypatch.setattr(launcher, 'entrypoint', lambda: None)
+    phases = []
+    monkeypatch.setattr(start, 'save_values', lambda home, v: phases.append('save'))
+    monkeypatch.setattr(start, 'check_values', lambda home, v: (phases.append('check') or True, 'Ready'))
+    client = object()
+    monkeypatch.setattr(start, 'launch', lambda a, v: phases.append('launch') or client)
+    def setup(values, choices, location, save, check, launch, *callbacks):
+        save(values)
+        assert check(values)[0]
+        return launch(values), values['name']
+    monkeypatch.setattr(launcher, 'setup', setup)
+    monkeypatch.setattr(start, 'open_interface', lambda a, c, name: phases.append('chat') or 0)
+    assert start.run(args(tmp_path, '--tui', 'pi', '--robot', 'panda')) == 0
+    assert phases == ['save', 'check', 'launch', 'chat']
+
+
+def test_pi_resume_never_loads_new_settings_or_launches(tmp_path, monkeypatch):
+    from openrua.terminal import launcher
+    monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+    monkeypatch.setattr('sys.stdout.isatty', lambda: True)
+    monkeypatch.setattr(launcher, 'runtime', lambda: None)
+    monkeypatch.setattr(launcher, 'entrypoint', lambda: None)
+    monkeypatch.setattr(start, 'values_for', lambda a: pytest.fail('must not configure'))
+    monkeypatch.setattr(start, 'launch', lambda *a: pytest.fail('must not launch'))
+    monkeypatch.setattr(start.history, 'open_session', lambda home, name: ('client', name))
+    opened = []
+    monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops: opened.append((client, name)) or 0)
+    assert start.run(args(tmp_path, '--tui', 'pi', '--resume', 'retained')) == 0
+    assert opened == [('client', 'retained')]
