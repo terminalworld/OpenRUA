@@ -49,4 +49,5 @@ jobs:
       - run: npm test --prefix ui/terminal
       - run: python scripts/terminal_assets.py prepare
       - run: python -m build
+      - run: python scripts/check_source_build.py
       - run: python scripts/check_dist.py --dist dist --version "$(python -c 'from openrua import __version__; print(__version__)')"

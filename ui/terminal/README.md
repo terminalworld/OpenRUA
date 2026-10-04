@@ -81,7 +81,7 @@ openrua --tui pi
 ```
 
 Frontend developers need Node 22.19 or newer for npm. Re-run asset preparation
-after changing frontend source. No npm command or download runs when a user
+after changing frontend source, including before building simulator images from the checkout. No npm command or download runs when a user
 starts OpenRUA. A source-only client can still attach to an already running
 service with `npm start --prefix ui/terminal -- --endpoint PATH`.
 

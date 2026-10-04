@@ -114,3 +114,11 @@ def test_fingerprint_follows_the_declaration_and_its_files_not_the_code(tmp_path
     assert installer.fingerprint(d, files) != one
     files_with_src = {**files, "src/openrua": tmp_path}          # code is not part of it
     assert installer.fingerprint(d, files_with_src) == installer.fingerprint(d, files)
+
+
+def test_source_image_carries_the_package_build_hook_and_its_inputs():
+    root = paths.code_root()
+    _, files = installer.render({'python': '3.12'}, 'package', root)
+    for item in ('hatch_build.py', 'scripts/terminal_assets.py', 'ui/terminal/src',
+                 'ui/terminal/package.json', 'ui/terminal/package-lock.json'):
+        assert files['src/' + item] == root / item

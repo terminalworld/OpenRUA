@@ -23,6 +23,8 @@ from __future__ import annotations
 import hashlib
 import shlex
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 from openrua import __version__
@@ -111,7 +113,9 @@ def render(install: dict, name: str, code_root: Path) -> tuple[str, dict[str, Pa
         lines.append(f"RUN bash <<'{_HEREDOC}'\n{_PRELUDE}{tail.strip(chr(10))}\n{_HEREDOC}")
     # This package last: it changes most often, and nothing above needs it.
     if (code_root / "pyproject.toml").is_file():
-        for item in ("pyproject.toml", "README.md", "LICENSE", "openrua"):
+        for item in ("pyproject.toml", "README.md", "LICENSE", "openrua", "hatch_build.py",
+                     "scripts/terminal_assets.py", "ui/terminal/src",
+                     "ui/terminal/package.json", "ui/terminal/package-lock.json"):
             if (code_root / item).exists():
                 files[f"src/{item}"] = code_root / item
         lines.append(f"COPY src {FILES}/src")
@@ -141,6 +145,11 @@ _PRELUDE = ("set -euo pipefail\n"
 def context(dockerfile: str, files: dict[str, Path], dest: Path) -> Path:
     """Lay a build context out under ``dest``: the Dockerfile and every
     referenced file or directory at its context path."""
+    if "src/hatch_build.py" in files:
+        # Check source package preparation before an expensive simulator build.
+        subprocess.run([sys.executable, str(files["src/scripts/terminal_assets.py"]), 'verify',
+                        '--source', str(files["src/ui/terminal/src"].parent),
+                        '--output', str(files["src/openrua"] / 'terminal/assets')], check=True)
     dest.mkdir(parents=True, exist_ok=True)
     (dest / "Dockerfile").write_text(dockerfile)
     for key, host in files.items():

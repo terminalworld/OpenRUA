@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import copy
 import sys
+import textwrap
 from pathlib import Path
 from typing import Any, get_args, get_origin
 
@@ -62,6 +63,17 @@ def _parser_reference(parser: argparse.ArgumentParser) -> str:
         tables.append("".join(rows))
         group._choices_actions = []
         group.metavar = group.metavar or "COMMAND"
+    if printable._mutually_exclusive_groups:
+        # Python 3.13 permits wrapping inside exclusive groups, whereas older
+        # argparse versions keep them together. Use one deterministic wrapping
+        # rule for the reference; the interactive CLI keeps its native help.
+        formatter = argparse.HelpFormatter(printable.prog, width=10000)
+        formatter.add_usage(None, printable._actions, printable._mutually_exclusive_groups)
+        usage = formatter.format_help().strip()
+        wrapped = textwrap.fill(usage, width=78,
+                                subsequent_indent=' ' * len(f'usage: {printable.prog} '),
+                                break_long_words=False, break_on_hyphens=False)
+        printable.usage = wrapped.removeprefix('usage: ')
     return f"```\n{printable.format_help().rstrip()}\n```\n" + "".join(tables)
 
 

@@ -24,8 +24,8 @@ def add_options(parser) -> None:
     group.add_argument('--model', default=None, help="model for a new session (default: the agent's configuration)")
     interface = group.add_mutually_exclusive_group()
     interface.add_argument('--gui', action='store_true', help='open the browser instead of terminal chat')
-    interface.add_argument('--tui', choices=['textual', 'pi'], default='textual',
-                           help='terminal frontend (default: textual; pi requires openrua[pi])')
+    interface.add_argument('--tui', choices=['textual', 'pi'], default='textual', metavar='UI',
+                           help='terminal frontend: textual or pi (default: textual; pi requires openrua[pi])')
     interface.add_argument('--cli', action='store_true', help='use plain text chat instead of the TUI')
     group.add_argument('--port', type=int, default=None, help='local service port for a new session (default: a free port)')
     group.add_argument('--setup', action='store_true', help='edit shared defaults in the terminal setup form')

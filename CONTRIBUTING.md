@@ -25,7 +25,7 @@ With the Python development environment activated, install `.[dev,pi]`, then run
 `npm test --prefix ui/terminal`. Its tests use the actual session service and
 controlled agent events without paid model calls.
 
-Before building a wheel or source archive, run
+Before building a wheel, source archive, or simulator image from a source checkout, run
 `python scripts/terminal_assets.py prepare` after `npm ci`. Builds verify the
 prepared resources against source and lockfile hashes. The source archive
 includes these assets and can build its wheel without npm. Editable installs
