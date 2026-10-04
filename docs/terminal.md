@@ -117,3 +117,10 @@ entry point; it does not import configuration or robot ownership modules. It has
 imports from robot backends, agent plugins, or the session execution internals.
 CLI code selects and launches this presentation module; replacing its UI toolkit
 does not require changing agent plugins or the shared session protocol.
+
+## Pi client prototype (source checkout)
+
+An opt-in [Pi terminal prototype](../ui/terminal/README.md) explores a
+keyboard-first coding-agent interface on the same session service. It uses Pi's
+editor, completion, Markdown, and keyboard selectors. See its README for setup,
+commands, tests, and current limits. It does not replace the installed default.

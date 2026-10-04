@@ -1,0 +1,11 @@
+{
+  "name": "@openrua/terminal-prototype",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=22.19.0"},
+  "scripts": {
+    "start": "node src/main.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {"@earendil-works/pi-tui": "1.0.2"}
+}

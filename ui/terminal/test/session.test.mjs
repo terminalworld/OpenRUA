@@ -1,0 +1,176 @@
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {once} from 'node:events';
+import {createInterface} from 'node:readline';
+import {fileURLToPath} from 'node:url';
+import {test} from 'node:test';
+import http from 'node:http';
+import {Client} from '../src/client.mjs';
+import {Controller} from '../src/controller.mjs';
+import {Chat} from '../src/app.mjs';
+import {Transcript} from '../src/view.mjs';
+
+async function fixture(t) {
+  const child = spawn('python', ['-u', '-m', 'ui.terminal.test.service'], {
+    cwd: fileURLToPath(new URL('../../../', import.meta.url)), stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  let errors = '';
+  child.stdin.on('error', () => {});
+  child.stderr.on('data', bytes => { errors += bytes; });
+  const lines = createInterface({input: child.stdout})[Symbol.asyncIterator]();
+  const next = async () => {
+    const value = await lines.next();
+    if (value.done) throw new Error(`Test service stopped: ${errors}`);
+    return JSON.parse(value.value);
+  };
+  t.after(async () => {
+    if (child.exitCode === null) {
+      const exited = once(child, 'exit'); child.stdin.end('{"op":"stop"}\n');
+      const timeout = setTimeout(() => child.kill('SIGKILL'), 2000);
+      await exited; clearTimeout(timeout);
+    }
+  });
+  const {endpoint} = await next();
+  return {client: await Client.fromFile(endpoint),
+    call: async data => { child.stdin.write(JSON.stringify(data) + '\n'); return next(); }};
+}
+
+async function until(client, condition) {
+  for (let i = 0; i < 200; i++) {
+    const {state} = await client.snapshot();
+    if (condition(state)) return state;
+    await new Promise(resolve => setTimeout(resolve, 10));
+  }
+  throw new Error('Session state did not converge.');
+}
+
+test('Pi client shares the real owner queue, events, interruption and reconnect', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const view = new Transcript();
+  const controller = new Controller(client, view, 'pi-client');
+  await controller.refresh();
+  const first = await controller.send('Inspect the block');
+  await call({op: 'frame', frame: {kind: 'turn_started', turn_id: first.id, data: {}}});
+  const other = new Client(client.origin, client.token);
+  t.after(() => other.close());
+  const second = await other.command('enqueue', {client_id: 'browser', request_id: 'b', text: 'Put it in the bowl'});
+  let state = await until(client, s => s.active === first.id && s.messages.length === 2);
+  assert.equal(state.messages[1].status, 'queued');
+  await call({op: 'frame', frame: {kind: 'text_delta', turn_id: first.id, data: {item_id: 'answer', text: 'Inspecting **camera**'}}});
+  await call({op: 'frame', frame: {kind: 'item', turn_id: first.id, data: {item_id: 'tool', kind: 'tool', text: 'read image', phase: 'completed', output: 'frame saved'}}});
+  for (let i = 0; i < 100 && view.tools.size === 0; i++) {
+    await controller.refresh(); await new Promise(resolve => setTimeout(resolve, 5));
+  }
+  assert.equal(view.tools.size, 1);
+  assert.match(view.render(80).join('\n'), /Inspecting/);
+  assert.doesNotMatch(view.render(80).join('\n'), /frame saved/);
+  view.toggleTool(`${first.id}:tool`);
+  assert.match(view.render(80).join('\n'), /frame saved/);
+  await client.command('interrupt', {message_id: first.id});
+  await call({op: 'frame', frame: {kind: 'turn_finished', turn_id: first.id, data: {status: 'interrupted'}}});
+  state = await until(client, s => s.paused && !s.active);
+  assert.equal(state.messages[1].status, 'queued');
+  const pause = state.pause_id;
+  client.close();
+  const reconnected = new Controller(other, new Transcript(), 'reconnected');
+  await reconnected.refresh();
+  assert.equal(reconnected.state.messages.length, 2);
+  await other.command('resume', {pause_id: pause});
+  await until(other, s => s.active === second.id);
+  const {writes} = await call({op: 'writes'});
+  assert.deepEqual(writes.filter(w => w.submit).map(w => w.submit), [first.id, second.id]);
+  assert.equal(writes.filter(w => w.interrupt).length, 1);
+});
+
+test('lost send acknowledgement retries the same ID without duplicate execution', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  t.after(() => client.close());
+  const realCommand = client.command.bind(client);
+  let loseReply = true;
+  client.command = async (...args) => {
+    const result = await realCommand(...args);
+    if (loseReply) { loseReply = false; throw new Error('Lost acknowledgement after server acceptance'); }
+    return result;
+  };
+  const controller = new Controller(client, new Transcript(), 'ack-client');
+  await assert.rejects(controller.send('Inspect once'), /Lost acknowledgement/);
+  const requestId = controller.pending.request_id;
+  await assert.rejects(controller.send('Do not duplicate'), /unconfirmed/);
+  const result = await controller.retry();
+  assert.equal(result.request_id, requestId);
+  const {state} = await client.snapshot();
+  assert.equal(state.messages.length, 1);
+  const {writes} = await call({op: 'writes'});
+  assert.equal(writes.filter(w => w.submit).length, 1);
+});
+
+test('client rejects remote endpoints and does not follow redirects', async t => {
+  for (const url of ['https://127.0.0.1:1234', 'http://example.com:1234', 'http://127.0.0.1:1234/path', 'http://user@127.0.0.1:1234']) {
+    assert.throws(() => new Client(url, 'token'), /local HTTP/);
+  }
+  let hits = 0;
+  const server = http.createServer((req, res) => {
+    hits++; res.writeHead(302, {'Location': 'http://example.com', 'Content-Type': 'application/json'}); res.end('{"error":"redirect"}');
+  }).listen(0, '127.0.0.1');
+  await once(server, 'listening'); t.after(() => server.close());
+  const client = new Client(`http://127.0.0.1:${server.address().port}`, 'test');
+  t.after(() => client.close());
+  await assert.rejects(client.snapshot(), /redirect/);
+  assert.equal(hits, 1);
+});
+
+class Terminal {
+  columns = 80;
+  rows = 24;
+  kittyProtocolActive = false;
+  output = '';
+  start(input, resize) { this.input = input; this.resize = resize; }
+  stop() { this.stopped = true; }
+  write(data) { this.output += data; }
+  async drainInput() {}
+  moveBy() {}
+  hideCursor() {}
+  showCursor() {}
+  clearLine() {}
+  clearFromCursor() {}
+  clearScreen() {}
+  setTitle() {}
+  setProgress() {}
+}
+
+test('Pi keyboard editor submits, queues, confirms interruption and detaches', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20});
+  t.after(() => chat.stop());
+  const running = chat.run();
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  assert.equal(typeof terminal.input, 'function');
+  // Exercise Pi's own input handling, not Chat.submit directly.
+  terminal.input('Inspect'); terminal.input('\r');
+  let state = await until(client, s => !!s.active);
+  const id = state.active;
+  await call({op: 'frame', frame: {kind: 'turn_started', turn_id: id, data: {}}});
+  while (chat.busy) await new Promise(r => setTimeout(r, 5));
+  terminal.input('Then wait'); terminal.input('\r');
+  await until(client, s => s.messages.length === 2);
+  while (chat.busy) await new Promise(r => setTimeout(r, 5));
+  terminal.input('\x1b');
+  assert.equal(chat.ui.hasOverlay(), true);
+  // Cancel is selected by default, so Escape alone cannot interrupt motion.
+  let writes = (await call({op: 'writes'})).writes;
+  assert.equal(writes.filter(w => w.interrupt).length, 0);
+  terminal.input('\x1b[B'); terminal.input('\r');
+  await until(client, s => s.messages[0].cancel_requested);
+  await call({op: 'frame', frame: {kind: 'turn_finished', turn_id: id, data: {status: 'interrupted'}}});
+  await until(client, s => s.paused && !s.active);
+  const observer = new Client(client.origin, client.token);
+  t.after(() => observer.close());
+  terminal.input('\x04');
+  await running;
+  state = (await observer.snapshot()).state;
+  assert.equal(state.closed, false);
+  assert.equal(state.messages[1].status, 'queued');
+  assert.equal(state.paused, true);
+  assert.equal(terminal.stopped, true);
+});
