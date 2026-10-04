@@ -12,7 +12,8 @@ OpenRUA's TUI, browser, or plain CLI as clients. They share the same agent
 conversation and queue. OpenRUA manages delivery and resources; the agent
 still decides which ROS commands and programs to execute.
 
-Shared chat is experimental and available from OpenRUA 0.1.0.
+This walkthrough uses the default TUI and background startup in OpenRUA 0.2.0.
+Shared chat remains experimental.
 Earlier releases do not include these commands. The walkthrough starts
 with Codex, for which live conversation and simulation checks have completed.
 Claude Code also has a conversation adapter; its successful model turns have
@@ -22,10 +23,10 @@ not yet been validated. See [validation scope](../docs/sessions.md#validation-sc
 
 Use a Linux execution host with Docker available, as described in
 [Install](../docs/install.md). Install the release in your Python environment,
-or use `pip install -e '.[tui]'` inside an OpenRUA source checkout:
+or use `pip install -e .` inside an OpenRUA source checkout:
 
 ```sh
-pip install -U 'openrua[tui]>=0.1.0'
+pip install -U 'openrua>=0.2.0'
 openrua serve --help
 openrua session --help
 ```
@@ -49,38 +50,35 @@ openrua doctor panda --sim robosuite --bench capbench --agent codex
 in a sandbox or build the proxy. The first build downloads the simulator and
 its dependencies; allow it to finish before starting the session.
 
-## 2. Start the execution host
-
-In terminal A:
+## 2. Start the terminal session
 
 ```sh
-openrua serve panda --sim robosuite --bench capbench \
+openrua --robot panda --sim robosuite --bench capbench \
   --task-suite capbench_lift --task-id 0 --agent codex \
   --name chat-demo --port 8765
 ```
 
-This explicitly selects a cube-lifting scene, independent of a saved benchmark
-default. It starts one interactive scene, not a benchmark campaign. The agent
-model comes from its configuration; add `--model MODEL` to select another model
-available to your account.
+The TUI shows these choices. Select **Save & start** to save the defaults,
+check the preparation, and start the background service. This selects a
+cube-lifting scene, independent of a saved benchmark default; it starts one
+interactive scene, not a benchmark campaign. Leave the model field blank for
+the configured default, or select one available to your account.
 
-Wait for the `[serve]` address and connection instructions. Keep this terminal
-running: closing a client is harmless to the session, but Ctrl-C in **serve**
-requests shutdown. If port 8765 is occupied, choose another port. If
-`chat-demo` already exists, choose a new name; previous work is never overwritten.
+Wait for chat to open. Type an instruction and press **Ctrl+S** to send; Enter
+inserts a newline. **Ctrl+P** opens the queue panel and tool output can be
+expanded. **Ctrl+Q** detaches without stopping the service. If port 8765 is
+occupied or `chat-demo` has retained work from an ended session, choose a new
+port or name. Existing records are never overwritten.
 
-## 3. Open a client and request an observation
+## 3. Reconnect or open the browser
 
-For terminal chat, open another terminal on the execution host:
+After leaving the TUI, reconnect without repeating startup options:
 
 ```sh
-openrua chat --tui --name chat-demo
+openrua --name chat-demo
 ```
 
-Type the observation request below and press **Ctrl+S** to send; Enter inserts
-a newline. **Ctrl+P** opens the queue panel, tool output can be expanded, and
-**Ctrl+Q** detaches without ending the session. See the
-[terminal guide](../docs/terminal.md) for all controls.
+Use the browser instead to inspect saved images:
 
 ### Browser and saved images
 
@@ -91,7 +89,7 @@ In a free terminal on the same execution host (detach with Ctrl+Q first if
 the TUI is occupying it):
 
 ```sh
-openrua session --name chat-demo web
+openrua --gui --name chat-demo
 ```
 
 Paste the displayed access token into the page and select **Connect**. Wait
@@ -136,8 +134,8 @@ openrua chat --name chat-demo --follow
 ```
 
 Ctrl-C here only detaches this client. Close or disconnect the browser while a
-turn runs, then reconnect with the same address and token. Progress continues
-in terminal A, and the browser reloads retained messages. Reloading the page
+turn runs, then reconnect with the same address and token. Execution continues
+in the background, and the browser reloads retained messages. Reloading the page
 requires pasting the token again. Do not resend a task just to reconnect.
 
 ## 5. Try manipulation, interruption, and queue editing
@@ -167,13 +165,13 @@ openrua session --name chat-demo status
 openrua session --name chat-demo events
 ```
 
-Terminal A exits after successful resource shutdown. Status and events remain
+The service exits after successful resource shutdown. Status and events remain
 readable from disk. With the default user directory, the workspace is at
 `~/.openrua/sandboxes/chat-demo/workspace/workspace/`; the event journal and
 native stderr log are stored in `~/.openrua/sandboxes/chat-demo/`.
 If you used `--home`, use that same directory for every client command.
 
-Starting another `serve` with the old name does not resume the ended robot.
+Starting with the old name does not resume the ended robot.
 Use a new name to keep earlier work. When you intentionally want to delete a
 stopped session and its retained materials, run `openrua clean --name chat-demo`.
 
@@ -183,7 +181,7 @@ stopped session and its retained materials, run `openrua clean --name chat-demo`
 |---|---|
 | Browser and CLI submit | Messages appear in one conversation and share queue order |
 | View an image or program | Saved file opens without sending the agent another task |
-| Close a browser or chat client | Execution continues while `serve` remains running |
+| Close a browser or chat client | Execution continues in the background service |
 | Reconnect or reload | Retained progress returns; old tasks are not resubmitted |
 | Interrupt or encounter a failure | Follow-up messages remain paused for review |
 | End the session | Owned resources stop; messages, images, and code remain |
@@ -200,8 +198,9 @@ stopped session and its retained materials, run `openrua clean --name chat-demo`
   quota is not bypassed by the shared interface.
 - **No image:** check the agent's actual output path and tool result, then
   refresh the workspace browser. The interface does not capture images by itself.
-- **Connection refused:** check that terminal A and, if used, the SSH tunnel
-  remain running. Restarting the browser cannot restart a stopped owner.
+- **Connection refused:** inspect `~/.openrua/launches/chat-demo/service.log`
+  and check the SSH tunnel if used. Restarting the browser cannot recover a
+  stopped owner or prove that a startup still in progress has failed.
 
 For CLI editing, input replies, recovery limits and API details, see the
 [shared session manual](../docs/sessions.md). To use the agent's original

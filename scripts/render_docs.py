@@ -74,11 +74,11 @@ def render_cli() -> str:
     verbs = next(a for a in ap._actions if isinstance(a, argparse._SubParsersAction))
     # The verb table is laid out here, not by argparse: its column
     # widths differ between Python versions and the page must not.
-    out = [CLI_HEAD, f"```\n{ap.format_usage().rstrip()}\n```\n\n| verb | does |\n|---|---|\n"]
-    for action in verbs._choices_actions:
-        out.append(f"| `{action.dest}` | {action.help} |\n")
-    out.append("\nGlobal options: `--home` (the user directory, default `$OPENRUA_HOME` "
-               "or `~/.openrua`), `--version`.\n")
+    out = [CLI_HEAD, _parser_reference(ap), "\n"]
+    out.append("Without a subcommand, an interactive terminal opens setup or reconnects "
+               "to the named shared session. `--gui` selects the browser, `--cli` plain chat, "
+               "and `--setup` edits the shared defaults. With no interface selected, "
+               "non-interactive invocations print help.\n")
     for name, sub in verbs.choices.items():
         out.append(f"\n## openrua {name}\n\n" + _parser_reference(sub))
         nested = [a for a in sub._actions if isinstance(a, argparse._SubParsersAction)]

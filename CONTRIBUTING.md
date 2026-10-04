@@ -4,12 +4,12 @@
 
 ```bash
 git clone https://github.com/terminalworld/OpenRUA && cd OpenRUA
-python -m venv .venv && .venv/bin/pip install -e ".[dev,tui]"
+python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest -q && .venv/bin/lint-imports
 ```
 
-Both checks must pass before a pull request. The `tui` extra includes the
-terminal interface in local tests, matching the Python CI jobs. After pushing, check the
+Both checks must pass before a pull request. The default package includes the
+terminal interface, so it is also exercised in local and CI tests. After pushing, check the
 GitHub Actions run for that commit; local checks do not replace the remote
 Python matrix. CI also runs browser tests in Chromium. To run them locally:
 
@@ -151,6 +151,5 @@ publication jobs and installation from PyPI before declaring the release done.
 Keep published tags immutable; subsequent fixes receive a new version.
 
 The local artifact check is `python scripts/check_dist.py --dist dist
---version <version>` after `python -m build`. It installs the base package and
-TUI extra outside the checkout, checks bundled resources, and mounts the TUI
+--version <version>` after `python -m build`. It installs the base package outside the checkout, checks bundled resources, and mounts the TUI
 headlessly without a robot or model call.

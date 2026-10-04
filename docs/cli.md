@@ -11,10 +11,60 @@ Generated from the parsers by `scripts/render_docs.py`; edit the
 `add_parser` of a verb, not this page.
 
 ```
-usage: openrua [-h] [--version] [--home HOME] <verb> ...
+usage: openrua [-h] [--version] [--home HOME] [--robot ROBOT] [--sim SIM]
+               [--bench BENCH] [--task-suite TASK_SUITE] [--task-id TASK_ID]
+               [--init-state INIT_STATE] [--task TASK] [--name NAME]
+               [--agent AGENT] [--workspace WORKSPACE]
+               [--ros-domain ROS_DOMAIN] [--model MODEL] [--gui | --cli]
+               [--port PORT] [--setup]
+               <verb> ...
+
+Open a robot conversation, or use ``openrua <verb> ...``.
+
+positional arguments:
+  <verb>
+
+options:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  --home HOME           the user directory: your robots/, benchmarks/,
+                        agents/, credentials/, sandboxes/ (default:
+                        $OPENRUA_HOME or ~/.openrua)
+
+start or reconnect (without a subcommand):
+  --robot ROBOT         robot name or profile path for a new session
+  --sim SIM             simulator that embodies the robot (openrua
+                        simulators); default: the benchmark's; a real robot's
+                        file needs none
+  --bench BENCH         benchmark whose world to load (openrua benchmarks);
+                        default: the saved benchmark, else the simulator's
+                        native scene
+  --task-suite TASK_SUITE
+                        scene suite (default: the profile's)
+  --task-id TASK_ID     scene index (default: the profile's)
+  --init-state INIT_STATE
+                        episode seed / init state (simulated robots)
+  --task TASK           task sentence to show the agent (real robots; a
+                        simulated robot's comes from the scene)
+  --name NAME           session handle (default: openrua)
+  --agent AGENT         agent to open (default: the config's)
+  --workspace WORKSPACE
+                        new or empty working directory, retained after
+                        shutdown (default: <home>/sandboxes/<name>/workspace)
+  --ros-domain ROS_DOMAIN
+                        ROS_DOMAIN_ID (default: the lowest one no running
+                        robot uses, so concurrent robots never share a graph;
+                        a real robot: its own domain, 0)
+  --model MODEL         model for a new session (default: the agent's
+                        configuration)
+  --gui                 open the browser instead of terminal chat
+  --cli                 use plain text chat instead of the TUI
+  --port PORT           local service port for a new session (default: a free
+                        port)
+  --setup               edit shared defaults in the terminal setup form
 ```
 
-| verb | does |
+| command | does |
 |---|---|
 | `robots` | list the bundled robots |
 | `simulators` | list the bundled simulators |
@@ -36,7 +86,7 @@ usage: openrua [-h] [--version] [--home HOME] <verb> ...
 | `clean` | explicitly delete retained session files |
 | `doctor` | check the install: docker, images, simulator, login |
 
-Global options: `--home` (the user directory, default `$OPENRUA_HOME` or `~/.openrua`), `--version`.
+Without a subcommand, an interactive terminal opens setup or reconnects to the named shared session. `--gui` selects the browser, `--cli` plain chat, and `--setup` edits the shared defaults. With no interface selected, non-interactive invocations print help.
 
 ## openrua robots
 
@@ -202,7 +252,8 @@ options:
                         simulators); default: the benchmark's; a real robot's
                         file needs none
   --bench BENCH         benchmark whose world to load (openrua benchmarks);
-                        default: the simulator's native scene
+                        default: the saved benchmark, else the simulator's
+                        native scene
   --task-suite TASK_SUITE
                         scene suite (default: the profile's)
   --task-id TASK_ID     scene index (default: the profile's)
@@ -210,8 +261,7 @@ options:
                         episode seed / init state (simulated robots)
   --task TASK           task sentence to show the agent (real robots; a
                         simulated robot's comes from the scene)
-  --name NAME           handle for this robot, for agent/down (default:
-                        openrua)
+  --name NAME           session handle (default: openrua)
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
                         new or empty working directory, retained after
@@ -247,7 +297,8 @@ options:
                         simulators); default: the benchmark's; a real robot's
                         file needs none
   --bench BENCH         benchmark whose world to load (openrua benchmarks);
-                        default: the simulator's native scene
+                        default: the saved benchmark, else the simulator's
+                        native scene
   --task-suite TASK_SUITE
                         scene suite (default: the profile's)
   --task-id TASK_ID     scene index (default: the profile's)
@@ -255,8 +306,7 @@ options:
                         episode seed / init state (simulated robots)
   --task TASK           task sentence to show the agent (real robots; a
                         simulated robot's comes from the scene)
-  --name NAME           handle for this robot, for agent/down (default:
-                        openrua)
+  --name NAME           session handle (default: openrua)
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
                         new or empty working directory, retained after
@@ -288,7 +338,8 @@ options:
                         simulators); default: the benchmark's; a real robot's
                         file needs none
   --bench BENCH         benchmark whose world to load (openrua benchmarks);
-                        default: the simulator's native scene
+                        default: the saved benchmark, else the simulator's
+                        native scene
   --task-suite TASK_SUITE
                         scene suite (default: the profile's)
   --task-id TASK_ID     scene index (default: the profile's)
@@ -296,8 +347,7 @@ options:
                         episode seed / init state (simulated robots)
   --task TASK           task sentence to show the agent (real robots; a
                         simulated robot's comes from the scene)
-  --name NAME           handle for this robot, for agent/down (default:
-                        openrua)
+  --name NAME           session handle (default: openrua)
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
                         new or empty working directory, retained after

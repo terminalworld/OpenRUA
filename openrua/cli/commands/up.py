@@ -110,7 +110,7 @@ def add_options(p) -> None:
                    "the benchmark's; a real robot's file needs none")
     p.add_argument("--bench", default=None,
                    help="benchmark whose world to load (openrua benchmarks); default: the "
-                   "simulator's native scene")
+                   "saved benchmark, else the simulator's native scene")
     p.add_argument("--task-suite", default=None, help="scene suite (default: the profile's)")
     p.add_argument("--task-id", type=int, default=None, help="scene index (default: the profile's)")
     p.add_argument("--init-state", type=int, default=0,
@@ -119,7 +119,7 @@ def add_options(p) -> None:
                    help="task sentence to show the agent (real robots; a "
                    "simulated robot's comes from the scene)")
     p.add_argument("--name", default=DEFAULT_NAME,
-                   help=f"handle for this robot, for agent/down (default: {DEFAULT_NAME})")
+                   help=f"session handle (default: {DEFAULT_NAME})")
     p.add_argument("--agent", default=None, help="agent to open (default: the config's)")
     p.add_argument("--workspace", default=None,
                    help="new or empty working directory, retained after shutdown (default: <home>/sandboxes/<name>/workspace)")

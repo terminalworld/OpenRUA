@@ -1,5 +1,5 @@
 ---
-summary: Try the chat-first terminal interface for a shared robot session
+summary: Configure, start, and use the default terminal interface for shared robot sessions
 read_when:
   - You want to chat while the agent works and manage queued instructions
   - You are evaluating the experimental terminal interface
@@ -12,26 +12,41 @@ CLI. It uses Textual's editor, layout, dialogs, and collapsible widgets;
 OpenRUA's existing service still owns the robot, native agent, and message queue.
 It does not implement a new agent loop.
 
-## Try it
+## Start and configure
 
-Install OpenRUA 0.1.0 or later with the optional terminal interface:
-
-```sh
-pip install -U 'openrua[tui]>=0.1.0'
-```
-
-Follow steps 1 and 2 of [Your first shared robot session](../examples/shared-session.md)
-to prepare the images and login, then start the `chat-demo` service. In a client
-terminal on the same execution host, open the TUI:
+Install OpenRUA 0.2.0 or later, then run it:
 
 ```sh
-openrua chat --tui --name chat-demo
+pip install -U 'openrua>=0.2.0'
+openrua
 ```
 
-This interface attaches to an existing service. It does not yet make bare
-`openrua` launch a session or start a background service automatically.
-`openrua run` retains the native agent terminal, and `openrua chat` without
-`--tui` retains the plain text interface.
+If the named session is running, this reconnects to it. Otherwise, a setup form
+collects the robot, simulator, optional benchmark, coding agent, model, and
+session name. Use Tab to complete available names or enter a profile path.
+**Save & check** saves shared defaults and reports missing images or login;
+**Save & start** also starts the session once the checks pass. Neither button
+automatically builds images or logs in. Check/start operations disable editing
+until their result is known.
+
+Run `openrua --setup` to reopen the form later. You can also use
+`openrua config set` or edit `config.yaml` directly. The TUI stores no separate
+copy of these defaults. Changing the selected agent resets the model field to
+that agent's saved model, rather than carrying the previous agent's model over.
+
+The background service continues after leaving the TUI. Use `openrua --name NAME`
+to reconnect. An ended session keeps its records; choose a new name to start a
+new one. Startup failures appear in the form and are retained in
+`~/.openrua/launches/NAME/service.log`. A startup timeout may leave an owner still
+initializing; inspect that log and reconnect when ready rather than duplicating
+the task or deleting its files.
+
+The existing `openrua chat --tui --name NAME` attaches to a service explicitly.
+For a foreground service with visible execution logs, use `openrua serve`.
+`openrua run` continues to open the native agent terminal.
+
+For a complete simulated example, follow
+[Your first shared robot session](../examples/shared-session.md).
 
 ## Work in the conversation
 
@@ -47,7 +62,7 @@ This interface attaches to an existing service. It does not yet make bare
 - **Answer** opens pending questions from the agent. Answers go to that question,
   not into the task queue. Secret inputs are masked and their answers are not
   added to the event journal.
-- **Ctrl+Q** detaches. The session continues in its execution terminal.
+- **Ctrl+Q** detaches. The session continues in its service process.
   **End session** asks for confirmation before stopping resources, retaining
   records and the workspace.
 
@@ -64,7 +79,7 @@ from a disconnected client: reopening the TUI does not restart the agent.
 
 ## Current scope
 
-Agent and model selection still happens when starting `serve`. Changing them
+Agent and model selection still happens when starting a session. Changing them
 inside a running conversation, a workspace file panel, terminal image previews,
 and saved layout preferences are not implemented in this release. The browser
 can display saved workspace images. Use a terminal at least 60 columns wide and
@@ -85,7 +100,9 @@ pytest -q tests/tui
 lint-imports
 ```
 
-`openrua/tui/` depends on `openrua.sessions.client` only within OpenRUA. It has no
+`openrua/tui/` depends on `openrua.sessions.client` only within OpenRUA.
+The setup form receives explicit save, check, and launch callbacks from the
+entry point; it does not import configuration or robot ownership modules. It has no
 imports from robot backends, agent plugins, or the session execution internals.
 CLI code selects and launches this presentation module; replacing its UI toolkit
 does not require changing agent plugins or the shared session protocol.

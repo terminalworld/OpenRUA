@@ -1,10 +1,10 @@
-"""The command line: ``openrua <verb> ...``.
+"""Open a robot conversation, or use ``openrua <verb> ...``.
 
     openrua robots | simulators | benchmarks | agents   what is available (bundled + yours)
     openrua build [robot|sandbox|proxy]    the three images (or one of them)
     openrua config set --robot panda --sim robosuite   your defaults
     openrua serve <robot> --name shared    a robot and shared conversation service
-    openrua chat --tui --name shared      attach the optional terminal UI
+    openrua chat --tui --name shared      attach the terminal UI
     openrua session --name shared web     open the browser client
     openrua session --name shared end     end and retain files
     openrua run "pick up the red cube"     a robot up, the agent on it, off after
@@ -32,6 +32,7 @@ import sys
 
 from openrua import __version__
 from openrua.cli.commands import COMMANDS
+from openrua.cli.commands import start
 from openrua.config import paths
 from openrua.errors import OpenRUAError
 
@@ -42,6 +43,7 @@ def build_parser(default_home: str | None = None) -> argparse.ArgumentParser:
     ap.add_argument("--home", default=default_home, type=paths.home,
                     help="the user directory: your robots/, benchmarks/, agents/, "
                     "credentials/, sandboxes/ (default: $OPENRUA_HOME or ~/.openrua)")
+    start.add_options(ap)
     sub = ap.add_subparsers(dest="verb", metavar="<verb>")
     for command in COMMANDS:
         command.add_parser(sub)
@@ -53,13 +55,13 @@ def main(argv: list[str] | None = None) -> int:
     # default; from here on the user directory travels as a parameter.
     ap = build_parser(default_home=os.environ.get("OPENRUA_HOME") or None)
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)
-    if not args.verb:
+    if not args.verb and not (sys.stdin.isatty() and sys.stdout.isatty()) and not (args.gui or args.cli or args.setup):
         ap.print_help()
         return 0
     if args.home is None:
         args.home = paths.home()
     try:
-        return args.fn(args) or 0
+        return (args.fn(args) if args.verb else start.run(args)) or 0
     except OpenRUAError as e:
         # What is wrong, how to fix it, and a sysexits code scripts can branch on.
         print(f"error: {e.message}", file=sys.stderr)

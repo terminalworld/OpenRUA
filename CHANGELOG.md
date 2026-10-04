@@ -1,5 +1,39 @@
 # Changelog
 
+## 0.2.0
+
+### Added
+
+- `openrua` opens a setup form for a new shared session or reconnects to the
+  named running session. `--gui` and `--cli` select browser or plain text chat.
+- `--setup` edits the same validated `config.yaml` used by `config set` and
+  direct file edits. The form reports missing preparation without automatically
+  building images, logging in, or submitting robot tasks.
+- Background startup reuses the existing `serve` command, waits for its API,
+  retains startup logs, and prevents competing startup attempts.
+
+### Changed
+
+- TUI dependencies are included in the default installation. The `[tui]` extra
+  remains accepted for compatibility. Administrative commands still import the
+  interface lazily.
+- Configuration updates preserve unrelated fields and use a lock and atomic
+  replacement; `config set --bench null` clears the benchmark default.
+- README, installation, shared-session walkthroughs, command reference, and
+  architecture documentation describe the same startup and configuration paths.
+
+### Upgrade and scope
+
+Install with `pip install -U 'openrua==0.2.0'`. Existing native-terminal and
+benchmark commands keep their behavior. Closing a shared client leaves its
+service running; explicitly end it to stop resources. Retained names are not
+reused automatically, and startup flags cannot reconfigure a running session.
+
+Tests cover shared configuration, headless setup interaction, real child-process
+startup and API readiness, duplicate startup, and retained failure output.
+These additions do not establish physical-hardware reliability or execution-owner
+crash recovery. In-session agent/model switching remains outside this release.
+
 ## 0.1.0
 
 This release adds shared robot conversations and an optional terminal UI while

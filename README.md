@@ -37,65 +37,54 @@ queue, and revisit saved observations without starting a new robot each turn.
 
 ## Quick start
 
-Use a Linux host with Docker or supported Podman setup. Install OpenRUA with
-the optional terminal UI, then configure your selected agent's native login
-as described in [Install](docs/install.md#logging-an-agent-in):
+Use a Linux host with Docker or supported Podman setup. The terminal UI is
+included in the default installation from version 0.2.0:
 
 ```sh
-pip install -U 'openrua[tui]>=0.1.0'
+pip install -U 'openrua>=0.2.0'
+openrua
 ```
 
-This example selects Codex and a simulated Panda cube-lifting scene explicitly.
-Build the simulator, sandbox, and proxy images, then check the setup:
+For a new session, the TUI guides you through selecting a robot, simulator,
+optional benchmark, and coding agent. Names support completion; you can also
+enter paths to your own profiles. **Save & check** writes your choices to
+`~/.openrua/config.yaml` and shows the preparation still needed. It does not
+build images or log in automatically. Follow the commands shown by the check
+and the [installation guide](docs/install.md), then choose **Save & start**.
 
-```sh
-openrua build --bench capbench
-openrua build sandbox --distro humble --agent codex
-openrua build proxy --agent codex
-openrua doctor panda --sim robosuite --bench capbench --agent codex
-```
-
-In an execution terminal, start the shared session:
-
-```sh
-openrua serve panda --sim robosuite --bench capbench \
-  --task-suite capbench_lift --task-id 0 --agent codex --name chat-demo
-```
-
-Keep that terminal running. In another terminal on the same host, open the TUI:
-
-```sh
-openrua chat --tui --name chat-demo
-```
-
+OpenRUA starts the existing session service in the background and opens chat.
 Type an instruction and press **Ctrl+S**, for example:
 
 > Inspect the workspace documentation and describe the scene without moving the robot.
 
-Continue the conversation with a manipulation task. **Ctrl+Q** leaves the TUI
-while the session keeps running. To use the browser instead, run
-`openrua session --name chat-demo web`; it also displays saved workspace images.
-When finished, choose **End session** or run
-`openrua session --name chat-demo end`. Records and workspace files
-are retained. Use a new name for your next session.
+**Ctrl+Q** leaves the interface while the session keeps running. Run `openrua`
+again to reconnect, or `openrua --gui` to view the same conversation and saved
+workspace images in a browser. To edit defaults later, use `openrua --setup`,
+`openrua config set`, or edit the same `config.yaml`; changes apply to new
+sessions, not the one already running.
 
-The [full walkthrough](examples/shared-session.md) covers expected results,
-queue operations, image inspection, SSH access, and shutdown.
-Shared chat is experimental in v0.1.0: the TUI currently connects to a separately
-started service; bare `openrua` displays help. Codex has live shared-session
-checks; successful Claude Code turns through the shared adapter still need
-validation. See [validation scope](docs/sessions.md#validation-scope).
+Choose **End session** when finished. Records and workspace files are retained;
+use a new `--name` for your next session. The
+[full walkthrough](examples/shared-session.md) gives a concrete simulated Panda
+example with image preparation, queue operations, SSH access, and shutdown.
+
+Shared chat remains experimental. Codex has live shared-session checks;
+successful Claude Code turns through the shared adapter still need validation.
+See [validation scope](docs/sessions.md#validation-scope).
 
 ## Choose your interface
 
 | Interface | Entry | When you leave |
 |---|---|---|
-| OpenRUA TUI | `openrua chat --tui --name chat-demo` | Ctrl+Q detaches; the shared session continues |
-| Browser | `openrua session --name chat-demo web` | Closing the page leaves the shared session running |
-| Plain CLI | `openrua chat --name chat-demo` | Leaving the client keeps the shared session running |
+| OpenRUA TUI | `openrua --name chat-demo` | Ctrl+Q detaches; the shared session continues |
+| Browser | `openrua --gui --name chat-demo` | Closing the page leaves the shared session running |
+| Plain CLI | `openrua --cli --name chat-demo` | Leaving the client keeps the shared session running |
 | Native agent terminal | `openrua run panda --sim robosuite --bench capbench --agent codex --name native-demo` | Exiting the agent stops the resources owned by `run` |
 
-The first three connect to the same `serve` session and share one queue.
+The first three start or reconnect to a shared service and use one queue.
+To reconnect to a running session, pass only its name and interface choice;
+startup options cannot change an active conversation. Existing `chat` and
+`session` commands remain available for explicit client operations.
 Native `run` starts a separate session using the agent's original TUI; it cannot
 yet take over that shared conversation. For a native terminal with a robot that
 stays up between agent visits, use `up`, `agent`, and `down` as described in
@@ -104,7 +93,8 @@ stays up between agent visits, use `up`, `agent`, and `down` as described in
 In shared chat, new instructions queue behind the active turn. Interrupting
 pauses the queue for review; **Resume** continues it. Ending the session stops
 its resources while preserving files; deleting them is a separate operation.
-Stopping `serve` ends the session, unlike closing one of its clients.
+For development, `openrua serve` still runs the service in the foreground.
+Stopping that process ends its session, unlike closing one of its clients.
 
 ## How it works
 

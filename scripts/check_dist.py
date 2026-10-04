@@ -33,16 +33,21 @@ for path in ('sandbox/workspace/README.md', 'configs/agents/codex.yaml',
              'configs/agents/claude-code.yaml', 'tui/chat.tcss'):
     assert root.joinpath(path).read_bytes(), path
 """)
-        run("-m", "pip", "install", f"{wheels[0]}[tui]")
         run("-c", """
 import asyncio
 from openrua.tui.app import ChatApp
+from openrua.tui.setup import SetupApp
 from openrua.sessions.client import Client
 async def check():
     app = ChatApp(Client('http://127.0.0.1:1', 'unused', timeout=0.1))
     async with app.run_test() as pilot:
         await pilot.pause()
         assert app.query_one('#message')
+    fields = dict(robot='', sim='', bench='', agent='', model='', name='install-check')
+    setup = SetupApp(fields, {}, 'config.yaml', lambda v: None, lambda v: (False, 'Not prepared'), lambda v: None)
+    async with setup.run_test() as pilot:
+        await pilot.pause()
+        assert setup.query_one('#robot') and setup.query_one('#start')
 asyncio.run(check())
 """)
 

@@ -16,7 +16,7 @@ Three entry paths share these foundations:
 
 | Path | Composition | Lifetime |
 |---|---|---|
-| Shared chat | `serve` → `runner.managed` → live resources, native conversation, session execution; TUI, browser, and plain CLI use its HTTP API | The service owns execution; closing a client only detaches |
+| Shared chat | default startup → background `serve` → `runner.managed` → live resources, native conversation, session execution; TUI, browser, and plain CLI use its HTTP API | The service owns execution; closing a client only detaches |
 | Native terminal | `run`, or `up` then `agent`, use `runner.live` and the selected agent's native terminal | `run` ends its resources when the agent exits; `up` retains them until shutdown |
 | Benchmark | `bench` → trial runner → fresh workspace, operator, preflight, scoring, records | The trial protocol controls budgets and teardown |
 
@@ -34,7 +34,7 @@ Its queue orders user instructions, not individual robot movements.
 | `openrua/runner/` | composition and ownership: `live.py` opens robot resources, `live_state.py` retains their state, `managed.py` adds a native conversation and shared execution owner. Trial execution stays separate: `main.py` (`openrua bench`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua serve`, `run`, `up`, `bench` |
 | `openrua/demo/` | a video from a recorded trial's files (`frames/`, `ops.jsonl`): `compose.py` renders the terminal beside the cameras. Reads files, imports `errors` only; its libraries are the `demo` extra. | `openrua demo` |
 | `openrua/sessions/` | shared user-message queue, durable events and native connection ownership through injected storage/transport contracts; independent of robot task planning. See [sessions.md](sessions.md). | `serve`, `chat`, `session` (experimental) |
-| `openrua/tui/` | Textual chat client, expandable tool output and queue controls. Imports the common session client, not execution or vendor implementations. | `openrua chat --tui` |
+| `openrua/tui/` | setup form with injected configuration/readiness/launch callbacks; Textual chat client, expandable tool output and queue controls. Imports the common session client, not execution or vendor implementations. | `openrua chat --tui` |
 | `openrua/web/` | bundled browser assets, supplied to the HTTP server by its caller. The browser consumes the session API. | `openrua session --name NAME web` |
 | `openrua/artifacts.py` | bounded, read-only workspace file access; the owner supplies the root and reader to the HTTP server. | file operations in the session API |
 | `openrua/cli/` | the command line: one module per verb under `commands/` including discovery, builds, native sessions, shared chat, trials, and cleanup. `output.py` formats output; `state.py` retains compatibility imports for resource state. | `openrua` |
@@ -149,7 +149,7 @@ save resource facts after startup also triggers resource cleanup.
 
 `runner.managed` combines a live robot with the plugin's native conversation
 and the session execution owner. The `serve` CLI supplies a local HTTP front
-end; `chat`, its optional TUI, `session`, and the browser consume that API.
+end; `chat`, the TUI, `session`, and the browser consume that API.
 Browser assets live in `openrua.web`, a leaf supplied explicitly to the HTTP
 adapter; session coordination never imports it. HTTP connection loss does not close
 the execution owner. `down` routes managed sessions through their owner, and
@@ -159,5 +159,9 @@ Agent-specific frames and launch commands remain in the existing agent plugins.
 For queue semantics, native transport details, and validated failure cases,
 see [Shared robot sessions](sessions.md). Client reconnection is supported;
 reopening a client does not recover a crashed execution service or restart a
-stopped native agent. `serve` is currently a foreground host, separate from
-its connected clients.
+stopped native agent. `serve` remains a foreground host for debugging. The default startup entry
+launches that same command in a detached process using `runner.service`, then
+checks its session API before opening a client. Failed or uncertain startup
+does not automatically replay work. `config.settings` supplies a validated,
+atomic update shared by CLI and TUI configuration; direct file edits remain
+supported and are read at subsequent starts.

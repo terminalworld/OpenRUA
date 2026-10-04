@@ -1,4 +1,4 @@
-"""The optional terminal client must not change core CLI dependency requirements."""
+"""Administrative commands stay usable even when the default TUI installation is broken."""
 
 import subprocess
 import sys
@@ -11,7 +11,7 @@ def test_tui_rejects_plain_chat_flags_before_connecting(capsys):
     assert "cannot be combined" in capsys.readouterr().err
 
 
-def test_tui_dependency_is_optional_and_has_an_actionable_install_error():
+def test_missing_tui_dependency_has_an_actionable_repair_error():
     code = '''
 import builtins
 original = builtins.__import__
@@ -29,5 +29,5 @@ assert main(["--version"]) is None
     result = subprocess.run([sys.executable, "-c", code.replace('assert main(["--version"]) is None',
                             'raise SystemExit(main(["chat", "--tui"]))')], capture_output=True, text=True)
     assert result.returncode == 69
-    assert "pip install -U 'openrua[tui]>=0.1.0'" in result.stderr
+    assert "pip install -U openrua" in result.stderr
     assert "Traceback" not in result.stderr

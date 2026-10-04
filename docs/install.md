@@ -19,28 +19,22 @@ read_when:
 ## The package
 
 ```bash
-pip install openrua
+pip install -U 'openrua>=0.2.0'
 openrua --version
 ```
 
-The command is `openrua`; `openrua --help` lists the verbs and
-[cli.md](cli.md) has every flag. Rendering recorded demo videos needs the
-`demo` extra: `pip install 'openrua[demo]'`.
+The default install includes the terminal UI. Run `openrua` to configure and
+start a shared session, or reconnect to the default running session. Use
+`openrua --gui` for the browser and `openrua --cli` for plain text chat.
+The first-run form saves to the same file as `openrua config set`.
+See [Your first shared robot session](../examples/shared-session.md) for a full
+example, or [First task in simulation](../examples/first-task.md) for the
+agent's original terminal.
 
-Choose the [shared-session walkthrough](../examples/shared-session.md) for
-OpenRUA's TUI or browser, or [First task in simulation](../examples/first-task.md)
-for the agent's original terminal. The shared TUI is an optional client;
-installing it does not change bare `openrua` from displaying help.
-
-Shared CLI/browser sessions are included from version 0.1.0. Upgrade an older
-installation, optionally including the terminal UI:
-
-```bash
-pip install -U 'openrua[tui]>=0.1.0'
-```
-
-Then follow [Your first shared robot session](../examples/shared-session.md)
-for the full build, login, connection and shutdown sequence.
+`openrua --help` lists commands and startup options; [cli.md](cli.md) has every
+flag. The old `[tui]` extra remains accepted for compatibility but is no longer
+required. Rendering recorded demo videos still needs the `demo` extra:
+`pip install 'openrua[demo]'`.
 
 ## The images
 
@@ -107,6 +101,18 @@ token is scrubbed from the trial record like every other secret.
 
 ## Your defaults
 
+Use `openrua --setup` to edit defaults through the TUI, `openrua config set`
+to update selected fields from a shell, or edit `~/.openrua/config.yaml`
+directly. These are three interfaces to one file. For example:
+
+```sh
+openrua config set --robot panda --sim robosuite --agent codex
+openrua config show
+```
+
+`config set --bench null` clears a saved benchmark selection. Changing defaults
+affects subsequent starts; it does not reconfigure a running conversation.
+
 `~/.openrua/config.yaml` holds what is true on this machine and nowhere
 else: the robot, simulator, benchmark and agent a command uses when it
 names none; under `agents.<name>`, what this machine knows about each
@@ -128,7 +134,13 @@ agent's facts and default model. The keys are listed in
 `sandboxes/<name>/`. Ending `run`, interrupting `up`, or calling `down`
 stops the session's resources but retains its workspace, native agent
 profile (including any conversation records written by the agent), logs
-and state. This does not resume a stopped robot or agent conversation.
+and state. This does not resume a stopped robot or agent conversation. A shared service
+started by `openrua` runs independently of the client: use **End session**, or
+`openrua session --name NAME end`, to stop it explicitly.
+
+Startup output is retained in `launches/<name>/service.log`, including errors
+before a session becomes ready. These startup diagnostics are separate from
+the workspace and native agent logs under `sandboxes/<name>/`.
 
 Start a new session with a new `--name` to keep the earlier one. An
 existing session directory or nonempty `--workspace` is never overwritten.

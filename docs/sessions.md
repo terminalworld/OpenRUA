@@ -11,7 +11,8 @@ For a first run, follow [Your first shared robot session](../examples/shared-ses
 It covers preparation, TUI, browser and CLI input, expected results, SSH forwarding,
 and shutdown. The commands below are the operation reference; implementation
 boundaries and validation evidence follow the user-facing instructions.
-These experimental features are included in OpenRUA 0.1.0 and later.
+Shared sessions are included from OpenRUA 0.1.0; default TUI startup and
+background hosting are included from 0.2.0.
 Upgrade older installations before following this guide.
 
 The `openrua.sessions` package coordinates user messages and native agent
@@ -23,6 +24,14 @@ For a chat-first terminal with streamed replies, collapsible tools and an
 editable queue, see [Terminal chat](terminal.md). It uses this same service.
 
 ## Start and connect
+
+For ordinary use, `openrua` opens setup or reconnects to the named session;
+`openrua --gui` selects the browser and `openrua --cli` selects plain chat.
+Preparation is still explicit: the setup form reports missing images and login
+without building or authenticating for you. The service runs in the background,
+with startup output in `~/.openrua/launches/<name>/service.log`.
+
+The following foreground form is useful for development and debugging:
 
 Use the same robot, simulator, benchmark and agent selections as `up`. The
 sandbox images and native agent login must already be configured; see

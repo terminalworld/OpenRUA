@@ -15,10 +15,9 @@ from __future__ import annotations
 
 import json
 
-import yaml
 
 from openrua import config
-from openrua.config import paths
+from openrua.config import paths, settings
 from openrua.errors import UsageError
 
 # flag -> key path in the defaults file; an agent's facts go under
@@ -42,22 +41,13 @@ def run(args) -> int:
     if not names and not facts:
         raise UsageError("config set needs at least one flag",
                          hint="openrua config set --robot panda --sim robosuite --agent <name>")
-    config.load_user_config(path)                       # refuses the old agent: shape
-    data = (config.load_yaml(path) if path.is_file() else {}) or {}
-    written = []
-    for flag, value in names.items():
-        data[NAMES[flag]] = value
-        written.append((NAMES[flag], value))
-    if facts:
-        agent = (names.get("agent") or data.get("agent")
-                 or config.load_user_config(paths.package_config_path()).agent)
-        node = data.setdefault("agents", {}).setdefault(agent, {})
-        for flag, value in facts.items():
-            node[FACTS[flag]] = value
-            written.append((f"agents.{agent}.{FACTS[flag]}", value))
-    config.validate(config.UserConfig, data, path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump(data, sort_keys=False))
+    updates = {NAMES[flag]: None if value == "null" else value for flag, value in names.items()}
+    agent_facts = {FACTS[flag]: None if value == "null" else value for flag, value in facts.items()}
+    data = settings.update(args.home, updates, agent_facts)
+    written = list(updates.items())
+    if agent_facts:
+        agent = data.get("agent") or config.load_user_config(paths.package_config_path()).agent
+        written.extend((f"agents.{agent}.{key}", value) for key, value in agent_facts.items())
     for key, value in written:
         print(f"{key}: {value}")
     return 0

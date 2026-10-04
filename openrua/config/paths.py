@@ -155,3 +155,9 @@ def entry_point(kind: str, spec: str, declared_in: Path) -> str:
         return str(p.resolve())
     return f"{ENTRY_POINT_PACKAGES[kind]}.{spec}"
 
+
+
+def launch_dir(name: str, home_dir: Path | None = None) -> Path:
+    """Retained startup log and launch lock for one validated session name."""
+    validated = sandbox_dir(name, home_dir).name
+    return home(home_dir) / "launches" / validated
