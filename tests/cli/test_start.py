@@ -48,10 +48,10 @@ def test_existing_session_reconnects_without_reading_changed_defaults(tmp_path, 
     monkeypatch.setattr(start.service, 'connect', lambda path: client)
     opened = []
     monkeypatch.setattr(start, 'open_interface', lambda args, c, name: opened.append((c, name)) or 0)
-    assert start.run(args(tmp_path)) == 0
+    assert start.run(args(tmp_path, '--name', 'openrua')) == 0
     assert opened == [(client, 'openrua')]
     with pytest.raises(UsageError, match='startup options'):
-        start.run(args(tmp_path, '--agent', 'codex'))
+        start.run(args(tmp_path, '--name', 'openrua', '--agent', 'codex'))
 
 
 def test_retained_directory_is_not_overwritten(tmp_path, monkeypatch):
@@ -73,8 +73,8 @@ def test_launch_passes_explicit_options_without_a_shell(tmp_path, monkeypatch):
     assert argv[1:6] == ['-m', 'openrua', '--home', str(tmp_path), 'serve']
     child = build_parser().parse_args(argv[3:])
     assert (child.agent, child.task_suite, child.task_id) == ('codex', 'capbench_lift', 0)
-    assert endpoint.parent == tmp_path / 'sandboxes/openrua'
-    assert log.parent == lock.parent == tmp_path / 'launches/openrua'
+    assert endpoint.parent == tmp_path / 'sandboxes' / values['name']
+    assert log.parent == lock.parent == tmp_path / 'launches' / values['name']
 
 
 def test_setup_preview_preserves_benchmark_configuration_precedence(tmp_path):
@@ -84,3 +84,28 @@ def test_setup_preview_preserves_benchmark_configuration_precedence(tmp_path):
     assert values['bench'] == 'robocasa365'
     explicit, _ = start.values_for(args(tmp_path, '--agent', 'codex', '--model', 'chosen'))
     assert explicit['agent'] == 'codex' and explicit['model'] == 'chosen'
+
+
+def test_unnamed_starts_create_distinct_ids_without_reconnecting_old_default(tmp_path, monkeypatch):
+    (tmp_path / 'sandboxes/openrua').mkdir(parents=True)
+    (tmp_path / 'sandboxes/openrua/endpoint.json').write_text('{}')
+    monkeypatch.setattr(start.service, 'connect', lambda path: pytest.fail('must not attach implicitly'))
+    monkeypatch.setattr(start, 'check_values', lambda *a: (True, 'Ready'))
+    launched = []
+    monkeypatch.setattr(start, 'launch', lambda a, v: launched.append(v['name']) or object())
+    monkeypatch.setattr(start, 'open_interface', lambda *a: 0)
+    for _ in range(2):
+        start.run(args(tmp_path, '--cli', '--robot', 'panda'))
+    assert len(set(launched)) == 2 and all(len(name) == 32 for name in launched)
+
+
+def test_resume_does_not_load_config_or_launch_resources(tmp_path, monkeypatch):
+    (tmp_path / 'config.yaml').write_text('broken: [')
+    selected = object()
+    monkeypatch.setattr(start.history, 'open_session', lambda home, name: (selected, name))
+    opened = []
+    monkeypatch.setattr(start, 'open_interface', lambda a, c, n: opened.append((c, n)) or 0)
+    assert start.run(args(tmp_path, '--resume', 'old')) == 0
+    assert opened == [(selected, 'old')]
+    with pytest.raises(UsageError):
+        start.run(args(tmp_path, '--resume', 'old', '--robot', 'panda'))

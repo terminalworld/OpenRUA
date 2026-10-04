@@ -10,7 +10,7 @@ from openrua import agents, config, doctor
 from openrua.cli.commands import chat, session, up
 from openrua.config import paths, settings
 from openrua.errors import NotFound, UnavailableError, UsageError
-from openrua.runner import service
+from openrua.runner import service, history
 
 # Command arguments belong here; the service launcher only sees explicit argv.
 SELECTION = ('robot', 'sim', 'bench', 'agent', 'model')
@@ -20,14 +20,16 @@ RESOURCE_OPTIONS = ('task_suite', 'task_id', 'init_state', 'task', 'workspace', 
 def add_options(parser) -> None:
     group = parser.add_argument_group('start or reconnect (without a subcommand)')
     group.add_argument('--robot', default=None, help='robot name or profile path for a new session')
-    up.add_options(group)
+    up.add_options(group, default_name=None)
     group.add_argument('--model', default=None, help="model for a new session (default: the agent's configuration)")
     interface = group.add_mutually_exclusive_group()
     interface.add_argument('--gui', action='store_true', help='open the browser instead of terminal chat')
     interface.add_argument('--cli', action='store_true', help='use plain text chat instead of the TUI')
     group.add_argument('--port', type=int, default=None, help='local service port for a new session (default: a free port)')
     group.add_argument('--setup', action='store_true', help='edit shared defaults in the terminal setup form')
-    parser.set_defaults(init_state=None)
+    group.add_argument('--resume', nargs='?', const='', default=None, metavar='ID',
+                       help='choose a previous conversation, or reconnect by its ID/name')
+    parser.set_defaults(init_state=None, name=None)
 
 
 def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
@@ -41,7 +43,7 @@ def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
         'bench': args.bench or user.benchmark or package.benchmark or '',
         'agent': chosen or '',
         'model': args.model or models.get(chosen, ''),
-        'name': args.name,
+        'name': args.name or history.new_id(),
     }
     try:
         resolved = config.compose(args.robot, args.sim, args.bench, args.home, agent=args.agent)
@@ -97,19 +99,55 @@ def launch(args, values: dict[str, str]):
     return service.start(argv, directory / 'endpoint.json', logs / 'service.log', logs / 'start.lock')
 
 
+def open_terminal(home, client, name: str) -> int:
+    from openrua.tui.app import ChatApp
+    while True:
+        client.timeout = 5
+        selected = ChatApp(client, name=name, list_sessions=lambda: history.entries(home),
+                           open_session=lambda name: history.open_session(home, name)).run()
+        if selected is None:
+            return 0
+        client, name = selected
+
+
+def choose_history(home):
+    from textual.app import App
+    from openrua.tui.history import History
+    class Picker(App):
+        def on_mount(self):
+            self.push_screen(History(lambda: history.entries(home),
+                                     lambda name: history.open_session(home, name)), self.exit)
+    return Picker().run()
+
+
 def open_interface(args, client, name: str) -> int:
-    if args.gui:
-        return session.run(argparse.Namespace(home=args.home, name=name, action='web', no_open=False))
-    if args.cli:
+    if args.gui or args.cli:
+        if getattr(client, 'read_only', False):
+            raise UsageError('this conversation is available as read-only history',
+                             hint=f'openrua --resume {name} opens its retained transcript in the TUI')
+        if args.gui:
+            return session.run(argparse.Namespace(home=args.home, name=name, action='web', no_open=False))
         return chat.run(argparse.Namespace(home=args.home, name=name, tui=False,
                                            message=None, follow=False, after=0))
-    from openrua.tui.app import ChatApp
-    client.timeout = 5
-    ChatApp(client, name=name).run()
-    return 0
+    return open_terminal(args.home, client, name)
 
 
 def run(args) -> int:
+    if args.resume is not None:
+        if args.name is not None or args.setup or any(getattr(args, key) is not None for key in SELECTION + RESOURCE_OPTIONS):
+            raise UsageError('--resume cannot be combined with new-session settings', hint='resume by ID, or start a new session separately')
+        if args.resume:
+            try:
+                selected = history.open_session(args.home, args.resume)
+            except (OSError, RuntimeError, ValueError) as exc:
+                raise UnavailableError(str(exc), hint='use openrua --resume to find retained conversations') from exc
+        else:
+            if not sys.stdin.isatty() or not sys.stdout.isatty():
+                raise UsageError('history selection needs an interactive terminal', hint='use openrua --resume ID to select a conversation explicitly')
+            selected = choose_history(args.home)
+        return open_interface(args, *selected) if selected else 0
+    if args.name is None:
+        args.name = history.new_id()
     endpoint = paths.sandbox_dir(args.name, args.home) / 'endpoint.json'
     overrides = any(getattr(args, key) is not None for key in SELECTION + RESOURCE_OPTIONS)
     if endpoint.exists() and not args.setup:
@@ -132,7 +170,9 @@ def run(args) -> int:
         app = SetupApp(values, choices, str(paths.config_path(args.home)),
                        lambda values: save_values(args.home, values),
                        lambda values: check_values(args.home, values),
-                       lambda values: launch(args, values), agent_models=models)
+                       lambda values: launch(args, values), agent_models=models,
+                       list_sessions=lambda: history.entries(args.home),
+                       open_session=lambda name: history.open_session(args.home, name))
         result = app.run()
         if result is None:
             return 0

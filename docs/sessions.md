@@ -12,7 +12,8 @@ It covers preparation, TUI, browser and CLI input, expected results, SSH forward
 and shutdown. The commands below are the operation reference; implementation
 boundaries and validation evidence follow the user-facing instructions.
 Shared sessions are included from OpenRUA 0.1.0; default TUI startup and
-background hosting are included from 0.2.0.
+background hosting are included from 0.2.0. Automatic IDs and TUI `/resume`
+history selection are included from 0.3.0.
 Upgrade older installations before following this guide.
 
 The `openrua.sessions` package coordinates user messages and native agent
@@ -25,7 +26,9 @@ editable queue, see [Terminal chat](terminal.md). It uses this same service.
 
 ## Start and connect
 
-For ordinary use, `openrua` opens setup or reconnects to the named session;
+For ordinary use, `openrua` creates a new session with an automatic ID;
+`openrua --resume` finds a previous conversation and `--name NAME` explicitly
+starts or reconnects to a named session;
 `openrua --gui` selects the browser and `openrua --cli` selects plain chat.
 Preparation is still explicit: the setup form reports missing images and login
 without building or authenticating for you. The service runs in the background,

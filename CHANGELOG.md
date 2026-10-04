@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.3.0
+
+### Added
+
+- Unnamed product launches create unique session IDs automatically. History
+  titles use the first user instruction, without an extra model call.
+- `/resume` searches history from both the setup form and chat. `--resume [ID]`
+  opens the selector or a specific conversation; live sessions reuse their
+  existing execution owner and native conversation.
+- Ended or unavailable conversations can be inspected read-only in the TUI.
+  Selection never starts a robot, replays a task, or changes retained state.
+
+### Changed
+
+- Bare `openrua` now prepares a new session instead of implicitly reconnecting
+  to a fixed default name. Use `/resume` or `--resume` to find earlier work.
+- Explicit `--name` and existing named directories remain compatible. Native
+  `run`, foreground `serve`, and administrative subcommands keep their defaults.
+- README, installation, terminal guide, walkthrough, and CLI reference document
+  the same new-session and history behavior.
+
+### Scope
+
+Automated checks cover legacy history, distinct generated IDs, live-owner
+reconnection, stale endpoints, read-only transcripts, and local slash commands.
+The web UI still represents one live session; select it with
+`openrua --gui --resume ID`. Restarting ended execution owners, renaming history
+entries, and migrating native agent conversations remain outside this release.
+
 ## 0.2.0
 
 ### Added

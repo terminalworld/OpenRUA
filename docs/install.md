@@ -19,12 +19,13 @@ read_when:
 ## The package
 
 ```bash
-pip install -U 'openrua>=0.2.0'
+pip install -U 'openrua>=0.3.0'
 openrua --version
 ```
 
 The default install includes the terminal UI. Run `openrua` to configure and
-start a shared session, or reconnect to the default running session. Use
+start a new shared session with an automatic ID. Use `openrua --resume` to find
+a previous conversation, or `/resume` inside the TUI. Use
 `openrua --gui` for the browser and `openrua --cli` for plain text chat.
 The first-run form saves to the same file as `openrua config set`.
 See [Your first shared robot session](../examples/shared-session.md) for a full
@@ -142,7 +143,8 @@ Startup output is retained in `launches/<name>/service.log`, including errors
 before a session becomes ready. These startup diagnostics are separate from
 the workspace and native agent logs under `sandboxes/<name>/`.
 
-Start a new session with a new `--name` to keep the earlier one. An
+Run `openrua` for a new automatically named session while retaining the earlier
+one. Explicit `--name` values must not overwrite retained work. An
 existing session directory or nonempty `--workspace` is never overwritten.
 The default workspace is `sandboxes/<name>/workspace/workspace/`;
 `--workspace <directory>` places it at `<directory>/workspace/` instead.

@@ -14,6 +14,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Button, Collapsible, Footer, Input, Select, Static, TextArea
 
 from openrua.sessions.client import Client
+from openrua.tui.history import History
 
 
 def literal(value: str) -> Text:
@@ -177,9 +178,11 @@ class ChatApp(App):
                 Binding("ctrl+p", "panel", "Queue", priority=True),
                 Binding("ctrl+q", "quit", "Detach", priority=True)]
 
-    def __init__(self, client: Client, name: str = "robot"):
+    def __init__(self, client: Client, name: str = "robot", *, list_sessions=None, open_session=None):
         super().__init__()
         self.client, self.session_name = client, name
+        self.list_sessions, self.open_session = list_sessions, open_session
+        self.read_only = getattr(client, "read_only", False)
         self.client_id = str(uuid4())
         self.pending: dict | None = None
         self.cursor = 0
@@ -207,7 +210,7 @@ class ChatApp(App):
         yield TextArea(id="message")
         with Horizontal(classes="buttons"):
             yield Button("Send", id="send", variant="primary", disabled=True)
-            yield Static("Enter: new line · Ctrl+S: send · Ctrl+Q: detach", id="hint")
+            yield Static("/resume: history · Ctrl+S: send · Ctrl+Q: detach", id="hint")
         yield Footer()
 
     def on_mount(self):
@@ -228,7 +231,7 @@ class ChatApp(App):
 
     def controls(self):
         state = self.state
-        ready = self.online and not state.get("closed") and not self.busy
+        ready = self.online and not state.get("closed") and not self.busy and not self.read_only
         self.view.query_one("#send", Button).disabled = not ready
         self.view.query_one("#send", Button).label = "Retry send" if self.pending else "Send"
         self.view.query_one("#message", TextArea).read_only = bool(self.pending)
@@ -277,6 +280,8 @@ class ChatApp(App):
         self.view.query_one("#toggle-panel", Button).label = f"Queue ({len(queue)})"
         state = self.state
         status = "Ended" if state["closed"] else "Paused" if state["paused"] else "Working" if state["active"] else "Ready" if state["connected"] else "Agent disconnected"
+        if self.read_only:
+            status = "Read only · " + self.client.reason
         if state["requests"]:
             status += " · input requested"
         if any(m["status"] == "unknown" for m in state["messages"]):
@@ -296,6 +301,8 @@ class ChatApp(App):
         while True:
             try:
                 await self.sync()
+                if self.read_only:
+                    return
             except (RuntimeError, OSError, ValueError) as exc:
                 self.online = False
                 self.view.query_one("#status", Static).update("Disconnected · reconnecting; execution may continue")
@@ -306,10 +313,17 @@ class ChatApp(App):
 
     @work(group="commands")
     async def action_send(self):
-        if len(self.screen_stack) > 1 or self.busy or not self.online or self.state.get("closed"):
+        if len(self.screen_stack) > 1 or self.busy:
             return
         text = self.view.query_one("#message", TextArea).text
-        if not text.strip():
+        if text.strip() == '/resume' and self.list_sessions:
+            if self.pending:
+                self.notice('Resolve the pending send before switching conversations.')
+            else:
+                self.push_screen(History(self.list_sessions, self.open_session),
+                                 lambda selected: self.exit(selected) if selected else None)
+            return
+        if not text.strip() or not self.online or self.state.get('closed') or self.read_only:
             return
         if self.pending is None:
             self.pending = dict(client_id=self.client_id, request_id=str(uuid4()), text=text)
@@ -331,7 +345,7 @@ class ChatApp(App):
 
     @work(group="commands")
     async def command(self, operation: str, **params):
-        if self.busy or not self.online:
+        if self.busy or not self.online or self.read_only:
             return
         self.busy = True
         self.controls()

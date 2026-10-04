@@ -14,16 +14,16 @@ It does not implement a new agent loop.
 
 ## Start and configure
 
-Install OpenRUA 0.2.0 or later, then run it:
+Install OpenRUA 0.3.0 or later, then run it:
 
 ```sh
-pip install -U 'openrua>=0.2.0'
+pip install -U 'openrua>=0.3.0'
 openrua
 ```
 
-If the named session is running, this reconnects to it. Otherwise, a setup form
-collects the robot, simulator, optional benchmark, coding agent, model, and
-session name. Use Tab to complete available names or enter a profile path.
+Without an explicit name, each launch prepares a new session with a unique ID.
+A setup form collects the robot, simulator, optional benchmark, coding agent, model, and
+an automatically generated session ID. You may supply a name, but do not need to. Use Tab to complete available names or enter a profile path.
 **Save & check** saves shared defaults and reports missing images or login;
 **Save & start** also starts the session once the checks pass. Neither button
 automatically builds images or logs in. Check/start operations disable editing
@@ -34,12 +34,23 @@ Run `openrua --setup` to reopen the form later. You can also use
 copy of these defaults. Changing the selected agent resets the model field to
 that agent's saved model, rather than carrying the previous agent's model over.
 
-The background service continues after leaving the TUI. Use `openrua --name NAME`
-to reconnect. An ended session keeps its records; choose a new name to start a
-new one. Startup failures appear in the form and are retained in
+The background service continues after leaving the TUI. Use `/resume` in the
+startup command field (Enter) or chat editor (Ctrl+S) to search history by its
+automatic title or fixed ID. Titles come from the first user instruction without
+a model call. `openrua --resume` opens the same selector directly;
+`openrua --resume ID` selects a conversation explicitly. Running sessions
+reconnect with their existing queue and native agent conversation. Ended or
+unavailable sessions open read-only; the interface does not restart resources
+or replay instructions. Switching conversations detaches from the current one.
+
+Existing named sessions also appear in history. `openrua --name NAME` retains its
+explicit start-or-connect behavior; only unnamed launches always create new IDs.
+Use `openrua --gui --resume ID` or `openrua --cli --resume ID` for an existing live
+conversation in another interface. Read-only history is currently in the TUI;
+the web interface remains scoped to the selected live session. Startup failures appear in the form and are retained in
 `~/.openrua/launches/NAME/service.log`. A startup timeout may leave an owner still
-initializing; inspect that log and reconnect when ready rather than duplicating
-the task or deleting its files.
+initializing; inspect that log and use the displayed ID with `--name` when ready
+rather than starting another session or deleting its files.
 
 The existing `openrua chat --tui --name NAME` attaches to a service explicitly.
 For a foreground service with visible execution logs, use `openrua serve`.

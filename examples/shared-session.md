@@ -12,7 +12,7 @@ OpenRUA's TUI, browser, or plain CLI as clients. They share the same agent
 conversation and queue. OpenRUA manages delivery and resources; the agent
 still decides which ROS commands and programs to execute.
 
-This walkthrough uses the default TUI and background startup in OpenRUA 0.2.0.
+This walkthrough uses the default TUI and background startup in OpenRUA 0.3.0.
 Shared chat remains experimental.
 Earlier releases do not include these commands. The walkthrough starts
 with Codex, for which live conversation and simulation checks have completed.
@@ -26,7 +26,7 @@ Use a Linux execution host with Docker available, as described in
 or use `pip install -e .` inside an OpenRUA source checkout:
 
 ```sh
-pip install -U 'openrua>=0.2.0'
+pip install -U 'openrua>=0.3.0'
 openrua serve --help
 openrua session --help
 ```
@@ -71,6 +71,10 @@ occupied or `chat-demo` has retained work from an ended session, choose a new
 port or name. Existing records are never overwritten.
 
 ## 3. Reconnect or open the browser
+
+This walkthrough uses `--name chat-demo` so its commands can refer to the same
+session. In ordinary use, omit the name for an automatic ID and use `/resume`
+in the startup form or chat to find it later.
 
 After leaving the TUI, reconnect without repeating startup options:
 

@@ -78,8 +78,8 @@ def run(args) -> int:
                                    hint="repair the installation with: pip install -U openrua") from exc
         client = connect(args)
         client.timeout = 5
-        ChatApp(client, name=args.name).run()
-        return 0
+        from openrua.cli.commands.start import open_terminal
+        return open_terminal(args.home, client, args.name)
     client = connect(args)
     client_id = str(uuid4())
     try:
@@ -96,6 +96,19 @@ def run(args) -> int:
                     prompt = input("you> ")
                 except EOFError:
                     break
+            if interactive and prompt.strip() == '/resume':
+                from openrua.cli.commands.start import choose_history
+                selected = choose_history(args.home)
+                if selected:
+                    client, name = selected
+                    if getattr(client, 'read_only', False):
+                        print(f'[chat] read-only history: openrua --resume {name}')
+                        client = connect(args)
+                    else:
+                        args.name = name
+                        print(f'[chat] connected to {name}')
+                prompt = None
+                continue
             if prompt.strip():
                 cursor = client.snapshot()["cursor"]
                 request_id = str(uuid4())
@@ -118,7 +131,7 @@ def add_parser(sub) -> None:
                        description=__doc__)
     p.add_argument("message", nargs="?", help="one message; omit for a conversation")
     p.add_argument("--name", default=DEFAULT_NAME)
-    p.add_argument("--tui", action="store_true", help="open the experimental chat-first terminal interface (requires openrua[tui])")
+    p.add_argument("--tui", action="store_true", help="open the experimental chat-first terminal interface (included in the default installation)")
     p.add_argument("--follow", action="store_true", help="observe events without submitting anything")
     p.add_argument("--after", type=int, default=0, help="event cursor for --follow (default: from the beginning)")
     p.set_defaults(fn=run)

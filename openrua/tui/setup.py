@@ -12,6 +12,8 @@ from textual.containers import Horizontal, VerticalScroll
 from textual.suggester import SuggestFromList
 from textual.widgets import Button, Footer, Input, Label, Static
 
+from openrua.tui.history import History
+
 
 class SetupApp(App):
     """Collect startup settings without importing configuration or resources."""
@@ -30,24 +32,28 @@ class SetupApp(App):
 
     def __init__(self, values: dict[str, str], choices: dict[str, list[str]],
                  location: str, save: Callable, check: Callable, launch: Callable,
-                 agent_models: dict[str, str] | None = None):
+                 agent_models: dict[str, str] | None = None,
+                 list_sessions=None, open_session=None):
         super().__init__()
         self.values, self.choices, self.location = values, choices, location
         self.save_settings, self.check_settings, self.launch_session = save, check, launch
         self.agent_models = agent_models or {}
         self.busy = False
+        self.list_sessions, self.open_session = list_sessions, open_session
         self.current_agent = values.get('agent', '')
 
     def compose(self) -> ComposeResult:
         with VerticalScroll(id='form'):
             yield Static('OpenRUA: start a robot conversation', id='title')
+            if self.list_sessions:
+                yield Input(placeholder='/resume to find a previous conversation (Enter)', id='command')
             yield Static(Text(f'Settings: {self.location}\n'
                               'You can also use openrua config set or edit this file later.\n'
                               'Tab completes suggested names. Profile paths are accepted.\n'
                               'Saving does not build images, log in, or start a robot.'), id='description')
             labels = {'robot': 'Robot (name or profile path)', 'sim': 'Simulator (blank for a real robot)',
                       'bench': 'Benchmark (blank for the native scene)', 'agent': 'Coding agent',
-                      'model': 'Model (blank for the configured default)', 'name': 'Session name'}
+                      'model': 'Model (blank for the configured default)', 'name': 'Session ID or optional name (generated automatically)'}
             for key, label in labels.items():
                 yield Label(label)
                 options = self.choices.get(key, [])
@@ -60,6 +66,11 @@ class SetupApp(App):
                 yield Button('Quit', id='quit')
             yield Static('', id='result')
         yield Footer()
+
+    def on_input_submitted(self, event: Input.Submitted):
+        if event.input.id == 'command' and event.value.strip() == '/resume' and not self.busy:
+            self.push_screen(History(self.list_sessions, self.open_session),
+                             lambda selected: self.exit(selected) if selected else None)
 
     def on_input_changed(self, event: Input.Changed):
         if event.input.id == 'agent' and event.value != self.current_agent:

@@ -16,7 +16,7 @@ usage: openrua [-h] [--version] [--home HOME] [--robot ROBOT] [--sim SIM]
                [--init-state INIT_STATE] [--task TASK] [--name NAME]
                [--agent AGENT] [--workspace WORKSPACE]
                [--ros-domain ROS_DOMAIN] [--model MODEL] [--gui | --cli]
-               [--port PORT] [--setup]
+               [--port PORT] [--setup] [--resume [ID]]
                <verb> ...
 
 Open a robot conversation, or use ``openrua <verb> ...``.
@@ -46,7 +46,8 @@ start or reconnect (without a subcommand):
                         episode seed / init state (simulated robots)
   --task TASK           task sentence to show the agent (real robots; a
                         simulated robot's comes from the scene)
-  --name NAME           session handle (default: openrua)
+  --name NAME           optional session name or ID; omitted for a new
+                        automatic ID
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
                         new or empty working directory, retained after
@@ -62,6 +63,8 @@ start or reconnect (without a subcommand):
   --port PORT           local service port for a new session (default: a free
                         port)
   --setup               edit shared defaults in the terminal setup form
+  --resume [ID]         choose a previous conversation, or reconnect by its
+                        ID/name
 ```
 
 | command | does |
@@ -86,7 +89,7 @@ start or reconnect (without a subcommand):
 | `clean` | explicitly delete retained session files |
 | `doctor` | check the install: docker, images, simulator, login |
 
-Without a subcommand, an interactive terminal opens setup or reconnects to the named shared session. `--gui` selects the browser, `--cli` plain chat, and `--setup` edits the shared defaults. With no interface selected, non-interactive invocations print help.
+Without a subcommand, an unnamed launch opens setup with a new session ID. An explicit name reconnects to the named shared session. `--gui` selects the browser, `--cli` plain chat, `--resume [ID]` selects history, and `--setup` edits the shared defaults. With no interface selected, non-interactive invocations print help.
 
 ## openrua robots
 
@@ -374,8 +377,8 @@ positional arguments:
 options:
   -h, --help     show this help message and exit
   --name NAME
-  --tui          open the experimental chat-first terminal interface (requires
-                 openrua[tui])
+  --tui          open the experimental chat-first terminal interface (included
+                 in the default installation)
   --follow       observe events without submitting anything
   --after AFTER  event cursor for --follow (default: from the beginning)
 ```

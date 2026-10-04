@@ -75,9 +75,9 @@ def render_cli() -> str:
     # The verb table is laid out here, not by argparse: its column
     # widths differ between Python versions and the page must not.
     out = [CLI_HEAD, _parser_reference(ap), "\n"]
-    out.append("Without a subcommand, an interactive terminal opens setup or reconnects "
+    out.append("Without a subcommand, an unnamed launch opens setup with a new session ID. An explicit name reconnects "
                "to the named shared session. `--gui` selects the browser, `--cli` plain chat, "
-               "and `--setup` edits the shared defaults. With no interface selected, "
+               "`--resume [ID]` selects history, and `--setup` edits the shared defaults. With no interface selected, "
                "non-interactive invocations print help.\n")
     for name, sub in verbs.choices.items():
         out.append(f"\n## openrua {name}\n\n" + _parser_reference(sub))

@@ -165,3 +165,10 @@ checks its session API before opening a client. Failed or uncertain startup
 does not automatically replay work. `config.settings` supplies a validated,
 atomic update shared by CLI and TUI configuration; direct file edits remain
 supported and are read at subsequent starts.
+
+Session history is a read-only discovery adapter in `runner/history.py`, using
+the existing conversation journal and endpoint handshake. IDs are generated
+for unnamed product launches; titles derive from the first instruction. Legacy
+named directories remain valid without migration. The TUI history picker
+receives listing and opening callbacks, and never imports storage or execution
+modules. Opening retained records cannot restart an owner or issue commands.

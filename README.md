@@ -38,14 +38,16 @@ queue, and revisit saved observations without starting a new robot each turn.
 ## Quick start
 
 Use a Linux host with Docker or supported Podman setup. The terminal UI is
-included in the default installation from version 0.2.0:
+included in the default installation. Automatic session IDs and history selection
+are available from version 0.3.0:
 
 ```sh
-pip install -U 'openrua>=0.2.0'
+pip install -U 'openrua>=0.3.0'
 openrua
 ```
 
-For a new session, the TUI guides you through selecting a robot, simulator,
+Each ordinary launch creates a new session with an automatic ID; no name is
+required. The TUI guides you through selecting a robot, simulator,
 optional benchmark, and coding agent. Names support completion; you can also
 enter paths to your own profiles. **Save & check** writes your choices to
 `~/.openrua/config.yaml` and shows the preparation still needed. It does not
@@ -57,14 +59,16 @@ Type an instruction and press **Ctrl+S**, for example:
 
 > Inspect the workspace documentation and describe the scene without moving the robot.
 
-**Ctrl+Q** leaves the interface while the session keeps running. Run `openrua`
-again to reconnect, or `openrua --gui` to view the same conversation and saved
-workspace images in a browser. To edit defaults later, use `openrua --setup`,
+**Ctrl+Q** leaves the interface while the session keeps running. Use `/resume`
+in the startup form or chat to search previous conversations by title or ID.
+You can also run `openrua --resume`, or `openrua --gui --resume ID` to open a
+running conversation and its saved workspace images in the browser. To edit defaults later, use `openrua --setup`,
 `openrua config set`, or edit the same `config.yaml`; changes apply to new
 sessions, not the one already running.
 
 Choose **End session** when finished. Records and workspace files are retained;
-use a new `--name` for your next session. The
+run `openrua` again for a new session. Ended or unavailable conversations open
+read-only from history; selecting them never restarts robot execution. The
 [full walkthrough](examples/shared-session.md) gives a concrete simulated Panda
 example with image preparation, queue operations, SSH access, and shutdown.
 
@@ -81,7 +85,8 @@ See [validation scope](docs/sessions.md#validation-scope).
 | Plain CLI | `openrua --cli --name chat-demo` | Leaving the client keeps the shared session running |
 | Native agent terminal | `openrua run panda --sim robosuite --bench capbench --agent codex --name native-demo` | Exiting the agent stops the resources owned by `run` |
 
-The first three start or reconnect to a shared service and use one queue.
+The first three use one shared queue per session. These examples explicitly
+name a session; omitting `--name` creates a new one with an automatic ID.
 To reconnect to a running session, pass only its name and interface choice;
 startup options cannot change an active conversation. Existing `chat` and
 `session` commands remain available for explicit client operations.

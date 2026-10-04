@@ -102,7 +102,7 @@ def run(args) -> int:
     return asyncio.run(_run(args))
 
 
-def add_options(p) -> None:
+def add_options(p, *, default_name=DEFAULT_NAME) -> None:
     """The bring-up options ``up`` and ``run`` share (everything but the
     robot positional)."""
     p.add_argument("--sim", default=None,
@@ -118,8 +118,9 @@ def add_options(p) -> None:
     p.add_argument("--task", default=None,
                    help="task sentence to show the agent (real robots; a "
                    "simulated robot's comes from the scene)")
-    p.add_argument("--name", default=DEFAULT_NAME,
-                   help=f"session handle (default: {DEFAULT_NAME})")
+    p.add_argument("--name", default=default_name,
+                   help=(f"session handle (default: {default_name})" if default_name else
+                         "optional session name or ID; omitted for a new automatic ID"))
     p.add_argument("--agent", default=None, help="agent to open (default: the config's)")
     p.add_argument("--workspace", default=None,
                    help="new or empty working directory, retained after shutdown (default: <home>/sandboxes/<name>/workspace)")
