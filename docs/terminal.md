@@ -20,18 +20,12 @@ Install OpenRUA 0.1.0 or later with the optional terminal interface:
 pip install -U 'openrua[tui]>=0.1.0'
 ```
 
-Prepare the robot images and native agent login as described in
-[Your first shared robot session](../examples/shared-session.md), then start the
-service in an execution terminal:
+Follow steps 1 and 2 of [Your first shared robot session](../examples/shared-session.md)
+to prepare the images and login, then start the `chat-demo` service. In a client
+terminal on the same execution host, open the TUI:
 
 ```sh
-openrua serve panda --sim robosuite --name shared --agent codex
-```
-
-In a client terminal, open the TUI:
-
-```sh
-openrua chat --tui --name shared
+openrua chat --tui --name chat-demo
 ```
 
 This interface attaches to an existing service. It does not yet make bare
@@ -61,7 +55,7 @@ After a connection failure, the interface reconnects and replays missing events.
 If sending an instruction has an unknown result, its draft is locked until the
 acceptance is observed or **Retry send** succeeds. Retries reuse the same request
 identity to prevent duplicate execution. If you close the TUI before this is
-resolved, inspect `openrua session --name shared status` before sending it again.
+resolved, inspect `openrua session --name chat-demo status` before sending it again.
 
 An unknown execution result keeps the queue paused. Reconcile it through the
 [session CLI or browser](sessions.md); the TUI displays this state but does not

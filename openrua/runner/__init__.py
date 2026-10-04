@@ -1,9 +1,13 @@
-"""Running trials: bring-up, preflight, the operator, the verdict, the record.
+"""Compose robot resources for native terminals, shared chat, and trials.
 
+- ``live.py``       one RobotRequest -> live robot and sandbox; explicit shutdown
+- ``live_state.py`` retained resource facts, separate from conversation state
+- ``managed.py``    live resources + native conversation + shared execution owner
+- ``control.py``    local shutdown endpoint for native-terminal resource owners
 - ``main.py``       ``openrua bench``: arguments, the run directory, the loop
                     over tasks and seeds
 - ``bringup.py``    one resolved config -> sandbox + robot, the same path
-                    for ``openrua up`` and for a trial
+                    for native terminals, shared sessions, and trials
 - ``trial.py``      one trial: reset, preflight, operator, verdict, record,
                     teardown
 - ``operators.py``  who acts on the robot during a trial (none, script,

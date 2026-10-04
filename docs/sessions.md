@@ -8,7 +8,7 @@ read_when:
 # Shared robot sessions
 
 For a first run, follow [Your first shared robot session](../examples/shared-session.md).
-It covers preparation, browser and CLI input, expected results, SSH forwarding,
+It covers preparation, TUI, browser and CLI input, expected results, SSH forwarding,
 and shutdown. The commands below are the operation reference; implementation
 boundaries and validation evidence follow the user-facing instructions.
 These experimental features are included in OpenRUA 0.1.0 and later.

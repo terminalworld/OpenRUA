@@ -8,9 +8,20 @@ read_when:
 
 # Architecture
 
-OpenRUA has one job: put a coding agent's terminal on a robot's native
-ROS 2 surface. Every unit below exists to set that table; none of them
-is visible to the agent.
+OpenRUA gives a native coding agent a workspace and access to the robot's
+ROS 2 interfaces. The product manages resources and user interaction; the agent
+chooses the robot observations, programs, and actions.
+
+Three entry paths share these foundations:
+
+| Path | Composition | Lifetime |
+|---|---|---|
+| Shared chat | `serve` → `runner.managed` → live resources, native conversation, session execution; TUI, browser, and plain CLI use its HTTP API | The service owns execution; closing a client only detaches |
+| Native terminal | `run`, or `up` then `agent`, use `runner.live` and the selected agent's native terminal | `run` ends its resources when the agent exits; `up` retains them until shutdown |
+| Benchmark | `bench` → trial runner → fresh workspace, operator, preflight, scoring, records | The trial protocol controls budgets and teardown |
+
+Shared chat does not replace the native agent loop or the benchmark protocol.
+Its queue orders user instructions, not individual robot movements.
 
 ## Units
 
@@ -20,14 +31,17 @@ is visible to the agent.
 | `openrua/sandbox/` | the agent's terminal: an Ubuntu + ROS 2 container with the agent installed and `workspace/` seeded (README, `machine.yaml`, four docs, a few tools). | `python -m openrua.sandbox` |
 | `openrua/proxy/` | a whitelist HTTP proxy, the sandbox's only route out. | `python -m openrua.proxy` |
 | `openrua/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, the module each names under `entry_point`), the launcher, credentials staging, the prompts. | `python -m openrua.agents launch` |
-| `openrua/runner/` | running trials: `main.py` (`openrua bench`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua bench` |
+| `openrua/runner/` | composition and ownership: `live.py` opens robot resources, `live_state.py` retains their state, `managed.py` adds a native conversation and shared execution owner. Trial execution stays separate: `main.py` (`openrua bench`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua serve`, `run`, `up`, `bench` |
 | `openrua/demo/` | a video from a recorded trial's files (`frames/`, `ops.jsonl`): `compose.py` renders the terminal beside the cameras. Reads files, imports `errors` only; its libraries are the `demo` extra. | `openrua demo` |
 | `openrua/sessions/` | shared user-message queue, durable events and native connection ownership through injected storage/transport contracts; independent of robot task planning. See [sessions.md](sessions.md). | `serve`, `chat`, `session` (experimental) |
-| `openrua/cli/` | the command line: one module per verb under `commands/` (`robots / benchmarks / agents / build / up / agent / down / run / demo / probe / config / doctor`), `output.py`, `state.py`. | `openrua` |
+| `openrua/tui/` | Textual chat client, expandable tool output and queue controls. Imports the common session client, not execution or vendor implementations. | `openrua chat --tui` |
+| `openrua/web/` | bundled browser assets, supplied to the HTTP server by its caller. The browser consumes the session API. | `openrua session --name NAME web` |
+| `openrua/artifacts.py` | bounded, read-only workspace file access; the owner supplies the root and reader to the HTTP server. | file operations in the session API |
+| `openrua/cli/` | the command line: one module per verb under `commands/` including discovery, builds, native sessions, shared chat, trials, and cleanup. `output.py` formats output; `state.py` retains compatibility imports for resource state. | `openrua` |
 | `openrua/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, login, the user directory), `report.py`. | `openrua doctor` |
 
-Shared leaves, importable by every host-side unit and by nothing in
-the bridge:
+Shared support modules, used only by the layers permitted by the import
+contracts; none is imported by the simulator bridge:
 
 | Leaf | Owns |
 |---|---|
@@ -36,12 +50,12 @@ the bridge:
 | `openrua/errors.py` | the error family: message, hint, sysexits code. The CLI entry point is the one place an error becomes text. |
 | `openrua/testing.py` | `check_manifest` and `check_agent`, the conformance tests third parties run. |
 
-Data, not code, is what crosses unit boundaries: a robot profile and a
-benchmark config are validated and assembled once into one config,
-written to disk (`config.yaml`), and read by every party (the sandbox
-seeds the workspace from it, the robot's bridge starts from it,
-preflight derives its checks from it). At runtime the units talk over DDS, stdio, and
-files under `runs/`.
+Resolved configuration and explicit contracts connect the units. Robot and
+simulator components receive validated data; the sandbox seeds its workspace
+from that data. Trial preflight derives its checks from the same configuration.
+Native agents communicate through their plugin transports, while the robot
+exposes ROS 2 interfaces. Shared clients use the local HTTP API and durable
+session events; benchmark artifacts remain under `runs/`.
 
 ## Where things live
 
@@ -83,7 +97,15 @@ shared ones go.
 - `agents` and `proxy` are leaves (they may use `paths` and `errors`).
 - The schema (`config`) is read by the runner, the cli and the agents
   registry; the other units read validated dicts and never import it.
-- Only the runner (`runner/bringup.py`, used by `openrua bench`, `openrua run` and `openrua up`) brings robots up.
+- Only the runner composes robot startup: `bringup.py` is shared by trials
+  and `live.py`; `managed.py` adds shared conversation ownership.
+- `sessions` depends on agent contracts and injected storage/transport, never
+  robot resources, vendor plugins, configuration, or CLI code. Agent plugins
+  do not import session coordination.
+- `tui` consumes `sessions.client`; it does not import execution internals.
+  `web` supplies static assets and is not imported by session coordination.
+- Workspace artifact readers are independent leaves. Their root and limits
+  are passed in by the resource owner, not discovered through global state.
 - `demo` reads a trial directory and imports `errors` only; recording
   itself is the bridge's (a `Recording` handed to its monitor) and is
   switched on by `openrua bench --record`, never by the demo unit.
@@ -105,10 +127,11 @@ starts the sandbox on the host network pointed at the graph the way
 `backend.discovery` says, waits until the sandbox sees a node, and seeds
 the workspace from the profile. The handle's rpc answers not applicable,
 so a trial records no verdict on hardware. `openrua probe` drafts the
-profile from the graph. The agent cannot tell the difference, which is
-the point.
+profile from the graph. Both paths expose ROS 2 to the agent; this interface
+choice alone does not establish real-hardware reliability. See
+[your-own-robot.md](your-own-robot.md) for setup and validation boundaries.
 
-### Interactive resource ownership
+## Interactive resource ownership
 
 `runner.live.open_robot(RobotRequest(...))` creates a live robot and sandbox
 through the existing `bring_up` path and returns a `LiveRobot` handle. The
@@ -126,9 +149,15 @@ save resource facts after startup also triggers resource cleanup.
 
 `runner.managed` combines a live robot with the plugin's native conversation
 and the session execution owner. The `serve` CLI supplies a local HTTP front
-end; `chat`, `session` and the bundled browser client consume that API.
+end; `chat`, its optional TUI, `session`, and the browser consume that API.
 Browser assets live in `openrua.web`, a leaf supplied explicitly to the HTTP
 adapter; session coordination never imports it. HTTP connection loss does not close
 the execution owner. `down` routes managed sessions through their owner, and
 `clean` refuses to delete a directory while its service endpoint remains.
 Agent-specific frames and launch commands remain in the existing agent plugins.
+
+For queue semantics, native transport details, and validated failure cases,
+see [Shared robot sessions](sessions.md). Client reconnection is supported;
+reopening a client does not recover a crashed execution service or restart a
+stopped native agent. `serve` is currently a foreground host, separate from
+its connected clients.

@@ -1,5 +1,5 @@
 ---
-summary: Start browser and CLI chat with one simulated robot, check the queue, reconnect, and keep your work
+summary: Start TUI, browser, and CLI chat with one simulated robot, reconnect, and keep your work
 read_when:
   - You want to try shared robot chat for the first time
   - You want a manual check of the browser, queue, and saved observations
@@ -7,8 +7,8 @@ read_when:
 
 # Your first shared robot session
 
-This walkthrough uses one simulated Panda, one native coding agent, and two
-clients: a browser and a terminal. Both clients talk to the same agent
+This walkthrough uses one simulated Panda and one native coding agent, with
+OpenRUA's TUI, browser, or plain CLI as clients. They share the same agent
 conversation and queue. OpenRUA manages delivery and resources; the agent
 still decides which ROS commands and programs to execute.
 
@@ -22,10 +22,10 @@ not yet been validated. See [validation scope](../docs/sessions.md#validation-sc
 
 Use a Linux execution host with Docker available, as described in
 [Install](../docs/install.md). Install the release in your Python environment,
-or use `pip install -e .` inside an OpenRUA source checkout:
+or use `pip install -e '.[tui]'` inside an OpenRUA source checkout:
 
 ```sh
-pip install -U 'openrua>=0.1.0'
+pip install -U 'openrua[tui]>=0.1.0'
 openrua serve --help
 openrua session --help
 ```
@@ -69,16 +69,33 @@ running: closing a client is harmless to the session, but Ctrl-C in **serve**
 requests shutdown. If port 8765 is occupied, choose another port. If
 `chat-demo` already exists, choose a new name; previous work is never overwritten.
 
-## 3. Open the browser and request an observation
+## 3. Open a client and request an observation
 
-In terminal B on the same execution host:
+For terminal chat, open another terminal on the execution host:
+
+```sh
+openrua chat --tui --name chat-demo
+```
+
+Type the observation request below and press **Ctrl+S** to send; Enter inserts
+a newline. **Ctrl+P** opens the queue panel, tool output can be expanded, and
+**Ctrl+Q** detaches without ending the session. See the
+[terminal guide](../docs/terminal.md) for all controls.
+
+### Browser and saved images
+
+The browser connects to the same conversation, including messages sent from the
+TUI. Use it to inspect saved images; the TUI does not yet have a file panel.
+
+In a free terminal on the same execution host (detach with Ctrl+Q first if
+the TUI is occupying it):
 
 ```sh
 openrua session --name chat-demo web
 ```
 
 Paste the displayed access token into the page and select **Connect**. Wait
-for **Ready**. Send this message:
+for **Ready**. Send this message from either client:
 
 > Inspect the workspace documentation and robot interfaces. Save one camera image as snaps/first.png and describe what you see. Do not move the robot yet.
 

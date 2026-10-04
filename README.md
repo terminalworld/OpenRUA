@@ -20,129 +20,140 @@ https://github.com/user-attachments/assets/3b134c51-a949-44dd-9474-5249c3879aa0
 
 </div>
 
-A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html)
-uses a robot just as a computer-use agent uses a computer. OpenRUA is
-the open harness for one: type `openrua run panda "pick up the red cube"` and
-Claude Code or Codex opens in a terminal on the robot's ROS&nbsp;2 graph,
-lists the topics, reads the docs in its workspace, writes a script with
-`rclpy`, runs it, and checks the camera.
+OpenRUA connects off-the-shelf coding agents to robots through their native
+ROS&nbsp;2 interfaces. The agent works in a workspace containing robot
+documentation and starter tools, writes perception and control programs, and
+uses execution feedback to continue the task.
 
-OpenRUA supports these workflows:
+You can chat with the agent through **OpenRUA's terminal UI or browser**, use
+its **original terminal**, or run **recorded benchmark experiments**. Shared
+chat lets you send follow-up instructions, inspect tool activity, manage the
+queue, and revisit saved observations without starting a new robot each turn.
 
-- **Play in simulation.** `openrua run` brings up a Franka Panda in
-  MuJoCo; the agent drives it the same way it would a real one.
-- **Put an agent on your robot.** Draft its file from the robot's live
-  graph, finish the `TODO` lines, `openrua run <name>`. See
-  [docs/your-own-robot.md](docs/your-own-robot.md).
-- **Chat from a browser and terminal.** `openrua serve` keeps a robot and
-  agent conversation running while clients share a message queue and browse
-  saved observations. This experimental feature is included from version 0.1.0;
-  follow [Your first shared robot session](examples/shared-session.md).
-- **Run experiments.** `openrua bench` plays a benchmark across tasks and
-  seeds with a fresh sandbox per trial and archives every command the
-  agent ran. See [docs/running-experiments.md](docs/running-experiments.md).
-
-> OpenRUA turns your robot into a coding project: your agent explores it
-> like a live codebase, pulls sensor streams into files for reading, and
-> runs commands and programs to move it.
->
-> *Start playing with your robot like you code a project :)*
+- [Start a shared session](examples/shared-session.md): OpenRUA TUI, browser, or plain CLI.
+- [Use the agent's original terminal](examples/first-task.md): launch a task with `openrua run`.
+- [Connect your robot](docs/your-own-robot.md): describe its ROS&nbsp;2 interfaces in a profile.
+- [Run experiments](docs/running-experiments.md): fresh trials, benchmark scoring, and recorded artifacts.
 
 ## Quick start
 
-Install, choose a simulator and an agent once, name a robot, run:
-
-```bash
-pip install openrua
-openrua config set --sim robosuite --agent claude-code   # your defaults
-openrua build --sim robosuite                          # simulator image
-openrua build sandbox --distro humble --agent claude-code
-openrua build proxy --agent claude-code
-openrua run panda "pick up the red cube"
-```
-
-The robot comes up on its ROS&nbsp;2 graph, the agent opens on its
-terminal with that sentence, and the robot powers off when you leave;
-`run` first prints which robot, scene and agent it picked.
-
-`openrua doctor` tells you what is missing before the first `run`
-(Docker, the images, an agent login); the details are in
-[docs/install.md](docs/install.md).
-
-## Browser and shared CLI chat (experimental)
-
-An optional [chat-first TUI](docs/terminal.md) supports streaming replies and an
-expandable queue: install `pip install -U 'openrua[tui]>=0.1.0'`, then
-attach to a running service with `openrua chat --tui --name shared`.
-
-Use `run` for the agent's original terminal, or `serve` for a shared conversation
-that stays active while browser and CLI clients disconnect and reconnect:
+Use a Linux host with Docker or supported Podman setup. Install OpenRUA with
+the optional terminal UI, then configure your selected agent's native login
+as described in [Install](docs/install.md#logging-an-agent-in):
 
 ```sh
-# Terminal A; selected agent images and login must already be ready
-openrua serve panda --sim robosuite --name shared --agent codex
-# Terminal B, on the same execution host
-openrua session --name shared web
-openrua chat --name shared "Inspect the scene without moving the robot."
+pip install -U 'openrua[tui]>=0.1.0'
 ```
 
-Messages share one queue. You can inspect saved images and programs, edit queued
-instructions, interrupt and review before continuing, and end the session while
-retaining its files. Start with the [step-by-step tutorial](examples/shared-session.md)
-for installation, image preparation, SSH access, expected results,
-and shutdown. The [session manual](docs/sessions.md) covers every operation.
-The original agent terminal cannot yet attach to the same shared conversation;
-remote hosting and a native mobile app are not implemented.
+This example selects Codex and a simulated Panda cube-lifting scene explicitly.
+Build the simulator, sandbox, and proxy images, then check the setup:
 
-## Choosing what to run
+```sh
+openrua build --bench capbench
+openrua build sandbox --distro humble --agent codex
+openrua build proxy --agent codex
+openrua doctor panda --sim robosuite --bench capbench --agent codex
+```
 
-- **The world.** Without `--bench` the scene is the simulator's own (robosuite: a
-  table and a cube). `--bench libero_pro` loads a benchmark's world instead, a
-  LIBERO kitchen with a bowl, a plate, a wine bottle, a drawer and a stove;
-  `--task-suite` and `--task-id` pick a scene inside it.
-- **The agent.** `--agent codex` opens Codex; `--model` picks the model.
-- **Once or every time.** Whatever `config set` stored can also be given on the
-  command line: `openrua run panda --sim robosuite --bench libero_pro "pick up the bowl"`.
-  `openrua robots`, `openrua simulators`, `openrua benchmarks` and
-  `openrua agents` list the choices; `openrua benchmarks libero_pro`
-  lists one benchmark's suites and tasks.
-- **A robot that stays up.** The same three steps as separate commands:
-  `openrua up`, then `openrua agent "..."` in a second terminal, then
-  `openrua down`.
+In an execution terminal, start the shared session:
+
+```sh
+openrua serve panda --sim robosuite --bench capbench \
+  --task-suite capbench_lift --task-id 0 --agent codex --name chat-demo
+```
+
+Keep that terminal running. In another terminal on the same host, open the TUI:
+
+```sh
+openrua chat --tui --name chat-demo
+```
+
+Type an instruction and press **Ctrl+S**, for example:
+
+> Inspect the workspace documentation and describe the scene without moving the robot.
+
+Continue the conversation with a manipulation task. **Ctrl+Q** leaves the TUI
+while the session keeps running. To use the browser instead, run
+`openrua session --name chat-demo web`; it also displays saved workspace images.
+When finished, choose **End session** or run
+`openrua session --name chat-demo end`. Records and workspace files
+are retained. Use a new name for your next session.
+
+The [full walkthrough](examples/shared-session.md) covers expected results,
+queue operations, image inspection, SSH access, and shutdown.
+Shared chat is experimental in v0.1.0: the TUI currently connects to a separately
+started service; bare `openrua` displays help. Codex has live shared-session
+checks; successful Claude Code turns through the shared adapter still need
+validation. See [validation scope](docs/sessions.md#validation-scope).
+
+## Choose your interface
+
+| Interface | Entry | When you leave |
+|---|---|---|
+| OpenRUA TUI | `openrua chat --tui --name chat-demo` | Ctrl+Q detaches; the shared session continues |
+| Browser | `openrua session --name chat-demo web` | Closing the page leaves the shared session running |
+| Plain CLI | `openrua chat --name chat-demo` | Leaving the client keeps the shared session running |
+| Native agent terminal | `openrua run panda --sim robosuite --bench capbench --agent codex --name native-demo` | Exiting the agent stops the resources owned by `run` |
+
+The first three connect to the same `serve` session and share one queue.
+Native `run` starts a separate session using the agent's original TUI; it cannot
+yet take over that shared conversation. For a native terminal with a robot that
+stays up between agent visits, use `up`, `agent`, and `down` as described in
+[First task in simulation](examples/first-task.md).
+
+In shared chat, new instructions queue behind the active turn. Interrupting
+pauses the queue for review; **Resume** continues it. Ending the session stops
+its resources while preserving files; deleting them is a separate operation.
+Stopping `serve` ends the session, unlike closing one of its clients.
 
 ## How it works
 
-```
- your terminal                       the robot (real or simulated)
- ┌─────────────────────────┐        ┌──────────────────────────────┐
- │ openrua run             │        │ ROS 2 graph                  │
- │  └─ Claude Code / Codex │  DDS   │  /joint_states  /tf  /camera │
- │      in a sandbox with  │◄──────►│  FollowJointTrajectory       │
- │      ros2 · rclpy · docs│        │  GripperCommand  MoveIt      │
- └─────────────────────────┘        └──────────────────────────────┘
+```text
+OpenRUA TUI / browser / plain CLI
+                |
+       shared session service
+       queue, events, resource ownership
+                |
+       native coding agent in a workspace
+       ROS 2 docs, starter tools, saved files
+                |
+         ros2 commands / rclpy programs
+                |
+       robot's native ROS 2 interfaces
+       sensors, trajectories, gripper, velocities
 ```
 
-- **The interface is the robot's own.** The agent sees the topics,
-  actions and services the robot exposes, plus `machine.yaml` (joints,
-  limits, frames, ports) and four short docs. It never sees OpenRUA.
-- **The sandbox is a plain Ubuntu + ROS&nbsp;2 container** with the agent
-  installed, a workspace mounted, and a whitelist proxy as its only
-  way out (the model API; nothing else).
-- **A robot is a file** ([`openrua/configs/robots/`](openrua/configs/robots)):
-  the facts true of it wherever it runs (joints, limits, frames, gripper,
-  ports). Your real robot is the same kind of file with a `machine:`
-  section that says how to reach its graph, passed by path.
-- **A simulator is a file** ([`openrua/configs/simulators/`](openrua/configs/simulators)):
-  the engine, its install, its native scene, and how it drives each robot
-  it embodies.
-- **A benchmark is a file** ([`openrua/configs/benchmarks/`](openrua/configs/benchmarks)):
-  which robot and simulator, which suites and init states to load, how a
-  trial runs and stops. `openrua bench` runs trials, checks every promise
-  the workspace docs make before the agent starts, and records each trial
-  with full provenance.
-- **Everything is checked against one schema** (`openrua config
-  schema`): a misspelled key in any file is an error, never a silent
-  no-op. Your defaults live in `~/.openrua/config.yaml`.
+The service coordinates user messages and resources. The coding agent decides
+when to observe, what programs to write, and how to complete the robot task.
+Native-terminal and benchmark entry points reuse the robot, workspace, and
+agent adapters without going through the shared chat queue.
+
+- **The robot provides the control interface.** The agent reads `machine.yaml`
+  and workspace documentation, acquires sensor data, and sends ROS&nbsp;2 requests.
+- **The workspace is the harness.** A ROS&nbsp;2 sandbox contains the agent CLI,
+  documentation, and readable starter-tool source. The agent can inspect, adapt,
+  or replace the tools and save observations and programs for later use.
+- **Extensions have their own boundaries.** Agent manifests and hooks own
+  agent integration; robot profiles own hardware facts; simulator engines and
+  benchmark loaders own their environments. Frontends use the common session API.
+- **Experiments retain their own protocol.** `openrua bench` creates fresh trials,
+  checks workspace interfaces, and records scoring and provenance separately
+  from interactive conversations.
+
+See [Architecture](docs/architecture.md) for the module boundaries and contracts.
+
+## Choosing what to run
+
+- **Robot and scene.** `--sim` selects the simulator; `--bench`, `--task-suite`,
+  and `--task-id` select a benchmark scene. Without a benchmark selection or saved
+  benchmark default, robosuite uses its native `Lift` scene.
+- **Agent and model.** Choose `--agent` and optionally `--model` when starting
+  the session. Switching them inside a running conversation is not implemented.
+- **Defaults.** Save common choices with `openrua config set`; explicit command
+  arguments override them. [Configuration](docs/config.md) documents the fields.
+- **Available extensions.** `openrua robots`, `openrua simulators`,
+  `openrua benchmarks`, and `openrua agents` list the bundled and local choices.
+  `openrua benchmarks libero_pro` lists its suites and tasks.
 
 ## Supported robots
 
@@ -228,7 +239,7 @@ Detailed results will be released with the paper.
 ## Use your own robot
 
 Draft a profile from the robot's live graph, finish the `TODO` lines,
-and point `up` at it:
+and pass it to `run`:
 
 ```bash
 openrua probe --host > my-ur5.yaml   # joints, limits, frames, ports, cameras from the graph
@@ -264,15 +275,15 @@ right (`openrua demo <trial>`; see
 
 ## Architecture
 
-Eight units, one direction of dependency: `robot/` (the machine,
-simulated or real), `sandbox/` (the agent's terminal and workspace),
-`proxy/` (the only route out), `agents/` (the agent contract, registry
-and launcher), `runner/` (bring-up, preflight, operator, verdict,
-record), `demo/` (a recorded trial's files rendered into a video),
-`cli/` and `doctor/`; under all of them the shared leaves `config/`
-(schema, loader, where things live), `errors.py` and `testing.py`. Who
-may import whom is enforced by CI (import-linter and
-`tests/architecture/`). The prose is [docs/architecture.md](docs/architecture.md).
+The implementation separates robot resources, native agent adapters, shared
+conversations, and presentation. `runner/` composes resources; `sessions/`
+coordinates messages and events; `tui/` and `web/` provide client interfaces.
+Robot, sandbox, proxy, and agent knowledge stay in their respective modules.
+Benchmark execution and recorded demos have separate entry points.
+
+Import-linter and architecture tests enforce these boundaries. See the
+[module map](docs/architecture.md#units), [agent extension guide](docs/agents.md),
+and [contribution guide](CONTRIBUTING.md).
 
 ## Documentation
 
@@ -280,7 +291,8 @@ may import whom is enforced by CI (import-linter and
 |---|---|
 | [docs/install.md](docs/install.md) | setting a machine up: images, logins, doctor |
 | [examples/first-task.md](examples/first-task.md) | your first task on the simulated Panda in the original agent terminal |
-| [examples/shared-session.md](examples/shared-session.md) | browser and CLI chat, queue checks, reconnection, saved images and shutdown |
+| [examples/shared-session.md](examples/shared-session.md) | TUI, browser and CLI chat, queue checks, reconnection, saved images and shutdown |
+| [docs/terminal.md](docs/terminal.md) | TUI shortcuts, expandable panels, and current limitations |
 | [docs/sessions.md](docs/sessions.md) | shared-session operations, API, architecture and validation scope |
 | [docs/your-own-robot.md](docs/your-own-robot.md) | describing your robot in one profile |
 | [examples/real-robot.md](examples/real-robot.md) | the same flow on a real ROS&nbsp;2 arm |
@@ -293,6 +305,7 @@ may import whom is enforced by CI (import-linter and
 | [docs/agents.md](docs/agents.md) | adding a coding agent |
 | [docs/architecture.md](docs/architecture.md) | the units and the layering contract |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | conventions for code, names and docs |
+| [CHANGELOG.md](CHANGELOG.md) | release changes and upgrade notes |
 
 ## Citation
 

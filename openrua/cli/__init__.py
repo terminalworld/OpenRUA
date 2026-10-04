@@ -3,6 +3,10 @@
     openrua robots | simulators | benchmarks | agents   what is available (bundled + yours)
     openrua build [robot|sandbox|proxy]    the three images (or one of them)
     openrua config set --robot panda --sim robosuite   your defaults
+    openrua serve <robot> --name shared    a robot and shared conversation service
+    openrua chat --tui --name shared      attach the optional terminal UI
+    openrua session --name shared web     open the browser client
+    openrua session --name shared end     end and retain files
     openrua run "pick up the red cube"     a robot up, the agent on it, off after
     openrua up                             a live robot (real or simulated) with
                                            a sandbox terminal on its ROS 2 graph

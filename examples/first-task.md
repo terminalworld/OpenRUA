@@ -7,9 +7,14 @@ read_when:
 
 # First task in simulation
 
-Twenty minutes: a simulated Franka Panda with a live ROS 2 graph, your
-coding agent on its terminal, one task. [Install](../docs/install.md)
-first; `openrua doctor panda --bench libero_pro` must be green.
+This walkthrough opens the coding agent's original terminal on a simulated
+Franka Panda. For OpenRUA's own TUI or browser, follow
+[Your first shared robot session](shared-session.md) instead.
+
+[Install](../docs/install.md) first; prepare the LIBERO-PRO simulator and the
+sandbox and proxy for your selected agent. Check them with
+`openrua doctor panda --bench libero_pro`. Initial image builds take additional
+time and download the simulator dependencies and assets.
 
 ## 1. One command
 
@@ -44,8 +49,9 @@ The command stays in the foreground:
 ```
 
 `--task-suite` and `--task-id` pick another scene from the benchmark;
-`--init-state` another initial layout of the same scene; leaving out
-`--bench` loads robosuite's own `Lift` scene, a table and a cube.
+`--init-state` another initial layout of the same scene. If no benchmark is
+selected on the command line or in saved defaults, robosuite loads its native
+`Lift` scene, a table and a cube.
 
 ## 1b. Hand the agent the task
 
@@ -77,10 +83,11 @@ the internet is the proxy to its model API.
     action/            fjt_send.py, gripper_cmd.py, ik_move.py, base_goto.py
 ```
 
-`machine.yaml` is generated from the robot's profile, so it never
-disagrees with the graph the agent is looking at; preflight checked
-every claim in it before the agent started. The tools are ordinary
-`rclpy` scripts the agent may read, copy or ignore.
+`machine.yaml` is generated from the resolved robot configuration. The agent
+can inspect the live graph to discover available interfaces. Benchmark trials
+also run preflight checks; interactive `run` does not perform that trial-level
+validation. The tools are ordinary `rclpy` scripts the agent may read, copy or
+ignore.
 
 ## 3. What a session looks like
 

@@ -4,11 +4,12 @@
 
 ```bash
 git clone https://github.com/terminalworld/OpenRUA && cd OpenRUA
-python -m venv .venv && .venv/bin/pip install -e ".[dev]"
+python -m venv .venv && .venv/bin/pip install -e ".[dev,tui]"
 .venv/bin/pytest -q && .venv/bin/lint-imports
 ```
 
-Both commands must pass before a pull request. After pushing, check the
+Both checks must pass before a pull request. The `tui` extra includes the
+terminal interface in local tests, matching the Python CI jobs. After pushing, check the
 GitHub Actions run for that commit; local checks do not replace the remote
 Python matrix. CI also runs browser tests in Chromium. To run them locally:
 
@@ -103,6 +104,14 @@ per unit (`tests/<unit>/`).
   why a line is the way it is when the code alone cannot.
 
 ## Docs
+
+Ship behavior changes with their command help, user tutorial, and reference
+updates. Start from the user path affected by the change; keep installation
+facts in `docs/install.md`, shared-session steps in `examples/shared-session.md`,
+interface controls in `docs/terminal.md` or `docs/sessions.md`, and module
+contracts in `docs/architecture.md`. Link to the owning page instead of copying
+its details into every guide. The README introduces supported paths in the
+released product; label work that is only available in a later version.
 
 `docs/` is flat; the README's Documentation table lists every page in
 reading order, users first, contributors last. Each page starts with

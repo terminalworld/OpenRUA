@@ -73,7 +73,14 @@ testpaths = ["tests"]
 #               before the agent starts), record (sole writer under runs/),
 #               lock.
 #               preflight, record and lock are leaves; the rest imports
-#               every host-side unit, never openrua.robot.sim.bridge
+#               host-side resource units, never openrua.robot.sim.bridge
+#               live/live_state retain interactive resources; managed combines
+#               them with native conversations and shared session execution.
+#   sessions    user-message coordination via agent contracts and injected
+#               storage/transport, never robot resources or vendor plugins.
+#   tui         terminal presentation through sessions.client only.
+#   web         browser assets supplied by the caller to the HTTP adapter.
+#   artifacts   read-only workspace access with explicit root and limits.
 #   cli         the command line (openrua up | down | agent | run | ...);
 #               one module per verb, composing the units above
 #   config, errors, testing
@@ -85,7 +92,8 @@ testpaths = ["tests"]
 #
 # Cross-layer communication otherwise: (1) configs at startup
 # (configs/robots, configs/benchmarks), (2) the DDS / subprocess boundary
-# at runtime, (3) files under runs/.
+# at runtime, (3) trial files under runs/, (4) the local shared-session API
+# and durable events. The contracts below define the permitted imports.
 # ---------------------------------------------------------------------------
 [tool.importlinter]
 root_package = "openrua"

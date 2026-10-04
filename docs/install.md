@@ -24,9 +24,13 @@ openrua --version
 ```
 
 The command is `openrua`; `openrua --help` lists the verbs and
-[cli.md](cli.md) has every flag. Rendering demo videos (`openrua
-demo`) needs the `demo` extra: `pip install
-'openrua[demo] @ git+https://github.com/terminalworld/OpenRUA'`.
+[cli.md](cli.md) has every flag. Rendering recorded demo videos needs the
+`demo` extra: `pip install 'openrua[demo]'`.
+
+Choose the [shared-session walkthrough](../examples/shared-session.md) for
+OpenRUA's TUI or browser, or [First task in simulation](../examples/first-task.md)
+for the agent's original terminal. The shared TUI is an optional client;
+installing it does not change bare `openrua` from displaying help.
 
 Shared CLI/browser sessions are included from version 0.1.0. Upgrade an older
 installation, optionally including the terminal UI:
@@ -79,6 +83,10 @@ current release. To pin one, say so where you build and where you run:
 against it, and every trial records the version it saw.
 
 ## Logging an agent in
+
+For the native login commands below, the corresponding agent CLI must also
+be installed on the host. The sandbox build installs its own copy for execution;
+it does not install the host command. Use the CLI's normal interactive login.
 
 Each agent logs in to a profile directory of its own under
 `~/.openrua/credentials/<agent>/`, never your personal one: OAuth
