@@ -252,3 +252,28 @@ test('end requires confirmation and releases execution through the service', {ti
   assert.deepEqual(await running, {action: 'quit'});
   assert.equal(terminal.stopped, true);
 });
+
+test('environment menus never offer untested pairs and selection repairs dependent fields', async () => {
+  const {Setup} = await import('../src/screens.mjs');
+  const terminal = new Terminal();
+  const environments = [
+    {selection: {robot: 'panda', sim: 'robosuite', bench: ''}},
+    {selection: {robot: 'panda-omron', sim: 'robosuite', bench: 'robocasa365'}},
+    {selection: {robot: 'widowx', sim: 'maniskill', bench: 'simpler'}},
+  ];
+  const spec = {values: {robot: 'panda', sim: 'robosuite', bench: '', agent: 'one', model: '', name: 'id'},
+    environments, choices: {}, models: {}, location: 'config.yaml', notice: ''};
+  const setup = new Setup(spec, terminal);
+  const running = setup.run();
+  terminal.input('\r'); terminal.input('\x1b[B'); terminal.input('\r');
+  assert.equal(setup.values.robot, 'panda-omron');
+  assert.equal(setup.values.sim, 'robosuite');
+  assert.equal(setup.values.bench, 'robocasa365');
+  assert.deepEqual(setup.options('sim'), ['robosuite']);
+  assert.deepEqual(setup.options('bench'), ['robocasa365']);
+  setup.update('robot', 'widowx');
+  assert.equal(setup.values.sim, 'maniskill');
+  assert.equal(setup.values.bench, 'simpler');
+  terminal.input('\x04');
+  await running;
+});

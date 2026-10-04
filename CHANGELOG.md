@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.4.1
+
+### Fixed
+
+- Robot, simulator and benchmark fields now filter linked, tested combinations
+  instead of offering an arbitrary cross-product of registered names. Recorded
+  RoboCasa365 startup, reset, ROS observations and no-op trajectory checks back
+  the initial guided entry. Other profiles remain available through explicit CLI options.
+- Invalid setup selections cannot overwrite saved defaults. Clearing a benchmark
+  stays cleared during checks and subprocess launch. Mismatched benchmark and
+  simulator selections fail before touching resources.
+
+### Changed
+
+- Prepare and start builds missing simulation, sandbox and proxy images for the
+  selection, with progress, retained logs and retry. Existing images are reused.
+  Save and check remains read-only with respect to images and running resources.
+- The same preparation path serves Textual, Pi, and root CLI/browser launches.
+  Low-level up, run and serve retain explicit preparation behavior.
+
 ## 0.4.0
 
 ### Added

@@ -14,20 +14,25 @@ It does not implement a new agent loop.
 
 ## Start and configure
 
-Install OpenRUA 0.3.0 or later, then run it:
+Install OpenRUA 0.4.1 or later, then run it:
 
 ```sh
-pip install -U 'openrua>=0.3.0'
+pip install -U 'openrua>=0.4.1'
 openrua
 ```
 
 Without an explicit name, each launch prepares a new session with a unique ID.
-A setup form collects the robot, simulator, optional benchmark, coding agent, model, and
-an automatically generated session ID. You may supply a name, but do not need to. Use Tab to complete available names or enter a profile path.
-**Save & check** saves shared defaults and reports missing images or login;
-**Save & start** also starts the session once the checks pass. Neither button
-automatically builds images or logs in. Check/start operations disable editing
-until their result is known.
+A setup form collects robot, simulator, benchmark, coding agent, model and
+an automatically generated session ID. Robot, simulator and benchmark selectors
+are linked; only combinations with current recorded startup checks are offered.
+Changing an upstream field repairs incompatible dependent selections. Custom
+profiles remain available through explicit CLI options or configuration files.
+**Save & check** saves valid shared defaults and reports preparation without
+building images. **Prepare and start** automatically builds missing images,
+streams progress, then checks preparation and starts the session. Existing images
+are reused. Build logs remain in `~/.openrua/preparation/`; select the same action
+to retry after resolving a failure. Login still uses the native agent CLI.
+See [setup validation](setup-validation.md) for the currently checked environments.
 
 Run `openrua --setup` to reopen the form later. You can also use
 `openrua config set` or edit `config.yaml` directly. The TUI stores no separate
@@ -123,7 +128,7 @@ does not require changing agent plugins or the shared session protocol.
 OpenRUA 0.4.0 includes a keyboard-first Pi frontend alongside the existing default:
 
 ```sh
-pip install -U 'openrua[pi]>=0.4.0'
+pip install -U 'openrua[pi]>=0.4.1'
 openrua --tui pi
 ```
 

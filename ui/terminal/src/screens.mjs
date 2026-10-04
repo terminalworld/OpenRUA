@@ -28,41 +28,65 @@ export class Setup extends Screen {
   constructor(spec, terminal) {
     super(terminal);
     this.values = {...spec.values}; this.spec = spec;
-    this.ui.addChild(new Text(`Configure a new robot conversation\n${plain(spec.location)}\nSettings also remain editable through openrua config set.`, 0, 1));
+    this.ui.addChild(new Text(`Configure a new robot conversation\n${plain(spec.location)}\nTested combinations only; dependent fields update together.\nPrepare and start installs missing images automatically.\nCustom profiles remain available through the CLI.`, 0, 1));
     this.body = new Container(); this.ui.addChild(this.body);
-    this.ui.addChild(new Text(plain(spec.notice), 0, 1));
+    this.notice = new Text(plain(spec.notice), 0, 1); this.ui.addChild(this.notice);
     this.ui.addChild(new Text('↑/↓ select · Enter edit or activate · Esc back · Ctrl+D quit', 0, 1));
     this.menu();
   }
   menu() {
     this.body.clear();
-    const labels = {robot: 'Robot', sim: 'Simulator (blank for real robot)', bench: 'Benchmark (optional)',
+    const labels = {robot: 'Robot', sim: 'Simulator', bench: 'Benchmark / scene',
       agent: 'Coding agent', model: 'Model (blank for default)', name: 'Session ID / optional name'};
     const items = Object.entries(labels).map(([key, label]) => ({value: key,
       label: `${label}: ${plain(this.values[key]) || '(none)'}`}));
-    items.push({value: 'start', label: 'Save and start'}, {value: 'check', label: 'Save and check preparation'},
+    items.push({value: 'start', label: 'Prepare and start'}, {value: 'check', label: 'Save and check preparation'},
       {value: 'history', label: '/resume: find an existing conversation'}, {value: 'quit', label: 'Quit'});
     const menu = new SelectList(items, 10, selectTheme);
     menu.onCancel = () => this.finish();
     menu.onSelect = item => {
       if (Object.hasOwn(labels, item.value)) this.edit(item.value, labels[item.value]);
-      else this.finish({action: item.value, values: this.values});
+      else if (['start', 'check'].includes(item.value) && this.spec.environments != null &&
+          !this.spec.environments.some(row => ['robot', 'sim', 'bench'].every(key => row.selection[key] === this.values[key]))) {
+        this.notice.setText('Choose a tested robot, simulator and benchmark combination first. Custom profiles remain available through the CLI.');
+        this.ui.requestRender();
+      } else this.finish({action: item.value, values: this.values});
     };
     this.body.addChild(menu); this.ui.setFocus(menu); this.ui.requestRender();
   }
   update(key, value) {
     if (key === 'agent' && value.trim() !== this.values.agent) this.values.model = this.spec.models[value.trim()] ?? '';
-    this.values[key] = value.trim(); this.menu();
+    this.values[key] = value.trim();
+    const fields = ['robot', 'sim', 'bench'];
+    if (this.spec.environments != null && fields.includes(key)) {
+      for (const child of fields.slice(fields.indexOf(key) + 1)) {
+        const available = this.options(child);
+        if (!available.includes(this.values[child])) this.values[child] = available.length === 1 ? available[0] : '';
+      }
+    }
+    this.menu();
+  }
+  options(key) {
+    const fields = ['robot', 'sim', 'bench'];
+    if (this.spec.environments == null || !fields.includes(key)) return this.spec.choices[key] ?? [];
+    const before = fields.slice(0, fields.indexOf(key));
+    return [...new Set(this.spec.environments.filter(row => before.every(k => !this.values[k] || this.values[k] === row.selection[k]))
+      .map(row => row.selection[key]))].sort();
   }
   edit(key, label, custom = false) {
     this.body.clear();
-    const choices = this.spec.choices[key] ?? [];
+    const choices = this.options(key);
+    const guided = this.spec.environments != null && ['robot', 'sim', 'bench'].includes(key);
     this.body.addChild(new Text(label, 0, 1));
+    if (guided && !choices.length) {
+      this.notice.setText('No tested combination for this selection. Change the robot first; use explicit CLI options for custom profiles.');
+      this.menu(); return;
+    }
     if (choices.length && !custom) {
       const menu = new SelectList([
-        ...choices.map(value => ({value, label: plain(value)})),
-        {value: '\0custom', label: 'Enter a name or profile path'},
-        {value: '', label: '(none / configured default)'},
+        ...choices.map(value => ({value, label: plain(value) || '(native scene)'})),
+        ...(!guided ? [{value: '\0custom', label: 'Enter a name or profile path'},
+        {value: '', label: '(none / configured default)'}] : []),
       ], 10, selectTheme);
       menu.setSelectedIndex(Math.max(0, choices.indexOf(this.values[key])));
       menu.onCancel = () => this.menu();

@@ -57,7 +57,7 @@ def connection(client) -> dict:
     return {'read_only': True, 'reason': client.reason, 'snapshot': snapshot, 'events': events}
 
 
-def choose_history(list_sessions, open_session, screen=run_screen):
+def choose_history(list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None):
     notice = ''
     while True:
         result = screen({'mode': 'history', 'rows': list_sessions(), 'notice': notice})
@@ -72,11 +72,12 @@ def choose_history(list_sessions, open_session, screen=run_screen):
 
 
 def setup(values, choices, location, save, check, launch, agent_models,
-          list_sessions, open_session, screen=run_screen):
+          list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None):
     notice = ''
     while True:
         result = screen({'mode': 'setup', 'values': values, 'choices': choices,
-                         'location': location, 'models': agent_models, 'notice': notice})
+                         'location': location, 'models': agent_models, 'notice': notice,
+                         'environments': environments})
         action = result['action']
         if action == 'quit':
             return None
@@ -91,6 +92,8 @@ def setup(values, choices, location, save, check, launch, agent_models,
         values = incoming
         try:
             save(values)
+            if action == 'start' and prepare:
+                prepare(values, lambda line: print(line, flush=True))
             print('Checking preparation...', flush=True)
             ok, notice = check(values)
             if ok and action == 'start':

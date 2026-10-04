@@ -73,3 +73,30 @@ def test_invalid_setup_reply_does_not_write_settings():
         launcher.setup({'robot': ''}, {}, 'config', lambda v: pytest.fail('must not save'),
                        None, None, {}, None, None,
                        lambda spec: {'action': 'start', 'values': {'unexpected': 'value'}})
+
+
+def test_prepare_only_on_start_and_recheck_before_launch():
+    values = dict(robot='panda', sim='robosuite', bench='', agent='test', model='', name='unique')
+    calls = []
+    results = iter([{'action': 'check', 'values': values}, {'action': 'start', 'values': values}])
+    launcher.setup(values, {}, 'config', lambda v: calls.append('save'),
+        lambda v: (calls.append('check') or True, 'Ready'),
+        lambda v: calls.append('launch') or 'client', {}, lambda: [], lambda n: None,
+        lambda spec: next(results), prepare=lambda v, progress: calls.append('prepare'))
+    assert calls == ['save', 'check', 'save', 'prepare', 'check', 'launch']
+
+
+def test_failed_image_build_stays_editable_without_launching():
+    values = dict(robot='panda', sim='robosuite', bench='', agent='test', model='', name='unique')
+    results = iter([{'action': 'start', 'values': values}, {'action': 'quit'}])
+    notices = []
+    def screen(spec):
+        notices.append(spec['notice'])
+        return next(results)
+    def prepare(*args):
+        raise RuntimeError('build failed; retained log')
+    launcher.setup(values, {}, 'config', lambda v: None,
+        lambda v: pytest.fail('must not check failed build'),
+        lambda v: pytest.fail('must not launch'), {}, lambda: [], lambda n: None,
+        screen, prepare=prepare)
+    assert 'build failed' in notices[1]

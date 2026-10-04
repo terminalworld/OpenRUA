@@ -91,11 +91,12 @@ def test_unnamed_starts_create_distinct_ids_without_reconnecting_old_default(tmp
     (tmp_path / 'sandboxes/openrua/endpoint.json').write_text('{}')
     monkeypatch.setattr(start.service, 'connect', lambda path: pytest.fail('must not attach implicitly'))
     monkeypatch.setattr(start, 'check_values', lambda *a: (True, 'Ready'))
+    monkeypatch.setattr(start, 'prepare', lambda *a: None)
     launched = []
     monkeypatch.setattr(start, 'launch', lambda a, v: launched.append(v['name']) or object())
     monkeypatch.setattr(start, 'open_interface', lambda *a: 0)
     for _ in range(2):
-        start.run(args(tmp_path, '--cli', '--robot', 'panda'))
+        start.run(args(tmp_path, '--cli', '--robot', 'panda', '--sim', 'robosuite'))
     assert len(set(launched)) == 2 and all(len(name) == 32 for name in launched)
 
 
@@ -122,13 +123,13 @@ def test_pi_uses_same_launcher_after_keyboard_setup(tmp_path, monkeypatch):
     monkeypatch.setattr(start, 'check_values', lambda home, v: (phases.append('check') or True, 'Ready'))
     client = object()
     monkeypatch.setattr(start, 'launch', lambda a, v: phases.append('launch') or client)
-    def setup(values, choices, location, save, check, launch, *callbacks):
+    def setup(values, choices, location, save, check, launch, *callbacks, **kwargs):
         save(values)
         assert check(values)[0]
         return launch(values), values['name']
     monkeypatch.setattr(launcher, 'setup', setup)
     monkeypatch.setattr(start, 'open_interface', lambda a, c, name: phases.append('chat') or 0)
-    assert start.run(args(tmp_path, '--tui', 'pi', '--robot', 'panda')) == 0
+    assert start.run(args(tmp_path, '--tui', 'pi', '--bench', 'robocasa365')) == 0
     assert phases == ['save', 'check', 'launch', 'chat']
 
 
@@ -145,3 +146,30 @@ def test_pi_resume_never_loads_new_settings_or_launches(tmp_path, monkeypatch):
     monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops: opened.append((client, name)) or 0)
     assert start.run(args(tmp_path, '--tui', 'pi', '--resume', 'retained')) == 0
     assert opened == [('client', 'retained')]
+
+
+def test_bad_selection_never_overwrites_existing_settings(tmp_path):
+    path = tmp_path / 'config.yaml'
+    original = 'robot: panda\nsimulator: robosuite\nbenchmark: null\n'
+    path.write_text(original)
+    values = dict(robot='panda-omron', sim='', bench='', agent='claude-code', model='', name='new')
+    with pytest.raises(UsageError, match='name the simulator'):
+        start.save_values(tmp_path, values)
+    assert path.read_text() == original
+    assert not (tmp_path / 'sandboxes').exists()
+
+
+def test_launch_preserves_explicit_cleared_environment(tmp_path, monkeypatch):
+    selected = args(tmp_path, '--cli', '--robot', 'panda', '--sim', 'robosuite')
+    values = dict(robot='panda', sim='robosuite', bench='', agent='claude-code', model='', name='new')
+    calls = []
+    monkeypatch.setattr(start.service, 'start', lambda *a: calls.append(a))
+    start.launch(selected, values)
+    child = build_parser().parse_args(calls[0][0][3:])
+    assert child.bench == ''
+
+
+def test_invalid_saved_combination_still_opens_editable_setup(tmp_path):
+    (tmp_path / 'config.yaml').write_text('robot: panda\nsimulator: maniskill\nbenchmark: libero_pro\n')
+    values, _ = start.values_for(args(tmp_path, '--sim', 'maniskill'))
+    assert values['robot'] == 'panda' and values['sim'] == 'maniskill'

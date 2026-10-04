@@ -19,7 +19,7 @@ read_when:
 ## The package
 
 ```bash
-pip install -U 'openrua>=0.3.0'
+pip install -U 'openrua>=0.4.1'
 openrua --version
 ```
 
@@ -42,7 +42,14 @@ required. Rendering recorded demo videos still needs the `demo` extra:
 OpenRUA runs three containers: the robot (when simulated), the sandbox
 (the agent's terminal: `ros2`, `rclpy`, the docs, the agent's CLI) and
 the proxy (the sandbox's only route out, limited to the agent's model
-API). Each is an image; build them once, `build` never runs on its own.
+API). **Prepare and start** in the product TUI automatically builds missing
+images for the selected environment and agent. Root `--cli` and `--gui` launches
+prepare them too. Browsing options or choosing **Save & check** never builds.
+First-time simulation builds can download large datasets. Progress is displayed,
+and logs are retained under `~/.openrua/preparation/` for retry.
+
+For manual preparation, or the explicit `up`, `run` and `serve` commands (which
+still require prepared images), use:
 
 ```bash
 openrua build                            # sandbox + proxy for the default agent, and the default benchmark's simulator image
@@ -185,7 +192,7 @@ docker image rm $(docker image ls -q 'openrua-*')
 
 ## Optional Pi terminal
 
-For the keyboard-first Pi frontend, use `pip install -U 'openrua[pi]>=0.4.0'`
+For the keyboard-first Pi frontend, use `pip install -U 'openrua[pi]>=0.4.1'`
 and `openrua --tui pi`. Pip installs the required runtime; a system Node/npm
 installation is unnecessary. See the [terminal guide](terminal.md#pi-terminal-optional).
 This path is verified on Linux x86_64; the existing default frontend remains

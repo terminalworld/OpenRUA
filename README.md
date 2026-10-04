@@ -39,20 +39,25 @@ queue, and revisit saved observations without starting a new robot each turn.
 
 Use a Linux host with Docker or supported Podman setup. The terminal UI is
 included in the default installation. Automatic session IDs and history selection
-are available from version 0.3.0:
+are included; version 0.4.1 adds linked setup choices and image preparation:
 
 ```sh
-pip install -U 'openrua>=0.3.0'
+pip install -U 'openrua>=0.4.1'
 openrua
 ```
 
 Each ordinary launch creates a new session with an automatic ID; no name is
-required. The TUI guides you through selecting a robot, simulator,
-optional benchmark, and coding agent. Names support completion; you can also
-enter paths to your own profiles. **Save & check** writes your choices to
-`~/.openrua/config.yaml` and shows the preparation still needed. It does not
-build images or log in automatically. Follow the commands shown by the check
-and the [installation guide](docs/install.md), then choose **Save & start**.
+required. The TUI links robot, simulator and benchmark choices using recorded
+startup checks. **Prepare and start** saves a valid selection, builds missing
+images with visible progress, checks the agent login, then starts the session.
+Existing images are reused; failed builds keep logs for retry.
+**Save & check** reports preparation without downloading or starting resources.
+
+The guided environment list currently contains **panda-omron / robosuite /
+RoboCasa365**, checked for startup, reset, sensor streams and a no-op control
+request. Other registered profiles remain available through explicit CLI options;
+they are not presented as tested startup combinations. See
+[setup validation](docs/setup-validation.md) for evidence and how to add a combination.
 
 OpenRUA starts the existing session service in the background and opens chat.
 Type an instruction and press **Ctrl+S**, for example:
@@ -69,7 +74,7 @@ sessions, not the one already running.
 Choose **End session** when finished. Records and workspace files are retained;
 run `openrua` again for a new session. Ended or unavailable conversations open
 read-only from history; selecting them never restarts robot execution. The
-[full walkthrough](examples/shared-session.md) gives a concrete simulated Panda
+[full walkthrough](examples/shared-session.md) gives a concrete simulated RoboCasa365
 example with image preparation, queue operations, SSH access, and shutdown.
 
 Shared chat remains experimental. Codex has live shared-session checks;
@@ -102,7 +107,7 @@ For development, `openrua serve` still runs the service in the foreground.
 Stopping that process ends its session, unlike closing one of its clients.
 
 For an optional **keyboard-first Pi terminal**, install
-`pip install -U 'openrua[pi]>=0.4.0'` and run `openrua --tui pi`.
+`pip install -U 'openrua[pi]>=0.4.1'` and run `openrua --tui pi`.
 It provides keyboard configuration, `/resume`, queue management, and tool
 expansion on the same shared sessions, with no separate Node install.
 See the [Pi guide](ui/terminal/README.md) for controls and current limits.

@@ -7,12 +7,12 @@ read_when:
 
 # Your first shared robot session
 
-This walkthrough uses one simulated Panda and one native coding agent, with
+This walkthrough uses one simulated Panda-Omron in RoboCasa365 and one native coding agent, with
 OpenRUA's TUI, browser, or plain CLI as clients. They share the same agent
 conversation and queue. OpenRUA manages delivery and resources; the agent
 still decides which ROS commands and programs to execute.
 
-This walkthrough uses the default TUI and background startup in OpenRUA 0.3.0.
+This walkthrough uses the default TUI and background startup in OpenRUA 0.4.1.
 Shared chat remains experimental.
 Earlier releases do not include these commands. The walkthrough starts
 with Codex, for which live conversation and simulation checks have completed.
@@ -26,7 +26,7 @@ Use a Linux execution host with Docker available, as described in
 or use `pip install -e .` inside an OpenRUA source checkout:
 
 ```sh
-pip install -U 'openrua>=0.3.0'
+pip install -U 'openrua>=0.4.1'
 openrua serve --help
 openrua session --help
 ```
@@ -36,14 +36,14 @@ Configure the selected agent's native login using the instructions in
 This uses the agent's own CLI and login profile. You need an available model
 and account quota when you send a task.
 
-Build the three images explicitly. Skip unchanged builds if they are already
-present and `doctor` reports them ready:
+The setup action prepares missing images automatically. To prepare them manually
+in advance, these commands are equivalent:
 
 ```sh
-openrua build --bench capbench
+openrua build --bench robocasa365
 openrua build sandbox --distro humble --agent codex
 openrua build proxy --agent codex
-openrua doctor panda --sim robosuite --bench capbench --agent codex
+openrua doctor panda-omron --sim robosuite --bench robocasa365 --agent codex
 ```
 
 `build --bench` builds the simulator image. It does not also install the agent
@@ -53,14 +53,14 @@ its dependencies; allow it to finish before starting the session.
 ## 2. Start the terminal session
 
 ```sh
-openrua --robot panda --sim robosuite --bench capbench \
-  --task-suite capbench_lift --task-id 0 --agent codex \
+openrua --robot panda-omron --sim robosuite --bench robocasa365 \
+  --task-suite CloseBlenderLid --task-id 0 --agent codex \
   --name chat-demo --port 8765
 ```
 
-The TUI shows these choices. Select **Save & start** to save the defaults,
+The TUI shows these choices. Select **Prepare and start** to save the defaults,
 check the preparation, and start the background service. This selects a
-cube-lifting scene, independent of a saved benchmark default; it starts one
+blender-lid closing scene, independent of a saved benchmark default; it starts one
 interactive scene, not a benchmark campaign. Leave the model field blank for
 the configured default, or select one available to your account.
 
@@ -144,7 +144,7 @@ requires pasting the token again. Do not resend a task just to reconnect.
 
 ## 5. Try manipulation, interruption, and queue editing
 
-In the browser, ask the agent to pick up the red cube and verify the outcome.
+In the browser, ask the agent to close the blender lid and verify the outcome.
 During an active turn, submit a follow-up such as “Save another camera image
 and describe the final scene.” Use the queued message controls to edit or
 withdraw it before it starts.

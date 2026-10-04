@@ -10,7 +10,7 @@ from textual import work
 from textual.app import App, ComposeResult
 from textual.containers import Horizontal, VerticalScroll
 from textual.suggester import SuggestFromList
-from textual.widgets import Button, Footer, Input, Label, Static
+from textual.widgets import Button, Footer, Input, Label, Select, Static
 
 from openrua.tui.history import History
 
@@ -33,13 +33,16 @@ class SetupApp(App):
     def __init__(self, values: dict[str, str], choices: dict[str, list[str]],
                  location: str, save: Callable, check: Callable, launch: Callable,
                  agent_models: dict[str, str] | None = None,
-                 list_sessions=None, open_session=None):
+                 list_sessions=None, open_session=None, *, environments=None, selection=None, choices_for=None, prepare=None):
         super().__init__()
         self.values, self.choices, self.location = values, choices, location
         self.save_settings, self.check_settings, self.launch_session = save, check, launch
         self.agent_models = agent_models or {}
         self.busy = False
         self.list_sessions, self.open_session = list_sessions, open_session
+        self.environments, self.selection, self.choices_for = environments, selection, choices_for
+        self.prepare = prepare
+        self.updating = False
         self.current_agent = values.get('agent', '')
 
     def compose(self) -> ComposeResult:
@@ -49,20 +52,26 @@ class SetupApp(App):
                 yield Input(placeholder='/resume to find a previous conversation (Enter)', id='command')
             yield Static(Text(f'Settings: {self.location}\n'
                               'You can also use openrua config set or edit this file later.\n'
-                              'Tab completes suggested names. Profile paths are accepted.\n'
-                              'Saving does not build images, log in, or start a robot.'), id='description')
+                              'Environment choices are linked and backed by startup checks.\n'
+                              'Prepare and start builds missing images. Check only never builds.\n'
+                              'Custom profiles remain available through explicit CLI options.'), id='description')
             labels = {'robot': 'Robot (name or profile path)', 'sim': 'Simulator (blank for a real robot)',
                       'bench': 'Benchmark (blank for the native scene)', 'agent': 'Coding agent',
                       'model': 'Model (blank for the configured default)', 'name': 'Session ID or optional name (generated automatically)'}
             for key, label in labels.items():
                 yield Label(label)
                 options = self.choices.get(key, [])
+                if self.environments is not None and key in ('robot', 'sim', 'bench'):
+                    current = self.values.get(key, '')
+                    yield Select([(v or '(native scene)', v) for v in options], id=key,
+                                 value=current if current in options else Select.NULL)
+                    continue
                 yield Input(self.values.get(key, ''), id=key,
                             placeholder=', '.join(options[:5]),
                             suggester=SuggestFromList(options, case_sensitive=False) if options else None)
             with Horizontal(id='buttons'):
                 yield Button('Save & check', id='check')
-                yield Button('Save & start', id='start', variant='primary')
+                yield Button('Prepare and start', id='start', variant='primary')
                 yield Button('Quit', id='quit')
             yield Static('', id='result')
         yield Footer()
@@ -71,6 +80,28 @@ class SetupApp(App):
         if event.input.id == 'command' and event.value.strip() == '/resume' and not self.busy:
             self.push_screen(History(self.list_sessions, self.open_session),
                              lambda selected: self.exit(selected) if selected else None)
+
+    def read_values(self):
+        values = {}
+        for key in self.values:
+            widget = self.query_one(f'#{key}')
+            values[key] = '' if widget.value is Select.NULL else str(widget.value).strip()
+        return values
+
+    def on_select_changed(self, event: Select.Changed):
+        if self.updating or event.value is Select.NULL or event.value != event.select.value:
+            return
+        self.updating = True
+        try:
+            values = self.selection(self.read_values(), event.select.id, str(event.value))
+            fields = ('robot', 'sim', 'bench')
+            for key in fields[fields.index(event.select.id) + 1:]:
+                widget = self.query_one(f'#{key}', Select)
+                available = self.choices_for(values, key)
+                widget.set_options([(v or '(native scene)', v) for v in available])
+                widget.value = values[key] if values[key] in available else Select.NULL
+        finally:
+            self.updating = False
 
     def on_input_changed(self, event: Input.Changed):
         if event.input.id == 'agent' and event.value != self.current_agent:
@@ -87,18 +118,24 @@ class SetupApp(App):
         if event.button.id == 'quit':
             self.action_leave()
         elif not self.busy:
-            values = {key: self.query_one(f'#{key}', Input).value.strip() for key in self.values}
+            values = self.read_values()
             self.perform(values, event.button.id == 'start')
 
     @work(exclusive=True)
     async def perform(self, values: dict, start: bool):
         self.busy = True
-        for widget in self.query('Input, Button'):
+        for widget in self.query('Input, Select, Button'):
             widget.disabled = True
         result = self.query_one('#result', Static)
         result.update('Saving settings and checking preparation...')
         try:
             await asyncio.to_thread(self.save_settings, values)
+            if start and self.prepare:
+                lines = []
+                def progress(line):
+                    lines.append(line)
+                    self.call_from_thread(result.update, Text('\n'.join(lines[-12:])))
+                await asyncio.to_thread(self.prepare, values, progress)
             ok, report = await asyncio.to_thread(self.check_settings, values)
             result.update(Text(report))
             self.call_after_refresh(result.scroll_visible, animate=False)
@@ -112,5 +149,5 @@ class SetupApp(App):
             self.call_after_refresh(result.scroll_visible, animate=False)
         finally:
             self.busy = False
-            for widget in self.query('Input, Button'):
+            for widget in self.query('Input, Select, Button'):
                 widget.disabled = False

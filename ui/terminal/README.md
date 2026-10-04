@@ -9,10 +9,10 @@ agent runtime or model provider is imported.
 
 ## Start
 
-Pi is an opt-in frontend in OpenRUA 0.4.0; the default remains Textual:
+Pi is an opt-in frontend in OpenRUA 0.4.1; the default remains Textual:
 
 ```sh
-pip install -U 'openrua[pi]>=0.4.0'
+pip install -U 'openrua[pi]>=0.4.1'
 openrua --tui pi
 ```
 
@@ -24,8 +24,11 @@ on Linux x86_64. Other runtime platforms and terminal IMEs need further trials.
 The keyboard setup shows the same robot, simulator, benchmark, agent, and model
 configuration as the existing clients. Use arrows and Enter to edit fields or
 choose available profiles. **Save and check** reports missing images or login;
-**Save and start** starts the existing background service only after checks pass.
-Neither operation builds images or logs in automatically. CLI configuration
+**Prepare and start** builds missing images with progress and retained logs,
+then starts the existing background service after checks pass. Environment
+selectors are linked and offer only combinations with recorded startup evidence;
+see [setup validation](../../docs/setup-validation.md).
+Save and check does not build. Agent login still uses the native CLI. CLI configuration
 and direct edits to `config.yaml` remain supported.
 
 ```sh
@@ -87,7 +90,7 @@ service with `npm start --prefix ui/terminal -- --endpoint PATH`.
 
 ```sh
 python -m build
-python scripts/check_dist.py --dist dist --version 0.4.0
+python scripts/check_dist.py --dist dist --version 0.4.1
 ```
 
 Distribution builds check the asset manifest, source hashes, and locked

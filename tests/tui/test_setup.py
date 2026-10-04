@@ -55,3 +55,24 @@ def test_start_returns_connected_session_after_successful_check(tmp_path):
         assert saved and order == ['check', 'launch']
         assert app.return_value == (client, 'guided')
     asyncio.run(run())
+
+
+def test_linked_environment_selection_fills_required_benchmark(tmp_path):
+    from textual.widgets import Select
+    from openrua.config import startup
+    async def run():
+        rows = [{'selection': dict(robot='panda', sim='robosuite', bench='')},
+                {'selection': dict(robot='panda-omron', sim='robosuite', bench='robocasa365')}]
+        values = dict(robot='panda', sim='robosuite', bench='', agent='one', model='', name='new')
+        choices = {key: startup.options(rows, values, key) for key in startup.FIELDS}
+        app = SetupApp(values, choices, 'config', lambda v: None, lambda v: (True, 'Ready'), lambda v: None,
+            environments=rows, selection=lambda v, k, value: startup.select(rows, v, k, value),
+            choices_for=lambda v, k: startup.options(rows, v, k))
+        async with app.run_test(size=(80, 40)) as pilot:
+            app.query_one('#robot', Select).value = 'panda-omron'
+            await pilot.pause()
+            assert app.query_one('#sim', Select).value == 'robosuite'
+            assert app.query_one('#bench', Select).value == 'robocasa365'
+            assert app.read_values()['bench'] == 'robocasa365'
+            await pilot.press('ctrl+q')
+    asyncio.run(run())

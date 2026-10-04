@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "selection": {
+    "robot": "panda-omron",
+    "sim": "robosuite",
+    "bench": "robocasa365"
+  },
+  "suite": "CloseBlenderLid",
+  "task_id": 0,
+  "seed": 0,
+  "profiles_sha256": "070b5fdbe0cdcb3a0fa4452366b89adb6393ba5c89c6fd151050c60e9ade4d92",
+  "checked_at": "2026-10-04T23:20:39.087565+00:00",
+  "images": {
+    "robot": {
+      "name": "openrua-sim-robocasa365",
+      "id": "sha256:18d7152e5cd8683b81e7cf35fa2a0359f121abfe87d5f771c566eb5ede467621"
+    },
+    "sandbox": {
+      "name": "openrua-sandbox-humble",
+      "id": "sha256:aeeb17f6218afae426ffed2d2871344229af307818de7e4ddbefbbd5e17d48ee"
+    }
+  },
+  "checks": {
+    "joint_states": true,
+    "camera_frame": true,
+    "trajectory": true
+  },
+  "agent_binaries": {
+    "claude": "2.1.251 (Claude Code)",
+    "codex": "codex-cli 0.153.4"
+  },
+  "scope": "Simulation startup, reset, ROS image and joint streams, no-op trajectory, agent CLI versions. No model task or physical robot validation."
+}

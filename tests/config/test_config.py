@@ -277,3 +277,17 @@ def test_simulation_still_requires_a_task(tmp_path):
     del cfg["task"]
     with pytest.raises(config.ConfigError, match="requires a benchmark task or native scene"):
         config.validate(config.ResolvedConfig, cfg, "missing scene")
+
+
+def test_empty_selection_does_not_reenable_saved_benchmark(tmp_path):
+    (tmp_path / 'config.yaml').write_text('benchmark: robocasa365\nsimulator: robosuite\nrobot: panda-omron\n')
+    native = compose('panda', 'robosuite', '', tmp_path)
+    assert native.benchmark is None and native.suite == 'Lift'
+    with pytest.raises(UsageError, match='name the simulator'):
+        compose('panda-omron', '', '', tmp_path)
+    assert compose(None, None, None, tmp_path).benchmark == 'robocasa365'
+
+
+def test_benchmark_cannot_be_loaded_by_an_unrelated_simulator(tmp_path):
+    with pytest.raises(config.ConfigError, match='requires simulator robosuite'):
+        compose('panda', 'maniskill', 'libero_pro', tmp_path)

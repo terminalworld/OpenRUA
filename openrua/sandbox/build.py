@@ -35,9 +35,9 @@ def _docker_build(dockerfile: Path, context: Path, tag: str,
     for k, v in (labels or {}).items():
         cmd += ["--label", f"{k}={v}"]
     cmd.append(str(context))
-    r = subprocess.run(cmd, capture_output=True, text=True)
+    r = subprocess.run(cmd)
     if r.returncode != 0:
-        raise SandboxError(f"docker build {tag} failed:\n{r.stderr[-2000:]}")
+        raise SandboxError(f"docker build {tag} failed (exit {r.returncode}); see build output above")
     return subprocess.run(
         ["docker", "inspect", "--format", "{{.Id}}", tag],
         capture_output=True, text=True, check=True).stdout.strip()

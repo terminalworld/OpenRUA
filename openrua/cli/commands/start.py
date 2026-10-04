@@ -8,7 +8,8 @@ from pathlib import Path
 
 from openrua import agents, config, doctor
 from openrua.cli.commands import chat, session, up
-from openrua.config import paths, settings
+from openrua.config import paths, settings, startup
+from openrua.cli.preparation import prepare
 from openrua.errors import NotFound, UnavailableError, UsageError
 from openrua.runner import service, history
 
@@ -49,7 +50,7 @@ def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
     }
     try:
         resolved = config.compose(args.robot, args.sim, args.bench, args.home, agent=args.agent)
-    except (UsageError, NotFound):
+    except (UsageError, NotFound, config.ConfigError):
         # An incomplete first-run selection stays editable in the form.
         pass
     else:
@@ -62,21 +63,36 @@ def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
 
 def save_values(home: Path, values: dict[str, str]) -> None:
     paths.sandbox_dir(values['name'], home)
+    validate_values(home, values)
     settings.update(home, {key: values[field] or None for field, key in
                          [('robot', 'robot'), ('sim', 'simulator'), ('bench', 'benchmark'), ('agent', 'agent')]},
                     {'model': values['model'] or None})
 
 
-def check_values(home: Path, values: dict[str, str]) -> tuple[bool, str]:
-    cfg = config.compose(values['robot'] or None, values['sim'] or None,
-                         values['bench'] or None, home, agent=values['agent'] or None).cfg
+def save_guided_values(home: Path, values: dict, environments: list[dict]) -> None:
+    if not any(all(row['selection'][key] == values[key] for key in startup.FIELDS)
+               for row in environments):
+        raise UsageError('select a tested robot, simulator and benchmark combination',
+                         hint='choose the robot first; custom profiles can use explicit CLI options')
+    save_values(home, values)
+
+
+def validate_values(home: Path, values: dict[str, str]) -> dict:
+    """Validate the exact selection before writing defaults or touching resources."""
+    cfg = config.compose(values['robot'], values['sim'], values['bench'], home,
+                         agent=values['agent'] or None, model=values['model'] or None).cfg
     selected = cfg['agent']
     adapter = agents.get(selected['name'], home, version=selected.get('version'))
     if 'conversation' not in adapter.capabilities:
         raise UsageError(f'{adapter.name} does not support shared chat',
                          hint='use this plugin with openrua run or select a conversation-capable agent')
-    report = doctor.run(robot=values['robot'] or None, sim=values['sim'] or None,
-                        bench=values['bench'] or None, agent_names=[values['agent']] if values['agent'] else None,
+    return cfg
+
+
+def check_values(home: Path, values: dict[str, str]) -> tuple[bool, str]:
+    validate_values(home, values)
+    report = doctor.run(robot=values['robot'], sim=values['sim'],
+                        bench=values['bench'], agent_names=[values['agent']] if values['agent'] else None,
                         home=home)
     return report.ok, report.render()
 
@@ -91,7 +107,7 @@ def launch(args, values: dict[str, str]):
     if values['robot']:
         argv.append(values['robot'])
     for key in ('sim', 'bench', 'agent', 'model', 'name'):
-        if values[key]:
+        if values[key] or key in {'sim', 'bench'}:
             argv.extend(['--' + key, values[key]])
     for key in RESOURCE_OPTIONS:
         value = getattr(args, key)
@@ -191,29 +207,40 @@ def _run(args) -> int:
         if not sys.stdin.isatty() or not sys.stdout.isatty():
             raise UsageError('terminal setup needs an interactive terminal',
                              hint='use openrua config set or edit config.yaml, then use --gui or --cli')
-        choices = {field: [entry.name for entry in paths.available(kind)] for field, kind in
-                   [('robot', 'robots'), ('sim', 'simulators'), ('bench', 'benchmarks'), ('agent', 'agents')]}
+        environments = startup.verified_environments()
+        if values['robot'] in startup.options(environments, {}, 'robot'):
+            values = startup.select(environments, values, 'robot', values['robot'])
+        choices = {'agent': [entry.name for entry in paths.available('agents')
+                             if 'conversation' in agents.get(entry.name, args.home).capabilities]}
+        choices.update({field: startup.options(environments, values, field) for field in startup.FIELDS})
         if args.tui == 'pi':
             from openrua.terminal.launcher import setup as pi_setup
             result = pi_setup(values, choices, str(paths.config_path(args.home)),
-                              lambda values: save_values(args.home, values),
+                              lambda values: save_guided_values(args.home, values, environments),
                               lambda values: check_values(args.home, values),
                               lambda values: launch(args, values), models,
                               lambda: history.entries(args.home),
-                              lambda name: history.open_session(args.home, name))
+                              lambda name: history.open_session(args.home, name),
+                              environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress))
         else:
             from openrua.tui.setup import SetupApp
             app = SetupApp(values, choices, str(paths.config_path(args.home)),
-                           lambda values: save_values(args.home, values),
+                           lambda values: save_guided_values(args.home, values, environments),
                            lambda values: check_values(args.home, values),
                            lambda values: launch(args, values), agent_models=models,
                            list_sessions=lambda: history.entries(args.home),
-                           open_session=lambda name: history.open_session(args.home, name))
+                           open_session=lambda name: history.open_session(args.home, name),
+                           environments=environments,
+                           selection=lambda v, k, value: startup.select(environments, v, k, value),
+                           choices_for=lambda v, k: startup.options(environments, v, k),
+                           prepare=lambda v, progress: prepare(args.home, v, progress))
             result = app.run()
         if result is None:
             return 0
         client, name = result
     else:
+        validate_values(args.home, values)
+        prepare(args.home, values)
         ok, report = check_values(args.home, values)
         if not ok:
             raise UnavailableError(report, hint='complete the preparation steps, then start again')

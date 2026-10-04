@@ -288,15 +288,19 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
     defaults = load_user_config(paths.package_config_path())
     user = load_user_config(paths.config_path(home))
     explicit_sim = sim
-    bench = bench or user.benchmark or defaults.benchmark
+    # None inherits defaults; an explicit empty value selects no benchmark.
+    bench = (user.benchmark or defaults.benchmark) if bench is None else bench
     b = bench_path = None
     if bench:
         bench_path, b = load_benchmark(bench)
+        if sim and b.get("simulator") and paths.find("simulators", sim).resolve() != paths.find("simulators", b["simulator"]).resolve():
+            raise ConfigError(f"benchmark {bench} requires simulator {b['simulator']}, not {sim}",
+                              hint=f"use --bench {bench} without overriding --sim")
         robot = robot or b.get("robot") or user.robot
-        sim = sim or b.get("simulator")
+        sim = b.get("simulator") if sim is None else sim
     else:
-        robot = robot or user.robot or defaults.robot
-    sim = sim or user.simulator or defaults.simulator
+        robot = (user.robot or defaults.robot) if robot is None else robot
+    sim = (user.simulator or defaults.simulator) if sim is None else sim
     composed_install = None
     if b is not None and b.get("machine") and not robot:
         machine, simulator, robot = b["machine"], None, "(inline machine:)"

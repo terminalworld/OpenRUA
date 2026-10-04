@@ -33,10 +33,9 @@ def build(whitelist: str = "", tag: str = IMAGE,
          "--build-arg", f"PORT={port}",
          "--label", f"openrua.whitelist_sha256={digest_in}",
          *(x for k, v in (labels or {}).items() for x in ("--label", f"{k}={v}")),
-         str(_HERE)],
-        capture_output=True, text=True)
+         str(_HERE)])
     if r.returncode != 0:
-        raise ProxyError(f"docker build {tag} failed:\n{r.stderr[-2000:]}")
+        raise ProxyError(f"docker build {tag} failed (exit {r.returncode}); see build output above")
     digest = subprocess.run(
         ["docker", "inspect", "--format", "{{.Id}}", tag],
         capture_output=True, text=True, check=True).stdout.strip()
