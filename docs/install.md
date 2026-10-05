@@ -176,9 +176,31 @@ directory and version, including when `--agent` selects a different agent from
 the benchmark default. Repeat `--agent` to check several agents. One row per fact: the container engine, each image and
 whether its label still matches the manifests (sandbox, proxy) or the
 declaration it was rendered from (the simulator image), the agent
-login, the user directory. An error row carries the command that fixes
-it; the exit code is 1 only when an error is present, and on a pipe
+login, the user directory. The standing proxy container is checked separately:
+rebuilding its image does not update its running policy. Error and warning rows
+include repair guidance when available; the exit code is 1 only when an error is present, and on a pipe
 the report is JSON.
+
+### Updating a shared proxy
+
+The proxy is shared by sessions. If `doctor` reports a manifest mismatch,
+rebuild the sandbox or proxy with the agents you need, repeating `--agent` to
+include more than one. For example:
+
+```sh
+openrua build proxy --agent claude-code --agent codex
+```
+
+A `proxy-container` warning can remain after this build because the existing
+container still uses its original image. End all sessions that use that proxy
+before removing it with `docker rm -f openrua-proxy`. Starting a new session then
+creates the proxy from the rebuilt image. OpenRUA never replaces a standing
+proxy automatically, since doing so would disconnect other sessions.
+
+If proxy network attachment fails, startup reports the Docker error instead
+of returning an unreachable address. Restore the Docker network or daemon
+access described in the error, then retry; the failure does not stop existing
+sessions.
 
 ## Update or remove
 

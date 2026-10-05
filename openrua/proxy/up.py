@@ -18,6 +18,7 @@ stamped at build, never a copied constant).
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 import time
@@ -79,11 +80,11 @@ def ensure(network: str, name: str = NAME,
     """
     if not _running(name):
         if _exists(name):
-            subprocess.run(["docker", "start", name], capture_output=True)
+            started = subprocess.run(["docker", "start", name], capture_output=True, text=True)
         else:
-            subprocess.run(
+            started = subprocess.run(
                 ["docker", "run", "-d", "--restart", "unless-stopped",
-                 "--name", name, image], capture_output=True)
+                 "--name", name, image], capture_output=True, text=True)
         for _ in range(10):  # wait out a sibling's in-progress creation
             if _running(name):
                 break
@@ -91,9 +92,22 @@ def ensure(network: str, name: str = NAME,
         if not _running(name):
             raise ProxyError(
                 f"proxy {name!r} failed to come up; is the image built? "
-                f"(openrua build proxy) docker logs {name} for the reason")
-    subprocess.run(["docker", "network", "connect", network, name],
-                   capture_output=True)  # idempotent re-ensure
+                f"(openrua build proxy) docker logs {name} for the reason\n"
+                f"{started.stderr.strip()}")
+    attached = subprocess.run(["docker", "network", "connect", network, name],
+                              capture_output=True, text=True)
+    # A duplicate connect is harmless only if the requested membership exists.
+    # Other errors must not produce a URL to an unreachable proxy.
+    try:
+        networks = json.loads(_inspect("container", name, '{{json .NetworkSettings.Networks}}'))
+    except (ValueError, TypeError):
+        networks = None
+    if not isinstance(networks, dict) or network not in networks:
+        raise ProxyError(
+            f"proxy {name!r} is not connected to network {network!r}\n"
+            f"{attached.stderr.strip()}\n"
+            f"check docker network inspect {network} and docker inspect {name}; "
+            "retry after restoring network access. Existing sessions were not stopped.")
     running_image = _inspect("container", name, "{{.Image}}")
     tagged_image = _inspect("image", image, "{{.Id}}")
     if tagged_image and running_image != tagged_image:

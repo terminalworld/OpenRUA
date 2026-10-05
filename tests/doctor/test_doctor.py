@@ -116,6 +116,37 @@ def test_json_and_text_are_the_same_report(tmp_path, monkeypatch, capsys):
     assert json.loads(capsys.readouterr().out)["ok"] is False
 
 
+def test_standing_proxy_checked_separately_from_rebuilt_image(tmp_path, monkeypatch):
+    from openrua.doctor import checks
+    a = agents.get("codex")
+    current = agents.fact_sha256(a, "whitelist")
+    def inspect(kind, name, fmt):
+        if "Labels" not in fmt:
+            return "container-id" if kind == "container" else "new-image-id"
+        if 'openrua.agent.codex.' in fmt:
+            return current if kind == "image" else "old-policy"
+        return "<no value>"
+    monkeypatch.setattr(checks, "docker_inspect", inspect)
+    ctx = checks.Context(home=tmp_path, agents=[a], cfg=None, robot=None)
+    assert checks.check_proxy_image(ctx)[0].severity == "ok"
+    finding = checks.check_proxy_container(ctx)[0]
+    assert finding.severity == "warning" and "end sessions" in finding.hint
+    report = doctor.Report([finding])
+    assert report.ok
+    assert finding.hint in report.render()
+
+
+def test_absent_agent_label_uses_legacy_aggregate_hash(tmp_path, monkeypatch):
+    from openrua.doctor import checks
+    a = agents.get("codex")
+    import hashlib
+    aggregate = hashlib.sha256("\n".join(a.whitelist).encode()).hexdigest()
+    monkeypatch.setattr(checks, "docker_inspect", lambda kind, name, fmt:
+                        aggregate if 'openrua.whitelist_sha256' in fmt else "<no value>")
+    ctx = checks.Context(home=tmp_path, agents=[a], cfg=None, robot=None)
+    assert checks._agents_in_artifact("legacy", ctx, "whitelist") == ("ok", "")
+
+
 def test_robot_image_is_checked_against_the_declaration_it_was_rendered_from(tmp_path, monkeypatch):
     from openrua import config
     from openrua.doctor import checks

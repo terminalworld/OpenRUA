@@ -40,7 +40,7 @@ class Report:
         for c in self.checks:
             detail = f"  ({c.detail})" if c.detail else ""
             lines.append(f"  [{MARK[c.severity]}] {c.label}{detail}")
-            if c.severity == "error" and c.hint:
+            if c.severity in ("warning", "error") and c.hint:
                 lines.append(f"       fix: {c.hint}")
         s = self.summary
         lines.append(f"{s['ok']} ok, {s['warning']} warnings, {s['error']} errors")

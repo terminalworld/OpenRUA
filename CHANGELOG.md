@@ -1,5 +1,36 @@
 # Changelog
 
+## 0.4.2
+
+### Fixed
+
+- Proxy startup verifies Docker network membership before returning a URL and
+  preserves Docker's original errors on failed startup or attachment. An
+  existing proxy is never replaced to repair another session's startup.
+- Readiness checks inspect the standing proxy container separately from the
+  image, so rebuilding an image cannot hide its older running policy. Warning
+  repair guidance is now visible in text reports as well as JSON.
+- Missing Docker labels use legacy aggregate metadata correctly instead of
+  interpreting `<no value>` as an agent hash.
+
+### Changed
+
+- Guided setup adds Panda in the native robosuite Lift scene and in CaP-Bench,
+  each backed by real startup, reset, camera, joint-state and no-op trajectory
+  checks. The existing RoboCasa365 entry remains available.
+- Environment validation accepts native scene names without a benchmark task
+  instruction, and checks agent executables through their plugin manifests
+  rather than a fixed list of CLI names.
+- README and GitHub citation metadata link to the published OpenRUA paper.
+
+### Scope
+
+The new environment records cover their default scenes with existing agent
+sandbox images. They do not establish model task success, every benchmark task,
+physical deployment, or an entirely fresh machine installation. Shared-proxy
+policy changes still require an explicit maintenance step after affected
+sessions end; ordinary startup does not interrupt them.
+
 ## 0.4.1
 
 ### Fixed

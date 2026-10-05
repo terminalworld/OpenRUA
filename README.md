@@ -40,10 +40,10 @@ queue, and revisit saved observations without starting a new robot each turn.
 
 Use a Linux host with Docker or supported Podman setup. The terminal UI is
 included in the default installation. Automatic session IDs and history selection
-are included; version 0.4.1 adds linked setup choices and image preparation:
+are included; version 0.4.2 expands the tested setup choices and startup diagnostics:
 
 ```sh
-pip install -U 'openrua>=0.4.1'
+pip install -U 'openrua>=0.4.2'
 openrua
 ```
 
@@ -54,10 +54,11 @@ images with visible progress, checks the agent login, then starts the session.
 Existing images are reused; failed builds keep logs for retry.
 **Save & check** reports preparation without downloading or starting resources.
 
-The guided environment list currently contains **panda-omron / robosuite /
-RoboCasa365**, checked for startup, reset, sensor streams and a no-op control
-request. Other registered profiles remain available through explicit CLI options;
-they are not presented as tested startup combinations. See
+The guided environment list offers **Panda in the native robosuite Lift scene**,
+**Panda in CaP-Bench**, and **Panda-Omron in RoboCasa365**. Their default scenes
+have passed startup, reset, sensor-stream and no-op control checks. This does
+not validate every benchmark task or a model completing the task. Other registered
+profiles remain available through explicit CLI options. See
 [setup validation](docs/setup-validation.md) for evidence and how to add a combination.
 
 OpenRUA starts the existing session service in the background and opens chat.

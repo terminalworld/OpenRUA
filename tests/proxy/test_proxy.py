@@ -162,3 +162,47 @@ def test_package_front_door():
     h = subprocess.run([sys.executable, "-m", "openrua.proxy", "--help"],
                        capture_output=True, text=True)
     assert h.returncode == 0 and "up" in h.stdout
+
+
+def test_failed_network_attachment_preserves_docker_error_and_standing_proxy(monkeypatch):
+    import pytest
+    from types import SimpleNamespace
+    from openrua.proxy import ProxyError, up
+
+    calls = []
+    monkeypatch.setattr(up, "_running", lambda name: "existing")
+    monkeypatch.setattr(up, "_inspect", lambda *args: '{"bridge": {}}')
+    def run(argv, **kwargs):
+        calls.append(argv)
+        return SimpleNamespace(returncode=1, stderr="network target not found")
+    monkeypatch.setattr(up.subprocess, "run", run)
+    with pytest.raises(ProxyError, match="network target not found"):
+        up.ensure("target", name="existing-proxy")
+    assert calls == [["docker", "network", "connect", "target", "existing-proxy"]]
+
+
+def test_duplicate_network_attachment_is_only_accepted_with_membership(monkeypatch):
+    from types import SimpleNamespace
+    from openrua.proxy import up
+
+    monkeypatch.setattr(up, "_running", lambda name: "existing")
+    monkeypatch.setattr(up, "_inspect", lambda kind, name, fmt:
+                        '{"target": {}}' if "Networks" in fmt else "same-image")
+    monkeypatch.setattr(up, "_port", lambda name: "8888")
+    monkeypatch.setattr(up.subprocess, "run", lambda *a, **kw:
+                        SimpleNamespace(returncode=1, stderr="endpoint already exists"))
+    assert up.ensure("target", name="existing-proxy") == "http://existing-proxy:8888"
+
+
+def test_container_start_failure_keeps_original_docker_error(monkeypatch):
+    import pytest
+    from types import SimpleNamespace
+    from openrua.proxy import ProxyError, up
+
+    monkeypatch.setattr(up, "_running", lambda name: "")
+    monkeypatch.setattr(up, "_exists", lambda name: "")
+    monkeypatch.setattr(up.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(up.subprocess, "run", lambda *a, **kw:
+                        SimpleNamespace(returncode=125, stderr="permission denied by daemon"))
+    with pytest.raises(ProxyError, match="permission denied by daemon"):
+        up.ensure("target")

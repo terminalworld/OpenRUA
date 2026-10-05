@@ -38,8 +38,9 @@ def docker_inspect(kind: str, name: str, fmt: str) -> str | None:
     return r.stdout.strip() if r.returncode == 0 else None
 
 
-def image_label(image: str, label: str) -> str | None:
-    return docker_inspect("image", image, f'{{{{index .Config.Labels "{label}"}}}}')
+def artifact_label(image: str, label: str, *, object_kind: str = "image") -> str | None:
+    value = docker_inspect(object_kind, image, f'{{{{index .Config.Labels "{label}"}}}}')
+    return None if value in (None, "", "<no value>") else value
 
 
 def _sha(text: str) -> str:
@@ -127,14 +128,14 @@ def check_bundled_agents(ctx: Context) -> list[CheckResult]:
     return out
 
 
-def _agents_in_image(image: str, ctx: Context, kind: str) -> tuple[str, str]:
-    """(severity, detail) for the agents an image should carry. Each
+def _agents_in_artifact(image: str, ctx: Context, kind: str, *, object_kind: str = "image") -> tuple[str, str]:
+    """(severity, detail) for the agents an image or container should carry. Each
     agent's label is compared with its manifest; an image built before
     per-agent labels existed falls back to the aggregate label of the
     selected set."""
     missing, stale, ok = [], [], []
     for a in ctx.agents:
-        have = image_label(image, f"openrua.agent.{a.name}.{kind}_sha256")
+        have = artifact_label(image, f"openrua.agent.{a.name}.{kind}_sha256", object_kind=object_kind)
         if have:
             (ok if have == agents.fact_sha256(a, kind) else stale).append(a.name)
         else:
@@ -143,8 +144,8 @@ def _agents_in_image(image: str, ctx: Context, kind: str) -> tuple[str, str]:
         if stale:
             return "warning", f"{', '.join(stale)}: the manifest changed since the image was built"
         return "ok", ""
-    aggregate = image_label(image, "openrua.preinstall_sha256" if kind == "install"
-                            else "openrua.whitelist_sha256")
+    aggregate = artifact_label(image, "openrua.preinstall_sha256" if kind == "install"
+                            else "openrua.whitelist_sha256", object_kind=object_kind)
     if not aggregate:
         return "ok", "unlabelled: built before labels existed"
     want = _sha(agents.preinstall(ctx.agents) if kind == "install"
@@ -162,9 +163,22 @@ def check_proxy_image(ctx: Context) -> list[CheckResult]:
     build = f"openrua build proxy {names}"
     if docker_inspect("image", image, "{{.Id}}") is None:
         return [CheckResult("proxy-image", f"proxy image {image} missing", "error", hint=build)]
-    severity, detail = _agents_in_image(image, ctx, "whitelist")
+    severity, detail = _agents_in_artifact(image, ctx, "whitelist")
     return [CheckResult("proxy-image", f"proxy image {image} present", severity,
                         detail=detail, hint=build if severity != "ok" else "")]
+
+
+def check_proxy_container(ctx: Context) -> list[CheckResult]:
+    """Check the standing container too: rebuilding its tag does not replace it."""
+    if docker_inspect("container", proxy.NAME, "{{.Id}}") is None:
+        return []
+    severity, detail = _agents_in_artifact(proxy.NAME, ctx, "whitelist", object_kind="container")
+    return [CheckResult("proxy-container", f"standing proxy {proxy.NAME} present", severity,
+                        detail=detail, hint=(
+                            "rebuilding the proxy image does not update this container; "
+                            "end sessions using it before removing it, then restart your session "
+                            "(see docs/install.md#updating-a-shared-proxy)"
+                        ) if severity != "ok" else "")]
 
 
 def _build_hint(ctx: Context) -> str:
@@ -186,7 +200,7 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
             out.append(CheckResult("robot-image", f"robot image {sim} missing", "error",
                                    hint=_build_hint(ctx)))
         else:
-            have = image_label(sim, sim_build.LABEL_FINGERPRINT)
+            have = artifact_label(sim, sim_build.LABEL_FINGERPRINT)
             want = None
             if ctx.install and ctx.owner:
                 dockerfile, files = installer.render(ctx.install, ctx.owner, paths.code_root())
@@ -197,7 +211,7 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
                                        hint=_build_hint(ctx)))
             else:
                 out.append(CheckResult("robot-image", f"robot image {sim} present",
-                                       detail=f"openrua {image_label(sim, sim_build.LABEL_VERSION) or '?'}"))
+                                       detail=f"openrua {artifact_label(sim, sim_build.LABEL_VERSION) or '?'}"))
     sandbox = backend["sandbox_image"]
     names = " ".join(f"--agent {a.name}" for a in ctx.agents)
     tag = "" if sandbox == config.schema.sandbox_image(backend["ros_distro"]) else f" --tag {sandbox}"
@@ -206,7 +220,7 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
         out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} missing", "error",
                                hint=build))
     else:
-        severity, detail = _agents_in_image(sandbox, ctx, "install")
+        severity, detail = _agents_in_artifact(sandbox, ctx, "install")
         out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} present", severity,
                                detail=detail, hint=build if severity != "ok" else ""))
     return out
@@ -230,7 +244,7 @@ def check_login(ctx: Context) -> list[CheckResult]:
 
 
 CHECKS: tuple[Callable[[Context], list[CheckResult]], ...] = (
-    check_docker, check_home, check_bundled_agents, check_proxy_image,
+    check_docker, check_home, check_bundled_agents, check_proxy_image, check_proxy_container,
     check_robot_images, check_login,
 )
 

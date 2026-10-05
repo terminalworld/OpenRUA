@@ -15,7 +15,7 @@ import subprocess
 import tempfile
 import uuid
 
-from openrua import config
+from openrua import agents, config
 from openrua.config.startup import profile_digest
 from openrua.runner.bringup import bring_up, ensure_internal_network, start_episode
 from openrua.runner.live import stop_resources
@@ -75,6 +75,8 @@ def main():
     parser.add_argument('--robot', required=True)
     parser.add_argument('--sim', required=True)
     parser.add_argument('--bench', default='')
+    parser.add_argument('--agent', action='append', default=None,
+                        help='agent CLI to check through its manifest, repeatable; default: the scene configuration')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     selection = dict(robot=args.robot, sim=args.sim, bench=args.bench)
@@ -103,7 +105,7 @@ def main():
                 composed.suite, composed.task_id, network, 'http://unused.invalid', (), None,
                 root / 'robot.log', home=root)
             info = start_episode(machine, 0)
-            assert info.get('language'), 'scene returned no task instruction'
+            assert info.get('language') or info.get('name'), 'scene returned neither a task instruction nor a scene name'
             probe = root / 'probe.py'
             probe.write_text(PROBE)
             subprocess.run(['docker', 'cp', str(probe), name + '-sandbox:/tmp/probe.py'], check=True)
@@ -113,10 +115,16 @@ def main():
                 raise RuntimeError(checked.stdout + checked.stderr)
             checks = json.loads(checked.stdout.strip().splitlines()[-1])
             versions = {}
-            for binary in ('claude', 'codex'):
-                result = subprocess.run(['docker', 'exec', name + '-sandbox', binary, '--version'],
+            selected = cfg['agent']
+            for spec in args.agent or [selected['name']]:
+                manifest = agents.manifest(spec, version=selected.get('version')
+                                           if spec == selected['name'] else None)
+                version_argv = manifest.fields.get('version_argv')
+                if not version_argv:
+                    continue
+                result = subprocess.run(['docker', 'exec', name + '-sandbox', *version_argv],
                     capture_output=True, text=True, timeout=30, check=True)
-                versions[binary] = result.stdout.strip()
+                versions[manifest.name] = result.stdout.strip()
         except BaseException:
             log = root / 'robot.log'
             if log.exists(): print(log.read_text()[-10000:], flush=True)
