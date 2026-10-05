@@ -40,10 +40,10 @@ queue, and revisit saved observations without starting a new robot each turn.
 
 Use a Linux host with Docker or supported Podman setup. The terminal UI is
 included in the default installation. Automatic session IDs and history selection
-are included; version 0.4.2 expands the tested setup choices and startup diagnostics:
+are included; version 0.4.3 expands the tested setup choices and startup diagnostics:
 
 ```sh
-pip install -U 'openrua>=0.4.2'
+pip install -U 'openrua>=0.4.3'
 openrua
 ```
 

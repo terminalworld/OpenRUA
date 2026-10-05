@@ -9,11 +9,27 @@ from __future__ import annotations
 
 import ast
 import subprocess
+import uuid
+
+import pytest
 from pathlib import Path
 
 from tests.conftest import requires_image
 
 PKG = Path(__file__).resolve().parents[2] / "openrua" / "proxy"
+
+
+@pytest.fixture
+def network():
+    """Every live proxy test owns its network, including on a clean CI runner."""
+    name = "openrua-proxy-check-" + uuid.uuid4().hex[:12]
+    subprocess.run(["docker", "network", "create", "--internal", name],
+                   capture_output=True, text=True, check=True)
+    try:
+        yield name
+    finally:
+        subprocess.run(["docker", "network", "rm", name],
+                       capture_output=True, text=True, check=True)
 
 
 def test_recipe_is_generic_and_agent_free():
@@ -45,20 +61,20 @@ def test_proxy_imports_no_layer():
 
 
 @requires_image("openrua-proxy")
-def test_up_is_idempotent_ensure_and_down_removes():
+def test_up_is_idempotent_ensure_and_down_removes(network):
     # Live singleton semantics on a throwaway name: two ensures return the
     # same URL AND the same container id (second call must not recreate).
     from openrua.proxy import down as pdown
     from openrua.proxy import up as pup
 
-    name = "openrua-proxy-testsingleton"
+    name = network + "-proxy"
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     try:
-        url1 = pup.ensure(network="openrua-internal", name=name)
+        url1 = pup.ensure(network=network, name=name)
         cid1 = subprocess.run(["docker", "ps", "-q", "--filter",
                                f"name=^{name}$"], capture_output=True,
                               text=True).stdout.strip()
-        url2 = pup.ensure(network="openrua-internal", name=name)
+        url2 = pup.ensure(network=network, name=name)
         cid2 = subprocess.run(["docker", "ps", "-q", "--filter",
                                f"name=^{name}$"], capture_output=True,
                               text=True).stdout.strip()
@@ -69,7 +85,7 @@ def test_up_is_idempotent_ensure_and_down_removes():
             ["docker", "inspect", "--format",
              "{{range $k, $_ := .NetworkSettings.Networks}}{{$k}} {{end}}",
              name], capture_output=True, text=True).stdout
-        assert "openrua-internal" in nets and "bridge" in nets
+        assert network in nets and "bridge" in nets
     finally:
         assert pdown.down(name)
         assert not subprocess.run(["docker", "ps", "-q", "--filter",
@@ -83,17 +99,17 @@ def test_runner_consumes_the_proxy_package():
     assert "def ensure_proxy" not in runner  # the split home is gone
 
 
-def test_port_parameter_travels_build_to_up():
+def test_port_parameter_travels_build_to_up(network):
     # Full chain: --port at build -> label in image -> URL from up.
     from openrua.proxy import build as pbuild
     from openrua.proxy import down as pdown
     from openrua.proxy import up as pup
 
-    tag, name = "openrua-proxy-porttest", "openrua-proxy-porttest-c"
+    tag, name = network + "-image", network + "-proxy"
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     try:
         pbuild.build(tag=tag, port=9999)
-        url = pup.ensure(network="openrua-internal", name=name, image=tag)
+        url = pup.ensure(network=network, name=name, image=tag)
         assert url == f"http://{name}:9999"
         conf = subprocess.run(["docker", "exec", name, "cat",
                                "/etc/tinyproxy/tinyproxy.conf"],
@@ -104,31 +120,31 @@ def test_port_parameter_travels_build_to_up():
         subprocess.run(["docker", "rmi", "-f", tag], capture_output=True)
 
 
-def test_ensure_fails_loudly_on_missing_image():
+def test_ensure_fails_loudly_on_missing_image(network):
     import pytest
     from openrua.proxy import up as pup
-    name = "openrua-proxy-noimg-test"
+    name = network + "-proxy"
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     with pytest.raises(Exception) as e:
-        pup.ensure(network="openrua-internal", name=name,
+        pup.ensure(network=network, name=name,
                    image="openrua-definitely-missing-proxy")
     assert "is the image built" in str(e.value)
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
 
 
 @requires_image("openrua-proxy")
-def test_ensure_revives_a_stopped_wall_same_container():
+def test_ensure_revives_a_stopped_wall_same_container(network):
     from openrua.proxy import down as pdown
     from openrua.proxy import up as pup
-    name = "openrua-proxy-revive-test"
+    name = network + "-proxy"
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     try:
-        pup.ensure(network="openrua-internal", name=name)
+        pup.ensure(network=network, name=name)
         cid = subprocess.run(["docker", "ps", "-q", "--filter",
                               f"name=^{name}$"], capture_output=True,
                              text=True).stdout.strip()
         subprocess.run(["docker", "stop", name], capture_output=True)
-        url = pup.ensure(network="openrua-internal", name=name)
+        url = pup.ensure(network=network, name=name)
         cid2 = subprocess.run(["docker", "ps", "-q", "--filter",
                                f"name=^{name}$"], capture_output=True,
                               text=True).stdout.strip()
@@ -138,21 +154,21 @@ def test_ensure_revives_a_stopped_wall_same_container():
 
 
 @requires_image("openrua-proxy")
-def test_ensure_reconnects_a_detached_wall():
+def test_ensure_reconnects_a_detached_wall(network):
     from openrua.proxy import down as pdown
     from openrua.proxy import up as pup
-    name = "openrua-proxy-reconnect-test"
+    name = network + "-proxy"
     subprocess.run(["docker", "rm", "-f", name], capture_output=True)
     try:
-        pup.ensure(network="openrua-internal", name=name)
+        pup.ensure(network=network, name=name)
         subprocess.run(["docker", "network", "disconnect",
-                        "openrua-internal", name], capture_output=True)
-        pup.ensure(network="openrua-internal", name=name)
+                        network, name], capture_output=True)
+        pup.ensure(network=network, name=name)
         nets = subprocess.run(
             ["docker", "inspect", "--format",
              "{{range $k, $_ := .NetworkSettings.Networks}}{{$k}} {{end}}",
              name], capture_output=True, text=True).stdout
-        assert "openrua-internal" in nets
+        assert network in nets
     finally:
         pdown.down(name)
 

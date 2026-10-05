@@ -1,6 +1,13 @@
 # Changelog
 
-## 0.4.2
+## 0.4.3
+
+This release includes the startup and diagnostic changes prepared for 0.4.2.
+The 0.4.2 publishing gate caught a test that relied on a pre-existing Docker
+network; no 0.4.2 package was published. Proxy integration tests now create
+and clean up isolated networks and use unique container/image names, so they
+exercise the same behavior on a clean CI runner and a development machine.
+
 
 ### Fixed
 
