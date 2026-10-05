@@ -7,6 +7,7 @@
 *Through the standard ROS&nbsp;2 CLI and client library, without relying on any VLA model.*
 
 [![CI](https://github.com/terminalworld/OpenRUA/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/OpenRUA/actions/workflows/ci.yml)
+[![arXiv](https://img.shields.io/badge/arXiv-2610.02459-b31b1b.svg)](https://arxiv.org/abs/2610.02459)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue)](pyproject.toml)
 [![ROS 2](https://img.shields.io/badge/ROS%202-22314E?logo=ros&logoColor=white)](docs/architecture.md)
 [![License](https://img.shields.io/badge/license-Apache--2.0-green)](LICENSE)<br>
@@ -233,7 +234,7 @@ launch it); everything else is optional. Pass yours as a path
 
 ## Results
 
-Detailed results will be released with the paper.
+Detailed results and analysis are available in our [paper](https://arxiv.org/abs/2610.02459).
 
 | Benchmark | Agent | Model (reasoning effort) | Success |
 |---|---|---|---|
@@ -315,15 +316,17 @@ and [contribution guide](CONTRIBUTING.md).
 
 ## Citation
 
-The paper will be released soon; until then, cite the software:
+If you use OpenRUA in your research, please cite our [paper](https://arxiv.org/abs/2610.02459):
 
 ```bibtex
-@software{openrua,
-  author  = {{Terminal World Labs}},
-  title   = {OpenRUA},
-  year    = {2026},
-  url     = {https://github.com/terminalworld/OpenRUA},
-  license = {Apache-2.0}
+@misc{chu2026openrua,
+  title         = {{OpenRUA}: Robot-Use Agents Are Zero-Shot Visuomotor Policies},
+  author        = {Zhaoyang Chu and Earl T. Barr and Claire Le Goues and Peter O'Hearn and Mark Harman and Federica Sarro and He Ye},
+  year          = {2026},
+  eprint        = {2610.02459},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.RO},
+  url           = {https://arxiv.org/abs/2610.02459}
 }
 ```
 

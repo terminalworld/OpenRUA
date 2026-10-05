@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it as below. The paper will be released soon."
+message: "If you use OpenRUA in your research, please cite the paper below."
 type: software
 title: OpenRUA
 authors:
@@ -7,3 +7,25 @@ authors:
 repository-code: https://github.com/terminalworld/OpenRUA
 license: Apache-2.0
 date-released: 2026-09-06
+preferred-citation:
+  type: article
+  title: "OpenRUA: Robot-Use Agents Are Zero-Shot Visuomotor Policies"
+  authors:
+    - family-names: Chu
+      given-names: Zhaoyang
+    - family-names: Barr
+      given-names: Earl T.
+    - family-names: Le Goues
+      given-names: Claire
+    - family-names: O'Hearn
+      given-names: Peter
+    - family-names: Harman
+      given-names: Mark
+    - family-names: Sarro
+      given-names: Federica
+    - family-names: Ye
+      given-names: He
+  journal: arXiv
+  year: 2026
+  doi: 10.48550/arXiv.2610.02459
+  url: https://arxiv.org/abs/2610.02459
