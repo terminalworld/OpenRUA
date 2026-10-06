@@ -13,6 +13,25 @@ from openrua.config import (apply_suite_overrides, compose, load_config, load_ro
 BUNDLED = [e.name for e in paths.available("benchmarks")]
 
 
+@pytest.mark.parametrize('name', BUNDLED)
+def test_benchmark_defaults_do_not_replace_explicit_api_authentication(name, tmp_path):
+    auth = {'mode': 'api', 'key_file': '/private/provider.key'}
+    (tmp_path / 'config.yaml').write_text(yaml.safe_dump({'agents': {'claude-code': {'auth': auth}}}))
+    assert load_config(name, home=tmp_path)['agent']['auth'] == auth
+
+
+def test_authentication_authored_in_benchmark_still_overrides_defaults(tmp_path):
+    source = config.load_yaml(paths.find('benchmarks', 'capbench'))
+    source['agent']['auth'] = {'mode': 'native'}
+    # The authored install paths are relative to the bundled benchmark.
+    source.pop('install', None)
+    benchmark = tmp_path / 'benchmark.yaml'
+    benchmark.write_text(yaml.safe_dump(source))
+    (tmp_path / 'config.yaml').write_text(yaml.safe_dump({'agents': {'claude-code': {
+        'auth': {'mode': 'api', 'key_file': '/private/provider.key'}}}}))
+    assert load_config(str(benchmark), home=tmp_path)['agent']['auth'] == {'mode': 'native'}
+
+
 @pytest.mark.parametrize("name", BUNDLED)
 def test_every_bundled_benchmark_assembles(name, tmp_path):
     cfg = load_config(name, home=tmp_path)

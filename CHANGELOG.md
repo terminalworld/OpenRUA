@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.9.0
+
+- Add keyboard authentication selection to setup. Native CLI login remains the default; API billing requires an explicit choice and a private key file path. Choices stay separate per agent, unsupported plugins do not offer API mode, and invalid selections cannot save defaults or start resources.
+- Preserve explicit user authentication when composing benchmark configurations. Schema-generated native defaults no longer silently replace an API choice; authentication actually written in a benchmark retains its documented precedence.
 
 - Add an experimental ZCode external plugin example with a pinned official source build, explicit BigModel API profile, and native shared-conversation adapter. Container lifecycle checks use a local model fixture; subscription reuse and robot-task performance remain unvalidated. The example is not a bundled setup option.
 

@@ -238,6 +238,37 @@ test('keyboard configuration and filtered history use Pi selectors', async () =>
   assert.deepEqual(await selected, {action: 'select', id: 'b'});
 });
 
+test('authentication uses explicit keyboard selection and separates agent key paths', async () => {
+  const {Setup} = await import('../src/screens.mjs');
+  const terminal = new Terminal();
+  const spec = {values: {robot: 'panda', sim: 'robosuite', bench: '', agent: 'one', model: '', name: 'id',
+    auth_mode: 'native', api_key_file: ''}, choices: {}, models: {}, location: 'config.yaml', notice: '',
+    authentication: {one: {api: true}, two: {api: true, auth_mode: 'api', api_key_file: '/keys/two.key'},
+      third: {api: false}}};
+  const setup = new Setup(spec, terminal);
+  const running = setup.run();
+  setup.edit('auth_mode', 'Authentication');
+  terminal.input('\x1b[B'); terminal.input('\r');
+  assert.equal(setup.values.auth_mode, 'api');
+  setup.edit('api_key_file', 'API key file path');
+  assert.match(setup.body.render(120).join('\n'), /Do not paste the key here/);
+  terminal.input('/keys/one.key'); terminal.input('\r');
+  assert.equal(setup.values.api_key_file, '/keys/one.key');
+  setup.update('agent', 'two');
+  assert.equal(setup.values.auth_mode, 'api');
+  assert.equal(setup.values.api_key_file, '/keys/two.key');
+  setup.update('agent', 'third');
+  assert.deepEqual(setup.options('auth_mode'), ['native']);
+  assert.equal(setup.values.api_key_file, '');
+  setup.update('agent', 'one');
+  assert.equal(setup.values.api_key_file, '/keys/one.key');
+  setup.edit('auth_mode', 'Authentication');
+  terminal.input('\x1b[A'); terminal.input('\r');
+  assert.equal(setup.values.auth_mode, 'native');
+  assert.equal(setup.values.api_key_file, '');
+  terminal.input('\x04'); await running;
+});
+
 test('end requires confirmation and releases execution through the service', {timeout: 15000}, async t => {
   const {client} = await fixture(t);
   const terminal = new Terminal();

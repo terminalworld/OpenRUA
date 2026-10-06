@@ -20,7 +20,7 @@ def terminal_smoke(executable: Path, home: Path, environment: dict) -> None:
                              stdin=slave, stdout=slave, stderr=slave, env=environment)
     os.close(slave)
     output = bytearray()
-    sent = False
+    stage = 0
     try:
         deadline = time.monotonic() + 20
         while time.monotonic() < deadline and child.poll() is None:
@@ -29,13 +29,23 @@ def terminal_smoke(executable: Path, home: Path, environment: dict) -> None:
                     output.extend(os.read(master, 65536))
                 except OSError:
                     break
-            if not sent and b'Configure a new robot conversation' in output:
+            if stage == 0 and b'Configure a new robot conversation' in output:
+                os.write(master, b'\x1b[B' * 6 + b'\r')
+                stage = 1
+            elif stage == 1 and b'no automatic fallback' in output:
+                os.write(master, b'\x1b[B\r')
+                stage = 2
+            elif stage == 2 and b'API key file path' in output:
+                os.write(master, b'\x1b[B' * 7 + b'\r')
+                stage = 3
+            elif stage == 3 and b'Do not paste the key here' in output:
                 os.write(master, b'\x04')
-                sent = True
+                stage = 4
         if child.poll() is None:
             child.wait(timeout=5)
-        assert sent and child.returncode == 0, output.decode(errors='replace')
+        assert stage == 4 and child.returncode == 0, output.decode(errors='replace')
         assert not (home / 'sandboxes').exists(), 'Setup cancellation started resources'
+        assert not (home / 'config.yaml').exists(), 'Setup cancellation saved an API choice'
     finally:
         if child.poll() is None:
             child.kill()

@@ -29,6 +29,7 @@ export class Setup extends Screen {
   constructor(spec, terminal) {
     super(terminal);
     this.values = {...spec.values}; this.spec = spec;
+    this.authentication = {...spec.authentication};
     this.ui.addChild(new Text(`Configure a new robot conversation\n${plain(spec.location)}\nTested combinations only; dependent fields update together.\nPrepare and start installs missing images automatically.\nCustom profiles remain available through the CLI.`, 0, 1));
     this.body = new Container(); this.ui.addChild(this.body);
     this.notice = new Text(plain(spec.notice), 0, 1); this.ui.addChild(this.notice);
@@ -39,8 +40,12 @@ export class Setup extends Screen {
     this.body.clear();
     const labels = {robot: 'Robot', sim: 'Simulator', bench: 'Benchmark / scene',
       agent: 'Coding agent', model: 'Model (blank for default)', name: 'Session ID / optional name'};
+    if (Object.hasOwn(this.values, 'auth_mode')) {
+      labels.auth_mode = 'Authentication';
+      if (this.values.auth_mode === 'api') labels.api_key_file = 'API key file path';
+    }
     const items = Object.entries(labels).map(([key, label]) => ({value: key,
-      label: `${label}: ${plain(this.values[key]) || '(none)'}`}));
+      label: `${label}: ${key === 'auth_mode' ? this.authLabel(this.values[key]) : plain(this.values[key]) || '(none)'}`}));
     items.push({value: 'start', label: 'Prepare and start'}, {value: 'check', label: 'Save and check preparation'},
       {value: 'history', label: '/resume: find an existing conversation'}, {value: 'quit', label: 'Quit'});
     const menu = new SelectList(items, 10, selectTheme);
@@ -56,8 +61,18 @@ export class Setup extends Screen {
     this.body.addChild(menu); this.ui.setFocus(menu); this.ui.requestRender();
   }
   update(key, value) {
-    if (key === 'agent' && value.trim() !== this.values.agent) this.values.model = this.spec.models[value.trim()] ?? '';
+    if (key === 'agent' && value.trim() !== this.values.agent) {
+      this.values.model = this.spec.models[value.trim()] ?? '';
+      if (Object.hasOwn(this.values, 'auth_mode')) {
+        this.authentication[this.values.agent] = {...this.authentication[this.values.agent],
+          auth_mode: this.values.auth_mode, api_key_file: this.values.api_key_file};
+        const next = this.authentication[value.trim()] ?? {};
+        this.values.auth_mode = next.auth_mode ?? 'native';
+        this.values.api_key_file = next.api_key_file ?? '';
+      }
+    }
     this.values[key] = value.trim();
+    if (key === 'auth_mode' && value === 'native') this.values.api_key_file = '';
     const fields = ['robot', 'sim', 'bench'];
     if (this.spec.environments != null && fields.includes(key)) {
       for (const child of fields.slice(fields.indexOf(key) + 1)) {
@@ -68,25 +83,31 @@ export class Setup extends Screen {
     this.menu();
   }
   options(key) {
+    if (key === 'auth_mode') return this.authentication[this.values.agent]?.api ? ['native', 'api'] : ['native'];
     const fields = ['robot', 'sim', 'bench'];
     if (this.spec.environments == null || !fields.includes(key)) return this.spec.choices[key] ?? [];
     const before = fields.slice(0, fields.indexOf(key));
     return [...new Set(this.spec.environments.filter(row => before.every(k => !this.values[k] || this.values[k] === row.selection[k]))
       .map(row => row.selection[key]))].sort();
   }
+  authLabel(mode) {
+    return mode === 'api' ? 'API key file (explicit API billing)' : 'Native CLI login (default)';
+  }
   edit(key, label, custom = false) {
     this.body.clear();
     const choices = this.options(key);
     const guided = this.spec.environments != null && ['robot', 'sim', 'bench'].includes(key);
     this.body.addChild(new Text(label, 0, 1));
+    if (key === 'auth_mode') this.body.addChild(new Text('Native login uses your existing coding-agent account.\nAPI billing is used only when you select it; there is no automatic fallback.\nAPI mode is offered only for plugins that support it.', 0, 1));
+    if (key === 'api_key_file') this.body.addChild(new Text('Enter the path to a file containing the raw API key. Do not paste the key here.', 0, 1));
     if (guided && !choices.length) {
       this.notice.setText('No tested combination for this selection. Change the robot first; use explicit CLI options for custom profiles.');
       this.menu(); return;
     }
     if (choices.length && !custom) {
       const menu = new SelectList([
-        ...choices.map(value => ({value, label: plain(value) || '(native scene)'})),
-        ...(!guided ? [{value: '\0custom', label: 'Enter a name or profile path'},
+        ...choices.map(value => ({value, label: key === 'auth_mode' ? this.authLabel(value) : plain(value) || '(native scene)'})),
+        ...(!guided && key !== 'auth_mode' ? [{value: '\0custom', label: 'Enter a name or profile path'},
         {value: '', label: '(none / configured default)'}] : []),
       ], 10, selectTheme);
       menu.setSelectedIndex(Math.max(0, choices.indexOf(this.values[key])));

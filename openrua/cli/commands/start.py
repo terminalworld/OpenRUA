@@ -40,6 +40,7 @@ def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
     package = config.load_user_config(paths.package_config_path())
     chosen = args.agent or user.agent or package.agent
     models = {name: facts.model or '' for name, facts in user.agents.items()}
+    selected = config.layer_agent({}, package, user, agent=chosen)
     values = {
         'robot': args.robot or user.robot or package.robot or '',
         'sim': args.sim or user.simulator or package.simulator or '',
@@ -58,15 +59,35 @@ def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
         values.update(robot=resolved.robot if not resolved.robot.startswith('(') else '',
                       sim=resolved.simulator or '', bench=resolved.benchmark or '',
                       agent=selected['name'], model=args.model or selected.get('model') or '')
+    auth = selected.get('auth') or {}
+    values.update(auth_mode=auth.get('mode', 'native'), api_key_file=auth.get('key_file') or '')
     return values, models
+
+
+def authentication_choices(home: Path, names: list[str]) -> dict:
+    """Describe plugin capabilities and saved choices, without reading keys."""
+    package = config.load_user_config(paths.package_config_path())
+    user = config.load_user_config(paths.config_path(home))
+    result = {}
+    for name in names:
+        selected = config.layer_agent({}, package, user, agent=name)
+        adapter = agents.get(name, home, version=selected.get('version'))
+        auth = selected.get('auth') or {}
+        result[name] = {'api': 'prepare_api_profile' in adapter.capabilities,
+                        'auth_mode': auth.get('mode', 'native'),
+                        'api_key_file': auth.get('key_file') or ''}
+    return result
 
 
 def save_values(home: Path, values: dict[str, str]) -> None:
     paths.sandbox_dir(values['name'], home)
-    validate_values(home, values)
+    cfg = validate_values(home, values)
+    facts = {'model': values['model'] or None}
+    if 'auth_mode' in values:
+        facts['auth'] = cfg['agent']['auth']
     settings.update(home, {key: values[field] or None for field, key in
                          [('robot', 'robot'), ('sim', 'simulator'), ('bench', 'benchmark'), ('agent', 'agent')]},
-                    {'model': values['model'] or None})
+                    facts)
 
 
 def save_guided_values(home: Path, values: dict, environments: list[dict]) -> None:
@@ -83,7 +104,23 @@ def validate_values(home: Path, values: dict[str, str]) -> dict:
                          agent=values['agent'] or None, model=values['model'] or None).cfg
     selected = cfg['agent']
     adapter = agents.get(selected['name'], home, version=selected.get('version'))
-    agents.api_key_file(adapter, selected.get('auth'))
+    if 'auth_mode' in values:
+        auth = {'mode': values['auth_mode']}
+        if values.get('api_key_file'):
+            auth['key_file'] = str(Path(values['api_key_file']).expanduser().resolve())
+        # A benchmark's explicit facts outrank saved defaults. Do not promise
+        # a choice that would be replaced on launch.
+        if values['bench']:
+            _, benchmark = config.load_benchmark(values['bench'])
+            fixed = benchmark.get('agent') or {}
+            if fixed.get('name') in (None, selected['name']) and fixed.get('auth') and fixed['auth'] != auth:
+                raise UsageError('the benchmark prescribes different authentication',
+                                 hint='edit its agent.auth configuration before selecting another source')
+        selected['auth'] = auth
+    try:
+        agents.api_key_file(adapter, selected.get('auth'))
+    except ValueError as exc:
+        raise UsageError(str(exc), hint='choose native login, or API key file with a readable raw-key file') from exc
     if 'conversation' not in adapter.capabilities:
         raise UsageError(f'{adapter.name} does not support shared chat',
                          hint='use this plugin with openrua run or select a conversation-capable agent')
@@ -199,7 +236,8 @@ def _run(args) -> int:
                                 lambda values: launch(args, values), models,
                                 lambda: history.entries(args.home),
                                 lambda name: history.open_session(args.home, name),
-                                environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress))
+                                environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress),
+                                authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']]))))
         if result is None:
             return 0
         client, name = result
