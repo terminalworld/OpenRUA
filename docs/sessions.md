@@ -30,7 +30,7 @@ For ordinary use, `openrua` creates a new session with an automatic ID;
 `openrua --resume` finds a previous conversation and `--name NAME` explicitly
 starts or reconnects to a named session;
 `openrua --gui` selects the browser and `openrua --cli` selects plain chat.
-Preparation is still explicit: the setup form reports missing images and login
+Preparation is still explicit: the keyboard setup reports missing images and login
 without building or authenticating for you. The service runs in the background,
 with startup output in `~/.openrua/launches/<name>/service.log`.
 
@@ -105,8 +105,8 @@ plain text, not executable HTML.
 
 ### Workspace files
 
-Both terminal frontends browse these same files through `/files`; the default
-TUI also provides **Ctrl+O**. Browsing does not send an agent instruction. See
+The terminal browses these same files through `/files`, using keyboard
+selection and read-only previews. Browsing does not send an agent instruction. See
 [terminal controls](terminal.md#current-scope) for preview support and keyboard
 navigation. The browser panel below also supports image viewing and downloads.
 

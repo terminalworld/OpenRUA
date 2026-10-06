@@ -37,6 +37,7 @@ def test_interactive_default_uses_product_entry(monkeypatch, tmp_path):
     monkeypatch.setattr(start, 'run', lambda args: called.append(args) or 0)
     assert main(['--home', str(tmp_path)]) == 0
     assert called[0].home == tmp_path
+    assert called[0].tui == 'pi'
 
 
 def test_existing_session_reconnects_without_reading_changed_defaults(tmp_path, monkeypatch):
@@ -48,10 +49,10 @@ def test_existing_session_reconnects_without_reading_changed_defaults(tmp_path, 
     monkeypatch.setattr(start.service, 'connect', lambda path: client)
     opened = []
     monkeypatch.setattr(start, 'open_interface', lambda args, c, name: opened.append((c, name)) or 0)
-    assert start.run(args(tmp_path, '--name', 'openrua')) == 0
+    assert start.run(args(tmp_path, '--cli', '--name', 'openrua')) == 0
     assert opened == [(client, 'openrua')]
     with pytest.raises(UsageError, match='startup options'):
-        start.run(args(tmp_path, '--name', 'openrua', '--agent', 'codex'))
+        start.run(args(tmp_path, '--cli', '--name', 'openrua', '--agent', 'codex'))
 
 
 def test_retained_directory_is_not_overwritten(tmp_path, monkeypatch):
@@ -106,10 +107,10 @@ def test_resume_does_not_load_config_or_launch_resources(tmp_path, monkeypatch):
     monkeypatch.setattr(start.history, 'open_session', lambda home, name: (selected, name))
     opened = []
     monkeypatch.setattr(start, 'open_interface', lambda a, c, n: opened.append((c, n)) or 0)
-    assert start.run(args(tmp_path, '--resume', 'old')) == 0
+    assert start.run(args(tmp_path, '--cli', '--resume', 'old')) == 0
     assert opened == [(selected, 'old')]
     with pytest.raises(UsageError):
-        start.run(args(tmp_path, '--resume', 'old', '--robot', 'panda'))
+        start.run(args(tmp_path, '--cli', '--resume', 'old', '--robot', 'panda'))
 
 
 def test_pi_uses_same_launcher_after_keyboard_setup(tmp_path, monkeypatch):
@@ -129,7 +130,7 @@ def test_pi_uses_same_launcher_after_keyboard_setup(tmp_path, monkeypatch):
         return launch(values), values['name']
     monkeypatch.setattr(launcher, 'setup', setup)
     monkeypatch.setattr(start, 'open_interface', lambda a, c, name: phases.append('chat') or 0)
-    assert start.run(args(tmp_path, '--tui', 'pi', '--bench', 'robocasa365')) == 0
+    assert start.run(args(tmp_path, '--bench', 'robocasa365')) == 0
     assert phases == ['save', 'check', 'launch', 'chat']
 
 
@@ -144,7 +145,7 @@ def test_pi_resume_never_loads_new_settings_or_launches(tmp_path, monkeypatch):
     monkeypatch.setattr(start.history, 'open_session', lambda home, name: ('client', name))
     opened = []
     monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops: opened.append((client, name)) or 0)
-    assert start.run(args(tmp_path, '--tui', 'pi', '--resume', 'retained')) == 0
+    assert start.run(args(tmp_path, '--resume', 'retained')) == 0
     assert opened == [('client', 'retained')]
 
 
@@ -173,3 +174,23 @@ def test_invalid_saved_combination_still_opens_editable_setup(tmp_path):
     (tmp_path / 'config.yaml').write_text('robot: panda\nsimulator: maniskill\nbenchmark: libero_pro\n')
     values, _ = start.values_for(args(tmp_path, '--sim', 'maniskill'))
     assert values['robot'] == 'panda' and values['sim'] == 'maniskill'
+
+
+@pytest.mark.parametrize('flag', ['--gui', '--cli'])
+def test_non_tui_resume_needs_no_terminal_runtime(tmp_path, monkeypatch, flag):
+    from openrua.terminal import launcher
+    monkeypatch.setattr(launcher, 'check_terminal', lambda: pytest.fail('must not open terminal'))
+    monkeypatch.setattr(start.history, 'open_session', lambda home, name: ('client', name))
+    monkeypatch.setattr(start, 'open_interface', lambda *args: 0)
+    assert start.run(args(tmp_path, flag, '--resume', 'running')) == 0
+
+
+def test_legacy_chat_tui_opens_the_same_keyboard_frontend(tmp_path, monkeypatch):
+    from openrua.cli.commands import chat
+    from openrua.terminal import launcher
+    monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
+    monkeypatch.setattr(chat, 'connect', lambda args: type('Client', (), {})())
+    opened = []
+    monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops: opened.append(name) or 0)
+    assert main(['--home', str(tmp_path), 'chat', '--tui', '--name', 'old']) == 0
+    assert opened == ['old']

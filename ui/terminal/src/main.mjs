@@ -9,7 +9,7 @@ try {
   const {values} = parseArgs({options: {endpoint: {type: 'string'}, input: {type: 'string'},
     output: {type: 'string'}, help: {type: 'boolean'}}});
   if (values.help) {
-    console.log('Usage: openrua --tui pi\nDevelopment: node src/main.mjs --endpoint /path/to/endpoint.json\n\nCtrl+D or /quit detaches without ending the session.');
+    console.log('Usage: openrua\nDevelopment: node src/main.mjs --endpoint /path/to/endpoint.json\n\nCtrl+D or /quit detaches without ending the session.');
   } else {
     if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('Run in an interactive terminal; use openrua session for scripts.');
     if (Boolean(values.input) !== Boolean(values.output) || Boolean(values.endpoint) === Boolean(values.input)) {

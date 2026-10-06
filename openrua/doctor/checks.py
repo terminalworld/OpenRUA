@@ -261,7 +261,7 @@ def check_login(ctx: Context) -> list[CheckResult]:
                                        if a.token_env else "")))
         else:
             out.append(CheckResult(f"login-{a.name}", f"{a.name} login file at {home}",
-                                   detail='readable and nonempty; authentication and quota are checked by the native agent'))
+                                   detail=f'source: {home.resolve()}; readable and nonempty; authentication and quota are checked by the native agent'))
     return out
 
 
@@ -307,9 +307,9 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
             settings = config.layer_agent(configured, defaults, user, agent=spec)
             adapter = agents.get(n, home, version=settings.get("version"))
             chosen.append(adapter)
-            login_directories[adapter] = Path(
-                settings.get("credentials_dir") or paths.credentials_dir(home) / adapter.name
-            ).expanduser()
+            login_directories[adapter] = agents.resolve_profile(
+                adapter, settings.get('credentials_dir'), paths.credentials_dir(home) / adapter.name,
+                user_home=Path.home(), environment=os.environ)
         except Exception as exc:  # noqa: BLE001
             report.checks.append(CheckResult(f"agent-{n}", f"agent {n}: {exc}", "error",
                                              hint="openrua agents lists the agents"))

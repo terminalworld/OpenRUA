@@ -21,10 +21,10 @@ whitelist:
   - '^api\.openai\.com$'
   - '^chatgpt\.com$'
   - '^auth\.openai\.com$'
-# The CLI keeps its login in a directory named by CODEX_HOME; the sandbox
-# gets a login of its own (never a copy of the host's auth.json: its
-# refresh token rotates and a second copy invalidates the first).
+# Reuse the native file-based login through an OpenRUA directory alias.
+# Explicit credentials_dir selects a separate profile; secrets are not copied.
 credentials:
+  native_dir: .codex
   dirname: codex
   filename: auth.json
   config_env: CODEX_HOME

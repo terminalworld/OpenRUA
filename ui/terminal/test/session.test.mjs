@@ -319,3 +319,14 @@ test('saved image preview uses Pi image rendering and a terminal fallback', asyn
   assert.match(preview.render(60).join('\n'), /camera.png/);
   assert.match(preview.render(60).join('\n'), /not a live camera feed/);
 });
+
+
+test('a native error emitted as both message and result is displayed once', () => {
+  const view = new Transcript();
+  const error = 'Failed to authenticate: OAuth session expired and could not be refreshed';
+  view.event({kind: 'agent_event', data: {kind: 'item', turn_id: 'failed',
+    data: {kind: 'message', item_id: 'auth', text: error}}});
+  view.event({kind: 'agent_event', data: {kind: 'turn_finished', turn_id: 'failed',
+    data: {status: 'failed', error: {message: error}}}});
+  assert.equal(view.render(120).join('\n').split(error).length - 1, 1);
+});

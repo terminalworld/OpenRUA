@@ -9,15 +9,15 @@ agent runtime or model provider is imported.
 
 ## Start
 
-Pi is an opt-in frontend in OpenRUA 0.5.0; the default remains Textual:
+Pi is the default terminal in OpenRUA 0.6.0. All interaction uses the keyboard:
 
 ```sh
-pip install -U 'openrua[pi]>=0.5.0'
-openrua --tui pi
+pip install -U 'openrua>=0.6.0'
+openrua
 ```
 
-The wheel includes the frontend and its dependency resources. The `pi` extra
-installs a packaged Node runtime through pip, so users need neither a separate
+The wheel includes the frontend and its dependency resources. Ordinary pip
+installation includes the packaged Node runtime, so users need neither a separate
 Node/npm install nor a second terminal. This distribution path has been tested
 on Linux x86_64. Other runtime platforms and terminal IMEs need further trials.
 
@@ -32,9 +32,9 @@ Save and check does not build. Agent login still uses the native CLI. CLI config
 and direct edits to `config.yaml` remain supported.
 
 ```sh
-openrua --tui pi --setup
-openrua --tui pi --resume
-openrua --tui pi --resume ID
+openrua --setup
+openrua --resume
+openrua --resume ID
 ```
 
 You can also reconnect to a named running session using `--name NAME`. New
@@ -97,7 +97,7 @@ pip install -e '.[dev,pi]' build
 npm ci --prefix ui/terminal --ignore-scripts
 npm test --prefix ui/terminal
 python scripts/terminal_assets.py prepare
-openrua --tui pi
+openrua
 ```
 
 Frontend developers need Node 22.19 or newer for npm. Re-run asset preparation
@@ -107,7 +107,7 @@ service with `npm start --prefix ui/terminal -- --endpoint PATH`.
 
 ```sh
 python -m build
-python scripts/check_dist.py --dist dist --version 0.5.0
+python scripts/check_dist.py --dist dist --version 0.6.0
 ```
 
 Distribution builds check the asset manifest, source hashes, and locked

@@ -13,8 +13,46 @@ from __future__ import annotations
 
 import shutil
 from pathlib import Path
+from collections.abc import Mapping
 
 from openrua.agents.base import Agent
+
+
+def resolve_profile(agent: Agent, configured: str | Path | None, alias: Path, *,
+                    user_home: Path, environment: Mapping[str, str], link: bool = False) -> Path:
+    """Resolve the login without changing explicit or existing account selections.
+
+    Native locations belong to the agent manifest. Read-only callers discover
+    the same source; launchers can create an absent alias without copying secrets.
+    """
+    def expand(value):
+        value = str(value)
+        return user_home / value[2:] if value.startswith('~/') else Path(value)
+
+    if configured:
+        return expand(configured)
+    creds = getattr(agent, 'credentials', None)
+    if creds is None:
+        return alias
+    override = environment.get(creds.config_env)
+    if not override and (alias.exists() or alias.is_symlink()):
+        return alias
+    if not override and not creds.native_dir:
+        return alias
+    source = expand(override) if override else user_home / creds.native_dir
+    if alias.exists() or alias.is_symlink():
+        # Honor the native override without replacing a different stored account.
+        return alias if alias.resolve() == source.resolve() else source
+    if link and (source / creds.filename).is_file():
+        alias.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            alias.symlink_to(source.resolve(), target_is_directory=True)
+        except FileExistsError:
+            # A concurrent launch selected an account first. Never overwrite it.
+            if override and alias.resolve() != source.resolve():
+                return source
+        return alias
+    return source
 
 
 def prepare_profile(creds_home: Path, agent: Agent, dest: Path,

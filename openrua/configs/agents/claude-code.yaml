@@ -23,10 +23,10 @@ whitelist:
   - '^console\.anthropic\.com$'
   - '^platform\.claude\.com$'
   - '^claude\.ai$'
-# Subscription login lives in a profile directory of its own, isolated
-# from the operator's personal one: OAuth refresh tokens rotate, and a
-# second copy of the credentials file would invalidate the first.
+# Reuse the native file-based login through an OpenRUA directory alias.
+# Explicit credentials_dir selects a separate profile; secrets are not copied.
 credentials:
+  native_dir: .claude
   dirname: claude-code
   filename: .credentials.json
   config_env: CLAUDE_CONFIG_DIR

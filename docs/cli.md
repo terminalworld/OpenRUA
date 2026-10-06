@@ -58,12 +58,11 @@ start or reconnect (without a subcommand):
   --model MODEL         model for a new session (default: the agent's
                         configuration)
   --gui                 open the browser instead of terminal chat
-  --tui UI              terminal frontend: textual or pi (default: textual; pi
-                        requires openrua[pi])
+  --tui UI              keyboard terminal frontend (default: pi, included)
   --cli                 use plain text chat instead of the TUI
   --port PORT           local service port for a new session (default: a free
                         port)
-  --setup               edit shared defaults in the terminal setup form
+  --setup               edit shared defaults in the keyboard setup menu
   --resume [ID]         choose a previous conversation, or reconnect by its
                         ID/name
 ```
@@ -378,8 +377,8 @@ positional arguments:
 options:
   -h, --help     show this help message and exit
   --name NAME
-  --tui          open the experimental chat-first terminal interface (included
-                 in the default installation)
+  --tui          open keyboard terminal chat (included in the default
+                 installation)
   --follow       observe events without submitting anything
   --after AFTER  event cursor for --follow (default: from the beginning)
 ```
@@ -640,8 +639,7 @@ options:
                         real robot: its own domain, 0)
   --credentials-dir CREDENTIALS_DIR
                         agent login-profile override (default: the config's
-                        agent.credentials_dir, then
-                        ~/.openrua/credentials/<agent>)
+                        agent.credentials_dir, then native login discovery)
   --token-file TOKEN_FILE
                         file holding <token_env>=<token> for the sandbox CLI;
                         given, the sandbox authenticates with that token and

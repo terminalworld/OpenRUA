@@ -47,6 +47,7 @@ class Credentials:
     filename: str
     config_env: str
     mount_point: str
+    native_dir: str | None = None
 
 
 # The optional hooks, in the order they are documented below. An agent

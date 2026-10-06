@@ -25,11 +25,11 @@ def add_options(parser) -> None:
     group.add_argument('--model', default=None, help="model for a new session (default: the agent's configuration)")
     interface = group.add_mutually_exclusive_group()
     interface.add_argument('--gui', action='store_true', help='open the browser instead of terminal chat')
-    interface.add_argument('--tui', choices=['textual', 'pi'], default='textual', metavar='UI',
-                           help='terminal frontend: textual or pi (default: textual; pi requires openrua[pi])')
+    interface.add_argument('--tui', choices=['pi'], default='pi', metavar='UI',
+                           help='keyboard terminal frontend (default: pi, included)')
     interface.add_argument('--cli', action='store_true', help='use plain text chat instead of the TUI')
     group.add_argument('--port', type=int, default=None, help='local service port for a new session (default: a free port)')
-    group.add_argument('--setup', action='store_true', help='edit shared defaults in the terminal setup form')
+    group.add_argument('--setup', action='store_true', help='edit shared defaults in the keyboard setup menu')
     group.add_argument('--resume', nargs='?', const='', default=None, metavar='ID',
                        help='choose a previous conversation, or reconnect by its ID/name')
     parser.set_defaults(init_state=None, name=None)
@@ -51,7 +51,7 @@ def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
     try:
         resolved = config.compose(args.robot, args.sim, args.bench, args.home, agent=args.agent)
     except (UsageError, NotFound, config.ConfigError):
-        # An incomplete first-run selection stays editable in the form.
+        # An incomplete first-run selection stays editable in the menu.
         pass
     else:
         selected = resolved.cfg['agent']
@@ -117,32 +117,15 @@ def launch(args, values: dict[str, str]):
     return service.start(argv, directory / 'endpoint.json', logs / 'service.log', logs / 'start.lock')
 
 
-def open_terminal(home, client, name: str, frontend: str = 'textual') -> int:
-    if frontend == 'pi':
-        from openrua.terminal.launcher import chat as pi_chat
-        return pi_chat(client, name, lambda: history.entries(home),
-                       lambda name: history.open_session(home, name))
-    from openrua.tui.app import ChatApp
-    while True:
-        client.timeout = 5
-        selected = ChatApp(client, name=name, list_sessions=lambda: history.entries(home),
-                           open_session=lambda name: history.open_session(home, name)).run()
-        if selected is None:
-            return 0
-        client, name = selected
+def open_terminal(home, client, name: str, frontend: str = 'pi') -> int:
+    from openrua.terminal.launcher import chat as terminal_chat
+    return terminal_chat(client, name, lambda: history.entries(home),
+                         lambda name: history.open_session(home, name))
 
 
-def choose_history(home, frontend: str = 'textual'):
-    if frontend == 'pi':
-        from openrua.terminal.launcher import choose_history as pi_history
-        return pi_history(lambda: history.entries(home), lambda name: history.open_session(home, name))
-    from textual.app import App
-    from openrua.tui.history import History
-    class Picker(App):
-        def on_mount(self):
-            self.push_screen(History(lambda: history.entries(home),
-                                     lambda name: history.open_session(home, name)), self.exit)
-    return Picker().run()
+def choose_history(home, frontend: str = 'pi'):
+    from openrua.terminal.launcher import choose_history as terminal_history
+    return terminal_history(lambda: history.entries(home), lambda name: history.open_session(home, name))
 
 
 def open_interface(args, client, name: str) -> int:
@@ -161,19 +144,14 @@ def run(args) -> int:
     try:
         return _run(args)
     except (RuntimeError, OSError, ValueError) as exc:
-        if args.tui != 'pi':
-            raise
         raise UnavailableError(str(exc), hint='the session may still be running; inspect it with --resume') from exc
 
 
 def _run(args) -> int:
-    if args.tui == 'pi':
-        if not sys.stdin.isatty() or not sys.stdout.isatty():
-            raise UsageError('Pi needs an interactive terminal', hint='use --cli for plain text interaction')
-        from openrua.terminal.launcher import entrypoint, runtime
+    if not (args.gui or args.cli) or args.setup or args.resume == '':
+        from openrua.terminal.launcher import check_terminal
         try:
-            runtime()
-            entrypoint()
+            check_terminal()
         except RuntimeError as exc:
             raise UnavailableError(str(exc)) from exc
     if args.resume is not None:
@@ -213,28 +191,14 @@ def _run(args) -> int:
         choices = {'agent': [entry.name for entry in paths.available('agents')
                              if 'conversation' in agents.get(entry.name, args.home).capabilities]}
         choices.update({field: startup.options(environments, values, field) for field in startup.FIELDS})
-        if args.tui == 'pi':
-            from openrua.terminal.launcher import setup as pi_setup
-            result = pi_setup(values, choices, str(paths.config_path(args.home)),
-                              lambda values: save_guided_values(args.home, values, environments),
-                              lambda values: check_values(args.home, values),
-                              lambda values: launch(args, values), models,
-                              lambda: history.entries(args.home),
-                              lambda name: history.open_session(args.home, name),
-                              environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress))
-        else:
-            from openrua.tui.setup import SetupApp
-            app = SetupApp(values, choices, str(paths.config_path(args.home)),
-                           lambda values: save_guided_values(args.home, values, environments),
-                           lambda values: check_values(args.home, values),
-                           lambda values: launch(args, values), agent_models=models,
-                           list_sessions=lambda: history.entries(args.home),
-                           open_session=lambda name: history.open_session(args.home, name),
-                           environments=environments,
-                           selection=lambda v, k, value: startup.select(environments, v, k, value),
-                           choices_for=lambda v, k: startup.options(environments, v, k),
-                           prepare=lambda v, progress: prepare(args.home, v, progress))
-            result = app.run()
+        from openrua.terminal.launcher import setup as terminal_setup
+        result = terminal_setup(values, choices, str(paths.config_path(args.home)),
+                                lambda values: save_guided_values(args.home, values, environments),
+                                lambda values: check_values(args.home, values),
+                                lambda values: launch(args, values), models,
+                                lambda: history.entries(args.home),
+                                lambda name: history.open_session(args.home, name),
+                                environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress))
         if result is None:
             return 0
         client, name = result

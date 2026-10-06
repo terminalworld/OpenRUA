@@ -65,6 +65,8 @@ def test_docker_engine_reports_no_userns_row(tmp_path, monkeypatch):
 
 
 def test_missing_pieces_are_errors_with_a_fix_and_stale_labels_are_warnings(tmp_path, monkeypatch):
+    monkeypatch.setattr(doctor.checks.Path, "home", lambda: tmp_path)
+    monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)
     monkeypatch.setattr(doctor.checks, "docker_inspect", _fake_docker({
         "openrua-proxy": {"openrua.whitelist_sha256": "stale"},
         "openrua-sandbox-jazzy": {"openrua.preinstall_sha256": "stale"}}))

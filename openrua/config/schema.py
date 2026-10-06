@@ -119,7 +119,7 @@ class AgentConfig(Strict):
                                 "default: whatever the image has")
     credentials_dir: str | None = Field(
         default=None, description="login profile directory; default: "
-        "~/.openrua/credentials/<agent name>")
+        "native login discovery, with ~/.openrua/credentials/<agent name> as its alias")
     options: dict[str, Any] = Field(
         default_factory=dict, description="adapter-specific knobs passed through as "
         "given, over the adapter's default_options")
@@ -134,7 +134,7 @@ class AgentFacts(Strict):
                               "default on this machine")
     version: str | None = Field(default=None, description="pin the agent CLI version")
     credentials_dir: str | None = Field(default=None, description="login profile "
-                                        "directory; default: ~/.openrua/credentials/<name>")
+                                        "directory; null enables native login discovery")
     options: dict[str, Any] | None = Field(default=None, description="merged key by key "
                                            "with the layers above")
 
@@ -629,6 +629,7 @@ class Credentials(Strict):
     filename: str = Field(description="the credentials file inside that directory")
     config_env: str = Field(description="environment variable naming the profile directory")
     mount_point: str = Field(description="where the profile is mounted inside the sandbox")
+    native_dir: str | None = Field(default=None, description="native profile directory relative to the host user home")
 
 
 class AgentManifest(Strict):

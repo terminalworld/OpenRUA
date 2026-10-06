@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openrua"
-version = "0.5.0"
+version = "0.6.0"
 description = "Let your Claude Code or Codex control any robot, real or simulated, through the standard ROS 2 CLI and client library."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,11 +25,11 @@ dependencies = [
     "numpy",
     "pyyaml",
     "pydantic>=2",
-    "textual>=8.2.8,<9",
+    "nodejs-wheel-binaries>=22.20,<23",
 ]
 
 [project.optional-dependencies]
-pi = ["nodejs-wheel-binaries>=22.20,<23"]
+pi = []  # Compatibility extra; Pi is now the default terminal.
 tui = []  # Compatibility extra; the terminal interface is installed by default.
 browser-test = ["pytest", "playwright>=1.50,<2"]
 demo = ["pillow", "numpy", "imageio", "imageio-ffmpeg"]
@@ -86,7 +86,7 @@ testpaths = ["tests"]
 #               them with native conversations and shared session execution.
 #   sessions    user-message coordination via agent contracts and injected
 #               storage/transport, never robot resources or vendor plugins.
-#   tui         terminal presentation through sessions.client only.
+#   terminal    keyboard presentation through injected operations and the session API.
 #   web         browser assets supplied by the caller to the HTTP adapter.
 #   artifacts   read-only workspace access with explicit root and limits.
 #   cli         the command line (openrua up | down | agent | run | ...);
@@ -217,28 +217,12 @@ source_modules = ["openrua.artifacts"]
 forbidden_modules = ["openrua.sessions", "openrua.agents", "openrua.plugins", "openrua.runner", "openrua.robot", "openrua.sandbox", "openrua.config", "openrua.cli", "openrua.web", "openrua.proxy", "openrua.doctor", "openrua.testing", "openrua.demo", "openrua.errors"]
 
 [[tool.importlinter.contracts]]
-name = "terminal UI consumes the session client, never execution or vendor implementations"
-type = "forbidden"
-source_modules = ["openrua.tui"]
-forbidden_modules = ["openrua.robot", "openrua.runner", "openrua.sandbox", "openrua.proxy",
-                     "openrua.agents", "openrua.plugins", "openrua.config", "openrua.cli",
-                     "openrua.sessions.core", "openrua.sessions.execution", "openrua.sessions.store",
-                     "openrua.sessions.http"]
-
-[[tool.importlinter.contracts]]
-name = "execution and plugins never depend on terminal presentation"
-type = "forbidden"
-source_modules = ["openrua.sessions", "openrua.runner", "openrua.agents", "openrua.plugins",
-                  "openrua.robot", "openrua.sandbox", "openrua.proxy", "openrua.config", "openrua.errors"]
-forbidden_modules = ["openrua.tui"]
-
-[[tool.importlinter.contracts]]
 name = "Pi launcher consumes injected operations, never product internals"
 type = "forbidden"
 source_modules = ["openrua.terminal"]
 forbidden_modules = ["openrua.robot", "openrua.runner", "openrua.sandbox", "openrua.proxy",
                      "openrua.agents", "openrua.plugins", "openrua.config", "openrua.cli",
-                     "openrua.sessions", "openrua.tui"]
+                     "openrua.sessions"]
 
 [[tool.importlinter.contracts]]
 name = "execution never depends on Pi presentation"

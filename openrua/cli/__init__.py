@@ -55,7 +55,7 @@ def main(argv: list[str] | None = None) -> int:
     # default; from here on the user directory travels as a parameter.
     ap = build_parser(default_home=os.environ.get("OPENRUA_HOME") or None)
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)
-    if not args.verb and not (sys.stdin.isatty() and sys.stdout.isatty()) and not (args.gui or args.cli or args.setup or args.resume is not None or args.tui == 'pi'):
+    if not args.verb and not (sys.stdin.isatty() and sys.stdout.isatty()) and not (args.gui or args.cli or args.setup or args.resume is not None):
         ap.print_help()
         return 0
     if args.home is None:

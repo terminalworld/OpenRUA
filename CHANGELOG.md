@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+
+- Make the Pi keyboard terminal the default for `openrua`, setup, history, and `chat --tui`. Remove the Textual frontend and dependency. Ordinary installation now includes the terminal runtime; `[pi]` and `[tui]` remain compatibility extras.
+- Use Enter to send, Ctrl+J for newlines, slash commands for tools/files/queues, and keyboard selectors for configuration and confirmations. Ctrl+D on an empty input detaches. No mouse is required.
+- Discover native Claude Code and Codex file-based logins and create absent OpenRUA profile aliases on launch, without copying OAuth credentials. Explicit profile paths, native environment overrides, and existing account directories are preserved. Doctor shows the effective credential source; cached files do not prove that a login is still valid.
+- Avoid repeating a native error when it arrives as both a message and a final turn result.
+- Keep browser/plain CLI startup independent of terminal runtime checks. Synchronize installation, tutorials, keyboard references and package validation with the new default.
+
 ## 0.5.0
 
 - Browse saved workspace files from either terminal frontend without sending agent instructions. Pi uses its keyboard selector, scroll view and image component; the default TUI previews text and shows image metadata. Both reuse the existing read-only workspace API.

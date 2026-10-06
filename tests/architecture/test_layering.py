@@ -23,7 +23,7 @@ _HOST = {"openrua.runner.preflight", "openrua.runner.record", "openrua.sandbox",
 # host side.
 _ROBOT_HOST = {"openrua.robot.base", "openrua.robot.real", "openrua.robot.sim.build",
                "openrua.robot.sim.up", "openrua.robot.sim.down", "openrua.robot.sim.client"}
-_TOP = {"openrua.terminal", "openrua.tui", "openrua.cli", "openrua.doctor", "openrua.testing"}
+_TOP = {"openrua.terminal", "openrua.cli", "openrua.doctor", "openrua.testing"}
 _HOST_LEAVES = {"openrua.config", "openrua.errors"}
 _BRIDGE_BAN = _HOST | _ROBOT_HOST | _TOP | _HOST_LEAVES
 _LAYERS = _BRIDGE | {"openrua.runner.preflight", "openrua.runner.record",

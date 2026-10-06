@@ -19,7 +19,7 @@ Python matrix. CI also runs browser tests in Chromium. To run them locally:
 .venv/bin/pytest -q tests/web
 ```
 
-The optional [Pi terminal](ui/terminal/README.md) has a separate Node test job.
+The default [Pi terminal](ui/terminal/README.md) has a separate Node test job.
 With the Python development environment activated, install `.[dev,pi]`, then run
 `npm ci --prefix ui/terminal --ignore-scripts` and
 `npm test --prefix ui/terminal`. Its tests use the actual session service and

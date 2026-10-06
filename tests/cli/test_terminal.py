@@ -15,11 +15,11 @@ def test_missing_tui_dependency_has_an_actionable_repair_error():
     code = '''
 import builtins
 original = builtins.__import__
-def without_textual(name, *args, **kwargs):
-    if name == "textual" or name.startswith("textual."):
-        raise ModuleNotFoundError("No module named textual", name="textual")
+def without_runtime(name, *args, **kwargs):
+    if name == "nodejs_wheel" or name.startswith("nodejs_wheel."):
+        raise ModuleNotFoundError("No module named nodejs_wheel", name="nodejs_wheel")
     return original(name, *args, **kwargs)
-builtins.__import__ = without_textual
+builtins.__import__ = without_runtime
 from openrua.cli import main
 assert main(["--version"]) is None
 '''

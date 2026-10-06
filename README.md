@@ -41,11 +41,11 @@ queue, and revisit saved observations without starting a new robot each turn.
 ### Chat with a robot
 
 Use a Linux host with Docker or supported Podman setup. The terminal UI is
-included in the default installation. Automatic session IDs and history selection
-are included; version 0.5.0 adds workspace browsing and strengthens startup diagnostics:
+included in the default installation. Version 0.6.0 opens the keyboard-first Pi
+interface directly, with no separate Node installation or frontend selection:
 
 ```sh
-pip install -U 'openrua>=0.5.0'
+pip install -U 'openrua>=0.6.0'
 openrua
 ```
 
@@ -64,22 +64,22 @@ profiles remain available through explicit CLI options. See
 [setup validation](docs/setup-validation.md) for evidence and how to add a combination.
 
 OpenRUA starts the existing session service in the background and opens chat.
-Type an instruction and press **Ctrl+S**, for example:
+Type an instruction and press **Enter**, for example:
 
 > Inspect the workspace documentation and describe the scene without moving the robot.
 
-**Ctrl+O** (or `/files`) opens saved workspace files without sending an agent
-instruction. Text files can be previewed in the TUI; the browser displays saved
-images, and the optional Pi terminal can display them on compatible terminals.
+`/files` opens saved workspace files without sending an agent instruction.
+Use arrows and Enter to browse, Escape to return, and `r` to refresh. Text files
+are scrollable; images render on supported terminals, with a browser alternative.
 
-**Ctrl+Q** leaves the interface while the session keeps running. Use `/resume`
-in the startup form or chat to search previous conversations by title or ID.
+**Ctrl+D** on an empty input leaves the interface while the session keeps running.
+Use `/resume` in chat, or choose it in setup, to search previous conversations by title or ID.
 You can also run `openrua --resume`, or `openrua --gui --resume ID` to open a
 running conversation and its saved workspace images in the browser. To edit defaults later, use `openrua --setup`,
 `openrua config set`, or edit the same `config.yaml`; changes apply to new
 sessions, not the one already running.
 
-Choose **End session** when finished. Records and workspace files are retained;
+Use `/end` and confirm with the keyboard when finished. Records and workspace files are retained;
 run `openrua` again for a new session. Ended or unavailable conversations open
 read-only from history; selecting them never restarts robot execution. The
 [full walkthrough](examples/shared-session.md) gives a concrete simulated RoboCasa365
@@ -97,11 +97,11 @@ The following example runs **one CaP-Bench Lift trial**, records its cameras,
 and renders a video with terminal commands beside the robot views.
 
 Install the demo dependencies and prepare the environment once (Docker must
-be running; use your native Claude Code login):
+be running; an existing native Claude Code login is reused):
 
 ```sh
-pip install -U 'openrua[demo]>=0.5.0'
-CLAUDE_CONFIG_DIR=~/.openrua/credentials/claude-code claude login
+pip install -U 'openrua[demo]>=0.6.0'
+claude login  # only if not already signed in
 openrua build --bench capbench
 openrua build sandbox --distro humble --agent claude-code
 openrua build proxy --agent claude-code
@@ -137,7 +137,7 @@ for the experimental protocol.
 
 | Interface | Entry | When you leave |
 |---|---|---|
-| OpenRUA TUI | `openrua --name chat-demo` | Ctrl+Q detaches; the shared session continues |
+| OpenRUA TUI | `openrua --name chat-demo` | Ctrl+D detaches; the shared session continues |
 | Browser | `openrua --gui --name chat-demo` | Closing the page leaves the shared session running |
 | Plain CLI | `openrua --cli --name chat-demo` | Leaving the client keeps the shared session running |
 | Native agent terminal | `openrua run panda --sim robosuite --bench capbench --agent codex --name native-demo` | Exiting the agent stops the resources owned by `run` |
@@ -158,11 +158,10 @@ its resources while preserving files; deleting them is a separate operation.
 For development, `openrua serve` still runs the service in the foreground.
 Stopping that process ends its session, unlike closing one of its clients.
 
-For an optional **keyboard-first Pi terminal**, install
-`pip install -U 'openrua[pi]>=0.5.0'` and run `openrua --tui pi`.
-It provides keyboard configuration, `/resume`, queue management, and tool
-expansion on the same shared sessions, with no separate Node install.
-See the [Pi guide](ui/terminal/README.md) for controls and current limits.
+The default terminal uses **Enter** to send and **Ctrl+J** for a newline.
+Use `/tools`, `/files`, and `/queue` to open details on demand. Configuration,
+history, and confirmations use arrow keys, Enter, and Escape; no mouse is needed.
+`--tui pi` remains an explicit alias. See the [keyboard guide](ui/terminal/README.md).
 
 ## How it works
 

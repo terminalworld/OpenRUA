@@ -42,7 +42,7 @@ knowledge appears anywhere else.
 | `install` | | one-line root shell chain that installs the CLI into the sandbox image; `{version}` in it is replaced by a pin when one is given |
 | `version` | | a pin the manifest itself carries; normally absent (see below) |
 | `whitelist` | | regexes of the hosts the CLI must reach through the proxy |
-| `credentials` | | `dirname`, `filename`, `config_env`, `mount_point`: a profile-directory login |
+| `credentials` | | `dirname`, `filename`, `config_env`, `mount_point`, optional `native_dir`: a profile-directory login with native discovery |
 | `token_env` | | environment variable carrying a long-lived token (passed by file) |
 | `version_argv` | | command printing the CLI version (recorded per trial) |
 | `instruction_file` | | the instructions file the CLI reads on its own |

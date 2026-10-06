@@ -90,15 +90,35 @@ For the native login commands below, the corresponding agent CLI must also
 be installed on the host. The sandbox build installs its own copy for execution;
 it does not install the host command. Use the CLI's normal interactive login.
 
-Each agent logs in to a profile directory of its own under
-`~/.openrua/credentials/<agent>/`, never your personal one: OAuth
-refresh tokens rotate, and a second copy of a credentials file
-invalidates the first.
+OpenRUA reuses existing file-based native logins. With no explicit profile
+selection, it discovers `~/.claude` or `~/.codex` and, when the OpenRUA account
+path is absent, links `~/.openrua/credentials/<agent>` to that directory at
+startup. OAuth credential files are not copied. Doctor is read-only and shows
+the actual source selected for the sandbox.
+
+Precedence is explicit `credentials_dir`, the agent's native environment
+variable (`CLAUDE_CONFIG_DIR` or `CODEX_HOME`), an existing OpenRUA profile,
+then the native default directory. Existing directories and symlinks are never
+overwritten or silently switched to another account. To clear an obsolete
+explicit path, use `openrua config set --agent claude-code --credentials-dir null`
+(or `--agent codex`). Already-running sandboxes retain their selected login;
+start a new session to use a changed source. If native re-login replaces the
+credential file, also start a new sandbox so its file mount uses the new file.
+
+If not already signed in, use the native CLI:
 
 ```bash
-CLAUDE_CONFIG_DIR=~/.openrua/credentials/claude-code claude login
-CODEX_HOME=~/.openrua/credentials/codex codex login
+claude login
+codex login
 ```
+
+Logins held only in an OS keychain cannot be discovered as files by a Linux
+sandbox. Use the native CLI's supported file-based login on the execution host;
+see [Claude authentication](https://code.claude.com/docs/en/authentication) and
+[Codex authentication](https://developers.openai.com/codex/auth/).
+An expired, unrefreshable native login requires signing in again. Discovering a
+file does not repair revoked tokens. OpenRUA does not silently switch accounts
+or retry failed robot instructions after authentication failure.
 
 `openrua doctor` prints the command for whichever agent it finds
 logged out. The other route is a token by file: `openrua bench
@@ -219,10 +239,9 @@ rm -r ~/.openrua                         # defaults, logins, sandboxes
 docker image rm $(docker image ls -q 'openrua-*')
 ```
 
-## Optional Pi terminal
+## Keyboard terminal
 
-For the keyboard-first Pi frontend, use `pip install -U 'openrua[pi]>=0.4.1'`
-and `openrua --tui pi`. Pip installs the required runtime; a system Node/npm
-installation is unnecessary. See the [terminal guide](terminal.md#pi-terminal-optional).
-This path is verified on Linux x86_64; the existing default frontend remains
-included in the ordinary installation.
+OpenRUA 0.6.0 includes the Pi terminal and its runtime in the ordinary install:
+`pip install -U openrua`, then `openrua`. No separate Node/npm install is needed.
+`[pi]` and `[tui]` remain empty compatibility extras. Textual has been removed.
+See the [keyboard guide](terminal.md). Linux x86_64 is the tested distribution path.

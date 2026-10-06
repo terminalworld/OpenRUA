@@ -173,7 +173,7 @@ export class Chat {
           case '/files': await browseWorkspace(this); break;
           case '/quit': this.stop(); break;
           case '/resume':
-            if (!this.history) throw new Error('Use openrua --tui pi --resume to select history.');
+            if (!this.history) throw new Error('Use openrua --resume to select history.');
             if (this.controller.pending) throw new Error('Resolve the unconfirmed send before changing conversations.');
             this.result = {action: 'history'}; this.stop(); break;
           case '/end':

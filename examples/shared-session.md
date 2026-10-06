@@ -12,7 +12,7 @@ OpenRUA's TUI, browser, or plain CLI as clients. They share the same agent
 conversation and queue. OpenRUA manages delivery and resources; the agent
 still decides which ROS commands and programs to execute.
 
-This walkthrough uses the default TUI and background startup in OpenRUA 0.4.1.
+This walkthrough uses the default TUI and background startup in OpenRUA 0.6.0.
 Shared chat remains experimental.
 Earlier releases do not include these commands. The walkthrough starts
 with Codex, for which live conversation and simulation checks have completed.
@@ -26,7 +26,7 @@ Use a Linux execution host with Docker available, as described in
 or use `pip install -e .` inside an OpenRUA source checkout:
 
 ```sh
-pip install -U 'openrua>=0.4.1'
+pip install -U 'openrua>=0.6.0'
 openrua serve --help
 openrua session --help
 ```
@@ -64,9 +64,9 @@ blender-lid closing scene, independent of a saved benchmark default; it starts o
 interactive scene, not a benchmark campaign. Leave the model field blank for
 the configured default, or select one available to your account.
 
-Wait for chat to open. Type an instruction and press **Ctrl+S** to send; Enter
-inserts a newline. **Ctrl+P** opens the queue panel and tool output can be
-expanded. **Ctrl+Q** detaches without stopping the service. If port 8765 is
+Wait for chat to open. Type an instruction and press **Enter** to send;
+**Ctrl+J** inserts a newline. `/queue` opens queued instructions; `/tools`
+opens tool output. **Ctrl+D** on empty input detaches without stopping the service. If port 8765 is
 occupied or `chat-demo` has retained work from an ended session, choose a new
 port or name. Existing records are never overwritten.
 
@@ -87,12 +87,11 @@ Use the browser instead to inspect saved images:
 ### Browser and saved images
 
 The browser connects to the same conversation, including messages sent from the
-TUI. Use it to inspect saved images. In the default TUI, **Ctrl+O** or
-`/files` opens the same workspace for text previews and image metadata. The
-optional Pi terminal can preview images on supported terminals; see
+TUI. Use it to inspect saved images. In the TUI, `/files` opens the same workspace for text previews and
+images on supported terminals; see
 [workspace controls](../ui/terminal/README.md#saved-workspace-files).
 
-In a free terminal on the same execution host (detach with Ctrl+Q first if
+In a free terminal on the same execution host (detach with Ctrl+D first if
 the TUI is occupying it):
 
 ```sh

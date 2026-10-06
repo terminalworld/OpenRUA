@@ -10,6 +10,7 @@ oracle-retry.
 
 from __future__ import annotations
 
+import os
 import traceback
 import hashlib
 import shutil
@@ -220,11 +221,10 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         rec["account_alias"] = account_alias
     agent = agents.get(cfg.get("agent", {}).get("name"), home,
                        version=cfg.get("agent", {}).get("version"))
-    creds_home = Path(
-        credentials_dir
-        or cfg.get("agent", {}).get("credentials_dir")
-        or paths.credentials_dir(home) / agent.name
-    ).expanduser()
+    creds_home = agents.resolve_profile(agent, credentials_dir or cfg.get('agent', {}).get('credentials_dir'),
+                                        paths.credentials_dir(home) / agent.name,
+                                        user_home=Path.home(), environment=os.environ,
+                                        link=token_file is None)
     # A token file is the sandbox's whole auth story, so the login
     # profile need not carry credentials then (see agents.prepare_profile).
     cfg_dir, creds_file = agents.prepare_profile(

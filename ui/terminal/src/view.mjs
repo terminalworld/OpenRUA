@@ -44,7 +44,10 @@ export class Transcript extends Container {
     const turn = this.turn(event.turn_id);
     const data = event.data;
     if (event.kind === 'turn_finished') {
-      turn.result.setText(plain(data.error?.message ?? (turn.items.size ? data.status : data.text ?? data.status)));
+      const error = plain(data.error?.message);
+      const alreadyShown = error && [...turn.items.values()].some(item => item.message && item.text.trim() === error.trim());
+      turn.result.setText(alreadyShown ? plain(data.status) :
+        plain(data.error?.message ?? (turn.items.size ? data.status : data.text ?? data.status)));
       return;
     }
     if (!['text_delta', 'item'].includes(event.kind)) return;

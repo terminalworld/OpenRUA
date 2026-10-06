@@ -7,6 +7,7 @@ agent conversation loop.
 
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -96,8 +97,10 @@ def open_robot(request: RobotRequest) -> LiveRobot:
     cfg_agent = cfg["agent"]
     adapter = agents.get(cfg_agent["name"], request.home, version=cfg_agent.get("version"))
     model = request.model or cfg_agent.get("model") or adapter.default_model
-    creds_home = Path(cfg.get("agent", {}).get("credentials_dir")
-                      or paths.credentials_dir(request.home) / adapter.name).expanduser()
+    creds_home = agents.resolve_profile(adapter, cfg_agent.get('credentials_dir'),
+                                        paths.credentials_dir(request.home) / adapter.name,
+                                        user_home=Path.home(), environment=os.environ, link=True)
+    print(f"[up] {adapter.name} login: {creds_home} (source: {creds_home.resolve()})", flush=True)
     cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter, sandbox_dir / "profile")
     print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
           flush=True)

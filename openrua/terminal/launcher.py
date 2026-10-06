@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 
@@ -12,16 +13,24 @@ def runtime():
     try:
         from nodejs_wheel import node
     except ImportError as exc:
-        raise RuntimeError("Pi requires its packaged runtime: pip install 'openrua[pi]'") from exc
+        raise RuntimeError("Terminal runtime is missing: repair with pip install -U openrua") from exc
     return node
 
 
 def entrypoint() -> Path:
     entry = Path(__file__).parent / 'assets' / 'src' / 'main.mjs'
     if not entry.is_file():
-        raise RuntimeError('Pi frontend assets are missing. Install the released openrua[pi] wheel, '
+        raise RuntimeError('Pi frontend assets are missing. Install the released openrua wheel, '
                            'or follow ui/terminal/README.md to build assets in a source checkout.')
     return entry
+
+
+def check_terminal() -> None:
+    # Check installation before connecting to execution resources.
+    runtime()
+    entrypoint()
+    if not sys.stdin.isatty() or not sys.stdout.isatty():
+        raise RuntimeError('Terminal chat needs an interactive terminal; use --cli for plain text interaction.')
 
 
 def run_screen(spec: dict) -> dict:

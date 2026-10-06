@@ -16,7 +16,7 @@ def terminal_smoke(executable: Path, home: Path, environment: dict) -> None:
     """Exercise real TTY startup and detachment without starting robot resources."""
     import pty
     master, slave = pty.openpty()
-    child = subprocess.Popen([str(executable), '--home', str(home), '--tui', 'pi'],
+    child = subprocess.Popen([str(executable), '--home', str(home)],
                              stdin=slave, stdout=slave, stderr=slave, env=environment)
     os.close(slave)
     output = bytearray()
@@ -64,32 +64,14 @@ from openrua.web import assets
 assert all(content for mime, content in assets().values())
 root = files('openrua')
 for path in ('sandbox/workspace/README.md', 'configs/agents/codex.yaml',
-             'configs/agents/claude-code.yaml', 'tui/chat.tcss'):
+             'configs/agents/claude-code.yaml', 'terminal/assets/src/workspace.mjs'):
     assert root.joinpath(path).read_bytes(), path
 """)
         run("-c", """
-import asyncio
-from openrua.tui.app import ChatApp
-from openrua.tui.setup import SetupApp
-from openrua.sessions.client import Client
-async def check():
-    app = ChatApp(Client('http://127.0.0.1:1', 'unused', timeout=0.1))
-    async with app.run_test() as pilot:
-        await pilot.pause()
-        assert app.query_one('#message')
-    fields = dict(robot='', sim='', bench='', agent='', model='', name='install-check')
-    setup = SetupApp(fields, {}, 'config.yaml', lambda v: None, lambda v: (False, 'Not prepared'), lambda v: None)
-    async with setup.run_test() as pilot:
-        await pilot.pause()
-        assert setup.query_one('#robot') and setup.query_one('#start')
-asyncio.run(check())
-""")
-
-        # Pi remains opt-in, but the same wheel already contains its JS assets.
-        run("-m", "pip", "install", str(wheels[0]) + "[pi]")
-        run("-c", """
 import os, shutil
 from openrua.terminal.launcher import entrypoint, runtime
+from importlib.metadata import requires
+assert not any('textual' in dep.lower() for dep in requires('openrua'))
 env = dict(os.environ, PATH=os.path.dirname(__import__('sys').executable))
 assert shutil.which('node', path=env['PATH']) is None
 assert runtime()([str(entrypoint()), '--help'], env=env, return_completed_process=True).returncode == 0

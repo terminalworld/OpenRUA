@@ -375,7 +375,7 @@ A benchmarks/<name>.yaml as written.
 | `name` | str \| null | None | agent name (openrua agents lists them); the package default lives in configs/config.yaml |
 | `model` | str \| null | None | model id; default: the adapter's |
 | `version` | str \| null | None | pin the agent CLI version: the sandbox image must carry it and preflight checks it; default: whatever the image has |
-| `credentials_dir` | str \| null | None | login profile directory; default: ~/.openrua/credentials/<agent name> |
+| `credentials_dir` | str \| null | None | login profile directory; default: native login discovery, with ~/.openrua/credentials/<agent name> as its alias |
 | `options` | dict[str, Any] | {} | adapter-specific knobs passed through as given, over the adapter's default_options |
 
 ## InstallOverrides
@@ -424,7 +424,7 @@ What a machine knows about one agent (``agents.<name>`` in a defaults file): the
 |---|---|---|---|
 | `model` | str \| null | None | model id this agent runs by default on this machine |
 | `version` | str \| null | None | pin the agent CLI version |
-| `credentials_dir` | str \| null | None | login profile directory; default: ~/.openrua/credentials/<name> |
+| `credentials_dir` | str \| null | None | login profile directory; null enables native login discovery |
 | `options` | dict[str, Any] \| null | None | merged key by key with the layers above |
 
 ## SandboxConfig
@@ -464,6 +464,7 @@ Where an agent keeps its login and how the sandbox is told about it.
 | `filename` | str | **required** | the credentials file inside that directory |
 | `config_env` | str | **required** | environment variable naming the profile directory |
 | `mount_point` | str | **required** | where the profile is mounted inside the sandbox |
+| `native_dir` | str \| null | None | native profile directory relative to the host user home |
 
 ## ResolvedConfig
 

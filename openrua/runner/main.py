@@ -93,7 +93,7 @@ def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> Non
     ap.add_argument(
         "--credentials-dir", default=None,
         help="agent login-profile override (default: the config's "
-        "agent.credentials_dir, then ~/.openrua/credentials/<agent>)",
+        "agent.credentials_dir, then native login discovery)",
     )
     ap.add_argument(
         "--token-file", default=None,

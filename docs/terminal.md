@@ -1,148 +1,86 @@
 ---
-summary: Configure, start, and use the default terminal interface for shared robot sessions
+summary: Keyboard-only terminal chat, configuration, history, and saved robot observations
 read_when:
   - You want to chat while the agent works and manage queued instructions
-  - You are evaluating the experimental terminal interface
+  - You want keyboard controls for the default terminal
 ---
 
-# Terminal chat (experimental)
+# Terminal chat
 
-The terminal interface attaches to the same session as the browser and plain
-CLI. It uses Textual's editor, layout, dialogs, and collapsible widgets;
-OpenRUA's existing service still owns the robot, native agent, and message queue.
-It does not implement a new agent loop.
+OpenRUA 0.6.0 uses Pi's main-screen renderer, editor, Markdown and keyboard
+selectors. There are no mouse-driven forms or buttons. The terminal consumes
+the same session API as the browser and plain CLI; the existing service owns
+the native coding agent, robot, message queue and history.
 
 ## Start and configure
 
-Install OpenRUA 0.4.1 or later, then run it:
-
 ```sh
-pip install -U 'openrua>=0.4.1'
+pip install -U 'openrua>=0.6.0'
 openrua
 ```
 
-Without an explicit name, each launch prepares a new session with a unique ID.
-A setup form collects robot, simulator, benchmark, coding agent, model and
-an automatically generated session ID. Robot, simulator and benchmark selectors
-are linked; only combinations with current recorded startup checks are offered.
-Changing an upstream field repairs incompatible dependent selections. Custom
-profiles remain available through explicit CLI options or configuration files.
-**Save & check** saves valid shared defaults and reports preparation without
-building images. **Prepare and start** automatically builds missing images,
-streams progress, then checks preparation and starts the session. Existing images
-are reused. Build logs remain in `~/.openrua/preparation/`; select the same action
-to retry after resolving a failure. Login still uses the native agent CLI.
-See [setup validation](setup-validation.md) for the currently checked environments.
+The runtime is included. No separate Node/npm install or frontend flag is needed.
+Use arrows and Enter to choose robot, simulator, benchmark, agent and model;
+Escape returns to the previous menu. Only environment combinations with recorded
+startup checks are offered, with dependent fields updated together. Custom
+profiles remain available through explicit CLI options and config files.
 
-Run `openrua --setup` to reopen the form later. You can also use
-`openrua config set` or edit `config.yaml` directly. The TUI stores no separate
-copy of these defaults. Changing the selected agent resets the model field to
-that agent's saved model, rather than carrying the previous agent's model over.
+**Prepare and start** saves a valid selection, builds missing images with logs,
+checks readiness and opens chat. Existing images are reused. **Save and check**
+only checks preparation. Logs remain in `~/.openrua/preparation/` for retry.
+See [setup validation](setup-validation.md) and [native login discovery](install.md#logging-an-agent-in).
 
-The background service continues after leaving the TUI. Use `/resume` in the
-startup command field (Enter) or chat editor (Ctrl+S) to search history by its
-automatic title or fixed ID. Titles come from the first user instruction without
-a model call. `openrua --resume` opens the same selector directly;
-`openrua --resume ID` selects a conversation explicitly. Running sessions
-reconnect with their existing queue and native agent conversation. Ended or
-unavailable sessions open read-only; the interface does not restart resources
-or replay instructions. Switching conversations detaches from the current one.
+Use `openrua --setup`, `openrua config set`, or `config.yaml` to change the same
+shared defaults. Each ordinary launch creates a new ID. `/resume` in chat,
+the setup menu's resume entry, or `openrua --resume` searches history. A running
+session reconnects to its owner; ended or unavailable sessions open read-only
+without restarting resources or replaying actions. `--resume ID` selects one
+directly. Explicit `--name NAME` still starts or connects to that named session.
 
-Existing named sessions also appear in history. `openrua --name NAME` retains its
-explicit start-or-connect behavior; only unnamed launches always create new IDs.
-Use `openrua --gui --resume ID` or `openrua --cli --resume ID` for an existing live
-conversation in another interface. Read-only history is currently in the TUI;
-the web interface remains scoped to the selected live session. Startup failures appear in the form and are retained in
-`~/.openrua/launches/NAME/service.log`. A startup timeout may leave an owner still
-initializing; inspect that log and use the displayed ID with `--name` when ready
-rather than starting another session or deleting its files.
-
-The existing `openrua chat --tui --name NAME` attaches to a service explicitly.
-For a foreground service with visible execution logs, use `openrua serve`.
-`openrua run` continues to open the native agent terminal.
-
-For a complete simulated example, follow
-[Your first shared robot session](../examples/shared-session.md).
+`openrua chat --tui --name NAME` also opens this keyboard interface for an
+existing service. `--gui` and `--cli` select the browser and plain text client;
+`openrua run` retains the native coding agent terminal. There is no Textual
+fallback. Startup failures keep their logs in `~/.openrua/launches/NAME/`.
 
 ## Work in the conversation
 
-- Type an instruction and press **Ctrl+S**, or select **Send**. Enter inserts a
-  new line. You can keep typing while the agent works; subsequent instructions
-  join the shared queue.
-- Tool output starts collapsed. Select its title to inspect it.
-- **Ctrl+P** or **Queue** toggles a panel that stays open until you hide it.
-  It appears beside the conversation in wide terminals and below it in narrow
-  terminals. Edit or withdraw queued instructions there.
-- **Interrupt** requests interruption of the current turn and pauses the queue.
-  Review retained instructions before choosing **Resume** and confirming.
-- **Answer** opens pending questions from the agent. Answers go to that question,
-  not into the task queue. Secret inputs are masked and their answers are not
-  added to the event journal.
-- **Ctrl+Q** detaches. The session continues in its service process.
-  **End session** asks for confirmation before stopping resources, retaining
-  records and the workspace.
+| Key or command | Action |
+| --- | --- |
+| Enter / Ctrl+J | Send / insert newline |
+| `/tools` | Expand or collapse a tool result |
+| `/files` | Browse saved workspace files |
+| `/queue` | Inspect, edit or withdraw queued instructions |
+| `/questions` | Answer ordinary agent questions |
+| Escape or `/interrupt` | Confirm interruption and pause the queue |
+| `/continue` | Confirm continuing the paused queue |
+| `/retry` | Retry an unconfirmed send with its original request ID |
+| `/resume` | Search retained conversations |
+| `/end` | Confirm ending execution, retaining history and workspace |
+| Ctrl+D on empty input or `/quit` | Detach while execution continues |
 
-After a connection failure, the interface reconnects and replays missing events.
-If sending an instruction has an unknown result, its draft is locked until the
-acceptance is observed or **Retry send** succeeds. Retries reuse the same request
-identity to prevent duplicate execution. If you close the TUI before this is
-resolved, inspect `openrua session --name chat-demo status` before sending it again.
-
-An unknown execution result keeps the queue paused. Reconcile it through the
-[session CLI or browser](sessions.md); the TUI displays this state but does not
-yet provide its reconciliation editor. A disconnected native agent is different
-from a disconnected client: reopening the TUI does not restart the agent.
+Menus use arrows, Enter and Escape. Confirmation starts on Cancel. Typing
+while the agent works does not interrupt it; submitted instructions queue.
+A failed or unknown execution outcome pauses the queue for review. Client
+reconnection replays events without automatically resending instructions.
 
 ## Current scope
 
-Agent and model selection still happens when starting a session. Changing them
-inside a running conversation and saved layout preferences are not implemented.
-Ctrl+O or `/files` opens the default TUI workspace browser: arrows and Enter
-navigate, Escape goes back, and `r` refreshes. Text previews are read-only and
-scrollable, while images show metadata with a browser viewing hint. The optional
-Pi frontend also supports inline images on compatible terminals; see its
-[workspace controls](../ui/terminal/README.md#saved-workspace-files).
-Workspace browsing requires a running session service and does not enqueue
-instructions. Saved observations are not live video. The browser can display
-and download saved workspace images. Use a terminal at least 60 columns wide and
-28 rows high for the tested narrow layout.
+`/files` uses the existing read-only workspace API. Text previews scroll;
+images use the terminal's supported image protocol with a metadata fallback.
+Escape returns, `r` refreshes, and the chat draft is preserved. Saved images
+are observations, not a live video stream. Offline history currently displays
+the transcript only. The browser also provides image viewing and downloads.
 
-Automated headless Textual tests use the real HTTP service and SQLite journal
-with a controlled agent transport. They exercise shared queues, stale edits,
-streamed output, interrupted turns, question replies, unknown outcomes,
-reconnection, lost acknowledgements, and confirmed shutdown. They do not invoke
-a paid model or a physical robot. Multiline Unicode content is tested; physical
-terminal IME behavior remains to be checked on users' terminal applications.
+Secret-input questions and reconciliation of unknown execution outcomes use
+the [session CLI](sessions.md), so these operations also require no mouse.
+In-session agent/model switching and persistent multi-panel layouts remain
+unimplemented. Linux x86_64 installation and real PTY startup are tested;
+terminal-specific image support and physical IMEs depend on the terminal.
 
 ## Development
 
-```sh
-pip install -e '.[dev,tui]'
-pytest -q tests/tui
-lint-imports
-```
-
-`openrua/tui/` depends on `openrua.sessions.client` only within OpenRUA.
-The setup form receives explicit save, check, and launch callbacks from the
-entry point; it does not import configuration or robot ownership modules. It has no
-imports from robot backends, agent plugins, or the session execution internals.
-CLI code selects and launches this presentation module; replacing its UI toolkit
-does not require changing agent plugins or the shared session protocol.
-
-## Pi terminal (optional)
-
-OpenRUA 0.4.0 includes a keyboard-first Pi frontend alongside the existing default:
-
-```sh
-pip install -U 'openrua[pi]>=0.4.1'
-openrua --tui pi
-```
-
-This starts the same configuration and background-session flow in one terminal.
-Pip installs the frontend runtime; no separate Node/npm installation is needed.
-Use `openrua --tui pi --resume` or `/resume` in chat for history. The Pi interface
-uses Enter to send, Ctrl+J for a newline, and slash commands for queue management,
-questions, interruption, and ending execution. Ctrl+D on an empty input detaches.
-The [Pi guide](../ui/terminal/README.md) describes its controls, installation,
-verification, and current limits. Selecting Pi does not change the agent or
-robot execution protocol; the default frontend remains available.
+See the [Pi frontend guide](../ui/terminal/README.md) for component boundaries,
+keyboard tests over the real HTTP service, asset preparation and distribution
+checks. The launcher receives configuration and history operations as callbacks;
+it does not import execution internals. Tests use a controlled agent transport,
+not paid models or physical robots.
