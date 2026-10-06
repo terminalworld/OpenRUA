@@ -30,8 +30,15 @@ checked in the same container against the official BigModel endpoint with
 independently, and the CLI exited successfully. This bounded check used two API
 requests and 51 output tokens.
 
-This establishes a simple real-provider file task, not robot-task performance,
-subscription compatibility, ARM support, or a guarantee of account quota. The
+A separate real-provider check through the container plugin and shared session
+service completed two turns from different clients in the same native
+conversation. The second turn correctly recalled a marker from the first,
+without invoking tools. It used two API requests and 11 output tokens with the
+same model and endpoint.
+
+These checks establish a simple file task and conversational context retention,
+not robot-task performance, subscription compatibility, ARM support, or a
+guarantee of account quota. The
 native terminal command is provided but its interactive UI has not been checked here.
 Headless launch is available; benchmark turn accounting, quota recovery and
 published benchmark reproduction are not validated for this example.

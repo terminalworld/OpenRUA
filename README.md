@@ -53,7 +53,7 @@ Use a Linux host with Docker or a supported Podman setup and an existing
 Claude Code or Codex login ([installation](docs/install.md)).
 
 ```sh
-pip install -U 'openrua>=0.7.0'
+pip install -U openrua
 openrua
 ```
 
@@ -72,6 +72,11 @@ See the [walkthrough](examples/shared-session.md) for setup and continuous tasks
 [validation scope](docs/sessions.md#validation-scope) for what has been tested.
 Shared chat remains experimental.
 
+Native Claude Code or Codex login is the default. To use an API key, explicitly
+select it in `openrua --setup` or through the
+[API configuration guide](docs/install.md#explicit-api-authentication).
+OpenRUA never switches to API billing after a login error.
+
 ### Run a benchmark and make a demo
 
 For researchers, the CLI runs fresh benchmark trials and saves the code,
@@ -83,7 +88,7 @@ Install the demo dependencies and prepare the environment once (Docker must
 be running; an existing native Claude Code login is reused):
 
 ```sh
-pip install -U 'openrua[demo]>=0.7.0'
+pip install -U 'openrua[demo]'
 claude login  # only if not already signed in
 openrua build --bench capbench
 openrua build sandbox --distro humble --agent claude-code
@@ -256,6 +261,13 @@ list; `openrua bench --config <name>` runs one.
 |---|---|
 | [Claude Code](https://claude.com/claude-code) | supported (`--agent claude-code`) |
 | [Codex](https://github.com/openai/codex) | supported (`--agent codex`) |
+
+Experimental external plugins are available for
+[Kimi Code](examples/plugins/kimi/README.md) and
+[ZCode](examples/plugins/zcode/README.md). Both have passed small real-provider
+file tasks and two-turn shared-chat checks. They currently require explicitly
+configured API access; native subscription reuse and robot tasks remain
+unvalidated. They are not default setup choices.
 
 Bring your own agent. An agent is a manifest (how to install its CLI in the sandbox, which
 hosts it talks to, how it logs in) and a small hooks class (how to
