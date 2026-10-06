@@ -319,8 +319,8 @@ answered on the user's behalf.
 Kimi Code 2.1.1's ACP reports `end_turn` for some non-authentication provider
 errors as well as normal completion. A local error fixture reproduced this
 behavior. Its official local server instead exposes a correlated transcript
-turn with `state: failed` and the provider error. Further integration will use
-an unambiguous native status source before enabling automatic queue progression.
+turn with `state: failed` and the provider error. The experimental Kimi example below uses that native status source, with
+prompt-correlated completion and the existing shared queue.
 
 Upstream references: [ZCode source](https://github.com/zai-org/ZCode),
 [Kimi ACP reference](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/reference/kimi-acp.md),
@@ -335,3 +335,14 @@ Native subscription reuse and robot-task performance are not validated, so it
 is not listed as a bundled agent or offered in guided setup. See the example
 for its supported endpoint, container lifecycle checks, bounded real-provider
 file-task check, and remaining limitations.
+
+### Experimental Kimi Code external example
+
+The [Kimi Code example](../examples/plugins/kimi/README.md) supplies a pinned
+2.1.1 install, an isolated native profile for explicitly selected Moonshot API
+authentication, and shared chat through the official local server. A small
+plugin-owned pipe/HTTP bridge keeps the existing execution owner and user
+queue unchanged. Native process and container checks cover file tools,
+approvals, exact resume, cancellation and failure pause using a local model
+fixture. Native subscription reuse, real-model shared chat and robot-task
+performance remain unvalidated; the example is not a default setup option.
