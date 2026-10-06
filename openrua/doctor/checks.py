@@ -243,25 +243,19 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
 def check_login(ctx: Context) -> list[CheckResult]:
     out: list[CheckResult] = []
     for a in ctx.agents:
-        if a.credentials is None:
+        home = ctx.login_directories.get(a, paths.credentials_dir(ctx.home) / a.name)
+        login = a.inspect_login(home)
+        if login is None:
             out.append(CheckResult(f"login-{a.name}", f"{a.name}: no profile login to check"))
             continue
-        home = ctx.login_directories.get(a, paths.credentials_dir(ctx.home) / a.name)
-        credential = home / a.credentials.filename
-        try:
-            if not credential.is_file():
-                raise ValueError('credential file is missing or is not a regular file')
-            with credential.open('rb') as stream:
-                if not stream.read(1):
-                    raise ValueError('credential file is empty')
-        except (OSError, ValueError) as exc:
-            out.append(CheckResult(f"login-{a.name}", f"{a.name} not logged in at {home}",
-                                   "error", detail=str(exc), hint=a.login_hint(home) + (
+        if not login.available:
+            out.append(CheckResult(f"login-{a.name}", f"{a.name}: local login unavailable at {home}",
+                                   "error", detail=login.detail, hint=a.login_hint(home) + (
                                        f"; or pass --token-file ({a.token_hint('<file>')})"
                                        if a.token_env else "")))
         else:
-            out.append(CheckResult(f"login-{a.name}", f"{a.name} login file at {home}",
-                                   detail=f'source: {home.resolve()}; readable and nonempty; authentication and quota are checked by the native agent'))
+            out.append(CheckResult(f"login-{a.name}", f"{a.name}: local login material at {home}",
+                                   detail=f'source: {home.resolve()}; {login.detail}; authentication and quota are checked by the native agent'))
     return out
 
 

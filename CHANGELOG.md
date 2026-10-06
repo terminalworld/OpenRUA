@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Let agent plugins prepare native profiles and inspect local login material for discovery and doctor. Custom layouts can share credential and refresh-lock directories without adding vendor-specific logic to the runner. Local checks do not authenticate online or switch billing sources.
+
 ## 0.7.1
 
 - Retain the shared service endpoint when abnormal exit cannot confirm resource shutdown. This keeps `clean`, including `clean --all`, from deleting the session's files until the remaining resources have been inspected. Successful shutdown still removes the endpoint and preserves the conversation and workspace.

@@ -109,6 +109,23 @@ lifecycle still need validation for the plugin's layout. The external-plugin
 fixture in `tests/agents/test_profiles.py` exercises both startup paths with
 isolated files; it does not authenticate to a model provider.
 
+### Checking local login material
+
+Source checkouts after 0.7.1 also provide `Agent.inspect_login(source)`.
+Doctor and automatic profile linking use this hook, so a plugin can recognize
+credential directories or other native formats. Return
+`ProfileLogin(available, detail)` from `openrua.agents.base`, or `None` when
+no local profile login applies. The default checks the declared credential
+file for readability and nonempty content. A new alias is created only when
+the selected source reports available login material; existing aliases and
+explicit account selections remain intact.
+
+This is a local, read-only check. Do not contact a provider, refresh tokens,
+log in, or fall back to another credential source. Keep secret values out of
+`detail`. A positive result does not establish an active subscription, a
+valid online login, or available quota; the native agent checks those during
+use. Doctor reports this distinction rather than declaring the account valid.
+
 ## The smallest agent
 
 ```yaml

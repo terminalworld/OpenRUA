@@ -42,7 +42,8 @@ def resolve_profile(agent: Agent, configured: str | Path | None, alias: Path, *,
     if alias.exists() or alias.is_symlink():
         # Honor the native override without replacing a different stored account.
         return alias if alias.resolve() == source.resolve() else source
-    if link and (source / creds.filename).is_file():
+    login = agent.inspect_login(source) if link else None
+    if login is not None and login.available:
         alias.parent.mkdir(parents=True, exist_ok=True)
         try:
             alias.symlink_to(source.resolve(), target_is_directory=True)

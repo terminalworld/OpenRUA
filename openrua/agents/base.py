@@ -52,6 +52,16 @@ class Credentials:
 
 
 @dataclass(frozen=True)
+class ProfileLogin:
+    """Local login material availability, not online authentication or quota.
+
+    Detail must describe the check without including credential contents.
+    """
+    available: bool
+    detail: str
+
+
+@dataclass(frozen=True)
 class PreparedProfile:
     """A session-local profile and the plugin's explicit sandbox mounts.
 
@@ -88,7 +98,7 @@ def _copy_profile(source: Path, dest: Path, credentials: Credentials | None,
 # The optional hooks, in the order they are documented below. An agent
 # "has" a capability when its hooks class overrides the hook.
 HOOK_NAMES = (
-    "prepare_profile", "interactive_argv", "conversation", "sandbox_cli_check", "login_hint", "token_hint",
+    "inspect_login", "prepare_profile", "interactive_argv", "conversation", "sandbox_cli_check", "login_hint", "token_hint",
     "quota_probe_argv", "quota_window_open", "matches_quota_anomaly",
     "read_rate_limits", "quota_since", "read_final", "scan_transcript",
     "assistant_turns_before", "replay_ops", "collect",
@@ -187,6 +197,28 @@ class Agent:
                          if getattr(type(self), h) is not getattr(Agent, h))
 
     # ---- optional hooks; each docstring states the default ----------
+    def inspect_login(self, source: Path) -> ProfileLogin | None:
+        """Read-only local inspection used by discovery and doctor.
+
+        Default: check that the manifest's credential file is readable and
+        nonempty, or return None when no profile login applies. Override for
+        native credential directories or other formats. Do not access the
+        network, log in, refresh tokens, or select alternative credentials.
+        Availability never establishes a valid subscription or API balance.
+        """
+        if self.credentials is None:
+            return None
+        credential = source / self.credentials.filename
+        try:
+            if not credential.is_file():
+                return ProfileLogin(False, "credential file is missing or is not a regular file")
+            with credential.open("rb") as stream:
+                if not stream.read(1):
+                    return ProfileLogin(False, "credential file is empty")
+        except OSError as exc:
+            return ProfileLogin(False, f"credential file cannot be read: {exc}")
+        return ProfileLogin(True, "credential file is readable and nonempty")
+
     def prepare_profile(self, source: Path, dest: Path, *,
                         require_credentials: bool = True) -> PreparedProfile:
         """Prepare one session's native configuration without selecting auth.
