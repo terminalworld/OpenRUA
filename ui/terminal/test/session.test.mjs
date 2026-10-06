@@ -82,6 +82,49 @@ test('Pi client shares the real owner queue, events, interruption and reconnect'
   assert.equal(writes.filter(w => w.interrupt).length, 1);
 });
 
+test('refresh after a send cannot reuse a snapshot taken before acceptance', async () => {
+  let release;
+  const barrier = new Promise(resolve => { release = resolve; });
+  let messages = [], snapshots = 0;
+  const client = {
+    async snapshot() {
+      const state = {messages: [...messages]};
+      if (++snapshots === 1) await barrier;
+      return {state};
+    },
+    async events() { return []; },
+    async command(op, message) { messages.push(message); return message; },
+  };
+  const controller = new Controller(client, {snapshot() {}, event() {}});
+  const poll = controller.refresh();
+  await controller.send('Inspect only');
+  const afterSend = controller.refresh();
+  release();
+  await Promise.all([poll, afterSend]);
+  assert.equal(controller.state.messages[0]?.text, 'Inspect only');
+  assert.equal(snapshots, 2);
+});
+
+test('a failed earlier poll does not prevent the next refresh', async () => {
+  let reject;
+  const barrier = new Promise((resolve, fail) => { reject = fail; });
+  let snapshots = 0;
+  const client = {
+    async snapshot() {
+      if (++snapshots === 1) await barrier;
+      return {state: {messages: []}};
+    },
+    async events() { return []; },
+  };
+  const controller = new Controller(client, {snapshot() {}, event() {}});
+  const failed = assert.rejects(controller.refresh(), /offline/);
+  const next = controller.refresh();
+  reject(new Error('offline'));
+  await Promise.all([failed, next]);
+  assert.equal(snapshots, 2);
+  assert.deepEqual(controller.state.messages, []);
+});
+
 test('lost send acknowledgement retries the same ID without duplicate execution', {timeout: 15000}, async t => {
   const {client, call} = await fixture(t);
   t.after(() => client.close());

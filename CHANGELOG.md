@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1
+
+- Read a fresh session snapshot after message submission instead of reusing an earlier in-flight poll. Newly queued instructions now appear immediately in the queue menu, and a failed poll does not block the next refresh.
+- Document a bounded real-provider file task through the experimental ZCode container plugin. Robot-task performance and subscription reuse remain unvalidated.
+
 ## 0.9.0
 
 - Add keyboard authentication selection to setup. Native CLI login remains the default; API billing requires an explicit choice and a private key file path. Choices stay separate per agent, unsupported plugins do not offer API mode, and invalid selections cannot save defaults or start resources.

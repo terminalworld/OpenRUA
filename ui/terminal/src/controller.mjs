@@ -12,8 +12,17 @@ export class Controller {
   }
 
   refresh() {
-    if (!this.refreshing) this.refreshing = this.read().finally(() => { this.refreshing = null; });
-    return this.refreshing;
+    // A refresh requested after a mutation must read after any earlier poll.
+    // Reusing that poll can return a snapshot taken before the mutation.
+    const previous = this.refreshing;
+    const current = (async () => {
+      if (previous) await previous.catch(() => {});
+      await this.read();
+    })();
+    this.refreshing = current;
+    return current.finally(() => {
+      if (this.refreshing === current) this.refreshing = null;
+    });
   }
 
   async read() {
