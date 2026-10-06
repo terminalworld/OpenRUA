@@ -391,3 +391,12 @@ If you use OpenRUA in your research, please cite our [paper](https://arxiv.org/a
 ## License
 
 Apache-2.0
+
+## Feedback
+
+Try OpenRUA with your coding agent and robot, and tell us how it goes.
+Bug reports, confusing steps, and ideas for improving the experience are welcome
+in [GitHub Issues](https://github.com/terminalworld/OpenRUA/issues).
+If something fails, include your OpenRUA version, agent, environment, and the
+command or steps that led to it. Please remove credentials and private data
+from any logs you share.
