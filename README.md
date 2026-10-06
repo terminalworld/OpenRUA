@@ -171,12 +171,15 @@ coding agent a task, terminal access to the robot's native ROS&nbsp;2 interface,
 and a workspace. The agent explores the machine, writes and tests programs,
 and uses execution feedback to refine its actions.
 
-```mermaid
-flowchart LR
-    Task[User task] --> Agent[Off-the-shelf coding agent]
-    Agent <--> Workspace[Workspace: docs, starter tools, observations and programs]
-    Robot[Robot's native ROS 2 interfaces] -->|Agent pulls sensor data into files| Workspace
-    Agent -->|ROS 2 commands and agent-written programs| Robot
+```text
+your terminal                                 the robot (real or simulated)
+┌──────────────────────────────────┐          ┌────────────────────────────────┐
+│ openrua                          │          │ ROS 2 graph                    │
+│  └─ Claude Code / Codex          │   DDS    │ /joint_states · /tf · /camera  │
+│      in a sandbox workspace      │◄────────►│ FollowJointTrajectory          │
+│      ros2 · rclpy · docs         │          │ GripperCommand · MoveIt        │
+│      starter tools · saved files │          │ Velocity control               │
+└──────────────────────────────────┘          └────────────────────────────────┘
 ```
 
 - **Workspace as harness.** Documentation and readable starter tools give the
