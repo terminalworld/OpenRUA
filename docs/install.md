@@ -168,8 +168,10 @@ Claude Code uses its native `apiKeyHelper` setting to read the private key file;
 Codex uses its native API login profile. See [Claude Code authentication](https://code.claude.com/docs/en/authentication)
 and [Codex authentication](https://developers.openai.com/codex/auth/). This configures
 direct provider API access, not a third-party gateway. Unsupported plugins reject
-`--auth api` before changing defaults. Kimi Code and ZCode are still under
-integration and are not selectable product options.
+`--auth api` before changing defaults. Experimental external examples for
+[Kimi Code](../examples/plugins/kimi/README.md) and
+[ZCode](../examples/plugins/zcode/README.md) document their own explicit API
+configuration and validation scope; neither is a bundled setup option.
 
 `openrua doctor` prints the command for whichever agent it finds
 logged out. The other route is a token by file: `openrua bench

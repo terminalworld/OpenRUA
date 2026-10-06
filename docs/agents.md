@@ -333,8 +333,9 @@ installation and an explicit API profile to the existing conversation adapter.
 It uses the standard external-manifest entry point and shared session service.
 Native subscription reuse and robot-task performance are not validated, so it
 is not listed as a bundled agent or offered in guided setup. See the example
-for its supported endpoint, container lifecycle checks, bounded real-provider
-file-task check, and remaining limitations.
+for its supported endpoint, container lifecycle checks, and remaining
+limitations. Bounded real-provider checks completed a file task and two
+shared-chat turns in the same native session, retaining conversational context.
 
 ### Experimental Kimi Code external example
 
