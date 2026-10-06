@@ -215,3 +215,40 @@ The earlier quota failure is not evidence of successful task execution.
 The shared queue and execution owner consume this contract without vendor
 branches; their boundaries and current validation scope are described in
 [sessions.md](sessions.md).
+
+## Additional native integrations under development
+
+Kimi Code and ZCode are not yet selectable bundled agents. A successful native
+API file task is a separate check from a complete OpenRUA robot integration.
+The default remains the configured native login; saving a provider key does
+not select it or authorize an automatic API fallback.
+
+`plugins/agents/zcode_conversation.py` provides a version-specific conversation
+adapter for external plugin development, checked against the official ZCode
+CLI 0.16.9 source at commit `29628c9`. It uses the native `app-server` session
+compatibility methods. These methods are being replaced upstream; a future
+CLI version must be revalidated before this adapter is used with it. The
+module does not install ZCode, configure authentication, or register a robot
+setup option.
+
+The adapter runs through the existing `Conversation` and `Execution` contracts.
+With the real CLI and a local model fixture, validation covered two clients
+sharing one native session, an explicitly approved file write, exact session
+resume after restarting the native process, interruption with a retained
+paused queue, and a provider error that pauses subsequent messages. Protocol
+regressions additionally cover late acknowledgements, duplicate and foreign
+turn events, permission retries, and unknown completion statuses. These checks
+exercise protocol behavior, not model capability or robot control. Subscription
+callbacks, structured user questions, container installation and robot tasks
+remain to be validated. Unsupported client requests are rejected rather than
+answered on the user's behalf.
+
+Kimi Code 2.1.1's ACP reports `end_turn` for some non-authentication provider
+errors as well as normal completion. A local error fixture reproduced this
+behavior. Its official local server instead exposes a correlated transcript
+turn with `state: failed` and the provider error. Further integration will use
+an unambiguous native status source before enabling automatic queue progression.
+
+Upstream references: [ZCode source](https://github.com/zai-org/ZCode),
+[Kimi ACP reference](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/reference/kimi-acp.md),
+and [Kimi local server reference](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/reference/server-api.md).
