@@ -12,12 +12,31 @@ OpenRUA's TUI, browser, or plain CLI as clients. They share the same agent
 conversation and queue. OpenRUA manages delivery and resources; the agent
 still decides which ROS commands and programs to execute.
 
-This walkthrough uses the default TUI and background startup in OpenRUA 0.6.0.
-Shared chat remains experimental.
-Earlier releases do not include these commands. The walkthrough starts
-with Codex, for which live conversation and simulation checks have completed.
-Claude Code also has a conversation adapter; its successful model turns have
-not yet been validated. See [validation scope](../docs/sessions.md#validation-scope).
+This walkthrough uses OpenRUA 0.7.0. Shared chat remains experimental.
+Bounded three-turn observation and gripper-control checks have passed with
+both Claude Code and Codex; they do not establish success on the blender-lid
+task below. See [validation scope](../docs/sessions.md#validation-scope).
+
+## Guided setup
+
+Run `openrua` for a new session with an automatic ID. The TUI links robot,
+simulator and benchmark choices using recorded startup checks. **Prepare and
+start** saves a valid selection, builds missing images with visible progress,
+checks the agent login, then starts the background service and opens chat.
+Existing images are reused; failed builds keep logs for retry. **Save & check**
+reports preparation without downloading or starting resources.
+
+The guided list offers Panda in the native robosuite Lift scene, Panda in
+CaP-Bench, and Panda-Omron in RoboCasa365. Their default scenes have passed
+startup, reset, sensor-stream and no-op control checks. This does not validate
+every benchmark task or model task success. Other registered profiles remain
+available through explicit CLI options. See
+[setup validation](../docs/setup-validation.md) for evidence and adding combinations.
+
+To change defaults later, use `openrua --setup`, `openrua config set`, or edit
+the same `config.yaml`. Changes apply to new sessions, not the running one.
+The steps below use explicit settings and a name so commands can refer to the
+same example session.
 
 ## 1. Prepare the package, login, and images
 
@@ -26,7 +45,7 @@ Use a Linux execution host with Docker available, as described in
 or use `pip install -e .` inside an OpenRUA source checkout:
 
 ```sh
-pip install -U 'openrua>=0.6.0'
+pip install -U 'openrua>=0.7.0'
 openrua serve --help
 openrua session --help
 ```
@@ -176,6 +195,10 @@ readable from disk. With the default user directory, the workspace is at
 `~/.openrua/sandboxes/chat-demo/workspace/workspace/`; the event journal and
 native stderr log are stored in `~/.openrua/sandboxes/chat-demo/`.
 If you used `--home`, use that same directory for every client command.
+
+Use `/resume` or `openrua --resume` to open an ended conversation read-only.
+Its `/files` browser reads the recorded workspace without restarting the robot
+or agent. Missing files do not prevent reading the retained transcript.
 
 Starting with the old name does not resume the ended robot.
 Use a new name to keep earlier work. When you intentionally want to delete a

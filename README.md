@@ -21,7 +21,7 @@ https://github.com/user-attachments/assets/3b134c51-a949-44dd-9474-5249c3879aa0
 
 </div>
 
-A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html)
+A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html) (RUA)
 uses a robot just as a computer-use agent uses a computer.
 
 OpenRUA connects off-the-shelf coding agents to robots through their native
@@ -49,56 +49,28 @@ queue, and revisit saved observations without starting a new robot each turn.
 
 ### Chat with a robot
 
-Use a Linux host with Docker or supported Podman setup. The terminal UI is
-included in the default installation. The keyboard-first Pi
-interface opens directly, with no separate Node installation or frontend selection:
+Use a Linux host with Docker or a supported Podman setup and an existing
+Claude Code or Codex login ([installation](docs/install.md)).
 
 ```sh
 pip install -U 'openrua>=0.7.0'
 openrua
 ```
 
-Each ordinary launch creates a new session with an automatic ID; no name is
-required. The TUI links robot, simulator and benchmark choices using recorded
-startup checks. **Prepare and start** saves a valid selection, builds missing
-images with visible progress, checks the agent login, then starts the session.
-Existing images are reused; failed builds keep logs for retry.
-**Save & check** reports preparation without downloading or starting resources.
-
-The guided environment list offers **Panda in the native robosuite Lift scene**,
-**Panda in CaP-Bench**, and **Panda-Omron in RoboCasa365**. Their default scenes
-have passed startup, reset, sensor-stream and no-op control checks. This does
-not validate every benchmark task or a model completing the task. Other registered
-profiles remain available through explicit CLI options. See
-[setup validation](docs/setup-validation.md) for evidence and how to add a combination.
-
-OpenRUA starts the existing session service in the background and opens chat.
-Type an instruction and press **Enter**, for example:
+The keyboard-first TUI guides environment selection and prepares missing images.
+Each launch creates a new session; no name is required. Type an instruction and
+press **Enter**, for example:
 
 > Inspect the workspace documentation and describe the scene without moving the robot.
 
-`/files` opens saved workspace files without sending an agent instruction.
-Use arrows and Enter to browse, Escape to return, and `r` to refresh. Text files
-are scrollable; images render on supported terminals, with a browser alternative.
+Use `/files` to browse saved observations and code, `/resume` to find earlier
+sessions, and `/end` to stop execution while keeping your work. **Ctrl+D** on an
+empty input detaches while the session continues running.
 
-**Ctrl+D** on an empty input leaves the interface while the session keeps running.
-Use `/resume` in chat, or choose it in setup, to search previous conversations by title or ID.
-You can also run `openrua --resume`, or `openrua --gui --resume ID` to open a
-running conversation and its saved workspace images in the browser. To edit defaults later, use `openrua --setup`,
-`openrua config set`, or edit the same `config.yaml`; changes apply to new
-sessions, not the one already running.
-
-Use `/end` and confirm with the keyboard when finished. Records and workspace files are retained;
-run `openrua` again for a new session. Ended or unavailable conversations open
-read-only from history, including retained workspace files through `/files`;
-selecting them never restarts robot execution. The
-[full walkthrough](examples/shared-session.md) gives a concrete simulated RoboCasa365
-example with image preparation, queue operations, SSH access, and shutdown.
-
-Shared chat remains experimental. Bounded three-turn simulation checks have
-passed with both Claude Code and Codex; these do not establish reliability
-across arbitrary robot tasks.
-See [validation scope](docs/sessions.md#validation-scope).
+See the [walkthrough](examples/shared-session.md) for setup and continuous tasks,
+[terminal guide](docs/terminal.md) for controls, and
+[validation scope](docs/sessions.md#validation-scope) for what has been tested.
+Shared chat remains experimental.
 
 ### Run a benchmark and make a demo
 
