@@ -108,6 +108,62 @@ def test_serve_chat_and_down_share_one_resource_owner(tmp_path, monkeypatch, cap
     assert "inspection complete" in capsys.readouterr().out
 
 
+def test_aborted_service_with_failed_shutdown_keeps_deletion_guard(tmp_path, monkeypatch):
+    import asyncio
+    from types import SimpleNamespace
+    from openrua.cli.commands import serve
+    from openrua.runner.managed import ManagedSession
+    from openrua.sessions.store import SQLiteStore
+    from tests.sessions.test_execution import setup, until
+
+    async def run():
+        directory = tmp_path / "sandboxes/shared"
+        store, core, native, execution = await setup(directory)
+        workspace = directory / "workspace"
+        workspace.mkdir()
+        (workspace / "control.py").write_text("# retained user program\n")
+
+        def fail_shutdown():
+            raise RuntimeError("driver shutdown unconfirmed")
+
+        owned = ManagedSession(SimpleNamespace(power_off=fail_shutdown), execution, store)
+
+        async def start(request):
+            return owned
+
+        monkeypatch.setattr(serve.managed, "start", start)
+        monkeypatch.setattr(clean, "running", lambda _: False)
+        args = build_parser().parse_args(["--home", str(tmp_path), "serve", "--name", "shared"])
+        serving = asyncio.create_task(serve.serve(args))
+        try:
+            await until(lambda: (directory / "endpoint.json").exists())
+            await execution.command("enqueue", client_id="cli", request_id="1", text="inspect")
+            await execution.command("enqueue", client_id="web", request_id="1", text="grasp")
+            serving.cancel()
+            with pytest.raises(UnavailableError, match="driver shutdown unconfirmed"):
+                await serving
+
+            assert (directory / "endpoint.json").exists()
+            retained = SQLiteStore.open_readonly(directory / "session.sqlite")
+            try:
+                snapshot = retained.snapshot()["state"]
+                assert not snapshot["closed"] and snapshot["paused"]
+                assert [m["status"] for m in snapshot["messages"]] == ["unknown", "queued"]
+            finally:
+                retained.close()
+            clean_args = build_parser().parse_args([
+                "--home", str(tmp_path), "clean", "--name", "shared", "--all"])
+            with pytest.raises(UnavailableError, match="files kept"):
+                clean.run(clean_args)
+            assert (workspace / "control.py").read_text() == "# retained user program\n"
+        finally:
+            if not serving.done():
+                serving.cancel()
+            await asyncio.gather(serving, return_exceptions=True)
+            await execution.close()
+    asyncio.run(run())
+
+
 @pytest.mark.parametrize("no_open", [True, False])
 def test_web_opens_only_local_url_and_explicitly_shows_token(tmp_path, monkeypatch, capsys, no_open):
     from openrua.cli.commands import session

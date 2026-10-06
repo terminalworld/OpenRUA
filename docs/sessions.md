@@ -176,6 +176,9 @@ Ctrl-C in **serve** also requests resource shutdown. A shutdown failure leaves
 the service available for inspection and retry. `clean` refuses a directory
 with a service endpoint, including an endpoint left by a crashed host. Inspect
 remaining resources before removing such a stale endpoint manually.
+If the service exits while resource shutdown fails, it also retains that endpoint
+and the session files. An unreachable service does not confirm that its resources
+stopped, and `clean --all` does not override this guard.
 
 `up` / `agent` / `run` retain their original native-terminal mode. Opening a
 second raw agent inside a managed session is refused because it would bypass

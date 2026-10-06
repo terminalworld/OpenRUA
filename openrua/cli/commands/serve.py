@@ -60,10 +60,12 @@ async def serve(args) -> None:
         finally:
             try:
                 await owned.end()
-            finally:
-                owned.store.close()
+                # A failed shutdown leaves the endpoint as a deletion guard.
+                # Its absence must not imply that all resources were stopped.
                 if published:
                     endpoint.unlink(missing_ok=True)
+            finally:
+                owned.store.close()
 
 
 def run(args) -> int:

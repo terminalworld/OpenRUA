@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1
+
+- Retain the shared service endpoint when abnormal exit cannot confirm resource shutdown. This keeps `clean`, including `clean --all`, from deleting the session's files until the remaining resources have been inspected. Successful shutdown still removes the endpoint and preserves the conversation and workspace.
+- Add a lifecycle regression covering two clients, queued execution, reconnection, shutdown, offline file access and explicit deletion, using real local HTTP, SQLite and a controlled child process. This verifies session behavior, not model or physical robot performance.
+- Include the development-only ZCode conversation adapter and its documented validation limits. Kimi Code and ZCode are not yet selectable product integrations.
+
 ## 0.7.0
 
 - Browse retained workspace files with `/files` after opening an ended or unavailable conversation through `/resume`. The same keyboard directory, text and image viewers now work without restarting the robot or agent.
