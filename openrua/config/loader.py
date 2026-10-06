@@ -158,7 +158,11 @@ def load_benchmark(bench: str) -> tuple[Path, dict]:
     (Benchmark); returns the file and the dict, the install's relative
     files made absolute."""
     p = paths.find("benchmarks", bench)
-    b = dump(validate(Benchmark, load_yaml(p), p))
+    parsed = validate(Benchmark, load_yaml(p), p)
+    b = dump(parsed)
+    # Only authored agent facts override user defaults. Filling native auth
+    # here would silently replace an explicit API choice before composition.
+    b['agent'] = parsed.agent.model_dump(exclude_unset=True, exclude_none=True)
     if b.get("install"):
         _absolutize_install(b["install"], p)
     return p, b

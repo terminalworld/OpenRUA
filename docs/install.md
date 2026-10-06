@@ -124,6 +124,9 @@ or retry failed robot instructions after authentication failure.
 
 Claude Code and Codex support separate API profiles for ordinary terminal chat,
 native terminal sessions, and benchmark trials.
+In `openrua --setup`, choose **Authentication → API key file**, then enter the
+private key file's path. **Native CLI login** remains the default and can be
+selected again in the same menu. The CLI alternative is below.
 Create a private file outside your workspace and repository containing only
 your Anthropic or OpenAI API key, then select it explicitly:
 

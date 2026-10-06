@@ -7,7 +7,7 @@ read_when:
 
 # Terminal chat
 
-OpenRUA 0.6.0 uses Pi's main-screen renderer, editor, Markdown and keyboard
+OpenRUA uses Pi's main-screen renderer, editor, Markdown and keyboard
 selectors. There are no mouse-driven forms or buttons. The terminal consumes
 the same session API as the browser and plain CLI; the existing service owns
 the native coding agent, robot, message queue and history.
@@ -15,7 +15,7 @@ the native coding agent, robot, message queue and history.
 ## Start and configure
 
 ```sh
-pip install -U 'openrua>=0.6.0'
+pip install -U openrua
 openrua
 ```
 
@@ -24,6 +24,16 @@ Use arrows and Enter to choose robot, simulator, benchmark, agent and model;
 Escape returns to the previous menu. Only environment combinations with recorded
 startup checks are offered, with dependent fields updated together. Custom
 profiles remain available through explicit CLI options and config files.
+
+**Authentication** defaults to **Native CLI login**, using the account already
+selected in your coding agent. To use API billing explicitly, choose **API key
+file** and enter the path to a private file containing the raw key. Do not paste
+the key into the menu. API mode is offered only when the selected plugin supports
+it. Each agent keeps its own saved choice; switching agents never borrows another
+agent's key path. Switching back to native login clears the selected path without
+deleting the key file. These defaults apply to new sessions, not running ones.
+See [API configuration](install.md#explicit-api-authentication) for CLI commands
+and file permissions. Local checks do not call a model or verify account quota.
 
 **Prepare and start** saves a valid selection, builds missing images with logs,
 checks readiness and opens chat. Existing images are reused. **Save and check**

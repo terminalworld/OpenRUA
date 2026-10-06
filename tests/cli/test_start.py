@@ -24,6 +24,51 @@ def test_cli_and_setup_edit_the_same_defaults(tmp_path):
     assert 'name' not in (tmp_path / 'config.yaml').read_text()
 
 
+@pytest.mark.parametrize('agent', ['claude-code', 'codex'])
+def test_setup_authentication_roundtrip_and_agent_isolation(tmp_path, agent):
+    key = tmp_path / 'provider.key'
+    key.write_text('synthetic-api-key')
+    values, _ = start.values_for(args(tmp_path, '--agent', agent, '--bench', 'capbench'))
+    assert values['auth_mode'] == 'native' and values['api_key_file'] == ''
+    values.update(auth_mode='api', api_key_file=str(key))
+    start.save_values(tmp_path, values)
+    reopened, _ = start.values_for(args(tmp_path, '--agent', agent))
+    assert reopened['auth_mode'] == 'api' and reopened['api_key_file'] == str(key)
+    choices = start.authentication_choices(tmp_path, ['claude-code', 'codex'])
+    assert choices[agent]['api'] and choices[agent]['api_key_file'] == str(key)
+    other = 'codex' if agent == 'claude-code' else 'claude-code'
+    assert choices[other]['auth_mode'] == 'native' and choices[other]['api_key_file'] == ''
+    assert 'synthetic-api-key' not in (tmp_path / 'config.yaml').read_text()
+    reopened.update(auth_mode='native', api_key_file='')
+    start.save_values(tmp_path, reopened)
+    assert load_user_config(tmp_path / 'config.yaml').agents[agent].auth.key_file is None
+    assert key.read_text() == 'synthetic-api-key'
+
+
+def test_invalid_api_selection_cannot_write_defaults_or_launch(tmp_path, monkeypatch):
+    from openrua.terminal import launcher
+    values, _ = start.values_for(args(tmp_path, '--bench', 'capbench'))
+    start.save_values(tmp_path, values)
+    path = tmp_path / 'config.yaml'
+    original = path.read_text()
+    values.update(auth_mode='api', api_key_file=str(tmp_path / 'missing.key'))
+    responses = iter([{'action': 'start', 'values': values}, {'action': 'quit'}])
+    screens = []
+    def screen(spec):
+        screens.append(spec)
+        return next(responses)
+    launcher.setup(values, {}, str(path), lambda v: start.save_values(tmp_path, v),
+        lambda v: pytest.fail('must not check resources'), lambda v: pytest.fail('must not launch'),
+        {}, lambda: [], lambda n: None, screen,
+        prepare=lambda *a: pytest.fail('must not prepare resources'))
+    assert 'key' in screens[1]['notice']
+    assert path.read_text() == original
+    assert not (tmp_path / 'sandboxes').exists()
+    values.update(auth_mode='native')
+    with pytest.raises(UsageError, match='requires mode: api'):
+        start.save_values(tmp_path, values)
+
+
 def test_no_arguments_on_a_pipe_prints_help_without_launching(monkeypatch, capsys):
     monkeypatch.setattr(start, 'run', lambda args: pytest.fail('must not launch'))
     assert main([]) == 0

@@ -81,12 +81,12 @@ def choose_history(list_sessions, open_session, screen=run_screen, *, environmen
 
 
 def setup(values, choices, location, save, check, launch, agent_models,
-          list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None):
+          list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None, authentication=None):
     notice = ''
     while True:
         result = screen({'mode': 'setup', 'values': values, 'choices': choices,
                          'location': location, 'models': agent_models, 'notice': notice,
-                         'environments': environments})
+                         'environments': environments, 'authentication': authentication})
         action = result['action']
         if action == 'quit':
             return None
