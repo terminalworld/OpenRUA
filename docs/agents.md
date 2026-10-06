@@ -344,5 +344,7 @@ authentication, and shared chat through the official local server. A small
 plugin-owned pipe/HTTP bridge keeps the existing execution owner and user
 queue unchanged. Native process and container checks cover file tools,
 approvals, exact resume, cancellation and failure pause using a local model
-fixture. Native subscription reuse, real-model shared chat and robot-task
-performance remain unvalidated; the example is not a default setup option.
+fixture. A bounded real-provider check also completed two shared-chat turns
+in the same native session and retained conversational context. Native
+subscription reuse and robot-task performance remain unvalidated; the example
+is not a default setup option.

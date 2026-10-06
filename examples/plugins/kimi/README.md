@@ -88,8 +88,12 @@ coverage but have not yet been exercised with an actual native question tool.
 
 A separate bounded real-provider check of native Kimi Code 2.1.1 against the
 same Moonshot endpoint completed a simple file task with two API requests and
-32 output tokens. That check predates this shared-chat bridge; it does not
-establish real-model shared-chat or robot-task performance.
+32 output tokens. A subsequent check used this container plugin and OpenRUA's
+shared execution owner for two real-model conversation turns from different
+clients. Both completed in the same native session, and the second correctly
+recalled a marker supplied in the first. That check used two API requests and
+13 output tokens, with no tools or robot actions. It establishes basic shared
+chat with this provider, not robot-task performance.
 
 Native subscription reuse, physical robots, ARM installation, interactive
 native TUI behavior, and benchmark accounting/reproduction remain unvalidated.
