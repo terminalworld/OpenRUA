@@ -1,0 +1,29 @@
+# Experimental external plugin: explicit BigModel API mode only. See README.md.
+name: zcode
+default_model: glm-4.5-air
+binary: zcode
+version: 0.16.9
+install: apt-get update && apt-get install -y --no-install-recommends curl ca-certificates xz-utils build-essential
+  python3 git && mkdir -p /opt/openrua-zcode/node /opt/openrua-zcode/source && cd /opt/openrua-zcode && curl -fsSL
+  https://nodejs.org/dist/v24.14.0/node-v24.14.0-linux-$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/').tar.xz
+  -o node.tar.xz && curl -fsSL https://nodejs.org/dist/v24.14.0/SHASUMS256.txt -o SHASUMS256.txt && grep node-v24.14.0-linux-$(uname
+  -m | sed 's/x86_64/x64/;s/aarch64/arm64/').tar.xz SHASUMS256.txt | sed 's@node-v.*@node.tar.xz@' | sha256sum -c
+  - && tar -xJf node.tar.xz -C node --strip-components=1 && rm node.tar.xz SHASUMS256.txt && curl -fsSL https://codeload.github.com/zai-org/ZCode/tar.gz/29628c9acdb81b703bbd4080c207a0e7ce5e276e
+  | tar -xz -C source --strip-components=1 && export PATH=/opt/openrua-zcode/node/bin:$PATH && npm install -g pnpm@10.33.2
+  && cd source && pnpm install --frozen-lockfile --ignore-scripts && pnpm --filter '@zcode/cli...' run build &&
+  sed -i '1c#!/opt/openrua-zcode/node/bin/node' apps/zcode-cli/packages/cli/dist/zcode.cjs && chmod +x apps/zcode-cli/packages/cli/dist/zcode.cjs
+  && ln -s /opt/openrua-zcode/source/apps/zcode-cli/packages/cli/dist/zcode.cjs /usr/local/bin/zcode && zcode --version
+  && rm -rf /var/lib/apt/lists/*
+whitelist:
+- ^open\.bigmodel\.cn$
+credentials:
+  dirname: zcode
+  filename: provider_config.json
+  config_env: ZCODE_DATA_BASE_DIR
+  mount_point: /zcode-home
+version_argv:
+- zcode
+- --version
+default_options:
+  api_base_url: https://open.bigmodel.cn/api/paas/v4
+entry_point: ./adapter.py

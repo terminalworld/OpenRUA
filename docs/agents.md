@@ -311,8 +311,9 @@ paused queue, and a provider error that pauses subsequent messages. Protocol
 regressions additionally cover late acknowledgements, duplicate and foreign
 turn events, permission retries, and unknown completion statuses. These checks
 exercise protocol behavior, not model capability or robot control. Subscription
-callbacks, structured user questions, container installation and robot tasks
-remain to be validated. Unsupported client requests are rejected rather than
+callbacks, structured user questions and robot tasks remain to be validated.
+The external example below additionally validates container installation and
+the same lifecycle checks in that container. Unsupported client requests are rejected rather than
 answered on the user's behalf.
 
 Kimi Code 2.1.1's ACP reports `end_turn` for some non-authentication provider
@@ -324,3 +325,12 @@ an unambiguous native status source before enabling automatic queue progression.
 Upstream references: [ZCode source](https://github.com/zai-org/ZCode),
 [Kimi ACP reference](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/reference/kimi-acp.md),
 and [Kimi local server reference](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/reference/server-api.md).
+
+### Experimental ZCode external example
+
+The [ZCode example](../examples/plugins/zcode/README.md) adds a pinned source
+installation and an explicit API profile to the existing conversation adapter.
+It uses the standard external-manifest entry point and shared session service.
+Native subscription reuse and robot-task performance are not validated, so it
+is not listed as a bundled agent or offered in guided setup. See the example
+for its supported endpoint, container checks and remaining limitations.

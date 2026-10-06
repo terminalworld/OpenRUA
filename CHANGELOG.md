@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Add an experimental ZCode external plugin example with a pinned official source build, explicit BigModel API profile, and native shared-conversation adapter. Container lifecycle checks use a local model fixture; subscription reuse and robot-task performance remain unvalidated. The example is not a bundled setup option.
+
 ## 0.8.1
 
 - Support explicit Claude Code API authentication through `config set --agent claude-code --auth api --api-key-file ...`. The native CLI reads a private session-local key through `apiKeyHelper`; subscription credentials are not mounted, and keys stay out of launch arguments. The same configuration works for shared chat, native terminal sessions, and benchmark trials. Native login remains the default.
