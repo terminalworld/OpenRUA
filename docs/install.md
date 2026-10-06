@@ -107,6 +107,13 @@ a `claude setup-token` value as `CLAUDE_CODE_OAUTH_TOKEN`, for Codex an
 `OPENAI_API_KEY`) that docker hands to the agent process only. The
 token is scrubbed from the trial record like every other secret.
 
+The readiness check verifies daemon access and that the selected credential
+file is readable, nonempty, and a regular file. It does not contact a model API,
+validate a token, or check quota. Authentication errors still come from the native
+agent; repeat its login command when it reports an expired or invalid login.
+A Docker CLI on PATH is insufficient if its daemon is stopped or inaccessible.
+`doctor` retains the daemon error and reports the repair step.
+
 ## Your defaults
 
 Use `openrua --setup` to edit defaults through the TUI, `openrua config set`

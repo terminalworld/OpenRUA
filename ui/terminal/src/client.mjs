@@ -62,6 +62,8 @@ export class Client {
 
   async end() { return (await this.request('/api/end', {})).result; }
   snapshot() { return this.request('/api/session'); }
+  workspaceList(path = '') { return this.request(`/api/workspace/list?path=${encodeURIComponent(path)}`); }
+  workspaceRead(path) { return this.request(`/api/workspace/read?path=${encodeURIComponent(path)}`); }
   events(after = 0) { return this.request(`/api/events?after=${after}&limit=1000`); }
   async command(operation, params) { return (await this.request('/api/commands', {operation, params})).result; }
 }

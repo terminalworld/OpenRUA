@@ -2,10 +2,12 @@ import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, Select
   TuiMainScreen, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
 import {Transcript, editorTheme, plain, selectTheme} from './view.mjs';
+import {browseWorkspace} from './workspace.mjs';
 
 const commands = [
   {name: 'help', description: 'Keyboard shortcuts and commands'},
   {name: 'tools', description: 'Expand or collapse a tool result'},
+  {name: 'files', description: 'Browse saved workspace files and images'},
   {name: 'queue', description: 'Inspect, edit or withdraw queued messages'},
   {name: 'questions', description: 'Answer pending agent questions'},
   {name: 'resume', description: 'Find an existing conversation'},
@@ -168,6 +170,7 @@ export class Chat {
         switch (text.trim()) {
           case '/help':
             this.say(commands.map(c => `/${c.name}: ${c.description}`).join('\n')); break;
+          case '/files': await browseWorkspace(this); break;
           case '/quit': this.stop(); break;
           case '/resume':
             if (!this.history) throw new Error('Use openrua --tui pi --resume to select history.');

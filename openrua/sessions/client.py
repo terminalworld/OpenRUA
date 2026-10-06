@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 from urllib.request import ProxyHandler, Request, build_opener
 
 
@@ -41,6 +41,12 @@ class Client:
 
     def snapshot(self) -> dict:
         return self.request("/api/session")
+
+    def workspace_list(self, path: str = "") -> dict:
+        return self.request("/api/workspace/list?path=" + quote(path, safe=""))
+
+    def workspace_read(self, path: str) -> dict:
+        return self.request("/api/workspace/read?path=" + quote(path, safe=""))
 
     def events(self, after: int = 0, limit: int = 1000) -> list[dict]:
         return self.request(f"/api/events?after={after}&limit={limit}")

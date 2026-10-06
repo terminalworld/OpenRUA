@@ -9,10 +9,10 @@ agent runtime or model provider is imported.
 
 ## Start
 
-Pi is an opt-in frontend in OpenRUA 0.4.1; the default remains Textual:
+Pi is an opt-in frontend in OpenRUA 0.5.0; the default remains Textual:
 
 ```sh
-pip install -U 'openrua[pi]>=0.4.1'
+pip install -U 'openrua[pi]>=0.5.0'
 openrua --tui pi
 ```
 
@@ -49,6 +49,7 @@ restarting a robot or replaying instructions.
 | Enter | Send through the shared queue |
 | Ctrl+J | Insert a newline |
 | `/` | Complete available commands |
+| `/files` | Browse saved workspace files and images |
 | `/tools` | Select a tool result to expand or collapse |
 | `/queue` | Select a queued instruction to inspect, edit, or withdraw |
 | `/questions` | Answer pending agent questions, then confirm submission |
@@ -70,6 +71,22 @@ still use the existing clients. In-session agent/model switching and a persisten
 multi-panel layout are not implemented. Automated tests do not establish
 real-terminal IME, SSH, clipboard, or long-transcript usability.
 
+## Saved workspace files
+
+Use `/files` to open a keyboard directory selector. Enter opens a directory or
+file; Escape returns to the directory and then to chat, preserving the editor
+draft. Select Refresh directory or press `r` in a preview to fetch the latest
+saved content. Text previews scroll with arrows, Page Up/Down, Home and End.
+Pi displays images using the terminal's supported image protocol; unsupported
+formats or terminals show metadata instead. The existing browser can display
+and download saved images. These are saved observations, not a live video feed.
+
+This is read-only access through the same workspace API as the browser. It does
+not send an agent message or execute a file. Symlinks, paths outside the workspace,
+and files exceeding the server limit are rejected; changed or deleted files
+report an error and can be refreshed. Text previews show at most 131,072 characters. Retained offline history has no workspace API; its transcript remains
+available without restarting execution.
+
 ## Develop and verify
 
 From the repository root, prepare the existing Python development environment:
@@ -90,7 +107,7 @@ service with `npm start --prefix ui/terminal -- --endpoint PATH`.
 
 ```sh
 python -m build
-python scripts/check_dist.py --dist dist --version 0.4.1
+python scripts/check_dist.py --dist dist --version 0.5.0
 ```
 
 Distribution builds check the asset manifest, source hashes, and locked
@@ -108,6 +125,7 @@ paid calls, simulator, or robot.
 ## Boundaries and upstream
 
 - `src/client.mjs`: existing authenticated local HTTP API only.
+- `src/workspace.mjs`: read-only saved-file browsing with upstream Pi components.
 - `src/controller.mjs`: event cursor and unconfirmed request identity.
 - `src/view.mjs`: event presentation using Pi components.
 - `src/app.mjs`, `src/screens.mjs`: keyboard chat, configuration, and history.

@@ -85,12 +85,26 @@ def engine_rootless() -> bool:
     return r.returncode == 0 and r.stdout.strip() == "true"
 
 
+def engine_error() -> str:
+    """Report access to the daemon, not just the installed CLI version."""
+    try:
+        result = subprocess.run(['docker', 'info', '--format', '{{.ServerVersion}}'],
+                                capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return str(exc)
+    return (result.stderr.strip() or result.stdout.strip() or 'Docker daemon unavailable') if result.returncode else ''
+
+
 def check_docker(ctx: Context) -> list[CheckResult]:
     if not shutil.which("docker"):
         return [CheckResult("docker", "docker not found", "error",
                             hint="install Docker Engine: https://docs.docker.com/engine/install/"
                                  " (or rootless podman with podman-docker: docs/podman.md)")]
     version = engine_version()
+    problem = engine_error()
+    if problem:
+        return [CheckResult('docker', 'Docker daemon unavailable', 'error', detail=problem,
+                            hint='start Docker or restore access to its socket, then rerun openrua doctor')]
     rows = [CheckResult("docker", "docker on PATH", detail=version)]
     if "podman" in version.lower() and engine_rootless():
         run_args = config.load_user_config(paths.config_path(ctx.home)).sandbox.run_args
@@ -233,13 +247,21 @@ def check_login(ctx: Context) -> list[CheckResult]:
             out.append(CheckResult(f"login-{a.name}", f"{a.name}: no profile login to check"))
             continue
         home = ctx.login_directories.get(a, paths.credentials_dir(ctx.home) / a.name)
-        if (home / a.credentials.filename).exists():
-            out.append(CheckResult(f"login-{a.name}", f"{a.name} login at {home}"))
-        else:
+        credential = home / a.credentials.filename
+        try:
+            if not credential.is_file():
+                raise ValueError('credential file is missing or is not a regular file')
+            with credential.open('rb') as stream:
+                if not stream.read(1):
+                    raise ValueError('credential file is empty')
+        except (OSError, ValueError) as exc:
             out.append(CheckResult(f"login-{a.name}", f"{a.name} not logged in at {home}",
-                                   "error", hint=a.login_hint(home) + (
+                                   "error", detail=str(exc), hint=a.login_hint(home) + (
                                        f"; or pass --token-file ({a.token_hint('<file>')})"
                                        if a.token_env else "")))
+        else:
+            out.append(CheckResult(f"login-{a.name}", f"{a.name} login file at {home}",
+                                   detail='readable and nonempty; authentication and quota are checked by the native agent'))
     return out
 
 

@@ -277,3 +277,45 @@ test('environment menus never offer untested pairs and selection repairs depende
   terminal.input('\x04');
   await running;
 });
+
+test('workspace reads and keyboard previews preserve the conversation and draft', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20});
+  t.after(() => chat.stop());
+  const running = chat.run();
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  const before = (await client.snapshot()).state;
+  chat.editor.setText('Keep my draft');
+  const entries = await client.workspaceList();
+  assert.equal(entries.entries.find(e => e.name === 'camera.png').kind, 'file');
+  assert.equal((await client.workspaceRead('notes #1.txt')).kind, 'text');
+  await assert.rejects(client.workspaceRead('../endpoint.json'), /relative/);
+  await assert.rejects(client.workspaceRead('blocked'), /symlinks/);
+  await chat.submit('/files');
+  // Refresh, blocked, camera, notes.
+  terminal.input('\x1b[B'); terminal.input('\x1b[B'); terminal.input('\x1b[B'); terminal.input('\r');
+  await new Promise(r => setTimeout(r, 80));
+  assert.equal(chat.ui.hasOverlay(), true);
+  assert.match(terminal.output, /measurement/);
+  terminal.input('\x1b[6~'); // Page down through Pi's scroll view.
+  terminal.columns = 50; terminal.rows = 18; terminal.resize();
+  await new Promise(r => setTimeout(r, 40));
+  assert.doesNotMatch(terminal.output, /\x1b\]52;/);
+  terminal.input('\x1b'); await new Promise(r => setTimeout(r, 40));
+  terminal.input('\x1b');
+  assert.equal(chat.editor.getText(), 'Keep my draft');
+  assert.deepEqual((await client.snapshot()).state, before);
+  assert.equal((await call({op: 'writes'})).writes.filter(w => w.submit).length, 0);
+  chat.stop(); await running;
+});
+
+test('saved image preview uses Pi image rendering and a terminal fallback', async () => {
+  const {FilePreview} = await import('../src/workspace.mjs');
+  const {setCapabilities} = await import('@earendil-works/pi-tui');
+  setCapabilities({images: null, trueColor: false, hyperlinks: false});
+  const preview = new FilePreview({path: 'camera.png', size: 1, kind: 'image', mime: 'image/png',
+    data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWZkAAAAASUVORK5CYII='}, () => {}, () => {}, () => {});
+  assert.match(preview.render(60).join('\n'), /camera.png/);
+  assert.match(preview.render(60).join('\n'), /not a live camera feed/);
+});

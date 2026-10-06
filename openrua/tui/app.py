@@ -15,6 +15,7 @@ from textual.widgets import Button, Collapsible, Footer, Input, Select, Static, 
 
 from openrua.sessions.client import Client
 from openrua.tui.history import History
+from openrua.tui.workspace import Workspace
 
 
 def literal(value: str) -> Text:
@@ -175,6 +176,7 @@ class ChatApp(App):
     CSS_PATH = "chat.tcss"
     ENABLE_COMMAND_PALETTE = False
     BINDINGS = [Binding("ctrl+s", "send", "Send", priority=True),
+                Binding("ctrl+o", "files", "Files", priority=True),
                 Binding("ctrl+p", "panel", "Queue", priority=True),
                 Binding("ctrl+q", "quit", "Detach", priority=True)]
 
@@ -228,6 +230,14 @@ class ChatApp(App):
     def action_panel(self):
         panel = self.view.query_one("#panel")
         panel.display = not panel.display
+
+    def action_files(self):
+        if len(self.screen_stack) > 1:
+            return
+        if not hasattr(self.client, 'workspace_list'):
+            self.notice('Workspace browsing needs a running session. Retained history remains read-only.')
+            return
+        self.push_screen(Workspace(self.client))
 
     def controls(self):
         state = self.state
@@ -316,6 +326,9 @@ class ChatApp(App):
         if len(self.screen_stack) > 1 or self.busy:
             return
         text = self.view.query_one("#message", TextArea).text
+        if text.strip() == '/files':
+            self.action_files()
+            return
         if text.strip() == '/resume' and self.list_sessions:
             if self.pending:
                 self.notice('Resolve the pending send before switching conversations.')

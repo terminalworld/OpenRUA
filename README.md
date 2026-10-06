@@ -38,12 +38,14 @@ queue, and revisit saved observations without starting a new robot each turn.
 
 ## Quick start
 
+### Chat with a robot
+
 Use a Linux host with Docker or supported Podman setup. The terminal UI is
 included in the default installation. Automatic session IDs and history selection
-are included; version 0.4.3 expands the tested setup choices and startup diagnostics:
+are included; version 0.5.0 adds workspace browsing and strengthens startup diagnostics:
 
 ```sh
-pip install -U 'openrua>=0.4.3'
+pip install -U 'openrua>=0.5.0'
 openrua
 ```
 
@@ -66,6 +68,10 @@ Type an instruction and press **Ctrl+S**, for example:
 
 > Inspect the workspace documentation and describe the scene without moving the robot.
 
+**Ctrl+O** (or `/files`) opens saved workspace files without sending an agent
+instruction. Text files can be previewed in the TUI; the browser displays saved
+images, and the optional Pi terminal can display them on compatible terminals.
+
 **Ctrl+Q** leaves the interface while the session keeps running. Use `/resume`
 in the startup form or chat to search previous conversations by title or ID.
 You can also run `openrua --resume`, or `openrua --gui --resume ID` to open a
@@ -82,6 +88,50 @@ example with image preparation, queue operations, SSH access, and shutdown.
 Shared chat remains experimental. Codex has live shared-session checks;
 successful Claude Code turns through the shared adapter still need validation.
 See [validation scope](docs/sessions.md#validation-scope).
+
+### Run a benchmark and make a demo
+
+For researchers, the CLI runs fresh benchmark trials and saves the code,
+observations, transcripts, scores, and configuration needed to inspect a run.
+The following example runs **one CaP-Bench Lift trial**, records its cameras,
+and renders a video with terminal commands beside the robot views.
+
+Install the demo dependencies and prepare the environment once (Docker must
+be running; use your native Claude Code login):
+
+```sh
+pip install -U 'openrua[demo]>=0.5.0'
+CLAUDE_CONFIG_DIR=~/.openrua/credentials/claude-code claude login
+openrua build --bench capbench
+openrua build sandbox --distro humble --agent claude-code
+openrua build proxy --agent claude-code
+openrua doctor panda --sim robosuite --bench capbench --agent claude-code
+```
+
+Then run and render:
+
+```sh
+openrua bench --config capbench --run-id lift-demo \
+  --task-suite capbench_lift --task-ids 0 --seeds 0 \
+  --operator agent --record --record-every 4 --wall-clock-min 10
+openrua demo runs/capbench/lift-demo/trials/capbench_lift-0/seed0 --speed 4
+```
+
+The video is saved as `demo.mp4` in that trial directory. Its `result.json`
+reports the benchmark verdict, and `provenance.json` records the resolved
+configuration and software versions. This small, recorded run demonstrates the
+method; reproducing the paper's aggregate results requires its full task/seed
+sets, model settings, and evaluation budgets. Recording also adds rendering cost.
+The bundled CaP-Bench configuration selects Claude Opus 5 with high reasoning
+effort; `--agent` and `--model` can select another available configuration.
+
+Native login requires the corresponding host CLI. See [installation](docs/install.md)
+for prerequisites and credentials. To check the benchmark setup without a model
+call, use the same `bench` command with `--operator none` and omit recording;
+this checks startup and interfaces, not task success. See
+[running experiments](docs/running-experiments.md) for full runs and recorded
+replays of existing trials, and the [paper](https://arxiv.org/abs/2610.02459)
+for the experimental protocol.
 
 ## Choose your interface
 
@@ -109,46 +159,42 @@ For development, `openrua serve` still runs the service in the foreground.
 Stopping that process ends its session, unlike closing one of its clients.
 
 For an optional **keyboard-first Pi terminal**, install
-`pip install -U 'openrua[pi]>=0.4.1'` and run `openrua --tui pi`.
+`pip install -U 'openrua[pi]>=0.5.0'` and run `openrua --tui pi`.
 It provides keyboard configuration, `/resume`, queue management, and tool
 expansion on the same shared sessions, with no separate Node install.
 See the [Pi guide](ui/terminal/README.md) for controls and current limits.
 
 ## How it works
 
-```text
-OpenRUA TUI / browser / plain CLI
-                |
-       shared session service
-       queue, events, resource ownership
-                |
-       native coding agent in a workspace
-       ROS 2 docs, starter tools, saved files
-                |
-         ros2 commands / rclpy programs
-                |
-       robot's native ROS 2 interfaces
-       sensors, trajectories, gripper, velocities
+**Treat the robot as an interactive software project.** Give an off-the-shelf
+coding agent a task, terminal access to the robot's native ROS&nbsp;2 interface,
+and a workspace. The agent explores the machine, writes and tests programs,
+and uses execution feedback to refine its actions.
+
+```mermaid
+flowchart LR
+    Task[User task] --> Agent[Off-the-shelf coding agent]
+    Agent <--> Workspace[Workspace: docs, starter tools, observations and programs]
+    Robot[Robot's native ROS 2 interfaces] -->|Agent pulls sensor data into files| Workspace
+    Agent -->|ROS 2 commands and agent-written programs| Robot
 ```
 
-The service coordinates user messages and resources. The coding agent decides
-when to observe, what programs to write, and how to complete the robot task.
-Native-terminal and benchmark entry points reuse the robot, workspace, and
-agent adapters without going through the shared chat queue.
+- **Workspace as harness.** Documentation and readable starter tools give the
+  agent a starting point. Files preserve observations, measurements, programs,
+  and notes as the task progresses. OpenRUA prescribes no robot-task workflow.
+- **Perception as file I/O.** The agent pulls sensor data on demand, inspects
+  saved images, and can write code to process images and compute measurements.
+- **Manipulation as coding.** The agent writes and executes commands or programs
+  against native ROS&nbsp;2 interfaces, incorporating sensor feedback when needed.
+  It decides when to observe, how to act, and how to verify completion.
 
-- **The robot provides the control interface.** The agent reads `machine.yaml`
-  and workspace documentation, acquires sensor data, and sends ROS&nbsp;2 requests.
-- **The workspace is the harness.** A ROS&nbsp;2 sandbox contains the agent CLI,
-  documentation, and readable starter-tool source. The agent can inspect, adapt,
-  or replace the tools and save observations and programs for later use.
-- **Extensions have their own boundaries.** Agent manifests and hooks own
-  agent integration; robot profiles own hardware facts; simulator engines and
-  benchmark loaders own their environments. Frontends use the common session API.
-- **Experiments retain their own protocol.** `openrua bench` creates fresh trials,
-  checks workspace interfaces, and records scoring and provenance separately
-  from interactive conversations.
+Task-specific perception and control strategies emerge from the agent's own
+coding during execution. The [paper](https://arxiv.org/abs/2610.02459) analyzes
+these behaviors, including image processing, metric measurement, and feedback
+controllers, without a learned robot policy or a task-specific primitive library.
 
-See [Architecture](docs/architecture.md) for the module boundaries and contracts.
+For the software modules, plugin boundaries, and shared-session implementation,
+see [Architecture](docs/architecture.md).
 
 ## Choosing what to run
 

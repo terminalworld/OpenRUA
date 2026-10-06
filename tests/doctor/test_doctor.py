@@ -19,6 +19,7 @@ def _fake_docker(present: dict[str, dict[str, str]]):
 
 
 def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
+    monkeypatch.setattr(doctor.checks, "engine_error", lambda: "")
     import hashlib
     a = agents.get("claude-code")
     want_wl = hashlib.sha256("\n".join(a.whitelist).encode()).hexdigest()
@@ -40,6 +41,7 @@ def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
 
 
 def test_rootless_podman_wants_keep_id_in_the_defaults_file(tmp_path, monkeypatch):
+    monkeypatch.setattr(doctor.checks, "engine_error", lambda: "")
     monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
     monkeypatch.setattr(doctor.checks, "engine_version", lambda: "podman version 6.1.1")
     monkeypatch.setattr(doctor.checks, "engine_rootless", lambda: True)
@@ -54,6 +56,7 @@ def test_rootless_podman_wants_keep_id_in_the_defaults_file(tmp_path, monkeypatc
 
 
 def test_docker_engine_reports_no_userns_row(tmp_path, monkeypatch):
+    monkeypatch.setattr(doctor.checks, "engine_error", lambda: "")
     monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
     monkeypatch.setattr(doctor.checks, "engine_version", lambda: "Docker version 27.1.1, build 6312585")
     monkeypatch.setattr(doctor.checks, "engine_rootless", lambda: False)
@@ -227,3 +230,35 @@ def test_invalid_user_config_is_a_finding_not_a_traceback(tmp_path):
     assert not report.ok
     assert report.checks[0].id == "configuration"
     assert "unknown_setting" in report.checks[0].detail
+
+
+def test_daemon_access_fails_loudly_even_if_cli_is_installed(tmp_path, monkeypatch):
+    from openrua.doctor import checks
+    from types import SimpleNamespace
+    monkeypatch.setattr(checks.shutil, 'which', lambda _: '/usr/bin/docker')
+    monkeypatch.setattr(checks, 'engine_version', lambda: 'Docker version 29')
+    monkeypatch.setattr(checks.subprocess, 'run', lambda *a, **kw: SimpleNamespace(
+        returncode=1, stderr='permission denied connecting to socket', stdout=''))
+    report = checks.run(home=tmp_path, checks=(checks.check_docker,))
+    assert not report.ok
+    assert 'permission denied' in report.render()
+    assert 'restore access' in report.render()
+
+
+def test_login_requires_a_readable_nonempty_regular_file(tmp_path):
+    from openrua.doctor.checks import Context, check_login
+    agent = agents.get('codex')
+    home = tmp_path / 'login'
+    home.mkdir()
+    ctx = Context(tmp_path, [agent], None, None, login_directories={agent: home})
+    file = home / agent.credentials.filename
+    for kind in ('missing', 'directory', 'empty', 'present'):
+        if kind == 'directory': file.mkdir()
+        if kind == 'empty':
+            file.rmdir()
+            file.touch()
+        if kind == 'present': file.write_text('{}')
+        result = check_login(ctx)[0]
+        assert result.severity == ('ok' if kind == 'present' else 'error')
+        if kind == 'present': assert 'authentication and quota' in result.detail
+        else: assert result.hint

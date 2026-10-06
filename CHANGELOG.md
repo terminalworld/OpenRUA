@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0
+
+- Browse saved workspace files from either terminal frontend without sending agent instructions. Pi uses its keyboard selector, scroll view and image component; the default TUI previews text and shows image metadata. Both reuse the existing read-only workspace API.
+- Preserve the chat draft while browsing. Refresh changed files, report missing/oversized paths, and reject symlinks through the existing server checks. Image rendering depends on terminal support; offline history remains transcript-only.
+- Check Docker daemon access and reject missing, empty or non-file credentials in readiness reports. Login-file presence is explicitly separate from authentication and quota. Existing images and shared proxy containers are not automatically replaced.
+- Give README readers separate TUI and benchmark/demo entry points. Explain How it works through the paper’s workspace-as-harness, file-I/O perception and coding-based control.
+
 ## 0.4.3
 
 This release includes the startup and diagnostic changes prepared for 0.4.2.

@@ -96,9 +96,15 @@ from a disconnected client: reopening the TUI does not restart the agent.
 ## Current scope
 
 Agent and model selection still happens when starting a session. Changing them
-inside a running conversation, a workspace file panel, terminal image previews,
-and saved layout preferences are not implemented in this release. The browser
-can display saved workspace images. Use a terminal at least 60 columns wide and
+inside a running conversation and saved layout preferences are not implemented.
+Ctrl+O or `/files` opens the default TUI workspace browser: arrows and Enter
+navigate, Escape goes back, and `r` refreshes. Text previews are read-only and
+scrollable, while images show metadata with a browser viewing hint. The optional
+Pi frontend also supports inline images on compatible terminals; see its
+[workspace controls](../ui/terminal/README.md#saved-workspace-files).
+Workspace browsing requires a running session service and does not enqueue
+instructions. Saved observations are not live video. The browser can display
+and download saved workspace images. Use a terminal at least 60 columns wide and
 28 rows high for the tested narrow layout.
 
 Automated headless Textual tests use the real HTTP service and SQLite journal
