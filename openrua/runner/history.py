@@ -3,12 +3,18 @@
 from __future__ import annotations
 
 import sqlite3
+import asyncio
+import secrets
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
 from openrua.config import paths
+from openrua.artifacts import WorkspaceFiles
+from openrua.runner import live_state
+from openrua.errors import NotFound
 from openrua.sessions.client import Client
+from openrua.sessions.http import LocalServer
 from openrua.sessions.store import SQLiteStore
 
 
@@ -55,14 +61,54 @@ def entries(home: Path) -> list[dict]:
     return sorted(records, key=lambda row: row['updated'], reverse=True)
 
 
+class ArchivedFiles:
+    """Resolve only the workspace recorded for this retained conversation."""
+
+    def __init__(self, root: Path | None):
+        self.root = root
+        self.reader = None
+
+    def _reader(self):
+        if self.root is None:
+            raise ValueError('No workspace path was recorded for this conversation; its transcript is still available.')
+        if self.reader is None:
+            try:
+                self.reader = WorkspaceFiles(self.root)
+            except FileNotFoundError as exc:
+                raise ValueError(f'Retained workspace is missing: {self.root}. Its transcript is still available.') from exc
+        return self.reader
+
+    def list(self, path: str = '') -> dict:
+        return self._reader().list(path)
+
+    def read(self, path: str) -> dict:
+        return self._reader().read(path)
+
+
 class ArchiveClient:
     """Read retained conversation state; never imply that its execution is live."""
 
     read_only = True
 
-    def __init__(self, database: Path, reason: str):
+    def __init__(self, database: Path, reason: str, workspace: Path | None = None):
         self.database, self.reason = database, reason
+        self.artifacts = ArchivedFiles(workspace)
         self.snapshot()
+
+    def with_workspace(self, consume):
+        """Supply a temporary read-only file endpoint for the consumer's lifetime."""
+        async def serve():
+            async def reject():
+                raise RuntimeError('Retained conversation is read-only.')
+            server = LocalServer(None, reject, secrets.token_urlsafe(32),
+                                 snapshot=self.snapshot, artifacts=self.artifacts,
+                                 read_only=True)
+            server.start()
+            try:
+                return await asyncio.to_thread(consume, {'url': server.url, 'token': server.token})
+            finally:
+                await server.close()
+        return asyncio.run(serve())
 
     def snapshot(self) -> dict:
         return _read(self.database, 'snapshot')
@@ -93,4 +139,9 @@ def open_session(home: Path, name: str):
                 return client, name
         except (OSError, RuntimeError, ValueError, KeyError):
             reason = 'Service unavailable; execution status unknown'
-    return ArchiveClient(directory / 'conversation.sqlite', reason), name
+    try:
+        workspace = live_state.load(name, home, require_running=False).get('workspace')
+    except NotFound:
+        workspace = None
+    return ArchiveClient(directory / 'conversation.sqlite', reason,
+                         Path(workspace) if workspace else None), name

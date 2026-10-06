@@ -1,5 +1,6 @@
 import {Container, Input, ProcessTerminal, SelectList, Text, TuiMainScreen, matchesKey} from '@earendil-works/pi-tui';
 import {plain, selectTheme} from './view.mjs';
+import {Client} from './client.mjs';
 
 export class Screen {
   constructor(terminal = new ProcessTerminal()) {
@@ -134,10 +135,17 @@ export class History extends Screen {
 }
 
 export class ArchiveClient {
-  constructor(data) { this.data = data; this.readOnly = true; this.reason = data.reason; }
+  constructor(data) {
+    this.data = data; this.readOnly = true; this.reason = data.reason;
+    if (data.workspace) {
+      this.files = new Client(data.workspace.url, data.workspace.token);
+      this.workspaceList = path => this.files.workspaceList(path);
+      this.workspaceRead = path => this.files.workspaceRead(path);
+    }
+  }
   async snapshot() { return this.data.snapshot; }
   async events(after = 0) { return this.data.events.filter(event => event.seq > after).slice(0, 1000); }
   async command() { throw new Error('Read-only history; no execution has been restarted.'); }
   async end() { return this.command(); }
-  close() {}
+  close() { this.files?.close(); }
 }

@@ -57,10 +57,12 @@ class LocalServer:
                  max_body_bytes: int = 1024 * 1024,
                  assets: dict[str, tuple[str, bytes]] | None = None,
                  artifacts: ArtifactReader | None = None,
-                 snapshot: Callable[[], dict] | None = None):
+                 snapshot: Callable[[], dict] | None = None,
+                 read_only: bool = False):
         if not token or request_timeout <= 0 or max_body_bytes <= 0:
             raise ValueError("token and positive request limits are required")
         self.execution, self.end = execution, end
+        self.read_only = read_only
         if execution is None and snapshot is None:
             raise ValueError("a session or explicit resource snapshot is required")
         self.snapshot = snapshot if snapshot is not None else execution.session.store.snapshot
@@ -161,6 +163,9 @@ class LocalServer:
 
             def do_POST(self):
                 if not self.authorized():
+                    return
+                if owner.read_only:
+                    self.reply(409, {"error": "retained conversation is read-only; no execution has been restarted"})
                     return
                 try:
                     if self.headers.get("Transfer-Encoding") or len(self.headers.get_all("Content-Length", [])) != 1:

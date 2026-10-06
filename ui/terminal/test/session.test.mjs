@@ -330,3 +330,18 @@ test('a native error emitted as both message and result is displayed once', () =
     data: {status: 'failed', error: {message: error}}}});
   assert.equal(view.render(120).join('\n').split(error).length - 1, 1);
 });
+
+test('archived conversations browse files without gaining execution commands', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const {ArchiveClient} = await import('../src/screens.mjs');
+  const archive = new ArchiveClient({snapshot: await client.snapshot(), events: [], reason: 'Ended',
+    workspace: {url: client.origin, token: client.token}});
+  t.after(() => archive.close());
+  const before = await call({op: 'writes'});
+  assert.equal((await archive.workspaceRead('notes #1.txt')).kind, 'text');
+  assert.equal((await archive.workspaceRead('camera.png')).kind, 'image');
+  assert.ok((await archive.workspaceList()).entries.length > 0);
+  await assert.rejects(archive.command('enqueue', {}), /Read-only/);
+  await assert.rejects(archive.end(), /Read-only/);
+  assert.deepEqual(await call({op: 'writes'}), before);
+});

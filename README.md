@@ -50,11 +50,11 @@ queue, and revisit saved observations without starting a new robot each turn.
 ### Chat with a robot
 
 Use a Linux host with Docker or supported Podman setup. The terminal UI is
-included in the default installation. Version 0.6.0 opens the keyboard-first Pi
-interface directly, with no separate Node installation or frontend selection:
+included in the default installation. The keyboard-first Pi
+interface opens directly, with no separate Node installation or frontend selection:
 
 ```sh
-pip install -U 'openrua>=0.6.0'
+pip install -U 'openrua>=0.7.0'
 openrua
 ```
 
@@ -90,12 +90,14 @@ sessions, not the one already running.
 
 Use `/end` and confirm with the keyboard when finished. Records and workspace files are retained;
 run `openrua` again for a new session. Ended or unavailable conversations open
-read-only from history; selecting them never restarts robot execution. The
+read-only from history, including retained workspace files through `/files`;
+selecting them never restarts robot execution. The
 [full walkthrough](examples/shared-session.md) gives a concrete simulated RoboCasa365
 example with image preparation, queue operations, SSH access, and shutdown.
 
-Shared chat remains experimental. Codex has live shared-session checks;
-successful Claude Code turns through the shared adapter still need validation.
+Shared chat remains experimental. Bounded three-turn simulation checks have
+passed with both Claude Code and Codex; these do not establish reliability
+across arbitrary robot tasks.
 See [validation scope](docs/sessions.md#validation-scope).
 
 ### Run a benchmark and make a demo
@@ -109,7 +111,7 @@ Install the demo dependencies and prepare the environment once (Docker must
 be running; an existing native Claude Code login is reused):
 
 ```sh
-pip install -U 'openrua[demo]>=0.6.0'
+pip install -U 'openrua[demo]>=0.7.0'
 claude login  # only if not already signed in
 openrua build --bench capbench
 openrua build sandbox --distro humble --agent claude-code
@@ -342,7 +344,7 @@ right (`openrua demo <trial>`; see
 
 The implementation separates robot resources, native agent adapters, shared
 conversations, and presentation. `runner/` composes resources; `sessions/`
-coordinates messages and events; `tui/` and `web/` provide client interfaces.
+coordinates messages and events; `terminal/`, `ui/terminal/` and `web/` provide client interfaces.
 Robot, sandbox, proxy, and agent knowledge stay in their respective modules.
 Benchmark execution and recorded demos have separate entry points.
 

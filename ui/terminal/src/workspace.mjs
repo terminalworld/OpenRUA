@@ -33,7 +33,7 @@ export class FilePreview extends VStack {
 }
 
 export async function browseWorkspace(chat, path = '') {
-  if (!chat.client.workspaceList) throw new Error('Workspace browsing needs a running session. Retained history remains read-only.');
+  if (!chat.client.workspaceList) throw new Error('Workspace access is unavailable for this conversation.');
   const listing = await chat.client.workspaceList(path);
   if (chat.done) return;
   const parent = path.split('/').slice(0, -1).join('/');

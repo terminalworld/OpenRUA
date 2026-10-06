@@ -207,9 +207,10 @@ native cancellation expires it. The protocol follows the
 [Anthropic's control-protocol implementation](https://github.com/anthropics/claude-agent-sdk-python/blob/main/src/claude_agent_sdk/_internal/query.py),
 checked with Claude Code 2.1.284. A live check confirmed initialization, the
 user-message echo and failure reporting: the account returned a weekly quota
-limit, which the owner recorded as a failed turn and a paused queue. Successful
-model turns, tools and active cancellation remain unverified for this adapter;
-the quota failure is not evidence of those capabilities.
+limit, which the owner recorded as a failed turn and a paused queue. Later
+Claude Opus 5 simulation checks completed observation and gripper-control turns
+in one native conversation; see [sessions.md](sessions.md#validation-scope).
+The earlier quota failure is not evidence of successful task execution.
 
 The shared queue and execution owner consume this contract without vendor
 branches; their boundaries and current validation scope are described in

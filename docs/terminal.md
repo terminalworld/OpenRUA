@@ -68,8 +68,10 @@ reconnection replays events without automatically resending instructions.
 `/files` uses the existing read-only workspace API. Text previews scroll;
 images use the terminal's supported image protocol with a metadata fallback.
 Escape returns, `r` refreshes, and the chat draft is preserved. Saved images
-are observations, not a live video stream. Offline history currently displays
-the transcript only. The browser also provides image viewing and downloads.
+are observations, not a live video stream. Ended or unavailable conversations also support `/files` from history, using
+the recorded workspace on disk. This starts only a temporary local read-only
+viewer, never the robot or agent. Missing files are reported without losing
+access to the transcript. The browser also provides image viewing and downloads.
 
 Secret-input questions and reconciliation of unknown execution outcomes use
 the [session CLI](sessions.md), so these operations also require no mouse.

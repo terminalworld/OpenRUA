@@ -105,6 +105,13 @@ plain text, not executable HTML.
 
 ### Workspace files
 
+In terminal history, `/files` also reads the workspace of an ended or
+unavailable conversation. The viewer uses its recorded workspace location,
+including an explicitly configured external directory. It starts no execution
+resources and rejects commands and shutdown requests at the server boundary.
+The temporary local file viewer closes when you leave that history screen;
+missing workspace files do not prevent reading the retained transcript.
+
 The terminal browses these same files through `/files`, using keyboard
 selection and read-only previews. Browsing does not send an agent instruction. See
 [terminal controls](terminal.md#current-scope) for preview support and keyboard
@@ -303,9 +310,17 @@ The file browser was also checked against the retained camera image (640 × 480)
 and gripper record from that run. This read-only replay used no new model call
 or robot process; it verifies artifact display, not live camera streaming.
 
-Successful Claude model turns remain unverified. See
-[agents.md](agents.md#structured-conversations-experimental) for native protocol,
-handshake and quota-failure checks.
+A subsequent CaP-Bench Lift check completed three consecutive turns with each
+of Claude Code (`claude-opus-5`) and Codex (`gpt-5.6-sol`): inspect and save a
+camera image, open the gripper and save joint feedback, then close it and save
+new feedback and an image. The final instruction queued behind the preceding
+turn; fresh HTTP clients observed the same native conversation throughout.
+Recorded finger positions independently confirmed the open/close change.
+Both checks stopped their resources and retained readable workspace files.
+A separate Claude cube-grasp attempt did not finish within its five-minute
+limit and was interrupted; the basic control checks are not evidence of
+reliable grasping or benchmark success. See
+[agents.md](agents.md#structured-conversations-experimental) for protocol checks.
 
 ### Browser regression checks
 

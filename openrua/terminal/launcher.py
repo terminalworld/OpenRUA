@@ -114,7 +114,13 @@ def setup(values, choices, location, save, check, launch, agent_models,
 
 def chat(client, name, list_sessions, open_session, screen=run_screen):
     while True:
-        result = screen({'mode': 'chat', 'name': name, 'connection': connection(client)})
+        spec = {'mode': 'chat', 'name': name, 'connection': connection(client)}
+        def display(files):
+            spec['connection']['workspace'] = files
+            return screen(spec)
+        result = (client.with_workspace(display)
+                  if getattr(client, 'read_only', False) and hasattr(client, 'with_workspace')
+                  else screen(spec))
         if result['action'] == 'quit':
             return 0
         if result['action'] != 'history':

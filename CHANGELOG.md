@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.0
+
+- Browse retained workspace files with `/files` after opening an ended or unavailable conversation through `/resume`. The same keyboard directory, text and image viewers now work without restarting the robot or agent.
+- Use the recorded workspace path, including external directories. Missing files leave the transcript accessible. The temporary local viewer rejects mutation requests, preserves the existing file access restrictions, and closes when the history screen exits.
+- Verify archived file browsing through a real terminal in the isolated distribution check, alongside Python and terminal integration tests. Image rendering still depends on terminal support; saved observations are not a live video feed.
+
 ## 0.6.0
 
 - Make the Pi keyboard terminal the default for `openrua`, setup, history, and `chat --tui`. Remove the Textual frontend and dependency. Ordinary installation now includes the terminal runtime; `[pi]` and `[tui]` remain compatibility extras.
