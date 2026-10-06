@@ -72,6 +72,43 @@ transcript, so agents never read each other's). The
 manifest's fields are available on `self`. An agent's `capabilities` is
 the set of hooks its class overrides; `openrua agents` lists them.
 
+### Preparing a native profile
+
+In source checkouts after 0.7.1, both interactive startup and benchmark
+trials call `Agent.prepare_profile(source, dest, require_credentials=True)`.
+The default preserves the existing JSON-settings and shared-credential-file
+layout; existing plugins do not need to override it. The package-level
+`openrua.agents.prepare_profile` tuple helper remains available for compatibility.
+
+A plugin with a different native layout overrides this hook and returns
+`PreparedProfile(directory, mounts, read_secrets=None)`, imported from
+`openrua.agents.base`. `directory` is the session-local profile used for native
+records and transcript collection. `mounts` is a tuple of the existing
+`SOURCE:DESTINATION` sandbox mount specifications. For example, a plugin can
+copy a TOML configuration and return separate mounts for shared credential and
+refresh-lock directories without changing the runner or any frontend.
+
+The hook receives the resolved source profile; it must not log in, choose a
+different account or endpoint, or silently switch to API billing. Keep native
+history and temporary session state separate from shared credentials. When
+`require_credentials=False`, the caller supplies authentication separately;
+do not mount the native login as a fallback. Validate source materials and
+destination ownership before replacing session-local files. The default
+implementation rejects source/destination overlap and destination symlinks,
+and reports missing credentials before clearing an existing destination.
+
+For credentials outside the legacy JSON layout, supply a `read_secrets` callable
+returning the current secret values as nonempty strings. Trials call it before and after execution
+and pass both sets to the existing archive redactor; do not print or serialize
+those values. This callback is for artifact redaction, not authentication or
+network access. It does not scrub private live conversation history.
+
+Profile preparation alone does not establish a working agent integration.
+Discovery, doctor checks, native launch, authentication, and conversation
+lifecycle still need validation for the plugin's layout. The external-plugin
+fixture in `tests/agents/test_profiles.py` exercises both startup paths with
+isolated files; it does not authenticate to a model provider.
+
 ## The smallest agent
 
 ```yaml

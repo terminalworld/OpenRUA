@@ -11,11 +11,10 @@ authenticates with a token of its own needs no credentials file at all.
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 from collections.abc import Mapping
 
-from openrua.agents.base import Agent
+from openrua.agents.base import Agent, _copy_profile
 
 
 def resolve_profile(agent: Agent, configured: str | Path | None, alias: Path, *,
@@ -67,19 +66,5 @@ def prepare_profile(creds_home: Path, agent: Agent, dest: Path,
     The sandbox runs as this user, so the directory keeps this user's
     permissions.
     """
-    if dest.exists():
-        shutil.rmtree(dest)
-    dest.mkdir(parents=True)
-    creds = agent.credentials
-    if creds is None:
-        return dest, None
-    creds_file: Path | None = creds_home / creds.filename
-    if not require_credentials:
-        creds_file = None
-    elif not creds_file.exists():
-        raise RuntimeError(f"credentials missing: {agent.login_hint(creds_home)}")
-    for pattern in ("*.json", ".*.json"):
-        for f in creds_home.glob(pattern):
-            if f.name != creds.filename:
-                shutil.copy2(f, dest / f.name)
-    return dest, creds_file
+    return _copy_profile(creds_home, dest, agent.credentials,
+                         require_credentials, agent.login_hint(creds_home))

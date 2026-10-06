@@ -8,7 +8,7 @@ Every fact about a particular coding agent lives in its manifest
 so post-hoc tools resolve the agent a trial actually ran.
 """
 
-from openrua.agents.base import HOOK_NAMES, Agent, Credentials  # noqa: F401
+from openrua.agents.base import HOOK_NAMES, Agent, Credentials, PreparedProfile  # noqa: F401
 from openrua.agents.credentials import prepare_profile, resolve_profile  # noqa: F401
 from openrua.agents.prompts import PROMPT, RESUME_PROMPT  # noqa: F401
 from openrua.agents.registry import (  # noqa: F401

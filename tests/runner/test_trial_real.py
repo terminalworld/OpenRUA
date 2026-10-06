@@ -44,7 +44,7 @@ def test_real_trial_uses_the_given_task_and_scores_nothing(monkeypatch, tmp_path
     run_dir = tmp_path / "runs" / "r1"
     rec = trial.run_trial(cfg, tmp_path / "bench.yaml", run_dir, "suite", 0, 0,
                           lambda ctx: {"operator": "none"}, 1.0, token_file=str(token),
-                          task="open the drawer")
+                          task="open the drawer", home=tmp_path / "home")
     assert rec["task_language"] == "open the drawer"
     assert rec["success"] is None and rec["verdict"] == "not_applicable"
     assert rec["anomaly"] is None and rec["termination"] == "operator_done"
@@ -56,5 +56,5 @@ def test_real_trial_uses_the_given_task_and_scores_nothing(monkeypatch, tmp_path
 def test_real_trial_without_a_task_is_an_anomaly(monkeypatch, tmp_path):
     handle, cfg, token = _harness(monkeypatch, tmp_path)
     rec = trial.run_trial(cfg, tmp_path / "bench.yaml", tmp_path / "runs" / "r2", "suite", 0, 0,
-                          lambda ctx: {"operator": "none"}, 1.0, token_file=str(token))
+                          lambda ctx: {"operator": "none"}, 1.0, token_file=str(token), home=tmp_path / "home")
     assert rec["termination"] == "anomaly" and "--task" in rec["anomaly"]

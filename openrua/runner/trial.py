@@ -226,11 +226,13 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
                                         user_home=Path.home(), environment=os.environ,
                                         link=token_file is None)
     # A token file is the sandbox's whole auth story, so the login
-    # profile need not carry credentials then (see agents.prepare_profile).
-    cfg_dir, creds_file = agents.prepare_profile(
-        creds_home, agent, paths.sandbox_dir(stem, home) / "profile",
+    # profile need not carry credentials then (see Agent.prepare_profile).
+    profile = agent.prepare_profile(
+        creds_home, paths.sandbox_dir(stem, home) / "profile",
         require_credentials=token_file is None)
     secrets = record.secret_strings(creds_home)  # pre-trial token values
+    if profile.read_secrets is not None:
+        secrets += profile.read_secrets()
     if token_file:
         # The token never reaches the record: it is as much a secret as
         # anything in the credentials file, and the agent can print its
@@ -248,7 +250,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         # robot fails, so sandbox_live flips only on success.
         config_path, machine, rec["ros_domain"] = bring_up(
             cfg, trial_dir, sim_name, sandbox_name, task_suite, task_id,
-            network, proxy_url, agent.sandbox_mounts(cfg_dir, creds_file),
+            network, proxy_url, profile.mounts,
             ros_domain, robot_log=trial_dir / "bridge.log", home=home,
             record_cameras=record_cameras, record_every=record_every,
             record_size=record_size)
@@ -267,7 +269,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         op_meta = operate(cfg, machine, sandbox_name, operator, {
             "machine": machine,
             "trial_dir": trial_dir,
-            "profile_dir": cfg_dir,
+            "profile_dir": profile.directory,
             "cfg": cfg,
             "sandbox": sandbox_name,
             "sim": sim_name,
@@ -303,12 +305,16 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             sandbox_down(sandbox_name)
         # Post-trial token values too; a mid-trial rotation would leave
         # both generations potentially visible in the record.
-        secrets += record.secret_strings(creds_home)
         try:
-            record.finalize_trial(trial_dir, agent, secrets, profile_dir=cfg_dir)
+            secrets += record.secret_strings(creds_home)
+            if profile.read_secrets is not None:
+                secrets += profile.read_secrets()
+            record.finalize_trial(trial_dir, agent, secrets, profile_dir=profile.directory)
         finally:
-            shutil.rmtree(paths.sandbox_dir(stem, home), ignore_errors=True)
-        held.release()
+            try:
+                shutil.rmtree(paths.sandbox_dir(stem, home), ignore_errors=True)
+            finally:
+                held.release()
     # wall_seconds spans the whole harness (boot, preflight, operator,
     # teardown). The wall cap is enforced only on the operator and its
     # verdict already sits in rec["termination"]; it is never rewritten

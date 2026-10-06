@@ -130,7 +130,8 @@ def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path):
     monkeypatch.setattr(live, "bring_up", bring_up)
     monkeypatch.setattr(live, "ensure_internal_network", lambda: "internal")
     monkeypatch.setattr(live, "ensure_proxy", lambda _: "http://proxy")
-    monkeypatch.setattr(live.agents, "prepare_profile", lambda *a: (tmp_path / "profile", None))
+    from openrua.agents import Agent, PreparedProfile
+    monkeypatch.setattr(Agent, "prepare_profile", lambda self, source, dest: PreparedProfile(dest, ()))
     monkeypatch.setattr(live, "sandbox_down", lambda _: calls.append("sandbox down"))
     monkeypatch.setattr(live, "start_episode", lambda *a: pytest.fail("must not reset a real robot"))
     args = build_parser().parse_args(["--home", str(tmp_path / "home"), "up", str(profile),

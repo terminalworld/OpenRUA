@@ -101,13 +101,13 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                                         paths.credentials_dir(request.home) / adapter.name,
                                         user_home=Path.home(), environment=os.environ, link=True)
     print(f"[up] {adapter.name} login: {creds_home} (source: {creds_home.resolve()})", flush=True)
-    cfg_dir, creds_file = agents.prepare_profile(creds_home, adapter, sandbox_dir / "profile")
+    profile = adapter.prepare_profile(creds_home, sandbox_dir / "profile")
     print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
           flush=True)
     try:
         _, machine, _ = bring_up(
             cfg, workdir, sim_name, sandbox_name, suite, task_id, network, proxy_url,
-            adapter.sandbox_mounts(cfg_dir, creds_file), request.ros_domain,
+            profile.mounts, request.ros_domain,
             robot_log=workdir / "robot.log", home=request.home)
     except Exception as e:  # noqa: BLE001
         # The sandbox directory stays for the read below; openrua clean sweeps it.
@@ -146,4 +146,3 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         benchmark=composed.benchmark,
         suite=suite, task_id=task_id, task=task,
         agent=adapter.name, model=model, power_off=power_off)
-

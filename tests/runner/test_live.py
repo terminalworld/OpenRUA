@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from openrua.errors import UnavailableError
+from openrua.agents import PreparedProfile
 from openrua.runner import live, live_state
 
 
@@ -19,9 +20,8 @@ def resources(monkeypatch, tmp_path):
     monkeypatch.setattr(live, "ensure_internal_network", lambda: "network")
     monkeypatch.setattr(live, "ensure_proxy", lambda _: "proxy")
     adapter = SimpleNamespace(name="fake", default_model="model", default_options={},
-                              sandbox_mounts=lambda *a: ())
+                              prepare_profile=lambda source, dest: PreparedProfile(dest, ()))
     monkeypatch.setattr(live.agents, "get", lambda *a, **kw: adapter)
-    monkeypatch.setattr(live.agents, "prepare_profile", lambda *a: (tmp_path / "profile", None))
     machine = SimpleNamespace(shutdown=lambda: calls.append("robot stopped"))
     monkeypatch.setattr(live, "bring_up", lambda *a, **kw: (None, machine, 0))
     monkeypatch.setattr(live, "sandbox_down", lambda _: calls.append("sandbox stopped"))

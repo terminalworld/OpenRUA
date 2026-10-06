@@ -22,9 +22,10 @@ Leaf contract: only type annotations refer to the optional conversation contract
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+import shutil
+from typing import Any, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from openrua.agents.conversation import Conversation
@@ -50,10 +51,44 @@ class Credentials:
     native_dir: str | None = None
 
 
+@dataclass(frozen=True)
+class PreparedProfile:
+    """A session-local profile and the plugin's explicit sandbox mounts.
+
+    The directory is also passed to transcript collection. Shared credential
+    paths stay outside it; the plugin decides their native layout and mounts.
+    """
+    directory: Path
+    mounts: tuple[str, ...]
+    # Custom credential formats supply current values for trial redaction.
+    # Called before and after execution so rotations are included.
+    read_secrets: Callable[[], list[str]] | None = field(default=None, repr=False)
+
+
+def _copy_profile(source: Path, dest: Path, credentials: Credentials | None,
+                  require_credentials: bool, login_hint: str) -> tuple[Path, Path | None]:
+    """The legacy JSON layout, also used by the package compatibility helper."""
+    shared = source / credentials.filename if credentials and require_credentials else None
+    resolved_dest, resolved_source = dest.resolve(), source.resolve()
+    if dest.is_symlink() or resolved_dest == resolved_source or resolved_dest in resolved_source.parents:
+        raise ValueError("profile destination must be separate from the native login directory")
+    if shared is not None and not shared.is_file():
+        raise RuntimeError(f"credentials missing: {login_hint}")
+    if dest.exists():
+        shutil.rmtree(dest)
+    dest.mkdir(parents=True, mode=0o700)
+    if credentials:
+        for pattern in ("*.json", ".*.json"):
+            for path in source.glob(pattern):
+                if path.name != credentials.filename:
+                    shutil.copy2(path, dest / path.name)
+    return dest, shared
+
+
 # The optional hooks, in the order they are documented below. An agent
 # "has" a capability when its hooks class overrides the hook.
 HOOK_NAMES = (
-    "interactive_argv", "conversation", "sandbox_cli_check", "login_hint", "token_hint",
+    "prepare_profile", "interactive_argv", "conversation", "sandbox_cli_check", "login_hint", "token_hint",
     "quota_probe_argv", "quota_window_open", "matches_quota_anomaly",
     "read_rate_limits", "quota_since", "read_final", "scan_transcript",
     "assistant_turns_before", "replay_ops", "collect",
@@ -152,6 +187,21 @@ class Agent:
                          if getattr(type(self), h) is not getattr(Agent, h))
 
     # ---- optional hooks; each docstring states the default ----------
+    def prepare_profile(self, source: Path, dest: Path, *,
+                        require_credentials: bool = True) -> PreparedProfile:
+        """Prepare one session's native configuration without selecting auth.
+
+        Default: copy JSON settings and bind the declared credential file,
+        preserving the existing profile contract. Override for other native
+        layouts. The source is an explicitly resolved profile; a plugin must
+        not choose another account, log in, or fall back to paid credentials.
+        With require_credentials=False, authentication is supplied separately
+        by the caller, and no native login credentials should be mounted.
+        """
+        directory, credentials = _copy_profile(source, dest, self.credentials,
+                                               require_credentials, self.login_hint(source))
+        return PreparedProfile(directory, self.sandbox_mounts(directory, credentials))
+
     def interactive_argv(self, sandbox: str, model: str, proxy: str,
                          options: dict[str, Any] | None = None,
                          prompt: str | None = None, **_: Any) -> list[str] | None:
