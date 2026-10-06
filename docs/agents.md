@@ -74,7 +74,7 @@ the set of hooks its class overrides; `openrua agents` lists them.
 
 ### Preparing a native profile
 
-In source checkouts after 0.7.1, both interactive startup and benchmark
+Since 0.8.0, both interactive startup and benchmark
 trials call `Agent.prepare_profile(source, dest, require_credentials=True)`.
 The default preserves the existing JSON-settings and shared-credential-file
 layout; existing plugins do not need to override it. The package-level
@@ -111,7 +111,7 @@ isolated files; it does not authenticate to a model provider.
 
 ### Checking local login material
 
-Source checkouts after 0.7.1 also provide `Agent.inspect_login(source)`.
+Version 0.8.0 also provides `Agent.inspect_login(source)`.
 Doctor and automatic profile linking use this hook, so a plugin can recognize
 credential directories or other native formats. Return
 `ProfileLogin(available, detail)` from `openrua.agents.base`, or `None` when
@@ -125,6 +125,23 @@ log in, or fall back to another credential source. Keep secret values out of
 `detail`. A positive result does not establish an active subscription, a
 valid online login, or available quota; the native agent checks those during
 use. Doctor reports this distinction rather than declaring the account valid.
+
+### Explicit API profiles
+
+Since 0.8.0, plugins can implement
+`prepare_api_profile(key_file, dest) -> PreparedProfile`. The caller invokes
+this hook only for an explicit `auth.mode: api` selection. The plugin converts
+the selected raw key into its CLI's native session-local configuration and
+provides `read_secrets` for trial redaction. No native login profile is supplied,
+so there is no subscription fallback to accidentally mount. The default rejects
+API mode. Codex implements this with native `auth.json` and a file-backed API
+login configuration; core startup and frontends contain no vendor branch.
+
+The hook must not contact a provider or start a task. Reject invalid input
+before clearing the destination, keep secret files private, and leave the source
+key and the user's native login untouched. Host checks cannot establish online
+key validity. See [installation](install.md#explicit-api-authentication) for
+configuration and the distinction from the existing benchmark `--token-file`.
 
 ## The smallest agent
 

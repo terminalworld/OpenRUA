@@ -82,6 +82,12 @@ def open_robot(request: RobotRequest) -> LiveRobot:
     if suite is not None:
         apply_suite_overrides(cfg, suite)
     normalize_arms(cfg)
+    cfg_agent = cfg["agent"]
+    adapter = agents.get(cfg_agent["name"], request.home, version=cfg_agent.get("version"))
+    try:
+        key_file = agents.api_key_file(adapter, cfg_agent.get("auth"))
+    except ValueError as exc:
+        raise UsageError(str(exc), hint="check the selected API key file, or use openrua config set --auth native") from exc
     sim_name, sandbox_name = state.container_names(request.name)
     sandbox_dir = paths.sandbox_dir(request.name, request.home)
     workdir = Path(request.workspace or sandbox_dir / "workspace").resolve()
@@ -94,14 +100,16 @@ def open_robot(request: RobotRequest) -> LiveRobot:
     proxy_url = ensure_proxy(network)
     # cfg["agent"] is already the chosen agent's (compose took --agent):
     # its model, version, login directory and options are that agent's.
-    cfg_agent = cfg["agent"]
-    adapter = agents.get(cfg_agent["name"], request.home, version=cfg_agent.get("version"))
     model = request.model or cfg_agent.get("model") or adapter.default_model
-    creds_home = agents.resolve_profile(adapter, cfg_agent.get('credentials_dir'),
-                                        paths.credentials_dir(request.home) / adapter.name,
-                                        user_home=Path.home(), environment=os.environ, link=True)
-    print(f"[up] {adapter.name} login: {creds_home} (source: {creds_home.resolve()})", flush=True)
-    profile = adapter.prepare_profile(creds_home, sandbox_dir / "profile")
+    if key_file is not None:
+        print(f"[up] {adapter.name}: explicitly selected API authentication", flush=True)
+        profile = adapter.prepare_api_profile(key_file, sandbox_dir / "profile")
+    else:
+        creds_home = agents.resolve_profile(adapter, cfg_agent.get('credentials_dir'),
+                                            paths.credentials_dir(request.home) / adapter.name,
+                                            user_home=Path.home(), environment=os.environ, link=True)
+        print(f"[up] {adapter.name} native login: {creds_home} (source: {creds_home.resolve()})", flush=True)
+        profile = adapter.prepare_profile(creds_home, sandbox_dir / "profile")
     print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
           flush=True)
     try:
@@ -130,6 +138,7 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                    network=network, proxy=proxy_url, agent=adapter.name,
                    agent_spec=cfg_agent["name"], agent_version=cfg_agent.get("version"),
                    model=model,
+                   auth_mode="api" if key_file is not None else "native",
                    options={**adapter.default_options,
                             **cfg.get("agent", {}).get("options", {})},
                    workspace=str(workdir / "workspace"), task=task)

@@ -30,11 +30,12 @@ covers shell commands only.
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from openrua.agents.base import Agent
+from openrua.agents.base import Agent, PreparedProfile, _copy_profile, read_api_key
 from openrua.agents.conversation import Conversation
 from openrua.plugins.agents.codex_conversation import CodexConversation
 
@@ -46,6 +47,16 @@ _WINDOWS = {300: "five_hour", 10080: "seven_day"}
 
 class Codex(Agent):
     """Hooks only; every fact comes from the manifest."""
+
+    def prepare_api_profile(self, key_file: Path, dest: Path) -> PreparedProfile:
+        key = read_api_key(key_file)
+        directory, _ = _copy_profile(key_file, dest, None, False, "")
+        auth = directory / "auth.json"
+        with open(auth, "x", encoding="utf-8", opener=lambda path, flags: os.open(path, flags, 0o600)) as stream:
+            json.dump({"auth_mode": "apikey", "OPENAI_API_KEY": key}, stream)
+        (directory / "config.toml").write_text(
+            'cli_auth_credentials_store = "file"\nforced_login_method = "api"\n')
+        return PreparedProfile(directory, self.sandbox_mounts(directory), lambda: [key])
 
     def _env(self, proxy: str) -> list[str]:
         return [

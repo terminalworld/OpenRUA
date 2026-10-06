@@ -372,11 +372,19 @@ A benchmarks/<name>.yaml as written.
 
 | key | type | default | meaning |
 |---|---|---|---|
+| `auth` | [Authentication](#authentication) |  | explicit authentication source; never selected from available keys |
 | `name` | str \| null | None | agent name (openrua agents lists them); the package default lives in configs/config.yaml |
 | `model` | str \| null | None | model id; default: the adapter's |
 | `version` | str \| null | None | pin the agent CLI version: the sandbox image must carry it and preflight checks it; default: whatever the image has |
 | `credentials_dir` | str \| null | None | login profile directory; default: native login discovery, with ~/.openrua/credentials/<agent name> as its alias |
 | `options` | dict[str, Any] | {} | adapter-specific knobs passed through as given, over the adapter's default_options |
+
+## Authentication
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `mode` | 'native' \| 'api' | 'native' | native login by default; API use must be selected explicitly |
+| `key_file` | str \| null | None | file containing the API key only; required for API authentication |
 
 ## InstallOverrides
 
@@ -422,6 +430,7 @@ What a machine knows about one agent (``agents.<name>`` in a defaults file): the
 
 | key | type | default | meaning |
 |---|---|---|---|
+| `auth` | [Authentication](#authentication) \| null | None | authentication source for this agent |
 | `model` | str \| null | None | model id this agent runs by default on this machine |
 | `version` | str \| null | None | pin the agent CLI version |
 | `credentials_dir` | str \| null | None | login profile directory; null enables native login discovery |

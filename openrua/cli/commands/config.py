@@ -14,9 +14,10 @@ meaning.
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 
-from openrua import config
+from openrua import agents, config
 from openrua.config import paths, settings
 from openrua.errors import UsageError
 
@@ -38,11 +39,25 @@ def run(args) -> int:
         return 0
     names = {f: getattr(args, f) for f in NAMES if getattr(args, f) is not None}
     facts = {f: getattr(args, f) for f in FACTS if getattr(args, f) is not None}
-    if not names and not facts:
+    if not names and not facts and args.auth is None and args.api_key_file is None:
         raise UsageError("config set needs at least one flag",
                          hint="openrua config set --robot panda --sim robosuite --agent <name>")
     updates = {NAMES[flag]: None if value == "null" else value for flag, value in names.items()}
     agent_facts = {FACTS[flag]: None if value == "null" else value for flag, value in facts.items()}
+    if args.auth is not None or args.api_key_file is not None:
+        if args.auth != "api" and args.api_key_file is not None:
+            raise UsageError("--api-key-file requires --auth api")
+        if args.auth == "api" and not args.api_key_file:
+            raise UsageError("--auth api requires --api-key-file")
+        selected = updates.get("agent") or config.load_user_config(path).agent or config.load_user_config(paths.package_config_path()).agent
+        auth = {"mode": args.auth}
+        if args.api_key_file:
+            auth["key_file"] = str(Path(args.api_key_file).expanduser().resolve())
+        try:
+            agents.api_key_file(agents.get(selected, args.home), auth)
+        except ValueError as exc:
+            raise UsageError(str(exc), hint="check --api-key-file, or select --auth native") from exc
+        agent_facts["auth"] = auth
     data = settings.update(args.home, updates, agent_facts)
     written = list(updates.items())
     if agent_facts:
@@ -72,4 +87,8 @@ def add_parser(sub) -> None:
                    help="pin the agent's CLI version (agents.<agent>.version)")
     p.add_argument("--credentials-dir", default=None, help="the agent's login profile "
                    "directory (agents.<agent>.credentials_dir)")
+    p.add_argument("--auth", choices=("native", "api"), default=None,
+                   help="authentication source; native login is the default, API use is explicit")
+    p.add_argument("--api-key-file", default=None,
+                   help="file containing a raw key, used only with --auth api")
     p.set_defaults(fn=run)

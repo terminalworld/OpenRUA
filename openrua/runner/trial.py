@@ -193,6 +193,11 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     ``record_cameras`` (None, or a tuple of camera names, empty for the
     profile's default) makes the robot write its frames under the trial,
     one step in ``record_every``, at ``record_size`` (WxH) when given."""
+    selected_agent = cfg.get("agent", {})
+    agent = agents.get(selected_agent.get("name"), home, version=selected_agent.get("version"))
+    key_file = agents.api_key_file(agent, selected_agent.get("auth"))
+    if key_file is not None and (token_file or credentials_dir or account_alias):
+        raise ValueError("explicit API authentication cannot be combined with token-file or account/profile overrides")
     scored = cfg.get("machine", {}).get("backend", {}).get("kind") == "sim"
     trial_dir = run_dir / "trials" / f"{task_suite}-{task_id}" / f"seed{seed}"
     trial_dir.mkdir(parents=True, exist_ok=True)
@@ -206,6 +211,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         "task_id": task_id,
         "init_state_id": seed,
         "started_utc": datetime.now(timezone.utc).isoformat(),
+        "auth_mode": "api" if key_file is not None else "token_file" if token_file else "native",
         # Which workspace the agent actually got. The run-level
         # config.json carries this too, but only a trial-level stamp can
         # tell trials apart after a mid-campaign template edit.
@@ -219,18 +225,20 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     proxy_url = ensure_proxy(network)
     if account_alias:
         rec["account_alias"] = account_alias
-    agent = agents.get(cfg.get("agent", {}).get("name"), home,
-                       version=cfg.get("agent", {}).get("version"))
-    creds_home = agents.resolve_profile(agent, credentials_dir or cfg.get('agent', {}).get('credentials_dir'),
+    creds_home = None if key_file is not None else agents.resolve_profile(agent, credentials_dir or cfg.get('agent', {}).get('credentials_dir'),
                                         paths.credentials_dir(home) / agent.name,
                                         user_home=Path.home(), environment=os.environ,
                                         link=token_file is None)
     # A token file is the sandbox's whole auth story, so the login
     # profile need not carry credentials then (see Agent.prepare_profile).
-    profile = agent.prepare_profile(
-        creds_home, paths.sandbox_dir(stem, home) / "profile",
-        require_credentials=token_file is None)
-    secrets = record.secret_strings(creds_home)  # pre-trial token values
+    profile_dir = paths.sandbox_dir(stem, home) / "profile"
+    try:
+        profile = (agent.prepare_api_profile(key_file, profile_dir) if key_file is not None else
+                   agent.prepare_profile(creds_home, profile_dir, require_credentials=token_file is None))
+    except BaseException:
+        held.release()
+        raise
+    secrets = record.secret_strings(creds_home) if creds_home is not None else []
     if profile.read_secrets is not None:
         secrets += profile.read_secrets()
     if token_file:
@@ -306,7 +314,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         # Post-trial token values too; a mid-trial rotation would leave
         # both generations potentially visible in the record.
         try:
-            secrets += record.secret_strings(creds_home)
+            secrets += record.secret_strings(creds_home) if creds_home is not None else []
             if profile.read_secrets is not None:
                 secrets += profile.read_secrets()
             record.finalize_trial(trial_dir, agent, secrets, profile_dir=profile.directory)

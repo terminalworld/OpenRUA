@@ -14,7 +14,24 @@ from __future__ import annotations
 from pathlib import Path
 from collections.abc import Mapping
 
-from openrua.agents.base import Agent, _copy_profile
+from openrua.agents.base import Agent, _copy_profile, read_api_key
+
+
+def api_key_file(agent: Agent, auth: dict | None) -> Path | None:
+    """Validate an explicit auth selection; never search for available keys."""
+    auth = auth or {}
+    mode = auth.get("mode", "native")
+    if mode == "native":
+        if auth.get("key_file") is not None:
+            raise ValueError("key_file requires mode: api")
+        return None
+    if mode != "api" or not auth.get("key_file"):
+        raise ValueError("authentication must select native, or api with key_file")
+    if "prepare_api_profile" not in agent.capabilities:
+        raise ValueError(f"{agent.name} does not support explicit API profiles; use native login")
+    path = Path(auth["key_file"]).expanduser().resolve()
+    read_api_key(path)
+    return path
 
 
 def resolve_profile(agent: Agent, configured: str | Path | None, alias: Path, *,

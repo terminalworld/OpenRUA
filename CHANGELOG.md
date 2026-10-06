@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
 
+- Add explicit Codex API authentication through `config set --auth api --api-key-file ...`, shared by interactive and benchmark startup. Native login remains the default; API profiles omit subscription credentials, and unsupported plugins reject the selection before updating defaults. Local checks do not spend tokens or validate quota.
 - Let agent plugins prepare native profiles and inspect local login material for discovery and doctor. Custom layouts can share credential and refresh-lock directories without adding vendor-specific logic to the runner. Local checks do not authenticate online or switch billing sources.
 
 ## 0.7.1

@@ -120,12 +120,51 @@ An expired, unrefreshable native login requires signing in again. Discovering a
 file does not repair revoked tokens. OpenRUA does not silently switch accounts
 or retry failed robot instructions after authentication failure.
 
+### Explicit API authentication
+
+Since 0.8.0, Codex also supports a separate API profile
+for ordinary terminal chat, native terminal sessions, and benchmark trials.
+Create a private file outside your workspace and repository containing only
+your OpenAI API key, then select it explicitly:
+
+```bash
+chmod 600 /path/to/openai.key
+openrua config set --agent codex --auth api --api-key-file /path/to/openai.key
+openrua doctor --agent codex
+openrua
+```
+
+This selection uses API billing for new Codex sessions and trials. It does not
+change an already running session or your normal Codex login. The default is
+`native`, which reuses the login you selected in the native CLI; merely saving
+a key file never enables API use. To return to that login:
+
+```bash
+openrua config set --agent codex --auth native
+```
+
+The equivalent configuration is `agents.codex.auth: {mode: api, key_file:
+/absolute/path/to/openai.key}`. Configuration stores the path, not the key.
+API mode creates a private, session-local native profile without mounting the
+subscription credentials. Live session profiles are retained with the other
+session files until explicit deletion; do not publish them. Trial profiles
+are removed after finalization, and their key is supplied to archive redaction.
+An invalid key fails through the native CLI, without falling back to subscription
+login. Local checks establish readability and format, not account validity or quota.
+
+This route currently supports the Codex plugin only. Unsupported plugins reject
+`--auth api` before changing defaults. Kimi Code and ZCode are still under
+integration and are not selectable product options. Authentication behavior
+follows [Codex's native API login](https://developers.openai.com/codex/auth/).
+
 `openrua doctor` prints the command for whichever agent it finds
 logged out. The other route is a token by file: `openrua bench
 --token-file <path>` names a one-line `KEY=value` file (for Claude Code
 a `claude setup-token` value as `CLAUDE_CODE_OAUTH_TOKEN`, for Codex an
 `OPENAI_API_KEY`) that docker hands to the agent process only. The
 token is scrubbed from the trial record like every other secret.
+Do not combine `--token-file` or account overrides with `auth.mode: api`;
+choose one authentication source.
 
 The readiness check verifies daemon access and that the selected credential
 file is readable, nonempty, and a regular file. It does not contact a model API,

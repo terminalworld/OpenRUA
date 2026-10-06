@@ -95,10 +95,23 @@ def _copy_profile(source: Path, dest: Path, credentials: Credentials | None,
     return dest, shared
 
 
+def read_api_key(path: Path) -> str:
+    """Read one explicitly selected raw key without including it in errors."""
+    try:
+        if not path.is_file():
+            raise ValueError("API key path must be a regular file")
+        key = path.read_text(encoding="utf-8").strip()
+    except (OSError, UnicodeError):
+        raise ValueError(f"cannot read API key file: {path}") from None
+    if not key or any(char.isspace() for char in key) or "\x00" in key:
+        raise ValueError("API key file must contain one nonempty key, without whitespace")
+    return key
+
+
 # The optional hooks, in the order they are documented below. An agent
 # "has" a capability when its hooks class overrides the hook.
 HOOK_NAMES = (
-    "inspect_login", "prepare_profile", "interactive_argv", "conversation", "sandbox_cli_check", "login_hint", "token_hint",
+    "inspect_login", "prepare_profile", "prepare_api_profile", "interactive_argv", "conversation", "sandbox_cli_check", "login_hint", "token_hint",
     "quota_probe_argv", "quota_window_open", "matches_quota_anomaly",
     "read_rate_limits", "quota_since", "read_final", "scan_transcript",
     "assistant_turns_before", "replay_ops", "collect",
@@ -197,6 +210,16 @@ class Agent:
                          if getattr(type(self), h) is not getattr(Agent, h))
 
     # ---- optional hooks; each docstring states the default ----------
+    def prepare_api_profile(self, key_file: Path, dest: Path) -> PreparedProfile:
+        """Prepare explicitly selected API auth using this CLI's native format.
+
+        No native login source is supplied: API mode must not load subscription
+        credentials as a fallback. Do not authenticate online or start a model
+        task here. Include API secrets in read_secrets for trial redaction.
+        Default: unsupported, with no profile mutation.
+        """
+        raise ValueError(f"{self.name} does not support explicit API profiles; use native login")
+
     def inspect_login(self, source: Path) -> ProfileLogin | None:
         """Read-only local inspection used by discovery and doctor.
 

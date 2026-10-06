@@ -761,6 +761,7 @@ options:
 usage: openrua config [-h] [--robot ROBOT] [--sim SIM] [--bench BENCH]
                       [--agent AGENT] [--model MODEL] [--version VERSION]
                       [--credentials-dir CREDENTIALS_DIR]
+                      [--auth {native,api}] [--api-key-file API_KEY_FILE]
                       {show,set,schema}
 
 Your defaults file, ~/.openrua/config.yaml: `config set` writes the flags it
@@ -784,6 +785,10 @@ options:
   --credentials-dir CREDENTIALS_DIR
                         the agent's login profile directory
                         (agents.<agent>.credentials_dir)
+  --auth {native,api}   authentication source; native login is the default,
+                        API use is explicit
+  --api-key-file API_KEY_FILE
+                        file containing a raw key, used only with --auth api
 ```
 
 ## openrua clean

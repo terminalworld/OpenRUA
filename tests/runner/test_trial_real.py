@@ -4,6 +4,8 @@ a not-applicable verdict, everything else as usual."""
 import json
 from pathlib import Path
 
+import pytest
+
 from openrua.runner import trial
 
 
@@ -58,3 +60,28 @@ def test_real_trial_without_a_task_is_an_anomaly(monkeypatch, tmp_path):
     rec = trial.run_trial(cfg, tmp_path / "bench.yaml", tmp_path / "runs" / "r2", "suite", 0, 0,
                           lambda ctx: {"operator": "none"}, 1.0, token_file=str(token), home=tmp_path / "home")
     assert rec["termination"] == "anomaly" and "--task" in rec["anomaly"]
+
+
+def test_api_trial_uses_isolated_profile_and_redacts_key(monkeypatch, tmp_path):
+    handle, cfg, _ = _harness(monkeypatch, tmp_path)
+    key_file = tmp_path / "key"
+    secret = "synthetic-openrua-api-secret-for-redaction"
+    key_file.write_text(secret)
+    cfg["agent"] = {"name": "codex", "auth": {"mode": "api", "key_file": str(key_file)}}
+    monkeypatch.setattr(trial.agents, "resolve_profile", lambda *a, **kw: pytest.fail("no native login fallback"))
+    finalized = []
+    def finalize(directory, agent, secrets, *, profile_dir):
+        finalized.append((secrets, profile_dir))
+        assert json.loads((profile_dir / "auth.json").read_text())["OPENAI_API_KEY"] == secret
+    monkeypatch.setattr(trial.record, "finalize_trial", finalize)
+    rec = trial.run_trial(cfg, tmp_path / "config.yaml", tmp_path / "run", "suite", 0, 0,
+                          lambda ctx: {"operator": "fixture"}, 1.0,
+                          task="inspect", home=tmp_path / "home")
+    assert rec["anomaly"] is None and rec["auth_mode"] == "api"
+    assert secret in finalized[0][0]
+    assert not finalized[0][1].exists()
+    assert key_file.read_text() == secret
+    with pytest.raises(ValueError, match="cannot be combined"):
+        trial.run_trial(cfg, tmp_path / "config.yaml", tmp_path / "conflict", "suite", 0, 0,
+                        lambda _: None, 1.0, token_file="other.env", home=tmp_path / "home")
+    assert not (tmp_path / "conflict").exists()

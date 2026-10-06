@@ -110,7 +110,21 @@ class Protocol(Strict):
 
 # ----------------------------------------------------------------- agent
 
+class Authentication(Strict):
+    mode: Literal["native", "api"] = Field(default="native", description="native login by default; API use must be selected explicitly")
+    key_file: str | None = Field(default=None, description="file containing the API key only; required for API authentication")
+
+    @model_validator(mode="after")
+    def selected_key(self):
+        if self.mode == "api" and not self.key_file:
+            raise ValueError("API authentication requires key_file")
+        if self.mode == "native" and self.key_file is not None:
+            raise ValueError("key_file requires mode: api; native authentication never falls back to a key")
+        return self
+
+
 class AgentConfig(Strict):
+    auth: Authentication = Field(default_factory=Authentication, description="explicit authentication source; never selected from available keys")
     name: str | None = Field(default=None, description="agent name (openrua agents lists "
                              "them); the package default lives in configs/config.yaml")
     model: str | None = Field(default=None, description="model id; default: the adapter's")
@@ -130,6 +144,7 @@ class AgentFacts(Strict):
     defaults file): the model it runs, a CLI version pin, where its
     login lives, its default knobs. No defaults: only what is written
     is layered in."""
+    auth: Authentication | None = Field(default=None, description="authentication source for this agent")
     model: str | None = Field(default=None, description="model id this agent runs by "
                               "default on this machine")
     version: str | None = Field(default=None, description="pin the agent CLI version")

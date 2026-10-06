@@ -61,6 +61,7 @@ class Context:
     bench: str | None = None
     owner: str | None = None     # the declaration the robot image is rendered from
     login_directories: dict[agents.Agent, Path] = field(default_factory=dict)
+    authentication: dict[agents.Agent, dict] = field(default_factory=dict)
 
 
 def engine_version() -> str:
@@ -243,6 +244,18 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
 def check_login(ctx: Context) -> list[CheckResult]:
     out: list[CheckResult] = []
     for a in ctx.agents:
+        auth = ctx.authentication.get(a)
+        if (auth or {}).get("mode") == "api":
+            try:
+                key_file = agents.api_key_file(a, auth)
+            except (ValueError, OSError) as exc:
+                out.append(CheckResult(f"login-{a.name}", f"{a.name}: API configuration unavailable",
+                                       "error", detail=str(exc),
+                                       hint="check the selected key file, or use openrua config set --auth native"))
+            else:
+                out.append(CheckResult(f"login-{a.name}", f"{a.name}: API authentication explicitly selected",
+                                       detail=f"key file: {key_file}; local format checked only; authentication and quota are checked by the native agent"))
+            continue
         home = ctx.login_directories.get(a, paths.credentials_dir(ctx.home) / a.name)
         login = a.inspect_login(home)
         if login is None:
@@ -252,7 +265,9 @@ def check_login(ctx: Context) -> list[CheckResult]:
             out.append(CheckResult(f"login-{a.name}", f"{a.name}: local login unavailable at {home}",
                                    "error", detail=login.detail, hint=a.login_hint(home) + (
                                        f"; or pass --token-file ({a.token_hint('<file>')})"
-                                       if a.token_env else "")))
+                                       if a.token_env else "") + (
+                                       f"; or explicitly choose API billing: openrua config set --agent {a.name} --auth api --api-key-file <path>"
+                                       if "prepare_api_profile" in a.capabilities else "")))
         else:
             out.append(CheckResult(f"login-{a.name}", f"{a.name}: local login material at {home}",
                                    detail=f'source: {home.resolve()}; {login.detail}; authentication and quota are checked by the native agent'))
@@ -295,12 +310,14 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
     names = agent_names or [configured.get("name") or config.default_agent_name(defaults, user)]
     chosen: list[agents.Agent] = []
     login_directories = {}
+    authentication = {}
     for n in names:
         try:
             spec, _ = agents.split_pin(n)
             settings = config.layer_agent(configured, defaults, user, agent=spec)
             adapter = agents.get(n, home, version=settings.get("version"))
             chosen.append(adapter)
+            authentication[adapter] = settings.get("auth", {})
             login_directories[adapter] = agents.resolve_profile(
                 adapter, settings.get('credentials_dir'), paths.credentials_dir(home) / adapter.name,
                 user_home=Path.home(), environment=os.environ)
@@ -308,7 +325,8 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
             report.checks.append(CheckResult(f"agent-{n}", f"agent {n}: {exc}", "error",
                                              hint="openrua agents lists the agents"))
     ctx = Context(home=home, agents=chosen, cfg=cfg, robot=robot, install=install,
-                  sim=sim, bench=bench, owner=owner, login_directories=login_directories)
+                  sim=sim, bench=bench, owner=owner, login_directories=login_directories,
+                  authentication=authentication)
     for check in checks:
         try:
             report.checks.extend(check(ctx))

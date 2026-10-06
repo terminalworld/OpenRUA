@@ -83,6 +83,7 @@ def validate_values(home: Path, values: dict[str, str]) -> dict:
                          agent=values['agent'] or None, model=values['model'] or None).cfg
     selected = cfg['agent']
     adapter = agents.get(selected['name'], home, version=selected.get('version'))
+    agents.api_key_file(adapter, selected.get('auth'))
     if 'conversation' not in adapter.capabilities:
         raise UsageError(f'{adapter.name} does not support shared chat',
                          hint='use this plugin with openrua run or select a conversation-capable agent')
