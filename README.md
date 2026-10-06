@@ -21,6 +21,9 @@ https://github.com/user-attachments/assets/3b134c51-a949-44dd-9474-5249c3879aa0
 
 </div>
 
+A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html)
+uses a robot just as a computer-use agent uses a computer.
+
 OpenRUA connects off-the-shelf coding agents to robots through their native
 ROS&nbsp;2 interfaces. The agent works in a workspace containing robot
 documentation and starter tools, writes perception and control programs, and
@@ -35,6 +38,12 @@ queue, and revisit saved observations without starting a new robot each turn.
 - [Use the agent's original terminal](examples/first-task.md): launch a task with `openrua run`.
 - [Connect your robot](docs/your-own-robot.md): describe its ROS&nbsp;2 interfaces in a profile.
 - [Run experiments](docs/running-experiments.md): fresh trials, benchmark scoring, and recorded artifacts.
+
+> OpenRUA turns your robot into a coding project: your agent explores it
+> like a live codebase, pulls sensor streams into files for reading, and
+> runs commands and programs to move it.
+>
+> *Start playing with your robot like you code a project :)*
 
 ## Quick start
 
