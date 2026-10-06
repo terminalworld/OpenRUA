@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1
+
+- Support explicit Claude Code API authentication through `config set --agent claude-code --auth api --api-key-file ...`. The native CLI reads a private session-local key through `apiKeyHelper`; subscription credentials are not mounted, and keys stay out of launch arguments. The same configuration works for shared chat, native terminal sessions, and benchmark trials. Native login remains the default.
+
 ## 0.8.0
 
 - Add explicit Codex API authentication through `config set --auth api --api-key-file ...`, shared by interactive and benchmark startup. Native login remains the default; API profiles omit subscription credentials, and unsupported plugins reject the selection before updating defaults. Local checks do not spend tokens or validate quota.

@@ -9,7 +9,8 @@ this class with ``configs/agents/claude-code.yaml``:
    transcript on stdout).
 2. auth: a profile directory the CLI reads from ``CLAUDE_CONFIG_DIR``
    (the shared credentials file is bind-mounted, the rest copied), or a
-   token passed by file. No API key anywhere.
+   token passed by file. Explicit API mode uses a separate native apiKeyHelper
+   profile, without the subscription credentials.
 3. transcript accounting: stream-json records; the final ``result``
    record (num_turns, is_error, subtype), ``assistant`` records with
    timestamps.
@@ -22,12 +23,13 @@ this class with ``configs/agents/claude-code.yaml``:
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from openrua.agents.base import Agent
+from openrua.agents.base import Agent, PreparedProfile, _copy_profile, read_api_key
 from openrua.agents.conversation import Conversation
 from openrua.plugins.agents.claude_conversation import ClaudeConversation
 
@@ -37,6 +39,19 @@ _REPLAY_TOOLS = ("Bash", "Write", "Edit")
 
 class ClaudeCode(Agent):
     """Hooks only; every fact comes from the manifest."""
+
+    def prepare_api_profile(self, key_file: Path, dest: Path) -> PreparedProfile:
+        key = read_api_key(key_file)
+        directory, _ = _copy_profile(key_file, dest, None, False, "")
+        with open(directory / "api-key", "x", encoding="utf-8",
+                  opener=lambda path, flags: os.open(path, flags, 0o600)) as stream:
+            stream.write(key)
+        # The native CLI runs this helper in every launch mode. The key never
+        # appears in argv, and the profile contains no subscription fallback.
+        (directory / "settings.json").write_text(json.dumps({
+            "apiKeyHelper": 'cat -- "${CLAUDE_CONFIG_DIR:?}/api-key"',
+        }) + "\n")
+        return PreparedProfile(directory, self.sandbox_mounts(directory), lambda: [key])
 
     # ---------------------------------------------------------- launch
 

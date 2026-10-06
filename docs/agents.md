@@ -135,7 +135,8 @@ the selected raw key into its CLI's native session-local configuration and
 provides `read_secrets` for trial redaction. No native login profile is supplied,
 so there is no subscription fallback to accidentally mount. The default rejects
 API mode. Codex implements this with native `auth.json` and a file-backed API
-login configuration; core startup and frontends contain no vendor branch.
+login configuration. Claude Code uses native `apiKeyHelper` settings and a private
+key file. Core startup and frontends contain no vendor branch.
 
 The hook must not contact a provider or start a task. Reject invalid input
 before clearing the destination, keep secret files private, and leave the source
@@ -186,7 +187,7 @@ def test_conforms():
 
 `claude-code` (`configs/agents/claude-code.yaml`,
 `plugins/agents/claude_code.py`): Claude Code, headless `claude -p` with
-the stream-json transcript, profile-directory or token login, quota and
+the stream-json transcript, profile-directory, explicit API, or token login, quota and
 transcript accounting, shell/write/edit replay. It is the reference
 implementation for all of the above.
 

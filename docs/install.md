@@ -122,29 +122,38 @@ or retry failed robot instructions after authentication failure.
 
 ### Explicit API authentication
 
-Since 0.8.0, Codex also supports a separate API profile
-for ordinary terminal chat, native terminal sessions, and benchmark trials.
+Claude Code and Codex support separate API profiles for ordinary terminal chat,
+native terminal sessions, and benchmark trials.
 Create a private file outside your workspace and repository containing only
-your OpenAI API key, then select it explicitly:
+your Anthropic or OpenAI API key, then select it explicitly:
 
 ```bash
+# Claude Code
+chmod 600 /path/to/anthropic.key
+openrua config set --agent claude-code --auth api --api-key-file /path/to/anthropic.key
+openrua doctor --agent claude-code
+openrua
+
+# Or Codex
 chmod 600 /path/to/openai.key
 openrua config set --agent codex --auth api --api-key-file /path/to/openai.key
 openrua doctor --agent codex
 openrua
 ```
 
-This selection uses API billing for new Codex sessions and trials. It does not
-change an already running session or your normal Codex login. The default is
+This selection uses API billing for new sessions and trials of the selected agent.
+It does not change an already running session or your normal native CLI login. The default is
 `native`, which reuses the login you selected in the native CLI; merely saving
 a key file never enables API use. To return to that login:
 
 ```bash
-openrua config set --agent codex --auth native
+openrua config set --agent claude-code --auth native
+# Or: openrua config set --agent codex --auth native
 ```
 
-The equivalent configuration is `agents.codex.auth: {mode: api, key_file:
-/absolute/path/to/openai.key}`. Configuration stores the path, not the key.
+The equivalent configuration is `agents.claude-code.auth: {mode: api, key_file:
+/absolute/path/to/anthropic.key}` (or `agents.codex.auth` for Codex).
+Configuration stores the path, not the key.
 API mode creates a private, session-local native profile without mounting the
 subscription credentials. Live session profiles are retained with the other
 session files until explicit deletion; do not publish them. Trial profiles
@@ -152,10 +161,12 @@ are removed after finalization, and their key is supplied to archive redaction.
 An invalid key fails through the native CLI, without falling back to subscription
 login. Local checks establish readability and format, not account validity or quota.
 
-This route currently supports the Codex plugin only. Unsupported plugins reject
+Claude Code uses its native `apiKeyHelper` setting to read the private key file;
+Codex uses its native API login profile. See [Claude Code authentication](https://code.claude.com/docs/en/authentication)
+and [Codex authentication](https://developers.openai.com/codex/auth/). This configures
+direct provider API access, not a third-party gateway. Unsupported plugins reject
 `--auth api` before changing defaults. Kimi Code and ZCode are still under
-integration and are not selectable product options. Authentication behavior
-follows [Codex's native API login](https://developers.openai.com/codex/auth/).
+integration and are not selectable product options.
 
 `openrua doctor` prints the command for whichever agent it finds
 logged out. The other route is a token by file: `openrua bench

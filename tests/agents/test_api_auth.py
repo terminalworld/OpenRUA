@@ -1,6 +1,8 @@
 """API billing requires a deliberate selection, separate from native profiles."""
 
 import json
+import os
+import subprocess
 from types import SimpleNamespace
 
 import pytest
@@ -19,12 +21,13 @@ def configure(home, *flags):
     return config_command.run(args)
 
 
-def test_explicit_selection_roundtrips_without_saving_key_contents(tmp_path, capsys):
+@pytest.mark.parametrize("name", ["codex", "claude-code"])
+def test_explicit_selection_roundtrips_without_saving_key_contents(tmp_path, capsys, name):
     key_file = tmp_path / "key"
     key_file.write_text("synthetic-openrua-secret-value")
-    configure(tmp_path, "--agent", "codex", "--auth", "api", "--api-key-file", str(key_file))
+    configure(tmp_path, "--agent", name, "--auth", "api", "--api-key-file", str(key_file))
     user = config.load_user_config(tmp_path / "config.yaml")
-    assert user.agents["codex"].auth.mode == "api"
+    assert user.agents[name].auth.mode == "api"
     cfg = config.compose("panda", "robosuite", None, tmp_path).cfg
     assert cfg["agent"]["auth"] == {"mode": "api", "key_file": str(key_file)}
     report = doctor_run(home=tmp_path, checks=(check_login,))
@@ -32,7 +35,7 @@ def test_explicit_selection_roundtrips_without_saving_key_contents(tmp_path, cap
     assert "API authentication explicitly selected" in report.render()
     assert key_file.read_text() not in report.render() + capsys.readouterr().out + (tmp_path / "config.yaml").read_text()
     configure(tmp_path, "--auth", "native")
-    assert config.load_user_config(tmp_path / "config.yaml").agents["codex"].auth.key_file is None
+    assert config.load_user_config(tmp_path / "config.yaml").agents[name].auth.key_file is None
     assert key_file.read_text() == "synthetic-openrua-secret-value"
 
 
@@ -46,7 +49,6 @@ def test_invalid_or_unsupported_selection_does_not_change_defaults(tmp_path):
         ("--api-key-file", str(key_file)),
         ("--auth", "native", "--api-key-file", str(key_file)),
         ("--auth", "api", "--api-key-file", str(tmp_path / "missing")),
-        ("--agent", "claude-code", "--auth", "api", "--api-key-file", str(key_file)),
     ]
     for flags in cases:
         with pytest.raises((ValueError, UsageError)):
@@ -85,12 +87,13 @@ def test_api_profile_is_isolated_and_rejects_destructive_paths(tmp_path):
     assert auth.exists()  # invalid replacement must not clear an existing profile
 
 
-def test_live_api_start_skips_native_discovery_and_records_only_mode(tmp_path, monkeypatch):
-    agent = agents.get("codex")
+@pytest.mark.parametrize("name", ["codex", "claude-code"])
+def test_live_api_start_skips_native_discovery_and_records_only_mode(tmp_path, monkeypatch, name):
+    agent = agents.get(name)
     key_file = tmp_path / "key"
     key_file.write_text("synthetic-secret-for-live-profile")
     cfg = {"machine": {"backend": {"kind": "real"}, "robot": {"model": "fixture"}},
-           "agent": {"name": "codex", "auth": {"mode": "api", "key_file": str(key_file)}}}
+           "agent": {"name": name, "auth": {"mode": "api", "key_file": str(key_file)}}}
     monkeypatch.setattr(live, "compose", lambda *a, **kw: SimpleNamespace(
         cfg=cfg, suite=None, task_id=None, robot="fixture", simulator=None, benchmark=None))
     monkeypatch.setattr(live.agents, "resolve_profile", lambda *a, **kw: pytest.fail("must not discover native auth"))
@@ -104,7 +107,7 @@ def test_live_api_start_skips_native_discovery_and_records_only_mode(tmp_path, m
     monkeypatch.setattr(live, "sandbox_down", lambda _: None)
     home = tmp_path / "home"
     robot = live.open_robot(live.RobotRequest(home=home, name="fixture", task="inspect"))
-    assert mounts == [f"{home / 'sandboxes/fixture/profile'}:/codex-home"]
+    assert mounts == [f"{home / 'sandboxes/fixture/profile'}:{agent.credentials.mount_point}"]
     facts = live_state.load("fixture", home)
     assert facts["auth_mode"] == "api"
     assert key_file.read_text() not in json.dumps(facts)
@@ -114,3 +117,28 @@ def test_live_api_start_skips_native_discovery_and_records_only_mode(tmp_path, m
     with pytest.raises(UsageError):
         live.open_robot(live.RobotRequest(home=home, name="invalid"))
     assert not (home / "sandboxes/invalid").exists()
+
+
+def test_claude_api_helper_reads_private_key_without_native_credentials(tmp_path):
+    agent = agents.get("claude-code")
+    key_file = tmp_path / "key"
+    secret = "synthetic-claude-secret-$literal;value"
+    key_file.write_text(secret + "\n")
+    with pytest.raises(ValueError, match="separate"):
+        agent.prepare_api_profile(key_file, tmp_path)
+    profile = agent.prepare_api_profile(key_file, tmp_path / "profile with spaces")
+    settings = json.loads((profile.directory / "settings.json").read_text())
+    helper = subprocess.run(settings["apiKeyHelper"], shell=True, capture_output=True,
+                            text=True, check=True,
+                            env={"PATH": os.defpath, "CLAUDE_CONFIG_DIR": str(profile.directory)})
+    assert helper.stdout == secret
+    assert secret not in settings["apiKeyHelper"]
+    assert not (profile.directory / ".credentials.json").exists()
+    assert profile.mounts == (f"{profile.directory}:/claude-config",)
+    assert (profile.directory / "api-key").stat().st_mode & 0o777 == 0o600
+    assert profile.directory.stat().st_mode & 0o777 == 0o700
+    assert profile.read_secrets() == [secret]
+    key_file.write_text("")
+    with pytest.raises(ValueError, match="nonempty"):
+        agent.prepare_api_profile(key_file, profile.directory)
+    assert (profile.directory / "api-key").read_text() == secret
