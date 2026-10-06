@@ -105,6 +105,11 @@ plain text, not executable HTML.
 
 ### Workspace files
 
+Both terminal frontends browse these same files through `/files`; the default
+TUI also provides **Ctrl+O**. Browsing does not send an agent instruction. See
+[terminal controls](terminal.md#current-scope) for preview support and keyboard
+navigation. The browser panel below also supports image viewing and downloads.
+
 The **Workspace files** panel lists the agent's actual workspace, including an
 explicitly selected workspace directory. Select a directory or enter its relative
 path, then use **Refresh** to see new artifacts. Images saved by the agent can

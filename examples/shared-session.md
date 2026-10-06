@@ -87,7 +87,10 @@ Use the browser instead to inspect saved images:
 ### Browser and saved images
 
 The browser connects to the same conversation, including messages sent from the
-TUI. Use it to inspect saved images; the TUI does not yet have a file panel.
+TUI. Use it to inspect saved images. In the default TUI, **Ctrl+O** or
+`/files` opens the same workspace for text previews and image metadata. The
+optional Pi terminal can preview images on supported terminals; see
+[workspace controls](../ui/terminal/README.md#saved-workspace-files).
 
 In a free terminal on the same execution host (detach with Ctrl+Q first if
 the TUI is occupying it):
