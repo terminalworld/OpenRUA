@@ -23,10 +23,16 @@ container CLI, this adapter, and OpenRUA's shared session owner passed:
 - Interruption retains and pauses queued messages.
 - A model error fails the current message and pauses the queue.
 
-These checks use a deterministic local model endpoint and a synthetic key.
-They establish installation and session integration, not live API validity,
-robot-task performance, subscription compatibility, or ARM support. The native
-terminal command is provided but its interactive UI has not been checked here.
+These lifecycle checks use a deterministic local model endpoint and a synthetic
+key. Separately, the adapter's headless launch and prepared API profile were
+checked in the same container against the official BigModel endpoint with
+`glm-4.5-air`: the native agent wrote a requested file, its contents were checked
+independently, and the CLI exited successfully. This bounded check used two API
+requests and 51 output tokens.
+
+This establishes a simple real-provider file task, not robot-task performance,
+subscription compatibility, ARM support, or a guarantee of account quota. The
+native terminal command is provided but its interactive UI has not been checked here.
 Headless launch is available; benchmark turn accounting, quota recovery and
 published benchmark reproduction are not validated for this example.
 
