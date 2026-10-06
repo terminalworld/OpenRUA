@@ -1,0 +1,27 @@
+# Experimental external plugin. Explicit Moonshot API only; see README.md.
+name: kimi
+default_model: kimi-k2.6
+binary: kimi
+version: 2.1.1
+install: apt-get update && apt-get install -y --no-install-recommends curl ca-certificates xz-utils build-essential
+  python3 git && mkdir -p /opt/openrua-kimi/node && cd /opt/openrua-kimi && curl -fsSL https://nodejs.org/dist/v24.14.0/node-v24.14.0-linux-$(uname
+  -m | sed 's/x86_64/x64/;s/aarch64/arm64/').tar.xz -o node.tar.xz && curl -fsSL https://nodejs.org/dist/v24.14.0/SHASUMS256.txt
+  -o SHASUMS256.txt && grep node-v24.14.0-linux-$(uname -m | sed 's/x86_64/x64/;s/aarch64/arm64/').tar.xz
+  SHASUMS256.txt | sed 's@node-v.*@node.tar.xz@' | sha256sum -c - && tar -xJf node.tar.xz -C node --strip-components=1
+  && rm node.tar.xz SHASUMS256.txt && export PATH=/opt/openrua-kimi/node/bin:$PATH && npm install --prefix
+  /opt/openrua-kimi/package @moonshot-ai/kimi-code@2.1.1 && sed -i '1c#!/opt/openrua-kimi/node/bin/node'
+  /opt/openrua-kimi/package/node_modules/@moonshot-ai/kimi-code/dist/main.mjs && ln -s /opt/openrua-kimi/package/node_modules/@moonshot-ai/kimi-code/dist/main.mjs
+  /usr/local/bin/kimi && kimi --version && rm -rf /var/lib/apt/lists/*
+whitelist:
+- ^api\.moonshot\.ai$
+credentials:
+  dirname: kimi
+  filename: config.toml
+  config_env: KIMI_CODE_HOME
+  mount_point: /kimi-home
+version_argv:
+- kimi
+- --version
+default_options:
+  api_base_url: https://api.moonshot.ai/v1
+entry_point: ./adapter.py
