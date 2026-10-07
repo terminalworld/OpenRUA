@@ -38,9 +38,9 @@ def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Pa
             elif stage == -1 and b'> ' in output:
                 os.write(master, b'\x01\x0b' + str(manifest).encode() + b'\r')
                 output.clear(); stage = 0
-            elif stage == 0 and b'Configure a new robot conversation' in output:
-                if manifest:
-                    assert b'Coding agent: ' + str(manifest).encode() in output, output.decode(errors='replace')
+            elif (stage == 0 and b'Configure a new robot conversation' in output
+                  and (manifest is None or b'Coding agent: ' + str(manifest).encode() in output)):
+                # PTY reads may split a render between its title and agent row.
                 os.write(master, b'\x1b[B' * 6 + b'\r')
                 stage = 1
             elif stage == 1 and b'no automatic fallback' in output:
