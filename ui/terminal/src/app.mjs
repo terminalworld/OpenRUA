@@ -150,7 +150,12 @@ export class Chat {
   }
 
   async poll() {
-    try { await this.refresh(); } catch (error) { this.say(error.message); }
+    try { await this.refresh(); } catch (error) {
+      if (!this.done) {
+        this.status.setText(`Disconnected · retrying · ${plain(error.message)}`);
+        this.ui.requestRender();
+      }
+    }
     if (!this.done) this.timer = setTimeout(() => { void this.poll(); }, this.pollMs);
   }
 

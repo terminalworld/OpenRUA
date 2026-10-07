@@ -471,3 +471,53 @@ test('keyboard questions preserve multiple choices and optional text until confi
   assert.deepEqual(await replies(), [{reply: 'multi', answers: {locations: ['Near', 'Far', 'Shelf'], color: ['Green']}}]);
   assert.equal((await client.snapshot()).state.messages.length, 1);
 });
+
+test('temporary transport loss shows disconnected status and recovers without losing drafts or queue', {timeout: 15000}, async t => {
+  const {client: owner, call} = await fixture(t);
+  t.after(() => owner.close());
+  let offline = false;
+  const proxy = http.createServer((request, response) => {
+    if (offline) { request.destroy(); return; }
+    const upstream = http.request(owner.origin + request.url, {
+      method: request.method, headers: {...request.headers, host: new URL(owner.origin).host},
+    }, result => {
+      response.writeHead(result.statusCode, result.headers); result.pipe(response);
+    });
+    upstream.on('error', () => response.destroy());
+    request.pipe(upstream);
+  }).listen(0, '127.0.0.1');
+  await once(proxy, 'listening');
+  t.after(() => proxy.close());
+  const client = new Client(`http://127.0.0.1:${proxy.address().port}`, owner.token);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20});
+  t.after(() => chat.stop());
+  const running = chat.run();
+  const waitFor = async condition => {
+    for (let i = 0; i < 300; i++) {
+      if (condition()) return;
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    assert.ok(condition(), 'client state did not converge');
+  };
+  await waitFor(() => Boolean(terminal.input));
+  await chat.submit('Inspect the robot');
+  const first = (await owner.snapshot()).state.active;
+  await waitFor(() => /Working/.test(chat.status.render(120).join('\n')));
+  chat.editor.setText('My unsent follow-up');
+  chat.say('Use /files to inspect saved observations.');
+  offline = true;
+  await waitFor(() => /Disconnected.*retrying/.test(chat.status.render(120).join('\n')));
+  assert.doesNotMatch(chat.status.render(120).join('\n'), /Working/);
+  await owner.command('enqueue', {client_id: 'other-ui', request_id: 'queued', text: 'Then wait'});
+  await call({op: 'frame', frame: {kind: 'item', turn_id: first, data: {
+    item_id: 'during-disconnect', kind: 'tool', phase: 'completed', text: 'Read', output: 'camera saved'}}});
+  offline = false;
+  await waitFor(() => /Working.*1 queued/.test(chat.status.render(120).join('\n')) && chat.transcript.tools.size === 1);
+  assert.equal(chat.editor.getText(), 'My unsent follow-up');
+  assert.match(chat.notice.render(120).join('\n'), /Use \/files/);
+  assert.doesNotMatch(chat.status.render(120).join('\n'), /Disconnected/);
+  assert.equal(chat.controller.state.messages.length, 2);
+  assert.equal((await call({op: 'writes'})).writes.filter(frame => frame.submit).length, 1);
+  chat.stop(); await running;
+});
