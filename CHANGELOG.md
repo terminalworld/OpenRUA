@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.16
+
+- Parse robot descriptions returned by native ROS topic echo by removing its trailing document separator before XML parsing. Previously, valid published URDFs could silently leave joint and frame fields empty in the draft.
+
+- Preserve the explicitly selected ROS distribution in standalone robot profile drafts instead of always writing Jazzy. Read-only graph probing no longer depends on a running model proxy; host, static-peer and discovery-server connection settings still use the shared native network configuration.
+
 ## 0.10.15
 
 - Stop robot profile probing when a topic, action or service query fails, preserving the native error or timeout output instead of printing an incomplete profile as a successful result. Missing optional robot descriptions still produce a draft with TODO fields.

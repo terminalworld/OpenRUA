@@ -63,14 +63,16 @@ def sandbox_reachability(backend: dict, network: str, robot_name: str,
     ``network: host`` (multicast), ``static_peers`` (unicast, rendered
     into the peers profile) or ``discovery_server`` (ROS_DISCOVERY_SERVER).
     On the host network the proxy is reached by address, not by name.
+    An empty proxy URL requests no proxy, as for read-only graph probing.
     """
     if backend.get("kind") != "real":
         return {"network": network, "static_peer": robot_name,
                 "peers_xml": peers_profile([robot_name]),
-                "internet": f"proxy:{proxy_url}", "env": ()}
+                "internet": f"proxy:{proxy_url}" if proxy_url else "none", "env": ()}
     discovery = backend.get("discovery", {})
     out = {"network": "host", "static_peer": None, "peers_xml": None,
-           "internet": f"proxy:{proxy_url_from_network(proxy_name)}", "env": ()}
+           "internet": f"proxy:{proxy_url_from_network(proxy_name)}" if proxy_url else "none",
+           "env": ()}
     if discovery.get("static_peers"):
         peers = list(discovery["static_peers"])
         out["static_peer"] = ",".join(peers)
