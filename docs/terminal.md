@@ -73,7 +73,7 @@ fallback. Startup failures keep their logs in `~/.openrua/launches/NAME/`.
 | Key or command | Action |
 | --- | --- |
 | Enter / Ctrl+J | Send / insert newline |
-| `/tools` | Expand or collapse a tool result |
+| `/tools` | Expand or collapse a tool call, with its details and output |
 | `/files` | Browse saved workspace files |
 | `/queue` | Inspect, edit or withdraw queued instructions |
 | `/questions` | Answer ordinary agent questions |

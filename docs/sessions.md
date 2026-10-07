@@ -366,6 +366,10 @@ be running. Image payloads remain in native records, and saved workspace
 images can be opened through `/files`. Existing recorded events are not
 rewritten, so older transcripts may retain their original tool labels.
 
+From 0.10.14, expanded tool calls in both clients retain their invocation
+details alongside output as results arrive. Empty output does not erase the
+call details, and replaying stored events restores both sections.
+
 ### Browser regression checks
 
 ```sh
