@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Decode depth pixels using the native ROS image encoding, byte order, and row stride. The coordinate starter tool accepts REP 118 float meters and raw integer millimeters, rejects invalid layouts and depths, and preserves raw saved arrays with accurate unit documentation.
+
 - Save robot resource metadata as complete snapshots. Concurrent readers retain the previous record until replacement, and failed writes preserve it instead of leaving an empty or partial state file.
 
 ## 0.10.8

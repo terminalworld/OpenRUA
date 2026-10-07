@@ -4,7 +4,8 @@
 Usage: python3 tools/perception/px2world.py <camera> <u> <v>
 Prints "x y z" in the world frame for pixel column u, row v of the
 camera's CURRENT depth frame. Exits nonzero if the pixel has no valid
-depth. Pure geometry; which pixel is worth asking about is your call.
+depth. Supports 32FC1 meters and 16UC1 millimeters per ROS REP 118.
+Pure geometry; which pixel is worth asking about is your call.
 """
 import struct
 import sys
@@ -13,6 +14,25 @@ import numpy as np
 import rclpy
 from sensor_msgs.msg import CameraInfo, Image
 from tf2_ros import Buffer, TransformListener
+
+
+def depth_meters(image, u, v):
+    """Read one REP 118 depth pixel using the Image message's byte layout."""
+    formats = {"32FC1": ("f", 1.0), "16UC1": ("H", 0.001)}
+    if image.encoding not in formats:
+        raise ValueError(f"unsupported depth encoding {image.encoding!r}; "
+                         "use a 32FC1 or 16UC1 depth image")
+    if not (0 <= v < image.height and 0 <= u < image.width):
+        raise ValueError(f"pixel ({u},{v}) outside {image.width}x{image.height}")
+    code, scale = formats[image.encoding]
+    size = struct.calcsize(code)
+    if image.step < image.width * size or len(image.data) < image.step * image.height:
+        raise ValueError("invalid depth image layout: check step, dimensions, and data length")
+    endian = ">" if image.is_bigendian else "<"
+    z = struct.unpack_from(endian + code, image.data, v * image.step + u * size)[0] * scale
+    if not np.isfinite(z) or z <= 0:
+        raise ValueError(f"no valid depth at ({u},{v}): {z}")
+    return z
 
 
 def _grab(node, topic, msg_type, timeout=15.0):
@@ -39,11 +59,10 @@ def main() -> None:
 
     depth = _grab(node, f"/{cam}/depth/image_raw", Image)
     info = _grab(node, f"/{cam}/color/camera_info", CameraInfo)
-    if not (0 <= v < depth.height and 0 <= u < depth.width):
-        raise SystemExit(f"pixel ({u},{v}) outside {depth.width}x{depth.height}")
-    z = struct.unpack_from("<f", depth.data, (v * depth.width + u) * 4)[0]
-    if not np.isfinite(z) or z <= 0:
-        raise SystemExit(f"no valid depth at ({u},{v}): {z}")
+    try:
+        z = depth_meters(depth, u, v)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
 
     fx, fy = info.k[0], info.k[4]
     cx, cy = info.k[2], info.k[5]
