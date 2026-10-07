@@ -238,7 +238,12 @@ alive independently of client connections.
   does not mean it has stopped; only a terminal event ends the turn.
 - `input_required` supplies questions and choices. `respond(request_id,
   answers)` maps question IDs to lists of strings; replies are separate from
-  ordinary queued messages. Unknown requests emit `unsupported_request` and
+  ordinary queued messages. Each question has `id`, `text`, `choices`, and
+  optional booleans `multiple`, `allow_other`, and `secret` (default false).
+  Plugins normalize native fields here; clients never interpret vendor schemas.
+  Answers use choice labels, with one additional text value only when
+  `allow_other` is true (questions without choices accept text).
+  Unknown requests emit `unsupported_request` and
   never receive a fabricated approval.
 - After `protocol_error`, malformed output, or transport loss, the owner must
   pause and reconcile outstanding work. It must not retry an uncertain action

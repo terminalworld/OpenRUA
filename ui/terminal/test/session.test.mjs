@@ -431,3 +431,43 @@ test('entering a plugin path requests backend resolution before changing authent
   assert.deepEqual(setup.result, {action: 'agent', agent: './external/agent.yaml', values});
   assert.equal(setup.values.agent, 'one');
 });
+
+test('keyboard questions preserve multiple choices and optional text until confirmed', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20});
+  t.after(() => chat.stop());
+  void chat.run();
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  await chat.submit('Inspect');
+  const id = (await client.snapshot()).state.active;
+  await call({op: 'frame', frame: {kind: 'input_required', turn_id: id, data: {
+    request_id: 'multi', questions: [
+      {id: 'locations', text: 'Which locations?', choices: ['Near', 'Far'], multiple: true, allow_other: true},
+      {id: 'color', text: 'Which color?', choices: ['Red', 'Blue'], allow_other: true},
+    ]}}});
+  await until(client, s => !!s.requests.multi); await chat.refresh();
+  const key = async input => { terminal.input(input); await new Promise(r => setTimeout(r, 20)); };
+  const replies = async () => (await call({op: 'writes'})).writes.filter(w => w.reply);
+  await chat.submit('/questions'); await key('\r');
+  // Empty selection cannot continue; Space toggles without submitting.
+  await key('\x1b[A'); await key('\r');
+  assert.match(terminal.output, /Choose at least one answer/);
+  await key('\x1b[B'); await key(' '); await key(' '); await key(' ');
+  await key('\x1b[B'); await key('\r');
+  // Escape discards this unsubmitted answer set.
+  await key('\x1b');
+  assert.deepEqual(await replies(), []);
+  await chat.submit('/questions'); await key('\r');
+  await key(' '); await key('\x1b[B'); await key('\r');
+  await key('\x1b[B'); await key('\r'); // Write another answer
+  await key('Shelf'); await key('\r');
+  await key('\x1b[B'); await key('\r'); // Continue to the color question
+  await key('\x1b[B'); await key('\x1b[B'); await key('\r');
+  await key('Green'); await key('\r');
+  assert.deepEqual(await replies(), []);
+  await key('\x1b[B'); await key('\r'); // Final explicit confirmation
+  await until(client, s => s.requests.multi?.status !== 'pending');
+  assert.deepEqual(await replies(), [{reply: 'multi', answers: {locations: ['Near', 'Far', 'Shelf'], color: ['Green']}}]);
+  assert.equal((await client.snapshot()).state.messages.length, 1);
+});

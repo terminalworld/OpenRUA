@@ -145,7 +145,8 @@ class KimiConversation(ConversationProtocol):
                 else:
                     questions = [{'id': q['id'], 'text': q['question'],
                                   'choices': [o['label'] for o in q['options']], 'secret': False,
-                                  'multi_select': q.get('multi_select', False)} for q in item['questions']]
+                                  'multiple': q.get('multi_select', False),
+                                  'allow_other': q.get('allow_other', False)} for q in item['questions']]
                 events.append(Event('input_required', self._active, {'request_id': key,
                               'questions': questions, 'details': item}))
         for key in self._requests.keys() - current.keys():

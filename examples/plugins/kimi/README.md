@@ -92,6 +92,10 @@ and rejection of unknown completion states. The native `AskUserQuestion` tool wa
 execution service: a single selection, multiple selections and a free-text
 answer returned to the native tool with their exact values. This check used the
 same deterministic local provider, not a paid model or a frontend interaction.
+OpenRUA 0.10.4 also normalizes Kimi's multiple-choice and custom-answer flags
+for shared clients. Separate keyboard and Chromium regressions verify selecting
+multiple options, adding text, cancelling, and explicitly submitting responses
+through the real shared service with a controlled native transport.
 
 A separate bounded real-provider check of native Kimi Code 2.1.1 against the
 same Moonshot endpoint completed a simple file task with two API requests and

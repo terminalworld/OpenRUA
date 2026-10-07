@@ -3,6 +3,7 @@ import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, Select
 import {Controller} from './controller.mjs';
 import {Transcript, editorTheme, plain, selectTheme} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
+import {answerQuestion} from './questions.mjs';
 
 const commands = [
   {name: 'help', description: 'Keyboard shortcuts and commands'},
@@ -129,10 +130,7 @@ export class Chat {
           return;
         }
         const question = request.questions[index];
-        const accept = value => { answers[question.id] = [value]; next(index + 1); };
-        if (question.choices?.length) this.picker(question.text,
-          question.choices.map(value => ({value, label: plain(value)})), accept);
-        else this.editText(question.text, '', accept);
+        answerQuestion(this, question, values => { answers[question.id] = values; next(index + 1); });
       };
       next(0);
     });

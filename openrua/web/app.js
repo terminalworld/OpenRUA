@@ -173,7 +173,24 @@ function renderQuestions() {
       field.disabled = request.status !== "pending";
       label.append(field);
       form.append(label);
-      fields.push({ q, field });
+      let other;
+      if (q.choices?.length && q.allow_other) {
+        other = make("input");
+        other.type = q.secret ? "password" : "text";
+        other.disabled = field.disabled;
+        const otherLabel = make("label", `${q.text} (another answer)`);
+        otherLabel.append(other);
+        form.append(otherLabel);
+        other.oninput = () => {
+          field.required = !other.value.trim();
+          if (!q.multiple && other.value.trim()) field.value = "";
+        };
+        field.onchange = () => {
+          if (!q.multiple && field.value) other.value = "";
+          field.required = !other.value.trim();
+        };
+      }
+      fields.push({ q, field, other });
     }
     const send = make("button", "Send answer", "primary");
     send.disabled = request.status !== "pending";
@@ -182,10 +199,13 @@ function renderQuestions() {
       e.preventDefault();
       send.disabled = true;
       const answers = {};
-      for (const { q, field } of fields)
-        answers[q.id] = field.multiple
+      for (const { q, field, other } of fields) {
+        const values = field.multiple
           ? Array.from(field.selectedOptions, (o) => o.value)
-          : [field.value];
+          : field.value ? [field.value] : [];
+        if (other?.value.trim()) values.push(other.value.trim());
+        answers[q.id] = [...new Set(values)];
+      }
       const ok = await act("respond", {
         request_id: request.request_id,
         answers,
