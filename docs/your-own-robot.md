@@ -84,6 +84,11 @@ not a silent no-op. Every port you list becomes a promise: `preflight`
 verifies it is served before the agent starts, and the workspace docs
 describe it to the agent. List only what the robot actually serves.
 
+Startup waits for ROS graph visibility for up to five minutes. A stalled
+readiness command is stopped at that deadline, and its last output is included
+in the error. Failed startup cleans up resources created for that attempt;
+an already-running external robot driver remains under its original owner.
+
 Two shapes the example does not show: a machine with several arms
 lists them under `arms:` (one entry each with its own joints, limits,
 gripper and ports) instead of `arm:`/`gripper:`/`ports:`, and a mobile

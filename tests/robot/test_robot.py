@@ -97,3 +97,38 @@ def test_real_handles_own_their_processes_even_with_the_same_display_name(tmp_pa
     finally:
         for handle in handles:
             handle.shutdown()
+
+
+def test_real_readiness_does_not_accept_a_probe_that_finishes_after_deadline():
+    import sys
+    from openrua.robot.real.up import RealHandle
+    handle = RealHandle('late-probe', None, [sys.executable, '-c',
+        'import sys,time; print("waiting for graph", file=sys.stderr, flush=True); time.sleep(2)'])
+    with pytest.raises(TimeoutError, match='waiting for graph'):
+        handle.wait_ready(timeout_s=.2)
+
+
+def test_real_readiness_failure_does_not_sleep_past_deadline():
+    import sys
+    import time
+    from openrua.robot.real.up import RealHandle
+    handle = RealHandle('missing-graph', None, [sys.executable, '-c',
+        'import sys; sys.stderr.write("graph unavailable"); sys.exit(1)'])
+    started = time.monotonic()
+    with pytest.raises(TimeoutError, match='graph unavailable'):
+        handle.wait_ready(timeout_s=.2)
+    assert time.monotonic() - started < 2, 'polling delay exceeded the readiness budget'
+
+
+def test_real_readiness_timeout_stops_probe_children(tmp_path):
+    import sys
+    import time
+    from openrua.robot.real.up import RealHandle
+    marker = tmp_path / 'probe-child-finished'
+    child = 'import time; from pathlib import Path; time.sleep(1); Path(' + repr(str(marker)) + ').touch()'
+    parent = 'import subprocess,sys,time; subprocess.Popen([sys.executable, "-c", ' + repr(child) + ']); time.sleep(2)'
+    handle = RealHandle('probe-pipeline', None, [sys.executable, '-c', parent])
+    with pytest.raises(TimeoutError, match='graph not visible'):
+        handle.wait_ready(timeout_s=.2)
+    time.sleep(1.1)
+    assert not marker.exists(), 'a child of the timed-out probe kept running'

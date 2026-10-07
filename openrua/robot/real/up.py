@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import signal
 import subprocess
 import time
 from pathlib import Path
@@ -23,18 +25,38 @@ class RealHandle(Handle):
         raise TimeoutError. Without a probe, return at once."""
         if not self._probe:
             return
-        deadline = time.time() + timeout_s
+        deadline = time.monotonic() + timeout_s
+        diagnostic = ""
         while True:
             if self.proc is not None and self.proc.poll() is not None:
                 raise TimeoutError(f"launch command exited with {self.proc.returncode} "
                                    "before the graph came up")
-            r = subprocess.run(self._probe, capture_output=True, text=True)
-            if r.returncode == 0:
-                return
-            if time.time() >= deadline:
-                raise TimeoutError(f"graph not visible after {timeout_s:.0f}s: "
-                                   f"{(r.stderr or r.stdout).strip()[-300:]}")
-            time.sleep(5)
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError(f"graph not visible after {timeout_s:g}s: {diagnostic}")
+            # The probe owns its process group, including a shell's pipeline.
+            # A stalled check must not outlive the graph-readiness deadline.
+            with subprocess.Popen(self._probe, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                  text=True, start_new_session=True) as probe:
+                try:
+                    stdout, stderr = probe.communicate(timeout=max(0, deadline - time.monotonic()))
+                except BaseException as exc:
+                    try:
+                        os.killpg(probe.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    probe.wait(timeout=5)
+                    if isinstance(exc, subprocess.TimeoutExpired):
+                        output = exc.stderr or exc.output or "readiness probe did not finish"
+                        if isinstance(output, bytes):
+                            output = output.decode(errors="replace")
+                        raise TimeoutError(f"graph not visible after {timeout_s:g}s: "
+                                           f"{output.strip()[-300:]}") from exc
+                    raise
+                if probe.returncode == 0:
+                    return
+                diagnostic = (stderr or stdout).strip()[-300:]
+            time.sleep(min(5, max(0, deadline - time.monotonic())))
 
     def rpc(self, obj: dict, timeout_note: str = "", timeout_s: float = 900.0) -> dict:
         return {"ok": True, "not_applicable": True, "cmd": obj.get("cmd")}

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.5
+
+- Enforce the real-backend ROS readiness deadline even when a probe command stalls. Stop the owned probe process group, preserve its diagnostic output, and cap polling sleeps to the remaining time. This does not stop an externally owned robot driver.
+
 ## 0.10.4
 
 - Honor native multiple-choice questions in the keyboard TUI. Toggle choices with Space or Enter, optionally write a custom answer when the native agent allows it, and confirm before sending. Escape cancels without replying.
