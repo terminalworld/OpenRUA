@@ -11,6 +11,11 @@ key. Missing native login never selects API billing automatically.
 
 ## Configure and start
 
+With OpenRUA 0.10.1 or later, `openrua --setup` also accepts this manifest
+through **Coding agent → Enter a name or profile path**. Select **API key
+file** explicitly and enter the private key file's path. Selecting the agent
+alone does not install it or validate an account; follow the build steps below.
+
 From the OpenRUA checkout root, after ordinary
 [installation and simulation setup](../../../docs/install.md):
 

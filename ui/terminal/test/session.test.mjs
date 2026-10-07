@@ -268,11 +268,15 @@ test('keyboard configuration and filtered history use Pi selectors', async () =>
   // Robot, simulator, benchmark, then agent.
   for (let i = 0; i < 3; i++) terminal.input('\x1b[B');
   terminal.input('\r'); terminal.input('\x1b[B'); terminal.input('\r');
-  assert.equal(setup.values.model, 'm2');
-  // Select Save and check after reviewing all fields.
-  for (let i = 0; i < 7; i++) terminal.input('\x1b[B');
-  terminal.input('\r');
-  assert.deepEqual(await running, {action: 'check', values: {...spec.values, robot: 'ur5', agent: 'two', model: 'm2'}});
+  assert.deepEqual(await running, {action: 'agent', agent: 'two', values: {...spec.values, robot: 'ur5'}});
+  // Backend resolves the agent, then the user reviews the new selection.
+  const nextTerminal = new Terminal();
+  const nextValues = {...spec.values, robot: 'ur5', agent: 'two', model: 'm2'};
+  const next = new Setup({...spec, values: nextValues}, nextTerminal);
+  const checking = next.run();
+  for (let i = 0; i < 7; i++) nextTerminal.input('\x1b[B');
+  nextTerminal.input('\r');
+  assert.deepEqual(await checking, {action: 'check', values: nextValues});
   const historyTerminal = new Terminal();
   const history = new History({rows: [{id: 'a', title: 'Cup', status: 'Ended', time: ''},
     {id: 'b', title: 'Bowl', status: 'Service recorded', time: ''}]}, historyTerminal);
@@ -281,7 +285,7 @@ test('keyboard configuration and filtered history use Pi selectors', async () =>
   assert.deepEqual(await selected, {action: 'select', id: 'b'});
 });
 
-test('authentication uses explicit keyboard selection and separates agent key paths', async () => {
+test('authentication uses explicit keyboard selection and clears the path on native login', async () => {
   const {Setup} = await import('../src/screens.mjs');
   const terminal = new Terminal();
   const spec = {values: {robot: 'panda', sim: 'robosuite', bench: '', agent: 'one', model: '', name: 'id',
@@ -296,14 +300,6 @@ test('authentication uses explicit keyboard selection and separates agent key pa
   setup.edit('api_key_file', 'API key file path');
   assert.match(setup.body.render(120).join('\n'), /Do not paste the key here/);
   terminal.input('/keys/one.key'); terminal.input('\r');
-  assert.equal(setup.values.api_key_file, '/keys/one.key');
-  setup.update('agent', 'two');
-  assert.equal(setup.values.auth_mode, 'api');
-  assert.equal(setup.values.api_key_file, '/keys/two.key');
-  setup.update('agent', 'third');
-  assert.deepEqual(setup.options('auth_mode'), ['native']);
-  assert.equal(setup.values.api_key_file, '');
-  setup.update('agent', 'one');
   assert.equal(setup.values.api_key_file, '/keys/one.key');
   setup.edit('auth_mode', 'Authentication');
   terminal.input('\x1b[A'); terminal.input('\r');
@@ -418,4 +414,20 @@ test('archived conversations browse files without gaining execution commands', {
   await assert.rejects(archive.command('enqueue', {}), /Read-only/);
   await assert.rejects(archive.end(), /Read-only/);
   assert.deepEqual(await call({op: 'writes'}), before);
+});
+
+test('entering a plugin path requests backend resolution before changing authentication', async () => {
+  const {Setup} = await import('../src/screens.mjs');
+  const terminal = new Terminal();
+  const values = {robot: 'panda', sim: 'robosuite', bench: '', agent: 'one',
+    model: 'saved-model', name: 'id', auth_mode: 'api', api_key_file: '/keys/one.key'};
+  const setup = new Setup({values, choices: {agent: ['one']}, models: {},
+    authentication: {one: {api: true}}, location: 'config', notice: ''}, terminal);
+  const running = setup.run();
+  setup.edit('agent', 'Coding agent', true);
+  terminal.input('./external/agent.yaml'); terminal.input('\r');
+  await running;
+  assert.equal(setup.done, true);
+  assert.deepEqual(setup.result, {action: 'agent', agent: './external/agent.yaml', values});
+  assert.equal(setup.values.agent, 'one');
 });

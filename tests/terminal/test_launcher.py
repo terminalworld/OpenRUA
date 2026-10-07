@@ -166,3 +166,47 @@ def test_missing_workspace_keeps_transcript_and_closes_server_on_screen_error(tm
             launcher.chat(archive, 'ended', None, None, screen)
         with pytest.raises(RuntimeError, match='unavailable'):
             clients[0].workspace_list()
+
+
+def test_new_plugin_selection_loads_capabilities_without_saving_or_borrowing_auth():
+    values = dict(robot='panda', sim='robosuite', bench='', agent='one', model='draft-model',
+                  name='id', auth_mode='api', api_key_file='/keys/one.key')
+    specs, resolved = [], []
+    actions = iter(['plugin', 'one', 'plugin', 'quit'])
+    def screen(spec):
+        specs.append(spec)
+        agent = next(actions)
+        if agent == 'quit':
+            return {'action': 'quit'}
+        return {'action': 'agent', 'agent': agent, 'values': dict(spec['values'])}
+    def resolve(name):
+        resolved.append(name)
+        return {'api': True, 'auth_mode': 'native', 'api_key_file': '', 'model': ''}
+    result = launcher.setup(values, {}, 'config', lambda v: pytest.fail('must not save'),
+        lambda v: pytest.fail('must not inspect resources'), lambda v: pytest.fail('must not launch'),
+        {}, lambda: [], lambda name: None, screen,
+        authentication={'one': {'api': True}}, resolve_agent=resolve)
+    assert result is None
+    assert specs[1]['values']['agent'] == 'plugin'
+    assert specs[1]['values']['auth_mode'] == 'native'
+    assert specs[1]['values']['api_key_file'] == ''
+    assert specs[1]['authentication']['plugin']['api']
+    assert specs[2]['values']['model'] == 'draft-model'
+    assert specs[2]['values']['api_key_file'] == '/keys/one.key'
+    assert specs[3]['values']['api_key_file'] == ''
+    assert resolved == ['plugin', 'one', 'plugin']
+
+
+def test_invalid_plugin_keeps_setup_editable_and_original_selection():
+    values = dict(agent='one', model='', auth_mode='native', api_key_file='')
+    specs = []
+    def screen(spec):
+        specs.append(spec)
+        return ({'action': 'agent', 'agent': './missing.yaml', 'values': dict(values)}
+                if len(specs) == 1 else {'action': 'quit'})
+    def resolve(name):
+        raise ValueError('plugin file not found')
+    launcher.setup(values, {}, 'config', lambda v: pytest.fail('must not save'),
+        None, None, {}, None, None, screen, resolve_agent=resolve)
+    assert specs[1]['values'] == values
+    assert 'plugin file not found' in specs[1]['notice']

@@ -239,3 +239,110 @@ def test_legacy_chat_tui_opens_the_same_keyboard_frontend(tmp_path, monkeypatch)
     monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops: opened.append(name) or 0)
     assert main(['--home', str(tmp_path), 'chat', '--tui', '--name', 'old']) == 0
     assert opened == ['old']
+
+
+@pytest.mark.parametrize('saved', [False, True])
+def test_custom_benchmark_selector_survives_preview_and_launch(tmp_path, monkeypatch, saved):
+    from openrua.config import paths
+    profile = tmp_path / 'custom-benchmark.yaml'
+    profile.write_text(paths.find('benchmarks', 'capbench').read_text())
+    if saved:
+        config_command.run(args(tmp_path, 'config', 'set', '--bench', str(profile)))
+    selected = args(tmp_path, '--cli', *([] if saved else ['--bench', str(profile)]))
+    values, _ = start.values_for(selected)
+    assert values['bench'] == str(profile)
+    captured = []
+    monkeypatch.setattr(start.service, 'start', lambda *a: captured.append(a))
+    start.launch(selected, values)
+    child = build_parser().parse_args(captured[0][0][3:])
+    assert child.bench == str(profile)
+
+
+@pytest.mark.parametrize('kind', ['robot', 'bench'])
+@pytest.mark.parametrize('saved', [False, True])
+def test_custom_environment_opens_tui_without_guided_replacement(tmp_path, monkeypatch, kind, saved):
+    from openrua.config import paths
+    from openrua.terminal import launcher
+    profile = tmp_path / (kind + '.yaml')
+    profile.write_text('type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n'
+                       if kind == 'robot' else paths.find('benchmarks', 'capbench').read_text())
+    if saved:
+        config_command.run(args(tmp_path, 'config', 'set', '--' + kind, str(profile)))
+    monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
+    monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+    monkeypatch.setattr('sys.stdout.isatty', lambda: True)
+    monkeypatch.setattr(launcher, 'setup', lambda *a, **kw: pytest.fail('must not replace a custom environment'))
+    original = (tmp_path / 'config.yaml').read_bytes() if saved else None
+    phases = []
+    monkeypatch.setattr(start, 'prepare', lambda h, v: phases.append(('prepare', v[kind])))
+    monkeypatch.setattr(start, 'check_values', lambda h, v: (phases.append(('check', v[kind])) or True, 'Ready'))
+    monkeypatch.setattr(start, 'launch', lambda a, v: phases.append(('launch', v[kind])) or 'client')
+    monkeypatch.setattr(start, 'open_interface', lambda a, c, n: phases.append(('chat', c)) or 0)
+    assert start.run(args(tmp_path, *([] if saved else ['--' + kind, str(profile)]))) == 0
+    assert phases == [('prepare', str(profile)), ('check', str(profile)), ('launch', str(profile)), ('chat', 'client')]
+    assert ((tmp_path / 'config.yaml').read_bytes() if (tmp_path / 'config.yaml').exists() else None) == original
+
+
+def test_invalid_custom_environment_fails_before_building_or_starting(tmp_path, monkeypatch):
+    from openrua.terminal import launcher
+    profile = tmp_path / 'broken.yaml'
+    profile.write_text('type: nonexistent-robot\nmachine: {}\n')
+    monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
+    monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+    monkeypatch.setattr('sys.stdout.isatty', lambda: True)
+    monkeypatch.setattr(launcher, 'setup', lambda *a, **kw: pytest.fail('must not replace explicit input'))
+    monkeypatch.setattr(start, 'prepare', lambda *a: pytest.fail('must not build'))
+    monkeypatch.setattr(start, 'launch', lambda *a: pytest.fail('must not launch'))
+    from openrua.errors import OpenRUAError
+    with pytest.raises(OpenRUAError):
+        start.run(args(tmp_path, '--robot', str(profile)))
+
+
+def test_explicit_empty_benchmark_does_not_reintroduce_saved_default(tmp_path):
+    config_command.run(args(tmp_path, 'config', 'set', '--bench', 'capbench'))
+    values, _ = start.values_for(args(tmp_path, '--robot', 'panda', '--sim', 'robosuite', '--bench', ''))
+    assert values['bench'] == ''
+
+
+def test_custom_setup_explains_how_to_preserve_the_profile(tmp_path, monkeypatch):
+    from openrua.terminal import launcher
+    profile = tmp_path / 'robot.yaml'
+    profile.write_text('type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n')
+    monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
+    monkeypatch.setattr(start, 'prepare', lambda *a: pytest.fail('must not build'))
+    with pytest.raises(UsageError, match='custom profile editing') as error:
+        start.run(args(tmp_path, '--setup', '--robot', str(profile)))
+    assert 'without --setup' in error.value.hint
+    assert not (tmp_path / 'config.yaml').exists()
+
+
+@pytest.mark.parametrize('plugin', ['kimi', 'zcode'])
+def test_entered_external_plugin_can_explicitly_select_api_in_setup(tmp_path, plugin):
+    from pathlib import Path
+    from openrua.terminal import launcher
+    manifest = str(Path(__file__).resolve().parents[2] / 'examples/plugins' / plugin / 'agent.yaml')
+    key = tmp_path / 'provider.key'
+    key.write_text('synthetic-key-no-model-calls')
+    values, models = start.values_for(args(tmp_path, '--bench', 'capbench'))
+    screens = []
+    def screen(spec):
+        screens.append(spec)
+        if len(screens) == 1:
+            return {'action': 'agent', 'agent': manifest, 'values': dict(spec['values'])}
+        if len(screens) == 2:
+            assert spec['authentication'][manifest]['api']
+            assert spec['values']['agent'] == manifest
+            assert spec['values']['auth_mode'] == 'native'
+            assert spec['values']['api_key_file'] == ''
+            assert not (tmp_path / 'config.yaml').exists()
+            return {'action': 'check', 'values': {**spec['values'], 'auth_mode': 'api', 'api_key_file': str(key)}}
+        return {'action': 'quit'}
+    launcher.setup(values, {}, 'config', lambda v: start.save_values(tmp_path, v),
+        lambda v: (False, 'Images not prepared in this test'), lambda v: pytest.fail('must not launch'),
+        models, None, None, screen,
+        resolve_agent=lambda name: start.authentication_choices(tmp_path, [name])[name])
+    saved = load_user_config(tmp_path / 'config.yaml')
+    assert saved.agent == manifest
+    assert saved.agents[manifest].auth.mode == 'api'
+    assert saved.agents[manifest].auth.key_file == str(key)
+    assert key.read_text() not in (tmp_path / 'config.yaml').read_text()
