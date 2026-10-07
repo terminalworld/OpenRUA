@@ -1,26 +1,12 @@
-"""Preflight: every promise the workspace docs make, checked before the agent starts.
+"""Check declared interfaces from the trial sandbox before starting its agent.
 
-Each check is asserted from the sandbox's own vantage (the same shell
-and the same DDS view the agent gets). A red check refuses the trial:
-the record shows an anomaly and the agent never pays for a wrong
-workspace description. Success predicates are not here; scoring stays
-with the benchmark's own code in the bridge, and this module verifies
-the apparatus only.
+The resolved config supplies the same port names used in machine.yaml.
+Simulation checks also verify the bridge's clock and gripper absence.
+An external real graph may contain interfaces beyond the profile's index.
+These checks validate selected apparatus properties, not task success or
+physical safety. Interactive startup separately waits for graph visibility.
 
-Three sources of checks:
-1. machine.yaml is generated from the resolved config, and so are the
-   checks, so the two cannot drift; a capability the config does not
-   declare gets a negative check.
-2. Claims made in the workspace prose are extracted by hand into named
-   checks (a finite set; shell provisioning, for one).
-3. Every failure found in a trial adds a regression check.
-
-This gate proves that the workspace docs do not lie, not that the robot
-has no defects; unknown defects are found by reading transcripts and
-feed new checks back here.
-
-Leaf: no openrua imports; the agent and the container name are handed
-in by the runner.
+Leaf: no openrua imports; the agent and container name are explicit inputs.
 """
 
 from __future__ import annotations
@@ -53,16 +39,14 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
         # agent's own knowledge; either is None for an agent without
         # that arrangement, and a None check is not minted.
         *(c for c in (agent.credentials_check(), agent.sandbox_cli_check()) if c),
-        # Polls until /clock is registered rather than asking once: the
-        # other probes block until their first message, but `topic list
-        # | grep` returns at once and would fail any bring-up slower than
-        # the moment it ran. A fast bring-up still pays nothing.
-        ("clock_topic",
-         f"timeout {_CHECK_TIMEOUT_S} bash -c "
-         "'until ros2 topic list | grep -qx /clock; do sleep 1; done'"),
-        ("joint_states_flow",
-         f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once /joint_states"),
     ]
+    simulated = m.get("backend", {}).get("kind") == "sim"
+    if simulated:
+        checks.append(("clock_topic",
+                       f"timeout {_CHECK_TIMEOUT_S} bash -c "
+                       "'until ros2 topic list | grep -qx /clock; do sleep 1; done'"))
+    checks.append(("joint_states_flow",
+                   f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once /joint_states"))
     # Declared frames are a promise: the pixel-to-world tool needs the
     # camera/world transform as much as depth and intrinsics, so the
     # transform stream is asserted, not assumed.
@@ -99,9 +83,9 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
             checks.append((f"wrench_flow{sfx}",
                            f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once "
                            f"'{aports['wrench']}'"))
-    if not any(a.get("ports", {}).get("gripper") for a in m.get("arms", [])):
-        # Negative check: a machine whose config lists no gripper must
-        # not expose one.
+    if simulated and not any(a.get("ports", {}).get("gripper") for a in m.get("arms", [])):
+        # The configured simulator must not expose its default gripper
+        # when that capability was removed from the scene.
         checks.append(("gripper_absent",
                        f"timeout {_CHECK_TIMEOUT_S} bash -c \"! ros2 action list | grep -qx "
                        f"'{_DEF_GRIPPER}'\""))
@@ -113,22 +97,24 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
     if ports.get("odom"):
         checks.append(("odom_flow",
                        f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once '{ports['odom']}'"))
-    # Cameras: at least one color stream must actually deliver a frame
-    # (list may be null = scene-defined; discover instead of assuming).
-    checks.append(("camera_frame_flow",
-                   "timeout 60 bash -c 'cam=$(ros2 topic list | grep -m1 "
-                   "color/image_raw) && [ -n \"$cam\" ] && "
-                   "ros2 topic echo --once \"$cam\" >/dev/null'"))
-    # machine.yaml promises depth and intrinsics with every color stream;
-    # the pixel-to-world tool dies without them, so the promise is
-    # asserted, not assumed.
-    checks.append(("camera_depth_intrinsics_flow",
-                   "timeout 60 bash -c 'cam=$(ros2 topic list | grep -m1 "
-                   "color/image_raw) && [ -n \"$cam\" ] && "
-                   "base=${cam%/color/image_raw} && "
-                   "ros2 topic echo --once \"$base/depth/image_raw\" "
-                   ">/dev/null && ros2 topic echo --once "
-                   "\"$base/color/camera_info\" >/dev/null'"))
+    # An empty list explicitly declares no cameras. None retains discovery.
+    if m.get("cameras", {}).get("list") != []:
+        # Cameras: at least one color stream must actually deliver a frame
+        # (list may be null = scene-defined; discover instead of assuming).
+        checks.append(("camera_frame_flow",
+                       "timeout 60 bash -c 'cam=$(ros2 topic list | grep -m1 "
+                       "color/image_raw) && [ -n \"$cam\" ] && "
+                       "ros2 topic echo --once \"$cam\" >/dev/null'"))
+        # machine.yaml promises depth and intrinsics with every color stream;
+        # the pixel-to-world tool dies without them, so the promise is
+        # asserted, not assumed.
+        checks.append(("camera_depth_intrinsics_flow",
+                       "timeout 60 bash -c 'cam=$(ros2 topic list | grep -m1 "
+                       "color/image_raw) && [ -n \"$cam\" ] && "
+                       "base=${cam%/color/image_raw} && "
+                       "ros2 topic echo --once \"$base/depth/image_raw\" "
+                       ">/dev/null && ros2 topic echo --once "
+                       "\"$base/color/camera_info\" >/dev/null'"))
     # The workspace tools must actually run: import each tool module
     # (all carry __main__ guards, so an import checks dependencies and
     # syntax without side effects).

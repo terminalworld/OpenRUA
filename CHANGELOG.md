@@ -1,9 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.10.10
 
 - Decode depth pixels using the native ROS image encoding, byte order, and row stride. The coordinate starter tool accepts REP 118 float meters and raw integer millimeters, rejects invalid layouts and depths, and preserves raw saved arrays with accurate unit documentation.
+- This reviewed starter-tool and unit-documentation fix updates the template for newly seeded workspaces. Existing workspaces, recorded trials, and historical release templates remain unchanged. Camera topic/frame naming and aligned depth calibration are still required; no perception strategy or agent workflow is added.
 
+## 0.10.9
+
+- Real-driver trial preflight no longer requires the simulator clock or forbids unlisted gripper interfaces. Explicit empty camera lists omit camera checks and the generated camera entry in `machine.yaml`; declared joint and control interfaces remain checked.
+- Clarify that interactive startup waits for graph visibility while trial preflight checks declared interfaces. Software ROS checks cover valid profiles and rejection of an incorrect joint name; the bundled benchmark checks and manifests remain unchanged.
 - Save robot resource metadata as complete snapshots. Concurrent readers retain the previous record until replacement, and failed writes preserve it instead of leaving an empty or partial state file.
 
 ## 0.10.8

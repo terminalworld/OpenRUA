@@ -188,7 +188,7 @@ def render_config() -> str:
         out.append("| key | type | default | meaning |\n|---|---|---|---|\n")
         for name, f in model.model_fields.items():
             desc = (f.description or "").replace("|", "\\|").replace("\n", " ")
-            out.append(f"| `{name}` | {_type_name(f.annotation)} | {_default(f)} | {desc} |\n")
+            out.append(f"| `{f.alias or name}` | {_type_name(f.annotation)} | {_default(f)} | {desc} |\n")
     return "".join(out)
 
 

@@ -80,9 +80,18 @@ machine:
 
 Every key is checked against the schema (`openrua config schema`
 prints all of them with their meaning); a misspelled key is an error,
-not a silent no-op. Every port you list becomes a promise: `preflight`
-verifies it is served before the agent starts, and the workspace docs
-describe it to the agent. List only what the robot actually serves.
+not a silent no-op. Listed ports describe the robot to the agent through
+`machine.yaml`; list only what the robot actually serves. Benchmark trials
+check declared interfaces through `preflight` before starting the agent.
+Interactive sessions wait for graph visibility, without running the full trial
+gate. Neither check establishes safe physical operation.
+
+For a real robot, set `cameras.list: []` when the profile declares no cameras.
+This omits camera
+entries from `machine.yaml` and camera checks from trial preflight; it does not
+disable sensors or restrict the agent's access to the graph. `null` retains
+camera discovery using the documented topic convention. Real-driver trials do
+not require the simulator's `/clock` or forbid unlisted gripper interfaces.
 
 Startup waits for ROS graph visibility for up to five minutes. A stalled
 readiness command is stopped at that deadline, and its last output is included

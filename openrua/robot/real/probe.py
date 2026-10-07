@@ -86,8 +86,8 @@ def draft_profile(graph: dict, discovery: dict) -> str:
     y = []
     y.append("# Drafted by `openrua probe` from the live graph. Lines marked TODO need")
     y.append("# a person; everything else was read from the robot. Delete any port the")
-    y.append("# robot does not actually serve: every port listed is a promise preflight")
-    y.append("# checks and the agent is told about.")
+    y.append("# robot does not actually serve: trial preflight checks the listed ports,")
+    y.append("# and the workspace documents them for the agent.")
     y.append("# type: panda   # TODO if this is an instance of a bundled robot type (openrua")
     y.append("#               # robots): name it and delete the facts below that it supplies")
     y.append("machine:")
