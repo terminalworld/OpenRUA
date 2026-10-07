@@ -165,3 +165,60 @@ def test_message_and_tool_events_have_common_display_fields():
         {"type": "tool_use", "id": "tool1", "name": "Bash", "input": {"command": "ls"}}]}})
     assert {e.data["kind"] for e in update.events} == {"message", "tool"}
     assert all(e.turn_id == "turn-1" and "item_id" in e.data for e in update.events)
+
+
+def tool_call(protocol, tool_id='tool1'):
+    return protocol.receive({'type': 'assistant', 'message': {'id': 'm1', 'content': [
+        {'type': 'tool_use', 'id': tool_id, 'name': 'Bash', 'input': {'command': 'ls'}}]}})
+
+
+def tool_result(protocol, content, *, tool_id='tool1', is_error=False):
+    return protocol.receive({'type': 'user', 'message': {'role': 'user', 'content': [
+        {'type': 'tool_result', 'tool_use_id': tool_id, 'content': content, 'is_error': is_error}]}})
+
+
+@pytest.mark.parametrize('is_error', [False, True])
+def test_native_tool_result_updates_original_item_without_finishing_turn(is_error):
+    protocol = ready()
+    started(protocol)
+    tool_call(protocol)
+    update = tool_result(protocol, 'native command output', is_error=is_error)
+    event = next(e for e in update.events if e.kind == 'item')
+    assert event.turn_id == 'turn-1'
+    assert event.data == {'phase': 'failed' if is_error else 'completed', 'kind': 'tool',
+                         'item_id': 'tool1', 'text': 'Bash', 'output': 'native command output'}
+    assert not any(e.kind == 'turn_finished' for e in update.events)
+    assert not protocol.can_submit
+
+
+def test_tool_content_blocks_keep_text_without_dumping_image_payload():
+    protocol = ready()
+    started(protocol)
+    tool_call(protocol)
+    update = tool_result(protocol, [
+        {'type': 'text', 'text': 'camera saved'},
+        {'type': 'image', 'source': {'type': 'base64', 'data': 'IMAGE_BYTES'}},
+        {'type': 'text', 'text': '640 x 480'}])
+    event = next(e for e in update.events if e.kind == 'item')
+    assert event.data['output'] == 'camera saved\n[image result in native record]\n640 x 480'
+    assert 'IMAGE_BYTES' not in str(event.data)
+
+
+def test_late_tool_result_keeps_its_original_turn_and_duplicates_do_not_regress_it():
+    protocol = ready()
+    started(protocol)
+    tool_call(protocol)
+    result(protocol)
+    started(protocol, 'turn-2')
+    event = next(e for e in tool_result(protocol, 'done').events if e.kind == 'item')
+    assert event.turn_id == 'turn-1'
+    assert not any(e.kind == 'item' for e in tool_result(protocol, 'done').events)
+    assert not any(e.kind == 'item' for e in tool_call(protocol).events)
+    assert not protocol.can_submit
+
+
+def test_unknown_tool_result_is_retained_without_assigning_it_to_current_turn():
+    protocol = ready()
+    started(protocol)
+    assert not any(e.kind == 'item' for e in tool_result(protocol, 'unknown result').events)
+    assert not protocol.can_submit

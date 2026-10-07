@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.12
+
+- Show Claude Code tool results as completed or failed, with expandable native text output, instead of leaving finished calls labeled as started. Results remain tied to the original tool and turn; duplicate or unrelated results cannot complete a later call.
+- Image payloads stay in native records rather than being printed as encoded data. Tool completion does not imply that the agent turn or robot task succeeded. Existing stored conversation events are not rewritten.
+
 ## 0.10.11
 
 - Send the configured hand link in IK starter-tool requests, so hand and TCP targets refer to the documented frame instead of an implicit planning-group tip. Native Panda IK/FK checks reproduce a 45-degree hand orientation error with the implicit tip and zero error with the explicit hand link.

@@ -29,6 +29,8 @@ class ClaudeConversation(ConversationProtocol):
         self._interrupted = False
         self._message_id: str | None = None
         self._requests: dict[str, tuple[dict, list[dict]]] = {}
+        self._tool_calls: dict[str, tuple[str, str]] = {}
+        self._finished_tools: set[str] = set()
 
     @property
     def can_submit(self) -> bool:
@@ -108,6 +110,10 @@ class ClaudeConversation(ConversationProtocol):
             key = frame["request_id"]
             self._requests.pop(key, None)
             return Update(events=[Event("input_cancelled", self._active, {"request_id": key})])
+        if kind == "user":
+            events = self._tool_results(frame)
+            if events:
+                return Update(events=events)
         if not self._active:
             return Update(events=[Event("native", data=frame)])
         if kind == "user" and frame.get("uuid") == self._user_uuid:
@@ -149,7 +155,8 @@ class ClaudeConversation(ConversationProtocol):
             message = frame["message"]
             events = []
             for block in message.get("content", []):
-                if block.get("type") == "tool_use":
+                if block.get("type") == "tool_use" and block["id"] not in self._tool_calls:
+                    self._tool_calls[block["id"]] = (self._active, block["name"])
                     events.append(Event("item", self._active, {"phase": "started", "kind": "tool",
                         "item_id": block["id"], "text": block["name"], "details": block["input"]}))
             text = "".join(b["text"] for b in message.get("content", []) if b.get("type") == "text")
@@ -158,6 +165,33 @@ class ClaudeConversation(ConversationProtocol):
                     "item_id": message["id"], "text": text}))
             return Update(events=events)
         return Update(events=[Event("native", self._active, frame)])
+
+    def _tool_results(self, frame: dict) -> list[Event]:
+        content = frame.get("message", {}).get("content")
+        if not isinstance(content, list):
+            return []
+        events = []
+        for block in content:
+            if not isinstance(block, dict) or block.get("type") != "tool_result":
+                continue
+            key = block.get("tool_use_id")
+            if key not in self._tool_calls or key in self._finished_tools:
+                continue
+            turn_id, name = self._tool_calls[key]
+            self._finished_tools.add(key)
+            output = block.get("content", "")
+            if isinstance(output, list):
+                # Binary content remains in the separately stored native frame.
+                output = "\n".join(
+                    part.get("text", "") if part.get("type") == "text"
+                    else f"[{part.get('type', 'structured')} result in native record]"
+                    for part in output if isinstance(part, dict))
+            elif not isinstance(output, str):
+                output = "" if output is None else "[structured result in native record]"
+            events.append(Event("item", turn_id, {
+                "phase": "failed" if block.get("is_error") else "completed", "kind": "tool",
+                "item_id": key, "text": name, "output": output}))
+        return events
 
     def _input(self, frame: dict) -> Update:
         request, key = frame["request"], frame["request_id"]
