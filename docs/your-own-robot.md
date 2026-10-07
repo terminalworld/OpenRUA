@@ -119,7 +119,10 @@ openrua config set --robot ./ur5e.yaml                                    # or m
 ```
 
 The sandbox joins the host network and reaches the graph the way
-`backend.discovery` says. On a real robot there is no simulator to ask,
+`backend.discovery` says. `--ros-domain` selects the same ROS domain for the
+sandbox and a driver started by `backend.launch`, whether on the host or in
+`backend.image`. For an already-running external driver, select its existing
+domain; OpenRUA does not reconfigure it. The default domain is 0. On a real robot there is no simulator to ask,
 so the task sentence is the one you give (`run`'s prompt, or `--task`
 on `up` and `bench`), and a trial's `result.json` records `success: null`
 with `verdict: not_applicable`; preflight, the agent, the transcript and
@@ -145,6 +148,27 @@ network is not on an internal docker network, so the proxy is the route
 the agent is told to use, not a wall it cannot get around. For a scored
 campaign, simulation keeps that isolation; on hardware the point of the
 sandbox is the same toolchain and the same workspace, not containment.
+
+## Same-host Fast DDS discovery
+
+If a driver sees its own ROS node but the sandbox cannot, first check that both
+use the same ROS domain. With host networking, Fast DDS may also select shared
+memory even though the containers have separate IPC namespaces; see the
+[native Docker guidance](https://fast-dds.docs.eprosima.com/en/3.4.x/docker/shm_docker.html).
+
+To retain separate IPC namespaces, a Fast DDS driver can use the
+[UDP-only profile](../examples/ros/fastdds-udp.xml). Place the file where the
+driver runs and prefix its launch command with:
+
+```sh
+FASTRTPS_DEFAULT_PROFILES_FILE=/absolute/path/to/fastdds-udp.xml ros2 launch ...
+```
+
+For `backend.image`, the file must exist inside that image. For an external
+driver, configure it through its existing deployment process. OpenRUA does not
+change an external driver's middleware or enable host IPC automatically. The
+profile was checked with software ROS nodes on Humble, including both owned and
+external driver lifecycles; it is not physical-robot validation.
 
 ## A simulated robot of your own
 
