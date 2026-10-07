@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.13
+
+- Show a temporary TUI connection loss as disconnected and retrying instead of leaving a stale working/ready status. Restore the current session status after reconnection without clearing drafts or local notices, duplicating tool output, or resending instructions.
+
 ## 0.10.12
 
 - Show Claude Code tool results as completed or failed, with expandable native text output, instead of leaving finished calls labeled as started. Results remain tied to the original tool and turn; duplicate or unrelated results cannot complete a later call.

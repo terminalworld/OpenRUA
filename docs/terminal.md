@@ -88,6 +88,10 @@ Menus use arrows, Enter and Escape. Confirmation starts on Cancel. Typing
 while the agent works does not interrupt it; submitted instructions queue.
 A failed or unknown execution outcome pauses the queue for review. Client
 reconnection replays events without automatically resending instructions.
+If a running client's connection drops, the status shows **Disconnected · retrying**
+until polling succeeds again. The recovered status reflects the shared session;
+your unsent draft and queued instructions remain intact. Connection recovery does
+not retry a send whose result is unconfirmed; use `/retry` with its original ID.
 
 For `/questions`, single choices use Enter. Multiple-choice requests use
 Space or Enter to toggle selections, followed by **Continue**. When the native
