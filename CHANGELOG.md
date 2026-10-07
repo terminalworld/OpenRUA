@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.7
+
+- Offer the Panda / robosuite / LIBERO-PRO combination in guided setup after checking its default scene, camera and joint streams, and trajectory interface in freshly built Jazzy images. Selection and image preparation use the existing configuration contracts; no task-specific control logic is added. The evidence covers environment startup, not model-task success or every benchmark task.
+
 ## 0.10.6
 
 - Publish session connection files atomically so reconnecting clients cannot read incomplete JSON. Keep credentials private, refuse to overwrite another session owner, and clean up unsuccessful writes.
