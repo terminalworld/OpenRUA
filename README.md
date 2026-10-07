@@ -193,6 +193,9 @@ see [Architecture](docs/architecture.md).
   benchmark default, robosuite uses its native `Lift` scene.
 - **Agent and model.** Choose `--agent` and optionally `--model` when starting
   the session. Switching them inside a running conversation is not implemented.
+- **Custom profiles.** Pass a file with `--robot`, `--sim`, or `--bench` to use
+  your own environment in the TUI. It is validated and prepared without being
+  replaced by a guided choice. See [your own robot](docs/your-own-robot.md).
 - **Defaults.** Save common choices with `openrua config set`; explicit command
   arguments override them. [Configuration](docs/config.md) documents the fields.
 - **Available extensions.** `openrua robots`, `openrua simulators`,

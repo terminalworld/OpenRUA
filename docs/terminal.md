@@ -25,6 +25,15 @@ Escape returns to the previous menu. Only environment combinations with recorded
 startup checks are offered, with dependent fields updated together. Custom
 profiles remain available through explicit CLI options and config files.
 
+For example, `openrua --robot ./my-robot.yaml --sim '' --bench ''` uses a real
+robot profile with no inherited simulator or benchmark. A custom environment
+selected by a file path, including a saved default, is validated and prepared
+before opening chat directly; it is not replaced by a guided-menu selection.
+Use the file or `openrua config set` to edit custom defaults. `--setup` remains
+the selector for tested bundled environments. Custom benchmark paths are kept
+as paths throughout startup, so their settings are not replaced by an internal
+benchmark name.
+
 **Authentication** defaults to **Native CLI login**, using the account already
 selected in your coding agent. To use API billing explicitly, choose **API key
 file** and enter the path to a private file containing the raw key. Do not paste

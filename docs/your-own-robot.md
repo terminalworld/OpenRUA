@@ -93,6 +93,20 @@ meaning is in [config.md](config.md#machine).
 
 ## Bringing it up
 
+To open OpenRUA's shared terminal chat with your completed profile:
+
+```bash
+openrua --robot ./ur5e.yaml --sim '' --bench '' --ros-domain 7
+```
+
+The empty simulator and benchmark selections override any saved simulation
+defaults. OpenRUA validates the profile and prepares missing agent images before
+opening chat. It preserves your profile instead of sending it through the
+simulation setup menu. This is a software entry point; physical robot operation
+still requires validation on your hardware.
+
+For the native coding agent terminal or explicit resource commands:
+
 ```bash
 openrua doctor ./ur5e.yaml         # images, login, and that the file loads
 openrua run ./ur5e.yaml --ros-domain 7 "move the arm to the home pose"   # or up + agent + down

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.1
+
+- Preserve custom benchmark file paths during session startup instead of replacing them with an internal benchmark name.
+- Open the default TUI for explicitly configured custom robot, simulator or benchmark profiles after validation and preparation, without forcing them into the tested bundled-environment menu. Saved custom defaults follow the same path; guided setup remains restricted to tested bundled combinations.
+
 ## 0.10.0
 
 - Add an experimental external Kimi Code 2.1.1 plugin with a pinned installation and explicit Moonshot API profile. Shared chat uses the native local server and prompt-correlated transcript states, retaining OpenRUA's existing queue, permission prompts, exact-session resume and failure pause. Native container lifecycle checks use a synthetic local provider; subscription reuse and robot-task performance remain unvalidated. Kimi is not added to default setup options.

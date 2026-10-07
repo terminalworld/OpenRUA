@@ -44,7 +44,7 @@ def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
     values = {
         'robot': args.robot or user.robot or package.robot or '',
         'sim': args.sim or user.simulator or package.simulator or '',
-        'bench': args.bench or user.benchmark or package.benchmark or '',
+        'bench': (user.benchmark or package.benchmark or '') if args.bench is None else args.bench,
         'agent': chosen or '',
         'model': args.model or models.get(chosen, ''),
         'name': args.name or history.new_id(),
@@ -57,7 +57,7 @@ def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
     else:
         selected = resolved.cfg['agent']
         values.update(robot=resolved.robot if not resolved.robot.startswith('(') else '',
-                      sim=resolved.simulator or '', bench=resolved.benchmark or '',
+                      sim=resolved.simulator or '',
                       agent=selected['name'], model=args.model or selected.get('model') or '')
     auth = selected.get('auth') or {}
     values.update(auth_mode=auth.get('mode', 'native'), api_key_file=auth.get('key_file') or '')
@@ -219,7 +219,11 @@ def _run(args) -> int:
             raise UnavailableError(str(exc), hint='inspect the retained service log and session status before restarting') from exc
         return open_interface(args, client, args.name)
     values, models = values_for(args)
-    if args.setup or not (values['robot'] or values['bench']) or (not args.gui and not args.cli):
+    custom_environment = any(paths.is_path(values[key]) for key in startup.FIELDS if values[key])
+    if args.setup and custom_environment:
+        raise UsageError('guided setup offers tested bundled environments, not custom profile editing',
+                         hint='start without --setup to use your profile; edit it or use openrua config set to change defaults')
+    if not custom_environment and (args.setup or not (values['robot'] or values['bench']) or (not args.gui and not args.cli)):
         if not sys.stdin.isatty() or not sys.stdout.isatty():
             raise UsageError('terminal setup needs an interactive terminal',
                              hint='use openrua config set or edit config.yaml, then use --gui or --cli')
