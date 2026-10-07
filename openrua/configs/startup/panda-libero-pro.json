@@ -1,0 +1,33 @@
+{
+  "status": "passed",
+  "selection": {
+    "robot": "panda",
+    "sim": "robosuite",
+    "bench": "libero_pro"
+  },
+  "suite": "libero_goal_task",
+  "task_id": 0,
+  "seed": 0,
+  "profiles_sha256": "070b5fdbe0cdcb3a0fa4452366b89adb6393ba5c89c6fd151050c60e9ade4d92",
+  "checked_at": "2026-10-07T18:07:20.289470+00:00",
+  "images": {
+    "robot": {
+      "name": "openrua-sim-libero_pro",
+      "id": "sha256:7cac6ed80c10642e31e498990b7aa97e699c9efb50c30d2c047a807c822255d3"
+    },
+    "sandbox": {
+      "name": "openrua-sandbox-jazzy",
+      "id": "sha256:b3dfcbe749dbf30104ad89e4b9244d17ce01d3e0017c28ea79a1b953576b5e50"
+    }
+  },
+  "checks": {
+    "joint_states": true,
+    "camera_frame": true,
+    "trajectory": true
+  },
+  "agent_binaries": {
+    "claude-code": "2.1.197 (Claude Code)",
+    "codex": "codex-cli 0.161.0"
+  },
+  "scope": "Simulation startup, reset, ROS image and joint streams, no-op trajectory, agent CLI versions. No model task or physical robot validation."
+}

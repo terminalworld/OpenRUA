@@ -16,7 +16,12 @@ The list currently contains:
 |---|---|---|---|
 | `panda` | `robosuite` | Native scene (no benchmark) | `Lift` |
 | `panda` | `robosuite` | `capbench` | `capbench_lift` |
+| `panda` | `robosuite` | `libero_pro` | `libero_goal_task`, task 0, seed 0 |
 | `panda-omron` | `robosuite` | `robocasa365` | `CloseBlenderLid` |
+
+LIBERO-PRO uses ROS Jazzy; the other listed entries use ROS Humble. Setup
+selects the matching simulator and sandbox images automatically. Each entry
+validates its default scene, not every suite or task in that benchmark.
 
 The recorded check starts the declared robot and sandbox images in an isolated
 network, resets the default scene, receives joint states and a camera frame,
