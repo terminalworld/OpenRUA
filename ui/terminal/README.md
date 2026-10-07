@@ -65,6 +65,8 @@ Selection lists use arrows, Enter, and Escape. Interruption, queue continuation,
 withdrawal, answering questions, and ending execution require explicit choices.
 Edits carry the message revision, so another client's change is not overwritten.
 A disconnected client never automatically resends a robot instruction.
+For multiple-choice questions and optional text replies, see the
+[question controls](../../docs/terminal.md#work-in-the-conversation).
 
 Requests containing secret inputs and resolution of unknown execution results
 still use the existing clients. In-session agent/model switching and a persistent
@@ -84,8 +86,11 @@ and download saved images. These are saved observations, not a live video feed.
 This is read-only access through the same workspace API as the browser. It does
 not send an agent message or execute a file. Symlinks, paths outside the workspace,
 and files exceeding the server limit are rejected; changed or deleted files
-report an error and can be refreshed. Text previews show at most 131,072 characters. Retained offline history has no workspace API; its transcript remains
-available without restarting execution.
+report an error and can be refreshed. Text previews show at most 131,072 characters.
+For ended or unavailable sessions, the launcher opens a temporary read-only
+workspace viewer using the recorded directory. This does not restart the robot
+or agent; missing files leave the transcript available. See the
+[terminal guide](../../docs/terminal.md#current-scope) for supported preview formats.
 
 ## Develop and verify
 
