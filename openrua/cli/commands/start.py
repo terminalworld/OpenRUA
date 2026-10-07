@@ -72,10 +72,13 @@ def authentication_choices(home: Path, names: list[str]) -> dict:
     for name in names:
         selected = config.layer_agent({}, package, user, agent=name)
         adapter = agents.get(name, home, version=selected.get('version'))
+        if 'conversation' not in adapter.capabilities:
+            raise UsageError(f'{adapter.name} does not support shared chat',
+                             hint='use this plugin with openrua run or select a conversation-capable agent')
         auth = selected.get('auth') or {}
         result[name] = {'api': 'prepare_api_profile' in adapter.capabilities,
                         'auth_mode': auth.get('mode', 'native'),
-                        'api_key_file': auth.get('key_file') or ''}
+                        'api_key_file': auth.get('key_file') or '', 'model': selected.get('model') or ''}
     return result
 
 
@@ -241,7 +244,8 @@ def _run(args) -> int:
                                 lambda: history.entries(args.home),
                                 lambda name: history.open_session(args.home, name),
                                 environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress),
-                                authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']]))))
+                                authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']]))),
+                                resolve_agent=lambda name: authentication_choices(args.home, [name])[name])
         if result is None:
             return 0
         client, name = result

@@ -62,14 +62,8 @@ export class Setup extends Screen {
   }
   update(key, value) {
     if (key === 'agent' && value.trim() !== this.values.agent) {
-      this.values.model = this.spec.models[value.trim()] ?? '';
-      if (Object.hasOwn(this.values, 'auth_mode')) {
-        this.authentication[this.values.agent] = {...this.authentication[this.values.agent],
-          auth_mode: this.values.auth_mode, api_key_file: this.values.api_key_file};
-        const next = this.authentication[value.trim()] ?? {};
-        this.values.auth_mode = next.auth_mode ?? 'native';
-        this.values.api_key_file = next.api_key_file ?? '';
-      }
+      this.finish({action: 'agent', agent: value.trim(), values: {...this.values}});
+      return;
     }
     this.values[key] = value.trim();
     if (key === 'auth_mode' && value === 'native') this.values.api_key_file = '';
@@ -115,7 +109,7 @@ export class Setup extends Screen {
       menu.onSelect = item => item.value === '\0custom' ? this.edit(key, label, true) : this.update(key, item.value);
       this.body.addChild(menu); this.ui.setFocus(menu);
     } else {
-      const input = new Input({prompt: '> '}); input.setValue(this.values[key]);
+      const input = new Input({prompt: '> '}); input.setValue(custom ? '' : this.values[key]);
       input.onEscape = () => this.menu();
       input.onSubmit = value => this.update(key, value);
       this.body.addChild(input); this.ui.setFocus(input);

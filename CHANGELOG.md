@@ -2,6 +2,8 @@
 
 ## 0.10.1
 
+- Resolve manually entered agent manifests in keyboard setup before offering authentication choices. External API-capable plugins can be configured without borrowing another agent's key path; switching agents preserves unsaved model and authentication choices until the user explicitly saves.
+
 - Preserve custom benchmark file paths during session startup instead of replacing them with an internal benchmark name.
 - Open the default TUI for explicitly configured custom robot, simulator or benchmark profiles after validation and preparation, without forcing them into the tested bundled-environment menu. Saved custom defaults follow the same path; guided setup remains restricted to tested bundled combinations.
 

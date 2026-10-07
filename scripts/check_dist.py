@@ -12,7 +12,7 @@ import tempfile
 import venv
 
 
-def terminal_smoke(executable: Path, home: Path, environment: dict) -> None:
+def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Path | None = None) -> None:
     """Exercise real TTY startup and detachment without starting robot resources."""
     import pty
     master, slave = pty.openpty()
@@ -20,16 +20,27 @@ def terminal_smoke(executable: Path, home: Path, environment: dict) -> None:
                              stdin=slave, stdout=slave, stderr=slave, env=environment)
     os.close(slave)
     output = bytearray()
-    stage = 0
+    stage = -3 if manifest else 0
     try:
-        deadline = time.monotonic() + 20
+        deadline = time.monotonic() + 30
         while time.monotonic() < deadline and child.poll() is None:
             if select.select([master], [], [], 0.1)[0]:
                 try:
                     output.extend(os.read(master, 65536))
                 except OSError:
                     break
-            if stage == 0 and b'Configure a new robot conversation' in output:
+            if stage == -3 and b'Configure a new robot conversation' in output:
+                os.write(master, b'\x1b[B' * 3 + b'\r')
+                output.clear(); stage = -2
+            elif stage == -2 and b'Enter a name or profile path' in output:
+                os.write(master, b'\x1b[B' * 2 + b'\r')
+                output.clear(); stage = -1
+            elif stage == -1 and b'> ' in output:
+                os.write(master, b'\x01\x0b' + str(manifest).encode() + b'\r')
+                output.clear(); stage = 0
+            elif stage == 0 and b'Configure a new robot conversation' in output:
+                if manifest:
+                    assert b'Coding agent: ' + str(manifest).encode() in output, output.decode(errors='replace')
                 os.write(master, b'\x1b[B' * 6 + b'\r')
                 stage = 1
             elif stage == 1 and b'no automatic fallback' in output:
@@ -139,6 +150,11 @@ assert runtime()([str(entrypoint()), '--help'], env=env, return_completed_proces
 """)
         terminal_smoke(environment / 'bin' / 'openrua', root / 'empty-home',
                        dict(os.environ, PATH=str(environment / 'bin')))
+        manifest = root / 'external-agent.yaml'
+        run('-c', "from importlib.resources import files; from pathlib import Path; import sys; "
+            "Path(sys.argv[1]).write_bytes(files('openrua').joinpath('configs/agents/codex.yaml').read_bytes())", str(manifest))
+        terminal_smoke(environment / 'bin' / 'openrua', root / 'plugin-home',
+                       dict(os.environ, PATH=str(environment / 'bin')), manifest)
         archive_smoke(environment / 'bin' / 'openrua', root / 'archive-home',
                       dict(os.environ, PATH=str(environment / 'bin')))
 

@@ -41,6 +41,13 @@ the key into the menu. API mode is offered only when the selected plugin support
 it. Each agent keeps its own saved choice; switching agents never borrows another
 agent's key path. Switching back to native login clears the selected path without
 deleting the key file. These defaults apply to new sessions, not running ones.
+For an external plugin, choose **Coding agent → Enter a name or profile path**.
+OpenRUA loads the manifest's shared-chat and authentication capabilities before
+showing its options. An invalid path returns to setup with an error; selecting
+an agent alone does not save defaults, start resources, or call a model. Unsaved
+model and authentication edits are retained separately when switching agents.
+Experimental plugins still require the installation and validation steps in
+their own guides and are not added to the default agent list.
 See [API configuration](install.md#explicit-api-authentication) for CLI commands
 and file permissions. Local checks do not call a model or verify account quota.
 

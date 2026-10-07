@@ -45,6 +45,11 @@ published benchmark reproduction are not validated for this example.
 
 ## Configure and try shared chat
 
+With OpenRUA 0.10.1 or later, `openrua --setup` also accepts this manifest
+through **Coding agent → Enter a name or profile path**. Select **API key
+file** explicitly and enter the private key file's path. Selecting the agent
+alone does not install it or validate an account; follow the build steps below.
+
 From the root of the OpenRUA checkout, after completing the ordinary
 [installation and simulation setup](../../../docs/install.md):
 
