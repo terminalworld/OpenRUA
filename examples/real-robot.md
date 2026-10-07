@@ -10,7 +10,7 @@ read_when:
    and finish the `TODO` lines (see `docs/your-own-robot.md`):
 
    ```bash
-   openrua probe --host > my-robot.yaml
+   openrua probe --host --ros-domain <id> --distro <humble-or-jazzy> > my-robot.yaml
    ```
 
 2. Check it loads and the images and login are in place:
@@ -27,10 +27,12 @@ read_when:
    openrua agent
    ```
 
-Preflight runs the same checks as in simulation: the ports you listed
-must be served, joint names must match the profile, TF and camera frames
-must flow. If a check fails, `up` refuses and says which promise the
-robot did not keep.
+Interactive startup waits for ROS graph visibility. Benchmark trials additionally
+run preflight checks on the declared control interfaces, joint names, TF and
+cameras. Neither check establishes safe physical operation; the robot and its
+independent safety controls need validation on your hardware. See the
+[robot guide](../docs/your-own-robot.md) for profile fields, driver ownership and
+discovery troubleshooting.
 
 `openrua bench --config <benchmark> --robot ./my-robot.yaml --task "..."`
 runs the same trial loop on hardware: no reset, no automatic verdict

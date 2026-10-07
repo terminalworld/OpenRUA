@@ -36,6 +36,13 @@ which of the found ports to keep. Delete any port the robot does not
 actually serve. A robot that is already up under OpenRUA can be
 probed from its own sandbox: `openrua probe --name openrua`.
 
+Use `--ros-domain` and `--distro` to match the running robot, for example
+`openrua probe --host --ros-domain 7 --distro humble > ur5e.yaml`.
+A failed topic, action or service query stops the probe and reports the native
+error instead of producing a profile from incomplete query results. A missing
+robot description is optional: the draft leaves joint and frame facts for you
+to complete. Check the command's exit status before using the redirected file.
+
 ## What the agent reads
 
 `openrua up` generates the agent's `machine.yaml` from the assembled

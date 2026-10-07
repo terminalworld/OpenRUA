@@ -7,10 +7,8 @@ import tempfile
 import uuid
 from pathlib import Path
 
-import yaml
-
 from openrua.cli import state
-from openrua.errors import UsageError
+from openrua.errors import UnavailableError, UsageError
 from openrua.robot.real.probe import draft_profile, read_graph
 from openrua.runner.bringup import sandbox_reachability
 from openrua.sandbox.down import down as sandbox_down
@@ -31,11 +29,28 @@ def _discovery(args) -> dict:
 
 
 def _exec_in(sandbox: str):
+    def diagnostic(*parts: str | bytes | None) -> str:
+        return "\n".join(
+            (part.decode(errors="replace") if isinstance(part, bytes) else part).strip()
+            for part in parts if part
+        )
+
     def run(cmd: str) -> str:
-        r = subprocess.run(
-            ["docker", "exec", sandbox, "bash", "-c", cmd],
-            capture_output=True, text=True, timeout=120)
-        return r.stdout
+        hint = ("Run `docker info`, check the robot's ROS domain and discovery settings, "
+                "then rerun the original `openrua probe` command.")
+        try:
+            result = subprocess.run(
+                ["docker", "exec", sandbox, "bash", "-c", cmd],
+                capture_output=True, text=True, timeout=120)
+        except subprocess.TimeoutExpired as exc:
+            raise UnavailableError(
+                f"probe command timed out after {exc.timeout}s: {cmd}\n"
+                + diagnostic(exc.stdout, exc.stderr), hint=hint) from exc
+        if result.returncode:
+            raise UnavailableError(
+                f"probe command failed (exit {result.returncode}): {cmd}\n"
+                + diagnostic(result.stdout, result.stderr), hint=hint)
+        return result.stdout
     return run
 
 
