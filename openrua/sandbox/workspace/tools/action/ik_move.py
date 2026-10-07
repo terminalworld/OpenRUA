@@ -1,22 +1,21 @@
 #!/usr/bin/env python3
-"""Move the hand to a world-frame pose: IK -> one trajectory -> done.
+"""Move the hand to a planning-frame pose through IK and one trajectory.
 
 Usage: python3 tools/action/ik_move.py <x> <y> <z> <qx> <qy> <qz> <qw> \
            [seconds=4] [--at tcp|hand]
 Pose is where the HAND frame goes; --at tcp aims the fingertip point
-instead (offset from machine.yaml gripper.tcp_offset_m along hand -Z...
-+Z; the offset is applied along the hand's approach axis). IK failures
+instead, using machine.yaml hand.tcp_offset_m along the hand's +Z axis.
+Coordinates are in machine.yaml planning.planning_frame, not necessarily
+the world frame. IK failures
 exit loudly with the MoveIt error code; no solution means NO MOTION
 happened. Approach direction, grasp logic, verification stay yours.
 """
+import argparse
 import sys
 from pathlib import Path
 
 import numpy as np
-import rclpy
 import yaml
-from moveit_msgs.srv import GetPositionIK
-from sensor_msgs.msg import JointState
 
 
 def manifest() -> dict:
@@ -24,13 +23,27 @@ def manifest() -> dict:
     return yaml.safe_load((root / "machine.yaml").read_text())
 
 
-def main() -> None:
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    if len(args) not in (7, 8):
-        raise SystemExit(__doc__)
-    x, y, z, qx, qy, qz, qw = map(float, args[:7])
-    seconds = float(args[7]) if len(args) == 8 else 4.0
-    at_tcp = "--at" in sys.argv and "tcp" in sys.argv
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    for name in ("x", "y", "z", "qx", "qy", "qz", "qw"):
+        parser.add_argument(name, type=float)
+    parser.add_argument("seconds", type=float, nargs="?", default=4.0,
+                        help="trajectory duration in seconds (default: 4)")
+    parser.add_argument("--at", choices=("tcp", "hand"), default="hand",
+                        help="point to place at the target pose (default: hand)")
+    return parser.parse_intermixed_args(argv)
+
+
+def main(argv=None) -> None:
+    args = parse_args(argv)
+    from moveit_msgs.srv import GetPositionIK
+    from sensor_msgs.msg import JointState
+    import rclpy
+
+    x, y, z, qx, qy, qz, qw = (getattr(args, name)
+                               for name in ("x", "y", "z", "qx", "qy", "qz", "qw"))
+    seconds = args.seconds
+    at_tcp = args.at == "tcp"
 
     m = manifest()
     traj_entry = next(a for a in m["actuators"]
@@ -39,7 +52,7 @@ def main() -> None:
     if at_tcp:
         off = float(m.get("hand", {}).get("tcp_offset_m", 0.0))
         # shift the target back along the hand's approach (+Z of the
-        # hand frame, expressed in world via the quaternion)
+        # hand frame, expressed in the planning frame via the quaternion)
         R = _quat_to_R(qx, qy, qz, qw)
         x, y, z = np.array([x, y, z]) - off * R[:, 2]
 

@@ -46,10 +46,11 @@ retreat, verify with a fresh frame.
 
 ## Session-runtime facts
 
-- NEVER end your turn while a motion or background task is pending: an
-  ended turn ends the session; nothing resumes it, and the paused
-  world means what you were "waiting for" will never arrive. Poll to
-  completion first.
+- In a benchmark trial, returning from the agent ends the trial and its
+  resources. Poll pending motion or background work to completion before
+  returning. In shared chat, completing a reply leaves the robot and
+  workspace available for subsequent messages until the session is ended.
+  A finished reply does not itself confirm that a motion completed.
 - Long commands: run them detached writing to a file with `python3 -u`
   (pipes buffer output invisibly), then poll the file with short
   commands. Build service/action clients once and reuse them; every

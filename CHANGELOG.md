@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.3
+
+- Parse the documented `ik_move.py --at tcp` option correctly, keeping its value separate from pose coordinates and duration. Clarify that targets use the planning frame.
+- Return a nonzero status from `fjt_send.py` for rejected, aborted or failed trajectories, preserving the native diagnostic instead of reporting shell success. IK forwards that exit status.
+- Correct workspace documentation: benchmark completion ends trial resources, while a shared-chat reply leaves the session available for subsequent messages.
+- These intentional starter-tool and documentation fixes change the workspace template hash for newly seeded workspaces. Existing workspaces and recorded trial hashes are untouched; use the original release or commit to reproduce an earlier template. No grasp strategy or agent workflow is added.
+
 ## 0.10.2
 
 - Keep CLI status and event inspection available when a shared service has stopped or its endpoint is invalid. Read retained records without changing the queue or resources, warn that recorded execution state may be stale, and preserve JSON output and event cursors. Sending, resuming and ending still require the live service.
