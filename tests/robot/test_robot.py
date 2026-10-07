@@ -56,7 +56,8 @@ def test_sim_up_requires_rendered_peers_with_static_peer():
 def test_real_launch_runs_in_the_driver_image_when_one_is_named():
     from openrua.robot.real.up import launch_argv
     assert launch_argv("r", "ros2 launch x y.py", None) == ["bash", "-lc", "ros2 launch x y.py"]
-    argv = launch_argv("r", "ros2 launch x y.py", "vendor/driver:foxy")
+    argv = launch_argv("r", "ros2 launch x y.py", "vendor/driver:foxy", ros_domain=37)
+    assert argv[argv.index("--env") + 1] == "ROS_DOMAIN_ID=37"
     assert argv[:2] == ["docker", "run"] and "--network" in argv and "host" in argv
     assert "r-driver" in argv and argv[-3:] == ["bash", "-lc", "ros2 launch x y.py"]
 
@@ -132,3 +133,20 @@ def test_real_readiness_timeout_stops_probe_children(tmp_path):
         handle.wait_ready(timeout_s=.2)
     time.sleep(1.1)
     assert not marker.exists(), 'a child of the timed-out probe kept running'
+
+
+@pytest.mark.parametrize("domain", [0, 37])
+def test_owned_real_driver_uses_explicit_domain_not_host_default(tmp_path, monkeypatch, domain):
+    import shlex
+    import sys
+    monkeypatch.setenv("ROS_DOMAIN_ID", "12")
+    log = tmp_path / "driver.log"
+    command = shlex.join([sys.executable, "-c", "import os; print(os.environ.get('ROS_DOMAIN_ID'), flush=True)"])
+    handle = robot.up({"kind": "real", "launch": command}, name="domain-probe",
+                      config_path="", task_suite="", task_id=0, log_path=log,
+                      ros_domain=domain)
+    try:
+        assert handle.proc.wait(timeout=5) == 0
+        assert log.read_text().strip() == str(domain)
+    finally:
+        handle.shutdown()

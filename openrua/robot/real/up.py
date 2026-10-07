@@ -65,18 +65,20 @@ class RealHandle(Handle):
         down(self.proc, self._container)
 
 
-def launch_argv(name: str, launch: str, image: str | None) -> list[str]:
+def launch_argv(name: str, launch: str, image: str | None, ros_domain: int = 0) -> list[str]:
     """The process that runs the launch command: on the host, or inside
     ``image`` on the host network so the driver's ROS release need not
     match the sandbox's."""
     if image:
         return ["docker", "run", "--rm", "--network", "host",
-                "--name", container_name(name), image, "bash", "-lc", launch]
+                "--name", container_name(name), "--env", f"ROS_DOMAIN_ID={ros_domain}",
+                image, "bash", "-lc", launch]
     return ["bash", "-lc", launch]
 
 
 def up(name: str, launch: str | None, log_path: Path | None = None,
-       probe_argv: list[str] | None = None, image: str | None = None) -> RealHandle:
+       probe_argv: list[str] | None = None, image: str | None = None,
+       ros_domain: int = 0) -> RealHandle:
     """Start ``launch`` if given (on the host, or in ``image``), its output
     streaming into ``log_path``; return the handle. ``probe_argv`` is what
     ``wait_ready`` polls."""
@@ -85,7 +87,8 @@ def up(name: str, launch: str | None, log_path: Path | None = None,
         if image:
             subprocess.run(["docker", "rm", "-f", container_name(name)], capture_output=True)
         proc = subprocess.Popen(
-            launch_argv(name, launch, image), stdin=subprocess.DEVNULL,
+            launch_argv(name, launch, image, ros_domain), stdin=subprocess.DEVNULL,
+            env={**os.environ, "ROS_DOMAIN_ID": str(ros_domain)},
             stdout=(open(log_path, "w") if log_path else subprocess.DEVNULL),
             stderr=subprocess.STDOUT, start_new_session=True)
     return RealHandle(name, proc, probe_argv, container_name(name) if launch and image else None)

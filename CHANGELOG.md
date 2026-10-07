@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.8
+
+- Pass the selected ROS domain to real-driver launch commands on the host and in driver containers, matching the sandbox instead of inheriting a different host default. Externally managed drivers remain unchanged.
+- Document native Fast DDS configuration for same-host containers with separate IPC namespaces, with a UDP profile and bounded software-graph lifecycle verification.
+
 ## 0.10.7
 
 - Offer the Panda / robosuite / LIBERO-PRO combination in guided setup after checking its default scene, camera and joint streams, and trajectory interface in freshly built Jazzy images. Selection and image preparation use the existing configuration contracts; no task-specific control logic is added. The evidence covers environment startup, not model-task success or every benchmark task.
