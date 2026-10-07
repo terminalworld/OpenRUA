@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.2
+
+- Keep CLI status and event inspection available when a shared service has stopped or its endpoint is invalid. Read retained records without changing the queue or resources, warn that recorded execution state may be stale, and preserve JSON output and event cursors. Sending, resuming and ending still require the live service.
+
 ## 0.10.1
 
 - Resolve manually entered agent manifests in keyboard setup before offering authentication choices. External API-capable plugins can be configured without borrowing another agent's key path; switching agents preserves unsaved model and authentication choices until the user explicitly saves.

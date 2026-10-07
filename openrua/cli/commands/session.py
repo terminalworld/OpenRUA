@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import sys
 import webbrowser
 from uuid import uuid4
 
@@ -18,24 +19,40 @@ def connect(args) -> Client:
     endpoint = paths.sandbox_dir(args.name, args.home) / "endpoint.json"
     try:
         return Client.from_file(endpoint)
-    except (OSError, KeyError, ValueError) as exc:
+    except (OSError, KeyError, ValueError, TypeError) as exc:
         raise UnavailableError(f"no usable shared service for {args.name!r}: {exc}",
                                hint="start it with openrua serve <robot> --name <name>") from exc
 
 
+def inspect_records(args):
+    """Read live data when available, otherwise explicitly identify retained data."""
+    directory = paths.sandbox_dir(args.name, args.home)
+    reason = 'no service endpoint'
+    if (directory / 'endpoint.json').exists():
+        try:
+            client = connect(args)
+            client.timeout = 3
+            return client.snapshot() if args.action == 'status' else client.events(args.after, args.limit)
+        except (UnavailableError, OSError, RuntimeError, ValueError, KeyError) as exc:
+            reason = str(exc)
+    try:
+        store = SQLiteStore.open_readonly(directory / 'conversation.sqlite')
+        try:
+            result = store.snapshot() if args.action == 'status' else store.events(args.after, args.limit)
+        finally:
+            store.close()
+    except (sqlite3.Error, OSError, ValueError, KeyError, TypeError) as exc:
+        raise UnavailableError(f'{reason}; cannot read retained records: {exc}',
+                               hint='check the retained session name and directory') from exc
+    print(f'[session] Reading retained records ({reason}); recorded execution status may be stale. '
+          'No resources were restarted or stopped.', file=sys.stderr)
+    return result
+
+
 def run(args) -> int:
     operation = args.action
-    directory = paths.sandbox_dir(args.name, args.home)
-    if operation in {"status", "events"} and not (directory / "endpoint.json").exists():
-        try:
-            store = SQLiteStore.open_readonly(directory / "conversation.sqlite")
-            try:
-                result = store.snapshot() if operation == "status" else store.events(args.after, args.limit)
-            finally:
-                store.close()
-        except (sqlite3.Error, ValueError) as exc:
-            raise UnavailableError(str(exc), hint="check the retained session name and directory") from exc
-        print(json.dumps(result, indent=2, ensure_ascii=False))
+    if operation in {'status', 'events'}:
+        print(json.dumps(inspect_records(args), indent=2, ensure_ascii=False))
         return 0
     client = connect(args)
     try:
@@ -45,11 +62,7 @@ def run(args) -> int:
             if not args.no_open:
                 webbrowser.open(client.url)
             return 0
-        if operation == "status":
-            result = client.snapshot()
-        elif operation == "events":
-            result = client.events(args.after, args.limit)
-        elif operation == "end":
+        if operation == "end":
             client.end()
             result = {"closed": True, "files_retained": True}
         elif operation == "send":

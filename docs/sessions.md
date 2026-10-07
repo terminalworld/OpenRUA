@@ -30,8 +30,9 @@ For ordinary use, `openrua` creates a new session with an automatic ID;
 `openrua --resume` finds a previous conversation and `--name NAME` explicitly
 starts or reconnects to a named session;
 `openrua --gui` selects the browser and `openrua --cli` selects plain chat.
-Preparation is still explicit: the keyboard setup reports missing images and login
-without building or authenticating for you. The service runs in the background,
+Choose **Prepare and start** in keyboard setup to build missing images and check
+readiness; **Save and check** only inspects preparation. Native login or explicit
+API configuration remains separate; OpenRUA never changes billing mode for you. The service runs in the background,
 with startup output in `~/.openrua/launches/<name>/service.log`.
 
 The following foreground form is useful for development and debugging:
@@ -69,6 +70,13 @@ The cursor is an event sequence number. Raw and normalized events are both
 retained; reconnecting never reruns old commands. `send` prints its client and
 request IDs before sending. After a lost acknowledgement, inspect status or
 retry the same text using both `--client-id` and `--request-id`.
+
+`status` and `events` also work after the service stops. If the endpoint is
+missing, invalid or unreachable, these commands read the retained database and
+warn on stderr that the recorded execution status may be stale. JSON on stdout
+keeps the same format, including event cursors and limits. Inspection does not
+restart resources, change the queue or confirm that robot motion has stopped.
+Commands such as `send`, `resume` and `end` still require the live service.
 
 ## Browser client
 
