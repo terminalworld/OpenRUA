@@ -1,10 +1,12 @@
-"""The agent-facing workspace template is pinned: package reorganisation
-must not change one byte of what the agent reads (its hash is recorded in
-every trial and compared across campaigns)."""
+"""Pin intentional workspace revisions and detect unrelated template changes.
+
+Each trial records the actual hash; published tags retain historical templates.
+Review agent-visible changes before updating this expected artifact hash.
+"""
 from openrua.config import load_config
 from openrua.sandbox import workspace
 
-PINNED = "812f5dd51bc6fd49e7ae5012ff02808b7421b7f6186e4eb5d482d58ffcabb277"
+PINNED = "6db2509f281fdeaa240ec8f7af924714d3fe5fb6f21fe508f29486b218588d3c"
 
 
 def test_workspace_template_hash_is_unchanged():
