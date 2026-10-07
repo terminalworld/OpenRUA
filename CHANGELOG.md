@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.9
+
+- Real-driver trial preflight no longer requires the simulator clock or forbids unlisted gripper interfaces. Explicit empty camera lists omit camera checks and the generated camera entry in `machine.yaml`; declared joint and control interfaces remain checked.
+- Clarify that interactive startup waits for graph visibility while trial preflight checks declared interfaces. Software ROS checks cover valid profiles and rejection of an incorrect joint name; the bundled benchmark checks and manifests remain unchanged.
+
 ## 0.10.8
 
 - Pass the selected ROS domain to real-driver launch commands on the host and in driver containers, matching the sandbox instead of inheriting a different host default. Externally managed drivers remain unchanged.
