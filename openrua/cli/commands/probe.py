@@ -63,14 +63,14 @@ def run(args) -> int:
     discovery = _discovery(args)
     backend = {"kind": "real", "discovery": discovery}
     reach = sandbox_reachability(backend, "host", "probe", "")
-    reach["internet"] = "none"
     name = f"openrua-probe-{uuid.uuid4().hex[:6]}"
     with tempfile.TemporaryDirectory(prefix="openrua-probe-") as tmp:
         sandbox_up({"machine": {"workspace_template": None}}, Path(tmp) / "ws",
                    image=args.image or sandbox_image(args.distro), ros_domain=args.ros_domain,
                    name=name, seed_workspace=False, **reach)
         try:
-            print(draft_profile(read_graph(_exec_in(name)), discovery), end="")
+            print(draft_profile(read_graph(_exec_in(name)), discovery,
+                                ros_distro=args.distro), end="")
         finally:
             sandbox_down(name)
     return 0

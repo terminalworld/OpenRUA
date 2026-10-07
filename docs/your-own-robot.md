@@ -38,10 +38,16 @@ probed from its own sandbox: `openrua probe --name openrua`.
 
 Use `--ros-domain` and `--distro` to match the running robot, for example
 `openrua probe --host --ros-domain 7 --distro humble > ur5e.yaml`.
+The draft preserves this ROS distribution. Probing requires the matching sandbox
+image and access to the ROS graph; it does not require a model login or the
+OpenRUA proxy. The selected domain is used for this probe; pass it again when
+starting a session. With `--name`, the probe reuses the existing sandbox and
+leaves the deployment distribution as a TODO to review in the draft.
 A failed topic, action or service query stops the probe and reports the native
 error instead of producing a profile from incomplete query results. A missing
 robot description is optional: the draft leaves joint and frame facts for you
-to complete. Check the command's exit status before using the redirected file.
+to complete. Published URDFs are parsed from the native topic output, excluding
+its trailing document separator. Check the command's exit status before using the redirected file.
 
 ## What the agent reads
 

@@ -20,7 +20,9 @@ Run = Callable[[str], str]
 _URDF_FACTS = r"""
 import json, sys
 from urdf_parser_py.urdf import URDF
-r = URDF.from_xml_string(sys.stdin.read())
+# ros2 topic echo appends a YAML document separator after the XML field.
+xml = sys.stdin.read().strip().removesuffix("\n---")
+r = URDF.from_xml_string(xml)
 joints = [j for j in r.joints if j.type in ("revolute", "prismatic", "continuous")]
 print(json.dumps({
     "name": r.name,
@@ -66,7 +68,7 @@ def _pick(names: list[str], *needles: str) -> str | None:
     return None
 
 
-def draft_profile(graph: dict, discovery: dict) -> str:
+def draft_profile(graph: dict, discovery: dict, *, ros_distro: str | None = None) -> str:
     """A robot profile in YAML, filled from the graph where the graph
     knows; ``# TODO`` marks what a person must decide."""
     u = graph.get("urdf") or {}
@@ -93,7 +95,10 @@ def draft_profile(graph: dict, discovery: dict) -> str:
     y.append("machine:")
     y.append("  backend:")
     y.append("    kind: real")
-    y.append("    ros_distro: jazzy   # TODO: the distro the robot runs; the sandbox image follows from it")
+    if ros_distro is None:
+        y.append("    ros_distro: jazzy   # TODO: the distro the robot runs; the sandbox image follows from it")
+    else:
+        y.append(f"    ros_distro: {json.dumps(ros_distro)}")
     y.append("    # launch: <command that starts the driver>   # TODO if the graph is not already up")
     y.append("    discovery:")
     for k, v in discovery.items():

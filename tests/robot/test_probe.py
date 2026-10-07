@@ -1,5 +1,6 @@
 """The profile draft: read from the graph where it can, TODO where it cannot."""
 
+import pytest
 import yaml
 
 from openrua.robot.real.probe import draft_profile, read_graph
@@ -48,3 +49,35 @@ def test_draft_without_a_urdf_marks_the_arm_todo():
     assert d["backend"]["discovery"] == {"static_peers": ["10.0.0.2"]}
     assert d["arm"]["joints"] == [] and "# TODO: no revolute joints" in text
     assert "trajectory" not in d["ports"] and "planning" not in d
+
+
+def test_explicit_ros_release_is_preserved_in_profile():
+    graph = read_graph(_fake_run)
+    text = draft_profile(graph, {"network": "host"}, ros_distro="humble")
+    assert yaml.safe_load(text)["machine"]["backend"]["ros_distro"] == "humble"
+
+
+@pytest.mark.parametrize("separator", ["", "\n---\n"])
+def test_native_urdf_converter_accepts_ros_topic_document_separator(monkeypatch, capsys, separator):
+    import io
+    import json
+    import sys
+    import types
+    import xml.etree.ElementTree as ET
+    from openrua.robot.real.probe import _URDF_FACTS
+
+    class ParsedRobot:
+        @staticmethod
+        def from_xml_string(text):
+            root = ET.fromstring(text)
+            return types.SimpleNamespace(name=root.attrib["name"], joints=[], links=[],
+                                         get_root=lambda: "base")
+
+    package = types.ModuleType("urdf_parser_py")
+    module = types.ModuleType("urdf_parser_py.urdf")
+    module.URDF = ParsedRobot
+    monkeypatch.setitem(sys.modules, "urdf_parser_py", package)
+    monkeypatch.setitem(sys.modules, "urdf_parser_py.urdf", module)
+    monkeypatch.setattr(sys, "stdin", io.StringIO('<robot name="fixture"><link name="base"/></robot>' + separator))
+    exec(_URDF_FACTS, {})
+    assert json.loads(capsys.readouterr().out)["name"] == "fixture"
