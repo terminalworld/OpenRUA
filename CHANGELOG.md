@@ -4,6 +4,7 @@
 
 - Real-driver trial preflight no longer requires the simulator clock or forbids unlisted gripper interfaces. Explicit empty camera lists omit camera checks and the generated camera entry in `machine.yaml`; declared joint and control interfaces remain checked.
 - Clarify that interactive startup waits for graph visibility while trial preflight checks declared interfaces. Software ROS checks cover valid profiles and rejection of an incorrect joint name; the bundled benchmark checks and manifests remain unchanged.
+- Save robot resource metadata as complete snapshots. Concurrent readers retain the previous record until replacement, and failed writes preserve it instead of leaving an empty or partial state file.
 
 ## 0.10.8
 
