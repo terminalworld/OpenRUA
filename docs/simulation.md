@@ -95,6 +95,16 @@ when the host has nvidia-container-toolkit (under podman the same flag
 resolves through CDI: `nvidia-ctk cdi generate` once, see
 docs/podman.md).
 
+## Native DDS address messages
+
+With Fast DDS 2.6.12 on ROS 2 Humble, a container hostname can produce
+`IP_LOCATOR Error ... error format. Expected X.X.X.X` before DNS resolution
+succeeds. The native parser first checks for a literal IPv4 address, then
+[resolves hostnames through DNS](https://github.com/eProsima/Fast-DDS/blob/v2.6.12/src/cpp/rtps/xmlparser/XMLElementParser.cpp#L2946-L2963).
+This message alone does not mean robot communication failed. If startup
+checks or ROS requests also fail, inspect those errors; an actual DNS lookup
+failure reports `DNS server did not return any IPv4 address`.
+
 ## A simulator or benchmark of your own
 
 A new benchmark on an existing engine is a benchmark file plus the
