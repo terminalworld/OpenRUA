@@ -77,6 +77,10 @@ warn on stderr that the recorded execution status may be stale. JSON on stdout
 keeps the same format, including event cursors and limits. Inspection does not
 restart resources, change the queue or confirm that robot motion has stopped.
 Commands such as `send`, `resume` and `end` still require the live service.
+Robot resource metadata is replaced as a complete snapshot, so concurrent
+readers do not see a partially written record. A failed write preserves the
+previous record and reports an error; that record is not proof of current
+physical robot state.
 
 ## Browser client
 

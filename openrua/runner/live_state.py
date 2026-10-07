@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
+import tempfile
 
 import yaml
 
@@ -22,8 +24,17 @@ def path(name: str, home: Path) -> Path:
 
 
 def save(name: str, home: Path, **facts) -> None:
-    paths.sandbox_dir(name, home).mkdir(parents=True, exist_ok=True)
-    path(name, home).write_text(yaml.safe_dump(facts, sort_keys=False))
+    """Replace retained facts only after the complete new snapshot is written."""
+    target = path(name, home)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    content = yaml.safe_dump(facts, sort_keys=False)
+    fd, temporary = tempfile.mkstemp(prefix=".state-", dir=target.parent)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as stream:
+            stream.write(content)
+        os.replace(temporary, target)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
 
 
 def load(name: str, home: Path, *, require_running: bool = True) -> dict:
