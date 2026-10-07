@@ -6,7 +6,7 @@ Review agent-visible changes before updating this expected artifact hash.
 from openrua.config import load_config
 from openrua.sandbox import workspace
 
-PINNED = "6db2509f281fdeaa240ec8f7af924714d3fe5fb6f21fe508f29486b218588d3c"
+PINNED = "60aac9da1cbfe59a70c0834bdade67a2275bbcc8f960bc81c24b45a294b14852"
 
 
 def test_workspace_template_hash_is_unchanged():

@@ -31,7 +31,7 @@ def parse_args(argv=None):
                         help="trajectory duration in seconds (default: 4)")
     parser.add_argument("--at", choices=("tcp", "hand"), default="hand",
                         help="point to place at the target pose (default: hand)")
-    return parser.parse_args(argv)
+    return parser.parse_intermixed_args(argv)
 
 
 def main(argv=None) -> None:
