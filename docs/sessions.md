@@ -197,7 +197,8 @@ is not yet supported; the structured chat is the shared-input path today.
 
 The service binds only to `127.0.0.1`, on a chosen free port by default. Its
 address and random bearer token are stored in the session's `endpoint.json`
-with mode `0600`. The client reads that file; tokens are not placed in URLs or
+with mode `0600`. The complete file becomes visible atomically and cannot
+overwrite another session owner. The client reads that file; tokens are not placed in URLs or
 printed in startup messages. Native records and the SQLite journal are private
 session data. Do not publish them as application assets.
 

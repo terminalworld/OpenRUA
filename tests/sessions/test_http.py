@@ -122,9 +122,45 @@ def test_endpoint_token_is_private_and_cannot_overwrite_another_owner(tmp_path):
     assert Client.from_file(path).token == "secret"
     with pytest.raises(FileExistsError):
         write_endpoint(path, "http://127.0.0.1:1234", "different")
+    assert Client.from_file(path).token == "secret"
+    assert list(tmp_path.iterdir()) == [path]
     with pytest.raises(ValueError, match="local"):
         Client("http://remote.example:1234", "secret")
 
+
+
+def test_endpoint_is_invisible_until_connection_facts_are_complete(tmp_path, monkeypatch):
+    from openrua.sessions import client as module
+    path = tmp_path / "endpoint.json"
+    dump = module.json.dump
+
+    def interrupted_write(facts, stream):
+        stream.write("{")
+        stream.flush()
+        assert not path.exists(), "a reconnect must not see incomplete connection facts"
+        stream.seek(0)
+        stream.truncate()
+        dump(facts, stream)
+
+    monkeypatch.setattr(module.json, "dump", interrupted_write)
+    write_endpoint(path, "http://127.0.0.1:1234", "secret")
+    assert Client.from_file(path).token == "secret"
+    assert list(tmp_path.iterdir()) == [path]
+
+
+def test_failed_endpoint_write_leaves_no_connection_file(tmp_path, monkeypatch):
+    from openrua.sessions import client as module
+    path = tmp_path / "endpoint.json"
+
+    def failed_write(facts, stream):
+        stream.write("{")
+        stream.flush()
+        raise OSError("disk write failed")
+
+    monkeypatch.setattr(module.json, "dump", failed_write)
+    with pytest.raises(OSError, match="disk write failed"):
+        write_endpoint(path, "http://127.0.0.1:1234", "secret")
+    assert list(tmp_path.iterdir()) == []
 
 def test_http_timeout_does_not_cancel_accepted_command(tmp_path):
     async def run():

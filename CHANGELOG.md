@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.6
+
+- Publish session connection files atomically so reconnecting clients cannot read incomplete JSON. Keep credentials private, refuse to overwrite another session owner, and clean up unsuccessful writes.
+- Include the ROS readiness deadline fix from 0.10.5, whose release validation caught this connection-file race before publication.
+
 ## 0.10.5
 
 - Enforce the real-backend ROS readiness deadline even when a probe command stalls. Stop the owned probe process group, preserve its diagnostic output, and cap polling sleeps to the remaining time. This does not stop an externally owned robot driver.
