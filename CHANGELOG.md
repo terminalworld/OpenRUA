@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.15
+
+- Stop robot profile probing when a topic, action or service query fails, preserving the native error or timeout output instead of printing an incomplete profile as a successful result. Missing optional robot descriptions still produce a draft with TODO fields.
+- Clarify ROS domain and distribution selection when probing, and correct the real-robot example to distinguish interactive graph readiness from trial preflight checks.
+
 ## 0.10.14
 
 - Keep tool invocation details alongside returned output in the TUI and browser. Completed calls no longer replace their command or arguments with the result; empty outputs and later status updates retain the original details. Reconnecting reconstructs both sections from recorded events.
