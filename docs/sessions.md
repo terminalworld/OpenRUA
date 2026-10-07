@@ -359,6 +359,13 @@ had reached the lift time limit. Earlier failed checks remain part of the
 validation record. This single post-fix success does not establish a success
 rate or isolate the effect of the IK fix from variation in agent behavior.
 
+From 0.10.12, new Claude Code conversations expose native tool results as
+completed or failed items with expandable text output in the TUI and browser.
+A tool result is not a robot-task success judgment; the agent turn may still
+be running. Image payloads remain in native records, and saved workspace
+images can be opened through `/files`. Existing recorded events are not
+rewritten, so older transcripts may retain their original tool labels.
+
 ### Browser regression checks
 
 ```sh
