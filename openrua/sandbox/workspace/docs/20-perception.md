@@ -77,8 +77,10 @@ section: what → port → CLI → rclpy → tool → notes.
 ### B3. Depth and intrinsics
 
 - Depth: same pattern on the depth topic (`cam_snap.py` accepts a full
-  topic path; depth is 32-bit float meters; convert with
-  `imgmsg_to_cv2(msg, "passthrough")`).
+  topic path). ROS REP 118 defines `32FC1` depth in meters and `16UC1`
+  depth in millimeters. `cam_snap.py` saves native values unchanged in
+  `.npy`; check the message encoding before using them for measurements.
+  Convert with `imgmsg_to_cv2(msg, "passthrough")`.
 - Intrinsics: `ros2 topic echo /<name>/color/camera_info --once`
   (`k` = 3×3 camera matrix); pixels + depth → 3D points in the camera
   optical frame, then TF into `world`.
@@ -106,4 +108,7 @@ section: what → port → CLI → rclpy → tool → notes.
 - The odometry topic publishes only as the sim advances.
 
 **Tool**: `python3 tools/perception/px2world.py <camera> <u> <v>`;
-depth + intrinsics + TF for one pixel, printed as world x y z.
+depth + intrinsics + TF for one pixel, printed as world x y z in meters.
+The tool supports `32FC1` and `16UC1`, including row padding and either byte
+order. It expects the documented camera topic/frame naming and depth aligned
+with the color calibration; inspect and adapt it for other camera layouts.
