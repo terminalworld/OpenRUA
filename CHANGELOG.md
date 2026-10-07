@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Save robot resource metadata as complete snapshots. Concurrent readers retain the previous record until replacement, and failed writes preserve it instead of leaving an empty or partial state file.
+
 ## 0.10.8
 
 - Pass the selected ROS domain to real-driver launch commands on the host and in driver containers, matching the sandbox instead of inheriting a different host default. Externally managed drivers remain unchanged.
