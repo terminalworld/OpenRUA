@@ -347,6 +347,18 @@ with the natural-language requests. This single task is not a reliability
 estimate, a matched model comparison, or a benchmark score. See
 [agents.md](agents.md#structured-conversations-experimental) for protocol checks.
 
+With the 0.10.11 workspace, Claude Code (`claude-opus-5`, native login)
+also completed observation, cube lift, and placement in one native session.
+The three turns took about 252, 225, and 87 seconds, each within the same
+15-minute limit. Inspected images, finger feedback, and recorded depth-based
+measurements supported an approximately 8 cm lift followed by release on the
+table. The placement message queued during the lift; shutdown removed the
+containers and retained the workspace and conversation. The requests and
+workspace guidance were unchanged from the preceding 0.10.10 check, which
+had reached the lift time limit. Earlier failed checks remain part of the
+validation record. This single post-fix success does not establish a success
+rate or isolate the effect of the IK fix from variation in agent behavior.
+
 ### Browser regression checks
 
 ```sh
