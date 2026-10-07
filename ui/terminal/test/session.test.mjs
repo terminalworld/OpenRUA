@@ -521,3 +521,23 @@ test('temporary transport loss shows disconnected status and recovers without lo
   assert.equal((await call({op: 'writes'})).writes.filter(frame => frame.submit).length, 1);
   chat.stop(); await running;
 });
+
+test('tool completion retains invocation details alongside output and empty results', () => {
+  const view = new Transcript();
+  const event = data => view.event({kind: 'agent_event', data: {kind: 'item', turn_id: 'turn',
+    data: {item_id: 'tool', kind: 'tool', text: 'Bash', ...data}}});
+  event({phase: 'started', details: {command: 'ros2 topic list'}});
+  view.toggleTool('turn:tool');
+  event({phase: 'completed', output: '/camera'});
+  let rendered = view.render(100).join('\n');
+  assert.match(rendered, /ros2 topic list/);
+  assert.match(rendered, /\/camera/);
+  event({phase: 'completed'});
+  assert.match(view.render(100).join('\n'), /\/camera/);
+  event({phase: 'completed', output: ''});
+  rendered = view.render(100).join('\n');
+  assert.match(rendered, /ros2 topic list/);
+  assert.doesNotMatch(rendered, /\/camera/);
+  assert.match(rendered, /Output/);
+  assert.equal(view.tools.size, 1);
+});

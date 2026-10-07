@@ -67,14 +67,18 @@ export class Transcript extends Container {
       const tool = {...prior, component: item.component,
         label: plain(data.text ?? data.kind ?? prior?.label ?? 'Tool'),
         phase: plain(data.phase ?? prior?.phase ?? ''),
-        detail: plain(data.output ?? (data.details === undefined ? prior?.detail ?? '' : JSON.stringify(data.details, null, 2))),
+        details: data.details === undefined ? prior?.details : plain(JSON.stringify(data.details, null, 2)),
+        output: data.output === undefined ? prior?.output : plain(data.output),
         expanded: prior?.expanded ?? false};
       this.tools.set(key, tool); this.renderTool(tool);
     }
   }
 
   renderTool(tool) {
-    tool.component.setText(`${tool.expanded ? '▾' : '▸'} ${tool.phase} · ${tool.label}${tool.expanded ? '\n' + tool.detail : '  (/tools)'}`);
+    const sections = [];
+    if (tool.details !== undefined) sections.push(`Details\n${tool.details}`);
+    if (tool.output !== undefined) sections.push(`Output\n${tool.output}`);
+    tool.component.setText(`${tool.expanded ? '▾' : '▸'} ${tool.phase} · ${tool.label}${tool.expanded ? '\n' + sections.join('\n\n') : '  (/tools)'}`);
   }
 
   toggleTool(key) {

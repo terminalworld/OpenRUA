@@ -124,8 +124,12 @@ function event(record) {
   } else {
     out.el.querySelector("summary").textContent =
       `${data.phase} · ${data.text || data.kind}`;
-    out.el.querySelector("pre").textContent =
-      data.output || JSON.stringify(data.details || {}, null, 2);
+    if (data.details !== undefined) out.details = JSON.stringify(data.details, null, 2);
+    if (data.output !== undefined) out.output = String(data.output ?? "");
+    const sections = [];
+    if (out.details !== undefined) sections.push(`Details\n${out.details}`);
+    if (out.output !== undefined) sections.push(`Output\n${out.output}`);
+    out.el.querySelector("pre").textContent = sections.join("\n\n");
   }
 }
 function button(text, action, disabled = false) {

@@ -58,7 +58,7 @@ def test_browser_and_cli_queue_interrupt_edit_resume_and_end(tmp_path):
         await emit(native, "item", first, item_id="tool", kind="command", phase="completed", text="read sensors", output="camera ready")
         await playwright.expect(page.locator(".agent-output")).to_have_text("Checking the camera")
         await page.locator(".tool summary").click()
-        await playwright.expect(page.locator(".tool pre")).to_have_text("camera ready")
+        await playwright.expect(page.locator(".tool pre")).to_have_text("Output\ncamera ready")
         cli = Client(server.url, server.token)
         second = await asyncio.to_thread(cli.command, "enqueue", client_id="cli", request_id="second", text="Move to the bowl")
         await playwright.expect(page.locator("#queue-count")).to_have_text("1")
@@ -255,4 +255,32 @@ def test_browser_multiple_questions_and_optional_text_preserve_native_answers(tm
         assert native.writes[-1] == {'reply': 'multi', 'answers': {
             'locations': ['Near', 'Far', 'Shelf'], 'color': ['Green']}}
         assert len(store.snapshot()['state']['messages']) == 1
+    asyncio.run(browser_case(tmp_path, check))
+
+
+def test_browser_tool_completion_preserves_details_and_empty_output(tmp_path):
+    async def check(page, store, native, server):
+        await send(page, "Inspect interfaces")
+        first = store.snapshot()["state"]["active"]
+        await emit(native, "item", first, item_id="tool", kind="tool", phase="started",
+                   text="Bash", details={"command": "ros2 topic list"})
+        await page.locator(".tool summary").click()
+        await playwright.expect(page.locator(".tool pre")).to_contain_text("ros2 topic list")
+        await emit(native, "item", first, item_id="tool", kind="tool", phase="completed",
+                   text="Bash", output="/camera")
+        await playwright.expect(page.locator(".tool summary")).to_contain_text("completed")
+        await playwright.expect(page.locator(".tool pre")).to_contain_text("ros2 topic list")
+        await playwright.expect(page.locator(".tool pre")).to_contain_text("/camera")
+        await emit(native, "item", first, item_id="tool", kind="tool", phase="completed",
+                   text="Bash", output="")
+        await playwright.expect(page.locator(".tool pre")).not_to_contain_text("/camera")
+        await playwright.expect(page.locator(".tool pre")).to_contain_text("ros2 topic list")
+        await playwright.expect(page.locator(".tool pre")).to_contain_text("Output")
+        await page.reload()
+        await page.locator("#token").fill(server.token)
+        await page.get_by_role("button", name="Connect", exact=True).click()
+        await page.locator(".tool summary").click()
+        await playwright.expect(page.locator(".tool pre")).to_contain_text("ros2 topic list")
+        await playwright.expect(page.locator(".tool pre")).not_to_contain_text("/camera")
+        assert len([f for f in native.writes if "submit" in f]) == 1
     asyncio.run(browser_case(tmp_path, check))

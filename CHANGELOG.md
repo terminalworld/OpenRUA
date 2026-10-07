@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.10.14
+
+- Keep tool invocation details alongside returned output in the TUI and browser. Completed calls no longer replace their command or arguments with the result; empty outputs and later status updates retain the original details. Reconnecting reconstructs both sections from recorded events.
+
 ## 0.10.13
 
 - Show a temporary TUI connection loss as disconnected and retrying instead of leaving a stale working/ready status. Restore the current session status after reconnection without clearing drafts or local notices, duplicating tool output, or resending instructions.
