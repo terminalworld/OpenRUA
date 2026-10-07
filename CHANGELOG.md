@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.11
+
+- Send the configured hand link in IK starter-tool requests, so hand and TCP targets refer to the documented frame instead of an implicit planning-group tip. Native Panda IK/FK checks reproduce a 45-degree hand orientation error with the implicit tip and zero error with the explicit hand link.
+- This reviewed starter-tool fix updates newly seeded workspace templates. Existing workspaces and historical releases remain unchanged; no grasp strategy or agent workflow is added.
+
 ## 0.10.10
 
 - Decode depth pixels using the native ROS image encoding, byte order, and row stride. The coordinate starter tool accepts REP 118 float meters and raw integer millimeters, rejects invalid layouts and depths, and preserves raw saved arrays with accurate unit documentation.

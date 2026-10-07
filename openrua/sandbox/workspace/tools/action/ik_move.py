@@ -3,7 +3,7 @@
 
 Usage: python3 tools/action/ik_move.py <x> <y> <z> <qx> <qy> <qz> <qw> \
            [seconds=4] [--at tcp|hand]
-Pose is where the HAND frame goes; --at tcp aims the fingertip point
+Pose targets machine.yaml frames.hand; --at tcp aims the fingertip point
 instead, using machine.yaml hand.tcp_offset_m along the hand's +Z axis.
 Coordinates are in machine.yaml planning.planning_frame, not necessarily
 the world frame. IK failures
@@ -73,6 +73,7 @@ def main(argv=None) -> None:
         raise SystemExit("IK service unavailable")
     req = GetPositionIK.Request()
     req.ik_request.group_name = planning.get("group", "panda_arm")
+    req.ik_request.ik_link_name = m["frames"]["hand"]
     # machine fact: leave frame_id empty; poses are interpreted in the
     # planner's model frame (the arm base), see machine.yaml planning
     req.ik_request.pose_stamped.header.frame_id = ""
