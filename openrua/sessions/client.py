@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import tempfile
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlsplit
@@ -62,6 +63,11 @@ class Client:
 def write_endpoint(path: Path, url: str, token: str) -> None:
     """Publish connection facts privately; do not print or store tokens in URLs."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(fd, "w") as stream:
-        json.dump({"url": url, "token": token}, stream)
+    fd, temporary = tempfile.mkstemp(prefix=".endpoint-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "w") as stream:
+            json.dump({"url": url, "token": token}, stream)
+        # Publish complete facts atomically without replacing another owner.
+        os.link(temporary, path)
+    finally:
+        Path(temporary).unlink(missing_ok=True)

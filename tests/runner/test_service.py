@@ -74,5 +74,7 @@ def test_startup_timeout_does_not_kill_or_replay_the_owner(tmp_path):
         time.sleep(0.05)
     assert endpoint.exists()
     client = service.connect(endpoint)
-    assert client.snapshot()['state']['closed'] is False
-    client.end()
+    try:
+        assert client.snapshot()['state']['closed'] is False
+    finally:
+        client.end()
