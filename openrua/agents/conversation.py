@@ -18,6 +18,10 @@ class Event:
 
     A finished turn describes agent execution, not robot task success.
     Native events remain available for diagnostics without vendor parsing in clients.
+    input_required carries request_id and questions with id, text, choices and
+    optional boolean multiple, allow_other and secret fields (default false).
+    Replies contain choice labels or, when allowed, one free-text answer.
+    Plugins map these fields to their native question and answer formats.
     """
     kind: str
     turn_id: str | None = None

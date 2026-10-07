@@ -136,3 +136,16 @@ def test_tool_details_and_changes_are_preserved():
     frame['transcript']['items'][0]['steps'][0]['frames'][-1]['state'] = 'done'
     event = p.receive(frame).events[-1]
     assert event.kind == 'item' and event.data['phase'] == 'completed'
+
+
+def test_native_question_capabilities_use_the_shared_frontend_contract():
+    p = connected(); submit(p)
+    question = {'question_id': 'q', 'session_id': p.session_id, 'turn_id': 0, 'questions': [
+        {'id': 'locations', 'question': 'Which locations?', 'multi_select': True, 'allow_other': True,
+         'options': [{'id': 'near', 'label': 'Near'}, {'id': 'far', 'label': 'Far'}]}]}
+    event = p.receive(snapshot(p, questions=[question])).events[-1]
+    assert event.data['questions'] == [{'id': 'locations', 'text': 'Which locations?',
+        'choices': ['Near', 'Far'], 'secret': False, 'multiple': True, 'allow_other': True}]
+    body = p.respond(event.data['request_id'], {'locations': ['Near', 'Far', 'Shelf']}).outbound[0]['params']['body']
+    assert body == {'answers': {'locations': {'kind': 'multi_with_other',
+                                            'option_ids': ['near', 'far'], 'other_text': 'Shelf'}}}

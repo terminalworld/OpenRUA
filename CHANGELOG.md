@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.4
+
+- Honor native multiple-choice questions in the keyboard TUI. Toggle choices with Space or Enter, optionally write a custom answer when the native agent allows it, and confirm before sending. Escape cancels without replying.
+- Normalize Kimi question capabilities into the existing shared `multiple` field and an optional `allow_other` flag. Browser forms also support explicit custom answers. Native permission decisions remain single choice and are never answered automatically.
+
 ## 0.10.3
 
 - Parse the documented `ik_move.py --at tcp` option correctly, keeping its value separate from pose coordinates and duration. Clarify that targets use the planning frame.

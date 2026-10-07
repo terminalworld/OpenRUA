@@ -230,3 +230,29 @@ def test_browser_previews_saved_files_without_submitting_tasks(tmp_path):
         assert store.snapshot()["state"]["messages"] == []
         assert not any("submit" in f for f in native.writes)
     asyncio.run(browser_case(tmp_path, check, artifacts=WorkspaceFiles(workspace)))
+
+
+def test_browser_multiple_questions_and_optional_text_preserve_native_answers(tmp_path):
+    async def check(page, store, native, server):
+        await send(page, 'Inspect')
+        first = store.snapshot()['state']['active']
+        await emit(native, 'input_required', first, request_id='multi', questions=[
+            {'id': 'locations', 'text': 'Which locations?', 'choices': ['Near', 'Far'],
+             'multiple': True, 'allow_other': True},
+            {'id': 'color', 'text': 'Which color?', 'choices': ['Red', 'Blue'], 'allow_other': True}])
+        await page.locator('#question-list select').nth(0).select_option(['Near', 'Far'])
+        await page.get_by_label('Which locations? (another answer)', exact=True).fill('Shelf')
+        await page.locator('#question-list select').nth(1).select_option('Red')
+        await page.get_by_label('Which color? (another answer)', exact=True).fill('Green')
+        await playwright.expect(page.locator('#question-list select').nth(1)).to_have_value('')
+        # A subsequent predefined single choice replaces the custom response.
+        await page.locator('#question-list select').nth(1).select_option('Blue')
+        await playwright.expect(page.get_by_label('Which color? (another answer)', exact=True)).to_have_value('')
+        await page.get_by_label('Which color? (another answer)', exact=True).fill('Green')
+        assert not any('reply' in f for f in native.writes)
+        await page.get_by_role('button', name='Send answer', exact=True).click()
+        await until(lambda: any('reply' in f for f in native.writes))
+        assert native.writes[-1] == {'reply': 'multi', 'answers': {
+            'locations': ['Near', 'Far', 'Shelf'], 'color': ['Green']}}
+        assert len(store.snapshot()['state']['messages']) == 1
+    asyncio.run(browser_case(tmp_path, check))

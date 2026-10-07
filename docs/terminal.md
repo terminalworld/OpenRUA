@@ -89,6 +89,12 @@ while the agent works does not interrupt it; submitted instructions queue.
 A failed or unknown execution outcome pauses the queue for review. Client
 reconnection replays events without automatically resending instructions.
 
+For `/questions`, single choices use Enter. Multiple-choice requests use
+Space or Enter to toggle selections, followed by **Continue**. When the native
+agent allows a custom answer, **Write another answer** opens a text editor.
+Escape cancels without sending; a final confirmation sends the collected
+answers. Replies answer the pending question rather than enqueueing a new task.
+
 ## Current scope
 
 `/files` uses the existing read-only workspace API. Text previews scroll;
