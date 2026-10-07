@@ -328,9 +328,18 @@ new feedback and an image. The final instruction queued behind the preceding
 turn; fresh HTTP clients observed the same native conversation throughout.
 Recorded finger positions independently confirmed the open/close change.
 Both checks stopped their resources and retained readable workspace files.
-A separate Claude cube-grasp attempt did not finish within its five-minute
-limit and was interrupted; the basic control checks are not evidence of
-reliable grasping or benchmark success. See
+Separate Claude cube-grasp checks reached their five- and ten-minute limits
+before completing the task; their queued follow-up instructions stayed paused.
+
+With the 0.10.3 workspace, Codex (`gpt-5.6-sol`) completed an additional
+three-turn task: observe the scene, grasp and lift the cube, then place and
+release it on the table. The placement instruction queued behind the lift in
+the same native conversation. Saved before/lifted/placed images were inspected,
+and native depth-based measurements showed a rise of about 5 cm. Shutdown
+removed the session containers and retained the workspace. Each turn had a
+15-minute validation limit; no control program or grasp strategy was supplied
+with the natural-language requests. This single task is not a reliability
+estimate, a matched model comparison, or a benchmark score. See
 [agents.md](agents.md#structured-conversations-experimental) for protocol checks.
 
 ### Browser regression checks
