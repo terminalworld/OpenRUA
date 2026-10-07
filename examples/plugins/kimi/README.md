@@ -88,8 +88,10 @@ owner were checked with a local deterministic model endpoint and synthetic key:
 
 Protocol regressions also check duplicate/foreign snapshots, incremental text,
 tool output, late cancellation acknowledgements, structured answer encoding,
-and rejection of unknown completion states. Structured questions have protocol
-coverage but have not yet been exercised with an actual native question tool.
+and rejection of unknown completion states. The native `AskUserQuestion` tool was also exercised through the shared
+execution service: a single selection, multiple selections and a free-text
+answer returned to the native tool with their exact values. This check used the
+same deterministic local provider, not a paid model or a frontend interaction.
 
 A separate bounded real-provider check of native Kimi Code 2.1.1 against the
 same Moonshot endpoint completed a simple file task with two API requests and
