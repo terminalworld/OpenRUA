@@ -1,10 +1,12 @@
 """Preflight generation contract: the gate is GENERATED from the assembly
-config, so every promised capability must mint its check (and an absent
-capability its negative check). A regression that silently drops a check
+config. Declared ports mint positive checks; simulator-specific expectations
+stay in simulated trials. A regression that silently drops a check
 would otherwise pass every trial unnoticed.
 """
 
 from __future__ import annotations
+
+import pytest
 
 from openrua.config import load_config
 
@@ -30,6 +32,7 @@ def _names(cfg):
 
 
 _ARM_CFG = {"machine": {
+    "backend": {"kind": "sim"},
     "ports": {"trajectory": "/panda_arm_controller/follow_joint_trajectory",
               "twist": "/servo_node/delta_twist_cmds",
               "gripper": "/franka_gripper/gripper_action",
@@ -81,7 +84,7 @@ def test_unpromised_capabilities_mint_no_check():
         assert absent not in checks, absent
 
 
-def test_real_configs_generate_a_full_gate():
+def test_benchmark_configs_generate_a_full_gate():
     # The shipped resolved configs must all mint the baseline plus their
     # own promised capabilities (drift guard between configs and gate).
     from pathlib import Path
@@ -151,3 +154,36 @@ def test_aggregate_budget_scales_with_the_ceiling():
     n = len(preflight.build_checks(view, _Agent()))
     expected = n * preflight._CHECK_TIMEOUT_S + 60.0
     assert expected >= n * 60  # ceiling is at least 60 per check
+
+
+def test_real_gate_does_not_require_a_simulation_clock():
+    cfg = {"machine": {**_ARM_CFG["machine"], "backend": {"kind": "real"}}}
+    checks = _names(cfg)
+    assert "clock_topic" not in checks
+    for name in ("trajectory_action", "wrench_flow", "joint_states_flow",
+                 "joint_names_match_manual", "workspace_tools_importable"):
+        assert name in checks
+
+
+def test_real_gate_does_not_forbid_an_unlisted_gripper():
+    cfg = {"machine": {**_ARM_CFG["machine"], "backend": {"kind": "real"},
+                       "ports": {"trajectory": "/driver/follow_joint_trajectory"}}}
+    checks = _names(cfg)
+    assert "gripper_absent" not in checks
+    assert "trajectory_action" in checks
+
+
+@pytest.mark.parametrize("backend", ["real", "sim"])
+@pytest.mark.parametrize("cameras", [None, [], ["wrist_camera"]])
+def test_camera_declaration_agrees_with_workspace_and_gate(tmp_path, backend, cameras):
+    import yaml
+    from openrua.sandbox.workspace import write_machine_manifest
+    cfg = {"machine": {"backend": {"kind": backend}, "cameras": {"list": cameras}}}
+    target = tmp_path / "machine.yaml"
+    write_machine_manifest(cfg, target)
+    sensor_kinds = {entry["kind"] for entry in yaml.safe_load(target.read_text())["sensors"]}
+    checks = _names(cfg)
+    expected = cameras != []
+    assert ("camera_set" in sensor_kinds) == expected
+    assert ("camera_frame_flow" in checks) == expected
+    assert ("camera_depth_intrinsics_flow" in checks) == expected

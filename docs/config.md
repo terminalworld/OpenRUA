@@ -217,7 +217,7 @@ A simulated robot: a container running the bridge in the image its declaration w
 | key | type | default | meaning |
 |---|---|---|---|
 | `resolution` | list[int] | (640, 480) | width, height in pixels for every camera |
-| `names` | list[str] \| null | None | camera names; null = every camera the scene defines |
+| `list` | list[str] \| null | None | camera names; [] = none declared; null = every camera the scene defines |
 | `rate_hz` | float | 2.0 | wall-clock publish rate |
 | `render_mode` | 'on_demand' \| 'always' | 'on_demand' | render a camera only while subscribed, or always |
 | `record` | list[str] \| null | None | the cameras `openrua bench --record` captures when none are named: the first is a demo's main view, the second its inset |

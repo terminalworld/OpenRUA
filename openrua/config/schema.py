@@ -251,7 +251,7 @@ class Cameras(Strict):
                                         "in pixels for every camera")
     # yaml key is ``list``; the attribute cannot be, so it carries an alias
     names: list[str] | None = Field(default=None, alias="list",
-                                    description="camera names; null = every "
+                                    description="camera names; [] = none declared; null = every "
                                     "camera the scene defines")
     rate_hz: float = Field(default=2.0, description="wall-clock publish rate")
     render_mode: Literal["on_demand", "always"] = Field(

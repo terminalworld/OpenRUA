@@ -23,13 +23,19 @@ jobs:
 
   browser:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      matrix:
+        playwright: ["1.63.0"]
+    container:
+      image: mcr.microsoft.com/playwright/python:v${{ matrix.playwright }}-noble
+      options: --ipc=host
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -e '.[browser-test]'
-      - run: python -m playwright install --with-deps chromium
+      - run: pip install -e '.[browser-test]' 'playwright==${{ matrix.playwright }}'
       - run: pytest -q tests/web
 
   terminal:

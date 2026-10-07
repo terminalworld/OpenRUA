@@ -19,6 +19,12 @@ Python matrix. CI also runs browser tests in Chromium. To run them locally:
 .venv/bin/pytest -q tests/web
 ```
 
+CI runs these same checks in the [official Playwright image](https://playwright.dev/python/docs/ci#via-containers),
+which already contains the browsers and their system dependencies. The browser
+job's single version setting in `.github/workflows/ci.yml` selects both the image
+and the Python package; update them together there. The job has a 15-minute
+limit so dependency or test failures cannot occupy a runner indefinitely.
+
 The default [Pi terminal](ui/terminal/README.md) has a separate Node test job.
 With the Python development environment activated, install `.[dev,pi]`, then run
 `npm ci --prefix ui/terminal --ignore-scripts` and

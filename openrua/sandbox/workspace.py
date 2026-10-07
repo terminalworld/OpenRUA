@@ -157,6 +157,13 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
         arm_sensors.append(
             {"kind": "wrench", "port": aports.get("wrench"),
              "type": "geometry_msgs/msg/WrenchStamped", **tag})
+    camera_sensors = []
+    if m.get("cameras", {}).get("list") != []:
+        camera_sensors.append(
+            {"kind": "camera_set",
+             "topics": "/<name>/color/image_raw, /<name>/depth/image_raw, "
+                       "/<name>/color/camera_info",
+             "discover": "ros2 topic list | grep image_raw"})
     manifest = {
         "schema": "openrua/machine-manifest v1",
         "robot": m.get("robot", {}),
@@ -175,10 +182,7 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
             {"kind": "odometry", "port": ports.get("odom"),
              "type": "nav_msgs/msg/Odometry",
              "frame": m.get("base", {}).get("frame")},
-            {"kind": "camera_set",
-             "topics": "/<name>/color/image_raw, /<name>/depth/image_raw, "
-                       "/<name>/color/camera_info",
-             "discover": "ros2 topic list | grep image_raw"},
+            *camera_sensors,
         ],
         "planning": m.get("planning", {}),
         "hand": m.get("hand", {}),
