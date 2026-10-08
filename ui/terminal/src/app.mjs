@@ -1,7 +1,7 @@
 import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, SelectList, Spacer, Text,
   TuiMainScreen, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
-import {Transcript, editorTheme, plain, selectTheme} from './view.mjs';
+import {Frame, Transcript, editorTheme, plain, selectTheme} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
 
@@ -60,6 +60,13 @@ export class Chat {
 
   say(message) { if (!this.done) { this.notice.setText(plain(message)); this.ui.requestRender(); } }
 
+  // Every dialog is a framed overlay sized to the terminal; the frame caps its own
+  // height so the bottom edge is drawn even when the content is longer.
+  dialog(component, {width = '85%', share = 0.8} = {}) {
+    const maxLines = () => Math.max(3, Math.floor((this.ui.terminal?.rows ?? 24) * share));
+    return this.ui.showOverlay(new Frame(component, {maxLines}), {width, maxHeight: `${Math.round(share * 100)}%`});
+  }
+
   picker(title, items, select) {
     if (!items.length) { this.say('Nothing to show.'); return; }
     const menu = new SelectList(items, 8, selectTheme);
@@ -67,7 +74,7 @@ export class Chat {
     box.addChild(new Text(plain(title), 1, 1)); box.addChild(menu);
     box.addChild(new Text('↑/↓ select · Enter confirm · Esc back', 1, 1));
     box.handleInput = data => menu.handleInput(data);
-    const handle = this.ui.showOverlay(box, {width: '85%', maxHeight: '80%'});
+    const handle = this.dialog(box);
     menu.onCancel = () => handle.hide();
     menu.onSelect = item => {
       handle.hide();
@@ -86,10 +93,10 @@ export class Chat {
     const box = new Container(); box.addChild(new Text(plain(title), 1, 1)); box.addChild(editor);
     box.addChild(new Text('Enter submit · Ctrl+J newline · Esc cancel', 1, 1));
     Object.defineProperty(box, 'focused', {get: () => editor.focused, set: value => { editor.focused = value; }});
-    const handle = this.ui.showOverlay(box, {width: '85%', maxHeight: '80%'});
     box.handleInput = data => {
       if (matchesKey(data, 'escape')) handle.hide(); else editor.handleInput(data);
     };
+    const handle = this.dialog(box);
     editor.onSubmit = text => {
       if (!text.trim()) return;
       handle.hide();

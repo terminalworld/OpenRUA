@@ -54,7 +54,7 @@ export async function browseWorkspace(chat, path = '') {
       const back = () => { handle.hide(); void browseWorkspace(chat, path).catch(e => chat.say(e.message)); };
       const refresh = () => { handle.hide(); void show().catch(e => chat.say(e.message)); };
       const preview = new FilePreview(file, back, refresh, () => chat.ui.requestRender());
-      const handle = chat.ui.showOverlay(preview, {width: '90%', maxHeight: '85%'});
+      const handle = chat.dialog(preview, {width: '90%', share: 0.85});
     };
     await show();
   });
