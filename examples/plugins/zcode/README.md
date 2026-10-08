@@ -4,12 +4,51 @@ This example connects the original **ZCode CLI 0.16.9** to OpenRUA's shared
 chat through an external manifest. It is not a bundled agent or a setup-menu
 option. Use an OpenRUA source checkout and OpenRUA **0.8.1 or later**.
 
-The current example supports **explicit BigModel prepaid API access**, using
-`glm-4.5-air` at `https://open.bigmodel.cn/api/paas/v4`. Native subscription
-reuse is not supported yet. It never chooses API billing after a login error;
-without an explicit API selection it stops with configuration instructions.
-Coding Plan and prepaid endpoints are different; see the
-[official ZCode configuration guide](https://zcode.z.ai/en/docs/configuration).
+The example supports a limited native Coding Plan profile path and explicitly
+selected BigModel prepaid API access. **Neither native subscription validity nor
+OAuth account reuse is claimed.** Missing native login never selects API billing
+automatically.
+
+## Native Coding Plan preparation (experimental)
+
+This first version imports the **currently selected Coding Plan key provider**
+from native ZCode 0.16.9. It discovers `~/.zcode/v2/provider_config.json` or the
+same native layout under `ZCODE_DATA_BASE_DIR`, using the standard OpenRUA profile
+alias mechanism. A Coding Plan key pays against the provider's subscription;
+ordinary `api-key` providers are rejected in native mode even when one exists.
+
+Configure and select the plan provider in native ZCode first. Its selected rule
+must be self-contained, with `access.type: zhipu-coding-plan-api-key`, its key,
+and the official BigModel or Z.ai Anthropic endpoint. The pinned native CLI
+routes these endpoints through its official `zcode.z.ai` Coding Plan gateway. Template-only rules are
+not resolved by this example. Set this manifest's `default_model` to the native
+selection's `modelId`, then:
+
+```bash
+plugin="$(pwd)/examples/plugins/zcode/agent.yaml"
+openrua config set --agent "$plugin" --auth native
+openrua doctor --agent "$plugin"
+```
+
+Follow the image build and launch steps below. Each session receives only the
+selected provider in a private mode-0600 configuration, without other API
+providers, OAuth credentials or native history. Key changes take effect in new
+sessions. Local checks and synthetic fixtures do not establish subscription
+entitlement or successful robot tasks.
+
+**OAuth login accounts remain unsupported.** Upstream stores encrypted OAuth
+credentials beside other state and binds the default encryption secret to the
+host environment. This example neither copies rotating tokens nor mounts the
+entire native home into every session. Supporting that path requires a separate
+integration and real account validation; a directory link alone is insufficient.
+See the pinned [credential cipher](https://github.com/zai-org/ZCode/blob/29628c9acdb81b703bbd4080c207a0e7ce5e276e/apps/zcode-cli/packages/adapters/src/auth/credential-cipher.ts)
+and [provider schema](https://github.com/zai-org/ZCode/blob/29628c9acdb81b703bbd4080c207a0e7ce5e276e/packages/provider/src/config/provider-data-schema.ts).
+
+## Explicit prepaid API access
+
+The separately selected API mode uses `glm-4.5-air` at
+`https://open.bigmodel.cn/api/paas/v4`. Without an explicit API selection, a
+missing or unsupported native profile stops with configuration instructions.
 
 ## What was checked
 
@@ -99,3 +138,14 @@ use; runtime model/endpoint overrides are deliberately rejected by this example.
 Do not add a subscription credential file to its API profile. ZCode's native
 subscription credential encryption depends on the original host environment,
 so mounting a login directory alone does not establish compatibility.
+
+## Native preparation validation
+
+Synthetic profiles were loaded by the real pinned CLI in a container with
+`--network none`, and a native session was created without submitting a prompt.
+Unit tests cover discovery, private session configs, rejection of unsupported
+native profiles and preservation of explicit API mode. Kimi additionally shares
+the upstream refresh-lock directory and observes atomic token-file replacement.
+These checks do not verify paid entitlement, online token refresh or robot tasks.
+After obtaining a subscription, validate one small native conversation and its
+continuation before testing robot control; do not switch to API on login failure.

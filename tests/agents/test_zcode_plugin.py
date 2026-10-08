@@ -17,7 +17,7 @@ def test_external_plugin_loads_and_does_not_appear_as_a_bundled_option():
     assert agent.name == 'zcode'
     assert all(m.name != 'zcode' for m in agents.manifests())
     assert not agent.inspect_login(Path('/missing')).available
-    with pytest.raises(ValueError, match='native subscription'):
+    with pytest.raises(ValueError, match='native'):
         agent.prepare_profile(Path('/missing'), Path('/unused'))
 
 

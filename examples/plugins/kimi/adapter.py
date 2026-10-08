@@ -1,4 +1,4 @@
-"""Experimental Kimi Code plugin with explicit, isolated Moonshot API auth."""
+"""Experimental Kimi Code plugin with native OAuth or explicit Moonshot API auth."""
 from __future__ import annotations
 
 import json
@@ -16,14 +16,75 @@ class Kimi(Agent):
         if self.version != '2.1.1':
             raise ValueError('this plugin supports Kimi Code 2.1.1 only')
 
+    def _native(self, source):
+        try:
+            import tomllib
+        except ImportError:
+            try:
+                import tomli as tomllib
+            except ImportError:
+                raise ValueError('native Kimi profiles require Python 3.11+ or: pip install tomli') from None
+        try:
+            data = tomllib.loads((source / 'config.toml').read_text())
+            models = data.get('models', {})
+            chosen = models.get(data.get('default_model'), {})
+            provider = data.get('providers', {}).get(chosen.get('provider'), {})
+            oauth = provider.get('oauth', {})
+            if (chosen.get('model') != self.default_model or
+                    provider.get('type') != 'kimi' or
+                    provider.get('base_url', '').rstrip('/') != 'https://api.kimi.com/coding/v1' or
+                    oauth.get('storage') != 'file' or oauth.get('key') != 'oauth/kimi-code' or
+                    oauth.get('oauth_host', 'https://auth.kimi.com').rstrip('/') != 'https://auth.kimi.com'):
+                raise ValueError('native Kimi requires the selected official OAuth model; set default_model in the external manifest to its model ID')
+            token_file = source / 'credentials/kimi-code.json'
+            token = json.loads(token_file.read_text())
+            if not isinstance(token, dict) or not all(isinstance(token.get(k), str) and token[k].strip()
+                                                      for k in ('access_token', 'refresh_token')):
+                raise ValueError('native Kimi OAuth credentials are incomplete; run kimi and /login')
+            if (not isinstance(chosen.get('max_context_size', 131072), int) or
+                    chosen.get('max_context_size', 131072) <= 0 or
+                    not isinstance(chosen.get('capabilities', []), list) or
+                    not all(isinstance(c, str) for c in chosen.get('capabilities', []))):
+                raise ValueError('native Kimi model metadata is invalid')
+            return chosen, token_file
+        except (OSError, UnicodeError, tomllib.TOMLDecodeError, json.JSONDecodeError, AttributeError, TypeError):
+            raise ValueError('native Kimi profile is missing or invalid; run kimi and /login') from None
+
     def inspect_login(self, source):
-        return ProfileLogin(False, 'native subscription reuse is not validated for this experimental plugin; explicitly configure API auth')
+        try:
+            self._native(source)
+        except ValueError as error:
+            return ProfileLogin(False, str(error))
+        return ProfileLogin(True, 'native OAuth files found locally; subscription and refresh are not verified')
 
     def login_hint(self, creds_home):
-        return 'select this manifest with config set --auth api --api-key-file /absolute/path/to/key; native subscription reuse is not yet supported'
+        return 'run kimi and /login for native subscription access; API use requires config set --auth api --api-key-file /absolute/path/to/key'
 
     def prepare_profile(self, source, dest, *, require_credentials=True):
-        raise ValueError(self.login_hint(source))
+        chosen, token_file = self._native(source)
+        directory, _ = _copy_profile(source, dest, None, False, '')
+        q = json.dumps
+        # Keep only the selected managed model, never a fallback API provider.
+        content = ('default_model = "openrua"\ntelemetry = false\nauto_session_title = false\nbuiltin_product_skills = false\n'
+                   '[providers."managed:kimi-code"]\ntype = "kimi"\nbase_url = "https://api.kimi.com/coding/v1"\napi_key = ""\n'
+                   '[providers."managed:kimi-code".oauth]\nstorage = "file"\nkey = "oauth/kimi-code"\n'
+                   '[models.openrua]\nprovider = "managed:kimi-code"\nmodel = ' + q(chosen['model']) + '\n'
+                   'max_context_size = ' + str(int(chosen.get('max_context_size', 131072))) + '\n'
+                   'capabilities = ' + q(chosen.get('capabilities', ['tool_use', 'image_in'])) + '\n')
+        with open(directory / 'config.toml', 'x', encoding='utf-8',
+                  opener=lambda p, f: os.open(p, f, 0o600)) as stream:
+            stream.write(content)
+        # Native refresh atomically replaces files; locks live under oauth/.
+        # Share both directories, while sessions stay in the private home.
+        (directory / 'credentials').mkdir(mode=0o700)
+        (directory / 'oauth').mkdir(mode=0o700)
+        (source / 'oauth').mkdir(mode=0o700, exist_ok=True)
+        def secrets():
+            current = json.loads(token_file.read_text())
+            return [current[k] for k in ('access_token', 'refresh_token') if current.get(k)]
+        return PreparedProfile(directory, (*self.sandbox_mounts(directory),
+            f'{token_file.parent.resolve()}:/kimi-home/credentials',
+            f"{(source / 'oauth').resolve()}:/kimi-home/oauth"), secrets)
 
     def prepare_api_profile(self, key_file, dest):
         key = read_api_key(key_file)

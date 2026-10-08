@@ -1,4 +1,4 @@
-# Experimental external plugin. Explicit Moonshot API only; see README.md.
+# Experimental external plugin. Native OAuth is pending live validation; see README.md.
 name: kimi
 default_model: kimi-k2.6
 binary: kimi
@@ -14,9 +14,12 @@ install: apt-get update && apt-get install -y --no-install-recommends curl ca-ce
   /usr/local/bin/kimi && kimi --version && rm -rf /var/lib/apt/lists/*
 whitelist:
 - ^api\.moonshot\.ai$
+- ^api\.kimi\.com$
+- ^auth\.kimi\.com$
 credentials:
   dirname: kimi
-  filename: config.toml
+  filename: credentials/kimi-code.json
+  native_dir: .kimi-code
   config_env: KIMI_CODE_HOME
   mount_point: /kimi-home
 version_argv:

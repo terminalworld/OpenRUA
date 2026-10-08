@@ -4,10 +4,42 @@ This example connects the original **Kimi Code 2.1.1** to OpenRUA shared chat.
 It uses an external manifest and requires an OpenRUA source checkout with
 OpenRUA **0.10.0 or later**. It is not a bundled agent or a guided-setup option.
 
-The example supports **explicit Moonshot API access**, using `kimi-k2.6` at
-`https://api.moonshot.ai/v1`. It does not yet reuse a native Kimi subscription.
-A Kimi Coding subscription/key is not interchangeable with an Open Platform
-key. Missing native login never selects API billing automatically.
+The example supports native Kimi Code OAuth profile staging and explicitly
+selected Moonshot API access. **Native subscription requests and refresh have
+not been tested with a paid account.** A Kimi Coding subscription/key is not
+interchangeable with a Moonshot Open Platform key. Missing native login never
+selects API billing automatically.
+
+## Native subscription preparation (experimental)
+
+On the host, run the pinned Kimi Code 2.1.1 CLI and use `/login`. This first
+implementation supports its default official OAuth service, file credentials,
+and selected model. It discovers `~/.kimi-code` (or `KIMI_CODE_HOME`) and creates
+an absent OpenRUA credential-directory alias. Existing explicit profiles win.
+On Python 3.10, first install the plugin's TOML reader with `pip install tomli`;
+Python 3.11 and later include it.
+
+Set `default_model` in this external manifest to the selected model's `model`
+ID in your native `config.toml`; a mismatch fails with instructions, rather
+than recording one model and running another. Then select native auth:
+
+```bash
+plugin="$(pwd)/examples/plugins/kimi/agent.yaml"
+openrua config set --agent "$plugin" --auth native
+openrua doctor --agent "$plugin"
+```
+
+Follow the image build and launch steps below. Doctor only checks local files;
+it does not establish an active subscription. Sessions receive private configs
+containing only that managed model, with no prepaid provider fallback. The
+native `credentials/` and `oauth/` directories are shared mounts so atomic token
+replacement and upstream refresh locks stay visible to the host and other
+sessions. History, server state and workspace files remain session-local.
+OpenRUA does not implement token refresh itself. Non-default OAuth endpoints,
+keyring storage and legacy Python Kimi CLI profiles are not supported here.
+
+The source contract is pinned to [Kimi 2.1.1 OAuth storage and refresh](https://github.com/MoonshotAI/kimi-code/tree/21406fb4c805cc8c715e6d1f16ad3fb5f25f4fe3/packages/oauth/src).
+
 
 ## Configure and start
 
@@ -106,7 +138,7 @@ recalled a marker supplied in the first. That check used two API requests and
 13 output tokens, with no tools or robot actions. It establishes basic shared
 chat with this provider, not robot-task performance.
 
-Native subscription reuse, physical robots, ARM installation, interactive
+Live subscription use and refresh, physical robots, ARM installation, interactive
 native TUI behavior, and benchmark accounting/reproduction remain unvalidated.
 Headless and native-terminal commands are supplied, but shared chat has the
 lifecycle checks listed above. To change the model or endpoint, edit the
@@ -116,3 +148,14 @@ because the upstream local server API is experimental.
 
 See the [official local server API](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/reference/server-api.md)
 and [Kimi source](https://github.com/MoonshotAI/kimi-code).
+
+## Native preparation validation
+
+Synthetic profiles were loaded by the real pinned CLI in a container with
+`--network none`, and a native session was created without submitting a prompt.
+Unit tests cover discovery, private session configs, rejection of unsupported
+native profiles and preservation of explicit API mode. Kimi additionally shares
+the upstream refresh-lock directory and observes atomic token-file replacement.
+These checks do not verify paid entitlement, online token refresh or robot tasks.
+After obtaining a subscription, validate one small native conversation and its
+continuation before testing robot control; do not switch to API on login failure.

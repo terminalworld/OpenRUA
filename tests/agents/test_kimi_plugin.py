@@ -17,7 +17,7 @@ def test_external_manifest_uses_the_existing_contract_without_becoming_a_default
     assert agent.name == 'kimi'
     assert all(m.name != 'kimi' for m in agents.manifests())
     assert not agent.inspect_login(Path('/missing')).available
-    with pytest.raises(ValueError, match='native subscription'):
+    with pytest.raises(ValueError, match='native'):
         agent.prepare_profile(Path('/missing'), Path('/unused'))
 
 

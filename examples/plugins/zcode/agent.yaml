@@ -1,4 +1,4 @@
-# Experimental external plugin: explicit BigModel API mode only. See README.md.
+# Experimental external plugin: native Coding Plan key profiles or explicit API. See README.md.
 name: zcode
 default_model: glm-4.5-air
 binary: zcode
@@ -16,9 +16,12 @@ install: apt-get update && apt-get install -y --no-install-recommends curl ca-ce
   && rm -rf /var/lib/apt/lists/*
 whitelist:
 - ^open\.bigmodel\.cn$
+- ^api\.z\.ai$
+- ^zcode\.z\.ai$
 credentials:
   dirname: zcode
   filename: provider_config.json
+  native_dir: .zcode
   config_env: ZCODE_DATA_BASE_DIR
   mount_point: /zcode-home
 version_argv:
