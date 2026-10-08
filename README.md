@@ -281,14 +281,34 @@ launch it); everything else is optional. Pass yours as a path
 
 ## Results
 
-Detailed results and analysis are available in our [paper](https://arxiv.org/abs/2610.02459).
+Results below are from our [paper](https://arxiv.org/abs/2610.02459), evaluated
+zero-shot in simulation without privileged simulator state or access to the
+benchmark's success predicate during execution.
 
-| Benchmark | Agent | Model (reasoning effort) | Success |
-|---|---|---|---|
-| CaP-Bench | Claude Code | Claude Opus 5 (high) | 99.0% |
-| LIBERO-PRO | Claude Code | Claude Opus 5 (high) | 87.0% |
-| LIBERO-10 (LIBERO-PRO) | Claude Code | Claude Opus 5 (high) | 72.5% |
-| LIBERO-10 (LIBERO-PRO) | Codex | GPT-6 Astra (medium) | 62.5% |
+Main benchmark results use Claude Code with Claude Opus 5 at high reasoning effort:
+
+| Benchmark | Evaluation scope | Success |
+|---|---|---|
+| CaP-Bench | Seven manipulation tasks | 99.0% |
+| LIBERO-PRO | All four suites, both perturbation types | 87.0% |
+| RoboCasa365 | Overall across 50 target tasks | 39.4% |
+
+On RoboCasa365, success is **26.3% on seen composite tasks** and **28.1% on
+unseen composite tasks**, with task templates defined by the benchmark's
+pretraining split.
+
+The model comparison uses the **LIBERO-10 suite of LIBERO-PRO**, with both
+perturbation types and 200 trials per configuration:
+
+| Agent | Model (reasoning effort) | Success |
+|---|---|---|
+| Claude Code | Claude Sonnet 5 (high) | 24.0% |
+| Claude Code | Claude Opus 5 (high) | 72.5% |
+| Claude Code | Claude Fable 5.1 (high) | 75.0% |
+| Codex | GPT-6 Astra (medium) | 62.5% |
+| Codex | GPT-6 Astra (high) | 69.0% |
+
+See the paper for baselines, evaluation protocols and detailed analysis.
 
 ## Use your own robot
 
