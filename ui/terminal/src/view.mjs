@@ -1,4 +1,4 @@
-import {Container, Markdown, Spacer, Text} from '@earendil-works/pi-tui';
+import {Container, Markdown, Spacer, Text, sliceByColumn, visibleWidth} from '@earendil-works/pi-tui';
 
 // Control bytes must not become terminal instructions, including OSC clipboard writes.
 export const plain = value => String(value ?? '').replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, '');
@@ -11,6 +11,33 @@ const markdownTheme = {heading: bold, link: accent, linkUrl: muted, code: accent
   codeBlock: text => text, codeBlockBorder: muted, quote: muted, quoteBorder: muted,
   hr: muted, listBullet: accent, bold, italic: style(3, 23), strikethrough: style(9, 29), underline: style(4, 24)};
 
+
+// A bordered dialog for overlays. Pi composites an overlay only over the columns it
+// covers, so without a frame the transcript shows through on both sides and the
+// dialog is indistinguishable from the conversation. Every line is padded to the
+// full width and the box is capped at maxLines so the bottom edge always shows.
+export class Frame extends Container {
+  constructor(child, {maxLines = () => Infinity} = {}) {
+    super();
+    this.child = child;
+    this.maxLines = maxLines;
+    this.addChild(child);
+    Object.defineProperty(this, 'focused', {get: () => child.focused, set: value => { child.focused = value; }});
+  }
+
+  handleInput(data) { return this.child.handleInput?.(data); }
+
+  render(width) {
+    const inner = Math.max(1, width - 2);
+    const limit = Math.max(1, this.maxLines() - 2);
+    const lines = this.child.render(inner).slice(0, limit).map(line => {
+      const fit = visibleWidth(line) > inner ? sliceByColumn(line, 0, inner, true) : line;
+      return `${muted('│')}${fit}${' '.repeat(Math.max(0, inner - visibleWidth(fit)))}${muted('│')}`;
+    });
+    const edge = '─'.repeat(inner);
+    return [muted(`┌${edge}┐`), ...lines, muted(`└${edge}┘`)];
+  }
+}
 
 export class Transcript extends Container {
   constructor() { super(); this.turns = new Map(); this.tools = new Map(); }

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.17
+
+- Draw every TUI dialog (`/files`, `/tools`, `/queue`, `/questions`, confirmations, text editing and file previews) inside a bordered frame padded to its full width. Pi composites an overlay only over the columns it covers, so the conversation showed through on both sides of an unframed dialog and the two were hard to tell apart. The frame caps its own height so its bottom edge is always drawn.
+- Checked with the Node test suite against the real local service and in a pseudo-terminal with the actual TUI. No session, API or workspace-reading behavior changed.
+
 ## 0.10.16
 
 - Parse robot descriptions returned by native ROS topic echo by removing its trailing document separator before XML parsing. Previously, valid published URDFs could silently leave joint and frame fields empty in the draft.

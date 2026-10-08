@@ -541,3 +541,31 @@ test('tool completion retains invocation details alongside output and empty resu
   assert.match(rendered, /Output/);
   assert.equal(view.tools.size, 1);
 });
+
+test('dialogs are framed and padded so the transcript cannot show through them', async t => {
+  const {Frame} = await import('../src/view.mjs');
+  const {Text} = await import('@earendil-works/pi-tui');
+  const frame = new Frame(new Text('short\n' + 'x'.repeat(40) + '\nthird\nfourth', 0, 0), {maxLines: () => 5});
+  const lines = frame.render(20);
+  assert.equal(lines.length, 5);
+  assert.match(lines[0], /┌─+┐/);
+  assert.match(lines.at(-1), /└─+┘/);
+  for (const line of lines) assert.equal((await import('@earendil-works/pi-tui')).visibleWidth(line), 20);
+  assert.match(lines[1].replace(/\x1b\[[0-9;]*m/g, ''), /^│short {13}│$/);
+  const {client} = await fixture(t);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20});
+  t.after(() => chat.stop());
+  const running = chat.run();
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  chat.transcript.addChild(new Text('TRANSCRIPT '.repeat(20), 0, 0));
+  terminal.output = '';
+  await chat.submit('/files');
+  await new Promise(r => setTimeout(r, 80));
+  const rows = terminal.output.split('\n').map(row => row.replace(/\x1b\[[0-9;]*[A-Za-z]/g, ''));
+  const framed = rows.filter(row => row.includes('│'));
+  assert.ok(framed.some(row => row.includes('Workspace /')));
+  for (const row of framed) assert.doesNotMatch(row.slice(row.indexOf('│'), row.lastIndexOf('│')), /TRANSCRIPT/);
+  terminal.input('\x1b');
+  chat.stop(); await running;
+});

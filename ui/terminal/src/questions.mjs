@@ -22,7 +22,7 @@ export function answerQuestion(chat, question, accept) {
   box.addChild(new Text(question.multiple
     ? '↑/↓ move · Space/Enter toggle · Continue to review · Esc cancel'
     : '↑/↓ select · Enter confirm · Esc cancel', 1, 1));
-  const handle = chat.ui.showOverlay(box, {width: '85%', maxHeight: '80%'});
+  const handle = chat.dialog(box);
   const refresh = () => {
     for (const item of items) {
       if (item.kind === 'choice') item.label = `${question.multiple ? selected.has(item.value) ? '[x] ' : '[ ] ' : ''}${plain(item.value)}`;
