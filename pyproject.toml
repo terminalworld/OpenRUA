@@ -33,7 +33,7 @@ pi = []  # Compatibility extra; Pi is now the default terminal.
 tui = []  # Compatibility extra; the terminal interface is installed by default.
 browser-test = ["pytest", "playwright>=1.50,<2"]
 demo = ["pillow", "numpy", "imageio", "imageio-ffmpeg"]
-dev = ["pytest", "import-linter", "pillow", "numpy", "imageio", "imageio-ffmpeg"]
+dev = ["tomli>=2; python_version < '3.11'", "pytest", "import-linter", "pillow", "numpy", "imageio", "imageio-ffmpeg"]
 
 [project.urls]
 Homepage = "https://github.com/terminalworld/OpenRUA"

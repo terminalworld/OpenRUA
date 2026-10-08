@@ -268,9 +268,9 @@ list; `openrua bench --config <name>` runs one.
 Experimental external plugins are available for
 [Kimi Code](examples/plugins/kimi/README.md) and
 [ZCode](examples/plugins/zcode/README.md). Both have passed small real-provider
-file tasks and two-turn shared-chat checks. They currently require explicitly
-configured API access; native subscription reuse and robot tasks remain
-unvalidated. They are not default setup choices.
+file tasks and two-turn shared-chat checks. Their API paths have real-provider checks; native Kimi OAuth and ZCode
+Coding Plan key profile staging have offline checks only. ZCode OAuth reuse
+remains unsupported, and robot tasks remain unvalidated. They are not default setup choices.
 
 Bring your own agent. An agent is a manifest (how to install its CLI in the sandbox, which
 hosts it talks to, how it logs in) and a small hooks class (how to

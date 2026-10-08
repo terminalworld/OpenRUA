@@ -354,3 +354,16 @@ fixture. A bounded real-provider check also completed two shared-chat turns
 in the same native session and retained conversational context. Native
 subscription reuse and robot-task performance remain unvalidated; the example
 is not a default setup option.
+
+### Staging new integrations
+
+New integrations remain external manifests until their documented capabilities
+have been validated. Being present in `examples/plugins/` does not make a plugin
+a bundled setup choice. Record which paths have offline checks, real-provider
+checks and robot-task evidence separately before considering promotion.
+
+The Kimi example now stages native file-based OAuth profiles; the ZCode example
+imports self-contained, selected native Coding Plan key profiles. These paths
+have offline checks only. ZCode OAuth accounts remain unsupported. Both retain
+explicit API mode and reject unsupported native profiles without switching
+billing modes. See each example for prerequisites and the next live checks.

@@ -1,4 +1,4 @@
-"""Experimental ZCode 0.16.9 plugin using explicitly selected BigModel API auth."""
+"""Experimental ZCode plugin using native Coding Plan profiles or explicit API auth."""
 from __future__ import annotations
 
 import json
@@ -16,14 +16,63 @@ class ZCode(Agent):
         if self.version != "0.16.9":
             raise ValueError("this plugin supports ZCode CLI 0.16.9 only")
 
+    def _native(self, source):
+        try:
+            paths = [source / 'v2/provider_config.json', source / '.zcode/v2/provider_config.json']
+            present = [path for path in paths if path.is_file()]
+            if len(present) != 1:
+                raise ValueError('native ZCode profile path must identify exactly one provider_config.json')
+            document = json.loads(present[0].read_text())
+            if document.get('schemaVersion') != 1:
+                raise ValueError('unsupported native ZCode provider schema; expected schemaVersion 1')
+            config = document['config']
+            selected = config['defaultModelSelection']
+            rules = config['providerConfigRules']['providerRules']
+            matches = [r for r in rules if r.get('providerId') == selected['providerId']]
+            if len(matches) != 1 or matches[0].get('enabled') is False:
+                raise ValueError('select an enabled native Coding Plan provider in ZCode first')
+            provider = matches[0]['config']
+            access, api = provider['access'], provider['api']
+            if access.get('type') != 'zhipu-coding-plan-api-key':
+                raise ValueError('native ZCode currently supports Coding Plan key profiles only; OAuth accounts and ordinary API providers are not imported')
+            key = access.get('apiKey')
+            if not isinstance(key, str) or not key.strip() or any(c.isspace() for c in key):
+                raise ValueError('configure the Coding Plan key in native ZCode first')
+            if (api.get('type') != 'anthropic-messages' or api.get('baseUrl', '').rstrip('/') not in
+                    ('https://open.bigmodel.cn/api/anthropic', 'https://api.z.ai/api/anthropic')):
+                raise ValueError('native ZCode requires an official Coding Plan endpoint')
+            if selected['modelId'] != self.default_model:
+                raise ValueError('set default_model in the external manifest to the model selected in native ZCode')
+            # Resolve only a self-contained provider rule. Inherited templates
+            # need explicit materialization by the native client first.
+            return {"schemaVersion": 1, "config": {
+                "providerConfigRules": {"providerRules": [{"providerId": selected['providerId'],
+                    "enabled": True, "config": {"group": provider.get('group', 'standard-personal'),
+                    "access": {"type": access['type'], "apiKey": key},
+                    "api": {"type": api['type'], "baseUrl": api['baseUrl']},
+                    "personalModelIds": [selected['modelId']]}}]},
+                "modelConfigRules": {"providerModelRules": [], "manualProviderModelRules": []},
+                "defaultModelSelection": selected}}, key
+        except (OSError, UnicodeError, json.JSONDecodeError, KeyError, AttributeError, TypeError):
+            raise ValueError('native ZCode needs a complete Coding Plan provider_config.json; configure it in ZCode first (OAuth reuse is not supported yet)') from None
+
     def inspect_login(self, source):
-        return ProfileLogin(False, "this experimental plugin requires explicit API configuration; native account reuse is not yet supported")
+        try:
+            self._native(source)
+        except ValueError as error:
+            return ProfileLogin(False, str(error))
+        return ProfileLogin(True, 'native Coding Plan key profile found locally; subscription validity is not verified')
 
     def prepare_profile(self, source, dest, *, require_credentials=True):
-        raise ValueError(self.login_hint(source))
+        config, key = self._native(source)
+        directory, _ = _copy_profile(source, dest, None, False, '')
+        with open(directory / 'provider_config.json', 'x', encoding='utf-8',
+                  opener=lambda path, flags: os.open(path, flags, 0o600)) as stream:
+            json.dump(config, stream)
+        return PreparedProfile(directory, self.sandbox_mounts(directory), lambda: [key])
 
     def login_hint(self, creds_home):
-        return "select this manifest with config set --auth api --api-key-file /absolute/path/to/key; native subscription reuse is not yet supported"
+        return 'configure a native ZCode Coding Plan key profile; OAuth reuse is not supported; API use requires config set --auth api --api-key-file /absolute/path/to/key'
 
     def prepare_api_profile(self, key_file: Path, dest: Path) -> PreparedProfile:
         key = read_api_key(key_file)
