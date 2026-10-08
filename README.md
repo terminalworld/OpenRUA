@@ -291,11 +291,6 @@ Main benchmark results use Claude Code with Claude Opus 5 at high reasoning effo
 |---|---|---|
 | CaP-Bench | Seven manipulation tasks | 99.0% |
 | LIBERO-PRO | All four suites, both perturbation types | 87.0% |
-| RoboCasa365 | Overall across 50 target tasks | 39.4% |
-
-On RoboCasa365, success is **26.3% on seen composite tasks** and **28.1% on
-unseen composite tasks**, with task templates defined by the benchmark's
-pretraining split.
 
 The model comparison uses the **LIBERO-10 suite of LIBERO-PRO**, with both
 perturbation types and 200 trials per configuration:
