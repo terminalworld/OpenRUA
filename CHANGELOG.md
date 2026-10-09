@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.19
+
+- Style the terminal the way a coding agent's own terminal reads: the header names the session and the robot it is on (robot, simulator, benchmark scene, agent and model, task), your instructions carry a `❯`, agent text and each tool call carry a `⏺` coloured by phase (working, completed, failed), a tool call shows its command and the first three lines of its output folded under `⎿` with a count of the rest, and `/tools` opens or folds the whole output. Long lines are cut to the terminal width while folded and wrapped when opened.
+- The status line shows an animated `Working…` with elapsed time, a green `✓ Ready`, a yellow `‖ Paused` with the next step, and yellow warnings for a disconnected agent, pending questions and an unconfirmed send; a failed, interrupted or uncertain turn is marked in colour under the instruction it belongs to. The shortcut line is dimmed and turns yellow while the service is unreachable.
+- Sessions started from this version record the robot, simulator, benchmark, scene and task names in their retained state so the header can show them; older sessions show the header without them. Colours use the terminal's own 16-colour palette.
+
 ## 0.10.18
 
 - Open TUI dialogs (`/files`, `/tools`, `/queue`, `/questions`, confirmations, text editing and file previews) below the transcript in the input's place, the way a coding agent's own menus appear, instead of in a framed overlay drawn over the conversation. Nothing is covered; Escape closes the open dialog and never doubles as interrupt; a menu that opens an editor returns when the editor closes.

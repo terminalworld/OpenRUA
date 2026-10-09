@@ -161,7 +161,8 @@ def launch(args, values: dict[str, str]):
 def open_terminal(home, client, name: str, frontend: str = 'pi') -> int:
     from openrua.terminal.launcher import chat as terminal_chat
     return terminal_chat(client, name, lambda: history.entries(home),
-                         lambda name: history.open_session(home, name))
+                         lambda name: history.open_session(home, name),
+                         facts=lambda name: history.robot_facts(home, name))
 
 
 def choose_history(home, frontend: str = 'pi'):

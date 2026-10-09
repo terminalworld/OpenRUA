@@ -128,6 +128,7 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         state.stopped(request.name, request.home)
         print(f"[down] files retained at {sandbox_dir}; workspace: {workdir / 'workspace'}")
 
+    robot = cfg["machine"].get("robot", {})
     try:
         if cfg["machine"]["backend"]["kind"] == "sim":
             task = start_episode(machine, request.init_state).get("language", "")
@@ -141,14 +142,18 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                    auth_mode="api" if key_file is not None else "native",
                    options={**adapter.default_options,
                             **cfg.get("agent", {}).get("options", {})},
-                   workspace=str(workdir / "workspace"), task=task)
+                   workspace=str(workdir / "workspace"), task=task,
+                   # What the terminal shows in its header; the resolved config is
+                   # the source and these are its names, not a second copy of facts.
+                   robot=composed.robot, robot_model=robot.get("model"),
+                   simulator=composed.simulator, benchmark=composed.benchmark,
+                   suite=suite, task_id=task_id)
     except BaseException:
         stop_resources(sandbox_name, machine.shutdown)
         raise
     backend = cfg["machine"]["backend"]
     where = (f"simulated by {composed.simulator} (ROS 2 {backend.get('ros_distro', '?')})"
              if backend["kind"] == "sim" else "real")
-    robot = cfg["machine"].get("robot", {})
     return LiveRobot(
         name=request.name, sim=sim_name, sandbox=sandbox_name,
         robot=composed.robot, robot_model=robot.get("model", "?"), backend=where,
