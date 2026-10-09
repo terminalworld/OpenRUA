@@ -1,7 +1,7 @@
 import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, SelectList, Spacer, Text,
   TuiMainScreen, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
-import {Transcript, editorTheme, muted, plain, selectTheme} from './view.mjs';
+import {Transcript, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
 
@@ -19,10 +19,32 @@ const commands = [
   {name: 'quit', description: 'Detach; the session keeps running'},
 ];
 
+const KEYS = 'Enter send · Ctrl+J newline · / commands · Esc interrupt · Ctrl+D detach';
+const SPINNER = ['✻', '✢', '✳', '✶', '✳', '✢'];
+
+const elapsed = since => {
+  const seconds = Math.max(0, Math.round((Date.now() - since) / 1000));
+  return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m${String(seconds % 60).padStart(2, '0')}s`;
+};
+
+// The first lines of the screen: the product, the session, and the robot it is
+// on, as recorded when the session started (nothing when nothing was recorded).
+export function header(name, facts = {}) {
+  const lines = [`${bold('OpenRUA')}${name ? muted(' · ' + plain(name)) : ''}`];
+  const where = [facts.robot && (facts.robot_model ? `${facts.robot} (${facts.robot_model})` : facts.robot),
+    facts.backend === 'real' ? 'real robot' : facts.simulator && `on ${facts.simulator}`].filter(Boolean).join(' ');
+  const scene = [facts.benchmark, facts.suite && (facts.task_id != null ? `${facts.suite} #${facts.task_id}` : facts.suite)].filter(Boolean).join(' / ');
+  const agent = facts.agent && (facts.model ? `${facts.agent} (${facts.model})` : facts.agent);
+  const parts = [where, scene, agent].filter(Boolean).map(plain);
+  if (parts.length) lines.push(muted(parts.join(' · ')));
+  if (facts.task) lines.push(muted('task: ') + plain(facts.task));
+  return lines.join('\n');
+}
+
 // The component composition follows Pi's chat-simple example and interactive UI:
 // transcript, status, editor, completion; application actions stay callbacks.
 export class Chat {
-  constructor(client, {terminal = new ProcessTerminal(), pollMs = 350, history = false, name = ''} = {}) {
+  constructor(client, {terminal = new ProcessTerminal(), pollMs = 350, history = false, name = '', facts = {}} = {}) {
     this.client = client;
     this.history = history; this.result = {action: 'quit'};
     this.ui = new TuiMainScreen(terminal);
@@ -42,11 +64,14 @@ export class Chat {
     this.done = false;
     this.busy = false;
     this.panels = [];
-    this.ui.addChild(new Text(`\x1b[1mOpenRUA\x1b[22m · ${plain(name) || 'robot conversation'}`, 0, 0));
+    this.ui.addChild(new Text(header(name, facts), 0, 0));
     this.ui.addChild(this.transcript);
     this.ui.addChild(new Spacer(1)); this.ui.addChild(this.status);
     this.ui.addChild(this.notice); this.ui.addChild(this.editor);
-    this.ui.addChild(new Text('Enter send · Ctrl+J newline · / commands · Esc interrupt · Ctrl+D detach', 0, 0));
+    this.keys = new Text(muted(KEYS), 0, 0);
+    this.ui.addChild(this.keys);
+    this.started = null;
+    this.frame = 0;
     this.editor.onSubmit = text => { void this.submit(text); };
     this.ui.addInputListener(data => {
       if (this.panel) return;
@@ -175,17 +200,28 @@ export class Chat {
     const state = this.controller.state;
     const queued = state.messages.filter(message => message.status === 'queued').length;
     const requests = Object.values(state.requests).filter(r => r.status === 'pending').length;
-    this.status.setText(`${this.client.readOnly ? 'Read-only history' : state.closed ? 'Closed' : state.paused ? 'Paused' : state.active ? 'Working' : 'Ready'} · ${queued} queued` +
-      (state.connected ? '' : ' · agent disconnected') +
-      (requests ? ` · ${requests} question(s): /questions` : '') +
-      (this.controller.pending ? ' · send unconfirmed (/retry)' : ''));
+    if (state.active && !this.started) this.started = Date.now();
+    if (!state.active) this.started = null;
+    const extra = (queued ? [`${queued} queued`] : [])
+      .concat(state.connected || state.closed || this.client.readOnly ? [] : [yellow('agent disconnected')])
+      .concat(requests ? [yellow(`${requests} question(s): /questions`)] : [])
+      .concat(this.controller.pending ? [yellow('send unconfirmed: /retry')] : []);
+    let head;
+    if (this.client.readOnly) head = muted('◇ Read-only history');
+    else if (state.closed) head = muted('◇ Closed');
+    else if (state.paused) head = yellow('‖ Paused · /queue to review, /continue to go on');
+    else if (state.active) head = accent(`${SPINNER[this.frame++ % SPINNER.length]} Working… ${elapsed(this.started)}`);
+    else head = green('✓ Ready');
+    this.status.setText([head, ...extra].join(muted(' · ')));
+    this.keys.setText(muted(KEYS));
     this.ui.requestRender();
   }
 
   async poll() {
     try { await this.refresh(); } catch (error) {
       if (!this.done) {
-        this.status.setText(`Disconnected · retrying · ${plain(error.message)}`);
+        this.status.setText(yellow(`⚠ Disconnected · retrying · ${plain(error.message)}`));
+        this.keys.setText(yellow('The service is not answering; your draft and queued instructions are kept.'));
         this.ui.requestRender();
       }
     }
@@ -220,7 +256,7 @@ export class Chat {
           case '/retry': await this.controller.retry(); await this.refresh(); break;
           case '/tools':
             this.picker('Tool results', [...this.transcript.tools].map(([key, tool]) => ({value: key,
-              label: `${tool.expanded ? '▾' : '▸'} ${tool.phase} ${tool.label}`})),
+              label: `${tool.expanded ? '▾' : '▸'} ${tool.label}`, description: `${tool.phase}${tool.details ? ' · ' + plain(String(tool.details.command ?? tool.details.file_path ?? '')).split('\n')[0] : ''}`})),
               key => { this.transcript.toggleTool(key); this.ui.requestRender(); }); break;
           case '/queue':
             this.queue(); break;

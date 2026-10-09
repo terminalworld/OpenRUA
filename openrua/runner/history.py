@@ -123,6 +123,20 @@ class ArchiveClient:
         raise RuntimeError('cannot stop an execution owner through retained records')
 
 
+ROBOT_FACTS = ('robot', 'robot_model', 'simulator', 'benchmark', 'suite', 'task_id', 'task',
+               'agent', 'model', 'backend', 'status')
+
+
+def robot_facts(home: Path, name: str) -> dict:
+    """What the terminal header says about a session's robot, from the retained
+    state; empty when nothing was recorded (an older or external session)."""
+    try:
+        facts = live_state.load(name, home, require_running=False)
+    except (NotFound, OSError, ValueError):
+        return {}
+    return {key: facts[key] for key in ROBOT_FACTS if facts.get(key) is not None}
+
+
 def open_session(home: Path, name: str):
     directory = paths.sandbox_dir(name, home)
     endpoint = directory / 'endpoint.json'

@@ -131,9 +131,10 @@ def setup(values, choices, location, save, check, launch, agent_models,
             notice = str(exc) + '\n' + getattr(exc, 'hint', '')
 
 
-def chat(client, name, list_sessions, open_session, screen=run_screen):
+def chat(client, name, list_sessions, open_session, screen=run_screen, *, facts=None):
     while True:
-        spec = {'mode': 'chat', 'name': name, 'connection': connection(client)}
+        spec = {'mode': 'chat', 'name': name, 'connection': connection(client),
+                'facts': facts(name) if facts else {}}
         def display(files):
             spec['connection']['workspace'] = files
             return screen(spec)

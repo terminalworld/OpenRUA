@@ -23,7 +23,7 @@ try {
       const client = values.endpoint ? await Client.fromFile(values.endpoint)
         : spec.connection.read_only ? new ArchiveClient(spec.connection)
         : new Client(spec.connection.url, spec.connection.token);
-      screen = new Chat(client, {history: Boolean(values.input), name: spec.name});
+      screen = new Chat(client, {history: Boolean(values.input), name: spec.name, facts: spec.facts ?? {}});
     } else throw new Error('Unknown terminal screen.');
     const stop = () => screen.stop();
     process.once('SIGINT', stop); process.once('SIGTERM', stop);

@@ -57,15 +57,22 @@ test('Pi client shares the real owner queue, events, interruption and reconnect'
   let state = await until(client, s => s.active === first.id && s.messages.length === 2);
   assert.equal(state.messages[1].status, 'queued');
   await call({op: 'frame', frame: {kind: 'text_delta', turn_id: first.id, data: {item_id: 'answer', text: 'Inspecting **camera**'}}});
-  await call({op: 'frame', frame: {kind: 'item', turn_id: first.id, data: {item_id: 'tool', kind: 'tool', text: 'read image', phase: 'completed', output: 'frame saved'}}});
+  await call({op: 'frame', frame: {kind: 'item', turn_id: first.id, data: {item_id: 'tool', kind: 'tool', text: 'read image', phase: 'completed', output: 'frame saved\nline 2\nline 3\nline 4\nline 5'}}});
   for (let i = 0; i < 100 && view.tools.size === 0; i++) {
     await controller.refresh(); await new Promise(resolve => setTimeout(resolve, 5));
   }
   assert.equal(view.tools.size, 1);
-  assert.match(view.render(80).join('\n'), /Inspecting/);
-  assert.doesNotMatch(view.render(80).join('\n'), /frame saved/);
+  // Folded: the first three output lines and a count of the rest; /tools opens it all.
+  let rendered = view.render(80).join('\n');
+  assert.match(rendered, /Inspecting/);
+  assert.match(rendered, /⎿ .*frame saved/);
+  assert.match(rendered, /line 3/);
+  assert.doesNotMatch(rendered, /line 4/);
+  assert.match(rendered, /\+2 lines \(\/tools\)/);
   view.toggleTool(`${first.id}:tool`);
-  assert.match(view.render(80).join('\n'), /frame saved/);
+  rendered = view.render(80).join('\n');
+  assert.match(rendered, /line 5/);
+  assert.doesNotMatch(rendered, /\+2 lines/);
   await client.command('interrupt', {message_id: first.id});
   await call({op: 'frame', frame: {kind: 'turn_finished', turn_id: first.id, data: {status: 'interrupted'}}});
   state = await until(client, s => s.paused && !s.active);
@@ -538,8 +545,15 @@ test('tool completion retains invocation details alongside output and empty resu
   rendered = view.render(100).join('\n');
   assert.match(rendered, /ros2 topic list/);
   assert.doesNotMatch(rendered, /\/camera/);
-  assert.match(rendered, /Output/);
   assert.equal(view.tools.size, 1);
+  // A long line is cut to the width while folded and wrapped once opened.
+  view.toggleTool('turn:tool');
+  event({phase: 'completed', output: 'x'.repeat(150)});
+  rendered = view.render(40).join('\n');
+  assert.match(rendered, /x+.*…/);
+  assert.doesNotMatch(rendered, /x{40}/);
+  view.toggleTool('turn:tool');
+  assert.match(view.render(40).join('\n'), /x{36}\n/);
 });
 
 test('dialogs open below the transcript in the editor slot and Escape closes them without interrupting', {timeout: 15000}, async t => {

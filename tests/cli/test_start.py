@@ -189,7 +189,7 @@ def test_pi_resume_never_loads_new_settings_or_launches(tmp_path, monkeypatch):
     monkeypatch.setattr(start, 'launch', lambda *a: pytest.fail('must not launch'))
     monkeypatch.setattr(start.history, 'open_session', lambda home, name: ('client', name))
     opened = []
-    monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops: opened.append((client, name)) or 0)
+    monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops, **kw: opened.append((client, name)) or 0)
     assert start.run(args(tmp_path, '--resume', 'retained')) == 0
     assert opened == [('client', 'retained')]
 
@@ -236,7 +236,7 @@ def test_legacy_chat_tui_opens_the_same_keyboard_frontend(tmp_path, monkeypatch)
     monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
     monkeypatch.setattr(chat, 'connect', lambda args: type('Client', (), {})())
     opened = []
-    monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops: opened.append(name) or 0)
+    monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops, **kw: opened.append(name) or 0)
     assert main(['--home', str(tmp_path), 'chat', '--tui', '--name', 'old']) == 0
     assert opened == ['old']
 
