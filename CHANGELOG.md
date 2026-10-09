@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.18
+
+- Open TUI dialogs (`/files`, `/tools`, `/queue`, `/questions`, confirmations, text editing and file previews) below the transcript in the input's place, the way a coding agent's own menus appear, instead of in a framed overlay drawn over the conversation. Nothing is covered; Escape closes the open dialog and never doubles as interrupt; a menu that opens an editor returns when the editor closes.
+- Text previews now scroll: a window of lines sized to the terminal, moved with the arrow, page, Home and End keys, with the position shown. Previously the whole file was drawn and cut at the overlay height, and the scroll keys did nothing on the main screen.
+- Checked with the Node test suite against the real local service and in a pseudo-terminal with the actual TUI. Session, API and workspace reading are unchanged.
+
 ## 0.10.17
 
 - Draw every TUI dialog (`/files`, `/tools`, `/queue`, `/questions`, confirmations, text editing and file previews) inside a bordered frame padded to its full width. Pi composites an overlay only over the columns it covers, so the conversation showed through on both sides of an unframed dialog and the two were hard to tell apart. The frame caps its own height so its bottom edge is always drawn.

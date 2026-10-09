@@ -1,34 +1,56 @@
-import {Image, ScrollView, Text, VStack, matchesKey} from '@earendil-works/pi-tui';
-import {plain} from './view.mjs';
+import {Container, Image, Text, matchesKey} from '@earendil-works/pi-tui';
+import {muted, plain} from './view.mjs';
 
 // Presentation only: the existing authenticated API bounds all workspace reads.
-export class FilePreview extends VStack {
-  constructor(file, close, refresh, redraw) {
-    const metadata = new Text(`${plain(file.path)} · ${file.size} bytes\nSaved workspace file, not a live camera feed.`, 0, 1);
-    const content = file.kind === 'image'
+// Text is shown through a window of `rows()` lines that the arrow keys move;
+// the whole file is never drawn at once, so a long file cannot flood the screen.
+export class FilePreview extends Container {
+  constructor(file, close, refresh, redraw, rows = () => 24) {
+    super();
+    this.rows = rows;
+    this.offset = 0;
+    this.lines = file.kind === 'text' ? plain(file.text.slice(0, 131072)).split('\n') : [];
+    if (file.kind === 'text' && file.text.length > 131072) this.lines.push('[Preview limited to 131,072 characters.]');
+    this.addChild(new Text(`${plain(file.path)} · ${file.size} bytes\n${muted('Saved workspace file, not a live camera feed.')}`, 0, 1));
+    this.body = file.kind === 'image'
       ? new Image(file.data, file.mime, {fallbackColor: plain},
         {filename: plain(file.path), maxWidthCells: 72, maxHeightCells: 16})
-      : new Text(file.kind === 'text' ? plain(file.text.slice(0, 131072)) +
-        (file.text.length > 131072 ? '\n[Preview limited to 131,072 characters.]' : '')
-        : `Binary file (${plain(file.mime)}); inspect it with the agent or browser.`, 0, 0);
-    const scroll = new ScrollView(content, {scrollbar: 'auto'});
-    const hint = new Text('↑/↓, PgUp/PgDn scroll · r refresh · Esc back' +
-      (file.kind === 'image' ? '\nImage display depends on your terminal. Use the session browser if only metadata appears.' : ''), 0, 1);
-    super([metadata, {component: scroll, grow: 1, shrink: 1, minSize: 1}, hint]);
-    this.scroll = scroll;
+      : new Text(file.kind === 'text' ? '' : `Binary file (${plain(file.mime)}); inspect it with the agent or browser.`, 0, 0);
+    this.position = new Text('', 0, 0);
+    this.addChild(this.body); this.addChild(this.position);
+    this.addChild(new Text(muted((file.kind === 'text' ? '↑/↓, PgUp/PgDn scroll · ' : '') + 'r refresh · Esc back' +
+      (file.kind === 'image' ? '\nImage display depends on your terminal. Use the session browser if only metadata appears.' : '')), 0, 1));
+    this.window();
     this.handleInput = data => {
       if (matchesKey(data, 'escape')) close();
       else if (data === 'r') refresh();
       else {
-        if (matchesKey(data, 'up')) scroll.scrollBy(-1);
-        if (matchesKey(data, 'down')) scroll.scrollBy(1);
-        if (matchesKey(data, 'pageUp')) scroll.scrollBy(-Math.max(1, scroll.viewportHeight - 1));
-        if (matchesKey(data, 'pageDown')) scroll.scrollBy(Math.max(1, scroll.viewportHeight - 1));
-        if (matchesKey(data, 'home')) scroll.scrollToStart();
-        if (matchesKey(data, 'end')) scroll.scrollToEnd();
+        const page = Math.max(1, this.height() - 1);
+        if (matchesKey(data, 'up')) this.scroll(-1);
+        if (matchesKey(data, 'down')) this.scroll(1);
+        if (matchesKey(data, 'pageUp')) this.scroll(-page);
+        if (matchesKey(data, 'pageDown')) this.scroll(page);
+        if (matchesKey(data, 'home')) this.scroll(-this.lines.length);
+        if (matchesKey(data, 'end')) this.scroll(this.lines.length);
         redraw();
       }
     };
+  }
+
+  // Lines of text shown at once: half the terminal, so the conversation above stays in view.
+  height() { return Math.max(5, Math.floor(this.rows() / 2)); }
+
+  scroll(by) {
+    this.offset = Math.max(0, Math.min(this.offset + by, this.lines.length - this.height()));
+    this.window();
+  }
+
+  window() {
+    if (!this.lines.length) return;
+    const shown = this.lines.slice(this.offset, this.offset + this.height());
+    this.body.setText(shown.join('\n'));
+    this.position.setText(this.lines.length > shown.length
+      ? muted(`lines ${this.offset + 1}-${this.offset + shown.length} of ${this.lines.length}`) : '');
   }
 }
 
@@ -53,8 +75,8 @@ export async function browseWorkspace(chat, path = '') {
       if (chat.done) return;
       const back = () => { handle.hide(); void browseWorkspace(chat, path).catch(e => chat.say(e.message)); };
       const refresh = () => { handle.hide(); void show().catch(e => chat.say(e.message)); };
-      const preview = new FilePreview(file, back, refresh, () => chat.ui.requestRender());
-      const handle = chat.dialog(preview, {width: '90%', share: 0.85});
+      const preview = new FilePreview(file, back, refresh, () => chat.ui.requestRender(), () => chat.rows());
+      const handle = chat.dialog(preview);
     };
     await show();
   });
