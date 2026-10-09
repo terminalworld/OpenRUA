@@ -1,5 +1,5 @@
 import {Container, SelectList, Text, matchesKey} from '@earendil-works/pi-tui';
-import {plain, selectTheme} from './view.mjs';
+import {muted, plain, selectTheme} from './view.mjs';
 
 // Native question semantics are normalized by the agent plugin.
 export function answerQuestion(chat, question, accept) {
@@ -17,11 +17,11 @@ export function answerQuestion(chat, question, accept) {
   if (question.multiple) items.push({value: 'continue', label: 'Continue', kind: 'continue'});
   const menu = new SelectList(items, 8, selectTheme);
   const box = new Container();
-  const notice = new Text('', 1, 0);
-  box.addChild(new Text(plain(question.text), 1, 1)); box.addChild(menu); box.addChild(notice);
-  box.addChild(new Text(question.multiple
+  const notice = new Text('', 0, 0);
+  box.addChild(new Text(plain(question.text), 0, 1)); box.addChild(menu); box.addChild(notice);
+  box.addChild(new Text(muted(question.multiple
     ? '↑/↓ move · Space/Enter toggle · Continue to review · Esc cancel'
-    : '↑/↓ select · Enter confirm · Esc cancel', 1, 1));
+    : '↑/↓ select · Enter confirm · Esc cancel'), 0, 1));
   const handle = chat.dialog(box);
   const refresh = () => {
     for (const item of items) {

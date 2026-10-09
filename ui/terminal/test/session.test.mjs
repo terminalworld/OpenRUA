@@ -199,7 +199,7 @@ test('Pi keyboard editor submits, queues, confirms interruption and detaches', {
   await until(client, s => s.messages.length === 2);
   while (chat.busy) await new Promise(r => setTimeout(r, 5));
   terminal.input('\x1b');
-  assert.equal(chat.ui.hasOverlay(), true);
+  assert.notEqual(chat.panel, null);
   // Cancel is selected by default, so Escape alone cannot interrupt motion.
   let writes = (await call({op: 'writes'})).writes;
   assert.equal(writes.filter(w => w.interrupt).length, 0);
@@ -366,7 +366,7 @@ test('workspace reads and keyboard previews preserve the conversation and draft'
   // Refresh, blocked, camera, notes.
   terminal.input('\x1b[B'); terminal.input('\x1b[B'); terminal.input('\x1b[B'); terminal.input('\r');
   await new Promise(r => setTimeout(r, 80));
-  assert.equal(chat.ui.hasOverlay(), true);
+  assert.notEqual(chat.panel, null);
   assert.match(terminal.output, /measurement/);
   terminal.input('\x1b[6~'); // Page down through Pi's scroll view.
   terminal.columns = 50; terminal.rows = 18; terminal.resize();
@@ -542,30 +542,48 @@ test('tool completion retains invocation details alongside output and empty resu
   assert.equal(view.tools.size, 1);
 });
 
-test('dialogs are framed and padded so the transcript cannot show through them', async t => {
-  const {Frame} = await import('../src/view.mjs');
+test('dialogs open below the transcript in the editor slot and Escape closes them without interrupting', {timeout: 15000}, async t => {
   const {Text} = await import('@earendil-works/pi-tui');
-  const frame = new Frame(new Text('short\n' + 'x'.repeat(40) + '\nthird\nfourth', 0, 0), {maxLines: () => 5});
-  const lines = frame.render(20);
-  assert.equal(lines.length, 5);
-  assert.match(lines[0], /┌─+┐/);
-  assert.match(lines.at(-1), /└─+┘/);
-  for (const line of lines) assert.equal((await import('@earendil-works/pi-tui')).visibleWidth(line), 20);
-  assert.match(lines[1].replace(/\x1b\[[0-9;]*m/g, ''), /^│short {13}│$/);
-  const {client} = await fixture(t);
+  const {client, call} = await fixture(t);
   const terminal = new Terminal();
   const chat = new Chat(client, {terminal, pollMs: 20});
   t.after(() => chat.stop());
   const running = chat.run();
   for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  await chat.submit('Inspect');
+  const id = (await client.snapshot()).state.active;
+  await call({op: 'frame', frame: {kind: 'turn_started', turn_id: id, data: {}}});
   chat.transcript.addChild(new Text('TRANSCRIPT '.repeat(20), 0, 0));
+  const slot = chat.ui.children.indexOf(chat.editor);
+  chat.editor.setText('Keep my draft');
   terminal.output = '';
   await chat.submit('/files');
   await new Promise(r => setTimeout(r, 80));
-  const rows = terminal.output.split('\n').map(row => row.replace(/\x1b\[[0-9;]*[A-Za-z]/g, ''));
-  const framed = rows.filter(row => row.includes('│'));
-  assert.ok(framed.some(row => row.includes('Workspace /')));
-  for (const row of framed) assert.doesNotMatch(row.slice(row.indexOf('│'), row.lastIndexOf('│')), /TRANSCRIPT/);
-  terminal.input('\x1b');
+  assert.notEqual(chat.panel, null);
+  assert.equal(chat.ui.children[slot], chat.panel.component);
+  assert.equal(chat.ui.children.includes(chat.editor), false);
+  assert.equal(chat.ui.hasOverlay(), false);
+  const screen = terminal.output.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
+  assert.match(screen, /Workspace \//);
+  assert.doesNotMatch(screen, /[│┌└]/);
+  assert.ok(screen.indexOf('TRANSCRIPT') < screen.indexOf('Workspace /'));
+  // Refresh, blocked, camera, notes: open the long text and page through it.
+  terminal.input('\x1b[B'); terminal.input('\x1b[B'); terminal.input('\x1b[B'); terminal.input('\r');
+  await new Promise(r => setTimeout(r, 80));
+  const preview = chat.panel.component;
+  assert.equal(preview.offset, 0);
+  assert.match(preview.render(80).join('\n'), /lines 1-12 of 82/);
+  terminal.input('\x1b[6~');
+  assert.equal(preview.offset, 11);
+  terminal.input('\x1b[F');
+  assert.equal(preview.offset, 82 - 12);
+  terminal.input('\x1b'); await new Promise(r => setTimeout(r, 80));
+  assert.match(chat.panel.component.render(80).join('\n'), /Workspace \//);
+  terminal.input('\x1b'); await new Promise(r => setTimeout(r, 20));
+  assert.equal(chat.panel, null);
+  assert.equal(chat.ui.children[slot], chat.editor);
+  assert.equal(chat.editor.getText(), 'Keep my draft');
+  assert.equal((await call({op: 'writes'})).writes.filter(w => w.interrupt).length, 0);
+  assert.equal((await client.snapshot()).state.messages[0].cancel_requested, false);
   chat.stop(); await running;
 });

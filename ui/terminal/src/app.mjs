@@ -1,7 +1,7 @@
 import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, SelectList, Spacer, Text,
   TuiMainScreen, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
-import {Frame, Transcript, editorTheme, plain, selectTheme} from './view.mjs';
+import {Transcript, editorTheme, muted, plain, selectTheme} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
 
@@ -41,6 +41,7 @@ export class Chat {
     this.pollMs = pollMs;
     this.done = false;
     this.busy = false;
+    this.panels = [];
     this.ui.addChild(new Text(`\x1b[1mOpenRUA\x1b[22m · ${plain(name) || 'robot conversation'}`, 0, 0));
     this.ui.addChild(this.transcript);
     this.ui.addChild(new Spacer(1)); this.ui.addChild(this.status);
@@ -48,7 +49,7 @@ export class Chat {
     this.ui.addChild(new Text('Enter send · Ctrl+J newline · / commands · Esc interrupt · Ctrl+D detach', 0, 0));
     this.editor.onSubmit = text => { void this.submit(text); };
     this.ui.addInputListener(data => {
-      if (this.ui.hasOverlay()) return;
+      if (this.panel) return;
       if (matchesKey(data, 'ctrl+d') && !this.editor.getText()) { this.stop(); return {consume: true}; }
       if (matchesKey(data, 'ctrl+c')) {
         if (this.editor.getText()) this.editor.setText(''); else this.stop();
@@ -60,19 +61,44 @@ export class Chat {
 
   say(message) { if (!this.done) { this.notice.setText(plain(message)); this.ui.requestRender(); } }
 
-  // Every dialog is a framed overlay sized to the terminal; the frame caps its own
-  // height so the bottom edge is drawn even when the content is longer.
-  dialog(component, {width = '85%', share = 0.8} = {}) {
-    const maxLines = () => Math.max(3, Math.floor((this.ui.terminal?.rows ?? 24) * share));
-    return this.ui.showOverlay(new Frame(component, {maxLines}), {width, maxHeight: `${Math.round(share * 100)}%`});
+  // A dialog takes the editor's place below the transcript, the way a coding
+  // agent's own menus do: nothing is drawn over the conversation, and while one
+  // is open Escape closes it instead of meaning interrupt. Dialogs stack: a
+  // menu that opens an editor gets its place back when the editor closes.
+  get panel() { return this.panels.at(-1) ?? null; }
+
+  dialog(component) {
+    const slot = replacement => {
+      const at = this.ui.children.indexOf(this.panel?.component ?? this.editor);
+      if (at !== -1) this.ui.children.splice(at, 1, replacement);
+    };
+    slot(component);
+    const handle = {component, hide: () => {
+      const index = this.panels.indexOf(handle);
+      if (index === -1) return;
+      const top = index === this.panels.length - 1;
+      this.panels.splice(index, 1);
+      if (top) {
+        const next = this.panel?.component ?? this.editor;
+        const at = this.ui.children.indexOf(component);
+        if (at !== -1) this.ui.children.splice(at, 1, next);
+        this.ui.setFocus(next);
+      }
+      this.ui.requestRender();
+    }};
+    this.panels.push(handle);
+    this.ui.setFocus(component); this.ui.requestRender();
+    return handle;
   }
+
+  rows() { return this.ui.terminal?.rows ?? 24; }
 
   picker(title, items, select) {
     if (!items.length) { this.say('Nothing to show.'); return; }
     const menu = new SelectList(items, 8, selectTheme);
     const box = new Container();
-    box.addChild(new Text(plain(title), 1, 1)); box.addChild(menu);
-    box.addChild(new Text('↑/↓ select · Enter confirm · Esc back', 1, 1));
+    box.addChild(new Text(plain(title), 0, 1)); box.addChild(menu);
+    box.addChild(new Text(muted('↑/↓ select · Enter confirm · Esc back'), 0, 1));
     box.handleInput = data => menu.handleInput(data);
     const handle = this.dialog(box);
     menu.onCancel = () => handle.hide();
@@ -90,8 +116,8 @@ export class Chat {
   editText(title, initial, apply) {
     const editor = new Editor(this.ui, editorTheme);
     editor.setText(initial);
-    const box = new Container(); box.addChild(new Text(plain(title), 1, 1)); box.addChild(editor);
-    box.addChild(new Text('Enter submit · Ctrl+J newline · Esc cancel', 1, 1));
+    const box = new Container(); box.addChild(new Text(plain(title), 0, 1)); box.addChild(editor);
+    box.addChild(new Text(muted('Enter submit · Ctrl+J newline · Esc cancel'), 0, 1));
     Object.defineProperty(box, 'focused', {get: () => editor.focused, set: value => { editor.focused = value; }});
     box.handleInput = data => {
       if (matchesKey(data, 'escape')) handle.hide(); else editor.handleInput(data);
