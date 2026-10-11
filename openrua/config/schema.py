@@ -440,6 +440,14 @@ class RobotType(Strict):
         default="workspace", description="workspace tree seeded into the sandbox; null = none")
 
 
+class EmbodiedPlanning(Strict):
+    """The planner keys a simulator or a benchmark's world can change.
+    Fields default to None so only the keys written are merged in."""
+    planning_frame: str | None = Field(default=None, description="the frame MoveIt "
+                                       "plans in, where this world differs from the "
+                                       "robot type's")
+
+
 class Embodiment(Strict):
     """How an engine drives one robot type: the keys that depend on the
     simulator, merged over the robot type. Written under a simulator's
@@ -460,6 +468,8 @@ class Embodiment(Strict):
     control: Control | None = Field(default=None, description="how goals are executed "
                                     "and judged")
     tf: Tf | None = Field(default=None, description="what the bridge publishes on TF")
+    planning: EmbodiedPlanning | None = Field(default=None, description="planner keys "
+                                              "this world changes")
     base: Base | None = Field(default=None, description="mobile-base keys the engine "
                               "decides (body, effective speed)")
     cameras: Cameras | None = Field(default=None, description="robot-mounted cameras this "

@@ -72,12 +72,15 @@ def test_assembly_folds_type_simulator_and_benchmark(tmp_path):
     assert m["engine_model"] == "Panda"                          # simulators/robosuite.yaml
     assert m["joint_name_map"] == {"robot0_": "panda_", "gripper0_": "panda_"}
     assert m["controller_kp_scale"] == 10                        # libero_pro's scenes.robots.panda
+    assert m["planning"]["planning_frame"] == "world"            # libero_pro's world, over the type's
+    assert m["planning"]["moveit"] is True                       # the type's other planner keys stay
     assert m["backend"]["image"] == "openrua-sim-libero_pro"     # libero_pro's own install
     assert m["backend"]["ros_distro"] == "jazzy" and m["backend"]["simulator"] == {
         "engine": "openrua.robot.sim.bridge.engines.robosuite"}
     assert m["cameras"]["record"] == ["agentview", "robot0_eye_in_hand"]  # scenes.cameras
     cap = load_config("capbench", home=tmp_path)["machine"]
     assert cap["controller_kp_scale"] == 1                       # the engine's own value
+    assert cap["planning"]["planning_frame"] == "panda_link0"    # the robot type's
     assert cap["backend"]["ros_distro"] == "humble"
     assert cap["backend"]["image"] == "openrua-sim-robosuite"     # nothing of its own: the engine's
 

@@ -121,9 +121,10 @@ CLI → rclpy → tool → notes.
 
 ## Planning facts (MoveIt)
 
-- The planner's model frame is the ARM BASE even where message headers
-  say "world" (machine.yaml planning.planning_frame). Leave `frame_id`
-  EMPTY in IK requests; a base-frame label is rejected (-21).
+- IK reads poses, and FK returns them, in the frame machine.yaml names
+  as planning.planning_frame, whatever the message headers say: the
+  arm base on some machines, the world on others. Leave `frame_id`
+  EMPTY in IK requests.
 - The planning scene starts EMPTY; no world collision objects exist
   until you publish them; collision meshes carry roughly a centimeter
   of padding, so trust measurements over nominals.
