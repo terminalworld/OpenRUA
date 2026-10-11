@@ -9,7 +9,10 @@ def test_every_offered_combination_has_current_live_evidence(tmp_path):
         selection = row['selection']
         composed = compose(selection['robot'], selection['sim'], selection['bench'], tmp_path)
         assert composed.suite == row['suite'] and composed.task_id == row['task_id']
-        assert row['checks'] == dict(joint_states=True, camera_frame=True, trajectory=True)
+        checks = row['checks']
+        assert {'joint_states', 'camera_frame', 'trajectory'} <= set(checks) and all(checks.values())
+        if composed.cfg['machine'].get('planning', {}).get('moveit'):
+            assert checks.get('planning_frame') is True
         assert all(value['id'].startswith('sha256:') for value in row['images'].values())
 
 

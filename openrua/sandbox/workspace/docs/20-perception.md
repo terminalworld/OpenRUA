@@ -94,10 +94,8 @@ section: what → port → CLI → rclpy → tool → notes.
 
 ## Sensor-surface facts
 
-- The TF arm chain may be DISCONNECTED from the world tree (lookups
-  like world->hand fail with "unconnected trees"). For the hand pose
-  use the FK service; TF stamps are sim-time and a cached buffer can
-  serve stale poses after motion.
+- TF stamps are sim-time and a cached buffer can serve stale poses
+  after motion; the FK service gives the hand pose for given joints.
 - `/robot_description` publishes with TRANSIENT_LOCAL durability; a
   plain subscription misses it; request that QoS.
 - Camera topics may appear in the graph lazily; the manifest's

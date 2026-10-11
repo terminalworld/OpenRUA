@@ -165,6 +165,10 @@ scenes:
         hand: false
         base_body: robot0_link0    # the arm root rides the mobile base
                                    # (robot0_base is a static dummy on PandaOmron)
+      planning:
+        planning_frame: world  # MoveIt's model frame: the SRDF's floating virtual joint
+                               # world->panda_link0 follows the bridge's TF, so IK reads
+                               # poses and FK returns them in world coordinates
       base:
         body: mobilebase0_base     # the body that actually rides the base
                                    # (robot0_base is a static dummy)

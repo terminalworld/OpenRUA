@@ -5,7 +5,8 @@ from openrua.runner import bringup
 
 def test_peers_profile_lists_every_peer():
     xml = bringup.peers_profile(["rc-x-sim", "10.0.0.7"])
-    assert xml.count("<locator>") == 2
+    # the default multicast peer stays, so processes in one container meet
+    assert xml.count("<locator>") == 3 and "<address>239.255.0.1</address>" in xml
     assert "<address>rc-x-sim</address>" in xml and "<address>10.0.0.7</address>" in xml
 
 
@@ -29,7 +30,7 @@ def test_real_robot_joins_the_host_network_and_reaches_the_proxy_by_address(monk
         {"kind": "real", "discovery": {"static_peers": ["192.168.1.20", "192.168.1.21"]}},
         "openrua-internal", "r", "http://x")
     assert peers["static_peer"] == "192.168.1.20,192.168.1.21"
-    assert peers["peers_xml"].count("<locator>") == 2
+    assert peers["peers_xml"].count("<locator>") == 3
 
     server = bringup.sandbox_reachability(
         {"kind": "real", "discovery": {"discovery_server": "192.168.1.20:11811"}},

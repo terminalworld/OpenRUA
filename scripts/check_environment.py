@@ -64,7 +64,36 @@ assert future.result().accepted, 'trajectory rejected'
 result = future.result().get_result_async()
 wait(result.done, 'trajectory result')
 assert result.result().result.error_code == 0, str(result.result())
-print(json.dumps({'joint_states': True, 'camera_frame': True, 'trajectory': True}))
+checks = {'joint_states': True, 'camera_frame': True, 'trajectory': True}
+planning = cfg.get('planning') or {}
+if planning.get('moveit') and planning.get('planning_frame'):
+    # The declared planning frame is what the docs tell the agent to use:
+    # FK of the hand must equal TF's hand pose in that frame, which also
+    # needs the TF arm chain to be connected.
+    from moveit_msgs.srv import GetPositionFK
+    from tf2_ros import Buffer, TransformListener
+    hand = arm.get('hand_frame', 'panda_hand')
+    tf_buffer = Buffer()
+    TransformListener(tf_buffer, node)
+    fk = node.create_client(GetPositionFK, '/compute_fk')
+    assert fk.wait_for_service(timeout_sec=120), 'FK service unavailable'
+    state = dict(zip(seen['joints'].name, seen['joints'].position))
+    request = GetPositionFK.Request()
+    request.fk_link_names = [hand]
+    request.robot_state.joint_state.name = list(arm['joints'])
+    request.robot_state.joint_state.position = [state[name] for name in arm['joints']]
+    answer = fk.call_async(request)
+    wait(answer.done, 'FK answer')
+    fk_position = answer.result().pose_stamped[0].pose.position
+    frame = planning['planning_frame']
+    wait(lambda: tf_buffer.can_transform(frame, hand, rclpy.time.Time()),
+         'TF from ' + frame + ' to ' + hand)
+    tf_position = tf_buffer.lookup_transform(frame, hand, rclpy.time.Time()).transform.translation
+    gap = sum((a - b) ** 2 for a, b in zip((fk_position.x, fk_position.y, fk_position.z),
+                                            (tf_position.x, tf_position.y, tf_position.z))) ** 0.5
+    assert gap < 0.005, 'FK and TF disagree by %.3f m in declared planning frame %s' % (gap, frame)
+    checks['planning_frame'] = True
+print(json.dumps(checks))
 node.destroy_node()
 rclpy.shutdown()
 """
@@ -138,7 +167,7 @@ def main():
                   'task_id': composed.task_id, 'seed': 0, 'profiles_sha256': profile_digest(),
                   'checked_at': datetime.now(timezone.utc).isoformat(), 'images': images,
                   'checks': checks, 'agent_binaries': versions,
-                  'scope': 'Simulation startup, reset, ROS image and joint streams, no-op trajectory, agent CLI versions. No model task or physical robot validation.'}
+                  'scope': 'Simulation startup, reset, ROS image and joint streams, no-op trajectory, declared planning frame against FK and TF, agent CLI versions. No model task or physical robot validation.'}
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2) + '\n')
         print('PASS: ' + str(args.output), flush=True)

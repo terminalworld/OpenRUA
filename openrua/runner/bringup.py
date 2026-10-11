@@ -28,7 +28,12 @@ from openrua.sandbox.up import up as sandbox_up
 # it. The portable equivalent is a Fast DDS initial-peers profile; DNS
 # names resolve inside it, so container names work as-is. Both sides of
 # a multicast-less network get a rendered copy (robot container and
-# sandbox).
+# sandbox). Initial peers replace Fast DDS's default discovery peer, the
+# multicast group, so it is listed again: without it the processes inside
+# one container (bridge, robot_state_publisher, move_group; or two of the
+# agent's own nodes) never discover each other.
+DDS_DEFAULT_MULTICAST = "239.255.0.1"
+
 FASTDDS_PEERS_XML = """<?xml version="1.0" encoding="UTF-8" ?>
 <profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
   <participant profile_name="openrua_initial_peers" is_default_profile="true">
@@ -47,7 +52,7 @@ def peers_profile(peers: list[str]) -> str:
     """The Fast DDS initial-peers profile naming every peer (container
     names or addresses)."""
     locators = "".join(f"          <locator><udpv4><address>{p}</address></udpv4></locator>\n"
-                       for p in peers)
+                       for p in [DDS_DEFAULT_MULTICAST, *peers])
     return FASTDDS_PEERS_XML.format(locators=locators)
 
 

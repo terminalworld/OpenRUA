@@ -75,7 +75,7 @@ def main(argv=None) -> None:
     req.ik_request.group_name = planning.get("group", "panda_arm")
     req.ik_request.ik_link_name = m["frames"]["hand"]
     # machine fact: leave frame_id empty; poses are interpreted in the
-    # planner's model frame (the arm base), see machine.yaml planning
+    # planner's model frame, machine.yaml planning.planning_frame
     req.ik_request.pose_stamped.header.frame_id = ""
     p = req.ik_request.pose_stamped.pose
     p.position.x, p.position.y, p.position.z = x, y, z

@@ -47,3 +47,7 @@ robots:
     tf:
       hand: false            # robot_state_publisher (MoveIt stack) owns the
                              # arm chain; the bridge keeps base + cameras
+    planning:
+      planning_frame: world  # MoveIt's model frame: the SRDF's floating virtual joint
+                             # world->panda_link0 follows the bridge's TF, so IK reads
+                             # poses and FK returns them in world coordinates
