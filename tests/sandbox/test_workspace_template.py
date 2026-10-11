@@ -6,8 +6,8 @@ Review agent-visible changes before updating this expected artifact hash.
 from openrua.config import load_config
 from openrua.sandbox import workspace
 
-# Reviewed revision: the planning frame is read from machine.yaml, not assumed.
-PINNED = "6014790de766e116768ba74b44292686a0069f0b8b11610c6ceb1c7d7bee8a98"
+# Reviewed revision: the TF arm chain is connected; frame comments follow machine.yaml.
+PINNED = "4f9286340e2da1a53eff81e09a1c2be44c8c3413b61b464e5cebea193e55d550"
 
 
 def test_workspace_template_hash_is_unchanged():

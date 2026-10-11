@@ -92,8 +92,3 @@ scenes:
     panda:
       controller_kp_scale: 10  # LIBERO's robosuite 1.4: stock kp=50 tracks ~15% of a
                                # 20 Hz setpoint; measured gain: x10 -> 0.92, x20 overshoots
-      planning:
-        planning_frame: world  # in LIBERO's world MoveIt reads IK poses and returns FK
-                               # in world coordinates, not the arm base's (measured:
-                               # /compute_fk gives the hand at z 1.27 with the base at
-                               # world z 0.912)

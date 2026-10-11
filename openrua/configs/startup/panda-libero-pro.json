@@ -8,8 +8,8 @@
   "suite": "libero_goal_task",
   "task_id": 0,
   "seed": 0,
-  "profiles_sha256": "5a66b8397ee4398530f9a4bd4dbe647a1a78b1785a426c6805f2baee34c83252",
-  "checked_at": "2026-10-11T09:05:37.036747+00:00",
+  "profiles_sha256": "f4322ed2e184bcc588684ec423e67bfd4954bf672cb59282d578e9fbda52070a",
+  "checked_at": "2026-10-11T10:06:11.770705+00:00",
   "images": {
     "robot": {
       "name": "openrua-sim-libero_pro",
@@ -23,11 +23,12 @@
   "checks": {
     "joint_states": true,
     "camera_frame": true,
-    "trajectory": true
+    "trajectory": true,
+    "planning_frame": true
   },
   "agent_binaries": {
     "claude-code": "2.1.197 (Claude Code)",
     "codex": "codex-cli 0.161.0"
   },
-  "scope": "Simulation startup, reset, ROS image and joint streams, no-op trajectory, agent CLI versions. No model task or physical robot validation."
+  "scope": "Simulation startup, reset, ROS image and joint streams, no-op trajectory, declared planning frame against FK and TF, agent CLI versions. No model task or physical robot validation."
 }

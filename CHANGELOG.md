@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.21
+
+- Fix ROS discovery inside a container on Humble images (robosuite's own scenes, CaP-Bench, RoboCasa365). The Fast DDS initial-peers profile that stands in for `ROS_STATIC_PEERS` replaced the default multicast peer, so processes in one container never discovered each other: in the robot container, robot_state_publisher and move_group received no `/joint_states` or TF from the bridge, which left the TF arm chain unpublished and MoveIt's floating base at the origin; in the sandbox, two of the agent's own nodes could not talk. The profile now keeps the multicast peer next to the static ones. Jazzy images (LIBERO-PRO) were not affected.
+- With MoveIt now following the bridge's world->panda_link0 transform, every robosuite scene plans in `world`: the simulator declares `planning.planning_frame: world`, as does RoboCasa365 for its PandaOmron. LIBERO-PRO's own override from 0.10.20 is no longer needed and is removed. On Humble scenes this changes what agents see: IK poses and FK results are in world coordinates instead of the arm base's, and TF lookups to the hand now succeed.
+- The workspace perception docs no longer warn that the TF arm chain may be disconnected; the IK tool's comment points to `machine.yaml` for the planning frame.
+- The startup check now also compares the hand's FK pose with its TF pose in the declared planning frame (within 5 mm), which needs a connected TF chain. With the old profile it fails on CaP-Bench waiting for TF from `world` to `panda_hand`; all four offered environments pass and their evidence is regenerated with both agents.
+
 ## 0.10.20
 
 - A benchmark can now set the frame MoveIt plans in for the robots it loads (`scenes.robots.<type>.planning.planning_frame`), over the robot type's value. LIBERO-PRO sets `world`: in its world MoveIt reads IK poses and returns FK in world coordinates, while CaP-Bench and RoboCasa365 use the arm base. Previously every Panda declared `panda_link0` and the workspace docs said the planner always works in the arm base, so on LIBERO-PRO an IK request in arm-base coordinates aimed at the wrong point and often failed with -31.
