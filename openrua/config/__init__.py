@@ -10,7 +10,8 @@ from openrua.config.loader import (  # noqa: F401
 )
 from openrua.config.schema import (  # noqa: F401
     AgentConfig, AgentFacts, AgentManifest, Arm, ArmSpec, Backend, Base,
-    Benchmark, Cameras, Checkout, Clock, Control, Credentials, Discovery, Embodiment, Frames,
+    Benchmark, Cameras, Checkout, Clock, Control, Credentials, Discovery, EmbodiedPlanning,
+    Embodiment, Frames,
     Gripper, GripperControl, Hand, Install, InstallOverrides, Machine, NativeScene,
     Planning, Ports, Protocol, RealBackend, ResolvedConfig, RobotFacts, RobotInstance,
     RobotType, Scenes, SimBackend, Simulator, SimulatorProfile, Task, Tf,

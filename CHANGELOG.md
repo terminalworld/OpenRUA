@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.20
+
+- A benchmark can now set the frame MoveIt plans in for the robots it loads (`scenes.robots.<type>.planning.planning_frame`), over the robot type's value. LIBERO-PRO sets `world`: in its world MoveIt reads IK poses and returns FK in world coordinates, while CaP-Bench and RoboCasa365 use the arm base. Previously every Panda declared `panda_link0` and the workspace docs said the planner always works in the arm base, so on LIBERO-PRO an IK request in arm-base coordinates aimed at the wrong point and often failed with -31.
+- The workspace action docs no longer state a fixed planning frame; they point to `machine.yaml` `planning.planning_frame`. Checked live on LIBERO-PRO: the FK pose of the hand matches its TF pose in the declared frame to 0.1 mm. Startup evidence regenerated for all four offered environments.
+
 ## 0.10.19
 
 - Style the terminal the way a coding agent's own terminal reads: the header names the session and the robot it is on (robot, simulator, benchmark scene, agent and model, task), your instructions carry a `❯`, agent text and each tool call carry a `⏺` coloured by phase (working, completed, failed), a tool call shows its command and the first three lines of its output folded under `⎿` with a count of the rest, and `/tools` opens or folds the whole output. Long lines are cut to the terminal width while folded and wrapped when opened.

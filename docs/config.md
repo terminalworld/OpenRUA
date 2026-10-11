@@ -315,8 +315,17 @@ How an engine drives one robot type: the keys that depend on the simulator, merg
 | `joint_name_map` | dict[str, str] \| null | None | engine joint prefix -> published prefix |
 | `control` | [Control](#control) \| null | None | how goals are executed and judged |
 | `tf` | [Tf](#tf) \| null | None | what the bridge publishes on TF |
+| `planning` | [EmbodiedPlanning](#embodiedplanning) \| null | None | planner keys this world changes |
 | `base` | [Base](#base) \| null | None | mobile-base keys the engine decides (body, effective speed) |
 | `cameras` | [Cameras](#cameras) \| null | None | robot-mounted cameras this embodiment adds |
+
+## EmbodiedPlanning
+
+The planner keys a simulator or a benchmark's world can change. Fields default to None so only the keys written are merged in.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `planning_frame` | str \| null | None | the frame MoveIt plans in, where this world differs from the robot type's |
 
 ## Benchmark
 
