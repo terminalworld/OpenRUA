@@ -56,9 +56,9 @@ The TF frames the workspace docs refer to.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `world` | str | 'world' | the fixed frame the robot plans in |
-| `base` | str \| null | 'panda_link0' | the arm's root link |
-| `hand` | str \| null | 'panda_hand' | the hand frame that twist commands and IK targets refer to |
+| `world` | str | **required** | the fixed frame the robot plans in |
+| `base` | str \| null | **required** | the arm's root link |
+| `hand` | str \| null | None | the hand frame that twist commands and IK targets refer to; null = none |
 
 ## Arm
 
@@ -78,10 +78,10 @@ One arm of a multi-arm machine (machine.arms); single-arm profiles are normalise
 | `limits_rad` | list[list[float]] | [] | travel per joint as [min, max], radians |
 | `gripper` | [Gripper](#gripper) \| null | None | this arm's gripper; null = a tool with no gripper |
 | `ports` | [Ports](#ports) |  | this arm's ports |
-| `hand_body` | str | 'robot0_right_hand' | simulator body the hand frame is read from |
-| `tf_base_body` | str | 'robot0_base' | simulator body the base frame is read from |
-| `base_frame` | str | 'panda_link0' | the arm's root link |
-| `hand_frame` | str \| null | 'panda_hand' | the hand frame |
+| `hand_body` | str \| null | None | simulator body the hand frame is read from; required in simulation |
+| `tf_base_body` | str \| null | None | simulator body the base frame is read from; required in simulation |
+| `base_frame` | str | **required** | the arm's root link |
+| `hand_frame` | str \| null | None | the hand frame; null = none |
 
 ## Gripper
 
@@ -250,8 +250,8 @@ Graph-side actuation behaviour (the facts below feed machine.yaml).
 | key | type | default | meaning |
 |---|---|---|---|
 | `hand` | bool | False | bridge publishes hand frames (MoveIt-less runs) |
-| `base_body` | str | 'robot0_base' | simulator body the base frame is read from |
-| `hand_body` | str | 'robot0_right_hand' | simulator body the hand frame is read from (and FK targets) |
+| `base_body` | str \| null | None | simulator body the base frame is read from |
+| `hand_body` | str \| null | None | simulator body the hand frame is read from (and FK targets) |
 
 ## SimulatorProfile
 

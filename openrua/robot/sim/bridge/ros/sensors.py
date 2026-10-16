@@ -162,12 +162,10 @@ class SensorPublishers:
         # tf.base_body, which normalize_arms folds into the arm spec).
         for arm in self._arm_specs:
             tfs.append(self._tf_from_body(
-                now, arm.get("tf_base_body", "robot0_base"),
-                arm.get("base_frame", "panda_link0")))
+                now, arm["tf_base_body"], arm["base_frame"]))
             if self._publish_hand_tf:
                 tfs.append(self._tf_from_body(
-                    now, arm.get("hand_body", "robot0_right_hand"),
-                    arm.get("hand_frame", "panda_hand")))
+                    now, arm["hand_body"], arm["hand_frame"]))
         for cam in self._cams:
             tfs.append(self._tf_from_camera(now, cam))
 
@@ -179,7 +177,7 @@ class SensorPublishers:
                 map(float, f)
             wr.wrench.torque.x, wr.wrench.torque.y, wr.wrench.torque.z = \
                 map(float, t)
-            wr.header.frame_id = arm.get("base_frame", "panda_link0")
+            wr.header.frame_id = arm["base_frame"]
             wrenches.append((wr, pub))
 
         if self._odom_pub is not None:

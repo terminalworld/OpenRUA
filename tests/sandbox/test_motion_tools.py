@@ -129,3 +129,16 @@ def test_ik_requests_the_manifest_hand_link(monkeypatch, point, expected_z):
     assert requests[0].ik_request.ik_link_name == 'custom_hand'
     assert requests[0].ik_request.group_name == 'custom_arm'
     assert requests[0].ik_request.pose_stamped.pose.position.z == pytest.approx(expected_z)
+
+
+def test_ik_without_a_planning_group_stops_before_any_request(monkeypatch):
+    module = tool('ik_move')
+    manifest = {'frames': {'hand': 'custom_hand'}, 'planning': {'ik_service': '/ik'},
+                'actuators': [{'kind': 'joint_trajectory', 'joints': ['joint_a']}]}
+    monkeypatch.setitem(sys.modules, 'rclpy', NS(init=lambda: pytest.fail('rclpy used')))
+    monkeypatch.setitem(sys.modules, 'moveit_msgs.srv', NS(GetPositionIK=NS()))
+    monkeypatch.setitem(sys.modules, 'sensor_msgs.msg', NS(JointState=NS()))
+    monkeypatch.setattr(module, 'manifest', lambda: manifest)
+    with pytest.raises(SystemExit) as error:
+        module.main(['.1', '.2', '.3', '0', '0', '0', '1'])
+    assert 'planning group' in str(error.value.code)

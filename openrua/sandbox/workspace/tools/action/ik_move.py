@@ -49,6 +49,10 @@ def main(argv=None) -> None:
     traj_entry = next(a for a in m["actuators"]
                       if a["kind"] == "joint_trajectory")
     planning = m.get("planning", {})
+    if not planning.get("group"):
+        raise SystemExit("machine.yaml names no planning group (planning.group); "
+                         "list the robot's groups with: ros2 param get /move_group "
+                         "robot_description_semantic")
     if at_tcp:
         off = float(m.get("hand", {}).get("tcp_offset_m", 0.0))
         # shift the target back along the hand's approach (+Z of the
@@ -72,7 +76,7 @@ def main(argv=None) -> None:
     if not cli.wait_for_service(timeout_sec=10):
         raise SystemExit("IK service unavailable")
     req = GetPositionIK.Request()
-    req.ik_request.group_name = planning.get("group", "panda_arm")
+    req.ik_request.group_name = planning["group"]
     req.ik_request.ik_link_name = m["frames"]["hand"]
     # machine fact: leave frame_id empty; poses are interpreted in the
     # planner's model frame, machine.yaml planning.planning_frame

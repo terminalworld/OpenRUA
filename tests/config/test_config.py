@@ -125,6 +125,41 @@ def test_real_instance_brings_its_machine_over_its_type(tmp_path):
         compose(str(lab), "robosuite", None, tmp_path)
 
 
+def test_an_arm_without_frames_is_refused_not_given_panda_names(tmp_path):
+    lab = tmp_path / "lab.yaml"
+    lab.write_text(
+        "machine:\n  backend: {kind: real, discovery: {network: host}}\n"
+        "  robot: {model: Lab arm}\n  arm: {joints: [j1], limits_rad: [[-1, 1]]}\n")
+    with pytest.raises(config.ConfigError) as e:
+        compose(str(lab), home=tmp_path)
+    assert "machine.frames is required" in str(e.value)
+    lab.write_text(lab.read_text() + "  frames: {world: world, hand: tool0}\n")
+    with pytest.raises(config.ConfigError) as e:
+        compose(str(lab), home=tmp_path)
+    assert "machine.frames.base" in str(e.value)
+
+
+def test_a_simulated_arm_names_its_bodies(tmp_path):
+    sim = yaml.safe_load(paths.find("simulators", "robosuite").read_text())
+    del sim["robots"]["panda"]["tf"]["hand_body"]
+    path = tmp_path / "robosuite.yaml"
+    path.write_text(yaml.safe_dump(sim))
+    with pytest.raises(config.ConfigError) as e:
+        compose("panda", str(path), None, tmp_path)
+    assert "machine.tf.base_body and machine.tf.hand_body are required" in str(e.value)
+
+
+def test_moveit_names_its_planning_group(tmp_path):
+    lab = tmp_path / "lab.yaml"
+    lab.write_text(
+        "machine:\n  backend: {kind: real, discovery: {network: host}}\n"
+        "  robot: {model: Lab arm}\n  arm: {joints: [j1], limits_rad: [[-1, 1]]}\n"
+        "  frames: {world: world, base: base_link}\n  planning: {moveit: true}\n")
+    with pytest.raises(config.ConfigError) as e:
+        compose(str(lab), home=tmp_path)
+    assert "moveit: true requires group" in str(e.value)
+
+
 def test_simulator_file_is_validated(tmp_path):
     s = load_simulator("robosuite", tmp_path)
     assert s["engine"].startswith("robosuite") and "panda" in s["robots"]

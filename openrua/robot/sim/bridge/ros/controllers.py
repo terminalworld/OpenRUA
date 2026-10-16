@@ -41,10 +41,10 @@ class _ArmUnit:
         self.index = index
         self.label = spec.get("label", "")
         self.grip = -1.0  # persistent gripper state: -1 open, +1 close
-        joints = spec.get("joints") or [f"panda_joint{i}" for i in range(1, 8)]
+        joints = spec["joints"]
         self.arm_names = joints
         self.qadrs = np.array([owner._jmap[n][0] for n in joints])
-        self.hand_body = spec.get("hand_body", f"robot{index}_right_hand")
+        self.hand_body = spec["hand_body"]
         self.has_gripper = False  # the engine answers once the arms are bound
         self.ports = spec.get("ports", {})
 

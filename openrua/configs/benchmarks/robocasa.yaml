@@ -82,5 +82,6 @@ scenes:
       tf:
         hand: false
         base_body: robot0_link0
+        hand_body: robot0_right_hand
       base:
         body: mobilebase0_base

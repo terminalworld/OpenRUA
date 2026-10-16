@@ -439,18 +439,23 @@ def normalize_arms(cfg: dict) -> dict:
     if not m or "arms" in m:
         return cfg
     ports = m.get("ports", {})
-    m["arms"] = [{
+    tf = m.get("tf", {})
+    frames = m.get("frames", {})
+    arm = {
         "label": "",
         "joints": m.get("arm", {}).get("joints", []),
         "limits_rad": m.get("arm", {}).get("limits_rad", []),
         "gripper": m.get("gripper"),
         "ports": {k: ports[k] for k in
                   ("trajectory", "gripper", "twist", "wrench") if ports.get(k)},
-        "hand_body": m.get("tf", {}).get("hand_body", "robot0_right_hand"),
-        "tf_base_body": m.get("tf", {}).get("base_body", "robot0_base"),
-        "base_frame": m.get("frames", {}).get("base", "panda_link0"),
-        "hand_frame": m.get("frames", {}).get("hand", "panda_hand"),
-    }]
+        "hand_body": tf.get("hand_body"),
+        "tf_base_body": tf.get("base_body"),
+        "base_frame": frames.get("base"),
+        "hand_frame": frames.get("hand"),
+    }
+    # The schema already required what a robot needs; only the written
+    # facts are copied, never a stand-in.
+    m["arms"] = [{k: v for k, v in arm.items() if v is not None or k == "gripper"}]
     return cfg
 
 

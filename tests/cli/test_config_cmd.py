@@ -66,7 +66,8 @@ def test_a_defaulted_simulator_does_not_break_a_real_instance(tmp_path):
     lab = tmp_path / "lab.yaml"
     lab.write_text(
         "machine:\n  backend: {kind: real, discovery: {network: host}}\n"
-        "  robot: {model: Lab arm}\n  arm: {joints: [j1], limits_rad: [[-1, 1]]}\n")
+        "  robot: {model: Lab arm}\n  arm: {joints: [j1], limits_rad: [[-1, 1]]}\n"
+        "  frames: {world: world, base: base_link, hand: tool0}\n")
     (tmp_path / "config.yaml").write_text("simulator: robosuite\n")
     c = compose(str(lab), None, "libero_pro", tmp_path)
     assert c.simulator is None and c.cfg["machine"]["backend"]["kind"] == "real"

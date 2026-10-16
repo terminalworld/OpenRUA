@@ -305,10 +305,10 @@ class RobotFacts(Strict):
 
 class Frames(Strict):
     """The TF frames the workspace docs refer to."""
-    world: str = Field(default="world", description="the fixed frame the robot plans in")
-    base: str | None = Field(default="panda_link0", description="the arm's root link")
-    hand: str | None = Field(default="panda_hand", description="the hand frame that "
-                             "twist commands and IK targets refer to")
+    world: str = Field(description="the fixed frame the robot plans in")
+    base: str | None = Field(description="the arm's root link")
+    hand: str | None = Field(default=None, description="the hand frame that twist "
+                             "commands and IK targets refer to; null = none")
 
 
 class Arm(Strict):
@@ -346,13 +346,20 @@ class Planning(Strict):
     planning_frame: str | None = Field(default=None, description="the frame MoveIt "
                                        "plans in")
 
+    @model_validator(mode="after")
+    def moveit_names_its_group(self):
+        if self.moveit and not self.group:
+            raise ValueError("moveit: true requires group, the MoveIt planning group "
+                             "covering the arm")
+        return self
+
 
 class Tf(Strict):
     hand: bool = Field(default=False, description="bridge publishes hand frames (MoveIt-less runs)")
-    base_body: str = Field(default="robot0_base", description="simulator body the base "
-                           "frame is read from")
-    hand_body: str = Field(default="robot0_right_hand", description="simulator body the "
-                           "hand frame is read from (and FK targets)")
+    base_body: str | None = Field(default=None, description="simulator body the base "
+                                  "frame is read from")
+    hand_body: str | None = Field(default=None, description="simulator body the hand "
+                                  "frame is read from (and FK targets)")
 
 
 class Base(Strict):
@@ -381,12 +388,12 @@ class ArmSpec(Strict):
     gripper: Gripper | None = Field(default=None, description="this arm's gripper; null = "
                                     "a tool with no gripper")
     ports: Ports = Field(default_factory=Ports, description="this arm's ports")
-    hand_body: str = Field(default="robot0_right_hand", description="simulator body the "
-                           "hand frame is read from")
-    tf_base_body: str = Field(default="robot0_base", description="simulator body the "
-                              "base frame is read from")
-    base_frame: str = Field(default="panda_link0", description="the arm's root link")
-    hand_frame: str | None = Field(default="panda_hand", description="the hand frame")
+    hand_body: str | None = Field(default=None, description="simulator body the hand "
+                                  "frame is read from; required in simulation")
+    tf_base_body: str | None = Field(default=None, description="simulator body the base "
+                                     "frame is read from; required in simulation")
+    base_frame: str = Field(description="the arm's root link")
+    hand_frame: str | None = Field(default=None, description="the hand frame; null = none")
 
 
 class Machine(Strict):
@@ -624,6 +631,27 @@ class ResolvedConfig(Strict):
     def simulation_needs_a_task(self):
         if self.machine.backend.kind == "sim" and self.task is None:
             raise ValueError("a simulated robot requires a benchmark task or native scene")
+        return self
+
+    @model_validator(mode="after")
+    def arm_facts_are_declared(self):
+        """Every arm names its frames, and in simulation the bodies they are
+        read from. Nothing falls back to one robot's names."""
+        m = self.machine
+        sim = m.backend.kind == "sim"
+        if m.arms:
+            for i, arm in enumerate(m.arms):
+                if sim and not (arm.hand_body and arm.tf_base_body):
+                    raise ValueError(f"machine.arms[{i}]: a simulated arm requires "
+                                     "hand_body and tf_base_body")
+        elif m.arm is not None:
+            if m.frames is None:
+                raise ValueError("machine.frames is required for an arm (world, base, "
+                                 "hand)")
+            if sim and not (m.tf and m.tf.base_body and m.tf.hand_body):
+                raise ValueError("machine.tf.base_body and machine.tf.hand_body are "
+                                 "required for a simulated arm (write them in the "
+                                 "simulator's robots: entry)")
         return self
 
 

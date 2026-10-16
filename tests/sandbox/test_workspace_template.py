@@ -6,8 +6,8 @@ Review agent-visible changes before updating this expected artifact hash.
 from openrua.config import load_config
 from openrua.sandbox import workspace
 
-# Reviewed revision: the TF arm chain is connected; frame comments follow machine.yaml.
-PINNED = "4f9286340e2da1a53eff81e09a1c2be44c8c3413b61b464e5cebea193e55d550"
+# Reviewed revision: ik_move refuses to guess a planning group.
+PINNED = "8b01bbf70c51c39e01777840e6cde55497c716e4857b47d06f803ff4b6bc95a8"
 
 
 def test_workspace_template_hash_is_unchanged():

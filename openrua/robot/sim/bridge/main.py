@@ -113,7 +113,7 @@ def main() -> None:
     monitor = Monitor(env, task_ctx, loader, engine, sim, on_reset=node.refresh,
                       record=recording(cfg, args.record, args.record_cameras,
                                        args.record_every, args.record_size),
-                      hand_body=arms[0].get("hand_body", "robot0_right_hand"))
+                      hand_body=arms[0].get("hand_body"))
 
     stop = {"flag": False}
 
