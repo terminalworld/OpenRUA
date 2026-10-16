@@ -39,6 +39,18 @@ def test_real_robot_joins_the_host_network_and_reaches_the_proxy_by_address(monk
     assert server["static_peer"] is None
 
 
+def test_the_agent_is_given_the_proxy_url_its_sandbox_can_reach(monkeypatch):
+    # A real robot's sandbox is on the host network, where the proxy's
+    # container name does not resolve: the agent CLI must get the address.
+    monkeypatch.setattr(bringup, "proxy_url_from_network",
+                        lambda name, network="bridge": "http://172.17.0.9:8888")
+    assert bringup.agent_proxy_url({"kind": "real"}, "http://openrua-proxy:8888") \
+        == "http://172.17.0.9:8888"
+    assert bringup.agent_proxy_url({"kind": "sim"}, "http://openrua-proxy:8888") \
+        == "http://openrua-proxy:8888"
+    assert bringup.agent_proxy_url({"kind": "real"}, "") == ""
+
+
 def test_graph_probe_runs_inside_the_sandbox():
     argv = bringup.graph_probe("rc-1-sandbox")
     assert argv[:3] == ["docker", "exec", "rc-1-sandbox"] and "ros2 node list" in argv[-1]
