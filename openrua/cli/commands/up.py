@@ -144,10 +144,15 @@ def add_options(p, *, default_name=DEFAULT_NAME) -> None:
                    help="ROS_DOMAIN_ID (default: the lowest one no running robot "
                         "uses, so concurrent robots never share a graph; a real "
                         "robot: its own domain, 0)")
+    add_limit_options(p, "default: not limited")
+
+
+def add_permissions_option(p) -> None:
+    """How a shared conversation's agent starts (openrua, serve); the native
+    terminal of run and agent keeps the CLI's own prompting."""
     p.add_argument("--permissions", choices=("ask", "auto"), default=None,
                    help="ask: the agent asks before each command that changes something; "
                    "auto: it runs them without asking (default); /permissions switches")
-    add_limit_options(p, "default: not limited")
 
 
 def add_parser(sub) -> None:

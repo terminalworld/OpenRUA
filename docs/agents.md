@@ -45,6 +45,7 @@ knowledge appears anywhere else.
 | `credentials` | | `dirname`, `filename`, `config_env`, `mount_point`, optional `native_dir`: a profile-directory login with native discovery |
 | `token_env` | | environment variable carrying a long-lived token (passed by file) |
 | `version_argv` | | command printing the CLI version (recorded per trial) |
+| `min_version` | | the oldest CLI release that takes every flag the hooks pass; a build that produces an older one fails, and a session or trial on a sandbox with an older one is refused with the rebuild command |
 | `instruction_file` | | the instructions file the CLI reads on its own |
 | `latest_release` | | URL whose JSON names the newest release as `version` (an npm registry's `/latest`); `openrua` offers an update when the sandbox's CLI is older |
 | `default_options` | | knobs a config may override under `agent.options` |
@@ -254,8 +255,16 @@ alive independently of client connections.
   `identity_confirmed: false` until a native `session` event confirms it.
 - `can_submit` indicates readiness for one turn. `submit(turn_id, text)` uses
   a new caller-assigned identity; subsequent messages wait in the owner's queue.
+- `can_steer` indicates that a user message can join the running turn, as a
+  coding agent's own terminal passes on what is typed while it works.
+  `steer(turn_id, message_id, text)` adds it; the plugin then emits
+  `steer_delivered`, or `steer_rejected` so the owner queues the message again.
+  The default is never: the message waits for the turn to end.
 - `turn_started`, `text_delta`, `item`, and `turn_finished` events retain that
-  identity. A completed agent turn is not proof of robot task success.
+  identity. A completed agent turn is not proof of robot task success. A turn
+  the agent starts by itself (a background task finished) arrives as
+  `turn_started` with a turn ID the owner never submitted and `data.origin`
+  `agent`.
 - `interrupt(turn_id)` targets the current turn. `interrupt_acknowledged`
   does not mean it has stopped; only a terminal event ends the turn.
 - `input_required` supplies questions and choices. `respond(request_id,
@@ -303,9 +312,9 @@ bidirectional JSON mode. It retains native workspace instructions, settings,
 login and session persistence. Unlike Codex, its interrupt request has no
 native turn target: the plugin validates the caller's turn ID, permits one
 outstanding turn, and keeps `can_submit` false until both the result and
-interrupt acknowledgement arrive. The owner still pauses its queue after any
-user interruption, regardless of whether the native result reports completion
-or failure. A result without the expected echoed user message is treated as
+interrupt acknowledgement arrive. After an interrupt the owner's queue goes
+on, whether the native result reports completion or failure; a failed turn
+pauses it only when the person did not interrupt that turn. A result without the expected echoed user message is treated as
 uncertain, not silently assigned to the current input.
 
 Claude tool approvals and `AskUserQuestion` are converted to the same

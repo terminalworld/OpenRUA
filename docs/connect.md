@@ -11,6 +11,9 @@ read_when:
 openrua connect my-arm            # or: openrua, then "Connect a real robot"
 ```
 
+The setup menu's entry connects a robot named `my-robot`, in
+`~/.openrua/robots/my-robot/`.
+
 This opens a session whose terminal reaches what connecting a robot
 needs: this computer's docker, its network (the robot's controller and
 ROS 2 graph) and its devices (read-only, under `/host/dev`), working in

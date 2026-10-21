@@ -45,7 +45,7 @@ The command stays in the foreground:
      openrua agent --name openrua            # your coding agent, on the robot
      docker exec -it -u robot -w /workspace openrua-sandbox bash   # or you
 
-     Ctrl-C here powers the robot off.
+     Ctrl-C here powers the robot off and keeps the workspace.
 ```
 
 `--task-suite` and `--task-id` pick another scene from the benchmark;
@@ -66,13 +66,14 @@ This opens the agent `up` was configured with (Claude Code by default,
 `/workspace`, with the sentence as its opening message. Nothing else is
 injected: no tool list, no API, no planner. The agent reaches the
 internet as it does on your machine; `openrua up --internet model-only`
-limits it to its model service ([what the agent can
-reach](../docs/install.md#what-the-agent-can-reach)).
+limits it to its model service, through the proxy image `openrua build proxy`
+makes ([what the agent can reach](../docs/install.md#what-the-agent-can-reach)).
 
 ## 2. What the agent sees
 
 ```
 /workspace
+  AGENTS.md            points any agent at README.md and machine.yaml
   README.md            start here: the map of the docs, a 30-second start
   machine.yaml         this robot's facts: joints, limits, frames, ports, cameras
   docs/

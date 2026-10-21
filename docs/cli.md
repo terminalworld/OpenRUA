@@ -15,10 +15,10 @@ usage: openrua [-h] [--version] [--home HOME] [--robot ROBOT] [--sim SIM]
                [--bench BENCH] [--task-suite TASK_SUITE] [--task-id TASK_ID]
                [--init-state INIT_STATE] [--task TASK] [--name NAME] [--agent
                AGENT] [--workspace WORKSPACE] [--ros-domain ROS_DOMAIN]
-               [--permissions {ask,auto}] [--internet {open,model-only}]
-               [--web-search | --no-web-search] [--account-connectors |
-               --no-account-connectors] [--model MODEL] [--gui | --tui UI |
-               --cli] [--port PORT] [--setup] [--resume [ID]] <verb> ...
+               [--internet {open,model-only}] [--web-search | --no-web-search]
+               [--account-connectors | --no-account-connectors] [--permissions
+               {ask,auto}] [--model MODEL] [--gui | --tui UI | --cli] [--port
+               PORT] [--setup] [--resume [ID]] <verb> ...
 
 Open a robot conversation, or use ``openrua <verb> ...``.
 
@@ -57,10 +57,6 @@ start or reconnect (without a subcommand):
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
-  --permissions {ask,auto}
-                        ask: the agent asks before each command that changes
-                        something; auto: it runs them without asking
-                        (default); /permissions switches
   --internet {open,model-only}
                         open, or only the agent's model service and login,
                         through a whitelist proxy (default: not limited)
@@ -71,6 +67,10 @@ start or reconnect (without a subcommand):
                         what your account brings beyond the CLI: its
                         connectors or apps, synced skills and plugins
                         (default: not limited)
+  --permissions {ask,auto}
+                        ask: the agent asks before each command that changes
+                        something; auto: it runs them without asking
+                        (default); /permissions switches
   --model MODEL         model for a new session (default: the agent's
                         configuration)
   --gui                 open the browser instead of terminal chat
@@ -262,8 +262,7 @@ usage: openrua run [-h] [--model MODEL] [--sim SIM] [--bench BENCH]
                    [--task-suite TASK_SUITE] [--task-id TASK_ID]
                    [--init-state INIT_STATE] [--task TASK] [--name NAME]
                    [--agent AGENT] [--workspace WORKSPACE]
-                   [--ros-domain ROS_DOMAIN] [--permissions {ask,auto}]
-                   [--internet {open,model-only}]
+                   [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
                    [--web-search | --no-web-search]
                    [--account-connectors | --no-account-connectors]
                    [robot] [prompt]
@@ -303,10 +302,6 @@ options:
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
-  --permissions {ask,auto}
-                        ask: the agent asks before each command that changes
-                        something; auto: it runs them without asking
-                        (default); /permissions switches
   --internet {open,model-only}
                         open, or only the agent's model service and login,
                         through a whitelist proxy (default: not limited)
@@ -325,8 +320,7 @@ options:
 usage: openrua up [-h] [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
                   [--task-id TASK_ID] [--init-state INIT_STATE] [--task TASK]
                   [--name NAME] [--agent AGENT] [--workspace WORKSPACE]
-                  [--ros-domain ROS_DOMAIN] [--permissions {ask,auto}]
-                  [--internet {open,model-only}]
+                  [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
                   [--web-search | --no-web-search]
                   [--account-connectors | --no-account-connectors]
                   [robot]
@@ -365,10 +359,6 @@ options:
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
-  --permissions {ask,auto}
-                        ask: the agent asks before each command that changes
-                        something; auto: it runs them without asking
-                        (default); /permissions switches
   --internet {open,model-only}
                         open, or only the agent's model service and login,
                         through a whitelist proxy (default: not limited)
@@ -418,12 +408,11 @@ usage: openrua serve [-h] [--sim SIM] [--bench BENCH]
                      [--task-suite TASK_SUITE] [--task-id TASK_ID]
                      [--init-state INIT_STATE] [--task TASK] [--name NAME]
                      [--agent AGENT] [--workspace WORKSPACE]
-                     [--ros-domain ROS_DOMAIN] [--permissions {ask,auto}]
-                     [--internet {open,model-only}]
+                     [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
                      [--web-search | --no-web-search]
                      [--account-connectors | --no-account-connectors]
-                     [--model MODEL] [--port PORT] [--connect FOLDER]
-                     [--distro {jazzy,humble}]
+                     [--permissions {ask,auto}] [--model MODEL] [--port PORT]
+                     [--connect FOLDER] [--distro {jazzy,humble}]
                      [robot]
 
 Run a local shared session independently of its connected clients.
@@ -455,10 +444,6 @@ options:
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
-  --permissions {ask,auto}
-                        ask: the agent asks before each command that changes
-                        something; auto: it runs them without asking
-                        (default); /permissions switches
   --internet {open,model-only}
                         open, or only the agent's model service and login,
                         through a whitelist proxy (default: not limited)
@@ -469,6 +454,10 @@ options:
                         what your account brings beyond the CLI: its
                         connectors or apps, synced skills and plugins
                         (default: not limited)
+  --permissions {ask,auto}
+                        ask: the agent asks before each command that changes
+                        something; auto: it runs them without asking
+                        (default); /permissions switches
   --model MODEL         model (default: the configured agent's)
   --port PORT           local port (default: choose a free port)
   --connect FOLDER      connect a real robot instead (see openrua connect):

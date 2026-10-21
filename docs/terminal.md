@@ -24,6 +24,13 @@ Use arrows and Enter to choose robot, simulator, benchmark, agent and model;
 Escape returns to the previous menu. Only environment combinations with recorded
 startup checks are offered, with dependent fields updated together. Custom
 profiles remain available through explicit CLI options and config files.
+**Connect a real robot** opens `openrua connect` for the robot folder
+`~/.openrua/robots/my-robot/` ([connect.md](connect.md)).
+
+Before a session starts, `openrua` offers a newer agent CLI at most once a
+day: update now (rebuilds the sandbox image), skip, or skip until the next
+version. A CLI older than OpenRUA can run must be updated to start
+([update or remove](install.md#update-or-remove)).
 
 For example, `openrua --robot ./my-robot.yaml` uses a real robot profile; a
 real robot takes no saved simulator or benchmark default, only one named on the
@@ -53,8 +60,8 @@ See [API configuration](install.md#explicit-api-authentication) for CLI commands
 and file permissions. Local checks do not call a model or verify account quota.
 
 **Prepare and start** saves a valid selection, builds missing images with logs,
-checks readiness and opens chat. Existing images are reused. **Save and check**
-only checks preparation. Logs remain in `~/.openrua/preparation/` for retry.
+checks readiness and opens chat. Existing images are reused. **Save and check
+preparation** only checks preparation. Logs remain in `~/.openrua/preparation/` for retry.
 See [setup validation](setup-validation.md) and [native login discovery](install.md#logging-an-agent-in).
 
 Use `openrua --setup`, `openrua config set`, or `config.yaml` to change the same
@@ -80,7 +87,7 @@ fallback. Startup failures keep their logs in `~/.openrua/launches/NAME/`.
 | `/questions` | Choose answers to agent questions (or type the answer) |
 | Escape or `/interrupt` | Stop the current turn and cancel the robot's motions; queued instructions go next |
 | `/continue` | Confirm continuing a paused queue |
-| `/permissions` | Whether the agent asks before each command that changes something, or runs without asking |
+| `/permissions` | Whether the agent asks before each command that changes something, or runs without asking (`--permissions ask\|auto` sets how a session starts: `auto` by default, `ask` under `openrua connect`) |
 | `/model` | Show the model, or change it: `/model <name>` |
 | The agent's own commands | `/compact`, `/clear`, and what else the agent lists (Claude Code's skills and custom commands) go to the agent, as in its own terminal; `/help` lists them |
 | `/retry` | Retry an unconfirmed send with its original request ID |
@@ -96,8 +103,8 @@ stops the turn at once and anything still queued goes next, and while the
 agent waits on a question, what you type is the answer. A turn the agent
 starts by itself (a background task finished) is shown as its own. The status
 line says how long the agent has been quiet once it passes a minute.
-A failed turn, a lost agent or a stopped robot pauses the queue for review,
-and the status line says which. Client
+A failed turn, a lost agent, a request this client cannot answer or a stopped
+robot pauses the queue for review, and the status line says which. Client
 reconnection replays events without automatically resending instructions.
 If a running client's connection drops, the status shows **Disconnected · retrying**
 until polling succeeds again. The recovered status reflects the shared session;
@@ -122,8 +129,8 @@ access to the transcript. The browser also provides image viewing and downloads.
 
 Secret-input questions and reconciliation of unknown execution outcomes use
 the [session CLI](sessions.md), so these operations also require no mouse.
-In-session agent/model switching and persistent multi-panel layouts remain
-unimplemented. Linux x86_64 installation and real PTY startup are tested;
+Switching the agent inside a session and persistent multi-panel layouts remain
+unimplemented; `/model` changes the model. Linux x86_64 installation and real PTY startup are tested;
 terminal-specific image support and physical IMEs depend on the terminal.
 
 ## Development

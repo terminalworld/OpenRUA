@@ -20,6 +20,10 @@ Three entry paths share these foundations:
 | Native terminal | `run`, or `up` then `agent`, use `runner.live` and the selected agent's native terminal | `run` ends its resources when the agent exits; `up` retains them until shutdown |
 | Benchmark | `bench` → trial runner → fresh workspace, operator, preflight, scoring, records | The trial protocol controls budgets and teardown |
 
+`openrua connect` is shared chat too: its `serve --connect` opens a connecting
+terminal (`runner.connect`) and moves the conversation to the robot's own
+terminal once every check has passed.
+
 Shared chat does not replace the native agent loop or the benchmark protocol.
 Its queue orders user instructions, not individual robot movements.
 
@@ -28,8 +32,8 @@ Its queue orders user instructions, not individual robot movements.
 | Unit | Role | Front door |
 |---|---|---|
 | `openrua/robot/` | the machine, provided by a backend (`up()` dispatches on `machine.backend.kind`). `sim/`: image build, container up/down, the host-side client, and `bridge/`, the simulated robot's own software (`environments/`, `engines/`, `ros/`, `rpc.py`, `main.py`). `real/`: an optional launch command (on the host or in a driver image), `build.py` (a driver image from the directory the config names), a handle that waits for the graph, and `probe.py` (a profile draft from the graph). | `python -m openrua.robot.sim.build` |
-| `openrua/sandbox/` | the agent's terminal: an Ubuntu + ROS 2 container with the agent installed and `workspace/` seeded (README, `machine.yaml`, four docs, a few tools). | `python -m openrua.sandbox` |
-| `openrua/proxy/` | a whitelist HTTP proxy, the sandbox's only route out when a run limits the agent to its model service; one standing proxy per whitelist. | `python -m openrua.proxy` |
+| `openrua/sandbox/` | the agent's terminal: an Ubuntu + ROS 2 container with the agent installed and `workspace/` seeded (README, `AGENTS.md`, `machine.yaml`, four docs, a few tools). | `python -m openrua.sandbox` |
+| `openrua/proxy/` | a whitelist HTTP proxy, the sandbox's route out when a run limits the agent to its model service (for a simulated robot, its only one); one standing proxy per whitelist. | `python -m openrua.proxy` |
 | `openrua/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, the module each names under `entry_point`), the launcher, credentials staging, the prompts. | `python -m openrua.agents launch` |
 | `openrua/runner/` | composition and ownership: `live.py` opens robot resources, `live_state.py` retains their state, `managed.py` adds a native conversation and shared execution owner (and moves it to new resources between turns), `connect.py` is `openrua connect`: the connecting terminal, the checks it asks the host for, and the move to the robot's own terminal. Trial execution stays separate: `main.py` (`openrua bench`), `limits.py` (the limit flags), `bringup.py` (one resolved config to sandbox + robot, and the sandbox's way out), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua serve`, `run`, `up`, `bench` |
 | `openrua/demo/` | a video from a recorded trial's files (`frames/`, `ops.jsonl`): `compose.py` renders the terminal beside the cameras. Reads files, imports `errors` only; its libraries are the `demo` extra. | `openrua demo` |
@@ -38,7 +42,7 @@ Its queue orders user instructions, not individual robot movements.
 | `openrua/artifacts.py` | bounded, read-only workspace file access; the owner supplies the root and reader to the HTTP server. | file operations in the session API |
 | `openrua/terminal/` and `ui/terminal/` | Pi launcher and frontend. The launcher receives configuration/history operations as callbacks; chat consumes the same local session API. Private temporary files carry screen input/output. Prepared JS resources ship in the wheel; the runtime is included in the default pip installation. | `openrua` |
 | `openrua/cli/` | the command line: one module per verb under `commands/` including discovery, builds, native sessions, shared chat, trials, and cleanup. `output.py` formats output; `state.py` retains compatibility imports for resource state. | `openrua` |
-| `openrua/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, a real robot's driver images, login, the user directory), `report.py`. | `openrua doctor` |
+| `openrua/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, a real robot's driver images and startup checks, login, the user directory), `report.py`. | `openrua doctor` |
 
 Shared support modules, used only by the layers permitted by the import
 contracts; none is imported by the simulator bridge:
@@ -122,11 +126,16 @@ every agent-specific token inside the manifests and hooks modules.
 `up` for a simulated robot (`backend.kind: sim`) starts a container that
 runs the bridge: the simulator, a ROS 2 graph over it, and the control
 line the runner scores through. For a real robot (`backend.kind: real`)
-that graph already exists; `up` runs the profile's launch command if it
-has one (on the host, or inside `backend.image` on the host network),
-starts the sandbox on the host network pointed at the graph the way
-`backend.discovery` says, waits until the sandbox sees a node, and seeds
-the workspace from the profile. The handle's rpc answers not applicable,
+that graph already exists; `up` runs the profile's startup checks
+(`backend.startup_checks`) and stops on a failed one, runs the launch
+command if there is one (on the host in its file's directory, or inside
+`backend.image` on the host network), starts the sandbox on the host
+network pointed at the graph the way `backend.discovery` says (speaking
+UDP only, since containers there share the host's addresses but not its
+shared memory), waits until the sandbox sees a node, and seeds the
+workspace from the profile. Plain `openrua` first builds what is missing:
+the driver images `backend.build` names, and the robot's own sandbox when
+it declares `backend.sandbox_install`. The handle's rpc answers not applicable,
 so a trial records no verdict on hardware. `openrua probe` drafts the
 profile from the graph. Both paths expose ROS 2 to the agent; this interface
 choice alone does not establish real-hardware reliability. See

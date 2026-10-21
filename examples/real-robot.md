@@ -6,6 +6,11 @@ read_when:
 
 # A real robot
 
+To have your coding agent connect the robot with you, run `openrua connect`
+([Connect a real robot](../docs/connect.md)); it writes the profile, its
+drivers and its startup checks, step by step. The steps below are for a
+profile you write yourself.
+
 1. With the robot's ROS 2 stack running, draft a profile from its graph
    and finish the `TODO` lines (see `docs/your-own-robot.md`):
 
@@ -13,7 +18,8 @@ read_when:
    openrua probe --host --ros-domain <id> --distro <humble-or-jazzy> > my-robot.yaml
    ```
 
-2. Check it loads and the images and login are in place:
+2. Check it loads, its startup checks pass, and the images and login are in
+   place:
 
    ```bash
    openrua doctor ./my-robot.yaml
@@ -27,6 +33,9 @@ read_when:
    openrua agent
    ```
 
+   `openrua --robot ./my-robot.yaml --ros-domain <id>` opens OpenRUA's shared
+   chat on the robot instead.
+
 Interactive startup waits for ROS graph visibility. Benchmark trials additionally
 run preflight checks on the declared control interfaces, joint names, TF and
 cameras. Neither check establishes safe physical operation; the robot and its
@@ -34,6 +43,7 @@ independent safety controls need validation on your hardware. See the
 [robot guide](../docs/your-own-robot.md) for profile fields, driver ownership and
 discovery troubleshooting.
 
-`openrua bench --config <benchmark> --robot ./my-robot.yaml --task "..."`
-runs the same trial loop on hardware: no reset, no automatic verdict
-(`success: null`, `verdict: not_applicable`), everything else recorded.
+`openrua bench --config <benchmark> --robot ./my-robot.yaml --run-id hw-1
+--task-suite <suite> --task "..."` runs the same trial loop on hardware: no
+reset, no automatic verdict (`success: null`, `verdict: not_applicable`),
+everything else recorded.

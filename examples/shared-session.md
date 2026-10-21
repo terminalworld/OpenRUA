@@ -12,7 +12,7 @@ OpenRUA's TUI, browser, or plain CLI as clients. They share the same agent
 conversation and queue. OpenRUA manages delivery and resources; the agent
 still decides which ROS commands and programs to execute.
 
-This walkthrough uses OpenRUA 0.7.0. Shared chat remains experimental.
+Shared chat remains experimental.
 Bounded three-turn observation and gripper-control checks have passed with
 both Claude Code and Codex; they do not establish success on the blender-lid
 task below. See [validation scope](../docs/sessions.md#validation-scope).
@@ -23,11 +23,11 @@ Run `openrua` for a new session with an automatic ID. The TUI links robot,
 simulator and benchmark choices using recorded startup checks. **Prepare and
 start** saves a valid selection, builds missing images with visible progress,
 checks the agent login, then starts the background service and opens chat.
-Existing images are reused; failed builds keep logs for retry. **Save & check**
-reports preparation without downloading or starting resources.
+Existing images are reused; failed builds keep logs for retry. **Save and check
+preparation** reports preparation without downloading or starting resources.
 
 The guided list offers Panda in the native robosuite Lift scene, Panda in
-CaP-Bench, and Panda-Omron in RoboCasa365. Their default scenes have passed
+CaP-Bench, Panda in LIBERO-PRO, and Panda-Omron in RoboCasa365. Their default scenes have passed
 startup, reset, sensor-stream and no-op control checks. This does not validate
 every benchmark task or model task success. Other registered profiles remain
 available through explicit CLI options. See
@@ -45,7 +45,7 @@ Use a Linux execution host with Docker available, as described in
 or use `pip install -e .` inside an OpenRUA source checkout:
 
 ```sh
-pip install -U 'openrua>=0.7.0'
+pip install -U openrua
 openrua serve --help
 openrua session --help
 ```
@@ -150,8 +150,10 @@ While a browser-requested turn is running, submit another message from terminal 
 openrua session --name chat-demo send "Summarize what you observed. Do not move the robot."
 ```
 
-The browser should show the new message queued behind the active turn. If the
-first turn already finished, the second can start immediately. To observe the
+The browser should show the new message joining the running turn, then
+joined: Claude Code and Codex take what you send mid-turn, as in their own
+terminals. If the first turn already finished, the second starts as a turn of
+its own. To observe the
 same conversation from the terminal without submitting another task:
 
 ```sh
@@ -166,15 +168,17 @@ requires pasting the token again. Do not resend a task just to reconnect.
 ## 5. Try manipulation, interruption, and queue editing
 
 In the browser, ask the agent to close the blender lid and verify the outcome.
-During an active turn, submit a follow-up such as “Save another camera image
-and describe the final scene.” Use the queued message controls to edit or
-withdraw it before it starts.
+During the turn, submit a follow-up such as “Save another camera image and
+describe the final scene.” It joins the running turn.
 
-Select **Interrupt current turn** while the first turn is active. The queue should become
-paused and retain the follow-up. Inspect the current state, revise the queued
-instruction if needed, and select **Continue queued messages** to continue. Agent failure
-or an unknown execution outcome also pauses the queue; the page explains when
-an explicit reconciliation note is required.
+Select **Interrupt current turn** while a turn is active. The turn stops, the
+robot's motion actions are asked to cancel their goals, and the next queued
+message starts; the queue does not pause. Agent failure or an unknown execution
+outcome pauses the queue. Messages sent while it is paused stay queued, and the
+queued message controls edit or withdraw them before they start. Inspect the
+current state, revise a queued instruction if needed, and select **Continue
+queued messages** to continue; the page explains when an explicit
+reconciliation note is required.
 
 Interrupting an agent is not a physical emergency stop. This walkthrough uses
 simulation. If an operation completes before you interrupt it, run another
@@ -212,7 +216,9 @@ stopped session and its retained materials, run `openrua clean --name chat-demo`
 | View an image or program | Saved file opens without sending the agent another task |
 | Close a browser or chat client | Execution continues in the background service |
 | Reconnect or reload | Retained progress returns; old tasks are not resubmitted |
-| Interrupt or encounter a failure | Follow-up messages remain paused for review |
+| Send during a turn | The message joins the running turn |
+| Interrupt | The turn stops and the next queued message starts |
+| Encounter a failure | Follow-up messages remain paused for review |
 | End the session | Owned resources stop; messages, images, and code remain |
 
 ## If something does not work
