@@ -127,6 +127,7 @@ class Agent:
     default_model: str = ""             # model when the config names none
 
     # ---- manifest facts, all with defaults --------------------------
+    title: str = ""                     # the agent's name as people write it ("" = name)
     binary: str = ""                    # the CLI executable inside the sandbox
     version: str | None = None          # the CLI version the install line pins
     install: str = ""                   # one-line root shell chain that installs the

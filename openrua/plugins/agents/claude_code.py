@@ -50,6 +50,9 @@ def _allowed(limits: dict | None, key: str) -> bool:
     return (limits or {}).get(key, True) is not False
 
 
+STATE_FILE = ".claude.json"
+
+
 def _isolate(directory: Path) -> None:
     """Merge ISOLATION_SETTINGS into the profile's settings.json."""
     directory.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -66,6 +69,13 @@ class ClaudeCode(Agent):
                         limits: dict | None = None) -> PreparedProfile:
         prepared = super().prepare_profile(source, dest,
                                            require_credentials=require_credentials)
+        # .claude.json is the CLI's own state (cached feature switches, last
+        # version seen), not a setting, and the one beside a login directory
+        # can be long stale: the CLI keeps its live state in ~/.claude.json
+        # when no config directory is named. Seen stale, a session took itself
+        # for the first one after an upgrade, which reads no AGENTS.md. Each
+        # session builds its own.
+        (prepared.directory / STATE_FILE).unlink(missing_ok=True)
         if not _allowed(limits, "account_connectors"):
             _isolate(prepared.directory)
         return prepared

@@ -10,9 +10,10 @@ from openrua.sandbox import workspace
 # machine-discrepancies.yaml (worded as a robot config that can drift);
 # tools check where the arm ended up; cameras are entries with their own
 # topics; simulation-only statements live in machine.yaml. AGENTS.md points
-# any agent at README.md and machine.yaml; the motion tools cancel their
-# goal when interrupted.
-PINNED = "14124e656176a18041a4c8b0e570c731f5129d7c7be59d15c64b8a300ed61bf7"
+# any agent at README.md and machine.yaml, and says /workspace is the one
+# place kept after the session; the motion tools cancel their goal when
+# interrupted.
+PINNED = "f8f5ac893ca3dbf4df4127bf5d1780664ee37df55dcc4f68ed5ad8dc4ba512ab"
 
 
 def test_workspace_template_hash_is_unchanged():

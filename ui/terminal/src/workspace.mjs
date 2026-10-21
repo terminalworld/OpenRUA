@@ -5,13 +5,16 @@ import {muted, plain} from './view.mjs';
 // Text is shown through a window of `rows()` lines that the arrow keys move;
 // the whole file is never drawn at once, so a long file cannot flood the screen.
 export class FilePreview extends Container {
-  constructor(file, close, refresh, redraw, rows = () => 24) {
+  // ``where``: the file's path on this computer (the sandbox's /workspace is a
+  // directory here), null when unknown.
+  constructor(file, close, refresh, redraw, rows = () => 24, where = null) {
     super();
     this.rows = rows;
     this.offset = 0;
     this.lines = file.kind === 'text' ? plain(file.text.slice(0, 131072)).split('\n') : [];
     if (file.kind === 'text' && file.text.length > 131072) this.lines.push('[Preview limited to 131,072 characters.]');
-    this.addChild(new Text(`${plain(file.path)} · ${file.size} bytes\n${muted('Saved workspace file, not a live camera feed.')}`, 0, 1));
+    this.addChild(new Text(`${plain(file.path)} · ${file.size} bytes\n${muted('Saved workspace file, not a live camera feed.')}`
+      + (where ? `\n${muted('On this computer:')} ${plain(where)}` : ''), 0, 1));
     this.body = file.kind === 'image'
       ? new Image(file.data, file.mime, {fallbackColor: plain},
         {filename: plain(file.path), maxWidthCells: 72, maxHeightCells: 16})
@@ -19,7 +22,9 @@ export class FilePreview extends Container {
     this.position = new Text('', 0, 0);
     this.addChild(this.body); this.addChild(this.position);
     this.addChild(new Text(muted((file.kind === 'text' ? '↑/↓, PgUp/PgDn scroll · ' : '') + 'r refresh · Esc back' +
-      (file.kind === 'image' ? '\nImage display depends on your terminal. Use the session browser if only metadata appears.' : '')), 0, 1));
+      (file.kind !== 'image' ? '' : where
+        ? '\nNo picture above? Open the path on this computer (Ctrl+click in Cursor or VS Code).'
+        : '\nImage display depends on your terminal. Use the session browser if only metadata appears.')), 0, 1));
     this.window();
     this.handleInput = data => {
       if (matchesKey(data, 'escape')) close();
@@ -75,7 +80,8 @@ export async function browseWorkspace(chat, path = '') {
       if (chat.done) return;
       const back = () => { handle.hide(); void browseWorkspace(chat, path).catch(e => chat.say(e.message)); };
       const refresh = () => { handle.hide(); void show().catch(e => chat.say(e.message)); };
-      const preview = new FilePreview(file, back, refresh, () => chat.ui.requestRender(), () => chat.rows());
+      const where = chat.facts?.workspace ? `${chat.facts.workspace}/${target}` : null;
+      const preview = new FilePreview(file, back, refresh, () => chat.ui.requestRender(), () => chat.rows(), where);
       const handle = chat.dialog(preview);
     };
     await show();

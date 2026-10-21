@@ -2,6 +2,7 @@
 # (launch command, transcript parsing) is the module named by entry_point at the
 # bottom. Facts read from codex-cli 0.145.0 --help and its JSONL output.
 name: codex
+title: Codex
 default_model: gpt-5.6-sol
 binary: codex
 # Root shell that installs the CLI into the sandbox image (build time only).

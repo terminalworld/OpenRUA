@@ -421,6 +421,53 @@ test('saved image preview uses Pi image rendering and a terminal fallback', asyn
 });
 
 
+test('a file preview names the file on this computer and how to open it', async () => {
+  const {FilePreview} = await import('../src/workspace.mjs');
+  const {setCapabilities} = await import('@earendil-works/pi-tui');
+  setCapabilities({images: null, trueColor: false, hyperlinks: true});
+  const preview = new FilePreview({path: 'snaps/front.png', size: 1, kind: 'image', mime: 'image/png',
+    data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWZkAAAAASUVORK5CYII='},
+    () => {}, () => {}, () => {}, () => 24, '/home/me/.openrua/sandboxes/s/workspace/workspace/snaps/front.png');
+  const shown = preview.render(100).join('\n');
+  assert.match(shown, /On this computer:.*\/home\/me\/\.openrua\/sandboxes\/s\/workspace\/workspace\/snaps\/front\.png/);
+  assert.match(shown, /Ctrl\+click in Cursor or VS Code/);
+});
+
+test('the welcome says where you are, in OpenRUA\'s words, and welcomes you back', async () => {
+  const {Welcome} = await import('../src/view.mjs');
+  const plainText = lines => lines.join('\n').replace(/\x1b\[[0-9;]*m/g, '');
+  const sim = new Welcome('s1', {robot: 'panda', robot_model: 'Franka Panda', simulator: 'robosuite',
+    backend: 'sim', agent: 'claude-code', agent_title: 'Claude Code', task: 'lift the red cube'});
+  let shown = plainText(sim.render(80));
+  assert.match(shown, /Welcome to OpenRUA/);
+  assert.match(shown, /connected to a Franka Panda, simulated in/);
+  assert.match(shown, /Try "what do you see\?"/);
+  assert.match(shown, /"lift the red cube"/);
+  assert.match(shown, /Esc stops the robot/);
+  assert.ok(sim.render(80).slice(0, -1).every(line => line.replace(/\x1b\[[0-9;]*m/g, '').length === 62));
+  sim.returning = true;
+  assert.match(plainText(sim.render(80)), /Welcome back to OpenRUA[\s\S]*Franka Panda is still up/);
+  const real = plainText(new Welcome('s2', {robot: './arm.yaml', robot_model: 'Franka Panda',
+    backend: 'real', agent: 'codex', agent_title: 'Codex'}).render(80));
+  assert.match(real, /your Franka Panda, with Codex at/);
+  assert.match(real, /stop button within reach/);
+  assert.match(plainText(new Welcome('old', {}, true).render(80)), /past conversation, read-only/);
+});
+
+test('a workspace file the agent names shows with its path on this computer', async () => {
+  const {mkdtempSync, mkdirSync, writeFileSync} = await import('node:fs');
+  const {tmpdir} = await import('node:os');
+  const {join} = await import('node:path');
+  const workspace = mkdtempSync(join(tmpdir(), 'ws-'));
+  mkdirSync(join(workspace, 'snaps')); writeFileSync(join(workspace, 'snaps', 'front.png'), 'x');
+  const transcript = new Transcript({workspace});
+  transcript.event({kind: 'agent_event', data: {turn_id: 't', kind: 'item', data: {item_id: 'm', kind: 'message',
+    text: 'Here it is: [front](/workspace/snaps/front.png). No /workspace/missing.png though.'}}});
+  const shown = transcript.render(120).join('\n').replace(/\x1b\[[0-9;]*m/g, '');
+  assert.ok(shown.includes(`↳ ${join(workspace, 'snaps', 'front.png')}`));
+  assert.ok(!shown.includes(join(workspace, 'missing.png')));
+});
+
 test('a native error emitted as both message and result is displayed once', () => {
   const view = new Transcript();
   const error = 'Failed to authenticate: OAuth session expired and could not be refreshed';

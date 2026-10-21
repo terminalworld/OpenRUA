@@ -30,6 +30,16 @@ def _read(path: Path, operation: str, *args):
         store.close()
 
 
+def _answers(endpoint: Path) -> bool:
+    """Whether the session's owner answers with its conversation open."""
+    try:
+        client = Client.from_file(endpoint)
+        client.timeout = 1
+        return not client.snapshot()['state']['closed']
+    except (OSError, RuntimeError, ValueError, KeyError, TypeError):
+        return False
+
+
 def describe(directory: Path) -> dict:
     database = directory / 'conversation.sqlite'
     snapshot = _read(database, 'snapshot')
@@ -42,7 +52,8 @@ def describe(directory: Path) -> dict:
         updated = max(updated, wal.stat().st_mtime)
     return dict(id=directory.name, title=title, updated=updated,
                 time=datetime.fromtimestamp(updated, timezone.utc).strftime('%Y-%m-%d %H:%M UTC'),
-                status='Ended' if state['closed'] else 'Service recorded; verify on open' if (directory / 'endpoint.json').exists() else 'Execution status unknown')
+                status='Ended' if state['closed'] else 'Running' if _answers(directory / 'endpoint.json')
+                else 'Not answering' if (directory / 'endpoint.json').exists() else 'Execution status unknown')
 
 
 def entries(home: Path) -> list[dict]:
@@ -58,7 +69,9 @@ def entries(home: Path) -> list[dict]:
         except (OSError, sqlite3.Error, ValueError, KeyError, TypeError) as exc:
             records.append(dict(id=directory.name, title='Unreadable retained conversation',
                                 updated=0, time='', status=f'Cannot read: {exc}'))
-    return sorted(records, key=lambda row: row['updated'], reverse=True)
+    # Sessions still running first (a robot may be under control), then the
+    # most recent.
+    return sorted(records, key=lambda row: (row['status'] == 'Running', row['updated']), reverse=True)
 
 
 class ArchivedFiles:
@@ -124,7 +137,7 @@ class ArchiveClient:
 
 
 ROBOT_FACTS = ('robot', 'robot_model', 'simulator', 'benchmark', 'suite', 'task_id', 'task',
-               'agent', 'model', 'backend', 'status')
+               'agent', 'agent_title', 'model', 'backend', 'status', 'workspace')
 
 
 def robot_facts(home: Path, name: str) -> dict:

@@ -79,7 +79,8 @@ press **Enter**, for example:
 
 Use `/files` to browse saved observations and code, `/resume` to find earlier
 sessions, and `/end` to stop execution while keeping your work. **Ctrl+D** on an
-empty input detaches while the session continues running.
+empty input leaves and asks whether to keep the session running in the
+background or end it.
 
 For a real robot, run `openrua connect` (or choose **Connect a real robot** in
 the setup menu): your coding agent sets it up with you, and OpenRUA checks each
@@ -164,7 +165,7 @@ for the experimental protocol.
 
 | Interface | Entry | When you leave |
 |---|---|---|
-| OpenRUA TUI | `openrua --name chat-demo` | Ctrl+D detaches; the shared session continues |
+| OpenRUA TUI | `openrua --name chat-demo` | Ctrl+D asks: keep the shared session running (Enter), or end it |
 | Browser | `openrua --gui --name chat-demo` | Closing the page leaves the shared session running |
 | Plain CLI | `openrua --cli --name chat-demo` | Leaving the client keeps the shared session running |
 | Native agent terminal | `openrua up panda --sim robosuite --bench capbench --agent codex --name native-demo`, then `openrua agent --name native-demo` in a second terminal | Exiting the agent leaves the robot up; Ctrl-C in `up` or `openrua down --name native-demo` powers it off |

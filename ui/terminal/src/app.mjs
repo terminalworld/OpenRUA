@@ -1,7 +1,7 @@
 import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, SelectList, Spacer, Text,
   TuiMainScreen, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
-import {Transcript, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
+import {Transcript, Welcome, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
 
@@ -18,10 +18,10 @@ const commands = [
   {name: 'permissions', description: 'Ask before each command that changes something, or run without asking'},
   {name: 'model', description: 'Show the model, or change it: /model <name>'},
   {name: 'retry', description: 'Retry an unconfirmed send with the same request ID'},
-  {name: 'quit', description: 'Detach; the session keeps running'},
+  {name: 'quit', description: 'Leave; you choose whether the session keeps running'},
 ];
 
-const KEYS = 'Enter send (joins a running turn) · Ctrl+J newline · / commands · Esc interrupt · Ctrl+D detach';
+const KEYS = 'Enter send (joins a running turn) · Ctrl+J newline · / commands · Esc interrupt · Ctrl+D leave';
 // The agent counts as quiet after this long without a new event: say so, so a
 // slow model and a stalled one are not mistaken for each other silently.
 const QUIET_MS = 60_000;
@@ -32,20 +32,6 @@ const elapsed = since => {
   return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m${String(seconds % 60).padStart(2, '0')}s`;
 };
 
-// The first lines of the screen: the product, the session, and the robot it is
-// on, as recorded when the session started (nothing when nothing was recorded).
-export function header(name, facts = {}) {
-  const lines = [`${bold('OpenRUA')}${name ? muted(' · ' + plain(name)) : ''}`];
-  const where = [facts.robot && (facts.robot_model ? `${facts.robot} (${facts.robot_model})` : facts.robot),
-    facts.backend === 'real' ? 'real robot' : facts.simulator && `on ${facts.simulator}`].filter(Boolean).join(' ');
-  const scene = [facts.benchmark, facts.suite && (facts.task_id != null ? `${facts.suite} #${facts.task_id}` : facts.suite)].filter(Boolean).join(' / ');
-  const agent = facts.agent && (facts.model ? `${facts.agent} (${facts.model})` : facts.agent);
-  const parts = [where, scene, agent].filter(Boolean).map(plain);
-  if (parts.length) lines.push(muted(parts.join(' · ')));
-  if (facts.task) lines.push(muted('task: ') + plain(facts.task));
-  return lines.join('\n');
-}
-
 // The component composition follows Pi's chat-simple example and interactive UI:
 // transcript, status, editor, completion; application actions stay callbacks.
 export class Chat {
@@ -53,7 +39,8 @@ export class Chat {
     this.client = client;
     this.history = history; this.result = {action: 'quit'};
     this.ui = new TuiMainScreen(terminal);
-    this.transcript = new Transcript();
+    this.facts = facts;
+    this.transcript = new Transcript({workspace: facts.workspace});
     // Every event the agent produces marks it as not quiet (QUIET_MS).
     const record = this.transcript.event.bind(this.transcript);
     this.transcript.event = event => {
@@ -83,7 +70,8 @@ export class Chat {
     this.done = false;
     this.busy = false;
     this.panels = [];
-    this.ui.addChild(new Text(header(name, facts), 0, 0));
+    this.welcome = new Welcome(name, facts, client.readOnly);
+    this.ui.addChild(this.welcome);
     this.ui.addChild(this.transcript);
     this.ui.addChild(new Spacer(1)); this.ui.addChild(this.status);
     this.ui.addChild(this.notice); this.ui.addChild(this.editor);
@@ -235,6 +223,10 @@ export class Chat {
     await this.controller.refresh();
     if (this.done) return;
     const state = this.controller.state;
+    if (this.welcome.seen === undefined) {
+      // Coming back to a conversation that already has messages.
+      this.welcome.seen = true; this.welcome.returning = state.messages.length > 0;
+    }
     const queued = state.messages.filter(message => message.status === 'queued').length;
     const requests = Object.values(state.requests).filter(r => r.status === 'pending').length;
     if (state.active && !this.started) this.started = Date.now();
