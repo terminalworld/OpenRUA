@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **An interrupt stops the robot too**: Escape or `/interrupt` stops the
+  agent's turn through its own CLI, as before, and now also asks the
+  robot's motion actions (each arm's trajectory and gripper ports, the
+  planner's move action) to cancel every goal, so a motion stops whatever
+  started it: a tool, a script of the agent's own, or a command Codex
+  keeps running after its turn is interrupted. The terminal says which
+  actions canceled and names any that did not answer. It is not an
+  emergency stop.
+
 ## 0.16.0
 
 - **A real robot's startup checks**: `backend.startup_checks` lists what

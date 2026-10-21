@@ -56,7 +56,16 @@ export class Chat {
     this.transcript = new Transcript();
     // Every event the agent produces marks it as not quiet (QUIET_MS).
     const record = this.transcript.event.bind(this.transcript);
-    this.transcript.event = event => { this.lastEvent = Date.now(); record(event); };
+    this.transcript.event = event => {
+      this.lastEvent = Date.now(); record(event);
+      // An interrupt also stops the robot's motions; say whether it did.
+      if (event.kind === 'motion_canceled') {
+        const {canceled = [], failed = []} = event.data ?? {};
+        this.say([canceled.length ? `Motion canceled: ${canceled.join(', ')}` : '',
+          failed.length ? `No answer from ${failed.join(', ')}: use the emergency stop if it still moves` : '']
+          .filter(Boolean).join('\n'));
+      }
+    };
     this.controller = new Controller(client, this.transcript);
     this.status = new Text('Connecting…', 0, 0);
     this.notice = new Text('', 0, 0);

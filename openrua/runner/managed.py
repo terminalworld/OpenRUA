@@ -53,6 +53,13 @@ class ManagedSession:
                     return
         self._watch = asyncio.create_task(watch())
 
+    async def cancel_motion(self) -> None:
+        """What an interrupt also does: the agent's turn stops through its
+        own CLI, and the robot's motions stop here, whatever started them."""
+        outcome = await asyncio.to_thread(self.robot.stop_motion)
+        if outcome:
+            self.execution.session.motion_canceled(outcome)
+
     async def move_to(self, open_resources: Callable[[], LiveRobot], reason: str) -> None:
         """Move the conversation to new resources between turns: the
         agent's process stops, the old resources stop, the new ones start
@@ -71,6 +78,7 @@ class ManagedSession:
             facts = live_state.load(self.name, self.home)
             self.artifacts = WorkspaceFiles(Path(facts["workspace"]))
             self.execution = await _open_execution(self.name, self.home, self.store, resume=True)
+            self.execution.on_interrupt = self.cancel_motion
             self.watch_robot()
 
     async def end(self) -> None:
@@ -148,6 +156,7 @@ async def start(request: RobotRequest, open_resources: Callable | None = None) -
         execution = await _open_execution(request.name, request.home, store)
         managed = ManagedSession(robot, execution, store, WorkspaceFiles(Path(facts["workspace"])),
                                  name=request.name, home=request.home)
+        execution.on_interrupt = managed.cancel_motion
         managed.watch_robot()
         return managed
     except BaseException:

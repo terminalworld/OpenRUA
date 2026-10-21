@@ -89,6 +89,9 @@ class Execution:
         # What the native process last said on its own (its stderr), added
         # to the reason when it ends: the cause is usually there.
         self._diagnostics = diagnostics
+        # What the resource owner also does when a turn is interrupted (a
+        # robot's motions canceled), started without holding the queue.
+        self.on_interrupt: Callable[[], Awaitable[None]] | None = None
 
     async def start(self) -> None:
         if self._owner is not None:
@@ -153,6 +156,8 @@ class Execution:
                 await self._pump()
             except Exception as exc:
                 self._lost(str(exc))
+            if operation == "interrupt" and self.on_interrupt is not None:
+                asyncio.create_task(self.on_interrupt())
             return result
 
     async def _pump(self) -> None:

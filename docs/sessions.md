@@ -164,9 +164,14 @@ A session starts with `--permissions auto` (the agent runs commands without
 asking) unless started with `--permissions ask`; either can be switched while it
 runs. Asked, the agent's request to run a command arrives as a question.
 
-Interrupting the agent is not an emergency stop for the robot. After interruption
-or failure the queue remains paused until explicitly resumed. If execution is
-unknown, inspect the robot and files before recording a reconciliation note:
+An interrupt stops the agent's turn through its own CLI and asks the robot's
+motion actions (each arm's trajectory and gripper ports, the planner's move
+action) to cancel every goal, so a motion stops whatever started it; the
+controllers hold where they are. It is not an emergency stop: an action that
+does not answer is named, and a robot that still moves needs the emergency
+stop. After an interrupt the queue goes on; after a failure it stays paused
+until explicitly resumed. If execution is unknown, inspect the robot and files
+before recording a reconciliation note:
 
 ```sh
 openrua session --name shared resolve_unknown MESSAGE_ID "What was checked and observed"
