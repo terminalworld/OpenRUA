@@ -117,7 +117,11 @@ def test_json_and_text_are_the_same_report(tmp_path, monkeypatch, capsys):
     assert [c["id"] for c in d["checks"]] == [c.id for c in r.checks]
     text = r.render()
     assert text.startswith("openrua doctor") and "fix:" in text     # proxy image missing
-    # exit on errors only: a missing proxy image is a warning
+    # exit on errors only: a missing proxy image is a warning (the login
+    # check is left out: it reads this machine's own login)
+    r = doctor.run(home=tmp_path, checks=tuple(
+        c for c in doctor.checks.CHECKS if c is not doctor.checks.check_login))
+    capsys.readouterr()
     assert doctor.print_report(r, as_json=True) == 0
     assert json.loads(capsys.readouterr().out)["ok"] is True
     r = doctor.run(robot="panda", home=tmp_path, bench="libero_pro")  # no images: errors
