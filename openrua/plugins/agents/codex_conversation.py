@@ -1,7 +1,13 @@
-"""Codex app-server JSON protocol. Checked against CLI 0.159.1 schemas.
+"""Codex app-server JSON protocol. Checked against CLI 0.159.1 schemas;
+turn/steer, server-started turns and async questions against 0.161.0.
 
 Native thread and turn IDs stay here. The execution owner supplies local turn
 IDs and serializes all calls; it owns persistence and the user-message queue.
+A message typed while a turn runs joins it through turn/steer, as Enter does
+in Codex's own terminal. A turn the server starts by itself (a goal or a
+wakeup) is a turn of the agent's own. A question the model asks with
+request_user_input_async arrives as an agent message with delivery "async";
+it is shown as a question, and the answer is the next user message.
 """
 
 from __future__ import annotations
@@ -27,6 +33,7 @@ class CodexConversation(ConversationProtocol):
         self._seen: set[str] = set()
         self._early: list[dict] = []
         self._requests: dict[str, tuple[Any, str, list[dict]]] = {}
+        self._steers: dict[int, str] = {}   # request ID -> message ID it carried
 
     @property
     def can_submit(self) -> bool:
@@ -56,6 +63,19 @@ class CodexConversation(ConversationProtocol):
             "threadId": self.thread_id, "input": [{"type": "text", "text": text}],
             "effort": self.effort}, turn_id)])
 
+    @property
+    def can_steer(self) -> bool:
+        return self.ready and self._active is not None and self._native_turn is not None
+
+    def steer(self, turn_id: str, message_id: str, text: str) -> Update:
+        if turn_id != self._active or not self.can_steer:
+            raise ValueError("no running turn to join")
+        frame = self._request("turn/steer", {
+            "threadId": self.thread_id, "input": [{"type": "text", "text": text}],
+            "expectedTurnId": self._native_turn}, turn_id)
+        self._steers[frame["id"]] = message_id
+        return Update([frame])
+
     def interrupt(self, turn_id: str) -> Update:
         if turn_id != self._active or not self._native_turn:
             raise ValueError("interrupt requires the active turn's acknowledged native ID")
@@ -74,6 +94,13 @@ class CodexConversation(ConversationProtocol):
             self._early.append(frame)
             return Update()
         native_turn = params.get("turnId") or params.get("turn", {}).get("id")
+        if not self._active and method == "turn/started" and native_turn:
+            # The server started a turn by itself (a goal, a wakeup).
+            turn_id = f"agent-{native_turn}"
+            self._seen.add(turn_id)
+            self._active, self._native_turn = turn_id, native_turn
+            return Update(events=[Event("turn_started", turn_id,
+                                        {"origin": "agent", "native_turn_id": native_turn})])
         if not self._active or native_turn != self._native_turn:
             return Update(events=[Event("native", data=frame)])
         if "id" in frame:
@@ -92,14 +119,35 @@ class CodexConversation(ConversationProtocol):
             return Update(events=[Event("text_delta", self._active,
                                         {"text": params["delta"], "item_id": params["itemId"]})])
         if method in {"item/started", "item/completed"}:
-            item = params["item"]
-            kind = {"agentMessage": "message", "commandExecution": "command",
-                    "fileChange": "files", "reasoning": "reasoning"}.get(item["type"], "activity")
-            return Update(events=[Event("item", self._active, {
-                "phase": method.split("/")[1], "item_id": item["id"], "kind": kind,
-                "text": item.get("text") or item.get("command") or item["type"],
-                "output": item.get("aggregatedOutput", ""), "details": item})])
+            return self._item(method, params["item"])
         return Update(events=[Event("native", self._active, frame)])
+
+    def _item(self, method: str, item: dict) -> Update:
+        """One item as a person reads it: the user's own message echoed back
+        and empty reasoning are not shown; a command shows its command once."""
+        kind = item["type"]
+        summary = "".join(item.get("summary") or []) if kind == "reasoning" else ""
+        if kind == "userMessage" or (kind == "reasoning" and not summary):
+            return Update(events=[Event("native", self._active, {"method": method, "item": item})])
+        phase = method.split("/")[1]
+        if kind == "agentMessage":
+            question = item.get("delivery") == "async" and item.get("questions")
+            return Update(events=[Event("item", self._active, {
+                "phase": phase, "item_id": item["id"],
+                "kind": "question" if question else "message",
+                "text": item.get("text", ""), "output": "", "details": item})])
+        if kind == "commandExecution":
+            details = {k: item[k] for k in ("cwd", "exitCode", "durationMs") if item.get(k) is not None}
+            return Update(events=[Event("item", self._active, {
+                "phase": phase, "item_id": item["id"], "kind": "command",
+                "text": item.get("command") or "command",
+                "output": item.get("aggregatedOutput", ""), "details": details})])
+        details = {k: v for k, v in item.items() if k not in ("id", "type") and v not in (None, [], "")}
+        return Update(events=[Event("item", self._active, {
+            "phase": phase, "item_id": item["id"],
+            "kind": {"fileChange": "files", "reasoning": "reasoning"}.get(kind, "activity"),
+            "text": summary or item.get("text") or kind,
+            "output": item.get("aggregatedOutput", ""), "details": details})])
 
     def _response(self, frame: dict) -> Update:
         request_id = frame["id"]
@@ -107,6 +155,13 @@ class CodexConversation(ConversationProtocol):
         if pending is None:
             return Update(events=[Event("native", data=frame)])
         method, turn_id = pending
+        if method == "turn/steer":
+            # A turn that ended before the steer arrived refuses it; the
+            # message then waits for a turn of its own.
+            message_id = self._steers.pop(request_id)
+            kind = "steer_rejected" if "error" in frame else "steer_delivered"
+            return Update(events=[Event(kind, turn_id, {"message_id": message_id,
+                                                        "error": frame.get("error")})])
         if "error" in frame:
             # Do not infer that an errored request had no side effects.
             self.ready = False
@@ -147,6 +202,7 @@ class CodexConversation(ConversationProtocol):
         if method == "item/tool/requestUserInput":
             questions = [{"id": q["id"], "text": q["question"],
                           "choices": [o["label"] for o in q.get("options") or []],
+                          "allow_other": bool(q.get("isOther")) or not q.get("options"),
                           "secret": q.get("isSecret", False)} for q in params["questions"]]
         elif method in {"item/commandExecution/requestApproval", "item/fileChange/requestApproval"}:
             questions = [{"id": "decision", "text": params.get("reason") or "Allow this operation?",

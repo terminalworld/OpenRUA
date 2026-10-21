@@ -48,7 +48,7 @@ async def emit(native, event_kind, turn_id, **data):
     await native.frames.put({"kind": event_kind, "turn_id": turn_id, "data": data})
 
 
-def test_browser_and_cli_queue_interrupt_edit_resume_and_end(tmp_path):
+def test_browser_and_cli_queue_interrupt_edit_and_end(tmp_path):
     async def check(page, store, native, server):
         await send(page, "Inspect the scene")
         first = store.snapshot()["state"]["active"]
@@ -72,11 +72,11 @@ def test_browser_and_cli_queue_interrupt_edit_resume_and_end(tmp_path):
         await page.locator("#interrupt").click()
         await until(lambda: any("interrupt" in frame for frame in native.writes))
         await emit(native, "turn_finished", first, status="interrupted")
-        await playwright.expect(page.locator("#resume")).to_be_enabled()
-        assert len([f for f in native.writes if "submit" in f]) == 1
-        page.on("dialog", lambda dialog: dialog.accept())
-        await page.locator("#resume").click()
+        # The interrupt stops the turn; the queued instruction goes next,
+        # with nothing to resume.
         await until(lambda: store.snapshot()["state"]["active"] == second["id"])
+        await playwright.expect(page.locator("#resume")).to_be_disabled()
+        page.on("dialog", lambda dialog: dialog.accept())
         assert [f["text"] for f in native.writes if "submit" in f] == ["Inspect the scene", "Inspect the bowl first"]
         await page.locator("#end").click()
         await playwright.expect(page.locator("#state")).to_have_text("Ended")

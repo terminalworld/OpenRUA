@@ -266,10 +266,13 @@ that edit. A message already dispatched cannot be edited or withdrawn.
 
 The owner records `dispatch_started` before writing to the native process.
 One turn is outstanding at a time. Normal completion releases the next message.
-Agent failure, interrupted execution, or uncertain delivery pauses the queue.
-An explicit interrupt also pauses it immediately, even if normal completion
-wins the cancellation race. Cancellation waits for the native turn identity,
-and its acknowledgement alone does not complete a turn.
+While a turn runs, a queued message joins it when the agent can take one
+(`steer_started`, then `steer_delivered`; a refused steer returns it to the
+queue). An interrupt stops the turn and the queue goes on. Agent failure,
+uncertain delivery, an unanswerable request or a stopped robot pauses the
+queue, with the reason in `pause_reason`. Cancellation waits for the native
+turn identity, and its acknowledgement alone does not complete a turn. A turn
+the agent starts by itself is recorded as a message with `origin: agent`.
 
 Resuming requires the current `pause_id`, so a delayed resume request cannot
 release a newer pause. Unknown execution must first be reconciled with an

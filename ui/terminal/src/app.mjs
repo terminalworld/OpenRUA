@@ -13,13 +13,16 @@ const commands = [
   {name: 'questions', description: 'Answer pending agent questions'},
   {name: 'resume', description: 'Find an existing conversation'},
   {name: 'end', description: 'End execution while retaining the workspace and history'},
-  {name: 'interrupt', description: 'Interrupt the current turn and pause the queue'},
+  {name: 'interrupt', description: 'Stop the current turn; queued messages go on'},
   {name: 'continue', description: 'Confirm continuation of the paused queue'},
   {name: 'retry', description: 'Retry an unconfirmed send with the same request ID'},
   {name: 'quit', description: 'Detach; the session keeps running'},
 ];
 
-const KEYS = 'Enter send · Ctrl+J newline · / commands · Esc interrupt · Ctrl+D detach';
+const KEYS = 'Enter send (joins a running turn) · Ctrl+J newline · / commands · Esc interrupt · Ctrl+D detach';
+// The agent counts as quiet after this long without a new event: say so, so a
+// slow model and a stalled one are not mistaken for each other silently.
+const QUIET_MS = 60_000;
 const SPINNER = ['✻', '✢', '✳', '✶', '✳', '✢'];
 
 const elapsed = since => {
@@ -49,6 +52,9 @@ export class Chat {
     this.history = history; this.result = {action: 'quit'};
     this.ui = new TuiMainScreen(terminal);
     this.transcript = new Transcript();
+    // Every event the agent produces marks it as not quiet (QUIET_MS).
+    const record = this.transcript.event.bind(this.transcript);
+    this.transcript.event = event => { this.lastEvent = Date.now(); record(event); };
     this.controller = new Controller(client, this.transcript);
     this.status = new Text('Connecting…', 0, 0);
     this.notice = new Text('', 0, 0);
@@ -172,6 +178,24 @@ export class Chat {
     });
   }
 
+  // While the agent waits on a question, what is typed is the answer, as in a
+  // coding agent's own terminal; a question with several parts, or a secret,
+  // goes through /questions.
+  answerTyped(text) {
+    const pending = Object.values(this.controller.state?.requests ?? {}).filter(r => r.status === 'pending');
+    if (!pending.length) return false;
+    const request = pending[0];
+    const [question] = request.questions;
+    if (request.questions.length !== 1 || question.secret
+        || (question.choices?.length && !question.allow_other && !question.choices.includes(text.trim()))) {
+      this.questions();
+      return true;
+    }
+    void this.client.command('respond', {request_id: request.request_id, answers: {[question.id]: [text.trim()]}})
+      .then(() => this.refresh()).catch(error => this.say(error.message));
+    return true;
+  }
+
   questions() {
     if (this.client.readOnly) throw new Error('This is read-only history.');
     const pending = Object.values(this.controller.state?.requests ?? {}).filter(r => r.status === 'pending');
@@ -203,9 +227,12 @@ export class Chat {
     if (state.active && !this.started) this.started = Date.now();
     if (!state.active) this.started = null;
     const robot = state.robot?.status === 'stopped' ? [red(`robot stopped: ${plain(state.robot.reason)}`)] : [];
-    const extra = robot.concat(queued ? [`${queued} queued`] : [])
-      .concat(state.connected || state.closed || this.client.readOnly ? [] : [yellow('agent disconnected')])
-      .concat(requests ? [yellow(`${requests} question(s): /questions`)] : [])
+    const quiet = state.active && this.lastEvent && Date.now() - this.lastEvent > QUIET_MS
+      ? [yellow(`no output for ${elapsed(this.lastEvent)}`)] : [];
+    const extra = robot.concat(quiet, queued ? [`${queued} queued`] : [])
+      .concat(state.connected || state.closed || this.client.readOnly ? []
+        : [yellow(state.pause_reason?.startsWith('agent disconnected') ? plain(state.pause_reason) : 'agent disconnected')])
+      .concat(requests ? [yellow(`${requests} question(s): type the answer, or /questions to choose`)] : [])
       .concat(this.controller.pending ? [yellow('send unconfirmed: /retry')] : []);
     let head;
     if (this.client.readOnly) head = muted('◇ Read-only history');
@@ -262,9 +289,13 @@ export class Chat {
           case '/queue':
             this.queue(); break;
           case '/interrupt': {
+            // As in a coding agent's own terminal: stop now, no dialog; what
+            // is queued goes next.
             const id = state?.active;
             if (!id) throw new Error('No active turn.');
-            this.confirm('Interrupt this turn and pause the shared queue?', () => this.client.command('interrupt', {message_id: id})); break;
+            await this.client.command('interrupt', {message_id: id});
+            this.say('Interrupted. Queued messages go next.');
+            await this.refresh(); break;
           }
           case '/continue': {
             const id = state?.pause_id;
@@ -273,6 +304,9 @@ export class Chat {
           }
           default: throw new Error('Unknown command. Use /help.');
         }
+      } else if (this.answerTyped(text)) {
+        this.editor.addToHistory(text);
+        this.say('');
       } else {
         await this.controller.send(text);
         this.editor.addToHistory(text);

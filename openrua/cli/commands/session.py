@@ -99,7 +99,7 @@ def add_parser(sub) -> None:
     send.add_argument("--client-id", default="cli", help="reuse with request ID for safe retry")
     send.add_argument("--request-id", default=None, help="unique for this message; reuse only for retries")
     for action, help_text in (
-            ("interrupt", "interrupt a message and pause the queue"),
+            ("interrupt", "stop the running message; queued ones go next"),
             ("withdraw", "withdraw a queued message")):
         item = actions.add_parser(action, help=help_text)
         item.add_argument("message_id")

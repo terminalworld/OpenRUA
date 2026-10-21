@@ -71,35 +71,75 @@ def test_interrupt_before_native_ack_waits_then_sends_once(session):
     session.native(Event("turn_started", message))
     assert session.take_interrupt() == message
     assert session.take_interrupt() is None
-    assert state(session)["paused"]
+    assert not state(session)["paused"]          # an interrupt stops the turn, not the queue
     session.native(Event("interrupt_acknowledged", message))
     assert state(session)["active"] == message
 
 
-def test_interrupt_retains_queue_and_needs_explicit_resume_even_if_completed(session):
+def test_after_an_interrupt_the_queue_goes_on(session):
+    # As in a coding agent's own terminal: Esc stops the turn, and what was
+    # typed meanwhile is sent next. A person read a paused queue as a hang.
     first = add(session)
     second = add(session, "place", request="2")
     session.take()
     session.interrupt(first)
     finish(session, first)  # natural completion won the cancellation race
-    assert session.take() is None
-    assert state(session)["messages"][1]["status"] == "queued"
-    session.resume(state(session)["pause_id"])
+    assert not state(session)["paused"]
     assert session.take()["id"] == second
     with pytest.raises(ValueError):
         session.interrupt(first)
     assert state(session)["active"] == second
 
 
-@pytest.mark.parametrize("outcome", ["failed", "interrupted"])
-def test_abnormal_terminal_pauses_pending_messages(session, outcome):
+def test_a_failed_turn_pauses_pending_messages(session):
     first = add(session)
     add(session, "next", request="2")
     session.take()
-    finish(session, first, outcome)
+    finish(session, first, "failed")
     assert state(session)["paused"] and session.take() is None
     session.resume(state(session)["pause_id"])
     assert session.take()
+
+
+def test_queued_messages_join_the_running_turn(session):
+    first = add(session)
+    second = add(session, "the ball moved left", request="2")
+    session.take()
+    assert session.take_steer() is None              # not running yet
+    session.native(Event("turn_started", first))
+    joined = session.take_steer()
+    assert joined["id"] == second and joined["joined"] == first
+    assert session.take_steer() is None
+    session.native(Event("steer_delivered", first, {"message_id": second}))
+    assert _message_status(session, second) == "steered"
+    finish(session, first)
+    assert session.take() is None                    # it was part of that turn
+
+
+def test_a_rejected_steer_waits_for_its_own_turn(session):
+    first = add(session)
+    second = add(session, "next", request="2")
+    session.take()
+    session.native(Event("turn_started", first))
+    session.take_steer()
+    session.native(Event("steer_rejected", first, {"message_id": second}))
+    assert _message_status(session, second) == "queued"
+    finish(session, first)
+    assert session.take()["id"] == second
+
+
+def test_a_turn_the_agent_starts_itself_is_recorded(session):
+    session.native(Event("turn_started", "agent-1", {"origin": "agent"}))
+    s = state(session)
+    assert s["active"] == "agent-1" and s["messages"][-1]["origin"] == "agent"
+    queued = add(session)
+    assert session.take() is None                    # it waits for that turn
+    finish(session, "agent-1")
+    assert session.take()["id"] == queued
+
+
+def _message_status(session, message_id):
+    return next(m for m in state(session)["messages"] if m["id"] == message_id)["status"]
 
 
 def test_stale_resume_cannot_release_a_later_pause(session):

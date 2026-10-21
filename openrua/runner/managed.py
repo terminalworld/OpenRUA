@@ -16,6 +16,15 @@ from openrua.sessions.execution import Execution, StdioTransport
 from openrua.sessions.store import SQLiteStore
 
 
+def _last_words(path: Path, limit: int = 300) -> str:
+    """The last nonempty line a native process wrote to its stderr log."""
+    try:
+        lines = [line.strip() for line in path.read_text(errors="replace").splitlines() if line.strip()]
+    except OSError:
+        return ""
+    return lines[-1][-limit:] if lines else ""
+
+
 class ManagedSession:
     def __init__(self, robot: LiveRobot, execution: Execution, store: SQLiteStore,
                  artifacts: ArtifactReader | None = None):
@@ -92,9 +101,11 @@ async def start(request: RobotRequest) -> ManagedSession:
         directory = paths.sandbox_dir(request.name, request.home)
         store = SQLiteStore(directory / "conversation.sqlite", initial_state())
         session = Session(store)
+        stderr = directory / "agent.stderr.log"
         async def transport():
-            return await StdioTransport.start(conversation.argv, directory / "agent.stderr.log")
-        execution = Execution(session, conversation, transport, directory / "conversation.lock")
+            return await StdioTransport.start(conversation.argv, stderr)
+        execution = Execution(session, conversation, transport, directory / "conversation.lock",
+                              diagnostics=lambda: _last_words(stderr))
         await execution.start()
         managed = ManagedSession(robot, execution, store, WorkspaceFiles(Path(facts["workspace"])))
         managed.watch_robot()

@@ -108,7 +108,9 @@ class Session:
         return self.store.update(change)
 
     def interrupt(self, message_id: str) -> None:
-        """Pause first. A separate claim sends cancellation once native identity exists."""
+        """Stop the running turn. Queued messages go on afterwards, as in a
+        coding agent's own terminal; a separate claim sends cancellation
+        once native identity exists."""
         def change(state):
             _open(state)
             if state["active"] != message_id:
@@ -117,9 +119,26 @@ class Session:
             if message["cancel_requested"]:
                 return None, []
             message["cancel_requested"] = True
-            _pause(state, "interrupted")
             return None, [_event("interrupt_requested", message_id=message_id)]
         self.store.update(change)
+
+    def take_steer(self) -> dict | None:
+        """The next queued message, marked to join the running turn, when
+        there is a running turn to join. Persisted before the owner sends."""
+        def change(state):
+            if state["closed"] or state["paused"] or not state["active"] or not state["connected"]:
+                return None, []
+            active = _message(state, state["active"])
+            if active["status"] != "running" or active["cancel_requested"]:
+                return None, []
+            for message in state["messages"]:
+                if message["status"] == "queued":
+                    message["status"] = "steering"
+                    message["joined"] = state["active"]
+                    return message, [_event("steer_started", message_id=message["id"],
+                                            turn_id=state["active"])]
+            return None, []
+        return self.store.update(change)
 
     def take_interrupt(self) -> str | None:
         def change(state):
@@ -148,6 +167,30 @@ class Session:
                     state["connected"] = True
             elif event.kind == "protocol_error":
                 self._unknown(state, "native protocol error")
+            elif event.kind in {"steer_delivered", "steer_rejected"}:
+                message = _message(state, event.data["message_id"])
+                if message["status"] == "steering":
+                    if event.kind == "steer_delivered":
+                        message["status"] = "steered"
+                    else:
+                        message["status"] = "queued"
+                        message.pop("joined", None)
+            elif event.kind == "turn_started" and event.turn_id and not state["active"]:
+                found = [m for m in state["messages"] if m["id"] == event.turn_id]
+                if found and found[0]["status"] == "steering":
+                    # It reached the agent after the turn it joined had ended,
+                    # and became a turn of its own.
+                    found[0]["status"] = "running"
+                    state["active"] = event.turn_id
+                elif not found and event.data.get("origin") == "agent":
+                    # The agent went on by itself (a background task finished).
+                    message = {"id": event.turn_id, "client_id": "agent",
+                               "request_id": event.turn_id, "original_text": "", "text": "",
+                               "revision": 0, "status": "running", "cancel_requested": False,
+                               "cancel_sent": False, "origin": "agent"}
+                    state["messages"].append(message)
+                    state["active"] = event.turn_id
+                    return None, [record, _event("message_accepted", message=message)]
             elif event.turn_id and event.turn_id == state["active"]:
                 message = _message(state, event.turn_id)
                 if event.kind == "turn_started":
@@ -159,10 +202,11 @@ class Session:
                     message["status"] = status
                     state["active"] = None
                     state["requests"] = {}
-                    if status != "completed" or message["cancel_requested"]:
+                    # An interrupt is the person's own stop: the queue goes
+                    # on. A failure holds it until someone looks.
+                    if status == "failed" and not message["cancel_requested"]:
                         if not state["paused"]:
-                            _pause(state, "interrupted" if status == "interrupted"
-                                   or message["cancel_requested"] else f"the turn {status}")
+                            _pause(state, "the turn failed")
                 elif event.kind == "input_required":
                     state["requests"][event.data["request_id"]] = {
                         "turn_id": event.turn_id, "status": "pending", **event.data}
@@ -196,6 +240,11 @@ class Session:
     def _unknown(state: dict, reason: str) -> None:
         state["connected"] = False
         _pause(state, f"agent disconnected: {reason}")
+        for message in state["messages"]:
+            if message["status"] == "steering":
+                message["status"] = "unknown"
+                message["uncertainty"] = (f"sent into a running turn, delivery unconfirmed "
+                                          f"({reason})")
         if state["active"]:
             message = _message(state, state["active"])
             message["status"] = "unknown"

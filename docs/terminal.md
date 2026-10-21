@@ -77,17 +77,24 @@ fallback. Startup failures keep their logs in `~/.openrua/launches/NAME/`.
 | `/tools` | Expand or collapse a tool call, with its details and output |
 | `/files` | Browse saved workspace files |
 | `/queue` | Inspect, edit or withdraw queued instructions |
-| `/questions` | Answer ordinary agent questions |
-| Escape or `/interrupt` | Confirm interruption and pause the queue |
-| `/continue` | Confirm continuing the paused queue |
+| `/questions` | Choose answers to agent questions (or type the answer) |
+| Escape or `/interrupt` | Stop the current turn; queued instructions go next |
+| `/continue` | Confirm continuing a paused queue |
 | `/retry` | Retry an unconfirmed send with its original request ID |
 | `/resume` | Search retained conversations |
 | `/end` | Confirm ending execution, retaining history and workspace |
 | Ctrl+D on empty input or `/quit` | Detach while execution continues |
 
-Menus use arrows, Enter and Escape. Confirmation starts on Cancel. Typing
-while the agent works does not interrupt it; submitted instructions queue.
-A failed or unknown execution outcome pauses the queue for review. Client
+Menus use arrows, Enter and Escape. Confirmation starts on Cancel. The terminal
+behaves the way a coding agent's own does: what you send while the agent works
+joins the running turn after its current tool calls (Claude Code and Codex
+take it; with an agent that cannot, it waits for the turn to end), Escape
+stops the turn at once and anything still queued goes next, and while the
+agent waits on a question, what you type is the answer. A turn the agent
+starts by itself (a background task finished) is shown as its own. The status
+line says how long the agent has been quiet once it passes a minute.
+A failed turn, a lost agent or a stopped robot pauses the queue for review,
+and the status line says which. Client
 reconnection replays events without automatically resending instructions.
 If a running client's connection drops, the status shows **Disconnected · retrying**
 until polling succeeds again. The recovered status reflects the shared session;

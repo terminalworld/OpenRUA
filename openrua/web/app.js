@@ -86,8 +86,11 @@ function turn(message) {
     entry = { article, user, status, result };
     turns.set(message.id, entry);
   }
-  entry.user.textContent = message.text;
-  entry.status.textContent = message.status;
+  // A turn the agent started by itself has no instruction of its own.
+  entry.user.textContent = message.origin === "agent" ? "(the agent went on by itself)" : message.text;
+  entry.status.textContent =
+    { steering: "joining the running turn", steered: "joined the running turn" }[message.status] ||
+    message.status;
   return entry;
 }
 function event(record) {

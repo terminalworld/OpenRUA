@@ -72,7 +72,7 @@ class StdioTransport:
 class Execution:
     def __init__(self, session: Session, conversation: Conversation,
                  transport: Callable[[], Awaitable[Transport]], owner_path: Path,
-                 write_timeout: float = 30):
+                 write_timeout: float = 30, diagnostics: Callable[[], str] | None = None):
         if write_timeout <= 0:
             raise ValueError("write timeout must be positive")
         self._write_timeout = write_timeout
@@ -86,6 +86,9 @@ class Execution:
         self._gate = asyncio.Lock()
         self._closing = False
         self._usable = False
+        # What the native process last said on its own (its stderr), added
+        # to the reason when it ends: the cause is usually there.
+        self._diagnostics = diagnostics
 
     async def start(self) -> None:
         if self._owner is not None:
@@ -152,10 +155,18 @@ class Execution:
         target = self.session.take_interrupt()
         if target:
             await self._update(self.conversation.protocol.interrupt(target))
-        if self.conversation.protocol.can_submit:
+        protocol = self.conversation.protocol
+        if protocol.can_submit:
             message = self.session.take()
             if message:
-                await self._update(self.conversation.protocol.submit(message["id"], message["text"]))
+                await self._update(protocol.submit(message["id"], message["text"]))
+        # What is typed while a turn runs joins it, where the agent can take
+        # it, the way a coding agent's own terminal passes it on.
+        while protocol.can_steer:
+            message = self.session.take_steer()
+            if not message:
+                break
+            await self._update(protocol.steer(message["joined"], message["id"], message["text"]))
 
     async def _update(self, update: Update) -> None:
         for event in update.events:
@@ -177,7 +188,9 @@ class Execution:
                     if self._closing:
                         return
                     if frame is None:
-                        self._lost("native process ended without a retained connection")
+                        said = self._diagnostics() if self._diagnostics else ""
+                        self._lost("native process ended without a retained connection"
+                                   + (f"; it said: {said}" if said else ""))
                         return
                     self.session.store.update(lambda state: (None, [{"kind": "native_frame", "data": frame}]))
                     await self._update(self.conversation.protocol.receive(frame))
