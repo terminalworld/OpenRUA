@@ -49,6 +49,7 @@ observations without starting a new robot each turn.
 
 ## News
 
+- **2026-10-21** · [v0.14.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.14.0): the agent does one task on its own, recorded, on a simulated or **real robot** (`openrua exec`); `openrua run` is gone: chat is `openrua`, and the agent's own terminal is `openrua up` and `openrua agent`.
 - **2026-10-21** · [v0.13.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.13.0): **real robots** connect with your coding agent doing the work, each step checked ([`openrua connect`](docs/connect.md)); startup checks run before every start, and Escape also cancels the robot's motions. The shared terminal works the way Claude Code's and Codex's own do: messages join the running turn, `/permissions`, `/model`.
 - **2026-10-21** · [v0.12.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.12.0): **real robots** get their drivers' images and their own sandbox built on start, and start and stop their drivers from their own folder; the agent is limited only when a benchmark run asks for it.
 - **2026-10-21** · [v0.11.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.11.0): every robot is described by its own config (gripper behaviour, camera types, notes), so the agent is told what holds for that robot.
