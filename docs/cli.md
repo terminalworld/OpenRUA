@@ -90,7 +90,7 @@ start or reconnect (without a subcommand):
 | `benchmarks` | list the bundled benchmarks (or one benchmark's suites and tasks) |
 | `agents` | list the bundled agents |
 | `build` | build the images: simulators, sandbox, proxy |
-| `run` | bring a robot up, open the agent on it, power off after |
+| `exec` | the agent does one task on its own; the run is recorded |
 | `up` | bring a robot up with a sandbox terminal on it |
 | `connect` | connect a real robot, your coding agent doing the work |
 | `serve` | own a robot and shared native conversation for local clients |
@@ -105,6 +105,7 @@ start or reconnect (without a subcommand):
 | `config` | your defaults (robot, simulator, benchmark, agent) |
 | `clean` | explicitly delete retained session files |
 | `doctor` | check the install: docker, images, simulator, login |
+| `run` | removed: use openrua, openrua exec, or up + agent |
 
 Without a subcommand, an unnamed launch opens setup with a new session ID. An explicit name reconnects to the named shared session. `--gui` selects the browser, `--cli` plain chat, `--resume [ID]` selects history, and `--setup` edits the shared defaults. With no interface selected, non-interactive invocations print help.
 
@@ -255,63 +256,72 @@ options:
   --port PORT  listen port, baked in and labelled
 ```
 
-## openrua run
+## openrua exec
 
 ```
-usage: openrua run [-h] [--model MODEL] [--sim SIM] [--bench BENCH]
-                   [--task-suite TASK_SUITE] [--task-id TASK_ID]
-                   [--init-state INIT_STATE] [--task TASK] [--name NAME]
-                   [--agent AGENT] [--workspace WORKSPACE]
-                   [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
-                   [--web-search | --no-web-search]
-                   [--account-connectors | --no-account-connectors]
-                   [robot] [prompt]
+usage: openrua exec [-h] [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
+                    [--task-id TASK_ID] [--seed SEED] [--agent AGENT]
+                    [--model MODEL] [--run-id RUN_ID] [--runs-root RUNS_ROOT]
+                    [--wall-clock-min WALL_CLOCK_MIN]
+                    [--ros-domain ROS_DOMAIN] [--record [CAMERAS]]
+                    [--internet {open,model-only}]
+                    [--web-search | --no-web-search]
+                    [--account-connectors | --no-account-connectors]
+                    [robot] [task]
 
-Bring a robot up, open the coding agent on its terminal with PROMPT as the
-opening message, and power the robot off when the agent exits. Same steps as
-up, agent, down.
+``openrua exec``: the agent does one task on its own, and the run is recorded.
+As a coding agent's own non-interactive command runs it without its terminal,
+this runs one trial: the robot comes up (simulated or real), the agent gets
+the task and works until it is done or a budget ends, the robot powers off,
+and everything lands under ``runs/<label>/<run id>/`` (transcript, result,
+provenance; ``openrua demo`` renders a simulated one). A benchmark scene
+states its task and judges success; a simulator's own scene judges success
+too, and takes the sentence given when it states no task; a real robot's task
+is the sentence given, and a person judges it. Like ``openrua bench``, which
+runs every task and seed of a benchmark this way, the agent may reach only its
+model service unless the limit flags say otherwise.
 
 positional arguments:
-  robot                 robot: a type or your robot's file (openrua robots),
-                        by name or path; default: --bench's robot, else the
-                        user config's default
-  prompt                opening message for the agent
+  robot                 robot: a type or your robot's file, by name or path;
+                        default: --bench's robot, else your default
+  task                  the task, as a sentence: a real robot's, or a
+                        simulator's own scene's when it states none (a
+                        benchmark scene states its own)
 
 options:
   -h, --help            show this help message and exit
-  --model MODEL         model (default: the config's)
-  --sim SIM             simulator that embodies the robot (openrua
-                        simulators); default: the benchmark's; a real robot's
-                        file needs none
-  --bench BENCH         benchmark whose world to load (openrua benchmarks);
-                        default: the saved benchmark, else the simulator's
-                        native scene
+  --sim SIM             simulator for a robot type (openrua simulators)
+  --bench BENCH         benchmark whose scene to load (openrua benchmarks);
+                        default: the simulator's own scene
   --task-suite TASK_SUITE
-                        scene suite (default: the profile's)
-  --task-id TASK_ID     scene index (default: the profile's)
-  --init-state INIT_STATE
-                        episode seed / init state (simulated robots)
-  --task TASK           task sentence to show the agent (real robots; a
-                        simulated robot's comes from the scene)
-  --name NAME           session handle (default: openrua)
-  --agent AGENT         agent to open (default: the config's)
-  --workspace WORKSPACE
-                        new or empty working directory, retained after
-                        shutdown (default: <home>/sandboxes/<name>/workspace)
+                        scene suite (default: the scene's)
+  --task-id TASK_ID     task in the suite (default: the scene's)
+  --seed SEED           initial state of a simulated scene
+  --agent AGENT         agent (default: the configured one)
+  --model MODEL         model (default: the agent's)
+  --run-id RUN_ID       the run's name (default: exec-<UTC time>)
+  --runs-root RUNS_ROOT
+                        where runs land (default: ./runs)
+  --wall-clock-min WALL_CLOCK_MIN
+                        active minutes before the run stops (default: the
+                        protocol's)
   --ros-domain ROS_DOMAIN
-                        ROS_DOMAIN_ID (default: the lowest one no running
-                        robot uses, so concurrent robots never share a graph;
-                        a real robot: its own domain, 0)
+                        ROS_DOMAIN_ID (default: a free one; a real robot: 0)
+  --record [CAMERAS]    record a simulated robot's cameras for openrua demo
+                        (names, or none for the robot's default)
   --internet {open,model-only}
                         open, or only the agent's model service and login,
-                        through a whitelist proxy (default: not limited)
+                        through a whitelist proxy (default: only the model
+                        service, as in a benchmark run)
   --web-search, --no-web-search
                         the agent CLI's own web search and fetch tools
-                        (default: not limited)
+                        (default: only the model service, as in a benchmark
+                        run)
   --account-connectors, --no-account-connectors
                         what your account brings beyond the CLI: its
                         connectors or apps, synced skills and plugins
-                        (default: not limited)
+                        (default: only the model service, as in a benchmark
+                        run)
 ```
 
 ## openrua up
@@ -327,8 +337,8 @@ usage: openrua up [-h] [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
 
 Bring a robot up (simulated: boot its container; real: join its graph) with a
 sandbox terminal on it, then stay in the foreground; Ctrl-C powers it off.
-Open a second terminal for `openrua agent`, or use `openrua run` to do all of
-it in one.
+Open a second terminal for `openrua agent`, the coding agent's own terminal on
+it.
 
 positional arguments:
   robot                 robot: a type or your robot's file (openrua robots),
@@ -897,8 +907,9 @@ usage: openrua config [-h] [--robot ROBOT] [--sim SIM] [--bench BENCH]
                       {show,set,schema}
 
 Your defaults file, ~/.openrua/config.yaml: `config set` writes the flags it
-is given into it (the same flags run takes), `config show` prints it, `config
-schema` prints the resolved config's JSON schema, every key with its meaning.
+is given into it (the same flags a session takes), `config show` prints it,
+`config schema` prints the resolved config's JSON schema, every key with its
+meaning.
 
 positional arguments:
   {show,set,schema}     what to do
@@ -907,8 +918,8 @@ options:
   -h, --help            show this help message and exit
   --robot ROBOT         robot a command uses when it names none
   --sim SIM             simulator, likewise
-  --bench BENCH         benchmark whose world run / up load by default (null =
-                        the simulator's native scene)
+  --bench BENCH         benchmark whose world a session loads by default (null
+                        = the simulator's native scene)
   --agent AGENT         agent a command uses when it names none (openrua
                         agents)
   --model MODEL         model the agent runs on this machine (written under
@@ -950,7 +961,7 @@ usage: openrua doctor [-h] [--sim SIM] [--bench BENCH]
 
 positional arguments:
   robot                 also check this robot's images and simulator (with
-                        --sim, or --bench, as for openrua run)
+                        --sim, or --bench, as for openrua exec)
 
 options:
   -h, --help            show this help message and exit
@@ -961,6 +972,21 @@ options:
                         build (default: the robot's config, else the
                         configured default)
   --json                machine-readable output
+```
+
+## openrua run
+
+```
+usage: openrua run [-h]
+
+``openrua run``: removed; it says where its uses went. It opened the coding
+agent's own terminal on a robot, from before OpenRUA had a terminal of its
+own. Talking to the agent is ``openrua``; its own terminal is ``openrua up``
+and then ``openrua agent``; the agent doing a task on its own, recorded, is
+``openrua exec``. This stub goes in the next release.
+
+options:
+  -h, --help  show this help message and exit
 ```
 
 ## Exit codes

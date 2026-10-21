@@ -230,12 +230,14 @@ says how to reconnect (`openrua --name <session>`) and how to end it
 simulation setup menu. This is a software entry point; physical robot operation
 still requires validation on your hardware.
 
-For the native coding agent terminal or explicit resource commands:
+For the native coding agent terminal, a recorded run, or explicit resource
+commands:
 
 ```bash
-openrua doctor ./ur5e.yaml         # images, login, and that the file loads
-openrua run ./ur5e.yaml --ros-domain 7 "move the arm to the home pose"   # or up + agent + down
-openrua config set --robot ./ur5e.yaml                                    # or make it the default
+openrua doctor ./ur5e.yaml         # images, login, startup checks, and that the file loads
+openrua up ./ur5e.yaml --ros-domain 7 --task "move the arm to the home pose"   # then openrua agent in a second terminal
+openrua exec ./ur5e.yaml "move the arm to the home pose" --ros-domain 7        # the agent does it on its own; the run is recorded
+openrua config set --robot ./ur5e.yaml                                         # or make it the default
 ```
 
 The sandbox joins the host network and reaches the graph the way
@@ -243,16 +245,15 @@ The sandbox joins the host network and reaches the graph the way
 sandbox and a driver started by `backend.launch`, whether on the host or in
 `backend.image`. For an already-running external driver, select its existing
 domain; OpenRUA does not reconfigure it. The default domain is 0. On a real robot there is no simulator to ask,
-so the task sentence is the one you give (`run`'s prompt, or `--task`
-on `up` and `bench`), and a trial's `result.json` records `success: null`
+so the task sentence is the one you give (`exec`'s task, or `--task`
+on `up`), and a recorded run's `result.json` records `success: null`
 with `verdict: not_applicable`; preflight, the agent, the transcript and
 the provenance are the same as in simulation. A real robot takes no
 `--sim`; it may take `--bench` to run a benchmark's task list on it.
 
 For an independently controlled native terminal, keep `openrua up` running and
 use `openrua agent --name <name>` in another terminal. `openrua down --name <name>`
-asks that resource owner to stop the sandbox and any driver it launched. The
-same external stop works while `openrua run` is open. Driver launch commands
+asks that resource owner to stop the sandbox and any driver it launched. Driver launch commands
 must stay in the foreground so their owner can wait for shutdown; omit `launch`
 to join an externally managed graph, which OpenRUA leaves running.
 
@@ -288,8 +289,8 @@ and what a person does when it fails:
         fix: plug the adapter into this computer
 ```
 
-Every check runs before every session and every benchmark run (`openrua
-doctor` runs them too);
+Every check runs before every session and every recorded run (`openrua
+exec`, `openrua bench`; `openrua doctor` runs them too);
 one that fails stops the start, and the message lists each failed check
 with its fix. If the robot itself changed, `openrua connect --dir <its
 folder>` goes on connecting it from there.

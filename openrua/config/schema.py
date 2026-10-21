@@ -11,7 +11,7 @@ direction only, benchmark -> simulator -> robot:
   carrying its ``real`` backend (and optionally ``type:`` naming the
   robot type it is an instance of);
 - a simulator (``simulators/<engine>.yaml``): the engine, its install
-  (what its image is made of, and the ROS distro), the native scene ``openrua run`` loads when no
+  (what its image is made of, and the ROS distro), the native scene a session loads when no
   benchmark is named, and ``robots:``, how it drives each robot type it
   embodies (controller, gains, joint-name map);
 - a benchmark (``benchmarks/<name>.yaml``): ``task:``, ``protocol:``,
@@ -749,7 +749,7 @@ class InstallOverrides(Strict):
 
 
 class NativeScene(Strict):
-    """What ``openrua run <robot> --sim <engine>`` loads with no benchmark."""
+    """What a session on ``<robot> --sim <engine>`` loads with no benchmark."""
     entry_point: str = Field(description="the bridge loader for the engine's own scenes: "
                              "a bundled name (robosuite) or a path to a module of your "
                              "own, relative to this file")
@@ -775,8 +775,8 @@ class SimulatorProfile(Strict):
 
 class Scenes(Strict):
     """What a benchmark brings into the simulator's world."""
-    default_suite: str | None = Field(default=None, description="the suite openrua run / up "
-                                      "load when none is named; default: the first in "
+    default_suite: str | None = Field(default=None, description="the suite a session "
+                                      "loads when none is named; default: the first in "
                                       "task.suites")
     cameras: Cameras | None = Field(default=None, description="the scene cameras (over "
                                     "the simulator's native ones)")
@@ -893,7 +893,7 @@ class UserConfig(Strict):
     simulator: str | None = Field(default=None, description="simulator when a command "
                                   "names none (and the robot is a type)")
     benchmark: str | None = Field(default=None, description="benchmark whose world "
-                                  "openrua run / up load when --bench is not given; null = "
+                                  "a session loads when --bench is not given; null = "
                                   "the simulator's native scene")
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig, description="how this "
                                    "machine starts the sandbox")

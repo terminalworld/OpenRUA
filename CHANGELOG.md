@@ -9,6 +9,18 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- **`openrua exec`**: the agent does one task on its own and the run is
+  recorded under `runs/`, on a simulated or a real robot, as `codex exec`
+  or `claude -p` run a coding agent without its terminal. A benchmark
+  scene states its own task and judges success; a simulator's own scene
+  judges success and takes the sentence given when it states none; a real
+  robot's task is the sentence given (`openrua exec ./my-robot.yaml "put
+  the cup on the plate"`). Like `bench`, it applies the protocol's limits
+  unless the flags say otherwise. `openrua bench` runs a benchmark's task
+  set this way.
+- **`openrua run` is removed**: talking to the agent is `openrua`, its own
+  terminal is `openrua up` and then `openrua agent`, and a recorded run is
+  `openrua exec`. `openrua run` says so for one release, then goes.
 - The README has a News section: releases and the paper, newest first.
 - `openrua bench` on a real robot runs the robot's startup checks before
   any trial, as a session does.

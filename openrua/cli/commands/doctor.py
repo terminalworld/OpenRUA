@@ -17,7 +17,7 @@ def add_parser(sub) -> None:
     p = sub.add_parser("doctor", help="check the install: docker, images, simulator, login")
     p.add_argument("robot", nargs="?", default=None,
                    help="also check this robot's images and simulator (with --sim, or "
-                   "--bench, as for openrua run)")
+                   "--bench, as for openrua exec)")
     p.add_argument("--sim", default=None, help="simulator that embodies the robot")
     p.add_argument("--bench", default=None, help="benchmark to check the install of")
     p.add_argument("--agent", action="append", default=None, metavar="NAME[@VERSION]",

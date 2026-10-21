@@ -73,7 +73,7 @@ directly. Explicit `--name NAME` still starts or connects to that named session.
 
 `openrua chat --tui --name NAME` also opens this keyboard interface for an
 existing service. `--gui` and `--cli` select the browser and plain text client;
-`openrua run` retains the native coding agent terminal. There is no Textual
+`openrua up` and `openrua agent` open the native coding agent terminal. There is no Textual
 fallback. Startup failures keep their logs in `~/.openrua/launches/NAME/`.
 
 ## Work in the conversation

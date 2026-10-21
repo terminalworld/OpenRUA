@@ -3,8 +3,7 @@ robot with a sandbox terminal on it.
 
 Stays in the foreground: the robot holds its control line to this
 process and powers itself off when the process ends. Open a second
-terminal for ``openrua agent``, or use ``openrua run`` for the
-one-command form (up, agent, down).
+terminal for ``openrua agent``, the coding agent's own terminal on it.
 """
 
 from __future__ import annotations
@@ -54,7 +53,7 @@ class Session(LiveRobot):
 
 def notice_update(args) -> None:
     """One line when a newer agent CLI is available (never a question:
-    up and run are for scripts too)."""
+    up is for scripts too)."""
     try:
         composed = config.compose(args.robot, args.sim, args.bench, args.home, agent=args.agent)
     except Exception:  # noqa: BLE001; the bring-up reports a bad selection itself
@@ -119,8 +118,8 @@ def run(args) -> int:
 
 
 def add_options(p, *, default_name=DEFAULT_NAME) -> None:
-    """The bring-up options ``up`` and ``run`` share (everything but the
-    robot positional)."""
+    """The bring-up options ``up``, ``serve`` and ``openrua`` share
+    (everything but the robot positional)."""
     p.add_argument("--sim", default=None,
                    help="simulator that embodies the robot (openrua simulators); default: "
                    "the benchmark's; a real robot's file needs none")
@@ -149,7 +148,7 @@ def add_options(p, *, default_name=DEFAULT_NAME) -> None:
 
 def add_permissions_option(p) -> None:
     """How a shared conversation's agent starts (openrua, serve); the native
-    terminal of run and agent keeps the CLI's own prompting."""
+    terminal (``openrua agent``) keeps the CLI's own prompting."""
     p.add_argument("--permissions", choices=("ask", "auto"), default=None,
                    help="ask: the agent asks before each command that changes something; "
                    "auto: it runs them without asking (default); /permissions switches")
@@ -160,7 +159,7 @@ def add_parser(sub) -> None:
                        description="Bring a robot up (simulated: boot its container; "
                        "real: join its graph) with a sandbox terminal on it, then stay "
                        "in the foreground; Ctrl-C powers it off. Open a second terminal "
-                       "for `openrua agent`, or use `openrua run` to do all of it in one.")
+                       "for `openrua agent`, the coding agent's own terminal on it.")
     p.add_argument("robot", nargs="?", default=None,
                    help="robot: a type or your robot's file (openrua robots), by name "
                    "or path; default: --bench's robot, else the user config's default")

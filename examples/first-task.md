@@ -1,5 +1,5 @@
 ---
-summary: Bring the simulated Panda up, hand your coding agent a task, watch what it does
+summary: Hand the simulated Panda's coding agent a task, as a recorded run or in its own terminal, and watch what it does
 read_when:
   - You have installed OpenRUA and want to see it work once
   - You want to know what the agent actually sees and types
@@ -7,26 +7,37 @@ read_when:
 
 # First task in simulation
 
-This walkthrough opens the coding agent's original terminal on a simulated
-Franka Panda. For OpenRUA's own TUI or browser, follow
+This walkthrough gives a simulated Franka Panda's coding agent a task in two
+ways: with `openrua exec`, where the agent works on its own and the run is
+recorded, and in the agent's original terminal (`openrua up`, then
+`openrua agent`). For OpenRUA's own TUI or browser, follow
 [Your first shared robot session](shared-session.md) instead.
 
-[Install](../docs/install.md) first; prepare the LIBERO-PRO simulator and the
-sandbox for your selected agent. Check them with
+[Install](../docs/install.md) first; prepare the LIBERO-PRO simulator, the
+sandbox for your selected agent and, for `exec`, the proxy
+(`openrua build proxy`). Check them with
 `openrua doctor panda --bench libero_pro`. Initial image builds take additional
 time and download the simulator dependencies and assets.
 
 ## 1. One command
 
 ```bash
-openrua run panda --sim robosuite --bench libero_pro "open the bottom drawer of the cabinet"
+openrua exec panda --bench libero_pro
 ```
 
 The robot container boots its scene and MoveIt (about a minute), the
-sandbox is created with the workspace seeded, and the agent opens on
-it with the sentence as its opening message. When you leave the agent
-the robot powers off. The rest of this page walks the same session in
-its two-terminal form, which keeps the robot up between sessions.
+sandbox is created with the workspace seeded, and the agent gets the
+scene's task, "open the bottom drawer of the cabinet", the way `codex exec`
+or `claude -p` take one: it works on its own until it is done or its wall
+clock (`--wall-clock-min`) ends, and then the robot powers off. The
+benchmark's own predicate judges success. The agent reaches only its model
+service unless `--internet open` says otherwise. The run is recorded under
+`runs/libero_pro/exec-<UTC time>/trials/libero_goal_task-0/seed0/`: the
+transcript, `commands.sh`, `result.json`, `provenance.json` and the workspace
+the agent left ([where it lands](../docs/running-experiments.md#where-it-lands)).
+
+The rest of this page opens the agent's original terminal on the same scene,
+in its two-terminal form, which keeps the robot up between agent visits.
 
 ## 1a. Bring the robot up
 
@@ -87,14 +98,14 @@ makes ([what the agent can reach](../docs/install.md#what-the-agent-can-reach)).
 ```
 
 `machine.yaml` is generated from the resolved robot configuration. The agent
-can inspect the live graph to discover available interfaces. Benchmark trials
-also run preflight checks; interactive `run` does not perform that trial-level
-validation. The tools are ordinary `rclpy` scripts the agent may read, copy or
+can inspect the live graph to discover available interfaces. Recorded runs
+(`exec`, `bench`) also run preflight checks before the agent starts; `up` does
+not perform that trial-level validation. The tools are ordinary `rclpy` scripts the agent may read, copy or
 ignore.
 
 ## 3. What a session looks like
 
-The first commands of a real session (Codex, from a trial's
+The first commands of a real session (Codex, from a recorded run's
 `commands.sh`):
 
 ```bash
@@ -108,7 +119,8 @@ python3 tools/perception/cam_snap.py robot0_eye_in_hand /workspace/robot0_eye_in
 
 From there it is ROS 2: a pixel-to-world lookup, an IK move or a
 `FollowJointTrajectory` goal, a `GripperCommand`, another snapshot to
-check. To watch from the outside, open a shell in the same sandbox:
+check. To watch from the outside while `up` runs, open a shell in the same
+sandbox:
 
 ```bash
 docker exec -it -u robot -w /workspace openrua-sandbox bash
@@ -117,7 +129,9 @@ ros2 topic echo /joint_states --once
 
 ## 4. Stop
 
-`Ctrl-C` in the first terminal powers the robot off and removes both
+An `exec` run stops by itself; its record stays under `runs/`.
+
+`Ctrl-C` in the first terminal of `up` powers the robot off and removes both
 containers. The workspace the agent left behind, snapshots and scripts
 included, stays under `~/.openrua/sandboxes/openrua/workspace/workspace/`.
 
@@ -125,6 +139,7 @@ included, stays under `~/.openrua/sandboxes/openrua/workspace/workspace/`.
 
 - [your-own-robot.md](../docs/your-own-robot.md): the same flow on your
   robot, from a profile drafted off its live graph.
-- [running-experiments.md](../docs/running-experiments.md): the scored
-  version, `openrua bench`, with the benchmark's own predicate deciding
-  success and every trial recorded.
+- [running-experiments.md](../docs/running-experiments.md): what a recorded
+  run holds, and `openrua bench`, which runs a benchmark's task set, one
+  trial per task and seed, with the benchmark's own predicate deciding
+  success.

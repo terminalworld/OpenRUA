@@ -1,6 +1,7 @@
 ---
-summary: Running a task set with openrua bench, what lands under runs/, and what every record field means
+summary: Recording one task with openrua exec or a task set with openrua bench, what lands under runs/, and what every record field means
 read_when:
+  - You want the agent to do one task on its own, with the run recorded
   - You want to reproduce or extend reported results
   - You are reading a result.json or provenance.json
   - You want to replay a trial, run it without an agent, or make a demo video of it
@@ -8,7 +9,31 @@ read_when:
 
 # Running experiments
 
-## One command, one run
+## One task, one run
+
+```bash
+openrua exec panda --bench libero_pro --task-suite libero_goal_task --task-id 3 --seed 0
+openrua exec panda "lift the cube" --sim robosuite
+openrua exec ./my-robot.yaml "put the cup on the plate"
+```
+
+`openrua exec` gives the agent one task and lets it work on its own, as
+`codex exec` or `claude -p` do: the robot comes up, the agent works until
+it is done or a budget ends, the robot powers off, and the run is
+recorded as one trial. A benchmark scene states its own task and judges
+success. A simulator's own scene judges success too, and takes the
+sentence you give when it states no task (robosuite's `Lift` states
+none). A real robot's task is the sentence you give; nothing resets it,
+and the verdict is recorded as not applicable, for you to judge.
+
+The run lands under `runs/<label>/<run id>/`: the label is the benchmark,
+else `<robot>-<simulator>`, else the robot file's name, and the run id is
+`--run-id` or `exec-<UTC time>`. `--agent`, `--model`, `--wall-clock-min`,
+`--ros-domain`, `--runs-root`, `--record` and the limit flags work as they
+do for `bench`; the rest of the protocol comes from the benchmark's config,
+else its defaults.
+
+## A benchmark's task set
 
 ```bash
 openrua bench --config libero_pro --run-id demo \
@@ -38,13 +63,12 @@ Three operators:
 | `none` | nothing; bring-up, preflight and teardown only | checking a machine, no quota spent |
 | `script` | a command file from `--script`, one operation at a time in one shell, open-loop | replaying a trial's `commands.sh` |
 
-A real robot has no scoring side: pass `--task "<sentence>"`, the
-verdict is recorded as not applicable, and nothing is reset.
+A task on a real robot is recorded with `openrua exec` (above).
 
 ## Where it lands
 
 ```
-<--runs-root, default ./runs>/<benchmark>/<--run-id>/
+<--runs-root, default ./runs>/<benchmark, or exec's label>/<--run-id>/
   config.json                 the run's arguments
   SUMMARY.md                  rewritten after every trial
   trials/<suite>-<task_id>/seed<N>/
@@ -67,7 +91,7 @@ overwrites it. Two runs never share a directory: name a new
 
 Runs share a machine without arrangement: each bring-up takes the
 lowest ROS domain no running container on the internal network uses,
-so two `openrua bench` (or a `bench` beside an `openrua run`) never
+so two `openrua bench` (or a `bench` beside an `openrua exec` or `openrua up`) never
 share a DDS graph; the domain is in `result.json` and `provenance.json`.
 `--ros-domain` pins one by hand, which a real robot needs (its graph
 has a domain already).
@@ -137,8 +161,9 @@ only the agent's model service and login, through a whitelist proxy, and
 the CLI's own web tools and the account's connectors are off. A
 benchmark config may change them; `--internet`, `--[no-]web-search` and
 `--[no-]account-connectors` override them for one run and land in the
-config the run records. Sessions outside `bench` set none of them by
-default ([install.md](install.md#what-the-agent-can-reach)).
+config the run records. `openrua exec` applies the same limits. Sessions you
+start (`openrua`, `up`, `serve`) set none of them by default
+([install.md](install.md#what-the-agent-can-reach)).
 
 ## Replaying a trial
 

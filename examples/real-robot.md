@@ -1,5 +1,5 @@
 ---
-summary: The first-task flow on a real ROS 2 arm, in three commands
+summary: The first-task flow on a real ROS 2 arm, in a few commands
 read_when:
   - You have a robot profile and want the shortest path to an agent on the hardware
 ---
@@ -36,14 +36,21 @@ profile you write yourself.
    `openrua --robot ./my-robot.yaml --ros-domain <id>` opens OpenRUA's shared
    chat on the robot instead.
 
-Interactive startup waits for ROS graph visibility. Benchmark trials additionally
+4. Or have the agent do the task on its own, with the run recorded:
+
+   ```bash
+   openrua exec ./my-robot.yaml "stack the red cube on the green one" --ros-domain <id>
+   ```
+
+   The agent reaches only its model service, through the image
+   `openrua build proxy` makes; `--internet open` lifts that. The run lands
+   under `runs/my-robot/<run id>/`: transcript, commands, workspace,
+   `result.json` and `provenance.json`. Nothing resets the robot, and you
+   judge the result (`success: null`, `verdict: not_applicable`).
+
+Interactive startup waits for ROS graph visibility. Recorded runs additionally
 run preflight checks on the declared control interfaces, joint names, TF and
 cameras. Neither check establishes safe physical operation; the robot and its
 independent safety controls need validation on your hardware. See the
 [robot guide](../docs/your-own-robot.md) for profile fields, driver ownership and
 discovery troubleshooting.
-
-`openrua bench --config <benchmark> --robot ./my-robot.yaml --run-id hw-1
---task-suite <suite> --task "..."` runs the same trial loop on hardware: no
-reset, no automatic verdict (`success: null`, `verdict: not_applicable`),
-everything else recorded.

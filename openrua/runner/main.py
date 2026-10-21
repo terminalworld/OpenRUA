@@ -140,6 +140,16 @@ def run(args: argparse.Namespace) -> int:
     cfg_path = paths.find("benchmarks", args.config).resolve()
     cfg = load_config(cfg_path, args.robot, home, sim=args.sim,
                       agent=args.agent, model=args.model)
+    return run_set(cfg, cfg_path, args, home, cfg["task"]["benchmark"])
+
+
+def run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
+            label: str) -> int:
+    """One trial per (task, seed) of ``args.task_ids`` and ``args.seeds`` in
+    ``args.task_suite``, on the resolved ``cfg`` (written from
+    ``cfg_path``), recorded under ``<runs root>/<label>/<run id>``. The
+    shared body of ``openrua bench`` and ``openrua exec``."""
+    record_cameras = args.record
     if cfg["machine"]["backend"].get("kind") != "sim" and not args.task:
         raise UsageError("a real robot has no benchmark task to ask for",
                          hint="pass --task \"<what the agent should do>\"")
@@ -171,7 +181,7 @@ def run(args: argparse.Namespace) -> int:
     apply_suite_overrides(cfg, args.task_suite)
     normalize_arms(cfg)
     runs_root = Path(args.runs_root).expanduser() if args.runs_root else RUNS_ROOT
-    run_dir = runs_root.resolve() / cfg["task"]["benchmark"] / args.run_id
+    run_dir = runs_root.resolve() / label / args.run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     agent = agents.get(cfg.get("agent", {}).get("name"), home,
                        version=cfg.get("agent", {}).get("version"))

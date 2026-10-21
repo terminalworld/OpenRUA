@@ -7,7 +7,7 @@
     openrua chat --tui --name shared      attach the terminal UI
     openrua session --name shared web     open the browser client
     openrua session --name shared end     end and retain files
-    openrua run "pick up the red cube"     a robot up, the agent on it, off after
+    openrua exec "pick up the red cube"    the agent does a task on its own, recorded
     openrua up                             a live robot (real or simulated) with
                                            a sandbox terminal on its ROS 2 graph
     openrua agent                          open a coding agent on that terminal

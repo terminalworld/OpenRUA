@@ -14,7 +14,7 @@ robots, a robot knows neither.
 
 - `simulators/<engine>.yaml` (`openrua simulators`): the engine, its
   install (what its image is made of, and the ROS distro that goes
-  with its Python), the native scene `openrua run <robot> --sim
+  with its Python), the native scene `openrua up <robot> --sim
   <engine>` loads with no benchmark, and `robots:`, how the engine
   drives each robot type it embodies (controller, gains, joint-name
   map). The bundled `robosuite` embodies `panda` and loads its `Lift`

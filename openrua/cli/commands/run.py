@@ -1,57 +1,28 @@
-"""``openrua run <robot> --sim <simulator> [--bench <benchmark>] [prompt]``:
-up, agent, down in one command.
+"""``openrua run``: removed; it says where its uses went.
 
-The shape of ``docker run``: bring the robot up with a sandbox terminal
-on it, open the coding agent there, and power everything off when the
-agent exits. ``up`` / ``agent`` / ``down`` are the same three steps for
-a robot that should stay up between sessions.
+It opened the coding agent's own terminal on a robot, from before
+OpenRUA had a terminal of its own. Talking to the agent is ``openrua``;
+its own terminal is ``openrua up`` and then ``openrua agent``; the agent
+doing a task on its own, recorded, is ``openrua exec``. This stub goes
+in the next release.
 """
 
 from __future__ import annotations
 
-import asyncio
-import subprocess
+import argparse
 
-from openrua import agents
-from openrua.config import paths
-from openrua.runner.control import serve_control
-from openrua.cli import state
-from openrua.cli.commands import up
-from openrua.errors import UnavailableError
-
-
-async def _run(args) -> int:
-    session = up.open_session(args)
-    async with serve_control(session.power_off, paths.sandbox_dir(args.name, args.home)):
-        st = state.load(args.name, args.home)
-        adapter = agents.get(st.get("agent_spec", st["agent"]), args.home,
-                             version=st.get("agent_version"))
-        argv = adapter.interactive_argv(
-            st["sandbox"], args.model or st["model"], st["proxy"],
-            options=st.get("options"), limits=st.get("limits"), prompt=args.prompt)
-        if argv is None:
-            raise UnavailableError(
-                f"{adapter.name} has no interactive mode",
-                hint=f"bring the robot up with `openrua up` and open a shell on it: "
-                     f"docker exec -it -u robot -w /workspace {st['sandbox']} bash")
-        print(session.header("run", args.prompt), flush=True)
-        print("[run] the robot powers off when the agent exits", flush=True)
-        return await asyncio.to_thread(subprocess.call, argv)
+from openrua.errors import UsageError
 
 
 def run(args) -> int:
-    return asyncio.run(_run(args))
+    raise UsageError("openrua run was removed",
+                     hint="to talk to the agent: openrua; for the agent's own terminal: "
+                     "openrua up <robot>, then openrua agent in a second terminal; for the "
+                     "agent to do a task on its own, recorded: openrua exec")
 
 
 def add_parser(sub) -> None:
-    p = sub.add_parser("run", help="bring a robot up, open the agent on it, power off after",
-                       description="Bring a robot up, open the coding agent on its "
-                       "terminal with PROMPT as the opening message, and power the robot "
-                       "off when the agent exits. Same steps as up, agent, down.")
-    p.add_argument("robot", nargs="?", default=None,
-                   help="robot: a type or your robot's file (openrua robots), by name "
-                   "or path; default: --bench's robot, else the user config's default")
-    p.add_argument("prompt", nargs="?", default=None, help="opening message for the agent")
-    p.add_argument("--model", default=None, help="model (default: the config's)")
-    up.add_options(p)
+    p = sub.add_parser("run", help="removed: use openrua, openrua exec, or up + agent",
+                       description=__doc__)
+    p.add_argument("rest", nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
     p.set_defaults(fn=run)

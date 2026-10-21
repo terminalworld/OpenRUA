@@ -199,7 +199,7 @@ If the service exits while resource shutdown fails, it also retains that endpoin
 and the session files. An unreachable service does not confirm that its resources
 stopped, and `clean --all` does not override this guard.
 
-`up` / `agent` / `run` retain their original native-terminal mode. Opening a
+`up` and `agent` retain their original native-terminal mode. Opening a
 second raw agent inside a managed session is refused because it would bypass
 the shared queue. A native terminal attached to the *same managed conversation*
 is not yet supported; the structured chat is the shared-input path today.
@@ -401,7 +401,7 @@ robot integration checks described above.
 
 ## Native terminal resource owners
 
-`up` and `run` publish a separate, authenticated resource-control endpoint so
+`up` publishes a separate, authenticated resource-control endpoint so
 `down` can reach the process holding the robot handle, including a host-side
 driver process. This endpoint supports status and end only. It does not create a
 managed agent conversation or change native terminal input. `agent` remains

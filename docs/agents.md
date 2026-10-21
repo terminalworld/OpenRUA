@@ -22,8 +22,8 @@ the agent through `openrua.agents.get(name)`:
   `HOOKS`.
 
 Selecting, pinning and logging an agent in is in [install.md](install.md).
-When opening a native terminal with `openrua agent` or `openrua run`,
-OpenRUA reuses the plugin manifest and version recorded at robot startup.
+When opening a native terminal with `openrua agent`, OpenRUA reuses the
+plugin manifest and version `openrua up` recorded at robot startup.
 An explicit `agent --agent` selection uses the replacement plugin's own
 version rather than inheriting the previous plugin's pin.
 A test (`tests/agents/test_agent_boundary.py`) fails the build if agent-specific
@@ -57,7 +57,8 @@ knowledge appears anywhere else.
 
 A subclass of `openrua.agents.Agent` (`openrua/agents/base.py`). One
 method is required, `launch_argv`: the command that runs the agent
-headless on a task inside the sandbox, transcript on stdout;
+headless on a task inside the sandbox (`openrua exec`, `openrua bench`),
+transcript on stdout;
 `self.exec_argv(sandbox, env, token_file)` gives the `docker exec`
 prefix every agent shares.
 Every other hook has a documented default, and a consumer that finds the
@@ -186,7 +187,7 @@ class MyAgent(Agent):
 HOOKS = MyAgent
 ```
 
-Pass the manifest where an agent name is expected (`openrua run
+Pass the manifest where an agent name is expected (`openrua exec
 --agent ./my-agent.yaml`, `openrua build sandbox --agent
 ./my-agent.yaml`); the module is found next to it. To ship an agent
 with OpenRUA, put the manifest under `openrua/configs/agents/`, the
