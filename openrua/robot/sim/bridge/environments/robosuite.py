@@ -1,6 +1,6 @@
 """robosuite loader: the engine's own scenes, no benchmark.
 
-What ``openrua run <robot> --sim robosuite`` loads when no benchmark is
+What ``--sim robosuite`` loads when no benchmark is
 named: ``robosuite.make`` on one of robosuite's stock environments
 (Lift, Stack, ...) with the robot the config names (``machine.
 engine_model``) and a joint-position composite controller. Success is
@@ -26,7 +26,7 @@ _ARM_JOINT_POSITION = {
 
 class RobosuiteLoader:
     def tasks(self, cfg: dict, task_suite: str) -> list[dict]:
-        # A native scene is one task; the sentence is whatever `openrua run` is given.
+        # A native scene is one task; the sentence is whatever `openrua exec` is given.
         return [{"task_id": 0, "language": ""}]
 
     def create(self, cfg: dict, task_suite: str, task_id: int):

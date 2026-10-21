@@ -1,7 +1,7 @@
 """ManiSkill 3 loader: its table-top tasks, and the engine's own scenes.
 
-Both the ``maniskill`` benchmark and ``openrua run <robot> --sim
-maniskill`` land here: ``gym.make`` on a registered ManiSkill task with
+Both the ``maniskill`` benchmark and ``--sim maniskill`` with no
+benchmark land here: ``gym.make`` on a registered ManiSkill task with
 the ``pd_joint_pos`` controller, the PhysX CPU backend and one
 sub-environment, cameras sized from the config. Success is the task's
 own ``evaluate()["success"]``. ManiSkill tasks carry no language; the

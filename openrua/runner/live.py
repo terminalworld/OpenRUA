@@ -21,6 +21,7 @@ from openrua.errors import UnavailableError, UsageError
 from openrua.proxy.up import ensure as ensure_proxy
 from openrua.robot import not_ready
 from openrua.runner import live_state as state
+from openrua.runner.motion import cancel_motion, motion_actions
 from openrua.runner.record import session_provenance
 from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
                                     internet_access, start_episode)
@@ -110,40 +111,6 @@ def check_agent_cli(sandbox: str, adapter, backend: dict, robot: str) -> str | N
     raise UnavailableError(
         f"the sandbox's {adapter.name} is {found or 'unreadable'}; this session needs {want}",
         hint=build)
-
-
-def motion_actions(machine: dict) -> list[str]:
-    """The action servers the robot moves through: each arm's trajectory
-    and gripper ports, and the motion planner's move action."""
-    names: list[str] = []
-    for arm in machine.get("arms") or []:
-        for key in ("trajectory", "gripper"):
-            port = (arm.get("ports") or {}).get(key)
-            if port and port not in names:
-                names.append(port)
-    move = (machine.get("planning") or {}).get("move_action")
-    if move and move not in names:
-        names.append(move)
-    return names
-
-
-def cancel_motion(sandbox: str, actions: list[str], timeout_s: float = 10) -> dict[str, bool]:
-    """Ask each action server, from the sandbox and all at once, to cancel
-    every goal it holds (CancelGoal with a zero goal ID and stamp means
-    all of them). A controller that cancels holds where it is."""
-    calls = {action: subprocess.Popen(
-        ["docker", "exec", sandbox, "bash", "-c",
-         f"timeout {timeout_s:g} ros2 service call {action}/_action/cancel_goal "
-         "action_msgs/srv/CancelGoal '{}'"],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) for action in actions}
-    outcome = {}
-    for action, call in calls.items():
-        try:
-            outcome[action] = call.wait(timeout=timeout_s + 5) == 0
-        except subprocess.TimeoutExpired:
-            call.kill()
-            outcome[action] = False
-    return outcome
 
 
 def not_ready_message(unready: list[dict]) -> str:

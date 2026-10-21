@@ -31,6 +31,7 @@ import uuid
 from pathlib import Path
 
 from openrua import agents
+from openrua.sandbox.down import stop_processes
 
 
 def launcher_command(ctx: dict, agent, model: str, options: dict,
@@ -75,6 +76,9 @@ def run_segment(cmd: list[str], trial_dir: Path, env: dict, timeout_s: float,
         proc = subprocess.run(
             cmd, cwd=trial_dir, timeout=timeout_s, env=env,
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            # A session of its own: a Ctrl-C at the terminal reaches the
+            # runner alone, which stops the agent and the robot in order.
+            start_new_session=True,
         )
         meta["termination"] = "self_finished"
         meta["launcher_returncode"] = proc.returncode
@@ -82,6 +86,10 @@ def run_segment(cmd: list[str], trial_dir: Path, env: dict, timeout_s: float,
     except subprocess.TimeoutExpired:
         meta["termination"] = "wall_clock_cap"
         timed_out = True
+    except KeyboardInterrupt:
+        # A person stopped the run (subprocess.run has killed the launcher).
+        meta["termination"] = "stopped"
+        timed_out = False
     return t0, time.time(), timed_out
 
 
@@ -142,7 +150,8 @@ def summarize(meta: dict, segments: list[dict], last_quota: dict, active_s: floa
     # that hung producing nothing (bad credentials, dead proxy) leaves an
     # empty file, on the timeout path too. A nonzero exit alone is not
     # the signal: the CLI exits nonzero on a legitimate max-turns as well.
-    if not transcript.exists() or not transcript.read_text().strip():
+    stopped = meta.get("termination") == "stopped"   # a person's stop says why it ended
+    if not stopped and (not transcript.exists() or not transcript.read_text().strip()):
         meta["termination"] = "launcher_failed"
     # Turn count and the max-turns verdict from the CLI's final record,
     # read by the agent's hooks (the transcript format is agent
@@ -155,7 +164,7 @@ def summarize(meta: dict, segments: list[dict], last_quota: dict, active_s: floa
         for k in ("usage", "cost_usd", "duration_ms"):
             if fin.get(k) is not None:
                 meta[k] = fin[k]
-        if fin.get("hit_max_turns"):
+        if fin.get("hit_max_turns") and not stopped:
             meta["termination"] = "max_turns"
 
 
@@ -216,6 +225,12 @@ def agent_operator(ctx: dict) -> dict:
         mark = _line_count(transcript) if resumed else 0
         t0, t1, timed_out = run_segment(cmd, trial_dir, env, remaining_s, meta)
         active_s += t1 - t0
+        stopped = meta["termination"] == "stopped"
+        if stopped:
+            # The agent CLI runs on in the sandbox after its launcher is
+            # gone: end it and everything it started (its motion tools
+            # cancel their goals on TERM).
+            stop_processes(ctx["sandbox"])
         # What the CLI wrote in its own profile directory this segment
         # (a session log, say) is kept now, before the transcript hooks
         # below and in summarize() read the segment; the trial's
@@ -242,7 +257,7 @@ def agent_operator(ctx: dict) -> dict:
         # previous segment's wall as its own, or a trial that ended at the
         # clock is voided as quota-limited and run again.
         last_quota = agent.quota_since(transcript, mark) or {}
-        if timed_out:
+        if timed_out or stopped:
             break
         resets_at = last_quota.get("resets_at")
         if not resets_at:

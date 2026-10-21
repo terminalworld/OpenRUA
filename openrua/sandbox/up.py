@@ -54,6 +54,15 @@ def load(config: Path) -> dict:
     return cfg
 
 
+def write_peers(name: str, peers_xml: str) -> None:
+    """(Re)write the sandbox's DDS peers profile; each ros2 process
+    started in it afterwards reads the new one."""
+    w = subprocess.run(["docker", "exec", "-i", name, "sh", "-c", "cat > /tmp/fastdds-peers.xml"],
+                       input=peers_xml, text=True, capture_output=True)
+    if w.returncode != 0:
+        raise SandboxError(_death_report(name, "peers-profile write failed"))
+
+
 def up(cfg: dict, workspace: Path, *, image: str, network: str = "host",
        static_peer: str | None = None, ros_domain: int = 0,
        internet: str = "none", name: str | None = None,
@@ -142,14 +151,7 @@ def up(cfg: dict, workspace: Path, *, image: str, network: str = "host",
             raise SandboxError(_death_report(name, f"could not join network {joined!r}: "
                                                    f"{j.stderr.strip()}"))
     if peers_xml:
-        w = subprocess.run(
-            ["docker", "exec", "-i", name, "sh", "-c",
-             "cat > /tmp/fastdds-peers.xml"],
-            input=peers_xml,
-            text=True, capture_output=True,
-        )
-        if w.returncode != 0:
-            raise SandboxError(_death_report(name, "peers-profile write failed"))
+        write_peers(name, peers_xml)
     # Birth verification: `docker run -d` succeeds even when the
     # container exits immediately (image without bash, broken
     # entrypoint); never hand back the name of a dead container.

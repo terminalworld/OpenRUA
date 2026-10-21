@@ -106,7 +106,7 @@ class Shell:
         self._proc = subprocess.Popen(
             ["docker", "exec", "-i", "-w", "/workspace", sandbox, "bash"],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT, text=True, bufsize=1)
+            stderr=subprocess.STDOUT, text=True, bufsize=1, start_new_session=True)
         self._n = 0
         # The operation runs in a child bash under `timeout`, from a file
         # the persistent shell writes. In the child, `exit` is aliased to

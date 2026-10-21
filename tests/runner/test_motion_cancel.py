@@ -3,7 +3,7 @@
 import asyncio
 from types import SimpleNamespace
 
-from openrua.runner import live
+from openrua.runner import live, motion
 from openrua.runner.managed import ManagedSession
 from openrua.sessions.core import Session, initial_state
 from openrua.sessions.store import SQLiteStore
@@ -14,8 +14,8 @@ def test_the_motion_actions_are_each_arms_trajectory_and_gripper_and_the_planner
     machine = {"arms": [{"ports": {"trajectory": "/left/fjt", "gripper": "/left/grip", "twist": "/servo"}},
                         {"ports": {"trajectory": "/right/fjt"}}],
                "planning": {"move_action": "/move_action"}}
-    assert live.motion_actions(machine) == ["/left/fjt", "/left/grip", "/right/fjt", "/move_action"]
-    assert live.motion_actions({"arms": []}) == []
+    assert motion.motion_actions(machine) == ["/left/fjt", "/left/grip", "/right/fjt", "/move_action"]
+    assert motion.motion_actions({"arms": []}) == []
 
 
 def test_every_action_is_asked_to_cancel_all_its_goals_at_once(monkeypatch):
@@ -26,8 +26,8 @@ def test_every_action_is_asked_to_cancel_all_its_goals_at_once(monkeypatch):
             self.code = 1 if "/missing" in argv[-1] else 0
         def wait(self, timeout):
             return self.code
-    monkeypatch.setattr(live.subprocess, "Popen", Call)
-    assert live.cancel_motion("box", ["/arm/fjt", "/missing"]) == {"/arm/fjt": True, "/missing": False}
+    monkeypatch.setattr(motion.subprocess, "Popen", Call)
+    assert motion.cancel_motion("box", ["/arm/fjt", "/missing"]) == {"/arm/fjt": True, "/missing": False}
     assert started[0][:3] == ["docker", "exec", "box"]
     assert "/arm/fjt/_action/cancel_goal action_msgs/srv/CancelGoal '{}'" in started[0][-1]
 

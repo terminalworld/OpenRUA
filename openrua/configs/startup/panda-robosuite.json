@@ -8,8 +8,8 @@
   "suite": "Lift",
   "task_id": 0,
   "seed": 0,
-  "profiles_sha256": "c095969793d4b56ac850cc833cbe990bb9ad45368aa9fbd2ae91e739c89c1388",
-  "checked_at": "2026-10-21T12:52:58.797987+00:00",
+  "profiles_sha256": "09c62fbd9b499753082c58dbca70d70c322ef8e3b7eff6511bad177099860eca",
+  "checked_at": "2026-10-21T23:00:18.330318+00:00",
   "images": {
     "robot": {
       "name": "openrua-sim-robosuite",
@@ -17,7 +17,7 @@
     },
     "sandbox": {
       "name": "openrua-sandbox-humble",
-      "id": "sha256:aeeb17f6218afae426ffed2d2871344229af307818de7e4ddbefbbd5e17d48ee"
+      "id": "sha256:5c26589f92c753e58aa6026eb3a7739d92edd75d4bf51a232626093d9e0bfcc3"
     }
   },
   "checks": {
@@ -39,8 +39,8 @@
     "planning_frame": true
   },
   "agent_binaries": {
-    "claude-code": "2.1.251 (Claude Code)",
-    "codex": "codex-cli 0.153.4"
+    "claude-code": "2.1.306 (Claude Code)",
+    "codex": "codex-cli 0.163.0"
   },
   "scope": "Simulation startup, reset, ROS image and joint streams, declared gripper joint, no-op trajectory, declared planning frame against FK and TF, agent CLI versions. No model task or physical robot validation."
 }

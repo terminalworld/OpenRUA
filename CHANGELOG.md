@@ -9,6 +9,20 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- **Ctrl-C stops a run in order**: during `openrua exec` or `bench`, the
+  agent and everything it started end, a real robot's motions are
+  cancelled, a simulated scene is judged as it stands, the robot powers
+  off, and the record says `stopped` (the command exits 130). A closed
+  terminal or a dropped SSH connection stops it the same way, and a second
+  Ctrl-C cannot cut the power-off short.
+- On Humble (robosuite's own scenes, CaP-Bench, RoboCasa365), the agent's `ros2`
+  commands no longer start with a Fast DDS `IP_LOCATOR Error` line: a
+  simulated robot and its sandbox find each other by address there.
+- `openrua doctor` with no arguments also checks your saved robot,
+  simulator and benchmark, the ones `openrua` starts.
+- In a source checkout, the terminal refuses built files older than
+  `ui/terminal/src` and says how to rebuild them.
+
 ## 0.14.1
 
 - **OpenRUA keeps itself up to date**: `openrua` checks PyPI at most once a

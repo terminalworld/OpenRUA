@@ -19,7 +19,7 @@ install:                     # the stock engine: robosuite 1.5.1 in the CaP-X ch
   requirements: robosuite/requirements.txt   # uv pip freeze of the venv the reported runs used
   editable: [cap-x, cap-x/capx/third_party/robosuite]
 
-native:                      # `openrua run <robot> --sim robosuite` with no --bench
+native:                      # what `--sim robosuite` loads with no --bench
   entry_point: robosuite     # bridge loader: robosuite.make on the engine's own env
   scene: Lift                # a table with a red cube
   cameras:

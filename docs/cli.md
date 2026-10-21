@@ -960,7 +960,9 @@ usage: openrua doctor [-h] [--sim SIM] [--bench BENCH]
 
 positional arguments:
   robot                 also check this robot's images and simulator (with
-                        --sim, or --bench, as for openrua exec)
+                        --sim, or --bench, as for openrua exec); default: your
+                        saved robot, simulator and benchmark, what openrua
+                        starts
 
 options:
   -h, --help            show this help message and exit
