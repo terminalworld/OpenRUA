@@ -8,9 +8,14 @@ declares; a number is a GripperCommand position in that entry's `unit`.
 Read `holds_partway` and `effort_honoured` on the entry before relying on
 a position between the two or on the effort limit. --arm picks the
 gripper of one arm on a multi-arm machine. Absent from the manifest =
-this machine has no gripper.
+this machine has no gripper. Interrupted (SIGINT, SIGTERM, SIGHUP) while
+the gripper moves, it cancels the goal before exiting, as `ros2 action
+send_goal` does on Ctrl-C.
 """
 import argparse
+import signal
+import sys
+import time
 from pathlib import Path
 
 import rclpy
@@ -57,7 +62,22 @@ def main() -> None:
     if handle is None or not handle.accepted:
         raise SystemExit(f"goal not accepted by {entry['port']}")
     res_fut = handle.get_result_async()
-    rclpy.spin_until_future_complete(node, res_fut, timeout_sec=120)
+    # A signal only sets a flag: the cancel request goes out from this
+    # loop, which wakes often enough to see it.
+    stop: list[int] = []
+    for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, lambda signum, _frame: stop.append(signum))
+    end = time.monotonic() + 120
+    while not res_fut.done() and not stop and time.monotonic() < end:
+        rclpy.spin_until_future_complete(node, res_fut, timeout_sec=0.2)
+    if stop:
+        cancel = handle.cancel_goal_async()
+        rclpy.spin_until_future_complete(node, cancel, timeout_sec=5.0)
+        answer = cancel.result()
+        print("interrupted: gripper goal "
+              + ("canceled" if answer is not None and answer.goals_canceling
+                 else "cancel not confirmed"), file=sys.stderr)
+        raise SystemExit(128 + stop[0])
     if not res_fut.done():
         raise SystemExit("no result within 120 s")
     res = res_fut.result().result

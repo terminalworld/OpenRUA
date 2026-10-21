@@ -884,6 +884,10 @@ class AgentManifest(Strict):
                                     "agent starts")
     instruction_file: str | None = Field(default=None, description="the file the agent "
                                          "reads instructions from, e.g. AGENTS.md")
+    latest_release: str | None = Field(default=None, description="URL whose JSON body "
+                                       "names the newest release as `version` (an npm "
+                                       "registry's /latest); openrua offers an update "
+                                       "when the sandbox's CLI is older")
     default_options: dict[str, Any] = Field(default_factory=dict, description="knobs a "
                                             "config may override under agent.options")
     entry_point: str | None = Field(default=None, description="the module behind this "

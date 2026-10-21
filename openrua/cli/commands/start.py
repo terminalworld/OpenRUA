@@ -9,6 +9,7 @@ from pathlib import Path
 from openrua import agents, config, doctor
 from openrua.cli.commands import chat, session, up
 from openrua.config import paths, settings, startup
+from openrua.cli import updates
 from openrua.cli.preparation import prepare
 from openrua.errors import NotFound, UnavailableError, UsageError
 from openrua.runner import service, history
@@ -192,6 +193,20 @@ def run(args) -> int:
         raise UnavailableError(str(exc), hint='the session may still be running; inspect it with --resume') from exc
 
 
+def offer_update(args, values: dict) -> bool:
+    """Offer a newer agent CLI before the session starts (see updates);
+    False when the user chose to quit. Only at an interactive terminal."""
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        return True
+    try:
+        composed = config.compose(values['robot'], values['sim'], values['bench'], args.home,
+                                  agent=values['agent'] or None, model=values['model'] or None)
+        offer = updates.offer_for(composed, args.home)
+    except Exception:  # noqa: BLE001; an incomplete selection is the setup screen's job
+        return True
+    return offer is None or updates.ask(offer, args.home)
+
+
 def _run(args) -> int:
     if not (args.gui or args.cli) or args.setup or args.resume == '':
         from openrua.terminal.launcher import check_terminal
@@ -226,6 +241,8 @@ def _run(args) -> int:
             raise UnavailableError(str(exc), hint='inspect the retained service log and session status before restarting') from exc
         return open_interface(args, client, args.name)
     values, models = values_for(args)
+    if not offer_update(args, values):
+        return 0
     custom_environment = any(paths.is_path(values[key]) for key in startup.FIELDS if values[key])
     if args.setup and custom_environment:
         raise UsageError('guided setup offers tested bundled environments, not custom profile editing',

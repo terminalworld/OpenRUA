@@ -35,6 +35,8 @@ credentials:
   mount_point: /claude-config
 # A long-lived token from `claude setup-token`, passed to the CLI by file.
 token_env: CLAUDE_CODE_OAUTH_TOKEN
+# Where the newest release is named, for the update offer at start.
+latest_release: https://registry.npmjs.org/@anthropic-ai/claude-code/latest
 version_argv: [claude, --version]
 # The oldest release seen taking every flag below (--autocompact is newer
 # than 2.1.197, which exits on it); an older sandbox CLI is refused before
