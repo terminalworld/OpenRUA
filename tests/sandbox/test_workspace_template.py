@@ -6,9 +6,11 @@ Review agent-visible changes before updating this expected artifact hash.
 from openrua.config import load_config
 from openrua.sandbox import workspace
 
-# Reviewed revision: the gripper docs and tool are direction-free; the
-# manifest entry carries unit, open, closed and what the gripper does.
-PINNED = "71205ac3ea1cea40eedfd1bd59d48ac485ed18f1c6fa2f7c0ce8ead52d5c9668"
+# Reviewed revision: simulation-only statements moved to machine.yaml
+# (simulation section, notes); the gripper docs and tool are
+# direction-free, the manifest entry carrying unit, open, closed and
+# what the gripper does.
+PINNED = "1c7ee6fb6b87cd29b4fd11d34211398983040671dd52c61e6cdf182e13e1f83b"
 
 
 def test_workspace_template_hash_is_unchanged():

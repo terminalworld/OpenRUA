@@ -261,7 +261,8 @@ def test_manifest_defines_every_fact_key_it_carries(tmp_path):
                     if ln.lstrip().lstrip("- ").startswith(f"{key}:"))
         assert "#" in line, f"{key} carries a value but no definition"
     # definitions only: what this machine does is the value, not the note
-    assert "NOT honoured" not in text and "metres" not in text
+    gripper = text.split("kind: gripper", 1)[1].split("- kind:", 1)[0]
+    assert "NOT honoured" not in gripper and "metres" not in gripper
     assert yaml.safe_load(text)["schema"].startswith("openrua/")
 
 
@@ -271,3 +272,52 @@ def test_action_doc_does_not_promise_a_force_limited_gripper():
     assert "keeps squeezing" not in doc
     assert "holds_partway" in doc  # points at the manifest instead
     assert "PER-FINGER" not in doc and "open_m" not in doc
+
+
+# ------------------------------------- simulation facts stay with simulators
+# The generic workspace serves every machine. What only a simulator does
+# (paused clock, on-demand rendering, queued base ticks, robosuite's
+# observations) reaches the agent through machine.yaml: a simulation:
+# section on simulated machines, and notes from whoever declared them.
+
+def _real_cfg(tmp_path) -> dict:
+    from openrua.config import compose, normalize_arms
+    lab = tmp_path / "lab.yaml"
+    lab.write_text(
+        "type: panda\nmachine:\n"
+        "  backend: {kind: real, discovery: {network: host}}\n"
+        "  robot: {model: Lab Panda}\n"
+        "  gripper: {holds_partway: true, effort_honoured: true}\n"
+        "  notes: {gripper: [stalls when it holds an object]}\n")
+    return normalize_arms(compose(str(lab), home=tmp_path).cfg)
+
+
+def test_simulation_section_only_on_a_simulated_machine(tmp_path):
+    workspace.write_machine_manifest(_cfg(), tmp_path / "sim.yaml")
+    sim = yaml.safe_load((tmp_path / "sim.yaml").read_text())
+    assert sim["simulation"]["clock"] == "paused"
+    assert "notes" in sim and "planning" in sim["notes"]          # robosuite's observations
+    workspace.write_machine_manifest(_real_cfg(tmp_path), tmp_path / "real.yaml")
+    real = yaml.safe_load((tmp_path / "real.yaml").read_text())
+    assert "simulation" not in real
+    assert real["notes"] == {"gripper": ["stalls when it holds an object"]}
+
+
+def test_notes_are_joined_by_kind_and_kept_to_the_kinds_present(tmp_path):
+    from openrua.config.loader import join_notes
+    assert join_notes({"gripper": ["a"]}, None, {"gripper": ["b"], "timing": ["t"]}) == \
+        {"gripper": ["a", "b"], "timing": ["t"]}
+    cfg = _cfg()
+    cfg["machine"]["notes"]["base_twist"] = ["no base on this machine"]
+    workspace.write_machine_manifest(cfg, tmp_path / "m.yaml")
+    assert "base_twist" not in yaml.safe_load((tmp_path / "m.yaml").read_text())["notes"]
+
+
+def test_workspace_template_says_nothing_only_a_simulator_does():
+    import re
+    words = re.compile(r"sim-time|sim-second|paused|\btick|agentview|panda|robot0|/clock",
+                       re.IGNORECASE)
+    for path in (PKG / "workspace").rglob("*"):
+        if path.is_file() and "__pycache__" not in path.parts:
+            hit = words.search(path.read_text())
+            assert not hit, f"{path.relative_to(PKG)}: {hit.group(0)!r}"

@@ -18,7 +18,9 @@ CLI → rclpy → tool → notes.
 - **CLI**: possible via `ros2 action send_goal`, but the YAML is
   unwieldy; prefer the tool/rclpy.
 - **Notes**:
-  - 2–4 s for large moves; too-short durations overshoot;
+  - give large moves several seconds; a too-short duration can
+    overshoot or trip the robot's own limits (machine.yaml notes say
+    what this machine needs);
   - action result returning ≠ target reached exactly; re-read the
     joint state and compare;
   - nonzero `error_code` = tracking problem (see 40-patterns.md).
@@ -31,8 +33,7 @@ CLI → rclpy → tool → notes.
 - **CLI**: `ros2 topic pub --rate 20 <port> geometry_msgs/msg/TwistStamped \
   "{header: {frame_id: <frame>}, twist: {linear: {z: -0.05}}}"`;
   Ctrl-C to stop the stream.
-- **rclpy** (the world only advances while commands stream; publish in
-  a loop, then re-check sensors):
+- **rclpy** (publish in a loop, then re-check sensors):
   ```python
   import rclpy, yaml
   from geometry_msgs.msg import TwistStamped
@@ -81,13 +82,13 @@ CLI → rclpy → tool → notes.
   stall.
 - **CLI**: `ros2 topic pub --rate 10 <port> geometry_msgs/msg/Twist \
   "{linear: {x: 0.3}}"`; Ctrl-C to stop.
-- **Semantics**: **one message = one control tick** of motion at that
-  velocity. Messages queue up to a small depth (4); anything beyond is
-  dropped, so flooding buys nothing. Queued ticks still execute after
-  you stop publishing; pace yourself by odometry feedback, not by
+- **Semantics**: how long one message drives the base, and what
+  happens to messages that arrive faster than it applies them, is this
+  machine's fact (`simulation.base_command` on a simulated machine,
+  otherwise its notes). Pace yourself by odometry feedback, not by
   message count or wall time.
 - **Notes**:
-  - closed-loop is the only reliable pattern: publish a few ticks →
+  - closed-loop is the only reliable pattern: publish a short burst →
     read odometry (20-perception A4) → correct → repeat;
   - drive and arm motion are separate commands; position the base
     first, then work the arm;
@@ -107,33 +108,26 @@ CLI → rclpy → tool → notes.
   <qw> [seconds] [--at tcp]`; IK then trajectory, loud on failure.
 - **Pattern**: IK for the target pose, then A (trajectory) to go there;
   or `move_action` end-to-end when obstacles matter.
-- **Notes**: check the returned `error_code` (1 = success); frame
-  behavior is NOT what headers suggest; see "Planning facts" below.
+- **Notes**: check the returned `error_code` (1 = success); see
+  "Planning facts" below.
 
 ## Actuation facts
 
 - What a gripper does with a commanded position is its own fact, not
   a general rule: read `holds_partway` and `effort_honoured` on the
   manifest's gripper entry.
-- A trajectory tolerance-violation result on a long goal is often
-  controller lag, not an obstruction: resending the same goal typically
-  converges.
-- Arm contact and reaction forces can displace the mobile base by
-  centimeters; re-read odometry after arm work before trusting stored
-  base poses.
+- A goal that fails tells you the controller gave up, not why: read
+  the joint state, and the machine's notes, before sending it again.
 
 ## Planning facts (MoveIt)
 
-- IK reads poses, and FK returns them, in the frame machine.yaml names
-  as planning.planning_frame, whatever the message headers say: the
-  arm base on some machines, the world on others. Leave `frame_id`
-  EMPTY in IK requests.
-- The planning scene starts EMPTY; no world collision objects exist
-  until you publish them; collision meshes carry roughly a centimeter
-  of padding, so trust measurements over nominals.
-- IK/FK requests HANG if their robot_state carries non-arm joints
-  (finger joints included): seed with the arm joints only.
+- IK and FK work in `planning.planning_frame`: give poses in that frame.
+- The planning scene starts empty: no world collision objects exist
+  until you publish them, so MoveIt does not know about the table or
+  anything on it.
 - IK can fail silently (no error, no motion) and non-monotonically
   (nearby poses flip feasibility). Seed requests with the current
   configuration to keep branch continuity, and verify motion actually
   happened from `/joint_states`.
+- This machine's own planner observations are under `notes.planning`
+  in machine.yaml.

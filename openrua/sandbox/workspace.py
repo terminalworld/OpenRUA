@@ -98,10 +98,20 @@ _FIELD_NOTES = {
     "discover": "shell command that lists what exists right now",
     "moveit": "whether a MoveIt planner is running on this machine",
     "move_action": "MoveIt's plan-and-execute action",
-    "ik_service": "inverse-kinematics service (leave frame_id empty)",
+    "ik_service": "inverse-kinematics service",
+    "tcp_offset_m": "hand frame -> the point between the fingertips, along\nthe hand's approach axis, metres",
     "group": "the MoveIt planning group covering the arm",
     "planning_frame": "the frame MoveIt plans in",
     "arm": "which arm of a multi-arm machine this port belongs to",
+    "simulation": "how this simulated machine behaves where a real one\nwould not",
+    "clock": "paused: the world moves only while a command executes, so\nwaiting changes nothing, objects settle only as commands run,\nand seconds of motion can take minutes of wall time under\nload (a client timeout is not a failed motion); free_running:\nthe world runs with the wall clock",
+    "camera_render": "on_demand: a camera renders only while something\nsubscribes, so its topics can appear late; always: every\nframe is rendered",
+    "camera_rate_hz": "frames each camera publishes per wall-clock second",
+    "trajectory_goal_tolerance_rad": "a FollowJointTrajectory goal succeeds when every\njoint ends within this of its last point, radians",
+    "gripper_settle_ticks": "control ticks a gripper goal advances the world",
+    "base_command": "queue: each base Twist drives one control tick, then\nstops; latest: a new Twist replaces the one not yet applied",
+    "base_queue": "most base ticks that may wait; a Twist beyond is dropped",
+    "notes": "observations about this machine that no field can say,\nby the kind they concern",
     "drive": "the base's drive geometry",
 }
 
@@ -120,6 +130,38 @@ def _annotate(text: str) -> str:
         out.append(f"{line}  # {first}")
         out += [f"{pad}  # {r}" for r in rest]
     return "\n".join(out) + "\n"
+
+
+def _simulation(cfg: dict, manifest: dict) -> dict:
+    """The values a simulated machine's bridge acts on and a real robot
+    does not have, read from the same config that starts the bridge."""
+    m, protocol = cfg.get("machine", {}), cfg.get("protocol", {})
+    kinds = {e["kind"] for e in manifest["actuators"]}
+    sim = {"clock": protocol.get("clock", {}).get("mode", "paused")}
+    if any(s["kind"] == "camera_set" for s in manifest["sensors"]):
+        sim["camera_render"] = m.get("cameras", {}).get("render_mode", "on_demand")
+        sim["camera_rate_hz"] = m.get("cameras", {}).get("rate_hz", 2.0)
+    control = m.get("control", {})
+    if "joint_trajectory" in kinds:
+        sim["trajectory_goal_tolerance_rad"] = control.get("trajectory", {}).get(
+            "goal_tolerance_rad", 0.05)
+    if "gripper" in kinds:
+        sim["gripper_settle_ticks"] = control.get("gripper", {}).get("settle_steps", 10)
+    if "base_twist" in kinds:
+        sim["base_command"] = protocol.get("base_cmd_policy", "queue")
+        if sim["base_command"] == "queue":
+            sim["base_queue"] = protocol.get("base_cmd_queue", 4)
+    return sim
+
+
+def _notes(m: dict, manifest: dict) -> dict:
+    """The machine's notes for the kinds it actually has: an observation
+    about a base or a gripper means nothing on a machine without one."""
+    present = {e["kind"] for e in manifest["actuators"] + manifest["sensors"]}
+    present = {("camera" if k == "camera_set" else k) for k in present} | {"timing"}
+    if (m.get("planning") or {}).get("moveit"):
+        present.add("planning")
+    return {k: v for k, v in (m.get("notes") or {}).items() if k in present and v}
 
 
 def write_machine_manifest(cfg: dict, out: Path) -> None:
@@ -193,6 +235,11 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
     manifest["actuators"] = [a for a in manifest["actuators"] if a.get("port")]
     manifest["sensors"] = [s for s in manifest["sensors"]
                            if s.get("port") or s.get("topics")]
+    if m.get("backend", {}).get("kind") == "sim":
+        manifest["simulation"] = _simulation(cfg, manifest)
+    notes = _notes(m, manifest)
+    if notes:
+        manifest["notes"] = notes
     out.write_text(_HEADER + _annotate(
         yaml.safe_dump(manifest, sort_keys=False, width=1000)))
 

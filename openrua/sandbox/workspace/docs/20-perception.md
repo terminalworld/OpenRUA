@@ -45,8 +45,8 @@ section: what → port → CLI → rclpy → tool → notes.
 - **Port**: `machine.yaml → sensors[kind=wrench].port`
   (`geometry_msgs/msg/WrenchStamped`).
 - **CLI**: `ros2 topic echo <port> --once`
-- **Notes**: baseline is not zero (gravity); watch for *changes* on
-  contact, not absolute values.
+- **Notes**: the baseline is not zero; watch for *changes* on contact,
+  not absolute values.
 
 ### A4. Odometry (kind `odometry` (only on mobile machines))
 
@@ -94,16 +94,14 @@ section: what → port → CLI → rclpy → tool → notes.
 
 ## Sensor-surface facts
 
-- TF stamps are sim-time and a cached buffer can serve stale poses
-  after motion; the FK service gives the hand pose for given joints.
+- A TF buffer kept from before a motion can serve stale poses; look up
+  after the motion with a fresh listener. When the planner offers an FK
+  service (`ros2 service list | grep fk`), it gives the hand pose for
+  given joints.
 - `/robot_description` publishes with TRANSIENT_LOCAL durability; a
   plain subscription misses it; request that QoS.
-- Camera topics may appear in the graph lazily; the manifest's
-  camera_set entry is authoritative, `ros2 node info` shows the full set.
-- Oblique (side-view) cameras systematically overestimate the height of
-  low, flat objects near their edges; cross-view disagreement on such
-  objects usually traces to this.
-- The odometry topic publishes only as the sim advances.
+- This machine's own sensor observations are under `notes` in
+  machine.yaml.
 
 **Tool**: `python3 tools/perception/px2world.py <camera> <u> <v>`;
 depth + intrinsics + TF for one pixel, printed as world x y z in meters.

@@ -17,6 +17,10 @@ in **`machine.yaml`** at the workspace root. Read it first. Structure:
   limits, open/closed positions)
 - `sensors`; a list of typed read-ports (`joint_state`, `wrench`,
   `camera_set`, …)
+- `simulation`; only on a simulated machine: how its clock, cameras and
+  controllers behave where a real robot's would not
+- `notes`; observations about this machine that no field can say,
+  grouped by the kind they concern (`timing`, `gripper`, `planning`, …)
 
 Every key in it is defined in a comment on its own line, units included;
 `machine.yaml` explains itself and needs nothing from this doc.
@@ -63,18 +67,10 @@ graph; `ros2 topic list` / `ros2 action list` show the same ports live
 
 ## 4. Timing
 
-The system clock (`/clock`) advances with robot activity, not wall time.
-Consequences:
+How time passes on this machine is in `machine.yaml` (`simulation.clock`
+on a simulated one, `notes.timing` when it has notes). Either way:
 
-- `sleep` does not let the physical world settle;
 - confirm every motion by re-reading sensors after the command
-  completes, not by waiting.
-
-## Timing facts (paused-clock machine)
-
-- At session start the scene may not have settled yet (objects can sit
-  slightly above their supports); the world only advances while commands
-  execute; waiting wall-clock time changes nothing.
-- A few sim-seconds of trajectory can take minutes of wall time to
-  return under load. A client-side timeout is NOT a motion failure;
-  verify against `/joint_states` before re-sending.
+  completes;
+- a client-side timeout is not a motion failure; read the joint state
+  before sending the motion again.

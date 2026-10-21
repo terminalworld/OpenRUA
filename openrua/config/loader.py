@@ -221,16 +221,34 @@ def image_owner(sim: str, bench: str | None = None) -> str:
     return paths.find("simulators", sim).stem
 
 
+def join_notes(*layers: dict | None) -> dict:
+    """Notes from each file that describes part of a machine, in the
+    order given, joined kind by kind: a later file adds to an earlier
+    one's observations instead of replacing them."""
+    out: dict = {}
+    for layer in layers:
+        for kind, lines in (layer or {}).items():
+            out.setdefault(kind, []).extend(lines)
+    return out
+
+
 def assemble(robot_type: dict, embodiments: list[dict], install: dict,
              cameras: dict | None, source: str, engine: str | None = None,
-             image: str = "") -> dict:
+             image: str = "", sim_notes: dict | None = None,
+             scene_notes: dict | None = None) -> dict:
     """robot type + embodiments (simulator's, then the benchmark's) +
     install + the resolved engine + the image -> the ``machine:`` dict
     (Machine, validated). Later embodiments write over earlier ones,
-    key by key."""
+    key by key; notes are joined: robot type, simulator, embodiments,
+    benchmark scene."""
     m = copy.deepcopy(robot_type)
+    notes = join_notes(robot_type.get("notes"), sim_notes,
+                       *(e.get("notes") for e in embodiments), scene_notes)
     for e in embodiments:
-        _merge(m, e)
+        _merge(m, {k: v for k, v in e.items() if k != "notes"})
+    m.pop("notes", None)
+    if notes:
+        m["notes"] = notes
     if cameras is not None:
         m["cameras"] = copy.deepcopy(cameras)
     backend = {"kind": "sim", "ros_distro": install["ros_distro"],
@@ -252,7 +270,11 @@ def _instance_machine(inst: dict, home: Path | None) -> dict:
         raise ConfigError(f"robot instance names type {inst['type']!r}, which is itself "
                           "an instance (has a machine: section)")
     m = copy.deepcopy(facts)
-    _merge(m, inst["machine"])
+    notes = join_notes(facts.get("notes"), inst["machine"].get("notes"))
+    _merge(m, {k: v for k, v in inst["machine"].items() if k != "notes"})
+    m.pop("notes", None)
+    if notes:
+        m["notes"] = notes
     return dump(validate(Machine, m, f"{source} (over robot type {inst['type']})"))
 
 
@@ -352,7 +374,9 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                                f"{robot} on {sim}" + (f" for {bench}" if bench else ""),
                                engine=paths.entry_point("simulators", s["entry_point"],
                                                         paths.find("simulators", sim)),
-                               image=sim_image(image_owner(sim, bench)))
+                               image=sim_image(image_owner(sim, bench)),
+                               sim_notes=s.get("notes"),
+                               scene_notes=(b or {}).get("scenes", {}).get("notes"))
             simulator = sim
     if b is not None:
         cfg = {k: copy.deepcopy(v) for k, v in b.items()

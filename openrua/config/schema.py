@@ -103,6 +103,8 @@ class Protocol(Strict):
     base_cmd_policy: Literal["queue", "latest"] = Field(
         default="queue", description="mobile base: queue every twist (one message = "
         "one tick) or let a new one replace the pending setpoint")
+    base_cmd_queue: int = Field(default=4, description="mobile base, policy queue: the "
+                                "most ticks that may wait; a message beyond is dropped")
     stall_probe_timeout_s: float = Field(
         default=600, description="seconds a simulator job may run before the trial is "
         "declared wedged")
@@ -155,6 +157,20 @@ class AgentFacts(Strict):
 
 
 # --------------------------------------------------------------- machine
+
+# Observations about a machine that no field can say, grouped by the
+# manifest kind they concern (timing: how time behaves). Every file that
+# describes part of a machine may write them; they are joined in the
+# order robot type, simulator, embodiment, benchmark scene (or robot
+# type, then a real robot's instance), and machine.yaml carries the kinds
+# the machine actually has.
+NoteKind = Literal["timing", "joint_state", "joint_trajectory", "cartesian_twist",
+                   "gripper", "base_twist", "odometry", "wrench", "camera", "planning"]
+Notes = dict[NoteKind, list[str]]
+_NOTES_DESCRIPTION = ("observations no field can say, by the manifest kind they "
+                      "concern: timing, joint_state, joint_trajectory, cartesian_twist, "
+                      "gripper, base_twist, odometry, wrench, camera, planning")
+
 
 class Simulator(Strict):
     engine: str | None = Field(default=None, description="the bridge engine module "
@@ -494,6 +510,7 @@ class Machine(Strict):
     planning: Planning | None = Field(default=None, description="the MoveIt planner")
     tf: Tf | None = Field(default=None, description="what the bridge publishes on TF")
     base: Base | None = Field(default=None, description="the mobile base; null = fixed")
+    notes: Notes | None = Field(default=None, description=_NOTES_DESCRIPTION)
 
 
 class RobotType(Strict):
@@ -514,6 +531,7 @@ class RobotType(Strict):
     base: Base | None = Field(default=None, description="the mobile base; null = fixed")
     workspace_template: str | None = Field(
         default="workspace", description="workspace tree seeded into the sandbox; null = none")
+    notes: Notes | None = Field(default=None, description=_NOTES_DESCRIPTION)
 
 
 class EmbodiedPlanning(Strict):
@@ -554,6 +572,7 @@ class Embodiment(Strict):
                               "decides (body, effective speed)")
     cameras: Cameras | None = Field(default=None, description="robot-mounted cameras this "
                                     "embodiment adds")
+    notes: Notes | None = Field(default=None, description=_NOTES_DESCRIPTION)
 
 
 class Checkout(Strict):
@@ -630,6 +649,8 @@ class SimulatorProfile(Strict):
                                        "benchmark; null = a benchmark is required")
     robots: dict[str, Embodiment] = Field(default_factory=dict, description="robot type "
                                           "name -> how this engine drives it")
+    notes: Notes | None = Field(default=None, description=_NOTES_DESCRIPTION + "; for "
+                                "every robot this engine drives")
 
 
 class Scenes(Strict):
@@ -642,6 +663,8 @@ class Scenes(Strict):
     robots: dict[str, Embodiment] = Field(default_factory=dict, description="robot type "
                                           "name -> embodiment this benchmark's assets add "
                                           "or adjust (merged over the simulator's)")
+    notes: Notes | None = Field(default=None, description=_NOTES_DESCRIPTION + "; for "
+                                "this benchmark's scenes")
 
 
 class RobotInstance(Strict):

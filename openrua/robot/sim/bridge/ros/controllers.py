@@ -101,7 +101,7 @@ class CommandPorts:
         self._base_vel = np.zeros(3)  # vx, vy, wz (JOINT_VELOCITY base)
         # Base command policy:
         #   "queue"  (default): one message = one tick, deterministic;
-        #            bounded by _BASE_QUEUE_MAX so a flood of messages
+        #            bounded by protocol.base_cmd_queue so a flood of messages
         #            cannot queue thousands of ticks of displacement.
         #   "latest" (real-robot semantics): a new message replaces the
         #            pending setpoint (a velocity setting, not a queued
@@ -110,6 +110,8 @@ class CommandPorts:
 
         self._base_policy = str(
             cfg.get("protocol", {}).get("base_cmd_policy", "queue"))
+        self._base_queue_max = int(
+            cfg.get("protocol", {}).get("base_cmd_queue", 4))
         self._base_lock = _threading.Lock()
         self._base_pending = 0
         self._base_dropped = 0
@@ -168,12 +170,10 @@ class CommandPorts:
 
         self._runner.submit(job, wait=False)
 
-    _BASE_QUEUE_MAX = 4  # flood fuse: max queued base ticks (policy "queue")
-
     def _on_base_twist(self, msg) -> None:
         """/cmd_vel (plain Twist): one message = one control tick of base
         motion at [vx, vy, wz]; the velocity does NOT persist beyond its
-        tick. Messages queue up to _BASE_QUEUE_MAX; excess is dropped
+        tick. Messages queue up to protocol.base_cmd_queue; excess is dropped
         (logged), like a real base's lossy command transport. Under policy
         "latest" a new message replaces the pending setpoint instead."""
         v = np.array([msg.linear.x, msg.linear.y, msg.angular.z], dtype=float)
@@ -183,7 +183,7 @@ class CommandPorts:
             if self._base_policy == "latest":
                 if self._base_pending:
                     return  # the queued tick consumes the newest setpoint
-            elif self._base_pending >= self._BASE_QUEUE_MAX:
+            elif self._base_pending >= self._base_queue_max:
                 self._base_dropped += 1
                 if self._base_dropped % 100 == 1:
                     import sys

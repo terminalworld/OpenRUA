@@ -40,6 +40,7 @@ A robots/<type>.yaml: what is true of this robot wherever it runs. No cameras, n
 | `planning` | [Planning](#planning) \| null | None | the MoveIt planner |
 | `base` | [Base](#base) \| null | None | the mobile base; null = fixed |
 | `workspace_template` | str \| null | 'workspace' | workspace tree seeded into the sandbox; null = none |
+| `notes` | dict['timing' \| 'joint_state' \| 'joint_trajectory' \| 'cartesian_twist' \| 'gripper' \| 'base_twist' \| 'odometry' \| 'wrench' \| 'camera' \| 'planning', list[str]] \| null | None | observations no field can say, by the manifest kind they concern: timing, joint_state, joint_trajectory, cartesian_twist, gripper, base_twist, odometry, wrench, camera, planning |
 
 ## RobotFacts
 
@@ -187,6 +188,7 @@ A robots/<name>.yaml describing one particular robot, usually a real one: its ``
 | `planning` | [Planning](#planning) \| null | None | the MoveIt planner |
 | `tf` | [Tf](#tf) \| null | None | what the bridge publishes on TF |
 | `base` | [Base](#base) \| null | None | the mobile base; null = fixed |
+| `notes` | dict['timing' \| 'joint_state' \| 'joint_trajectory' \| 'cartesian_twist' \| 'gripper' \| 'base_twist' \| 'odometry' \| 'wrench' \| 'camera' \| 'planning', list[str]] \| null | None | observations no field can say, by the manifest kind they concern: timing, joint_state, joint_trajectory, cartesian_twist, gripper, base_twist, odometry, wrench, camera, planning |
 
 ## RealBackend
 
@@ -282,6 +284,7 @@ A simulators/<engine>.yaml: the engine, its install, its native scene, and how i
 | `install` | [Install](#install) | **required** | what its image is made of, and the ROS distro |
 | `native` | [NativeScene](#nativescene) \| null | None | scene loaded with no benchmark; null = a benchmark is required |
 | `robots` | dict[str, [Embodiment](#embodiment)] | {} | robot type name -> how this engine drives it |
+| `notes` | dict['timing' \| 'joint_state' \| 'joint_trajectory' \| 'cartesian_twist' \| 'gripper' \| 'base_twist' \| 'odometry' \| 'wrench' \| 'camera' \| 'planning', list[str]] \| null | None | observations no field can say, by the manifest kind they concern: timing, joint_state, joint_trajectory, cartesian_twist, gripper, base_twist, odometry, wrench, camera, planning; for every robot this engine drives |
 
 ## Install
 
@@ -337,6 +340,7 @@ How an engine drives one robot type: the keys that depend on the simulator, merg
 | `planning` | [EmbodiedPlanning](#embodiedplanning) \| null | None | planner keys this world changes |
 | `base` | [Base](#base) \| null | None | mobile-base keys the engine decides (body, effective speed) |
 | `cameras` | [Cameras](#cameras) \| null | None | robot-mounted cameras this embodiment adds |
+| `notes` | dict['timing' \| 'joint_state' \| 'joint_trajectory' \| 'cartesian_twist' \| 'gripper' \| 'base_twist' \| 'odometry' \| 'wrench' \| 'camera' \| 'planning', list[str]] \| null | None | observations no field can say, by the manifest kind they concern: timing, joint_state, joint_trajectory, cartesian_twist, gripper, base_twist, odometry, wrench, camera, planning |
 
 ## EmbodiedPlanning
 
@@ -388,6 +392,7 @@ A benchmarks/<name>.yaml as written.
 | `clock` | [Clock](#clock) |  | how simulated time advances |
 | `horizon` | int | 1000000000 | simulator step cap (libero) |
 | `base_cmd_policy` | 'queue' \| 'latest' | 'queue' | mobile base: queue every twist (one message = one tick) or let a new one replace the pending setpoint |
+| `base_cmd_queue` | int | 4 | mobile base, policy queue: the most ticks that may wait; a message beyond is dropped |
 | `stall_probe_timeout_s` | float | 600 | seconds a simulator job may run before the trial is declared wedged |
 
 ## Clock
@@ -438,6 +443,7 @@ What a benchmark brings into the simulator's world.
 | `default_suite` | str \| null | None | the suite openrua run / up load when none is named; default: the first in task.suites |
 | `cameras` | [Cameras](#cameras) \| null | None | the scene cameras (over the simulator's native ones) |
 | `robots` | dict[str, [Embodiment](#embodiment)] | {} | robot type name -> embodiment this benchmark's assets add or adjust (merged over the simulator's) |
+| `notes` | dict['timing' \| 'joint_state' \| 'joint_trajectory' \| 'cartesian_twist' \| 'gripper' \| 'base_twist' \| 'odometry' \| 'wrench' \| 'camera' \| 'planning', list[str]] \| null | None | observations no field can say, by the manifest kind they concern: timing, joint_state, joint_trajectory, cartesian_twist, gripper, base_twist, odometry, wrench, camera, planning; for this benchmark's scenes |
 
 ## UserConfig
 
