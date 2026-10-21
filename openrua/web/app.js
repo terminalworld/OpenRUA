@@ -1,4 +1,12 @@
 import { workspaceBrowser } from "/workspace.js";
+import {
+  PERMISSIONS,
+  agentCommands,
+  commandsFor,
+  notice as eventNotice,
+  parseCommand,
+  status,
+} from "/session.mjs";
 const $ = (id) => document.getElementById(id);
 const make = (tag, text, className) => {
   const e = document.createElement(tag);
@@ -23,7 +31,8 @@ let token = "",
   online = false,
   ending = false,
   sending = false,
-  generation = 0;
+  generation = 0,
+  lastEvent = 0;
 let turns = new Map(),
   outputs = new Map(),
   questionVersion = "",
@@ -94,7 +103,11 @@ function turn(message) {
   return entry;
 }
 function event(record) {
+  // What an event says to the person, as every client says it.
+  const said = eventNotice(record);
+  if (said) notice(said);
   if (record.kind !== "agent_event") return;
+  lastEvent = Date.now();
   const e = record.data,
     data = e.data || {},
     t = turns.get(e.turn_id);
@@ -255,6 +268,27 @@ function render() {
         : state.connected
           ? "Ready for your next instruction."
           : "Waiting for the native agent connection.";
+  // The same notes the terminal's status line shows.
+  const { notes } = status(state);
+  if (state.active && lastEvent && Date.now() - lastEvent > 60000)
+    notes.splice(1, 0, {
+      tone: "warn",
+      text: `no output for ${Math.round((Date.now() - lastEvent) / 1000)}s`,
+    });
+  $("notes").replaceChildren(
+    ...notes.map((n) => make("span", n.text, `tone-${n.tone}`)),
+  );
+  // The agent: its permissions and model, and its own commands.
+  const settings = state.settings || {};
+  if (document.activeElement !== $("permissions"))
+    $("permissions").value = settings.permissions || "";
+  $("permissions").disabled = !online || state.closed;
+  $("model").disabled = !online || state.closed;
+  $("agent-model").textContent = settings.model || "";
+  const theirs = agentCommands(state);
+  $("agent-commands").textContent = theirs.length
+    ? `Its own commands: ${theirs.map((c) => "/" + c.name).join(" ")}`
+    : "";
   $("cursor").textContent = `Event ${cursor}`;
   $("interrupt").disabled = !online || !state.active || state.closed;
   $("resume").disabled =
@@ -388,9 +422,90 @@ $("disconnect").onclick = () => {
   $("login").hidden = false;
   $("disconnect").hidden = true;
 };
+async function configure(setting, value) {
+  return act("configure", { setting, value });
+}
+// One handler for each command the page offers (commandsFor("browser"));
+// the agent's own commands go to it as a message, as in its terminal.
+export const handlers = {
+  help: () => {
+    const theirs = agentCommands(state);
+    notice(
+      commandsFor("browser")
+        .map((c) => `/${c.name}: ${c.description}`)
+        .concat(
+          theirs.length
+            ? ["", "The agent's own:", ...theirs.map((c) => `/${c.name}: ${c.description}`)]
+            : [],
+        )
+        .join("\n"),
+    );
+  },
+  files: () => {
+    $("files-path").scrollIntoView({ block: "center" });
+    $("files-path").focus();
+  },
+  queue: () => $("queue").scrollIntoView({ block: "center" }),
+  questions: () => {
+    if ($("questions").hidden) throw new Error("No pending questions.");
+    $("questions").scrollIntoView({ block: "center" });
+  },
+  end: () => $("end").click(),
+  interrupt: async () => {
+    if (!state?.active) throw new Error("No active turn.");
+    if (await act("interrupt", { message_id: state.active }))
+      notice("Interrupted. Queued messages go next.");
+  },
+  continue: () => {
+    if (!state?.paused) throw new Error("The queue is not paused.");
+    $("resume").click();
+  },
+  permissions: async ([value]) => {
+    if (!value) {
+      $("permissions").focus();
+      return;
+    }
+    await configure("permissions", value);
+  },
+  model: async ([value]) => {
+    if (!value) {
+      notice(`The model: ${state?.settings?.model ?? "unknown"}. Change it with /model <name>.`);
+      return;
+    }
+    if (await configure("model", value)) notice(`The model is ${value} from the next request.`);
+  },
+};
+for (const p of PERMISSIONS) {
+  const option = make("option", p.label);
+  option.value = p.value;
+  $("permissions").append(option);
+}
+$("permissions").onchange = () => configure("permissions", $("permissions").value);
+$("model-form").onsubmit = async (e) => {
+  e.preventDefault();
+  const value = $("model").value.trim();
+  if (value && (await configure("model", value))) $("model").value = "";
+};
 $("compose").onsubmit = async (e) => {
   e.preventDefault();
   if (!online || !state || state.closed || sending) return;
+  const typed = pending ? null : parseCommand($("message").value, state);
+  if (typed && typed.kind !== "agent") {
+    $("message").value = ""; // as the terminal does, whatever the command says
+    try {
+      const handler = typed.kind === "ours" ? handlers[typed.name] : undefined;
+      if (!handler)
+        throw new Error(
+          typed.kind === "ours"
+            ? `/${typed.name} is a terminal command.`
+            : "Unknown command. Use /help.",
+        );
+      await handler(typed.args);
+    } catch (err) {
+      notice(err.message);
+    }
+    return;
+  }
   if (!pending) {
     pending = {
       request_id: crypto.randomUUID(),

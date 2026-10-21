@@ -9,6 +9,13 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- **The browser catches up with the terminal**: an Agent panel switches
+  permissions and the model and lists the agent's own commands; the
+  message box takes the same `/` commands; the page shows the same status
+  notes (stopped robot, connecting checks, questions, a quiet minute) and
+  the same notices (cancelled motions, a setting the agent refused). Both
+  clients read commands, status and notices from one file, and tests fail
+  when a command is added without a handler in either.
 - **Claude Code reads AGENTS.md in every session**: each session used to
   start from a copy of Claude's own state file, which on some machines was
   long stale and made the CLI skip AGENTS.md, so the agent could answer

@@ -98,6 +98,15 @@ so a retry after a lost response uses the original request identity.
 The page shows messages from all clients, streamed agent text, tool activity,
 and queued instructions. You can edit or withdraw queued messages, interrupt
 the current turn, confirm queue continuation, and answer native agent questions.
+The **Agent** panel switches permissions (ask before each command that changes
+something, or run without asking) and the model, and lists the agent's own
+commands. The message box takes the same `/` commands as the terminal where
+they mean something on a page (`/help` lists them; `/permissions ask`,
+`/model <name>`, `/interrupt`, ...); the agent's own commands go to the agent.
+Under the execution state, the page shows the notes the terminal's status line
+shows: a stopped robot, the checks while connecting a robot, permissions,
+queued messages, a disconnected agent, pending questions, a quiet minute. Both
+read them from one shared file, `openrua/web/session.mjs`.
 If the execution result is unknown, record what you checked before continuing.
 Ending waits for the resource owner and displays the resulting retained state;
 a failed shutdown is not displayed as a successful end.

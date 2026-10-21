@@ -284,3 +284,38 @@ def test_browser_tool_completion_preserves_details_and_empty_output(tmp_path):
         await playwright.expect(page.locator(".tool pre")).not_to_contain_text("/camera")
         assert len([f for f in native.writes if "submit" in f]) == 1
     asyncio.run(browser_case(tmp_path, check))
+
+
+def test_the_page_offers_every_command_the_shared_list_gives_it(tmp_path):
+    # One list of commands for every client (openrua/web/session.mjs); a
+    # command added there without a handler here fails this.
+    async def check(page, store, native, server):
+        seen = await page.evaluate("""async () => {
+            const shared = await import('/session.mjs'), page = await import('/app.js');
+            return {want: shared.commandsFor('browser').map(c => c.name).sort(),
+                    have: Object.keys(page.handlers).sort()};
+        }""")
+        assert seen["want"] == seen["have"]
+    asyncio.run(browser_case(tmp_path, check))
+
+
+def test_the_page_changes_the_agents_settings_and_says_what_events_say(tmp_path):
+    from openrua.sessions.core import Session
+
+    async def check(page, store, native, server):
+        await send(page, "/permissions ask")
+        await playwright.expect(page.locator("#notes")).to_contain_text("asks before commands")
+        await page.locator("#permissions").select_option("auto")
+        await playwright.expect(page.locator("#notes")).not_to_contain_text("asks before commands")
+        await send(page, "/model m2")
+        await playwright.expect(page.locator("#agent-model")).to_have_text("m2")
+        await playwright.expect(page.locator("#notice")).to_contain_text("The model is m2")
+        Session(store).motion_canceled({"/arm/fjt": True, "/arm/grip": False})
+        await playwright.expect(page.locator("#notice")).to_contain_text("Motion canceled: /arm/fjt")
+        await playwright.expect(page.locator("#notice")).to_contain_text("use the emergency stop")
+        await send(page, "/help")
+        await playwright.expect(page.locator("#notice")).to_contain_text("/permissions:")
+        await send(page, "/quit")
+        await playwright.expect(page.locator("#notice")).to_have_text("/quit is a terminal command.")
+        assert store.snapshot()["state"]["messages"] == []   # none of it went to the agent
+    asyncio.run(browser_case(tmp_path, check))
