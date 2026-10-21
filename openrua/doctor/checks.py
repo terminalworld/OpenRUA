@@ -18,6 +18,7 @@ from pathlib import Path
 
 
 from openrua import agents, config, proxy
+from openrua.robot import not_ready
 from openrua.config import compose, paths
 from openrua.doctor.report import CheckResult, Report
 from openrua.robot.sim import build as sim_build
@@ -184,6 +185,19 @@ def check_proxy_image(ctx: Context) -> list[CheckResult]:
     return [CheckResult("proxy-image", f"proxy image {image} present")]
 
 
+def check_robot_ready(ctx: Context) -> list[CheckResult]:
+    """A real robot's own startup checks (``backend.startup_checks``), run
+    now, so a start that would stop on one says so first, with its fix."""
+    if ctx.cfg is None:
+        return []
+    backend = ctx.cfg["machine"].get("backend", {})
+    checks = backend.get("startup_checks") or []
+    failed = [c["name"] for c in not_ready(backend)] if checks else []
+    return [CheckResult(f"ready-{i}", c["name"], "error" if c["name"] in failed else "ok",
+                        hint=c["fix"] if c["name"] in failed else "")
+            for i, c in enumerate(checks)]
+
+
 def _build_hint(ctx: Context) -> str:
     return f"openrua build --bench {ctx.bench}" if ctx.bench else f"openrua build --sim {ctx.sim}"
 
@@ -282,7 +296,7 @@ def check_login(ctx: Context) -> list[CheckResult]:
 
 CHECKS: tuple[Callable[[Context], list[CheckResult]], ...] = (
     check_docker, check_home, check_bundled_agents, check_proxy_image,
-    check_robot_images, check_login,
+    check_robot_images, check_robot_ready, check_login,
 )
 
 

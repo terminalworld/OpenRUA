@@ -272,12 +272,37 @@ it cannot get around. For a scored campaign, simulation keeps that
 isolation; on hardware the point of the sandbox is the same toolchain and
 the same workspace, not containment.
 
+## Before it starts
+
+`backend.startup_checks` lists what has to be true before the robot can
+start, each a command run on this computer in the robot file's directory
+and what a person does when it fails:
+
+```yaml
+    startup_checks:
+      - name: the arm's controller answers
+        run: ping -c1 -W2 192.168.1.20
+        fix: power the controller on; check the cable to its network port
+      - name: the gripper's USB adapter is plugged in
+        run: test -e /dev/serial/by-id/usb-FTDI_USB_TO_RS-485_XXXX-if00-port0
+        fix: plug the adapter into this computer
+```
+
+Every check runs before every session (`openrua doctor` runs them too);
+one that fails stops the start, and the message lists each failed check
+with its fix. If the robot itself changed, `openrua connect --dir <its
+folder>` goes on connecting it from there.
+
 ## Same-host Fast DDS discovery
 
 If a driver sees its own ROS node but the sandbox cannot, first check that both
 use the same ROS domain. With host networking, Fast DDS may also select shared
 memory even though the containers have separate IPC namespaces; see the
 [native Docker guidance](https://fast-dds.docs.eprosima.com/en/3.4.x/docker/shm_docker.html).
+A real robot's sandbox speaks UDP only for this reason (Jazzy through
+`FASTDDS_BUILTIN_TRANSPORTS=UDPv4`, Humble through a Fast DDS profile), so it
+finds a driver in another container. Drivers in separate containers that
+talk to each other need the same.
 
 To retain separate IPC namespaces, a Fast DDS driver can use the
 [UDP-only profile](../examples/ros/fastdds-udp.xml). Place the file where the

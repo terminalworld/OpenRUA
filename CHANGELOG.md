@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.16.0
+
+- **A real robot's startup checks**: `backend.startup_checks` lists what
+  has to be true before the robot starts (its controller answers, its
+  devices are plugged in), each a command on this computer with the fix a
+  person applies when it fails. They run before every session and in
+  `openrua doctor`; one that fails stops the start and lists every failed
+  check with its fix, and where to go on connecting the robot if it
+  changed. `openrua connect` has the agent write them.
+
 ## 0.15.0
 
 Connecting a real robot, with the coding agent doing the work.

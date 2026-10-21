@@ -9,6 +9,7 @@ machine:
     discovery:
       network: host
     build: {}           # image name: directory with its Dockerfile, relative to this file
+    startup_checks: []  # {name, run: a command on this computer, fix: what a person does}
   robot:
     model: TODO         # make and model, as the vendor names it
     description: TODO   # one line: the arm, the gripper, the cameras
