@@ -80,7 +80,7 @@ install:                  # LIBERO's world: its robosuite 1.4 fork in the CaP-X 
     [ -d "$LIBERO/bddl_files/libero_goal_task" ] || run tar xzf {here}/libero-pro-suites.tar.gz -C "$LIBERO"
 
 scenes:
-  default_suite: libero_goal_task  # what `openrua run --bench libero_pro` loads (the
+  default_suite: libero_goal_task  # what `--bench libero_pro` loads (the
                                    # unperturbed goal suite; swap/spatial/object are the
                                    # benchmark's other cells)
   cameras:                # the scene's own cameras, unchanged

@@ -224,6 +224,21 @@ def test_doctor_without_robot_honors_selected_default_and_custom_manifest(tmp_pa
     assert str(login) in report.checks[0].label
 
 
+def test_doctor_without_robot_checks_the_saved_robot_as_openrua_would_start_it(tmp_path):
+    import yaml
+    (tmp_path / "config.yaml").write_text(yaml.safe_dump({"robot": "panda",
+                                                          "simulator": "robosuite"}))
+    seen = []
+    report = doctor.run(home=tmp_path, checks=(lambda ctx: seen.append(
+        (ctx.robot, ctx.sim, ctx.cfg["machine"]["backend"]["kind"])) or [],))
+    assert report.ok, report.render()
+    assert seen == [("panda", "robosuite", "sim")]
+    seen.clear()
+    (tmp_path / "config.yaml").write_text("{}\n")    # nothing saved: nothing to check
+    doctor.run(home=tmp_path, checks=(lambda ctx: seen.append(ctx.cfg) or [],))
+    assert seen == [None]
+
+
 def test_invalid_user_config_is_a_finding_not_a_traceback(tmp_path):
     (tmp_path / "config.yaml").write_text("unknown_setting: true\n")
     report = doctor.run(home=tmp_path)

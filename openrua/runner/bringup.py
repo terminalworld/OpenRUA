@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
+import time
 from pathlib import Path
 from typing import Callable
 from urllib.parse import urlparse
@@ -23,16 +24,21 @@ from openrua.proxy.up import url_from_network as proxy_url_from_network
 from openrua.runner import record
 from openrua.sandbox.down import down as sandbox_down
 from openrua.sandbox.up import up as sandbox_up
+from openrua.sandbox.up import write_peers as sandbox_peers
 
 # ROS_STATIC_PEERS exists only from Iron on; Humble's Fast DDS ignores
 # it. The portable equivalent is a Fast DDS initial-peers profile; DNS
-# names resolve inside it, so container names work as-is. Both sides of
-# a multicast-less network get a rendered copy (robot container and
-# sandbox). Initial peers replace Fast DDS's default discovery peer, the
+# names resolve inside it, so container names work as-is. Humble's Fast
+# DDS resolves them too, but only after printing an IP_LOCATOR format
+# error in every process that loads the profile (each ros2 command the
+# agent runs), so a simulated robot on a distro outside NAMES_RESOLVE
+# gets addresses instead (bring_up). Both sides of a multicast-less
+# network get a rendered copy (robot container and sandbox). Initial peers replace Fast DDS's default discovery peer, the
 # multicast group, so it is listed again: without it the processes inside
 # one container (bridge, robot_state_publisher, move_group; or two of the
 # agent's own nodes) never discover each other.
 DDS_DEFAULT_MULTICAST = "239.255.0.1"
+NAMES_RESOLVE = ("jazzy",)   # distros whose Fast DDS takes a name in a locator quietly
 
 FASTDDS_PEERS_XML = """<?xml version="1.0" encoding="UTF-8" ?>
 <profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
@@ -148,6 +154,22 @@ def start_episode(machine: robot.Handle, init_state_id: int) -> dict:
     if not r.get("ok"):
         raise RuntimeError(f"reset failed: {r}")
     return machine.rpc({"cmd": "task_info"})
+
+
+def address_on(container: str, network: str, timeout_s: float = 30.0) -> str:
+    """``container``'s IPv4 address on ``network``, once docker has given
+    it one (a container started a moment ago may not have it yet)."""
+    form = f'{{{{with index .NetworkSettings.Networks "{network}"}}}}{{{{.IPAddress}}}}{{{{end}}}}'
+    deadline = time.monotonic() + timeout_s
+    while True:
+        r = subprocess.run(["docker", "inspect", "--format", form, container],
+                           capture_output=True, text=True)
+        if r.returncode == 0 and r.stdout.strip():
+            return r.stdout.strip()
+        if time.monotonic() > deadline:
+            raise UnavailableError(f"{container} has no address on {network}",
+                                   hint=r.stderr.strip() or f"docker inspect {container}")
+        time.sleep(0.2)
 
 
 def graph_probe(sandbox_name: str) -> list[str]:
@@ -307,8 +329,15 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     if backend.get("kind") != "sim":
         ros_domain = 0 if ros_domain is None else ros_domain
     ros_domain = claim_domain(network, ros_domain, start_sandbox, sandbox_down)
+    # Addresses instead of names where Fast DDS complains about names: the
+    # robot's profile gets the sandbox's (up already), the sandbox's is
+    # rewritten with the robot's once its container exists, before
+    # anything in the sandbox starts a ros2 process.
+    by_address = backend.get("kind") == "sim" and \
+        backend.get("ros_distro", "jazzy") not in NAMES_RESOLVE
     machine = None
     try:
+        sandbox_peer = address_on(sandbox_name, network) if by_address else sandbox_name
         machine = robot.up(
             backend,
             name=sim_name,
@@ -319,7 +348,7 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             moveit_log=str(robot_log.with_name("moveit.log")),
             network=network,
             static_peer=sandbox_name,
-            peers_xml=peers_profile([sandbox_name]),
+            peers_xml=peers_profile([sandbox_peer]),
             ros_domain=ros_domain,
             probe_argv=graph_probe(sandbox_name),
             record=str(dest / "frames") if record_cameras is not None else None,
@@ -327,6 +356,8 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
             record_every=record_every,
             record_size=record_size,
         )
+        if by_address:
+            sandbox_peers(sandbox_name, peers_profile([address_on(sim_name, network)]))
         machine.wait_ready()
     except BaseException:
         try:

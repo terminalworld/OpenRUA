@@ -8,8 +8,8 @@
   "suite": "libero_goal_task",
   "task_id": 0,
   "seed": 0,
-  "profiles_sha256": "c095969793d4b56ac850cc833cbe990bb9ad45368aa9fbd2ae91e739c89c1388",
-  "checked_at": "2026-10-21T12:53:40.691914+00:00",
+  "profiles_sha256": "09c62fbd9b499753082c58dbca70d70c322ef8e3b7eff6511bad177099860eca",
+  "checked_at": "2026-10-21T23:01:01.395058+00:00",
   "images": {
     "robot": {
       "name": "openrua-sim-libero_pro",
@@ -17,7 +17,7 @@
     },
     "sandbox": {
       "name": "openrua-sandbox-jazzy",
-      "id": "sha256:b3dfcbe749dbf30104ad89e4b9244d17ce01d3e0017c28ea79a1b953576b5e50"
+      "id": "sha256:ecdc7cfb25a08888390ad8e54e87a88e14333b9af656cc4ebbc6609f7c3d12ac"
     }
   },
   "checks": {
@@ -39,8 +39,8 @@
     "planning_frame": true
   },
   "agent_binaries": {
-    "claude-code": "2.1.197 (Claude Code)",
-    "codex": "codex-cli 0.161.0"
+    "claude-code": "2.1.306 (Claude Code)",
+    "codex": "codex-cli 0.163.0"
   },
   "scope": "Simulation startup, reset, ROS image and joint streams, declared gripper joint, no-op trajectory, declared planning frame against FK and TF, agent CLI versions. No model task or physical robot validation."
 }

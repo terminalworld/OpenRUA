@@ -17,7 +17,7 @@ install:                     # ManiSkill 3.0.1 from its checkout; rendering is V
   requirements: maniskill/requirements.txt   # uv pip freeze of the venv the gate ran in (ManiSkill's dependencies)
   editable: [maniskill/ManiSkill]
 
-native:                      # `openrua run <robot> --sim maniskill` with no --bench
+native:                      # what `--sim maniskill` loads with no --bench
   entry_point: maniskill     # bridge loader: gym.make on a ManiSkill task
   scene: PickCube-v1         # a red cube and a goal marker on a table
   cameras:

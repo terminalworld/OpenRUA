@@ -8,6 +8,14 @@ from openrua.config import load_user_config
 from openrua.errors import UsageError
 
 
+@pytest.fixture(autouse=True)
+def no_update_offers(monkeypatch):
+    """What npm and PyPI hold today must not turn a start into a question
+    (tests/cli/test_updates.py covers the offers themselves)."""
+    from openrua.cli import updates
+    monkeypatch.setattr(updates, "offers", lambda composed, home: [])
+
+
 def args(tmp_path, *flags):
     return build_parser().parse_args(['--home', str(tmp_path), *flags])
 

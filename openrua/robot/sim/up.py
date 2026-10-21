@@ -128,6 +128,9 @@ def up(
         stderr=(open(log_path, "w") if log_path is not None
                 else subprocess.DEVNULL),
         text=True,
+        # A Ctrl-C at the terminal is the runner's to handle: it still
+        # asks this robot for the verdict before powering it off.
+        start_new_session=True,
     )
     return BridgeClient(proc, name)
 

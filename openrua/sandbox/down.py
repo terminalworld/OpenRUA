@@ -12,6 +12,17 @@ import subprocess
 import sys
 
 
+def stop_processes(name: str, grace_s: float = 5.0) -> None:
+    """End everything the sandbox user runs (the agent and whatever it
+    started) and keep the container: TERM first, so a tool that holds a
+    goal can cancel it, then KILL what is left after ``grace_s``. The
+    container's first process is not the user's to signal, so it stays."""
+    for sig, wait in (("TERM", grace_s), ("KILL", 0)):
+        subprocess.run(["docker", "exec", "-u", "robot", name, "bash", "-c",
+                        f"kill -{sig} -1 2>/dev/null; sleep {wait:g}"],
+                       capture_output=True, timeout=wait + 30)
+
+
 def down(name: str) -> bool:
     """Remove the container; True if it existed."""
     r = subprocess.run(["docker", "rm", "-f", name],

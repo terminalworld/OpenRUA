@@ -11,6 +11,7 @@ oracle-retry.
 from __future__ import annotations
 
 import os
+import signal
 import traceback
 import hashlib
 import shutil
@@ -18,6 +19,7 @@ import subprocess
 import threading
 import time
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -28,9 +30,11 @@ from openrua.runner import lock
 from openrua.runner import record
 from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
                                     internet_access, start_episode)
+from openrua.runner.motion import cancel_motion, motion_actions
 from openrua.runner.preflight import run_preflight
 from openrua.sandbox import workspace
 from openrua.sandbox.down import down as sandbox_down
+from openrua.sandbox.down import stop_processes
 
 
 DNS_LABEL_MAX = 63  # RFC 1035, single label
@@ -153,6 +157,38 @@ def operate(cfg: dict, machine, sandbox_name: str, operator, ctx: dict) -> dict:
     if stall:
         raise RuntimeError(stall["msg"])
     return op_meta
+
+
+@contextmanager
+def held_interrupts():
+    """While a robot is being stopped and powered off, a further Ctrl-C,
+    hangup or terminate is noted, not obeyed: stopping half way would
+    leave it running. (Signals belong to the main thread; elsewhere this
+    holds nothing.)"""
+    def note(*_):
+        try:
+            print("[trial] stopping the robot; it powers off in a moment", flush=True)
+        except OSError:   # the terminal is gone (a hangup)
+            pass
+    held = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
+    main = threading.current_thread() is threading.main_thread()
+    before = {sig: signal.signal(sig, note) for sig in held} if main else {}
+    try:
+        yield
+    finally:
+        for sig, handler in before.items():
+            signal.signal(sig, handler)
+
+
+def halt(cfg: dict, sandbox_name: str, agent_stopped: bool) -> None:
+    """A person stopped the run: end the agent and everything it started
+    (its motion tools cancel their goals on TERM), then, on a real robot,
+    ask every motion action to cancel what is left, so the arm holds
+    where it is. A simulated robot is judged as it stands."""
+    if not agent_stopped:
+        stop_processes(sandbox_name)
+    if cfg.get("machine", {}).get("backend", {}).get("kind") == "real":
+        cancel_motion(sandbox_name, motion_actions(cfg.get("machine", {})))
 
 
 def score(rec: dict, machine) -> None:
@@ -297,16 +333,28 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             "token_file": token_file,
             "home": home,
         })
-        if scored:
-            score(rec, machine)
-        else:
-            rec["success"] = None
-            rec["steps_total"] = None
+        with held_interrupts():
+            if op_meta.get("termination") == "stopped":
+                halt(cfg, sandbox_name, agent_stopped=True)
+            if scored:
+                score(rec, machine)
+            else:
+                rec["success"] = None
+                rec["steps_total"] = None
         rec["operator_meta"] = op_meta
         rec["termination"] = op_meta.get("termination", "operator_done")
         # Validity judgment (quota voiding and the like) belongs to
         # whoever reads the artifacts; the runner records faithfully and
         # flags only its own failures below.
+        rec["anomaly"] = None
+    except KeyboardInterrupt:
+        # Stopped outside the agent's segment: during bring-up, preflight,
+        # a quota wait, or the verdict. No verdict then.
+        with held_interrupts():
+            if sandbox_live:
+                halt(cfg, sandbox_name, agent_stopped=False)
+        rec["termination"] = "stopped"
+        rec.setdefault("success", None)
         rec["anomaly"] = None
     except Exception as exc:  # noqa: BLE001; anomaly ledger, not a crash
         rec["success"] = False
@@ -316,22 +364,23 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         # errors have no bridge.log to fall back on.
         rec["anomaly_traceback"] = traceback.format_exc()
     finally:
-        if machine is not None:
-            machine.shutdown()
-        if sandbox_live:
-            sandbox_down(sandbox_name)
-        # Post-trial token values too; a mid-trial rotation would leave
-        # both generations potentially visible in the record.
-        try:
-            secrets += record.secret_strings(creds_home) if creds_home is not None else []
-            if profile.read_secrets is not None:
-                secrets += profile.read_secrets()
-            record.finalize_trial(trial_dir, agent, secrets, profile_dir=profile.directory)
-        finally:
+        with held_interrupts():
+            if machine is not None:
+                machine.shutdown()
+            if sandbox_live:
+                sandbox_down(sandbox_name)
+            # Post-trial token values too; a mid-trial rotation would leave
+            # both generations potentially visible in the record.
             try:
-                shutil.rmtree(paths.sandbox_dir(stem, home), ignore_errors=True)
+                secrets += record.secret_strings(creds_home) if creds_home is not None else []
+                if profile.read_secrets is not None:
+                    secrets += profile.read_secrets()
+                record.finalize_trial(trial_dir, agent, secrets, profile_dir=profile.directory)
             finally:
-                held.release()
+                try:
+                    shutil.rmtree(paths.sandbox_dir(stem, home), ignore_errors=True)
+                finally:
+                    held.release()
     # wall_seconds spans the whole harness (boot, preflight, operator,
     # teardown). The wall cap is enforced only on the operator and its
     # verdict already sits in rec["termination"]; it is never rewritten

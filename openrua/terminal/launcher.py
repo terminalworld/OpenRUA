@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -22,6 +23,18 @@ def entrypoint() -> Path:
     if not entry.is_file():
         raise RuntimeError('Pi frontend assets are missing. Install the released openrua wheel, '
                            'or follow ui/terminal/README.md to build assets in a source checkout.')
+    # In a source checkout the assets are built from ui/terminal by hand and
+    # an editable install never rebuilds them: refuse ones older than the
+    # source rather than run yesterday's terminal. The script that builds
+    # them is the one that knows how to tell.
+    checkout = Path(__file__).resolve().parents[2]
+    script = checkout / 'scripts' / 'terminal_assets.py'
+    if script.is_file() and (checkout / 'ui' / 'terminal' / 'src').is_dir():
+        checked = subprocess.run([sys.executable, str(script), 'verify'], cwd=checkout,
+                                 capture_output=True, text=True)
+        if checked.returncode:
+            raise RuntimeError((checked.stdout + checked.stderr).strip()
+                               + f' (in {checkout})')
     return entry
 
 

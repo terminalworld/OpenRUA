@@ -114,7 +114,7 @@ its state; check it before restarting anything that launches trials.
 | `success_at` | step and time of the first success |
 | `steps_total` | simulator steps since reset |
 | `end_state` | the world when the operator was done: `objects` (every object's position and quaternion, by the simulator's own names) and `hand` (the hand's position and the grasp point); what a failed trial is measured against later |
-| `termination` | `self_finished`, `max_turns`, `wall_clock_cap`, `quota_limit`, `sandbox_lost`, `launcher_failed`, `operator_done`, `anomaly` |
+| `termination` | `self_finished`, `max_turns`, `wall_clock_cap`, `quota_limit`, `sandbox_lost`, `launcher_failed`, `operator_done`, `anomaly`, or `stopped`: a person stopped the run (Ctrl-C, or the terminal closed); the agent was ended, a real robot's motions cancelled, a simulated robot judged as it stood, and the command exits 130 |
 | `anomaly`, `anomaly_traceback` | a harness failure (preflight red, sim stall, bring-up error); the trial does not count |
 | `preflight` | every check and its verdict, from the sandbox's own vantage, before the agent started |
 | `agent_version` | the CLI version the sandbox reported |

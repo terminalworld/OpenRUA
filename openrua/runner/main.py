@@ -7,6 +7,9 @@
 from __future__ import annotations
 
 import argparse
+import signal
+import threading
+from contextlib import contextmanager
 from pathlib import Path
 
 from openrua import agents, proxy
@@ -143,8 +146,38 @@ def run(args: argparse.Namespace) -> int:
     return run_set(cfg, cfg_path, args, home, cfg["task"]["benchmark"])
 
 
+STOPPED_EXIT = 130   # the shell's code for a run ended by Ctrl-C
+
+
+@contextmanager
+def stops_like_ctrl_c():
+    """A hangup (the terminal or the SSH connection closed) or a terminate
+    stops the run as Ctrl-C does: in order, the robot powered off."""
+    signals = (signal.SIGTERM, signal.SIGHUP)
+    main = threading.current_thread() is threading.main_thread()
+    before = {sig: signal.signal(sig, signal.default_int_handler) for sig in signals} if main else {}
+    try:
+        yield
+    finally:
+        for sig, handler in before.items():
+            signal.signal(sig, handler)
+
+
+def _say(text: str) -> None:
+    try:
+        print(text, flush=True)
+    except OSError:   # the terminal is gone (a hangup)
+        pass
+
+
 def run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
             label: str) -> int:
+    with stops_like_ctrl_c():
+        return _run_set(cfg, cfg_path, args, home, label)
+
+
+def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
+             label: str) -> int:
     """One trial per (task, seed) of ``args.task_ids`` and ``args.seeds`` in
     ``args.task_suite``, on the resolved ``cfg`` (written from
     ``cfg_path``), recorded under ``<runs root>/<label>/<run id>``. The
@@ -213,11 +246,12 @@ def run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
                          / f"seed{seed}")
             record.write_trial_provenance(trial_dir, prov)
             record.write_run_summary(run_dir)
-            print(
-                f"[{args.task_suite}:{task_id} seed{seed}] "
-                f"success={rec['success']} term={rec['termination']} "
-                f"wall={rec['wall_seconds']}s"
-            )
+            _say(f"[{args.task_suite}:{task_id} seed{seed}] "
+                 f"success={rec['success']} term={rec['termination']} "
+                 f"wall={rec['wall_seconds']}s")
+            if rec["termination"] == "stopped":
+                _say(f"[trial] stopped; the record is in {trial_dir}")
+                return STOPPED_EXIT
     return 0
 
 
