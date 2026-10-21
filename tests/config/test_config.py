@@ -108,7 +108,8 @@ def test_real_instance_brings_its_machine_over_its_type(tmp_path):
         "machine:\n"
         "  backend: {kind: real, ros_distro: humble, discovery: {network: host}}\n"
         "  cameras: {list: [wrist]}\n"
-        "  robot: {model: Our lab Panda}\n")
+        "  robot: {model: Our lab Panda}\n"
+        "  gripper: {holds_partway: true, effort_honoured: true}\n")
     # Free use has no invented benchmark, loader, suite or task index.
     free = compose(str(lab), home=tmp_path)
     assert "task" not in free.cfg
@@ -121,8 +122,16 @@ def test_real_instance_brings_its_machine_over_its_type(tmp_path):
     assert m["robot"]["description"].startswith("7-joint")      # type's line kept
     assert m["arm"]["joints"][0] == "panda_joint1" and m["cameras"]["list"] == ["wrist"]
     assert m["backend"]["sandbox_image"] == "openrua-sandbox-humble"
+    assert m["gripper"]["open"] == 0.04 and m["gripper"]["holds_partway"] is True
     with pytest.raises(UsageError):                            # an instance takes no --sim
         compose(str(lab), "robosuite", None, tmp_path)
+    # The type says how the gripper is addressed; only the instance knows
+    # what its driver does with a goal.
+    lab.write_text(lab.read_text().replace(
+        "  gripper: {holds_partway: true, effort_honoured: true}\n", ""))
+    with pytest.raises(config.ConfigError) as e:
+        compose(str(lab), home=tmp_path)
+    assert "holds_partway" in str(e.value)
 
 
 def test_an_arm_without_frames_is_refused_not_given_panda_names(tmp_path):
@@ -203,7 +212,7 @@ def test_defaults_match_the_reported_runs():
     assert p.clock.mode == "paused"
     m = config.Machine(backend={"kind": "sim", "image": "openrua-sim-x", "simulator": {}})
     assert m.controller == "JOINT_POSITION" and m.cameras.rate_hz == 2.0
-    assert m.control.gripper.open_threshold_m == 0.02
+    assert m.control.gripper.settle_steps == 10
     assert m.backend.image == "openrua-sim-x"
     assert m.backend.sandbox_image == "openrua-sandbox-jazzy"
     h = config.Machine(backend={"kind": "sim", "ros_distro": "humble", "image": "openrua-sim-x",
@@ -348,3 +357,43 @@ def test_empty_selection_does_not_reenable_saved_benchmark(tmp_path):
 def test_benchmark_cannot_be_loaded_by_an_unrelated_simulator(tmp_path):
     with pytest.raises(config.ConfigError, match='requires simulator robosuite'):
         compose('panda', 'maniskill', 'libero_pro', tmp_path)
+
+
+# ------------------------------------------------- gripper interface vs behaviour
+
+_SIM = {"kind": "sim", "image": "openrua-sim-x", "simulator": {}}
+
+
+def test_gripper_needs_its_behaviour_where_it_is_driven():
+    with pytest.raises(config.ConfigError) as e:
+        config.validate(config.Machine, {"backend": _SIM, "gripper": {
+            "unit": "rad", "open": 0.0, "closed": 0.79, "max_effort": 50.0}}, "x")
+    assert "holds_partway" in str(e.value) and "machine.gripper" in str(e.value)
+    m = config.Machine(backend=_SIM, gripper={
+        "unit": "rad", "open": 0.0, "closed": 0.79, "max_effort": 50.0,
+        "holds_partway": True, "effort_honoured": False})
+    assert m.gripper.closed > m.gripper.open          # closing may run either way
+
+
+def test_old_gripper_keys_are_refused_with_the_rewrite():
+    with pytest.raises(config.ConfigError) as e:
+        config.validate(config.RobotType, {"robot": {"model": "x"}, "gripper": {
+            "open_m": 0.04, "closed_m": 0.0, "max_effort": 30.0,
+            "stops_at": ["open", "closed"]}}, "x")
+    assert "open: <open_m>" in str(e.value) and "holds_partway: false" in str(e.value)
+    with pytest.raises(config.ConfigError) as e:
+        config.validate(config.Machine, {"backend": _SIM, "control": {
+            "gripper": {"open_threshold_m": 0.02}}}, "x")
+    assert "open_threshold_m was removed" in str(e.value)
+
+
+def test_every_bundled_gripper_resolves_with_its_behaviour():
+    # Each embodiment that drives a gripper says what it does with a goal.
+    for name, sim in (("panda", "robosuite"), ("panda", "maniskill"), ("widowx", "maniskill"),
+                      ("panda", "calvin"), ("panda", "vlabench")):
+        try:
+            cfg = config.compose(name, sim).cfg
+        except UsageError:          # simulators without a native scene need a benchmark
+            continue
+        g = cfg["machine"]["gripper"]
+        assert g["holds_partway"] is False and g["effort_honoured"] is False, (name, sim)

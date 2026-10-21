@@ -30,7 +30,9 @@ def test_draft_reads_ports_joints_and_frames_from_the_graph():
     assert d["backend"] == {"kind": "real", "ros_distro": "jazzy", "discovery": {"network": "host"}}
     assert d["arm"]["joints"] == ["shoulder_pan_joint", "elbow_joint"]
     assert d["arm"]["limits_rad"] == [[-6.28, 6.28], [-3.14, 3.14]]
-    assert d["gripper"]["open_m"] == 0.085 and d["gripper"]["closed_m"] == 0.0
+    assert d["gripper"]["joint"] == "finger_joint"
+    # which end is open and what the driver does are the owner's to say
+    assert d["gripper"]["open"] == d["gripper"]["holds_partway"] == "TODO"
     assert d["frames"]["base"] == "base_link" and d["frames"]["hand"] == "tool0"
     assert d["ports"]["trajectory"].endswith("follow_joint_trajectory")
     assert d["ports"]["gripper"].endswith("gripper_cmd")

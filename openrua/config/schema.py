@@ -262,9 +262,16 @@ class Cameras(Strict):
 
 
 class GripperControl(Strict):
-    open_threshold_m: float = Field(default=0.02, description="GripperCommand position "
-                                    "below this = close")
     settle_steps: int = Field(default=10, description="control ticks a gripper goal advances")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _no_threshold(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "open_threshold_m" in data:
+            raise ValueError("control.gripper.open_threshold_m was removed: delete it; "
+                             "a goal nearer the gripper's closed position than its open "
+                             "one closes it")
+        return data
 
 
 class TrajectoryControl(Strict):
@@ -318,16 +325,77 @@ class Arm(Strict):
                                                   "[min, max], radians")
 
 
-class Gripper(Strict):
-    open_m: float = Field(description="fingers fully open: position of one finger, "
-                          "metres (the gap is twice this)")
-    closed_m: float = Field(description="fingers fully closed: position of one finger, "
-                            "metres")
-    max_effort: float = Field(description="force ceiling a GripperCommand goal may ask "
-                              "for, newtons")
-    stops_at: list[str] = Field(default_factory=lambda: ["open", "closed"],
-                                description="the only positions the gripper comes to "
-                                "rest at; a commanded width is read as open or closed")
+_GRIPPER_RENAMED = {"open_m": "open", "closed_m": "closed"}
+
+
+def _refuse_old_gripper_keys(data: Any) -> Any:
+    """The metre-only keys predate grippers commanded in radians: refuse
+    them with the rewrite rather than an unknown-key error."""
+    if isinstance(data, dict):
+        old = [k for k in (*_GRIPPER_RENAMED, "stops_at") if k in data]
+        if old:
+            raise ValueError(
+                f"gripper keys {', '.join(old)} were replaced: write unit: m, "
+                "open: <open_m>, closed: <closed_m>; stops_at: [open, closed] "
+                "becomes holds_partway: false, written where the gripper is "
+                "driven (a simulator's robots.<type>.gripper, or a real robot's "
+                "machine.gripper)")
+    return data
+
+
+class GripperPart(Strict):
+    """Gripper keys as one file writes them: a robot type the interface,
+    a simulator's embodiment or a real robot's instance the behaviour.
+    The resolved machine needs them all (``Gripper``)."""
+    joint: str | None = Field(default=None, description="the joint whose /joint_states "
+                              "position reports the gripper's; null = not declared")
+    unit: Literal["m", "rad"] | None = Field(default=None, description="unit of the "
+                                             "GripperCommand position and of that joint")
+    open: float | None = Field(default=None, description="the position that opens the "
+                               "gripper fully")
+    closed: float | None = Field(default=None, description="the position that closes it "
+                                 "fully; which way closes follows from the two")
+    max_effort: float | None = Field(default=None, description="the GripperCommand "
+                                     "max_effort a goal asks for unless told otherwise")
+    holds_partway: bool | None = Field(default=None, description="true: a position between "
+                                       "open and closed is held; false: it is read as "
+                                       "open or closed, whichever is nearer")
+    effort_honoured: bool | None = Field(default=None, description="true: max_effort "
+                                         "limits the grip; false: it is ignored")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _old_keys(cls, data: Any) -> Any:
+        return _refuse_old_gripper_keys(data)
+
+
+class Gripper(GripperPart):
+    """A resolved gripper: interface and behaviour both declared."""
+    unit: Literal["m", "rad"] = Field(description="unit of the GripperCommand position "
+                                      "and of the reporting joint")
+    open: float = Field(description="the position that opens the gripper fully")
+    closed: float = Field(description="the position that closes it fully; which way "
+                          "closes follows from the two")
+    max_effort: float = Field(description="the GripperCommand max_effort a goal asks for "
+                              "unless told otherwise")
+    holds_partway: bool = Field(description="true: a position between open and closed "
+                                "is held; false: it is read as open or closed, "
+                                "whichever is nearer")
+    effort_honoured: bool = Field(description="true: max_effort limits the grip; false: "
+                                  "it is ignored")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _behaviour_is_declared(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            missing = [k for k in ("holds_partway", "effort_honoured") if k not in data]
+            if missing:
+                raise ValueError(
+                    f"gripper needs {' and '.join(missing)}: what the executor does "
+                    "with a goal is declared where the gripper is driven, in a "
+                    "simulator's robots.<type>.gripper or a real robot's "
+                    "machine.gripper")
+        return data
 
 
 class Hand(Strict):
@@ -437,7 +505,8 @@ class RobotType(Strict):
     arm: Arm | None = Field(default=None, description="the arm (single-arm robots)")
     arms: list[ArmSpec] | None = Field(default=None, description="the arms (multi-arm "
                                        "robots); replaces arm, gripper and ports")
-    gripper: Gripper | None = Field(default=None, description="the gripper; null = none")
+    gripper: GripperPart | None = Field(default=None, description="the gripper's interface; "
+                                        "null = none")
     hand: Hand | None = Field(default=None, description="hand geometry")
     ports: Ports = Field(default_factory=Ports, description="the ROS 2 names the robot "
                          "serves (single arm)")
@@ -474,6 +543,10 @@ class Embodiment(Strict):
         default=None, description="engine joint prefix -> published prefix")
     control: Control | None = Field(default=None, description="how goals are executed "
                                     "and judged")
+    gripper: GripperPart | None = Field(default=None, description="gripper keys the "
+                                        "engine decides: the joint it publishes and what "
+                                        "it does with a goal (holds_partway, "
+                                        "effort_honoured)")
     tf: Tf | None = Field(default=None, description="what the bridge publishes on TF")
     planning: EmbodiedPlanning | None = Field(default=None, description="planner keys "
                                               "this world changes")
@@ -578,6 +651,15 @@ class RobotInstance(Strict):
     type: str | None = Field(default=None, description="robot type this is an instance "
                              "of; its facts come first, machine: writes over them")
     machine: Machine = Field(description="backend (kind: real | sim) and facts")
+
+
+class RobotInstanceOverType(Strict):
+    """A RobotInstance that names its type: its machine: writes only part
+    of a machine (the type supplies the rest), so it is validated whole
+    once the type's facts are under it."""
+    type: str = Field(description="robot type this is an instance of")
+    machine: dict[str, Any] = Field(description="backend and the facts written over "
+                                    "the type's")
 
 
 class Benchmark(Strict):

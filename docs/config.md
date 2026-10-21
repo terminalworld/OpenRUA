@@ -34,7 +34,7 @@ A robots/<type>.yaml: what is true of this robot wherever it runs. No cameras, n
 | `frames` | [Frames](#frames) \| null | None | world, base and hand frames |
 | `arm` | [Arm](#arm) \| null | None | the arm (single-arm robots) |
 | `arms` | list[[ArmSpec](#armspec)] \| null | None | the arms (multi-arm robots); replaces arm, gripper and ports |
-| `gripper` | [Gripper](#gripper) \| null | None | the gripper; null = none |
+| `gripper` | [GripperPart](#gripperpart) \| null | None | the gripper's interface; null = none |
 | `hand` | [Hand](#hand) \| null | None | hand geometry |
 | `ports` | [Ports](#ports) |  | the ROS 2 names the robot serves (single arm) |
 | `planning` | [Planning](#planning) \| null | None | the MoveIt planner |
@@ -85,12 +85,17 @@ One arm of a multi-arm machine (machine.arms); single-arm profiles are normalise
 
 ## Gripper
 
+A resolved gripper: interface and behaviour both declared.
+
 | key | type | default | meaning |
 |---|---|---|---|
-| `open_m` | float | **required** | fingers fully open: position of one finger, metres (the gap is twice this) |
-| `closed_m` | float | **required** | fingers fully closed: position of one finger, metres |
-| `max_effort` | float | **required** | force ceiling a GripperCommand goal may ask for, newtons |
-| `stops_at` | list[str] | ['open', 'closed'] | the only positions the gripper comes to rest at; a commanded width is read as open or closed |
+| `joint` | str \| null | None | the joint whose /joint_states position reports the gripper's; null = not declared |
+| `unit` | 'm' \| 'rad' | **required** | unit of the GripperCommand position and of the reporting joint |
+| `open` | float | **required** | the position that opens the gripper fully |
+| `closed` | float | **required** | the position that closes it fully; which way closes follows from the two |
+| `max_effort` | float | **required** | the GripperCommand max_effort a goal asks for unless told otherwise |
+| `holds_partway` | bool | **required** | true: a position between open and closed is held; false: it is read as open or closed, whichever is nearer |
+| `effort_honoured` | bool | **required** | true: max_effort limits the grip; false: it is ignored |
 
 ## Ports
 
@@ -104,6 +109,20 @@ ROS 2 names the machine exposes; null = this machine has no such port.
 | `wrench` | str \| null | None | WrenchStamped topic of the wrist force-torque sensor |
 | `base_twist` | str \| null | None | Twist topic driving a mobile base |
 | `odom` | str \| null | None | Odometry topic of a mobile base |
+
+## GripperPart
+
+Gripper keys as one file writes them: a robot type the interface, a simulator's embodiment or a real robot's instance the behaviour. The resolved machine needs them all (``Gripper``).
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `joint` | str \| null | None | the joint whose /joint_states position reports the gripper's; null = not declared |
+| `unit` | 'm' \| 'rad' \| null | None | unit of the GripperCommand position and of that joint |
+| `open` | float \| null | None | the position that opens the gripper fully |
+| `closed` | float \| null | None | the position that closes it fully; which way closes follows from the two |
+| `max_effort` | float \| null | None | the GripperCommand max_effort a goal asks for unless told otherwise |
+| `holds_partway` | bool \| null | None | true: a position between open and closed is held; false: it is read as open or closed, whichever is nearer |
+| `effort_honoured` | bool \| null | None | true: max_effort limits the grip; false: it is ignored |
 
 ## Hand
 
@@ -235,7 +254,6 @@ Graph-side actuation behaviour (the facts below feed machine.yaml).
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `open_threshold_m` | float | 0.02 | GripperCommand position below this = close |
 | `settle_steps` | int | 10 | control ticks a gripper goal advances |
 
 ## TrajectoryControl
@@ -314,6 +332,7 @@ How an engine drives one robot type: the keys that depend on the simulator, merg
 | `controller_kp_scale` | float \| null | None | multiplier on the engine's joint position gains |
 | `joint_name_map` | dict[str, str] \| null | None | engine joint prefix -> published prefix |
 | `control` | [Control](#control) \| null | None | how goals are executed and judged |
+| `gripper` | [GripperPart](#gripperpart) \| null | None | gripper keys the engine decides: the joint it publishes and what it does with a goal (holds_partway, effort_honoured) |
 | `tf` | [Tf](#tf) \| null | None | what the bridge publishes on TF |
 | `planning` | [EmbodiedPlanning](#embodiedplanning) \| null | None | planner keys this world changes |
 | `base` | [Base](#base) \| null | None | mobile-base keys the engine decides (body, effective speed) |

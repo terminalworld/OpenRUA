@@ -27,8 +27,8 @@ streams alike.
    depth + intrinsics → world position, 20-perception B3).
 2. Move above it (IK → trajectory), open the gripper.
 3. Descend with short servo bursts, watching a wrist camera if present.
-4. Close the gripper; verify the grasp: finger gap above `closed_m`,
-   wrench change on contact.
+4. Close the gripper; verify the grasp: the reported position stops
+   short of the gripper's `closed`, wrench change on contact.
 5. Lift and confirm visually (fresh frame) before moving on.
 
 Placing is the mirror: position above the destination, descend, open,

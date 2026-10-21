@@ -24,7 +24,8 @@ from pydantic import BaseModel, ValidationError
 
 from openrua.config import paths
 from openrua.config.schema import (Benchmark, Machine, ResolvedConfig, RobotInstance,
-                                   RobotType, SimulatorProfile, UserConfig, sim_image)
+                                   RobotInstanceOverType, RobotType, SimulatorProfile,
+                                   UserConfig, sim_image)
 from openrua.errors import ConfigError, UsageError
 
 
@@ -138,8 +139,11 @@ def load_robot(robot: str, home: Path | None = None) -> tuple[str, dict]:
     if "machine" in data:
         # Only the keys the file wrote, so an instance over a type replaces
         # exactly what it says (defaults are filled in after the merge).
-        inst = validate(RobotInstance, data, p)
-        return "instance", inst.model_dump(exclude_unset=True, by_alias=True)
+        # Over a type the machine is partial (the type's gripper interface,
+        # the instance's gripper behaviour) and is validated after the merge.
+        model = RobotInstanceOverType if data.get("type") else RobotInstance
+        inst = validate(model, data, p).model_dump(exclude_unset=True, by_alias=True)
+        return "instance", {**inst, "source": str(p)}
     return "type", dump(validate(RobotType, data, p))
 
 
@@ -240,15 +244,16 @@ def assemble(robot_type: dict, embodiments: list[dict], install: dict,
 
 def _instance_machine(inst: dict, home: Path | None) -> dict:
     """An instance's machine over its type's facts (when it names one)."""
+    source = inst.get("source", "robot instance")
     if not inst.get("type"):
-        return dump(validate(Machine, inst["machine"], "robot instance"))
+        return dump(validate(Machine, inst["machine"], source))
     kind, facts = load_robot(inst["type"], home)
     if kind != "type":
         raise ConfigError(f"robot instance names type {inst['type']!r}, which is itself "
                           "an instance (has a machine: section)")
     m = copy.deepcopy(facts)
     _merge(m, inst["machine"])
-    return dump(validate(Machine, m, f"instance of {inst['type']}"))
+    return dump(validate(Machine, m, f"{source} (over robot type {inst['type']})"))
 
 
 def _who_embodies(robot: str, home: Path | None) -> list[str]:

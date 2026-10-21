@@ -33,7 +33,6 @@ robots:
       "": ""                 # the URDF's names are the published names (fl_joint1, fr_joint1, ...)
     control:
       gripper:
-        open_threshold_m: 0.025
         settle_steps: 25     # a tick is ten physics steps (0.04 s); the fingers travel 5 cm in about a second
       trajectory:
         goal_tolerance_rad: 0.05

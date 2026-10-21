@@ -65,7 +65,8 @@ def test_up_preserves_nonempty_external_directory_before_launch(monkeypatch, tmp
     program = external / "my-program.py"
     program.write_text("keep")
     profile = tmp_path / "robot.yaml"
-    profile.write_text("type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n")
+    profile.write_text("type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n"
+                       "  gripper: {holds_partway: true, effort_honoured: true}\n")
     monkeypatch.setattr(live, "ensure_internal_network", lambda: pytest.fail("must not start"))
     args = build_parser().parse_args(["--home", str(tmp_path / "home"), "up", str(profile),
                                       "--workspace", str(external)])

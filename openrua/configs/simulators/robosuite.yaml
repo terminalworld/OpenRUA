@@ -40,9 +40,11 @@ robots:
     joint_name_map:          # robosuite internal -> franka_ros2 published names
       robot0_: panda_
       gripper0_: panda_
+    gripper:                 # the bridge reads a goal as open or closed,
+      holds_partway: false   # whichever is nearer, and sets no force limit
+      effort_honoured: false
     control:                 # graph-side actuation behavior
       gripper:
-        open_threshold_m: 0.02 # GripperCommand position below this = close
         settle_steps: 10       # control ticks a gripper goal advances the world
     tf:
       hand: false            # robot_state_publisher (MoveIt stack) owns the

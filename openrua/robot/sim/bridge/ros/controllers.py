@@ -27,7 +27,7 @@ from control_msgs.action import FollowJointTrajectory, GripperCommand
 from geometry_msgs.msg import TwistStamped
 from rclpy.action import ActionServer
 
-from .arms import arm_specs
+from .arms import arm_specs, closes
 from .joints import build_joint_map
 
 _FD_EPS = 1e-6  # finite-difference step for the jacobian
@@ -46,6 +46,7 @@ class _ArmUnit:
         self.qadrs = np.array([owner._jmap[n][0] for n in joints])
         self.hand_body = spec["hand_body"]
         self.has_gripper = False  # the engine answers once the arms are bound
+        self.gripper = spec.get("gripper") or {}  # declared open/closed positions
         self.ports = spec.get("ports", {})
 
     def open_ports(self, node) -> None:
@@ -54,10 +55,13 @@ class _ArmUnit:
             node.create_subscription(
                 TwistStamped, ports["twist"],
                 lambda msg, a=self: owner._on_twist(a, msg), 10)
-        # GripperCommand action (franka_ros2 name). position >= threshold
-        # means open (Franka: 0.0 closed .. 0.04/finger open); the goal
-        # runs settle_steps control ticks so the fingers physically move.
+        # GripperCommand action: a position nearer the declared closed
+        # one closes, otherwise opens; the goal runs settle_steps control
+        # ticks so the fingers physically move.
         if ports.get("gripper") and self.has_gripper:
+            if not {"open", "closed"} <= self.gripper.keys():
+                raise ValueError(f"arm {self.label or 0} serves {ports['gripper']} "
+                                 "but its gripper declares no open/closed positions")
             ActionServer(node, GripperCommand, ports["gripper"],
                          lambda gh, a=self: owner._on_gripper_goal(a, gh))
         # FollowJointTrajectory (L3): native joint-space tracking.
@@ -112,8 +116,6 @@ class CommandPorts:
         self._latest_base = np.zeros(3)
 
         control = machine.get("control", {})
-        self._grip_threshold = float(
-            control.get("gripper", {}).get("open_threshold_m", 0.02))
         self._settle_steps = int(
             control.get("gripper", {}).get("settle_steps", 10))
         self._traj_tol_rad = float(
@@ -245,7 +247,7 @@ class CommandPorts:
         self._runner.submit(job, wait=True)
 
     def _on_gripper_goal(self, arm: _ArmUnit, goal_handle):
-        close = goal_handle.request.command.position < self._grip_threshold
+        close = closes(goal_handle.request.command.position, arm.gripper)
         self.set_gripper(arm, close)
         goal_handle.succeed()
         result = GripperCommand.Result()

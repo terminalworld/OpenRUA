@@ -50,17 +50,23 @@ CLI → rclpy → tool → notes.
 ## C. Gripper (kind `gripper`)
 
 - **What**: open/close the fingers. The manifest entry carries this
-  gripper's facts (`open_m`, `closed_m`, `stops_at`, `max_effort`),
-  each with its definition written on the line.
+  gripper's facts (`unit`, `open`, `closed`, `max_effort`,
+  `holds_partway`, `effort_honoured`, and the reporting `joint` when
+  declared), each with its definition written on the line.
 - **Port**: `machine.yaml → actuators[kind=gripper]`
   (`control_msgs/action/GripperCommand`).
-- **Tool**: `python3 tools/action/gripper_cmd.py <width_m>`
-- **CLI** (fill `<port>`, `open_m`/`closed_m`, `max_effort` from the
-  manifest entry):
+- **Tool**: `python3 tools/action/gripper_cmd.py <open|closed|position> [--arm LABEL]`
+- **CLI** (fill `<port>`, a position between `open` and `closed`, and
+  `max_effort` from the manifest entry):
   `ros2 action send_goal <port> control_msgs/action/GripperCommand \
-  "{command: {position: <m>, max_effort: <n>}}"`
-- **Notes**: after closing on something, finger positions in the joint
-  state stop above `closed_m`; that gap is your grasp evidence.
+  "{command: {position: <p>, max_effort: <n>}}"`
+- **Notes**: the gripper may close in either direction: which way is
+  closed follows from the entry's `open` and `closed`, never from the
+  sign of a number. After closing on something, the reported position
+  stops short of `closed`; that gap is your grasp evidence. A controller
+  that stops on an object may report the goal as stalled, or even as
+  aborted, while it holds the object: read the position and look before
+  calling it a failure.
 
 ## D. Mobile base (kind `base_twist` (only on mobile machines))
 
@@ -106,12 +112,9 @@ CLI → rclpy → tool → notes.
 
 ## Actuation facts
 
-- Gripper commands are PER-FINGER positions: the opening between the
-  fingers is twice the commanded value (nominals in machine.yaml).
-  What this machine does with the commanded value is its own fact, not
-  a general rule: read `stops_at` on the manifest's gripper entry. Gap
-  readings need a few settle ticks; the measured maximum opening can sit
-  slightly under nominal.
+- What a gripper does with a commanded position is its own fact, not
+  a general rule: read `holds_partway` and `effort_honoured` on the
+  manifest's gripper entry.
 - A trajectory tolerance-violation result on a long goal is often
   controller lag, not an obstruction: resending the same goal typically
   converges.

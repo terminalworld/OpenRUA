@@ -117,7 +117,8 @@ def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path):
     from types import SimpleNamespace
 
     profile = tmp_path / "robot.yaml"
-    profile.write_text("type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n")
+    profile.write_text("type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n"
+                       "  gripper: {holds_partway: true, effort_honoured: true}\n")
     calls = []
     machine = SimpleNamespace(shutdown=lambda: calls.append("shutdown"))
 

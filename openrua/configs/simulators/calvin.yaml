@@ -24,9 +24,11 @@ robots:
   panda:
     joint_name_map:
       panda_: panda_         # calvin_env's URDF already uses the franka_ros2 names
+    gripper:                 # the bridge reads a goal as open or closed,
+      holds_partway: false   # whichever is nearer, and sets no force limit
+      effort_honoured: false
     control:
       gripper:
-        open_threshold_m: 0.02
         settle_steps: 10
     tf:
       hand: false

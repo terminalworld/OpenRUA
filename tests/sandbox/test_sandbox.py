@@ -233,20 +233,19 @@ def test_manifest_two_arms_two_of_everything(tmp_path):
 
 
 # --------------------------------------------- manifest explains itself
-# The gripper on every robosuite-backed machine is binary: robosuite's
-# own PandaGripper.format_action takes np.sign(action), so a commanded
-# width is read as open-or-closed and max_effort is never honoured. That
-# is a PER-MACHINE fact (multi-finger hands pass the action through
-# untouched), so it lives on the manifest, not in the generic docs, and
-# the docs must not promise the force-limited behaviour they used to
-# (seen in the handover failures).
+# What a gripper does with a commanded position is a per-machine fact:
+# robosuite's bridge reads a goal as open or closed and sets no force
+# limit, a Robotiq on a real arm holds any position and limits force. So
+# it lives on the manifest, declared where the gripper is driven, and the
+# docs and the field notes only define the keys.
 
-def test_gripper_entry_declares_the_binary_stops(tmp_path):
+def test_gripper_entry_carries_interface_and_behaviour(tmp_path):
     out = tmp_path / "machine.yaml"
     workspace.write_machine_manifest(_cfg(), out)
     grip = next(a for a in yaml.safe_load(out.read_text())["actuators"]
                 if a["kind"] == "gripper")
-    assert grip["stops_at"] == ["open", "closed"]
+    assert (grip["unit"], grip["open"], grip["closed"]) == ("m", 0.04, 0.0)
+    assert grip["holds_partway"] is False and grip["effort_honoured"] is False
 
 
 def test_manifest_defines_every_fact_key_it_carries(tmp_path):
@@ -255,13 +254,14 @@ def test_manifest_defines_every_fact_key_it_carries(tmp_path):
     out = tmp_path / "machine.yaml"
     workspace.write_machine_manifest(_cfg(), out)
     text = out.read_text()
-    for key in ("open_m", "closed_m", "max_effort", "stops_at",
-                "limits_rad", "joints"):
+    for key in ("unit", "open", "closed", "max_effort", "holds_partway",
+                "effort_honoured", "limits_rad", "joints"):
         assert f"{key}:" in text, f"{key} missing from the manifest"
         line = next(ln for ln in text.splitlines()
                     if ln.lstrip().lstrip("- ").startswith(f"{key}:"))
         assert "#" in line, f"{key} carries a value but no definition"
-    assert "newtons" in text and "NOT honoured" in text  # max_effort
+    # definitions only: what this machine does is the value, not the note
+    assert "NOT honoured" not in text and "metres" not in text
     assert yaml.safe_load(text)["schema"].startswith("openrua/")
 
 
@@ -269,4 +269,5 @@ def test_action_doc_does_not_promise_a_force_limited_gripper():
     doc = (PKG / "workspace" / "docs" / "30-action.md").read_text()
     assert "stalls on contact" not in doc
     assert "keeps squeezing" not in doc
-    assert "stops_at" in doc  # points at the manifest instead
+    assert "holds_partway" in doc  # points at the manifest instead
+    assert "PER-FINGER" not in doc and "open_m" not in doc

@@ -6,8 +6,9 @@ Review agent-visible changes before updating this expected artifact hash.
 from openrua.config import load_config
 from openrua.sandbox import workspace
 
-# Reviewed revision: ik_move refuses to guess a planning group.
-PINNED = "8b01bbf70c51c39e01777840e6cde55497c716e4857b47d06f803ff4b6bc95a8"
+# Reviewed revision: the gripper docs and tool are direction-free; the
+# manifest entry carries unit, open, closed and what the gripper does.
+PINNED = "71205ac3ea1cea40eedfd1bd59d48ac485ed18f1c6fa2f7c0ce8ead52d5c9668"
 
 
 def test_workspace_template_hash_is_unchanged():

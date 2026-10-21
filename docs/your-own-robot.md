@@ -76,8 +76,14 @@ machine:
              wrist_1_joint, wrist_2_joint, wrist_3_joint]
     limits_rad: [[-6.28, 6.28], [-6.28, 6.28], [-3.14, 3.14],
                  [-6.28, 6.28], [-6.28, 6.28], [-6.28, 6.28]]
-  gripper: {open_m: 0.085, closed_m: 0.0, max_effort: 100.0,
-            stops_at: [open, closed]}
+  gripper:                   # the GripperCommand interface, then what the driver does with a goal
+    joint: robotiq_85_left_knuckle_joint   # reports the gripper's position in /joint_states
+    unit: rad                # this driver commands the knuckle angle, not a width
+    open: 0.0
+    closed: 0.7929           # which way closes follows from open and closed
+    max_effort: 100.0
+    holds_partway: true      # try a position between the two and watch
+    effort_honoured: false   # try a low max_effort on something soft
   planning: {moveit: true, move_action: /move_action,
              ik_service: /compute_ik, group: ur_manipulator,
              planning_frame: base_link}

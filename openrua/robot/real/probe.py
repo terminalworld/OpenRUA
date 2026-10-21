@@ -121,12 +121,19 @@ def draft_profile(graph: dict, discovery: dict, *, ros_distro: str | None = None
         y.append("    joints: []")
         y.append("    limits_rad: []")
     if gripper:
+        # The graph names the joint and its travel; which end is open,
+        # the command's unit and what the driver does with a goal are
+        # the owner's to say, so they stay TODO and fail validation.
         g = gripper[0]
         y.append("  gripper:")
-        y.append(f"    open_m: {_num(g['upper'])}")
-        y.append(f"    closed_m: {_num(g['lower'])}")
-        y.append("    max_effort: 30.0   # TODO")
-        y.append("    stops_at: [open, closed]")
+        y.append(f"    joint: {g['name']}")
+        y.append(f"    unit: TODO   # m or rad: the GripperCommand position's unit "
+                 f"(the joint travels {_num(g['lower'])} .. {_num(g['upper'])})")
+        y.append("    open: TODO   # the position that opens it fully")
+        y.append("    closed: TODO   # the position that closes it fully")
+        y.append("    max_effort: TODO   # the max_effort a goal asks for")
+        y.append("    holds_partway: TODO   # true if a position between open and closed is held")
+        y.append("    effort_honoured: TODO   # true if max_effort limits the grip")
     if moveit:
         y.append("  planning:")
         y.append("    moveit: true")

@@ -114,8 +114,8 @@ suite_overrides:
           limits_rad: [[-2.90, 2.90], [-1.76, 1.76], [-2.90, 2.90],
                        [-3.07, -0.07], [-2.90, 2.90], [-0.02, 3.75],
                        [-2.90, 2.90]]
-          gripper: {open_m: 0.04, closed_m: 0.0, max_effort: 30.0,
-            stops_at: [open, closed]}
+          gripper: {unit: m, open: 0.04, closed: 0.0, max_effort: 30.0,
+                    holds_partway: false, effort_honoured: false}
           hand_body: robot0_right_hand
           tf_base_body: robot0_base
           base_frame: left_panda_link0
@@ -132,8 +132,8 @@ suite_overrides:
           limits_rad: [[-2.90, 2.90], [-1.76, 1.76], [-2.90, 2.90],
                        [-3.07, -0.07], [-2.90, 2.90], [-0.02, 3.75],
                        [-2.90, 2.90]]
-          gripper: {open_m: 0.04, closed_m: 0.0, max_effort: 30.0,
-            stops_at: [open, closed]}
+          gripper: {unit: m, open: 0.04, closed: 0.0, max_effort: 30.0,
+                    holds_partway: false, effort_honoured: false}
           hand_body: robot1_right_hand
           tf_base_body: robot1_base
           base_frame: right_panda_link0
