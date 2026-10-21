@@ -550,6 +550,7 @@ configs/agents/<name>.yaml: the facts about one coding agent, no code. The modul
 | `version_argv` | list[str] \| null | None | command printing the agent's version |
 | `min_version` | str \| null | None | the oldest CLI release that accepts every flag this adapter passes; a sandbox with an older one is refused before the agent starts |
 | `instruction_file` | str \| null | None | the file the agent reads instructions from, e.g. AGENTS.md |
+| `latest_release` | str \| null | None | URL whose JSON body names the newest release as `version` (an npm registry's /latest); openrua offers an update when the sandbox's CLI is older |
 | `default_options` | dict[str, Any] | {} | knobs a config may override under agent.options |
 | `entry_point` | str \| null | None | the module behind this manifest, exposing HOOKS (an Agent subclass): a bundled name under plugins/agents/ or a path to a module of your own, relative to this file |
 

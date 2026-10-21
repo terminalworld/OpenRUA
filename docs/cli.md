@@ -461,7 +461,7 @@ options:
 | `status` | snapshot, pending questions and message IDs |
 | `events` | read retained events after a cursor |
 | `send` | enqueue a message without waiting for its result |
-| `interrupt` | interrupt a message and pause the queue |
+| `interrupt` | stop the running message; queued ones go next |
 | `withdraw` | withdraw a queued message |
 | `resume` | release the currently confirmed pause |
 | `edit` | edit a queued message at its current revision |
