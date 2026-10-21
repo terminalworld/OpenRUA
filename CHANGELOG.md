@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.12.0
+
+The sandbox and the session around a real robot, from the same first
+real-robot day.
+
+- **Agent CLI versions**: Claude Code 2.1.198 and later require Node 22;
+  the manifests installed Node 20, so npm quietly installed 2.1.197,
+  which exits on `--autocompact`. Both manifests install Node 22. An
+  unpinned build installs the release current at build time (it no
+  longer reuses an older build's layer), prints each CLI's version, and
+  is checked under a candidate tag before it replaces the image. A
+  manifest may name `min_version` (Claude Code: 2.1.251); a build, a
+  session or a trial with an older CLI is refused with the rebuild
+  command. `doctor`'s rebuild hint carries a configured pin.
+- **A robot's own interfaces in the sandbox**: `backend.sandbox_install`
+  installs what the agent needs to speak the robot (vendor messages, the
+  ros2 control CLI) when `openrua build sandbox --robot <file>` builds
+  that robot's own sandbox image; a ROS workspace under
+  `/opt/openrua/overlays/<name>` is sourced in every shell.
+- **The session record**: `$HOME` is `/home/robot`, so caches and logs no
+  longer land in `/workspace`. A session writes `provenance.json` (OpenRUA
+  version and commit, the robot config's hash and repository commit,
+  images).
+- **Account isolation**: Claude Code's claude.ai connectors and synced
+  skills and plugins, and Codex's ChatGPT apps, are off in every session.
+  Codex's app-server runs with full access and no longer warns about
+  bubblewrap.
+- **Proxy**: a standing proxy that does not allow the session's agent's
+  hosts is refused at start with the rebuild and replace commands.
+- **Real robots**: no saved simulator or benchmark default applies to a
+  real robot. A launch command runs in its file's directory
+  (`backend.cwd`); shutdown sends SIGINT, SIGTERM and SIGKILL with
+  `backend.stop_timeout_s` between them. When the robot's resources end
+  on their own, the session says so, records it and holds the queue.
+- **Pauses say why** in the terminal and the browser; leaving the
+  terminal says the session (and robot) keeps running and how to end it.
+
 ## 0.11.0
 
 What a machine is now comes from its config, not from OpenRUA's
