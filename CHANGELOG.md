@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.14.1
+
 - **OpenRUA keeps itself up to date**: `openrua` checks PyPI at most once a
   day and, when a newer OpenRUA is out, offers to update now, skip, or skip
   until the next version, as Codex does; updating runs the installer's own
