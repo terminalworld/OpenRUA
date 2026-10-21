@@ -46,6 +46,16 @@ queue, and revisit saved observations without starting a new robot each turn.
 >
 > *Start playing with your robot like you code a project :)*
 
+## News
+
+- **2026-10-21** · [v0.13.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.13.0): **real robots** connect with your coding agent doing the work, each step checked ([`openrua connect`](docs/connect.md)); startup checks run before every start, and Escape also cancels the robot's motions. The shared terminal works the way Claude Code's and Codex's own do: messages join the running turn, `/permissions`, `/model`.
+- **2026-10-21** · [v0.12.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.12.0): **real robots** get their drivers' images and their own sandbox built on start, and start and stop their drivers from their own folder; the agent is limited only when a benchmark run asks for it.
+- **2026-10-21** · [v0.11.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.11.0): every robot is described by its own config (gripper behaviour, camera types, notes), so the agent is told what holds for that robot.
+- **2026-10-06** · [v0.6.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.6.0): the keyboard terminal is the default way to talk to a robot.
+- **2026-10-03** · [v0.1.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.1.0): shared robot conversations, joined from the terminal, the browser or a script.
+- **2026-10-01** · The paper is on arXiv: [OpenRUA: Robot-Use Agents Are Zero-Shot Visuomotor Policies](https://arxiv.org/abs/2610.02459).
+- **2026-09-14** · [v0.0.7](https://github.com/terminalworld/OpenRUA/releases/tag/v0.0.7): first release, `pip install openrua`: Claude Code or Codex on a simulated or real ROS&nbsp;2 robot.
+
 ## Quick start
 
 ### Chat with a robot
