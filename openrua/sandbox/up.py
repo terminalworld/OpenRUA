@@ -106,11 +106,11 @@ def up(cfg: dict, workspace: Path, *, image: str, network: str = "host",
     peer_env = ["-e", f"ROS_DOMAIN_ID={ros_domain}"]
     if static_peer:
         # Multicast-less networks (docker internal nets) need a unicast
-        # bootstrap peer; profile written after start (see below).
-        peer_env += [
-            "-e", f"ROS_STATIC_PEERS={static_peer}",
-            "-e", "FASTRTPS_DEFAULT_PROFILES_FILE=/tmp/fastdds-peers.xml",
-        ]
+        # bootstrap peer.
+        peer_env += ["-e", f"ROS_STATIC_PEERS={static_peer}"]
+    if peers_xml:
+        # The DDS profile, written after start (see below).
+        peer_env += ["-e", "FASTRTPS_DEFAULT_PROFILES_FILE=/tmp/fastdds-peers.xml"]
     extra = []
     for m in mounts:
         extra += ["-v", m]
@@ -141,7 +141,7 @@ def up(cfg: dict, workspace: Path, *, image: str, network: str = "host",
         if j.returncode != 0:
             raise SandboxError(_death_report(name, f"could not join network {joined!r}: "
                                                    f"{j.stderr.strip()}"))
-    if static_peer:
+    if peers_xml:
         w = subprocess.run(
             ["docker", "exec", "-i", name, "sh", "-c",
              "cat > /tmp/fastdds-peers.xml"],

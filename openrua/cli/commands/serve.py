@@ -5,18 +5,27 @@ from __future__ import annotations
 import asyncio
 import secrets
 import signal
+from pathlib import Path
 
 from openrua.cli.commands import up
 from openrua.web import assets
 from openrua.config import paths
 from openrua.errors import UnavailableError
 from openrua.runner import managed
+from openrua.runner.connect import ConnectFlow, ConnectRequest, open_connect
 from openrua.sessions.client import write_endpoint
 from openrua.sessions.http import LocalServer
 
 
 async def serve(args) -> None:
-    owned = await managed.start(up.robot_request(args))
+    flow = None
+    if getattr(args, "connect", None):
+        request = ConnectRequest(home=args.home, name=args.name, folder=Path(args.connect),
+                                 agent=args.agent, model=args.model, distro=args.distro)
+        owned = await managed.start(request, open_resources=open_connect)
+        flow = ConnectFlow(owned, request)
+    else:
+        owned = await managed.start(up.robot_request(args))
     server = None
     published = False
     endpoint = paths.sandbox_dir(args.name, args.home) / "endpoint.json"
@@ -27,10 +36,14 @@ async def serve(args) -> None:
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, stopped.set)
             signals.append(sig)
-        server = LocalServer(owned.execution, owned.end, secrets.token_urlsafe(32), port=args.port, assets=assets(), artifacts=owned.artifacts)
+        server = LocalServer(owned.execution, owned.end, secrets.token_urlsafe(32), port=args.port,
+                             assets=assets(), artifacts=owned.artifacts,
+                             actions={"check": flow.check} if flow else None)
         server.start()
         write_endpoint(endpoint, server.url, server.token)
         published = True
+        if flow:
+            await flow.begin(server)
         print(f"[serve] {args.name} at {server.url}\n"
               f"[serve] open another terminal: openrua --home {args.home} chat --name {args.name}\n"
               f"[serve] browser: openrua --home {args.home} session --name {args.name} web\n"
@@ -52,6 +65,8 @@ async def serve(args) -> None:
                 print(f"[serve] shutdown incomplete: {exc}; service kept open for retry", flush=True)
                 stopped.clear()
     finally:
+        if flow:
+            await flow.close()
         for sig in signals:
             loop.remove_signal_handler(sig)
         try:
@@ -83,4 +98,9 @@ def add_parser(sub) -> None:
     up.add_options(p)
     p.add_argument("--model", default=None, help="model (default: the configured agent's)")
     p.add_argument("--port", type=int, default=0, help="local port (default: choose a free port)")
+    p.add_argument("--connect", default=None, metavar="FOLDER",
+                   help="connect a real robot instead (see openrua connect): FOLDER is the "
+                   "robot's adaptation folder, the connecting terminal's workspace")
+    p.add_argument("--distro", default="jazzy", choices=("jazzy", "humble"),
+                   help="with --connect: the connecting terminal's ROS 2")
     p.set_defaults(fn=run)

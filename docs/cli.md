@@ -92,6 +92,7 @@ start or reconnect (without a subcommand):
 | `build` | build the images: simulators, sandbox, proxy |
 | `run` | bring a robot up, open the agent on it, power off after |
 | `up` | bring a robot up with a sandbox terminal on it |
+| `connect` | connect a real robot, your coding agent doing the work |
 | `serve` | own a robot and shared native conversation for local clients |
 | `chat` | chat with an existing shared agent, or reconnect to its events |
 | `session` | inspect, queue messages, pause/resume or end a shared session |
@@ -380,6 +381,36 @@ options:
                         (default: not limited)
 ```
 
+## openrua connect
+
+```
+usage: openrua connect [-h] [--dir DIR] [--agent AGENT] [--model MODEL]
+                       [--distro {jazzy,humble}] [--name NAME]
+                       [robot]
+
+``openrua connect``: connect a real robot, with your coding agent doing the
+work. A session opens whose terminal reaches this computer's docker, network
+and devices, working in the robot's folder. Your agent finds out what the
+robot is, builds and starts its ROS 2 drivers and writes the robot's config,
+asking you for what only a person can do and before each command that changes
+something; OpenRUA checks each step. When every check has passed, the session
+moves to the robot's own terminal and the conversation goes on there.
+
+positional arguments:
+  robot                 the robot's name (default: my-robot)
+
+options:
+  -h, --help            show this help message and exit
+  --dir DIR             the robot's folder (default: <home>/robots/<robot>);
+                        an existing one goes on from what is in it
+  --agent AGENT         coding agent (default: the configured one)
+  --model MODEL         model (default: the agent's)
+  --distro {jazzy,humble}
+                        the connecting terminal's ROS 2; the robot's own comes
+                        from its drivers
+  --name NAME           session ID (default: a new one)
+```
+
 ## openrua serve
 
 ```
@@ -391,7 +422,8 @@ usage: openrua serve [-h] [--sim SIM] [--bench BENCH]
                      [--internet {open,model-only}]
                      [--web-search | --no-web-search]
                      [--account-connectors | --no-account-connectors]
-                     [--model MODEL] [--port PORT]
+                     [--model MODEL] [--port PORT] [--connect FOLDER]
+                     [--distro {jazzy,humble}]
                      [robot]
 
 Run a local shared session independently of its connected clients.
@@ -439,6 +471,11 @@ options:
                         (default: not limited)
   --model MODEL         model (default: the configured agent's)
   --port PORT           local port (default: choose a free port)
+  --connect FOLDER      connect a real robot instead (see openrua connect):
+                        FOLDER is the robot's adaptation folder, the
+                        connecting terminal's workspace
+  --distro {jazzy,humble}
+                        with --connect: the connecting terminal's ROS 2
 ```
 
 ## openrua chat

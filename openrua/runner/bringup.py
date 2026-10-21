@@ -48,12 +48,38 @@ FASTDDS_PEERS_XML = """<?xml version="1.0" encoding="UTF-8" ?>
 """
 
 
-def peers_profile(peers: list[str]) -> str:
+# On the host network every container shares the host's addresses, so
+# Fast DDS takes participants in different containers for one host and
+# reaches them through shared memory, which containers do not share:
+# they discover nothing. A sandbox there speaks UDP only (the drivers'
+# side then answers over UDP too): Jazzy's Fast DDS through
+# FASTDDS_BUILTIN_TRANSPORTS (a profile naming transports keeps it from
+# discovering anything, checked on Jazzy), Humble's, which predates that
+# variable, through this profile.
+UDP_ONLY_TRANSPORTS = """  <transport_descriptors>
+    <transport_descriptor>
+      <transport_id>openrua_udp</transport_id>
+      <type>UDPv4</type>
+    </transport_descriptor>
+  </transport_descriptors>
+"""
+UDP_ONLY_PARTICIPANT = """      <userTransports>
+        <transport_id>openrua_udp</transport_id>
+      </userTransports>
+      <useBuiltinTransports>false</useBuiltinTransports>
+"""
+
+
+def peers_profile(peers: list[str], udp_only: bool = False) -> str:
     """The Fast DDS initial-peers profile naming every peer (container
-    names or addresses)."""
+    names or addresses); ``udp_only`` for a sandbox on the host network."""
     locators = "".join(f"          <locator><udpv4><address>{p}</address></udpv4></locator>\n"
                        for p in [DDS_DEFAULT_MULTICAST, *peers])
-    return FASTDDS_PEERS_XML.format(locators=locators)
+    profile = FASTDDS_PEERS_XML.format(locators=locators)
+    if udp_only:
+        profile = profile.replace("  <participant ", UDP_ONLY_TRANSPORTS + "  <participant ", 1)
+        profile = profile.replace("      </builtin>\n", "      </builtin>\n" + UDP_ONLY_PARTICIPANT, 1)
+    return profile
 
 
 def agent_proxy_url(backend: dict, proxy_url: str) -> str:
@@ -72,6 +98,14 @@ def internet_access(proxy_url: str) -> str:
     return f"proxy:{proxy_url}" if proxy_url else "open"
 
 
+def host_network_dds(distro: str, peers: list[str]) -> tuple[str | None, tuple[str, ...]]:
+    """(DDS profile, environment) for a sandbox on the host network: UDP
+    only, and ``peers`` as initial peers when there are any."""
+    if distro == "humble":
+        return peers_profile(peers, udp_only=True), ()
+    return (peers_profile(peers) if peers else None), ("FASTDDS_BUILTIN_TRANSPORTS=UDPv4",)
+
+
 def sandbox_reachability(backend: dict, network: str, robot_name: str,
                          internet: str) -> dict:
     """How the sandbox reaches the robot's graph and the outside world, as
@@ -86,7 +120,8 @@ def sandbox_reachability(backend: dict, network: str, robot_name: str,
     ``backend.discovery`` says how it finds the graph: ``network: host``
     (multicast), ``static_peers`` (unicast, rendered into the peers
     profile) or ``discovery_server`` (ROS_DISCOVERY_SERVER). On the host
-    network the proxy is reached by address, not by name. ``internet`` is
+    network the proxy is reached by address, not by name, and the sandbox
+    speaks UDP only (UDP_ONLY_TRANSPORTS). ``internet`` is
     ``none`` (read-only graph probing), ``open`` or ``proxy:<url>``.
     """
     if backend.get("kind") != "real":
@@ -96,14 +131,12 @@ def sandbox_reachability(backend: dict, network: str, robot_name: str,
     if internet.startswith("proxy:"):
         internet = "proxy:" + agent_proxy_url(backend, internet.split(":", 1)[1])
     discovery = backend.get("discovery", {})
-    out = {"network": "host", "static_peer": None, "peers_xml": None,
-           "internet": internet, "networks": (), "env": ()}
-    if discovery.get("static_peers"):
-        peers = list(discovery["static_peers"])
-        out["static_peer"] = ",".join(peers)
-        out["peers_xml"] = peers_profile(peers)
-    elif discovery.get("discovery_server"):
-        out["env"] = (f"ROS_DISCOVERY_SERVER={discovery['discovery_server']}",)
+    peers = list(discovery.get("static_peers") or [])
+    profile, env = host_network_dds(backend.get("ros_distro", "jazzy"), peers)
+    out = {"network": "host", "static_peer": ",".join(peers) or None, "peers_xml": profile,
+           "internet": internet, "networks": (), "env": env}
+    if discovery.get("discovery_server"):
+        out["env"] += (f"ROS_DISCOVERY_SERVER={discovery['discovery_server']}",)
     return out
 
 

@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from openrua import agents, config, doctor
-from openrua.cli.commands import chat, session, up
+from openrua.cli.commands import chat, connect, session, up
 from openrua.config import paths, settings, startup
 from openrua.cli import updates
 from openrua.cli.preparation import prepare
@@ -271,7 +271,10 @@ def _run(args) -> int:
                                 lambda name: history.open_session(args.home, name),
                                 environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress, limit_overrides(args)),
                                 authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']]))),
-                                resolve_agent=lambda name: authentication_choices(args.home, [name])[name])
+                                resolve_agent=lambda name: authentication_choices(args.home, [name])[name],
+                                connect=lambda values: connect.launch(args.home, 'my-robot',
+                                                                      agent=values['agent'] or None,
+                                                                      model=values['model'] or None))
         if result is None:
             return 0
         client, name = result

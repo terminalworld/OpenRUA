@@ -61,7 +61,7 @@ def run(args) -> int:
                             {"network": "host"}), end="")
         return 0
     discovery = _discovery(args)
-    backend = {"kind": "real", "discovery": discovery}
+    backend = {"kind": "real", "discovery": discovery, "ros_distro": args.distro}
     reach = sandbox_reachability(backend, "host", "probe", "none")
     name = f"openrua-probe-{uuid.uuid4().hex[:6]}"
     with tempfile.TemporaryDirectory(prefix="openrua-probe-") as tmp:

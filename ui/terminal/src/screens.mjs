@@ -47,6 +47,7 @@ export class Setup extends Screen {
     const items = Object.entries(labels).map(([key, label]) => ({value: key,
       label: `${label}: ${key === 'auth_mode' ? this.authLabel(this.values[key]) : plain(this.values[key]) || '(none)'}`}));
     items.push({value: 'start', label: 'Prepare and start'}, {value: 'check', label: 'Save and check preparation'},
+      {value: 'connect', label: 'Connect a real robot: your agent sets it up with you'},
       {value: 'history', label: '/resume: find an existing conversation'}, {value: 'quit', label: 'Quit'});
     const menu = new SelectList(items, 10, selectTheme);
     menu.onCancel = () => this.finish();
