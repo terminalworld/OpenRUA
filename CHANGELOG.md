@@ -9,6 +9,14 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.14.0
+
+One task done by the agent on its own and recorded, on any robot, with
+`openrua exec`; `openrua run` is gone. Changes you may notice:
+`openrua run` now says what replaced it, `run` and `up` no longer take
+`--permissions`, and `openrua bench` on a real robot runs its startup
+checks first.
+
 - **`openrua exec`**: the agent does one task on its own and the run is
   recorded under `runs/`, on a simulated or a real robot, as `codex exec`
   or `claude -p` run a coding agent without its terminal. A benchmark
