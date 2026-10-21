@@ -14,11 +14,11 @@ import shutil
 import subprocess
 from pathlib import Path
 from typing import Callable
+from urllib.parse import urlparse
 
 from openrua import robot
 from openrua.config import paths
 from openrua.errors import NotFound, UnavailableError
-from openrua import proxy
 from openrua.proxy.up import url_from_network as proxy_url_from_network
 from openrua.runner import record
 from openrua.sandbox.down import down as sandbox_down
@@ -56,38 +56,48 @@ def peers_profile(peers: list[str]) -> str:
     return FASTDDS_PEERS_XML.format(locators=locators)
 
 
-def agent_proxy_url(backend: dict, proxy_url: str, proxy_name: str = proxy.NAME) -> str:
+def agent_proxy_url(backend: dict, proxy_url: str) -> str:
     """The proxy URL as the sandbox can reach it: by container name on the
     internal docker network, by address from the host network a real
     robot's sandbox joins. The agent CLI started inside the sandbox must be
-    given this one, not the name-based URL."""
+    given this one, not the name-based URL. Empty means no proxy."""
     if not proxy_url or backend.get("kind") != "real":
         return proxy_url
-    return proxy_url_from_network(proxy_name)
+    return proxy_url_from_network(urlparse(proxy_url).hostname)
+
+
+def internet_access(proxy_url: str) -> str:
+    """The sandbox's way out (``sandbox.up``'s ``internet``) for a run with
+    this proxy: through it, or, with none, the open internet."""
+    return f"proxy:{proxy_url}" if proxy_url else "open"
 
 
 def sandbox_reachability(backend: dict, network: str, robot_name: str,
-                         proxy_url: str, proxy_name: str = proxy.NAME) -> dict:
-    """How the sandbox reaches the robot's graph and the proxy, as
+                         internet: str) -> dict:
+    """How the sandbox reaches the robot's graph and the outside world, as
     ``sandbox.up`` keyword arguments.
 
     A simulated robot shares the internal docker network with the sandbox;
-    the two find each other by container name through a static peer. A
-    real robot is on the host's network, so the sandbox joins the host
-    network and ``backend.discovery`` says how it finds the graph:
-    ``network: host`` (multicast), ``static_peers`` (unicast, rendered
-    into the peers profile) or ``discovery_server`` (ROS_DISCOVERY_SERVER).
-    On the host network the proxy is reached by address, not by name.
-    An empty proxy URL requests no proxy, as for read-only graph probing.
+    the two find each other by container name through a static peer. An
+    open internet then means joining a routed network as well
+    (INTERNET_NETWORK: OpenRUA's own, so no other container on this host
+    shares the sandbox's ROS 2 traffic). A real robot is on the host's
+    network, so the sandbox joins the host network and
+    ``backend.discovery`` says how it finds the graph: ``network: host``
+    (multicast), ``static_peers`` (unicast, rendered into the peers
+    profile) or ``discovery_server`` (ROS_DISCOVERY_SERVER). On the host
+    network the proxy is reached by address, not by name. ``internet`` is
+    ``none`` (read-only graph probing), ``open`` or ``proxy:<url>``.
     """
     if backend.get("kind") != "real":
         return {"network": network, "static_peer": robot_name,
-                "peers_xml": peers_profile([robot_name]),
-                "internet": f"proxy:{proxy_url}" if proxy_url else "none", "env": ()}
+                "peers_xml": peers_profile([robot_name]), "internet": internet,
+                "networks": (INTERNET_NETWORK,) if internet == "open" else (), "env": ()}
+    if internet.startswith("proxy:"):
+        internet = "proxy:" + agent_proxy_url(backend, internet.split(":", 1)[1])
     discovery = backend.get("discovery", {})
     out = {"network": "host", "static_peer": None, "peers_xml": None,
-           "internet": f"proxy:{agent_proxy_url(backend, proxy_url, proxy_name)}" if proxy_url else "none",
-           "env": ()}
+           "internet": internet, "networks": (), "env": ()}
     if discovery.get("static_peers"):
         peers = list(discovery["static_peers"])
         out["static_peer"] = ",".join(peers)
@@ -113,6 +123,10 @@ def graph_probe(sandbox_name: str) -> list[str]:
     return ["docker", "exec", sandbox_name, "bash", "-c",
             "ros2 node list 2>/dev/null | grep -q ."]
 
+
+# The routed network a simulated robot's sandbox joins for an open
+# internet; only OpenRUA's sandboxes are on it.
+INTERNET_NETWORK = "openrua-internet"
 
 # ROS_DOMAIN_ID values that keep DDS on its default ports (ROS 2 documents
 # 0-101 as safe on Linux); the higher range is reserved for hand-picked ids.
@@ -208,7 +222,7 @@ def claim_domain(network: str, requested: int | None,
 
 
 def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
-             task_suite: str | None, task_id: int | None, network: str, proxy_url: str,
+             task_suite: str | None, task_id: int | None, network: str, internet: str,
              mounts: tuple[str, ...], ros_domain: int | None, robot_log: Path,
              home: Path | None = None,
              record_cameras: tuple[str, ...] | None = None,
@@ -222,6 +236,7 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     party reads that same file; files the robot opens by path are copied
     next to it first (resolve_robot_files).
 
+    ``internet`` is the sandbox's way out (``internet_access``).
     ``ros_domain`` None means: a simulated robot takes the lowest ROS
     domain no container on the internal network uses (claim_domain), so
     concurrent bring-ups on one machine never share a DDS graph; a real
@@ -239,7 +254,9 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     resolve_robot_files(cfg, dest, home)
     config_path = record.write_config(dest, cfg)
     backend = cfg.get("machine", {}).get("backend", {})
-    reach = sandbox_reachability(backend, network, sim_name, proxy_url)
+    reach = sandbox_reachability(backend, network, sim_name, internet)
+    for routed in reach["networks"]:
+        ensure_network(routed, internal=False)
 
     def start_sandbox(domain: int) -> str:
         sandbox_up(
@@ -324,8 +341,12 @@ def _stage(src: Path, dest: Path) -> str:
     return str(dst.resolve())
 
 
-def ensure_internal_network(name: str = "openrua-internal") -> str:
-    subprocess.run(
-        ["docker", "network", "create", "--internal", name], capture_output=True
-    )
+def ensure_network(name: str, internal: bool) -> str:
+    """Create the docker network unless it exists; returns its name."""
+    subprocess.run(["docker", "network", "create", *(["--internal"] if internal else []), name],
+                   capture_output=True)
     return name
+
+
+def ensure_internal_network(name: str = "openrua-internal") -> str:
+    return ensure_network(name, internal=True)

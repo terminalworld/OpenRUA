@@ -73,6 +73,8 @@ def harness(tmp_path, monkeypatch):
         ctx = {"cfg": cfg, "sandbox": "rc-x-sandbox", "task_language": "T",
                "trial_dir": tmp_path, "profile_dir": tmp_path / "profile",
                "proxy": "http://p",
+               "limits": {"internet": "model-only", "web_search": False,
+                          "account_connectors": False},
                "sim": "rc-x-sim",
                "active_wall_clock_min": 240}
         return R.agent_operator(ctx)
@@ -94,6 +96,10 @@ def test_wall_suspends_and_the_same_session_resumes(harness):
     sid = first[first.index("--session-id") + 1]
     assert second[second.index("--session-id") + 1] == sid
     assert "--resume" in second and "--resume" not in first
+    # the trial's limits reach the launcher on every segment
+    for cmd in (first, second):
+        assert json.loads(cmd[cmd.index("--limits") + 1]) == {
+            "internet": "model-only", "web_search": False, "account_connectors": False}
 
 
 def test_resumed_trial_that_runs_out_the_clock_is_resolved(harness, monkeypatch):

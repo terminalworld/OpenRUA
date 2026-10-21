@@ -18,7 +18,8 @@ class _Adapter:
     def __init__(self, argv):
         self._argv = argv
 
-    def interactive_argv(self, sandbox, model, proxy, options=None, prompt=None):
+    def interactive_argv(self, sandbox, model, proxy, options=None, prompt=None, limits=None):
+        self.limits = limits
         return self._argv and [*self._argv, sandbox, model, prompt or ""]
 
 
@@ -38,8 +39,10 @@ def test_run_brings_up_opens_the_agent_and_powers_off(monkeypatch, tmp_path, cap
     calls = []
     monkeypatch.setattr(run_cmd.up, "open_session", _session(calls))
     monkeypatch.setattr(run_cmd.state, "load", lambda name, home: {
-        "agent": "fake", "sandbox": "box", "model": "m", "proxy": "http://p", "options": {}})
-    monkeypatch.setattr(run_cmd.agents, "get", lambda name, home, **kwargs: _Adapter(["agent-cli"]))
+        "agent": "fake", "sandbox": "box", "model": "m", "proxy": "http://p", "options": {},
+        "limits": {"internet": "model-only", "web_search": False}})
+    adapter = _Adapter(["agent-cli"])
+    monkeypatch.setattr(run_cmd.agents, "get", lambda name, home, **kwargs: adapter)
     monkeypatch.setattr(run_cmd.subprocess, "call",
                         lambda argv: calls.append(("agent", argv)) or 3)
     args = build_parser().parse_args(["--home", str(tmp_path), "run", "panda", "hello"])
@@ -50,6 +53,7 @@ def test_run_brings_up_opens_the_agent_and_powers_off(monkeypatch, tmp_path, cap
     assert '[run] agent     fake (m), opening message: "hello"' in out
     assert calls == [("up", "panda"), ("agent", ["agent-cli", "box", "m", "hello"]),
                      ("down",)]
+    assert adapter.limits == {"internet": "model-only", "web_search": False}   # the session's
 
 
 def test_run_powers_off_when_the_agent_cannot_open(monkeypatch, tmp_path):
@@ -77,7 +81,7 @@ def test_bare_build_builds_the_agent_images_and_the_default_benchmarks(monkeypat
                         lambda install, name, code_root, tag: built.append(("sim", name, tag)) or (tag, "d1"))
     monkeypatch.setattr(build_cmd, "_sandbox",
                         lambda *a: built.append(("sandbox", a[2])) or ("s", "d2"))
-    monkeypatch.setattr(build_cmd, "_proxy",
+    monkeypatch.setattr(build_cmd, "build_proxy",
                         lambda *a: built.append(("proxy",)) or ("p", "d3"))
     args = build_parser().parse_args(["--home", str(tmp_path), "build"])
     assert args.fn(args) == 0
@@ -96,7 +100,7 @@ def test_build_names_benchmarks_and_deduplicates_shared_images(monkeypatch, tmp_
     monkeypatch.setattr(build_cmd, "build_simulator",
                         lambda install, name, code_root, tag: built.append(tag) or (tag, "d"))
     monkeypatch.setattr(build_cmd, "_sandbox", lambda *a: ("s", "d"))
-    monkeypatch.setattr(build_cmd, "_proxy", lambda *a: ("p", "d"))
+    monkeypatch.setattr(build_cmd, "build_proxy", lambda *a: ("p", "d"))
     args = build_parser().parse_args(["--home", str(tmp_path), "build", "--bench", "capbench",
                                       "--bench", "libero_pro", "--sim", "robosuite"])
     assert args.fn(args) == 0

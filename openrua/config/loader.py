@@ -396,7 +396,12 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
             resolve_cameras(machine, Path(r["source"]), r["source"])
             # A launch command runs where its file is, so it may name the
             # driver's files relative to it.
-            machine["backend"].setdefault("cwd", str(Path(r["source"]).resolve().parent))
+            here = Path(r["source"]).resolve().parent
+            machine["backend"].setdefault("cwd", str(here))
+            # Build directories are named relative to the file too.
+            build = machine["backend"].get("build") or {}
+            machine["backend"]["build"] = {image: str((here / context).resolve())
+                                           for image, context in build.items()}
         else:
             if not sim:
                 raise UsageError(f"{robot} is a robot type: name the simulator that "

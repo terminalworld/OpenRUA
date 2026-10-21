@@ -81,11 +81,14 @@ def test_start_keeps_custom_plugin_spec_and_native_configuration(tmp_path, monke
         workspace.mkdir()
         (workspace / "README.md").write_text("Robot documentation")
         live_state.save("custom", tmp_path, agent="display-name", agent_spec="/plugins/custom.yaml",
-                        workspace=str(workspace), agent_version="1.2", sandbox="box", model="model", proxy="proxy", options={"effort": "high"})
+                        workspace=str(workspace), agent_version="1.2", sandbox="box", model="model", proxy="proxy", options={"effort": "high"},
+                        limits={"internet": "model-only", "web_search": False, "account_connectors": False})
         monkeypatch.setattr(managed, "open_robot", lambda request: SimpleNamespace(power_off=lambda: calls.append("stopped")))
         def conversation(*args, **kwargs):
             assert args == ("box", "model", "proxy")
-            assert kwargs == {"options": {"effort": "high"}}
+            assert kwargs == {"options": {"effort": "high"},
+                              "limits": {"internet": "model-only", "web_search": False,
+                                         "account_connectors": False}}
             return Conversation(["native-agent"], FakeProtocol())
         def get(spec, home, version=None):
             assert (spec, home, version) == ("/plugins/custom.yaml", tmp_path, "1.2")

@@ -92,7 +92,7 @@ pip install -U 'openrua[demo]'
 claude login  # only if not already signed in
 openrua build --bench capbench
 openrua build sandbox --distro humble --agent claude-code
-openrua build proxy --agent claude-code
+openrua build proxy  # a trial limits the agent to its model service through it
 openrua doctor panda --sim robosuite --bench capbench --agent claude-code
 ```
 

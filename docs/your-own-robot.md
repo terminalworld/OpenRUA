@@ -124,6 +124,21 @@ Then `openrua build sandbox --robot ./ur5e.yaml` builds that robot's own
 sandbox image (its name carries a hash of the install), and `doctor`
 says when the install has changed since.
 
+A driver that runs in docker images of your own (a vendor stack pinned
+to its own ROS release, say) names each image with the directory holding
+its Dockerfile, relative to the robot's file, as docker compose's
+`build:` does:
+
+```yaml
+  backend:
+    launch: python3 driver/up.py      # starts the driver's containers
+    build:
+      my-robot-driver: driver         # image name: directory with its Dockerfile
+```
+
+`openrua build driver --robot ./ur5e.yaml` builds them (`--image NAME`
+for one), and `doctor` reports any that is missing.
+
 A camera type is a file of its own, next to the robot's, saying what one
 camera with one driver publishes; `{name}` stands for the camera's name
 on the machine:
@@ -191,7 +206,10 @@ openrua --robot ./ur5e.yaml --ros-domain 7
 
 A real robot takes no saved simulator or benchmark default; name a benchmark
 with `--bench` to run its task on the robot. OpenRUA validates the profile and
-prepares missing agent images before opening chat.
+builds what is missing before opening chat: the driver images
+`backend.build` names, and the sandbox (the robot's own when it declares
+`backend.sandbox_install`). With `openrua config set --robot ./ur5e.yaml`
+once, plain `openrua` does all of it.
 
 The launch command runs on the host in the directory of the robot's file
 (`backend.cwd` to choose another), so it may name the driver's files relative
@@ -242,11 +260,14 @@ or infer that a host driver stopped just because the sandbox container is gone.
 Delete retained materials separately with `openrua clean --name <name>` after
 shutdown. This lifecycle handling does not constitute a physical emergency stop.
 
+The agent reaches the internet as it does on your own machine unless a
+limit says otherwise ([what the agent can reach](install.md#what-the-agent-can-reach)).
 One difference from simulation to know about: a sandbox on the host
-network is not on an internal docker network, so the proxy is the route
-the agent is told to use, not a wall it cannot get around. For a scored
-campaign, simulation keeps that isolation; on hardware the point of the
-sandbox is the same toolchain and the same workspace, not containment.
+network is not on an internal docker network, so with `--internet
+model-only` the proxy is the route the agent is told to use, not a wall
+it cannot get around. For a scored campaign, simulation keeps that
+isolation; on hardware the point of the sandbox is the same toolchain and
+the same workspace, not containment.
 
 ## Same-host Fast DDS discovery
 

@@ -65,12 +65,11 @@ or modify your ordinary Kimi login. The profile, native session history and
 private server log remain outside the robot workspace. They may contain
 credentials or a local server token; do not publish them as workspace artifacts.
 
-Build the sandbox and proxy with the external plugin. For CaP-Bench, use
-Humble; retain the existing agents when rebuilding the shared images:
+Build the sandbox with the external plugin. For CaP-Bench, use Humble;
+retain the existing agents when rebuilding the shared image:
 
 ```bash
 openrua build sandbox --distro humble --agent claude-code --agent codex --agent "$plugin"
-openrua build proxy --agent claude-code --agent codex --agent "$plugin"
 openrua --agent "$plugin" --robot panda --bench capbench --task-id 0
 ```
 

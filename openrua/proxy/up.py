@@ -1,18 +1,19 @@
-"""Verb ``up``: idempotent ensure -> proxy URL.
+"""Verb ``up``: whitelist -> idempotent ensure -> proxy URL.
 
     python3 -m openrua.proxy.up --network <internal-net> \
-        [--name openrua-proxy] [--image openrua-proxy]
+        [--whitelist "<one regex per line>"] [--image openrua-proxy]
 
-One standing instance (contrast sandbox.up, which always creates a
-fresh container): if the proxy is running, running is the answer. On a
-cold start several callers may race; losers of the name conflict adopt
-the winner's instance; a live proxy is never ``rm -f``-ed (that would
-cut every in-flight session through it).
+One standing instance per whitelist (contrast sandbox.up, which always
+creates a fresh container): its name carries the whitelist's hash, so
+agents with different hosts get different proxies and none is ever
+replaced under a running session. If the proxy is running, running is
+the answer. On a cold start several callers may race; losers of the name
+conflict adopt the winner's instance; a live proxy is never ``rm -f``-ed
+(that would cut every in-flight session through it).
 
 Value output: the proxy URL (``http://<name>:<port>``; the container
-name doubles as its DNS hostname on the shared network, so the URL is
-stable across rebuilds; the port is read back from the label the image
-stamped at build, never a copied constant).
+name doubles as its DNS hostname on the shared network; the port is read
+back from the label the image stamped at build, never a copied constant).
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ import subprocess
 import sys
 import time
 
-from openrua.proxy import ProxyError, IMAGE, NAME
+from openrua.proxy import ProxyError, IMAGE, name_for
 
 
 def _running(name: str) -> str:
@@ -60,15 +61,12 @@ def _port(name: str) -> str:
     return out
 
 
-def ensure(network: str, name: str = NAME,
-           image: str = IMAGE, whitelists: dict[str, str] | None = None) -> str:
-    """Ensure the proxy serves ``network``; returns its URL.
+def ensure(network: str, whitelist: str = "", image: str = IMAGE) -> str:
+    """Ensure a proxy enforcing ``whitelist`` serves ``network``; returns
+    its URL.
 
-    ``whitelists`` maps each agent the caller is about to run to the hash
-    of its hosts (``openrua.agent.<name>.whitelist_sha256``): a standing
-    proxy labelled for other agents and not for one of these is refused
-    with the commands that fix it, before the agent meets a 403.
-
+    - its name is ``name_for(whitelist)``: the same hosts always meet the
+      same proxy, other hosts get their own;
     - a stopped proxy (host reboot, crash) is revived with ``docker
       start``, never recreated; new ones carry ``--restart
       unless-stopped`` so reboots self-heal;
@@ -83,13 +81,15 @@ def ensure(network: str, name: str = NAME,
       killing a live proxy cuts every in-flight session, so that call
       stays with a person.
     """
+    name = name_for(whitelist)
     if not _running(name):
         if _exists(name):
             started = subprocess.run(["docker", "start", name], capture_output=True, text=True)
         else:
             started = subprocess.run(
                 ["docker", "run", "-d", "--restart", "unless-stopped",
-                 "--name", name, image], capture_output=True, text=True)
+                 "--name", name, "-e", f"WHITELIST={whitelist}", image],
+                capture_output=True, text=True)
         for _ in range(10):  # wait out a sibling's in-progress creation
             if _running(name):
                 break
@@ -117,33 +117,9 @@ def ensure(network: str, name: str = NAME,
     tagged_image = _inspect("image", image, "{{.Id}}")
     if tagged_image and running_image != tagged_image:
         print(f"[proxy] WARNING: standing proxy {name!r} runs an older "
-              f"image than tag {image!r} (whitelist may have changed); "
-              f"recycle it between campaigns: docker rm -f {name}",
-              file=sys.stderr)
-    _serves(name, whitelists or {})
+              f"image than tag {image!r}; recycle it between campaigns: "
+              f"docker rm -f {name}", file=sys.stderr)
     return f"http://{name}:{_port(name)}"
-
-
-def _serves(name: str, whitelists: dict[str, str]) -> None:
-    """Refuse a standing proxy that lets none of an agent's hosts through.
-    A proxy built before per-agent labels carries none and is not judged."""
-    try:
-        labels = json.loads(_inspect("container", name, "{{json .Config.Labels}}")) or {}
-    except ValueError:
-        return
-    if not any(k.startswith("openrua.agent.") for k in labels):
-        return
-    missing = [agent for agent, sha in whitelists.items()
-               if labels.get(f"openrua.agent.{agent}.whitelist_sha256") != sha]
-    if missing:
-        carried = sorted(k.split(".")[2] for k in labels if k.startswith("openrua.agent."))
-        raise ProxyError(
-            f"the standing proxy {name!r} allows the hosts of {', '.join(carried)}, "
-            f"not of {', '.join(missing)}: {', '.join(missing)} would be refused at its API. "
-            f"Rebuild it for every agent you use, then replace the container while no "
-            f"session uses it (the next session starts the new one):\n"
-            f"  openrua build proxy " + " ".join(f"--agent {a}" for a in sorted({*carried, *missing}))
-            + f"\n  docker rm -f {name}")
 
 
 def url_from_network(name: str, network: str = "bridge") -> str:
@@ -161,11 +137,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--network", required=True,
                     help="internal docker network the proxy serves")
-    ap.add_argument("--name", default=NAME)
+    ap.add_argument("--whitelist", default="",
+                    help="hosts it lets through, one regex per line (empty = none)")
     ap.add_argument("--image", default=IMAGE)
     args = ap.parse_args()
     try:
-        print(ensure(network=args.network, name=args.name, image=args.image))
+        print(ensure(network=args.network, whitelist=args.whitelist, image=args.image))
     except ProxyError as e:
         raise SystemExit(str(e))
     return 0

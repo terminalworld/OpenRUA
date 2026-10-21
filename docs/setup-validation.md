@@ -63,6 +63,9 @@ on another machine. **Prepare and start** validates the selected combination,
 builds missing images through the existing `openrua build` commands, then runs
 the preparation checks and starts the session. The simulator's ROS distribution
 selects the sandbox image; the selected agent supplies its installation manifest.
+A real robot's driver images (`backend.build`) and its own sandbox image (when it
+declares `backend.sandbox_install`) are built the same way. The proxy image is
+prepared only for a session limited to the model service (`--internet model-only`).
 Docker itself and agent login are prerequisites; OpenRUA reports how to resolve
 them without installing host system software or collecting credentials in setup.
 
@@ -70,7 +73,7 @@ Build output is streamed and retained in `~/.openrua/preparation/`. A failed
 build never launches the session. Retry reuses completed images and Docker's
 build cache. **Save & check** does not download, build or start a robot. Existing
 images are reused; declaration-change warnings still require an explicit rebuild.
-The readiness report checks both the proxy image and its standing container,
-since a rebuild cannot update a container already serving other sessions.
-See [updating a shared proxy](install.md#updating-a-shared-proxy) for the repair
-procedure. Network attachment failures retain Docker's error and stop startup.
+A proxy's whitelist is given when it starts and its name carries the hash of
+those hosts, so switching agents starts another proxy instead of needing a
+rebuild ([what the agent can reach](install.md#what-the-agent-can-reach)).
+Network attachment failures retain Docker's error and stop startup.

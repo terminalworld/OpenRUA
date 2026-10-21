@@ -303,11 +303,13 @@ def write_result(trial_dir: Path, record: dict) -> None:
     (trial_dir / "result.json").write_text(json.dumps(record, indent=2))
 
 
-def session_provenance(robot_file: Path | None, cfg: dict, code_root: Path) -> dict:
+def session_provenance(robot_file: Path | None, cfg: dict, code_root: Path,
+                       agent_cli: dict | None = None, limits: dict | None = None) -> dict:
     """What an interactive session ran with, for comparing sessions later:
     OpenRUA's version and commit, the robot's config file (its hash, and
     the commit of the repository it lives in, which on a real robot holds
-    the driver too), and the images."""
+    the driver too), the images, the agent CLI as the sandbox reports it,
+    and what the agent could reach."""
     def sh(cmd: list[str]) -> str:
         try:
             return subprocess.run(cmd, capture_output=True, text=True).stdout.strip()
@@ -333,6 +335,10 @@ def session_provenance(robot_file: Path | None, cfg: dict, code_root: Path) -> d
         if backend.get(key):
             out[key] = {"name": backend[key], "id": sh(
                 ["docker", "image", "inspect", "--format", "{{.Id}}", backend[key]])}
+    if agent_cli is not None:
+        out["agent_cli"] = agent_cli
+    if limits is not None:
+        out["limits"] = limits
     return out
 
 

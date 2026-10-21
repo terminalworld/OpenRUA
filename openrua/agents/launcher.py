@@ -28,6 +28,7 @@ The launcher is pure process construction: no prompt tricks, no aids.
 from __future__ import annotations
 
 import argparse
+import json
 import subprocess
 import sys
 from pathlib import Path
@@ -58,7 +59,12 @@ def main() -> int:
     ap.add_argument("--home", default=None,
                     help="user directory holding agents/ (default: ~/.openrua)")
     ap.add_argument("--max-turns", type=int, default=100)
-    ap.add_argument("--proxy", required=True, help="the proxy URL the sandbox reaches its model API through")
+    ap.add_argument("--proxy", required=True,
+                    help="the proxy URL the sandbox reaches its model API through "
+                    "(empty: the sandbox goes out directly)")
+    ap.add_argument("--limits", required=True, metavar="JSON",
+                    help="the run's limits (config.schema.Limits as JSON): what the "
+                    "agent may reach")
     ap.add_argument("--session-id", default=None,
                     help="name the session up front so it can be resumed")
     ap.add_argument("--token-file", default=None,
@@ -92,6 +98,7 @@ def main() -> int:
         model=args.model or agent.default_model,
         max_turns=args.max_turns,
         proxy=args.proxy,
+        limits=json.loads(args.limits),
         options=options,
         session_id=args.session_id,
         resume=args.resume,

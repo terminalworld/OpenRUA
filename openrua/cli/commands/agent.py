@@ -21,7 +21,7 @@ def run(args) -> int:
                        version=None if args.agent else st.get("agent_version"))
     argv = agent.interactive_argv(
         st["sandbox"], args.model or st["model"], st["proxy"],
-        options=st.get("options"), prompt=args.prompt)
+        options=st.get("options"), limits=st.get("limits"), prompt=args.prompt)
     if argv is None:
         raise UnavailableError(
             f"{agent.name} has no interactive mode",

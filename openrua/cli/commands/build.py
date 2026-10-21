@@ -1,5 +1,5 @@
 """``openrua build [--bench B ...] [--sim S ...] [--all]`` and
-``openrua build sandbox | proxy | base``: the images.
+``openrua build sandbox | proxy | base | driver``: the images.
 
 A simulated robot's image is rendered from a declaration: the
 simulator's ``install:`` with the benchmark's over it, one image per
@@ -8,10 +8,11 @@ declaration that writes install keys (``openrua-sim-<name>``). Bare
 images for the default agent and the simulator image of the default
 benchmark; ``--all`` builds every bundled benchmark's.
 
-The sandbox and proxy images are agent-parameterised: the install line
-and the whitelist come from the manifests of the agents named with
-``--agent`` (default: the configured default agent), so a manifest is
-the only place an agent's install and hosts are written down.
+The sandbox image is agent-parameterised: the install line comes from
+the manifests of the agents named with ``--agent`` (default: the
+configured default agent), so a manifest is the only place an agent's
+install is written down. The proxy image holds no whitelist; each proxy
+gets its agent's hosts when it starts.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ from openrua.errors import UnavailableError, UsageError
 from openrua.config import paths
 from openrua.config.schema import sim_image
 from openrua.proxy.build import build as build_proxy
+from openrua.robot.real.build import DriverBuildError, build as build_driver
 from openrua.robot.sim.build import build_base, build_simulator
 from openrua.sandbox.build import build as build_sandbox
 
@@ -46,14 +48,10 @@ def preinstall_for(names: list[str] | None, home: Path | None) -> str:
     return agents.preinstall(manifests_for(names, home))
 
 
-def whitelist_for(names: list[str] | None, home: Path | None) -> str:
-    return "\n".join(agents.whitelist(manifests_for(names, home)))
-
-
 def agent_labels(manifests: list[agents.Manifest], kind: str) -> dict[str, str]:
     """One label per agent baked into an image: the hash of its install
-    line (``install``) or whitelist (``whitelist``), so doctor can tell
-    which agents an image carries and whether their manifests changed."""
+    line, so doctor can tell which agents an image carries and whether
+    their manifests changed."""
     return {f"openrua.agent.{m.name}.{kind}_sha256": agents.fact_sha256(m, kind)
             for m in manifests}
 
@@ -89,7 +87,7 @@ def run(args) -> int:
         if not (args.bench or args.sim or args.all):
             # bare `openrua build`: the agent images too
             built += [_sandbox(None, None, "jazzy", None, None, args.home),
-                      _proxy(None, None, proxy.IMAGE, proxy.PORT, args.home)]
+                      build_proxy(proxy.IMAGE, proxy.PORT)]
         targets = simulator_targets(args.bench or [], args.sim or [], args.all, args.home)
         if not targets:
             print("[build] no default benchmark, so no simulator image: openrua build "
@@ -103,22 +101,46 @@ def run(args) -> int:
     elif unit == "sandbox":
         built = [_sandbox(args.agent, args.preinstall, args.distro, args.robot_uid,
                           args.tag, args.home, getattr(args, "robot", None))]
+    elif unit == "driver":
+        built = _drivers(args.robot, args.image, args.home)
     else:
-        built = [_proxy(args.agent, args.whitelist, args.tag, args.port, args.home)]
+        built = [build_proxy(args.tag, args.port)]
     for tag, digest in built:
         print(f"{tag} {digest}")
     return 0
 
 
 def robot_install(robot: str, home: Path | None) -> dict:
-    """The sandbox facts a real robot's config declares: its distro, its
-    sandbox image and the install chain for its interface packages."""
+    """The image facts a real robot's config declares: its distro, its
+    sandbox image, the install chain for its interface packages and the
+    driver images it builds."""
     composed = config.compose(robot, "", "", home)
     backend = composed.cfg["machine"]["backend"]
     if backend["kind"] != "real":
         raise UsageError(f"{robot} is not a real robot instance; --robot names one",
                          hint="openrua build sandbox --distro <distro> builds the shared image")
     return backend
+
+
+def _drivers(robot: str, image: str | None, home: Path | None) -> list[tuple[str, str]]:
+    """Build the images a real robot's config builds itself (``backend.build``),
+    or the one named."""
+    images = robot_install(robot, home).get("build") or {}
+    if image is not None and image not in images:
+        raise UsageError(f"{robot} builds no image {image!r}",
+                         hint=f"its backend.build names: {', '.join(images) or 'none'}")
+    if not images:
+        raise UsageError(f"{robot} declares no images to build (backend.build)")
+    built = []
+    for name, context in images.items():
+        if image in (None, name):
+            print(f"[build] {name} from {context}", flush=True)
+            try:
+                built.append(build_driver(name, context))
+            except DriverBuildError as e:
+                raise UnavailableError(str(e), hint=f"fix {context}/Dockerfile, then "
+                                       f"openrua build driver --robot {robot}") from e
+    return built
 
 
 def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None):
@@ -169,22 +191,15 @@ def _report_versions(image: str, chosen: list[agents.Manifest]) -> None:
                                    hint=f"pin a release with --agent {m.name}@<version>")
 
 
-def _proxy(agent, whitelist, tag, port, home):
-    chosen = manifests_for(agent, home)
-    whitelist = whitelist if whitelist is not None else "\n".join(agents.whitelist(chosen))
-    return build_proxy(whitelist=whitelist, tag=tag, port=port,
-                       labels=agent_labels(chosen, "whitelist"))
-
-
 def add_parser(sub) -> None:
     p = sub.add_parser("build", help="build the images: simulators, sandbox, proxy",
                        description="Build simulator images from their declarations "
                        "(--bench / --sim, repeatable; --all: every bundled benchmark), "
-                       "or one of the agent-side images (sandbox, proxy) or the ROS "
-                       "base. Bare `openrua build` makes the sandbox and proxy images "
+                       "or one of the agent-side images (sandbox, proxy), the ROS "
+                       "base, or a real robot's driver images. Bare `openrua build` makes the sandbox and proxy images "
                        "for the default agent and the default benchmark's simulator "
-                       "image. The sandbox and proxy take their install line and "
-                       "whitelist from the manifests of the agents named with --agent.")
+                       "image. The sandbox takes its install line from the manifests "
+                       "of the agents named with --agent.")
     p.add_argument("--bench", action="append", default=None, metavar="NAME",
                    help="benchmark whose simulator image to build (openrua benchmarks); "
                         "repeatable")
@@ -213,12 +228,13 @@ def add_parser(sub) -> None:
                    help="a real robot whose config declares backend.sandbox_install: "
                    "its distro, image name and install chain come from there")
 
-    x = units.add_parser("proxy", help="the whitelist proxy image")
-    x.add_argument("--agent", action="append", default=None,
-                   help="agent(s) whose hosts to allow; repeatable (default: the "
-                   "configured default)")
-    x.add_argument("--whitelist", default=None,
-                   help="regexes, one per line, instead of the agents' manifests")
+    d = units.add_parser("driver", help="the images a real robot's launch command uses, "
+                         "from the directories its config names (backend.build)")
+    d.add_argument("--robot", required=True, metavar="NAME|PATH", help="the real robot")
+    d.add_argument("--image", default=None, help="only this one of them")
+
+    x = units.add_parser("proxy", help="the whitelist proxy image (runs that limit the "
+                         "agent to its model service start one per agent's hosts)")
     x.add_argument("--tag", default=proxy.IMAGE)
     x.add_argument("--port", type=int, default=proxy.PORT, help="listen port, baked in and labelled")
     p.set_defaults(fn=run)

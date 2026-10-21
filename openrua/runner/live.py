@@ -16,13 +16,13 @@ from typing import Callable
 
 from openrua import agents
 from openrua.config import apply_suite_overrides, compose, normalize_arms, paths
-from openrua.config.schema import sandbox_image
+from openrua.config.schema import Limits, sandbox_image
 from openrua.errors import UnavailableError, UsageError
 from openrua.proxy.up import ensure as ensure_proxy
 from openrua.runner import live_state as state
 from openrua.runner.record import session_provenance
 from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
-                                    start_episode)
+                                    internet_access, start_episode)
 from openrua.sandbox.down import down as sandbox_down
 
 
@@ -41,6 +41,9 @@ class RobotRequest:
     init_state: int = 0
     workspace: Path | None = None
     ros_domain: int | None = None
+    # What the agent may reach, over a free session's defaults (nothing
+    # limited): config.schema.Limits field -> value.
+    limits: dict | None = None
 
 
 @dataclass
@@ -66,21 +69,25 @@ class LiveRobot:
     robot_log: Path | None = None
 
 
-def check_agent_cli(sandbox: str, adapter, backend: dict, robot: str) -> None:
-    """Refuse a sandbox whose agent CLI is not the pinned version, or is
+def check_agent_cli(sandbox: str, adapter, backend: dict, robot: str) -> str | None:
+    """The sandbox's agent CLI version (None if the CLI cannot say).
+
+    Refuses a sandbox whose agent CLI is not the pinned version, or is
     older than every flag the adapter passes needs, before the agent
     starts: an old CLI otherwise exits on the first unknown flag and the
     session shows only a disconnected agent. The error says how to
     rebuild the sandbox."""
+    found = None
+    if adapter.version_probe():
+        found = subprocess.run(["docker", "exec", sandbox, "bash", "-c", adapter.version_probe()],
+                               capture_output=True, text=True, timeout=60).stdout.strip() or None
     check = adapter.sandbox_cli_check()
     if not check:
-        return
+        return found
     r = subprocess.run(["docker", "exec", sandbox, "bash", "-c", check[1]],
                        capture_output=True, text=True, timeout=60)
     if r.returncode == 0:
-        return
-    found = subprocess.run(["docker", "exec", sandbox, *adapter.version_argv],
-                           capture_output=True, text=True, timeout=60).stdout.strip()
+        return found
     want = f"version {adapter.version}" if adapter.version else f"{adapter.min_version} or newer"
     pin = f"@{adapter.version}" if adapter.version else ""
     if backend.get("sandbox_install"):
@@ -141,21 +148,24 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                          hint="use --workspace <new-empty-directory>; existing files are retained")
     state.reserve(request.name, request.home)
     workdir.mkdir(parents=True, exist_ok=True)
+    limits = Limits(**(request.limits or {})).model_dump()
     network = ensure_internal_network()
-    proxy_url = ensure_proxy(network, whitelists={
-        adapter.name: agents.fact_sha256(adapter, "whitelist")})
+    # A proxy only when the agent may reach no more than its model
+    # service; otherwise the sandbox goes out directly.
+    proxy_url = (ensure_proxy(network, "\n".join(adapter.whitelist))
+                 if limits["internet"] == "model-only" else "")
     # cfg["agent"] is already the chosen agent's (compose took --agent):
     # its model, version, login directory and options are that agent's.
     model = request.model or cfg_agent.get("model") or adapter.default_model
     if key_file is not None:
         print(f"[up] {adapter.name}: explicitly selected API authentication", flush=True)
-        profile = adapter.prepare_api_profile(key_file, sandbox_dir / "profile")
+        profile = adapter.prepare_api_profile(key_file, sandbox_dir / "profile", limits=limits)
     else:
         creds_home = agents.resolve_profile(adapter, cfg_agent.get('credentials_dir'),
                                             paths.credentials_dir(request.home) / adapter.name,
                                             user_home=Path.home(), environment=os.environ, link=True)
         print(f"[up] {adapter.name} native login: {creds_home} (source: {creds_home.resolve()})", flush=True)
-        profile = adapter.prepare_profile(creds_home, sandbox_dir / "profile")
+        profile = adapter.prepare_profile(creds_home, sandbox_dir / "profile", limits=limits)
     if cfg["machine"]["backend"]["kind"] == "sim":
         print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
               flush=True)
@@ -163,8 +173,8 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         print(f"[up] sandbox {sandbox_name}; waiting for the robot's ROS 2 graph", flush=True)
     try:
         _, machine, _ = bring_up(
-            cfg, workdir, sim_name, sandbox_name, suite, task_id, network, proxy_url,
-            profile.mounts, request.ros_domain,
+            cfg, workdir, sim_name, sandbox_name, suite, task_id, network,
+            internet_access(proxy_url), profile.mounts, request.ros_domain,
             robot_log=workdir / "robot.log", home=request.home)
     except Exception as e:  # noqa: BLE001
         # The sandbox directory stays for the read below; openrua clean sweeps it.
@@ -172,9 +182,12 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                                hint=f"read {workdir / 'robot.log'}") from e
 
     try:
-        check_agent_cli(sandbox_name, adapter, cfg["machine"]["backend"], composed.robot)
+        cli_version = check_agent_cli(sandbox_name, adapter, cfg["machine"]["backend"],
+                                      composed.robot)
         (sandbox_dir / "provenance.json").write_text(json.dumps(
-            session_provenance(_robot_file(composed.robot), cfg, paths.code_root()),
+            session_provenance(_robot_file(composed.robot), cfg, paths.code_root(),
+                               agent_cli={"name": adapter.name, "version": cli_version},
+                               limits=limits),
             indent=2) + "\n")
     except BaseException:
         stop_resources(sandbox_name, machine.shutdown)
@@ -196,6 +209,7 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                    backend=cfg["machine"]["backend"]["kind"],
                    network=network,
                    proxy=agent_proxy_url(cfg["machine"]["backend"], proxy_url),
+                   limits=limits,
                    agent=adapter.name,
                    agent_spec=cfg_agent["name"], agent_version=cfg_agent.get("version"),
                    model=model,

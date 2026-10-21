@@ -40,9 +40,7 @@ instruction_file: AGENTS.md
 #   gpt-5.3-codex-spark high). high, the same level the claude-code manifest
 #   pins, so runs across agents share one setting; a model's own default
 #   is a config override.
-# - web_search: disabled | cached | live; disabled because server-side
-#   search cannot be routed through the proxy
+# (Web search is one of a run's limits, not a knob here.)
 default_options:
   effort: high
-  web_search: disabled
 entry_point: codex

@@ -27,7 +27,7 @@ from openrua.proxy.up import ensure as ensure_proxy
 from openrua.runner import lock
 from openrua.runner import record
 from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
-                                    start_episode)
+                                    internet_access, start_episode)
 from openrua.runner.preflight import run_preflight
 from openrua.sandbox import workspace
 from openrua.sandbox.down import down as sandbox_down
@@ -38,10 +38,10 @@ DNS_LABEL_MAX = 63  # RFC 1035, single label
 
 def _sandbox_version(sandbox_name: str, agent) -> str | None:
     """The agent CLI's version as the sandbox reports it, or None."""
-    if not agent.version_argv:
+    if not agent.version_probe():
         return None
     try:
-        r = subprocess.run(["docker", "exec", sandbox_name, *agent.version_argv],
+        r = subprocess.run(["docker", "exec", sandbox_name, "bash", "-c", agent.version_probe()],
                            capture_output=True, text=True, timeout=60)
         return r.stdout.strip() or None
     except (OSError, subprocess.TimeoutExpired):
@@ -223,8 +223,10 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         "containers": {"sim": sim_name, "sandbox": sandbox_name},
         "ros_domain": ros_domain,   # None until bring_up picked one
     }
-    proxy_url = ensure_proxy(network, whitelists={
-        agent.name: agents.fact_sha256(agent, "whitelist")})
+    limits = cfg["protocol"]["limits"]
+    rec["limits"] = limits
+    proxy_url = (ensure_proxy(network, "\n".join(agent.whitelist))
+                 if limits["internet"] == "model-only" else "")
     if account_alias:
         rec["account_alias"] = account_alias
     creds_home = None if key_file is not None else agents.resolve_profile(agent, credentials_dir or cfg.get('agent', {}).get('credentials_dir'),
@@ -235,8 +237,10 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     # profile need not carry credentials then (see Agent.prepare_profile).
     profile_dir = paths.sandbox_dir(stem, home) / "profile"
     try:
-        profile = (agent.prepare_api_profile(key_file, profile_dir) if key_file is not None else
-                   agent.prepare_profile(creds_home, profile_dir, require_credentials=token_file is None))
+        profile = (agent.prepare_api_profile(key_file, profile_dir, limits=limits)
+                   if key_file is not None else
+                   agent.prepare_profile(creds_home, profile_dir, limits=limits,
+                                         require_credentials=token_file is None))
     except BaseException:
         held.release()
         raise
@@ -260,7 +264,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         # robot fails, so sandbox_live flips only on success.
         config_path, machine, rec["ros_domain"] = bring_up(
             cfg, trial_dir, sim_name, sandbox_name, task_suite, task_id,
-            network, proxy_url, profile.mounts,
+            network, internet_access(proxy_url), profile.mounts,
             ros_domain, robot_log=trial_dir / "bridge.log", home=home,
             record_cameras=record_cameras, record_every=record_every,
             record_size=record_size)
@@ -286,6 +290,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             "task_language": task_language,
             "active_wall_clock_min": wall_cap_min,
             "proxy": agent_proxy_url(cfg["machine"]["backend"], proxy_url),
+            "limits": limits,
             "script": script,
             "token_file": token_file,
             "home": home,

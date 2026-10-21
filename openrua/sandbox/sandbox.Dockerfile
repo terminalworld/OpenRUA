@@ -35,9 +35,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root robot account; /workspace is the per-container mounted volume
-# (the cwd and the only persistent surface: what the agent writes there
-# is the session's record). $HOME is the account's own /home/robot, so
-# tool caches and logs (.ros, .cache, .npm) stay out of the record.
+# (the user's $HOME and cwd; its only persistent surface, so whatever the
+# agent writes under ~ is in the session's record). Logs and caches the
+# tools write on their own go to /home/robot instead, through each tool's
+# own variable (ROS_HOME, XDG_CACHE_HOME, npm_config_cache), and stay out
+# of the record.
 # ROBOT_UID must match the host user (volume file ownership, caller
 # cleanup; a mismatched uid cannot read 0600 mounted files); openrua
 # build sandbox passes the current uid. The base image's stock `ubuntu`
@@ -59,7 +61,10 @@ RUN mkdir -p /opt/openrua/overlays \
     && echo "source /etc/openrua-ros.sh" >> /etc/bash.bashrc
 USER robot
 WORKDIR /workspace
-ENV HOME=/home/robot
+ENV HOME=/workspace \
+    ROS_HOME=/home/robot/.ros \
+    XDG_CACHE_HOME=/home/robot/.cache \
+    npm_config_cache=/home/robot/.npm
 ENV BASH_ENV=/etc/openrua-ros.sh
 # The core ROS environment is also set as image ENV so non-bash paths
 # (sh/dash via subprocess(shell=True), direct exec) are provisioned
