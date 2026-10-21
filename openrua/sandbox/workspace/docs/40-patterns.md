@@ -43,7 +43,7 @@ retreat, verify with a fresh frame.
 | gripper "closed" but nothing held | closed on air | reopen, re-approach lower/centered, use the wrist camera |
 | image looks stale | pulled an old frame | snapshot again after the motion completed |
 | a port seems missing | wrong name assumed | `ros2 topic list` / `ros2 action list`, then `ros2 topic info` |
-| machine.yaml disagrees with the graph | the declared fact is wrong | work with what the graph shows; add the difference to `machine-discrepancies.yaml` (10-machine.md §1) |
+| machine.yaml disagrees with the graph | the config has drifted | the live graph is authoritative; log the discrepancy in `machine-discrepancies.yaml` (10-machine.md §1) |
 
 ## Session-runtime facts
 

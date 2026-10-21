@@ -31,12 +31,14 @@ or [30-action.md](30-action.md). The manifest is an index of the ROS
 graph; `ros2 topic list` / `ros2 action list` show the same ports live
 (and anything beyond the manifest).
 
-The manifest is what the machine's owner declared, and an owner can be
-wrong. Check a fact against the running system before relying on it
-(`ros2 topic info`, `ros2 interface show`, `ros2 param get`, a frame, a
-reading). When they disagree, work with what the system shows and
-record the difference in `machine-discrepancies.yaml` at the workspace
-root, one entry per fact, so a person can correct the config:
+The manifest is the robot's configuration as its integrator wrote it,
+and like any robot config it can drift from the running system. A quick
+check against the live graph before depending on a value is cheap:
+`ros2 topic info`, `ros2 interface show`, `ros2 param get`, a TF lookup,
+a sensor reading. Where they disagree, the live graph is authoritative;
+work with what it shows and log the discrepancy in
+`machine-discrepancies.yaml` at the workspace root, one entry per value,
+for review and merging into the config:
 
 ```yaml
 - key: sensors[kind=camera, name=d405].depth     # where in machine.yaml
@@ -46,7 +48,7 @@ root, one entry per fact, so a person can correct the config:
     topic publishes 16UC1 at 30 Hz
 ```
 
-Leave `machine.yaml` itself as it is.
+`machine.yaml` itself is regenerated from the config at every bring-up.
 
 ## 2. Software stack
 
