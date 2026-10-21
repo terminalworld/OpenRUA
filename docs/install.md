@@ -326,12 +326,20 @@ does not stop existing sessions.
 
 ## Update or remove
 
+`openrua` checks PyPI for a newer OpenRUA at most once a day and, when
+there is one, asks before the session starts: update now, skip, or skip
+until the next version. Updating runs the upgrade your installer uses
+(`pip install -U openrua`, `uv tool upgrade openrua` or `pipx upgrade
+openrua`); run `openrua` again to start the new version. `openrua up`
+and `openrua exec` print one line instead of asking. An install from a
+source checkout is never offered one: `git pull` updates it.
+
 The agent CLIs live in the sandbox image, so a newer CLI comes with a
 rebuild of that image. `openrua` looks for one at most once a day and,
 when the sandbox's CLI is older, asks before the session starts: update
 now (rebuild the sandbox), skip, or skip until the next version. A CLI
-older than OpenRUA can run must be updated to start. `openrua up` prints
-one line instead of asking; a pinned version
+older than OpenRUA can run must be updated to start. `openrua up` and
+`openrua exec` print one line instead of asking; a pinned version
 (`agent.version`) is never offered an update; a trial never changes its
 CLI. Inside the sandbox the CLIs' own updaters are off.
 

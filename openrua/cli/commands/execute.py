@@ -19,6 +19,7 @@ import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 
+from openrua.cli import updates
 from openrua.config import compose, paths
 from openrua.errors import UsageError
 from openrua.runner.limits import LIMITS, add_limit_options
@@ -64,6 +65,7 @@ def run(args) -> int:
         runs_root=args.runs_root, run_id=run_id, ros_domain=args.ros_domain,
         credentials_dir=None, account_alias=None, script=None, token_file=None,
         **{key: getattr(args, key) for key in LIMITS})
+    updates.notice(composed, home)
     print(f"[exec] {label}: {suite}:{task_id} seed {args.seed}; "
           f"recorded under {Path(args.runs_root or 'runs') / label / run_id}", flush=True)
     return run_set(composed.cfg, _source(composed), trials, home, label)

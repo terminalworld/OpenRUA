@@ -1,4 +1,4 @@
-"""``openrua run`` is gone and says so; bare ``openrua build`` builds all three images."""
+"""Bare ``openrua build`` builds all three images; a real robot opens without a benchmark."""
 
 from __future__ import annotations
 
@@ -7,15 +7,7 @@ import pytest
 from openrua.cli import build_parser
 from openrua.cli.commands import build as build_cmd
 from openrua.cli.commands import up as up_cmd
-from openrua.cli.commands import run as run_cmd
 from openrua.runner import live, live_state
-
-
-def test_run_is_removed_and_says_where_its_uses_went(tmp_path):
-    args = build_parser().parse_args(["--home", str(tmp_path), "run", "panda", "hello"])
-    with pytest.raises(run_cmd.UsageError) as caught:
-        args.fn(args)
-    assert "openrua exec" in caught.value.hint and "openrua agent" in caught.value.hint
 
 
 def test_bare_build_builds_the_agent_images_and_the_default_benchmarks(monkeypatch, tmp_path, capsys):
