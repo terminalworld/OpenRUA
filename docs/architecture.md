@@ -27,18 +27,18 @@ Its queue orders user instructions, not individual robot movements.
 
 | Unit | Role | Front door |
 |---|---|---|
-| `openrua/robot/` | the machine, provided by a backend (`up()` dispatches on `machine.backend.kind`). `sim/`: image build, container up/down, the host-side client, and `bridge/`, the simulated robot's own software (`environments/`, `engines/`, `ros/`, `rpc.py`, `main.py`). `real/`: an optional launch command (on the host or in a driver image), a handle that waits for the graph, and `probe.py` (a profile draft from the graph). | `python -m openrua.robot.sim.build` |
+| `openrua/robot/` | the machine, provided by a backend (`up()` dispatches on `machine.backend.kind`). `sim/`: image build, container up/down, the host-side client, and `bridge/`, the simulated robot's own software (`environments/`, `engines/`, `ros/`, `rpc.py`, `main.py`). `real/`: an optional launch command (on the host or in a driver image), `build.py` (a driver image from the directory the config names), a handle that waits for the graph, and `probe.py` (a profile draft from the graph). | `python -m openrua.robot.sim.build` |
 | `openrua/sandbox/` | the agent's terminal: an Ubuntu + ROS 2 container with the agent installed and `workspace/` seeded (README, `machine.yaml`, four docs, a few tools). | `python -m openrua.sandbox` |
-| `openrua/proxy/` | a whitelist HTTP proxy, the sandbox's only route out. | `python -m openrua.proxy` |
+| `openrua/proxy/` | a whitelist HTTP proxy, the sandbox's only route out when a run limits the agent to its model service; one standing proxy per whitelist. | `python -m openrua.proxy` |
 | `openrua/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, the module each names under `entry_point`), the launcher, credentials staging, the prompts. | `python -m openrua.agents launch` |
-| `openrua/runner/` | composition and ownership: `live.py` opens robot resources, `live_state.py` retains their state, `managed.py` adds a native conversation and shared execution owner. Trial execution stays separate: `main.py` (`openrua bench`), `bringup.py` (one resolved config to sandbox + robot), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua serve`, `run`, `up`, `bench` |
+| `openrua/runner/` | composition and ownership: `live.py` opens robot resources, `live_state.py` retains their state, `managed.py` adds a native conversation and shared execution owner. Trial execution stays separate: `main.py` (`openrua bench`), `limits.py` (the limit flags), `bringup.py` (one resolved config to sandbox + robot, and the sandbox's way out), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua serve`, `run`, `up`, `bench` |
 | `openrua/demo/` | a video from a recorded trial's files (`frames/`, `ops.jsonl`): `compose.py` renders the terminal beside the cameras. Reads files, imports `errors` only; its libraries are the `demo` extra. | `openrua demo` |
 | `openrua/sessions/` | shared user-message queue, durable events and native connection ownership through injected storage/transport contracts; independent of robot task planning. See [sessions.md](sessions.md). | `serve`, `chat`, `session` (experimental) |
 | `openrua/web/` | bundled browser assets, supplied to the HTTP server by its caller. The browser consumes the session API. | `openrua session --name NAME web` |
 | `openrua/artifacts.py` | bounded, read-only workspace file access; the owner supplies the root and reader to the HTTP server. | file operations in the session API |
 | `openrua/terminal/` and `ui/terminal/` | Pi launcher and frontend. The launcher receives configuration/history operations as callbacks; chat consumes the same local session API. Private temporary files carry screen input/output. Prepared JS resources ship in the wheel; the runtime is included in the default pip installation. | `openrua` |
 | `openrua/cli/` | the command line: one module per verb under `commands/` including discovery, builds, native sessions, shared chat, trials, and cleanup. `output.py` formats output; `state.py` retains compatibility imports for resource state. | `openrua` |
-| `openrua/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, login, the user directory), `report.py`. | `openrua doctor` |
+| `openrua/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, a real robot's driver images, login, the user directory), `report.py`. | `openrua doctor` |
 
 Shared support modules, used only by the layers permitted by the import
 contracts; none is imported by the simulator bridge:
@@ -63,6 +63,7 @@ session events; benchmark artifacts remain under `runs/`.
 openrua/configs/{robots,simulators,benchmarks,agents}/   bundled declarations, ship in the wheel
 openrua/plugins/agents/, openrua/robot/sim/bridge/{environments,engines}/   the code bundled entry_points name
 openrua-sim-<name>, openrua-sandbox-<distro>, openrua-proxy   the images (openrua build): a simulator's whole environment, the agent's terminal, the proxy
+openrua-proxy-<hash>, openrua-internal, openrua-internet  standing proxies (one per whitelist), the sandboxes' internal network, the routed network a simulated robot's sandbox joins for an open internet
 ~/.openrua/                                             the user directory ($OPENRUA_HOME, --home); written by the tool, not by hand
   config.yaml                                            your defaults (openrua config set)
   credentials/<agent>/                                   login profiles

@@ -1,5 +1,62 @@
 # Changelog
 
+## 0.12.0
+
+The sandbox and the session around a real robot, from the same first
+real-robot day.
+
+- **Agent CLI versions**: Claude Code 2.1.198 and later require Node 22;
+  the manifests installed Node 20, so npm quietly installed 2.1.197,
+  which exits on `--autocompact`. Both manifests install Node 22. An
+  unpinned build installs the release current at build time (it no
+  longer reuses an older build's layer), prints each CLI's version, and
+  is checked under a candidate tag before it replaces the image. A
+  manifest may name `min_version` (Claude Code: 2.1.251); a build, a
+  session or a trial with an older CLI is refused with the rebuild
+  command. `doctor`'s rebuild hint carries a configured pin.
+- **A robot's own interfaces in the sandbox**: `backend.sandbox_install`
+  installs what the agent needs to speak the robot (vendor messages, the
+  ros2 control CLI) when `openrua build sandbox --robot <file>` builds
+  that robot's own sandbox image; a ROS workspace under
+  `/opt/openrua/overlays/<name>` is sourced in every shell.
+- **A robot's own driver images**: `backend.build` names the images a
+  launch command uses and the directories they are built from, as docker
+  compose's `build:`; `openrua build driver --robot <file>` builds them.
+  Starting a session builds what is missing: the driver images, and the
+  robot's own sandbox when it declares `sandbox_install`. `doctor` checks
+  the driver images.
+- **What the agent can reach**: three limits, `internet` (`open` or
+  `model-only`), `web_search` and `account_connectors` (the claude.ai
+  connectors and synced skills and plugins, the ChatGPT apps). A session
+  you start (`openrua`, `run`, `up`, `serve`) sets none of them: no proxy
+  starts and the agent CLI behaves as you have it set up; a simulated
+  robot's sandbox reaches the internet through `openrua-internet`, a
+  network only OpenRUA's sandboxes join. A benchmark trial applies its
+  config's `protocol.limits`, by default all three. `--internet`,
+  `--[no-]web-search` and `--[no-]account-connectors` set them on any of
+  these commands. Codex's `web_search` option is replaced by the limit.
+  Codex's app-server runs with full access and no longer warns about
+  bubblewrap.
+- **Proxy**: started only for `internet: model-only`, one standing proxy
+  per whitelist (`openrua-proxy-<hash of its hosts>`). The image holds no
+  whitelist; each proxy is given its hosts when it starts, so switching
+  agents needs no rebuild and never replaces a proxy in use. `openrua
+  build proxy` takes no `--agent`; `doctor` only warns when the image is
+  missing.
+- **The session record**: `$HOME` is `/workspace` again, so whatever the
+  agent writes under `~` stays in the record; ROS logs and the pip and
+  npm caches go to `/home/robot` (`ROS_HOME`, `XDG_CACHE_HOME`,
+  `npm_config_cache`). A session writes `provenance.json` (OpenRUA
+  version and commit, the robot config's hash and repository commit,
+  images, the agent CLI's version, the limits).
+- **Real robots**: no saved simulator or benchmark default applies to a
+  real robot. A launch command runs in its file's directory
+  (`backend.cwd`); shutdown sends SIGINT, SIGTERM and SIGKILL with
+  `backend.stop_timeout_s` between them. When the robot's resources end
+  on their own, the session says so, records it and holds the queue.
+- **Pauses say why** in the terminal and the browser; leaving the
+  terminal says the session (and robot) keeps running and how to end it.
+
 ## 0.11.0
 
 What a machine is now comes from its config, not from OpenRUA's

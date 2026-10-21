@@ -243,8 +243,10 @@ function render() {
     `${state.messages.length} messages · ${queued.length} queued · ${label.toLowerCase()}`;
   $("execution-description").textContent = state.closed
     ? "Resources stopped. Conversation and workspace retained."
-    : state.paused
-      ? "Queued instructions are retained. Review them before continuing."
+    : state.robot && state.robot.status === "stopped"
+      ? `The robot stopped: ${state.robot.reason}. Queued instructions are retained.`
+      : state.paused
+      ? `Paused${state.pause_reason ? `: ${state.pause_reason}` : ""}. Queued instructions are retained. Review them before continuing.`
       : state.active
         ? "The agent is working. New messages will wait their turn."
         : state.connected

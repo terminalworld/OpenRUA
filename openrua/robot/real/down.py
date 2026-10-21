@@ -15,7 +15,11 @@ def container_name(name: str) -> str:
     return f"{name}-driver"
 
 
-def down(proc: subprocess.Popen | None, container: str | None = None) -> None:
+def down(proc: subprocess.Popen | None, container: str | None = None,
+         stop_timeout_s: float = 30.0) -> None:
+    """Stop the launch process: SIGINT, then SIGTERM, then SIGKILL, waiting
+    ``stop_timeout_s`` after each of the first two, so a driver that
+    releases its robot before exiting has the time it declared."""
     failures = []
     if container:
         result = subprocess.run(["docker", "rm", "-f", container], capture_output=True, text=True)
@@ -23,13 +27,17 @@ def down(proc: subprocess.Popen | None, container: str | None = None) -> None:
             failures.append(f"could not remove {container}: {result.stderr.strip()}")
     if proc is not None and proc.poll() is None:
         try:
-            try:
-                os.killpg(proc.pid, signal.SIGINT)
-            except ProcessLookupError:
-                pass
-            try:
-                proc.wait(timeout=30)
-            except subprocess.TimeoutExpired:
+            for sig in (signal.SIGINT, signal.SIGTERM):
+                try:
+                    os.killpg(proc.pid, sig)
+                except ProcessLookupError:
+                    break
+                try:
+                    proc.wait(timeout=stop_timeout_s)
+                    break
+                except subprocess.TimeoutExpired:
+                    continue
+            if proc.poll() is None:
                 try:
                     os.killpg(proc.pid, signal.SIGKILL)
                 except ProcessLookupError:

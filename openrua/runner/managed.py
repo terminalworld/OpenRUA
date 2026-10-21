@@ -25,12 +25,30 @@ class ManagedSession:
         self._ended = False
         self._native_stopped = False
         self._robot_stopped = False
+        self._watch: asyncio.Task | None = None
+
+    def watch_robot(self, interval_s: float = 2.0) -> None:
+        """Notice when the robot's resources end under the session (a
+        driver that crashed after an emergency stop, say): say so in the
+        service log, record it in the session and hold the queue."""
+        async def watch():
+            while True:
+                await asyncio.sleep(interval_s)
+                reason = self.robot.stopped()
+                if reason:
+                    where = f"; read {self.robot.robot_log}" if self.robot.robot_log else ""
+                    print(f"[robot] {reason}{where}", flush=True)
+                    self.execution.session.robot_stopped(reason)
+                    return
+        self._watch = asyncio.create_task(watch())
 
     async def end(self) -> None:
         """Stop owned execution resources and retain all conversation materials."""
         async with self._end_lock:
             if self._ended:
                 return
+            if self._watch is not None:
+                self._watch.cancel()
             errors = []
             if not self._native_stopped:
                 try:
@@ -66,7 +84,7 @@ async def start(request: RobotRequest) -> ManagedSession:
         facts = live_state.load(request.name, request.home)
         adapter = agents.get(facts.get("agent_spec", facts["agent"]), request.home, version=facts.get("agent_version"))
         conversation = adapter.conversation(facts["sandbox"], facts["model"], facts["proxy"],
-                                            options=facts["options"])
+                                            options=facts["options"], limits=facts.get("limits"))
         if conversation is None:
             raise UnavailableError(
                 f"{adapter.name} does not support structured conversations",
@@ -78,7 +96,9 @@ async def start(request: RobotRequest) -> ManagedSession:
             return await StdioTransport.start(conversation.argv, directory / "agent.stderr.log")
         execution = Execution(session, conversation, transport, directory / "conversation.lock")
         await execution.start()
-        return ManagedSession(robot, execution, store, WorkspaceFiles(Path(facts["workspace"])))
+        managed = ManagedSession(robot, execution, store, WorkspaceFiles(Path(facts["workspace"])))
+        managed.watch_robot()
+        return managed
     except BaseException:
         try:
             if execution is not None:

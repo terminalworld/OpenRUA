@@ -38,11 +38,13 @@ def test_pins_come_from_the_caller_not_the_manifest():
     latest = agents.get("claude-code")
     assert latest.version is None and "{version}" not in latest.install
     assert "claude-code@" not in latest.install          # the current release
-    assert latest.sandbox_cli_check() is None            # nothing to check against
-    pinned = agents.get("claude-code@2.1.226")
-    assert pinned.version == "2.1.226" and "claude-code@2.1.226" in pinned.install
+    # unpinned, the sandbox CLI is still checked against the adapter's floor
+    name, cmd = latest.sandbox_cli_check()
+    assert name == "sandbox_cli_version" and latest.min_version in cmd
+    pinned = agents.get("claude-code@2.1.301")
+    assert pinned.version == "2.1.301" and "claude-code@2.1.301" in pinned.install
     name, cmd = pinned.sandbox_cli_check()
-    assert name == "sandbox_cli_matches_pin" and "2.1.226" in cmd
+    assert name == "sandbox_cli_version" and '"$v" = "2.1.301"' in cmd
     assert agents.get("claude-code", version="2.1.100").version == "2.1.100"
     assert agents.split_pin("codex@0.153.4") == ("codex", "0.153.4")
 
@@ -50,11 +52,27 @@ def test_pins_come_from_the_caller_not_the_manifest():
 def test_preflight_includes_version_checks():
     from openrua.runner.preflight import build_checks
     cfg = load_config(LIBERO_CFG)
-    names = [n for n, _ in build_checks(cfg, agents.get("claude-code@2.1.226"))]
-    assert "sandbox_cli_matches_pin" in names
+    names = [n for n, _ in build_checks(cfg, agents.get("claude-code@2.1.301"))]
+    assert "sandbox_cli_version" in names
     assert "credentials_readable" in names
-    # without a pin there is nothing to check the sandbox CLI against
-    assert "sandbox_cli_matches_pin" not in [n for n, _ in build_checks(cfg, agents.get("claude-code"))]
+    # a manifest with neither a pin nor a floor has nothing to check against
+    plain = agents.get("codex")
+    assert plain.min_version is None
+    assert "sandbox_cli_version" not in [n for n, _ in build_checks(cfg, plain)]
+
+
+def test_version_check_takes_the_pin_and_the_floor():
+    import subprocess
+    agent = agents.get("claude-code")
+    _, cmd = agent.sandbox_cli_check()
+    def run(version):
+        fake = f"claude() {{ echo '{version} (Claude Code)'; }}; export -f claude; "
+        return subprocess.run(["bash", "-c", fake + cmd], capture_output=True).returncode
+    assert run("2.1.301") == 0 and run(agent.min_version) == 0
+    assert run("2.1.197") != 0                       # exits on --autocompact
+    pinned = agents.get("claude-code@2.1.301")
+    _, cmd = pinned.sandbox_cli_check()
+    assert run("2.1.301") == 0 and run("2.1.302") != 0
 
 
 # -------------------------------------------------- credentials pipeline
@@ -239,16 +257,15 @@ def test_no_direct_hooks_imports_outside_the_registry():
     assert not offenders, offenders
 
 
-def test_build_takes_install_and_whitelist_from_the_manifests(tmp_path):
-    from openrua.cli.commands.build import (default_agent, preinstall_for,
-                                            whitelist_for)
+def test_build_takes_the_install_from_the_manifests(tmp_path):
+    # The whitelist is no longer built into an image: a proxy gets its
+    # agent's hosts when it starts (proxy.up), so build reads installs only.
+    from openrua.cli.commands import build
+    from openrua.cli.commands.build import default_agent, preinstall_for
     a = agents.get("claude-code")
     assert default_agent(tmp_path) == "claude-code"      # the package default
     assert preinstall_for(None, tmp_path) == a.install
-    assert whitelist_for(["claude-code"], tmp_path).splitlines() == list(a.whitelist)
-    # several --agent: the union, each line once
-    assert whitelist_for(["claude-code", "claude-code"], tmp_path).splitlines() == \
-        list(a.whitelist)
+    assert not hasattr(build, "whitelist_for")
     # the user's defaults file picks the default agent
     (tmp_path / "config.yaml").write_text("agent: codex\n")
     assert default_agent(tmp_path) == "codex"
@@ -576,3 +593,75 @@ def test_collect_on_an_empty_profile_keeps_nothing(tmp_path):
     for listed in agents.available():
         agent = listed.agent
         assert agent.collect(tmp_path / "empty", tmp_path / "trial") == [], agent.name
+
+
+def test_claude_profile_keeps_the_account_extras_out_when_limited(tmp_path):
+    # The operator's claude.ai connectors, synced skills and plugins were
+    # loaded into a robot's sandbox; a run limited on account_connectors
+    # turns them off in the session profile and keeps the operator's other
+    # settings.
+    import json
+    source = tmp_path / "login"
+    source.mkdir()
+    (source / ".credentials.json").write_text("{}")
+    (source / "settings.json").write_text(json.dumps({"theme": "dark"}))
+    agent = agents.get("claude-code")
+    limits = {"account_connectors": False}
+    prepared = agent.prepare_profile(source, tmp_path / "profile", limits=limits)
+    settings = json.loads((prepared.directory / "settings.json").read_text())
+    assert settings["theme"] == "dark" and settings["disableClaudeAiConnectors"] is True
+    assert settings["syncClaudeAiSkills"] is False and settings["syncClaudeAiPlugins"] is False
+    argv = agent.conversation("sandbox", "model", "http://proxy", limits=limits).argv
+    assert "ENABLE_CLAUDEAI_MCP_SERVERS=false" in argv
+
+
+def test_claude_profile_is_the_users_own_when_not_limited(tmp_path):
+    # A free session: the account's extras come along as the user has them.
+    import json
+    source = tmp_path / "login"
+    source.mkdir()
+    (source / ".credentials.json").write_text("{}")
+    (source / "settings.json").write_text(json.dumps({"theme": "dark"}))
+    agent = agents.get("claude-code")
+    prepared = agent.prepare_profile(source, tmp_path / "profile")
+    settings = json.loads((prepared.directory / "settings.json").read_text())
+    assert settings == {"theme": "dark"}
+    argv = agent.conversation("sandbox", "model", "").argv
+    assert not any(a.startswith("ENABLE_CLAUDEAI_MCP_SERVERS") for a in argv)
+    assert "--disallowedTools" not in argv
+    assert not any(a.startswith(("HTTPS_PROXY", "HTTP_PROXY")) for a in argv)
+
+
+def test_claude_web_tools_follow_the_limit():
+    agent = agents.get("claude-code")
+    for argv in (agent.conversation("box", "m", "http://p", limits={"web_search": False}).argv,
+                 agent.launch_argv("box", "task", "m", 3, "http://p",
+                                   limits={"web_search": False}),
+                 agent.interactive_argv("box", "m", "http://p", limits={"web_search": False})):
+        i = argv.index("--disallowedTools")
+        assert argv[i + 1:i + 3] == ["WebSearch", "WebFetch"]
+    for argv in (agent.launch_argv("box", "task", "m", 3, "http://p",
+                                   limits={"web_search": True}),
+                 agent.interactive_argv("box", "m", "http://p")):
+        assert "--disallowedTools" not in argv
+
+
+def test_codex_runs_without_the_accounts_apps_when_limited():
+    codex = agents.get("codex")
+    limits = {"account_connectors": False, "web_search": False}
+    argv = codex.conversation("sandbox", "model", "http://proxy", limits=limits).argv
+    assert "features.apps=false" in argv and 'sandbox_mode="danger-full-access"' in argv
+    assert 'web_search="disabled"' in argv
+    for argv in (codex.launch_argv("box", "task", "m", 3, "http://p", limits=limits),
+                 codex.interactive_argv("box", "m", "http://p", limits=limits)):
+        assert "features.apps=false" in argv and 'web_search="disabled"' in argv
+
+
+def test_codex_left_unlimited_passes_its_users_own_config():
+    # A limit the run leaves open passes nothing: the CLI does what its
+    # user's own config.toml says.
+    argv = agents.get("codex").conversation("sandbox", "model", "").argv
+    assert "features.apps=false" not in argv
+    assert not any(a.startswith("web_search=") for a in argv)
+    assert not any(a.startswith(("HTTPS_PROXY", "HTTP_PROXY")) for a in argv)
+    assert 'sandbox_mode="danger-full-access"' in argv

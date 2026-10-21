@@ -41,9 +41,10 @@ Leaf module: imports nothing from openrua.
 
 from __future__ import annotations
 
+import hashlib
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class Strict(BaseModel):
@@ -87,6 +88,26 @@ class Clock(Strict):
         "commands; free_running is the sub-experiment switch")
 
 
+class Limits(Strict):
+    """What the agent may reach beyond the robot. The defaults are a free
+    session's (openrua, run, up): nothing is limited, and the agent CLI
+    behaves as its user has it set up."""
+    internet: Literal["open", "model-only"] = Field(
+        default="open", description="open: the sandbox reaches the internet; model-only: "
+        "only the agent's model service and login, through a whitelist proxy")
+    web_search: bool = Field(default=True, description="the agent CLI's own web search "
+                             "and web fetch tools")
+    account_connectors: bool = Field(
+        default=True, description="what the user's account brings beyond the CLI: its "
+        "connectors or apps, and the skills and plugins it syncs")
+
+
+# A benchmark trial's limits unless its protocol says otherwise: the agent
+# reaches its model service and nothing else, so its results rest on the
+# robot's own surface.
+TRIAL_LIMITS = Limits(internet="model-only", web_search=False, account_connectors=False)
+
+
 class Protocol(Strict):
     trials_per_task: int = Field(default=10, description="episodes per task")
     max_turns: int = Field(default=500, description="agent turns before the trial stops")
@@ -108,6 +129,20 @@ class Protocol(Strict):
     stall_probe_timeout_s: float = Field(
         default=600, description="seconds a simulator job may run before the trial is "
         "declared wedged")
+    limits: Limits = Field(default_factory=lambda: TRIAL_LIMITS.model_copy(),
+                           description="what the agent may reach during a trial "
+                           "(openrua bench), over the trial defaults (model-only, no "
+                           "web search, no account connectors); free sessions take "
+                           "none of these")
+
+    @field_validator("limits", mode="before")
+    @classmethod
+    def _over_trial_limits(cls, given):
+        """A key the benchmark leaves out keeps the trial's limit, not a free
+        session's."""
+        if isinstance(given, dict):
+            return {**TRIAL_LIMITS.model_dump(), **given}
+        return given
 
 
 # ----------------------------------------------------------------- agent
@@ -189,11 +224,15 @@ def sim_image(name: str) -> str:
     return f"openrua-sim-{name}"
 
 
-def sandbox_image(distro: str) -> str:
+def sandbox_image(distro: str, install: str | None = None) -> str:
     """The agent terminal image for a ROS 2 distro; openrua build sandbox
     tags it so. The sandbox runs the robot's distro: cross-distro
-    message definitions break service responses."""
-    return f"openrua-sandbox-{distro}"
+    message definitions break service responses. A robot that installs
+    its own interface packages gets an image of its own, named by a hash
+    of that install, so no other robot's sandbox is overwritten."""
+    if not install:
+        return f"openrua-sandbox-{distro}"
+    return f"openrua-sandbox-{distro}-{hashlib.sha256(install.encode()).hexdigest()[:8]}"
 
 
 class SimBackend(Strict):
@@ -247,15 +286,34 @@ class RealBackend(Strict):
                               "command runs in, on the host network (a vendor driver "
                               "pinned to its own ROS release); null = run it on the host")
     discovery: Discovery = Field(description="how the sandbox reaches the graph")
+    build: dict[str, str] = Field(
+        default_factory=dict, description="images the launch command uses that are "
+        "built from a directory here: image name -> directory holding its Dockerfile, "
+        "relative to this file (as docker compose's build:). A missing one is built "
+        "before a session starts; openrua build driver --robot <this file> rebuilds them")
+    cwd: str | None = Field(default=None, description="directory the launch command runs "
+                            "in on the host; default: the directory of the file declaring "
+                            "it, so the command may name its files relative to it")
+    stop_timeout_s: float = Field(default=30.0, description="seconds shutdown waits after "
+                                  "SIGINT, and again after SIGTERM, before SIGKILL: time "
+                                  "for a driver to release the robot")
+    sandbox_install: str | None = Field(
+        default=None, description="one-line shell chain, run as root when the sandbox "
+        "image is built, installing what the agent needs to speak this robot's "
+        "interfaces (vendor message definitions, a controller CLI); a ROS workspace "
+        "built under /opt/openrua/overlays/<name> is sourced in every shell. No double "
+        "quotes. Build it with openrua build sandbox --robot <this file>")
 
     sandbox_image: str | None = Field(default=None, description="agent terminal image; "
-                                      "default: openrua-sandbox-<ros_distro>")
+                                      "default: openrua-sandbox-<ros_distro>, with a hash "
+                                      "of sandbox_install when there is one")
 
     @model_validator(mode="after")
     def _derive(self):
         if self.image and not self.launch:
             raise ValueError("backend.image needs a launch command to run in it")
-        self.sandbox_image = self.sandbox_image or sandbox_image(self.ros_distro)
+        self.sandbox_image = self.sandbox_image or sandbox_image(self.ros_distro,
+                                                                 self.sandbox_install)
         return self
 
 
@@ -859,6 +917,10 @@ class AgentManifest(Strict):
                                   "an auth token")
     version_argv: list[str] | None = Field(default=None, description="command printing the "
                                            "agent's version")
+    min_version: str | None = Field(default=None, description="the oldest CLI release "
+                                    "that accepts every flag this adapter passes; a "
+                                    "sandbox with an older one is refused before the "
+                                    "agent starts")
     instruction_file: str | None = Field(default=None, description="the file the agent "
                                          "reads instructions from, e.g. AGENTS.md")
     default_options: dict[str, Any] = Field(default_factory=dict, description="knobs a "

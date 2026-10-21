@@ -3,6 +3,8 @@
 - ``up.py``    run the profile's launch command if it has one, return a
                handle that waits until the graph answers a probe
 - ``down.py``  stop a launch process started by ``up``
+- ``build.py`` build one of the images the launch command uses, from the
+               directory the config names for it (``backend.build``)
 
 There is no bridge: the agent reaches the graph the sandbox was pointed
 at (``machine.backend.discovery``), and the handle's rpc answers

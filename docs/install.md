@@ -39,10 +39,11 @@ required. Rendering recorded demo videos still needs the `demo` extra:
 
 ## The images
 
-OpenRUA runs three containers: the robot (when simulated), the sandbox
-(the agent's terminal: `ros2`, `rclpy`, the docs, the agent's CLI) and
-the proxy (the sandbox's only route out, limited to the agent's model
-API). **Prepare and start** in the product TUI automatically builds missing
+OpenRUA runs up to three containers: the robot (when simulated), the
+sandbox (the agent's terminal: `ros2`, `rclpy`, the docs, the agent's
+CLI) and, when a run limits the agent to its model service, the proxy
+(then the sandbox's only route out; see
+[what the agent can reach](#what-the-agent-can-reach)). **Prepare and start** in the product TUI automatically builds missing
 images for the selected environment and agent. Root `--cli` and `--gui` launches
 prepare them too. Browsing options or choosing **Save & check** never builds.
 First-time simulation builds can download large datasets. Progress is displayed,
@@ -55,7 +56,8 @@ still require prepared images), use:
 openrua build                            # sandbox + proxy for the default agent, and the default benchmark's simulator image
 openrua build --bench libero_pro         # one simulator image; --bench / --sim repeatable, --all: every bundled benchmark
 openrua build sandbox --agent codex      # --distro jazzy (default) | humble; --agent claude-code (default), repeatable
-openrua build proxy                      # the whitelist comes from the same manifests
+openrua build proxy                      # one image for every agent: each proxy gets its hosts when it starts
+openrua build driver --robot ./my-robot.yaml   # a real robot's driver images (backend.build)
 ```
 
 A simulated robot's image holds the whole environment: ROS 2, the
@@ -70,19 +72,70 @@ ROS base it stacks on (`openrua-sim-base-jazzy`); Docker's layer cache
 makes an unchanged rebuild a no-op. Sizes and what each image carries
 are in [simulation.md](simulation.md).
 
-The sandbox and proxy images are named after the ROS 2 distro
+The sandbox image is named after the ROS 2 distro
 (`openrua-sandbox-humble`), which a robot's declaration names once as
-`ros_distro`; they take the agent's install line and host whitelist
-from its manifest and carry a label per agent with the hash of what
-went in. A simulator image carries the fingerprint of the declaration
-it was rendered from. Those labels are how `doctor` later knows
-whether an image is stale.
+`ros_distro`; it takes the agent's install line from its manifest and
+carries a label per agent with the hash of what went in. A simulator
+image carries the fingerprint of the declaration it was rendered from.
+Those labels are how `doctor` later knows whether an image is stale.
+The proxy image holds no whitelist.
 
 A manifest pins no version, so `build sandbox` installs the agent's
-current release. To pin one, say so where you build and where you run:
-`openrua build sandbox --agent claude-code@2.1.226` and `agent.version:
-"2.1.226"` in the config; preflight then checks the sandbox's CLI
-against it, and every trial records the version it saw.
+release current at build time (it never reuses an older build's layer
+for that), and prints the version each CLI got. To pin one, say so where
+you build and where you run: `openrua build sandbox --agent
+claude-code@2.1.301` and `agent.version: "2.1.301"` in the config;
+`doctor` then suggests the pinned rebuild. A manifest may also name the
+oldest release that takes every flag its adapter passes (`min_version`;
+Claude Code's is 2.1.251): a build that produces an older one fails, and
+a session or trial on a sandbox with an older one is refused before the
+agent starts, with the rebuild command. Every trial records the version
+it saw.
+
+A robot whose agent needs interface packages beyond ROS's own (a vendor's
+message definitions, the ros2 control CLI) declares the install in its
+config (`backend.sandbox_install`) and gets a sandbox image of its own:
+`openrua build sandbox --robot ./my-robot.yaml`. A real robot whose
+launch command runs its driver in images of its own names them with the
+directories they are built from (`backend.build`); `openrua build driver
+--robot ./my-robot.yaml` builds them. **Prepare and start** builds both
+when they are missing. See [your-own-robot.md](your-own-robot.md).
+
+In the sandbox, `$HOME` is `/workspace`, so whatever the agent writes
+under `~` stays in the session's record. The logs and caches tools write
+on their own (ROS logs, the pip and npm caches) go to `/home/robot`
+through `ROS_HOME`, `XDG_CACHE_HOME` and `npm_config_cache`.
+
+## What the agent can reach
+
+Three limits say what the agent may reach beyond the robot:
+
+| limit | values | what it governs |
+|---|---|---|
+| `internet` | `open` \| `model-only` | the whole internet, or only the agent's model service and login, through a whitelist proxy |
+| `web_search` | `true` \| `false` | the agent CLI's own web search and web fetch tools |
+| `account_connectors` | `true` \| `false` | what your account brings beyond the CLI: its connectors or apps, and the skills and plugins it syncs |
+
+A session you start yourself (`openrua`, `run`, `up`, `serve`) sets none
+of them: the agent CLI behaves as you have it set up, no proxy starts,
+and the sandbox reaches the internet directly (a simulated robot's
+sandbox also joins `openrua-internet`, a network only OpenRUA's
+sandboxes are on, so no other container shares its ROS 2 traffic; a real
+robot's sandbox is on the host network). Turn one on for a session with
+`--internet model-only`, `--no-web-search` or `--no-account-connectors`.
+
+A benchmark trial (`openrua bench`) applies its config's
+`protocol.limits`, by default all three: the agent reaches its model
+service and nothing else. A benchmark config may change them, and the
+same flags on `openrua bench` override them for a run (`--internet open`,
+`--web-search`, `--account-connectors`). The run's `config.json` and each
+trial's record say which applied; a session's `provenance.json` records
+its limits and the agent CLI version the sandbox reported.
+
+With `internet: model-only`, OpenRUA starts one standing proxy per
+whitelist, named after the hash of its hosts (`openrua-proxy-<hash>`),
+with the hosts the agent's manifest lists. A different agent gets its own
+proxy; no rebuild is needed and a proxy in use is never replaced.
 
 ## Logging an agent in
 
@@ -256,33 +309,17 @@ openrua doctor panda --bench libero_pro
 Read-only. Each selected agent is checked against its own configured login
 directory and version, including when `--agent` selects a different agent from
 the benchmark default. Repeat `--agent` to check several agents. One row per fact: the container engine, each image and
-whether its label still matches the manifests (sandbox, proxy) or the
-declaration it was rendered from (the simulator image), the agent
-login, the user directory. The standing proxy container is checked separately:
-rebuilding its image does not update its running policy. Error and warning rows
-include repair guidance when available; the exit code is 1 only when an error is present, and on a pipe
-the report is JSON.
+whether its label still matches the manifests (the sandbox) or the
+declaration it was rendered from (the simulator image), a real robot's
+driver images, the agent login, the user directory. A missing proxy image
+is a warning, not an error: only runs limited to the model service use it.
+Error and warning rows include repair guidance when available; the exit
+code is 1 only when an error is present, and on a pipe the report is JSON.
 
-### Updating a shared proxy
-
-The proxy is shared by sessions. If `doctor` reports a manifest mismatch,
-rebuild the sandbox or proxy with the agents you need, repeating `--agent` to
-include more than one. For example:
-
-```sh
-openrua build proxy --agent claude-code --agent codex
-```
-
-A `proxy-container` warning can remain after this build because the existing
-container still uses its original image. End all sessions that use that proxy
-before removing it with `docker rm -f openrua-proxy`. Starting a new session then
-creates the proxy from the rebuilt image. OpenRUA never replaces a standing
-proxy automatically, since doing so would disconnect other sessions.
-
-If proxy network attachment fails, startup reports the Docker error instead
-of returning an unreachable address. Restore the Docker network or daemon
-access described in the error, then retry; the failure does not stop existing
-sessions.
+If a proxy cannot join the session's network, startup reports the Docker
+error instead of returning an unreachable address. Restore the Docker
+network or daemon access described in the error, then retry; the failure
+does not stop existing sessions.
 
 ## Update or remove
 

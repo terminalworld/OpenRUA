@@ -137,6 +137,7 @@ class Agent:
     token_env: str | None = None        # env var carrying a long-lived token, when
                                         # the CLI accepts one (passed by file)
     version_argv: tuple[str, ...] | None = None   # prints the CLI version (provenance)
+    min_version: str | None = None      # oldest CLI that takes this adapter's flags
     instruction_file: str | None = None  # the instructions file this CLI reads on
                                          # its own at start, if any; declared only,
                                          # nothing is seeded from it yet
@@ -158,8 +159,10 @@ class Agent:
                     token_file: str | None = None, **_: Any) -> list[str]:
         """The docker-exec command that runs the agent headless in
         ``sandbox`` on ``prompt``, as the ``robot`` user in /workspace,
-        with ``proxy`` as its only route out, writing its transcript to
-        stdout. ``options`` are the merged adapter knobs. ``session_id``
+        with ``proxy`` as its only route out (empty: no proxy), writing
+        its transcript to stdout. ``options`` are the merged adapter
+        knobs; ``limits`` the run's (see prepare_profile), passed as a
+        keyword by every launch hook. ``session_id``
         names the session so ``resume=True`` can continue it later.
         ``token_file`` is a host file holding ``<token_env>=<token>`` for
         docker's ``--env-file``."""
@@ -210,7 +213,8 @@ class Agent:
                          if getattr(type(self), h) is not getattr(Agent, h))
 
     # ---- optional hooks; each docstring states the default ----------
-    def prepare_api_profile(self, key_file: Path, dest: Path) -> PreparedProfile:
+    def prepare_api_profile(self, key_file: Path, dest: Path, *,
+                            limits: dict | None = None) -> PreparedProfile:
         """Prepare explicitly selected API auth using this CLI's native format.
 
         No native login source is supplied: API mode must not load subscription
@@ -243,8 +247,13 @@ class Agent:
         return ProfileLogin(True, "credential file is readable and nonempty")
 
     def prepare_profile(self, source: Path, dest: Path, *,
-                        require_credentials: bool = True) -> PreparedProfile:
+                        require_credentials: bool = True,
+                        limits: dict | None = None) -> PreparedProfile:
         """Prepare one session's native configuration without selecting auth.
+
+        ``limits`` (config.schema.Limits as a dict; an absent key is not
+        limited) is the run's: a CLI that reads one of them from its
+        profile gets it written here; the rest arrive at launch.
 
         Default: copy JSON settings and bind the declared credential file,
         preserving the existing profile contract. Override for other native
@@ -276,10 +285,30 @@ class Agent:
         """
         return None
 
+    def version_probe(self) -> str | None:
+        """Shell command printing the sandbox CLI's version, None without
+        ``version_argv``. HOME points away from the workspace: a CLI may
+        create its config directory under HOME when asked anything, and
+        the workspace is the session's record."""
+        if not self.version_argv:
+            return None
+        return "HOME=/tmp " + " ".join(self.version_argv)
+
     def sandbox_cli_check(self) -> tuple[str, str] | None:
-        """(name, bash) preflight check run inside the sandbox before the
-        agent starts (a version pin, say). Default: None, no check."""
-        return None
+        """(name, bash) check run inside the sandbox before the agent
+        starts: the CLI is the pinned version, and no older than
+        ``min_version``. None when there is nothing to check or no
+        ``version_argv`` to ask."""
+        if not self.version_argv or not (self.version or self.min_version):
+            return None
+        # No single quotes inside: the whole check is one bash -c '...'.
+        parts = [f'v="$({self.version_probe()} | grep -oE "[0-9]+([.][0-9]+)+" | head -1)"',
+                 '[ -n "$v" ]']
+        if self.version:
+            parts.append(f'[ "$v" = "{self.version}" ]')
+        if self.min_version:
+            parts.append(f'printf "%s\\n%s\\n" {self.min_version} "$v" | sort -V -C')
+        return ("sandbox_cli_version", "bash -c '" + " && ".join(parts) + "'")
 
     def login_hint(self, creds_home: Path) -> str:
         """One line telling the operator how to log this CLI in with

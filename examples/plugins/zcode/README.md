@@ -102,14 +102,13 @@ openrua doctor --agent "$plugin"
 The key file contains only the raw key and stays outside the repository and
 robot workspace. Doctor checks the file locally; it does not verify API balance.
 
-Build the sandbox and proxy for your robot's ROS distribution. The following
+Build the sandbox for your robot's ROS distribution. The following
 commands use **Humble**, as required by CaP-Bench, and include the existing
 Claude Code and Codex plugins so those agents remain available in the rebuilt
-shared images:
+shared image:
 
 ```bash
 openrua build sandbox --distro humble --agent claude-code --agent codex --agent "$plugin"
-openrua build proxy --agent claude-code --agent codex --agent "$plugin"
 openrua --agent "$plugin" --robot panda --bench capbench --task-id 0
 ```
 

@@ -303,6 +303,45 @@ def write_result(trial_dir: Path, record: dict) -> None:
     (trial_dir / "result.json").write_text(json.dumps(record, indent=2))
 
 
+def session_provenance(robot_file: Path | None, cfg: dict, code_root: Path,
+                       agent_cli: dict | None = None, limits: dict | None = None) -> dict:
+    """What an interactive session ran with, for comparing sessions later:
+    OpenRUA's version and commit, the robot's config file (its hash, and
+    the commit of the repository it lives in, which on a real robot holds
+    the driver too), the images, the agent CLI as the sandbox reports it,
+    and what the agent could reach."""
+    def sh(cmd: list[str]) -> str:
+        try:
+            return subprocess.run(cmd, capture_output=True, text=True).stdout.strip()
+        except OSError:
+            return "unavailable"
+
+    def git(where: Path) -> dict:
+        commit = sh(["git", "-C", str(where), "rev-parse", "HEAD"])
+        if not commit:
+            return {}
+        return {"commit": commit,
+                "dirty": bool(sh(["git", "-C", str(where), "status", "--porcelain", "--", "."]))}
+
+    from openrua import __version__
+    out = {"created_utc": datetime.now(timezone.utc).isoformat(),
+           "openrua_version": __version__, "openrua": git(code_root)}
+    if robot_file is not None:
+        out["robot_config"] = {"file": str(robot_file),
+                               "sha256": hashlib.sha256(robot_file.read_bytes()).hexdigest(),
+                               **git(robot_file.parent)}
+    backend = cfg.get("machine", {}).get("backend", {})
+    for key in ("image", "sandbox_image"):
+        if backend.get(key):
+            out[key] = {"name": backend[key], "id": sh(
+                ["docker", "image", "inspect", "--format", "{{.Id}}", backend[key]])}
+    if agent_cli is not None:
+        out["agent_cli"] = agent_cli
+    if limits is not None:
+        out["limits"] = limits
+    return out
+
+
 def write_trial_provenance(trial_dir: Path, prov: dict) -> None:
     (trial_dir / "provenance.json").write_text(json.dumps(prov, indent=2))
 

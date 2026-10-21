@@ -218,3 +218,27 @@ def test_multiple_store_connections_share_acceptance_order(tmp_path):
     finally:
         for store in stores:
             store.close()
+
+
+def test_a_pause_says_why(session):
+    # A person saw only "Paused" and sent the same instruction three times.
+    first = add(session)
+    assert session.take()["id"] == first
+    session.native(Event("turn_started", first))
+    finish(session, first, "failed")
+    assert state(session)["pause_reason"] == "the turn failed"
+    session.resume(state(session)["pause_id"])
+    assert state(session)["pause_reason"] is None
+    session.disconnected("native process ended")
+    assert state(session)["pause_reason"] == "agent disconnected: native process ended"
+
+
+def test_a_stopped_robot_holds_the_queue_with_its_reason(session):
+    add(session)
+    session.robot_stopped("the launch command exited with 134")
+    s = state(session)
+    assert s["robot"] == {"status": "stopped", "reason": "the launch command exited with 134"}
+    assert s["paused"] and s["pause_reason"].startswith("robot stopped:")
+    assert session.take() is None                     # nothing goes to an agent without a robot
+    session.robot_stopped("again")                    # recorded once
+    assert state(session)["robot"]["reason"].endswith("134")

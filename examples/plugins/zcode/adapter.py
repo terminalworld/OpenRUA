@@ -63,7 +63,7 @@ class ZCode(Agent):
             return ProfileLogin(False, str(error))
         return ProfileLogin(True, 'native Coding Plan key profile found locally; subscription validity is not verified')
 
-    def prepare_profile(self, source, dest, *, require_credentials=True):
+    def prepare_profile(self, source, dest, *, require_credentials=True, limits=None):
         config, key = self._native(source)
         directory, _ = _copy_profile(source, dest, None, False, '')
         with open(directory / 'provider_config.json', 'x', encoding='utf-8',
@@ -74,7 +74,8 @@ class ZCode(Agent):
     def login_hint(self, creds_home):
         return 'configure a native ZCode Coding Plan key profile; OAuth reuse is not supported; API use requires config set --auth api --api-key-file /absolute/path/to/key'
 
-    def prepare_api_profile(self, key_file: Path, dest: Path) -> PreparedProfile:
+    def prepare_api_profile(self, key_file: Path, dest: Path, *,
+                            limits: dict | None = None) -> PreparedProfile:
         key = read_api_key(key_file)
         directory, _ = _copy_profile(key_file, dest, None, False, "")
         config = {"schemaVersion": 1, "config": {
@@ -93,7 +94,8 @@ class ZCode(Agent):
         return ["-e", "ZCODE_DATA_BASE_DIR=/zcode-home",
                 "-e", "ZCODE_PERSONAL_PROVIDER_CONFIG_FILE=/zcode-home/provider_config.json",
                 "-e", "ZCODE_BUILTIN_PROVIDER_CONFIG_FILE=/opt/openrua-zcode/source/config/provider/zcode-builtin.json",
-                "-e", f"HTTPS_PROXY={proxy}", "-e", f"HTTP_PROXY={proxy}"]
+                # An empty proxy means the run goes out directly.
+                *(["-e", f"HTTPS_PROXY={proxy}", "-e", f"HTTP_PROXY={proxy}"] if proxy else [])]
 
     def _validate(self, model, options):
         if model != self.default_model:

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from openrua import agents
+from openrua.config.schema import TRIAL_LIMITS
 from openrua.runner import live, trial
 
 
@@ -22,7 +23,7 @@ def external_profile(tmp_path):
 import json, shutil
 from openrua.agents import Agent, PreparedProfile
 class ProfileAgent(Agent):
-    def prepare_profile(self, source, dest, *, require_credentials=True):
+    def prepare_profile(self, source, dest, *, require_credentials=True, limits=None):
         if require_credentials and not (source / "credentials").is_dir():
             raise RuntimeError("native credentials missing")
         dest.mkdir(parents=True, mode=0o700)
@@ -97,10 +98,11 @@ def test_profile_preparation_does_not_destroy_source_or_previous_files_on_missin
     assert saved.read_text() == "keep"
 
 
-def test_live_and_trial_consume_the_external_profile_hook(external_profile, tmp_path, monkeypatch, proxy_address):
+def test_live_and_trial_consume_the_external_profile_hook(external_profile, tmp_path, monkeypatch, proxy_address, agent_cli_ok):
     agent, source = external_profile
     cfg = {"machine": {"backend": {"kind": "real"}, "robot": {"model": "fixture"}},
-           "agent": {"name": "profile-agent", "credentials_dir": str(source)}, "protocol": {}}
+           "agent": {"name": "profile-agent", "credentials_dir": str(source)},
+           "protocol": {"limits": TRIAL_LIMITS.model_dump()}}
     home = tmp_path / "home"
     machine = SimpleNamespace(shutdown=lambda: None)
     seen = []
@@ -114,7 +116,7 @@ def test_live_and_trial_consume_the_external_profile_hook(external_profile, tmp_
         cfg=cfg, suite=None, task_id=None, robot="fixture", simulator=None, benchmark=None))
     for module in (live, trial):
         monkeypatch.setattr(module, "ensure_internal_network", lambda: "fixture")
-        monkeypatch.setattr(module, "ensure_proxy", lambda _: "fixture")
+        monkeypatch.setattr(module, "ensure_proxy", lambda *a, **k: "fixture")
         monkeypatch.setattr(module, "bring_up", bring_up)
         monkeypatch.setattr(module, "sandbox_down", lambda _: None)
     robot = live.open_robot(live.RobotRequest(home=home, name="live", task="inspect"))

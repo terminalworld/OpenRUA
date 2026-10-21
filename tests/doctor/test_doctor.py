@@ -22,10 +22,9 @@ def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
     monkeypatch.setattr(doctor.checks, "engine_error", lambda: "")
     import hashlib
     a = agents.get("claude-code")
-    want_wl = hashlib.sha256("\n".join(a.whitelist).encode()).hexdigest()
     want_pi = hashlib.sha256(a.install.encode()).hexdigest()
     monkeypatch.setattr(doctor.checks, "docker_inspect", _fake_docker({
-        "openrua-proxy": {"openrua.whitelist_sha256": want_wl},
+        "openrua-proxy": {},
         "openrua-sim-libero_pro": {},
         "openrua-sandbox-jazzy": {"openrua.preinstall_sha256": want_pi}}))
     monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
@@ -68,14 +67,15 @@ def test_missing_pieces_are_errors_with_a_fix_and_stale_labels_are_warnings(tmp_
     monkeypatch.setattr(doctor.checks.Path, "home", lambda: tmp_path)
     monkeypatch.delenv("CLAUDE_CONFIG_DIR", raising=False)
     monkeypatch.setattr(doctor.checks, "docker_inspect", _fake_docker({
-        "openrua-proxy": {"openrua.whitelist_sha256": "stale"},
         "openrua-sandbox-jazzy": {"openrua.preinstall_sha256": "stale"}}))
     monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: None)
     r = doctor.run(robot="panda", home=tmp_path, bench="libero_pro")
     by = {c.id: c for c in r.checks}
     assert by["docker"].severity == "error" and "docs.docker.com" in by["docker"].hint
     assert by["robot-image"].severity == "error" and by["robot-image"].hint == "openrua build --bench libero_pro"
-    assert by["proxy-image"].severity == "warning" and "build proxy --agent" in by["proxy-image"].hint
+    # Only a run kept to its model service starts a proxy: missing is a warning.
+    assert by["proxy-image"].severity == "warning" and by["proxy-image"].hint == "openrua build proxy"
+    assert "model-only" in by["proxy-image"].detail
     assert by["sandbox-image"].severity == "warning" and "build sandbox --distro jazzy" in by["sandbox-image"].hint
     assert by["login-claude-code"].severity == "error"
     assert "claude login" in by["login-claude-code"].hint
@@ -89,7 +89,7 @@ def test_an_unwritable_user_directory_is_an_error(tmp_path, monkeypatch):
     r = doctor.run(home=tmp_path)
     by = {c.id: c for c in r.checks}
     assert by["home"].severity == "ok"
-    assert by["proxy-image"].detail.startswith("unlabelled")
+    assert by["proxy-image"].severity == "ok"           # present; it carries no whitelist
     assert not [c for c in r.checks if c.id.startswith("agents-")]   # bundled agents load
 
 
@@ -117,39 +117,37 @@ def test_json_and_text_are_the_same_report(tmp_path, monkeypatch, capsys):
     assert [c["id"] for c in d["checks"]] == [c.id for c in r.checks]
     text = r.render()
     assert text.startswith("openrua doctor") and "fix:" in text     # proxy image missing
+    # exit on errors only: a missing proxy image is a warning (the login
+    # check is left out: it reads this machine's own login)
+    r = doctor.run(home=tmp_path, checks=tuple(
+        c for c in doctor.checks.CHECKS if c is not doctor.checks.check_login))
+    capsys.readouterr()
+    assert doctor.print_report(r, as_json=True) == 0
+    assert json.loads(capsys.readouterr().out)["ok"] is True
+    r = doctor.run(robot="panda", home=tmp_path, bench="libero_pro")  # no images: errors
     assert doctor.print_report(r, as_json=True) == 1
     assert json.loads(capsys.readouterr().out)["ok"] is False
 
 
-def test_standing_proxy_checked_separately_from_rebuilt_image(tmp_path, monkeypatch):
+def test_no_standing_proxy_is_judged_any_more(tmp_path, monkeypatch):
+    # Each whitelist has its own proxy, named for it, so a standing one can
+    # no longer lack an agent's hosts; doctor only checks the image exists.
     from openrua.doctor import checks
-    a = agents.get("codex")
-    current = agents.fact_sha256(a, "whitelist")
-    def inspect(kind, name, fmt):
-        if "Labels" not in fmt:
-            return "container-id" if kind == "container" else "new-image-id"
-        if 'openrua.agent.codex.' in fmt:
-            return current if kind == "image" else "old-policy"
-        return "<no value>"
-    monkeypatch.setattr(checks, "docker_inspect", inspect)
-    ctx = checks.Context(home=tmp_path, agents=[a], cfg=None, robot=None)
-    assert checks.check_proxy_image(ctx)[0].severity == "ok"
-    finding = checks.check_proxy_container(ctx)[0]
-    assert finding.severity == "warning" and "end sessions" in finding.hint
-    report = doctor.Report([finding])
-    assert report.ok
-    assert finding.hint in report.render()
+    assert not hasattr(checks, "check_proxy_container")
+    monkeypatch.setattr(checks, "docker_inspect", _fake_docker({"openrua-proxy": {}}))
+    ctx = checks.Context(home=tmp_path, agents=[agents.get("codex")], cfg=None, robot=None)
+    assert [c.severity for c in checks.check_proxy_image(ctx)] == ["ok"]
 
 
 def test_absent_agent_label_uses_legacy_aggregate_hash(tmp_path, monkeypatch):
     from openrua.doctor import checks
     a = agents.get("codex")
     import hashlib
-    aggregate = hashlib.sha256("\n".join(a.whitelist).encode()).hexdigest()
+    aggregate = hashlib.sha256(agents.preinstall([a]).encode()).hexdigest()
     monkeypatch.setattr(checks, "docker_inspect", lambda kind, name, fmt:
-                        aggregate if 'openrua.whitelist_sha256' in fmt else "<no value>")
+                        aggregate if 'openrua.preinstall_sha256' in fmt else "<no value>")
     ctx = checks.Context(home=tmp_path, agents=[a], cfg=None, robot=None)
-    assert checks._agents_in_artifact("legacy", ctx, "whitelist") == ("ok", "")
+    assert checks._agents_in_artifact("legacy", ctx, "install") == ("ok", "")
 
 
 def test_robot_image_is_checked_against_the_declaration_it_was_rendered_from(tmp_path, monkeypatch):

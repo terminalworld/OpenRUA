@@ -139,7 +139,7 @@ def main():
         try:
             print('Starting ' + json.dumps(selection), flush=True)
             _, machine, _ = bring_up(cfg, root, name + '-robot', name + '-sandbox',
-                composed.suite, composed.task_id, network, 'http://unused.invalid', (), None,
+                composed.suite, composed.task_id, network, 'none', (), None,
                 root / 'robot.log', home=root)
             info = start_episode(machine, 0)
             assert info.get('language') or info.get('name'), 'scene returned neither a task instruction nor a scene name'

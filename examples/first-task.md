@@ -12,7 +12,7 @@ Franka Panda. For OpenRUA's own TUI or browser, follow
 [Your first shared robot session](shared-session.md) instead.
 
 [Install](../docs/install.md) first; prepare the LIBERO-PRO simulator and the
-sandbox and proxy for your selected agent. Check them with
+sandbox for your selected agent. Check them with
 `openrua doctor panda --bench libero_pro`. Initial image builds take additional
 time and download the simulator dependencies and assets.
 
@@ -64,8 +64,10 @@ openrua agent "open the bottom drawer of the cabinet"
 This opens the agent `up` was configured with (Claude Code by default,
 `--agent codex` for Codex) inside the sandbox, as user `robot` in
 `/workspace`, with the sentence as its opening message. Nothing else is
-injected: no tool list, no API, no planner. The agent's only route to
-the internet is the proxy to its model API.
+injected: no tool list, no API, no planner. The agent reaches the
+internet as it does on your machine; `openrua up --internet model-only`
+limits it to its model service ([what the agent can
+reach](../docs/install.md#what-the-agent-can-reach)).
 
 ## 2. What the agent sees
 

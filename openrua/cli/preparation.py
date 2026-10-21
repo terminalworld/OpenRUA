@@ -17,7 +17,12 @@ def image_exists(image: str) -> bool:
                           capture_output=True, timeout=30).returncode == 0
 
 
-def image_commands(composed, benchmark: str | None = None) -> list[tuple[str, list[str]]]:
+def image_commands(composed, benchmark: str | None = None,
+                   limits: dict | None = None) -> list[tuple[str, list[str]]]:
+    """``(image, openrua build arguments)`` for every image this selection
+    runs: the simulator's, or a real robot's driver images; the sandbox
+    (a real robot's own when it installs packages into it); the proxy
+    only when ``limits`` keep the agent to its model service."""
     backend = composed.cfg['machine']['backend']
     selected = composed.cfg['agent']
     agent = selected['name']
@@ -27,16 +32,25 @@ def image_commands(composed, benchmark: str | None = None) -> list[tuple[str, li
     if backend['kind'] == 'sim':
         selector = ['--bench', benchmark or composed.benchmark] if composed.benchmark else ['--sim', composed.simulator]
         commands.append((backend['image'], ['build', *selector]))
-    commands.extend([
-        (backend['sandbox_image'], ['build', 'sandbox', '--distro', backend['ros_distro'],
-                                    '--tag', backend['sandbox_image'], '--agent', agent]),
-        (proxy.IMAGE, ['build', 'proxy', '--agent', agent]),
-    ])
+    robot_file = None
+    if backend['kind'] == 'real' and (backend.get('build') or backend.get('sandbox_install')):
+        robot_file = str(paths.find('robots', composed.robot).resolve())
+    for image in backend.get('build') or {}:
+        commands.append((image, ['build', 'driver', '--robot', robot_file, '--image', image]))
+    if backend.get('sandbox_install'):
+        commands.append((backend['sandbox_image'], ['build', 'sandbox', '--robot', robot_file,
+                                                    '--agent', agent]))
+    else:
+        commands.append((backend['sandbox_image'], ['build', 'sandbox', '--distro', backend['ros_distro'],
+                                                    '--tag', backend['sandbox_image'], '--agent', agent]))
+    if (limits or {}).get('internet') == 'model-only':
+        commands.append((proxy.IMAGE, ['build', 'proxy']))
     return commands
 
 
-def prepare(home: Path, values: dict, progress=print) -> None:
-    """Build only missing images, with streamed output and retained failure logs."""
+def prepare(home: Path, values: dict, progress=print, limits: dict | None = None) -> None:
+    """Build only missing images, with streamed output and retained failure logs.
+    ``limits`` are the session's (a proxy image only when it needs one)."""
     composed = config.compose(values['robot'], values['sim'], values['bench'], home,
                               agent=values['agent'] or None, model=values['model'] or None)
     try:
@@ -49,7 +63,7 @@ def prepare(home: Path, values: dict, progress=print) -> None:
                                hint='restore Docker access and retry startup')
     directory = paths.home(home) / 'preparation'
     directory.mkdir(parents=True, exist_ok=True)
-    for image, command in image_commands(composed, values['bench']):
+    for image, command in image_commands(composed, values['bench'], limits):
         key = hashlib.sha256(image.encode()).hexdigest()[:16]
         with (directory / f'{key}.lock').open('a') as lock:
             # Another frontend may already be preparing the same image.

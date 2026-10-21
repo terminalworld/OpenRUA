@@ -60,7 +60,7 @@ def test_invalid_api_selection_cannot_write_defaults_or_launch(tmp_path, monkeyp
     launcher.setup(values, {}, str(path), lambda v: start.save_values(tmp_path, v),
         lambda v: pytest.fail('must not check resources'), lambda v: pytest.fail('must not launch'),
         {}, lambda: [], lambda n: None, screen,
-        prepare=lambda *a: pytest.fail('must not prepare resources'))
+        prepare=lambda *a, **k: pytest.fail('must not prepare resources'))
     assert 'key' in screens[1]['notice']
     assert path.read_text() == original
     assert not (tmp_path / 'sandboxes').exists()
@@ -137,7 +137,7 @@ def test_unnamed_starts_create_distinct_ids_without_reconnecting_old_default(tmp
     (tmp_path / 'sandboxes/openrua/endpoint.json').write_text('{}')
     monkeypatch.setattr(start.service, 'connect', lambda path: pytest.fail('must not attach implicitly'))
     monkeypatch.setattr(start, 'check_values', lambda *a: (True, 'Ready'))
-    monkeypatch.setattr(start, 'prepare', lambda *a: None)
+    monkeypatch.setattr(start, 'prepare', lambda *a, **k: None)
     launched = []
     monkeypatch.setattr(start, 'launch', lambda a, v: launched.append(v['name']) or object())
     monkeypatch.setattr(start, 'open_interface', lambda *a: 0)
@@ -275,7 +275,7 @@ def test_custom_environment_opens_tui_without_guided_replacement(tmp_path, monke
     monkeypatch.setattr(launcher, 'setup', lambda *a, **kw: pytest.fail('must not replace a custom environment'))
     original = (tmp_path / 'config.yaml').read_bytes() if saved else None
     phases = []
-    monkeypatch.setattr(start, 'prepare', lambda h, v: phases.append(('prepare', v[kind])))
+    monkeypatch.setattr(start, 'prepare', lambda h, v, **k: phases.append(('prepare', v[kind])))
     monkeypatch.setattr(start, 'check_values', lambda h, v: (phases.append(('check', v[kind])) or True, 'Ready'))
     monkeypatch.setattr(start, 'launch', lambda a, v: phases.append(('launch', v[kind])) or 'client')
     monkeypatch.setattr(start, 'open_interface', lambda a, c, n: phases.append(('chat', c)) or 0)
@@ -292,7 +292,7 @@ def test_invalid_custom_environment_fails_before_building_or_starting(tmp_path, 
     monkeypatch.setattr('sys.stdin.isatty', lambda: True)
     monkeypatch.setattr('sys.stdout.isatty', lambda: True)
     monkeypatch.setattr(launcher, 'setup', lambda *a, **kw: pytest.fail('must not replace explicit input'))
-    monkeypatch.setattr(start, 'prepare', lambda *a: pytest.fail('must not build'))
+    monkeypatch.setattr(start, 'prepare', lambda *a, **k: pytest.fail('must not build'))
     monkeypatch.setattr(start, 'launch', lambda *a: pytest.fail('must not launch'))
     from openrua.errors import OpenRUAError
     with pytest.raises(OpenRUAError):
@@ -311,7 +311,7 @@ def test_custom_setup_explains_how_to_preserve_the_profile(tmp_path, monkeypatch
     profile.write_text('type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n  cameras: {list: []}\n'
                        '  gripper: {holds_partway: true, effort_honoured: true}\n')
     monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
-    monkeypatch.setattr(start, 'prepare', lambda *a: pytest.fail('must not build'))
+    monkeypatch.setattr(start, 'prepare', lambda *a, **k: pytest.fail('must not build'))
     with pytest.raises(UsageError, match='custom profile editing') as error:
         start.run(args(tmp_path, '--setup', '--robot', str(profile)))
     assert 'without --setup' in error.value.hint

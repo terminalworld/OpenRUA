@@ -41,3 +41,12 @@ def proxy_address(monkeypatch):
     monkeypatch.setattr(bringup, "proxy_url_from_network",
                         lambda name=None, *a, **k: "http://172.17.0.2:8888")
     return "http://172.17.0.2:8888"
+
+
+@pytest.fixture
+def agent_cli_ok(monkeypatch):
+    """An interactive session checks the agent CLI inside its sandbox
+    before starting the agent. Tests that fake the sandbox have no CLI to
+    ask; this stands in for one that passes."""
+    from openrua.runner import live
+    monkeypatch.setattr(live, "check_agent_cli", lambda *a, **k: None)

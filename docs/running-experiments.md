@@ -27,8 +27,8 @@ only the episode's number). `--config`
 names a bundled benchmark (`openrua benchmarks`) or a path to a
 benchmark file of your own. `--robot` overrides the config's
 robot. Everything else about the protocol (wall clock, turn budget,
-cameras, control) is in the config, and the trial writes the resolved
-copy it ran with.
+what the agent may reach, cameras, control) is in the config, and the
+trial writes the resolved copy it ran with.
 
 Three operators:
 
@@ -94,6 +94,7 @@ its state; check it before restarting anything that launches trials.
 | `anomaly`, `anomaly_traceback` | a harness failure (preflight red, sim stall, bring-up error); the trial does not count |
 | `preflight` | every check and its verdict, from the sandbox's own vantage, before the agent started |
 | `agent_version` | the CLI version the sandbox reported |
+| `limits` | what the agent could reach: `internet`, `web_search`, `account_connectors` |
 | `wall_seconds` | the whole harness span (boot, preflight, operator, teardown) |
 | `active_wall_cap_min` | the active wall-clock budget the operator ran under |
 | `operator_meta` | the operator's own record, below |
@@ -127,6 +128,17 @@ on, in which case the runner waits for the window (bounded by
 `max_quota_wait_minutes` and `max_suspensions`) and resumes the same
 session. Whether a trial counts is decided afterwards from the
 artifacts, never by the runner.
+
+## What the agent can reach
+
+`protocol.limits` says it, by default `internet: model-only`,
+`web_search: false`, `account_connectors: false`: the sandbox reaches
+only the agent's model service and login, through a whitelist proxy, and
+the CLI's own web tools and the account's connectors are off. A
+benchmark config may change them; `--internet`, `--[no-]web-search` and
+`--[no-]account-connectors` override them for one run and land in the
+config the run records. Sessions outside `bench` set none of them by
+default ([install.md](install.md#what-the-agent-can-reach)).
 
 ## Replaying a trial
 
