@@ -74,6 +74,21 @@ def test_existing_plugins_keep_their_shared_login_contract(tmp_path, name):
     assert not (profile.directory / agent.credentials.filename).exists()
 
 
+def test_a_claude_session_builds_its_own_cli_state(tmp_path):
+    # A stale .claude.json beside the login (cached switches from an older
+    # CLI) made a session skip AGENTS.md; settings still come along.
+    agent = agents.get("claude-code")
+    source = tmp_path / "native"
+    source.mkdir()
+    (source / agent.credentials.filename).write_text('{"token":"fixture"}')
+    (source / "settings.json").write_text('{"model": "opus"}')
+    (source / ".claude.json").write_text('{"cachedGrowthBookFeatures": {}}')
+    profile = agent.prepare_profile(source, tmp_path / "session")
+    assert (profile.directory / "settings.json").read_text() == '{"model": "opus"}'
+    assert not (profile.directory / ".claude.json").exists()
+    assert (source / ".claude.json").exists()   # the user's own file is left alone
+
+
 def test_profile_preparation_does_not_destroy_source_or_previous_files_on_missing_login(tmp_path):
     agent = agents.get("claude-code")
     source = tmp_path / "native"

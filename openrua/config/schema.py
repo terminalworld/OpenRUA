@@ -915,6 +915,8 @@ class AgentManifest(Strict):
     The module named by ``entry_point`` supplies the behaviour."""
     name: str = Field(description="the name configs use under agent.name")
     default_model: str = Field(description="model when the config names none")
+    title: str | None = Field(default=None, description="the agent's name as people write "
+                              "it, for what a person reads (default: name)")
     binary: str | None = Field(default=None, description="executable name inside the sandbox")
     version: str | None = Field(default=None, description="a CLI version this manifest "
                                 "pins; usually null: pins come from name@version at build "

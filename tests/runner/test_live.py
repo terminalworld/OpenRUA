@@ -20,7 +20,7 @@ def resources(monkeypatch, tmp_path):
     monkeypatch.setattr(live, "ensure_internal_network", lambda: "network")
     monkeypatch.setattr(live, "ensure_proxy", lambda network, whitelist:
                         calls.append(("proxy", whitelist)) or "http://openrua-proxy-ab12cd34:8888")
-    adapter = SimpleNamespace(name="fake", default_model="model", default_options={},
+    adapter = SimpleNamespace(name="fake", title="Fake", default_model="model", default_options={},
                               whitelist=("^api\\.fake\\.com$",), install="",
                               prepare_profile=lambda source, dest, limits=None:
                                   calls.append(("profile", limits)) or PreparedProfile(dest, ()))

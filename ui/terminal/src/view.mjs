@@ -1,3 +1,5 @@
+import {existsSync} from 'node:fs';
+import {join} from 'node:path';
 import {Container, Markdown, Spacer, Text, truncateToWidth, visibleWidth, wrapTextWithAnsi} from '@earendil-works/pi-tui';
 
 // Control bytes must not become terminal instructions, including OSC clipboard writes.
@@ -12,6 +14,75 @@ export const editorTheme = {borderColor: muted, selectList: selectTheme};
 const markdownTheme = {heading: bold, link: accent, linkUrl: muted, code: accent,
   codeBlock: text => text, codeBlockBorder: muted, quote: muted, quoteBorder: muted,
   hr: muted, listBullet: accent, bold, italic: style(3, 23), strikethrough: style(9, 29), underline: style(4, 24)};
+
+// The first thing on the screen, as a coding agent's own terminal greets you:
+// where you are and what you can say, in OpenRUA's own words (no model has
+// looked at anything yet). Facts are the session's, as recorded at start.
+export class Welcome {
+  constructor(name, facts = {}, readOnly = false) {
+    this.name = name; this.facts = facts; this.readOnly = readOnly;
+    this.returning = false;   // set once the conversation turns out to have messages
+  }
+
+  invalidate() {}
+
+  lines() {
+    const f = this.facts;
+    const agent = plain(f.agent_title || f.agent || 'your coding agent');
+    const model = plain(f.robot_model || f.robot || 'robot');
+    const a = /^[aeiou]/i.test(model) ? 'an' : 'a';
+    const real = f.backend === 'real';
+    let hello;
+    if (f.backend === 'connect') hello = `Hi! Let's connect your robot. ${agent} does the work with you, and OpenRUA checks each step.`;
+    else if (!f.robot) hello = `Hi! ${agent} is ready.`;
+    else if (this.returning) hello = `The ${model} is still up, with ${agent} at the controls.`;
+    else if (real) hello = `Hi! You're connected to your ${model}, with ${agent} at the controls.`;
+    else hello = `Hi! You're connected to ${a} ${model}, simulated in ${plain(f.simulator)}, with ${agent} at the controls.`;
+    const paragraphs = [hello];
+    if (real) paragraphs.push('Keep the stop button within reach.');
+    if (f.backend !== 'connect') {
+      const tries = ['"what do you see?"'].concat(f.task ? [`"${plain(f.task)}"`] : []);
+      paragraphs.push(tries.map((t, i) => (i ? '    ' : 'Try ') + t).join('\n'));
+    }
+    paragraphs.push(muted(`/help for commands · Esc ${f.backend === 'connect' ? 'interrupts' : 'stops the robot'}`));
+    return paragraphs;
+  }
+
+  render(width) {
+    const f = this.facts;
+    const scene = [f.benchmark, f.suite && (f.task_id != null ? `${f.suite} #${f.task_id}` : f.suite)]
+      .filter(Boolean).map(plain).join(' / ');
+    const below = muted('  ' + [this.name && `session ${plain(this.name)}`, f.model && plain(f.model), scene]
+      .filter(Boolean).join(' · '));
+    if (this.readOnly) return [`${bold('OpenRUA')}${muted(` · ${plain(this.name)} · a past conversation, read-only`)}`];
+    const inner = Math.max(20, Math.min(width, 62) - 4);
+    const body = [`${accent('✻')} ${bold(this.returning ? 'Welcome back to OpenRUA' : 'Welcome to OpenRUA')}`];
+    for (const paragraph of this.lines()) {
+      body.push('');
+      for (const line of paragraph.split('\n')) body.push(...wrapTextWithAnsi(line, inner - 2).map(l => '  ' + l));
+    }
+    const edge = muted('│');
+    const box = [muted('╭' + '─'.repeat(inner + 2) + '╮'),
+      ...body.map(line => `${edge} ${line}${' '.repeat(Math.max(0, inner - visibleWidth(line)))} ${edge}`),
+      muted('╰' + '─'.repeat(inner + 2) + '╯')];
+    return below.trim() ? box.concat(below) : box;
+  }
+}
+
+// A file the agent names under /workspace, as the path it has on this
+// computer: the sandbox's /workspace is a directory here, and a terminal that
+// cannot draw a picture (Cursor, VS Code) opens a path on Ctrl+click.
+const WORKSPACE_PATH = /\/workspace\/[^\s)\]'"`<>,;*]+/g;
+
+export function onThisComputer(text, workspace, known = new Set()) {
+  if (!workspace) return [];
+  const found = [];
+  for (const mention of new Set(String(text).match(WORKSPACE_PATH) ?? [])) {
+    const host = join(workspace, mention.replace(/[.:]+$/, '').slice('/workspace/'.length));
+    if (known.has(host) || existsSync(host)) { known.add(host); found.push(host); }
+  }
+  return found.slice(0, 5);
+}
 
 // Lines shown of a folded tool output, and the marker that opens the rest.
 export const FOLDED_LINES = 3;
@@ -84,7 +155,10 @@ const RESULT = {
 };
 
 export class Transcript extends Container {
-  constructor() { super(); this.turns = new Map(); this.tools = new Map(); }
+  constructor({workspace = null} = {}) {
+    super(); this.turns = new Map(); this.tools = new Map();
+    this.workspace = workspace; this.known = new Set();
+  }
 
   turn(id) {
     if (!this.turns.has(id)) {
@@ -156,10 +230,17 @@ export class Transcript extends Container {
       let entry;
       if (message) {
         const component = new Markdown('', 0, 0, markdownTheme);
-        entry = {text: '', message: true, set: text => { entry.text = text; component.setText(text); }};
+        const files = new Text('', 0, 0);
+        const block = new Container();
+        block.addChild(component); block.addChild(files);
+        entry = {text: '', message: true, set: text => {
+          entry.text = text; component.setText(text);
+          files.setText(onThisComputer(text, this.workspace, this.known)
+            .map(path => muted('↳ ') + plain(path)).join('\n'));
+        }};
         // A question the agent asks without stopping: the answer is the next
         // message typed.
-        turn.output.addChild(question ? new Bullet(component, () => yellow('?')) : new Bullet(component));
+        turn.output.addChild(question ? new Bullet(block, () => yellow('?')) : new Bullet(block));
       } else {
         const view = new ToolView({label: 'Tool', phase: '', expanded: false});
         entry = {message: false, view};

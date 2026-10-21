@@ -193,6 +193,7 @@ def open_connect(request: ConnectRequest, continuing: bool = False) -> LiveRobot
         raise
     state.save(request.name, request.home, status="running", sim="", sandbox=sandbox_name,
                backend="connect", network="host", proxy="", agent=adapter.name,
+               agent_title=adapter.title or adapter.name,
                agent_spec=adapter.name, agent_version=selected.get("version"), model=model,
                auth_mode="api" if key_file is not None else "native",
                options={**adapter.default_options, **(selected.get("options") or {})},

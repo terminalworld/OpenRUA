@@ -66,3 +66,33 @@ def test_resume_live_owner_keeps_queue_and_native_conversation(tmp_path):
         finally:
             await stop(store, execution, server)
     asyncio.run(run())
+
+
+def test_sessions_still_running_are_marked_and_listed_first(tmp_path):
+    async def run():
+        store, session, native, execution, server = await running_server(tmp_path)
+        live = tmp_path / 'sandboxes' / 'live'
+        live.mkdir(parents=True)
+        SQLiteStore(live / 'conversation.sqlite', initial_state()).close()
+        write_endpoint(live / 'endpoint.json', server.url, server.token)
+        gone, newer = retained(tmp_path, 'gone')
+        newer.close()
+        write_endpoint(gone / 'endpoint.json', 'http://127.0.0.1:1', 'unused')
+        import os
+        os.utime(live / 'conversation.sqlite', (0, 0))   # older, yet first
+        try:
+            rows = await asyncio.to_thread(history.entries, tmp_path)
+            assert [(r['id'], r['status']) for r in rows] == [('live', 'Running'),
+                                                              ('gone', 'Not answering')]
+        finally:
+            await stop(store, execution, server)
+    asyncio.run(run())
+
+
+def test_the_terminal_knows_where_a_sessions_workspace_is_and_who_is_at_work(tmp_path):
+    from openrua.runner import live_state
+    live_state.save('s', tmp_path, status='running', robot='panda', robot_model='Franka Panda',
+                    agent='claude-code', agent_title='Claude Code', backend='sim',
+                    workspace=str(tmp_path / 'sandboxes' / 's' / 'workspace' / 'workspace'))
+    facts = history.robot_facts(tmp_path, 's')
+    assert facts['agent_title'] == 'Claude Code' and facts['workspace'].endswith('workspace/workspace')

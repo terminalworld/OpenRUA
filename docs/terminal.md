@@ -66,8 +66,8 @@ See [setup validation](setup-validation.md) and [native login discovery](install
 
 Use `openrua --setup`, `openrua config set`, or `config.yaml` to change the same
 shared defaults. Each ordinary launch creates a new ID. `/resume` in chat,
-the setup menu's resume entry, or `openrua --resume` searches history. A running
-session reconnects to its owner; ended or unavailable sessions open read-only
+the setup menu's resume entry, or `openrua --resume` searches history, sessions
+still running first. A running session reconnects to its owner; ended or unavailable sessions open read-only
 without restarting resources or replaying actions. `--resume ID` selects one
 directly. Explicit `--name NAME` still starts or connects to that named session.
 
@@ -77,6 +77,10 @@ existing service. `--gui` and `--cli` select the browser and plain text client;
 fallback. Startup failures keep their logs in `~/.openrua/launches/NAME/`.
 
 ## Work in the conversation
+
+A conversation opens with a welcome: which robot you are on, simulated or
+real, which agent is at the controls, and a few things to try. It is
+OpenRUA's own greeting; the agent has not looked at anything yet.
 
 | Key or command | Action |
 | --- | --- |
@@ -93,7 +97,7 @@ fallback. Startup failures keep their logs in `~/.openrua/launches/NAME/`.
 | `/retry` | Retry an unconfirmed send with its original request ID |
 | `/resume` | Search retained conversations |
 | `/end` | Confirm ending execution, retaining history and workspace |
-| Ctrl+D on empty input or `/quit` | Detach while execution continues |
+| Ctrl+D on empty input or `/quit` | Leave, then choose: Enter keeps the session (and its robot) running in the background, `e` ends it, keeping its files |
 
 Menus use arrows, Enter and Escape. Confirmation starts on Cancel. The terminal
 behaves the way a coding agent's own does: what you send while the agent works
@@ -120,7 +124,11 @@ answers. Replies answer the pending question rather than enqueueing a new task.
 ## Current scope
 
 `/files` uses the existing read-only workspace API. Text previews scroll;
-images use the terminal's supported image protocol with a metadata fallback.
+images use the terminal's supported image protocol (kitty, Ghostty, WezTerm,
+iTerm2; over SSH too for iTerm2 and kitty), and every file also shows its
+path on this computer: in Cursor or VS Code, which draw no pictures in their
+terminal, Ctrl+click opens it. A file the agent names under `/workspace` in a
+reply gets the same path under its message.
 Escape returns, `r` refreshes, and the chat draft is preserved. Saved images
 are observations, not a live video stream. Ended or unavailable conversations also support `/files` from history, using
 the recorded workspace on disk. This starts only a temporary local read-only

@@ -9,6 +9,23 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- **Claude Code reads AGENTS.md in every session**: each session used to
+  start from a copy of Claude's own state file, which on some machines was
+  long stale and made the CLI skip AGENTS.md, so the agent could answer
+  "I'm in a container, no camera" on a robot. Each session now builds its
+  own state; settings still come along. AGENTS.md also says that
+  /workspace is the one place kept after the session.
+- **A welcome when a conversation opens**: which robot you are on, simulated
+  or real, which agent is at the controls, and things to try; "Welcome
+  back" when you return.
+- **Files the agent saves are a click away**: a `/workspace/...` file named
+  in a reply, and every file in `/files`, shows its path on this computer,
+  which Cursor and VS Code open on Ctrl+click; iTerm2 and kitty draw
+  pictures over SSH too.
+- **Leaving asks**: Ctrl+D or `/quit` asks whether to keep the session
+  (and its robot) running in the background or end it now. `openrua
+  --resume` lists the sessions still running first.
+- Agent manifests take a `title`, the agent's name as people write it.
 - **Watch `openrua exec` work**: what the agent says and each command or
   tool it runs show as they happen, with whether each worked and how long
   it took, and a line that keeps time on what is still running; the

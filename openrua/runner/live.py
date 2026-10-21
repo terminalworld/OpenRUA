@@ -246,7 +246,7 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                    network=network,
                    proxy=agent_proxy_url(cfg["machine"]["backend"], proxy_url),
                    limits=limits, permissions=request.permissions, mounts=list(mounts),
-                   agent=adapter.name,
+                   agent=adapter.name, agent_title=adapter.title or adapter.name,
                    agent_spec=cfg_agent["name"], agent_version=cfg_agent.get("version"),
                    model=model,
                    auth_mode="api" if key_file is not None else "native",
