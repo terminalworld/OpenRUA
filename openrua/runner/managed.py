@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
+from typing import Callable
 
 from openrua import agents
 from openrua.artifacts import ArtifactReader, WorkspaceFiles
@@ -27,9 +28,10 @@ def _last_words(path: Path, limit: int = 300) -> str:
 
 class ManagedSession:
     def __init__(self, robot: LiveRobot, execution: Execution, store: SQLiteStore,
-                 artifacts: ArtifactReader | None = None):
+                 artifacts: ArtifactReader | None = None, name: str = "", home: Path | None = None):
         self.robot, self.execution, self.store = robot, execution, store
         self.artifacts = artifacts
+        self.name, self.home = name, home
         self._end_lock = asyncio.Lock()
         self._ended = False
         self._native_stopped = False
@@ -50,6 +52,26 @@ class ManagedSession:
                     self.execution.session.robot_stopped(reason)
                     return
         self._watch = asyncio.create_task(watch())
+
+    async def move_to(self, open_resources: Callable[[], LiveRobot], reason: str) -> None:
+        """Move the conversation to new resources between turns: the
+        agent's process stops, the old resources stop, the new ones start
+        (``open_resources``), and a new process goes on with the same
+        native conversation. A failure leaves the old resources stopped
+        and no agent process; moving again (back, say) recovers."""
+        async with self._end_lock:
+            if self._ended:
+                raise RuntimeError("the session has ended")
+            if self._watch is not None:
+                self._watch.cancel()
+                self._watch = None
+            await self.execution.close(handover=reason)
+            await asyncio.to_thread(self.robot.power_off)
+            self.robot = await asyncio.to_thread(open_resources)
+            facts = live_state.load(self.name, self.home)
+            self.artifacts = WorkspaceFiles(Path(facts["workspace"]))
+            self.execution = await _open_execution(self.name, self.home, self.store, resume=True)
+            self.watch_robot()
 
     async def end(self) -> None:
         """Stop owned execution resources and retain all conversation materials."""
@@ -79,36 +101,53 @@ class ManagedSession:
             self._ended = True
 
 
-async def start(request: RobotRequest) -> ManagedSession:
+async def _open_execution(name: str, home: Path, store: SQLiteStore,
+                          resume: bool = False) -> Execution:
+    """The agent's native process for this session's resources, started.
+    ``resume`` continues the session's native conversation (its settings
+    too) instead of beginning one."""
+    facts = live_state.load(name, home)
+    adapter = agents.get(facts.get("agent_spec", facts["agent"]), home, version=facts.get("agent_version"))
+    current = store.snapshot()["state"] if resume else {}
+    settings = current.get("settings") or {}
+    conversation = adapter.conversation(
+        facts["sandbox"], settings.get("model") or facts["model"], facts["proxy"],
+        options=facts["options"], limits=facts.get("limits"),
+        permissions=settings.get("permissions") or facts.get("permissions", "auto"),
+        **({"session_id": current["native_session"]} if current.get("native_session") else {}))
+    if conversation is None:
+        raise UnavailableError(
+            f"{adapter.name} does not support structured conversations",
+            hint="use this agent with openrua up and openrua agent instead")
+    directory = paths.sandbox_dir(name, home)
+    stderr = directory / "agent.stderr.log"
+    async def transport():
+        return await StdioTransport.start(conversation.argv, stderr)
+    execution = Execution(Session(store), conversation, transport, directory / "conversation.lock",
+                          diagnostics=lambda: _last_words(stderr))
+    await execution.start()
+    return execution
+
+
+async def start(request: RobotRequest, open_resources: Callable | None = None) -> ManagedSession:
     """Start through the existing robot/agent plugin path, with one owner.
 
     Robot startup is synchronous just as in `up`. Once ready, the native
     reader and clients run on the event loop. No model task is submitted
-    until a user sends a message.
+    until a user sends a message. ``open_resources`` takes the request and
+    returns the resources' handle (a robot by default; the connecting
+    terminal for ``openrua connect``).
     """
-    robot = open_robot(request)
+    robot = (open_resources or open_robot)(request)
     store = None
     execution = None
     try:
         facts = live_state.load(request.name, request.home)
-        adapter = agents.get(facts.get("agent_spec", facts["agent"]), request.home, version=facts.get("agent_version"))
-        conversation = adapter.conversation(facts["sandbox"], facts["model"], facts["proxy"],
-                                            options=facts["options"], limits=facts.get("limits"),
-                                            permissions=facts.get("permissions", "auto"))
-        if conversation is None:
-            raise UnavailableError(
-                f"{adapter.name} does not support structured conversations",
-                hint="use this agent with openrua up and openrua agent instead")
         directory = paths.sandbox_dir(request.name, request.home)
         store = SQLiteStore(directory / "conversation.sqlite", initial_state())
-        session = Session(store)
-        stderr = directory / "agent.stderr.log"
-        async def transport():
-            return await StdioTransport.start(conversation.argv, stderr)
-        execution = Execution(session, conversation, transport, directory / "conversation.lock",
-                              diagnostics=lambda: _last_words(stderr))
-        await execution.start()
-        managed = ManagedSession(robot, execution, store, WorkspaceFiles(Path(facts["workspace"])))
+        execution = await _open_execution(request.name, request.home, store)
+        managed = ManagedSession(robot, execution, store, WorkspaceFiles(Path(facts["workspace"])),
+                                 name=request.name, home=request.home)
         managed.watch_robot()
         return managed
     except BaseException:

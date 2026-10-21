@@ -1,5 +1,7 @@
 """How the sandbox reaches the robot's graph and the outside world, per backend."""
 
+import pytest
+
 from openrua.runner import bringup
 
 
@@ -66,8 +68,24 @@ def test_real_robot_joins_the_host_network_and_reaches_the_proxy_by_address(monk
     server = bringup.sandbox_reachability(
         {"kind": "real", "discovery": {"discovery_server": "192.168.1.20:11811"}},
         "openrua-internal", "r", "open")
-    assert server["env"] == ("ROS_DISCOVERY_SERVER=192.168.1.20:11811",)
+    assert server["env"] == ("FASTDDS_BUILTIN_TRANSPORTS=UDPv4",
+                             "ROS_DISCOVERY_SERVER=192.168.1.20:11811")
     assert server["static_peer"] is None
+
+
+@pytest.mark.parametrize("distro", ["jazzy", "humble"])
+def test_a_host_network_sandbox_speaks_udp_only(distro):
+    # Containers on the host network share its addresses, so Fast DDS
+    # would reach them through shared memory they do not share.
+    r = bringup.sandbox_reachability(
+        {"kind": "real", "ros_distro": distro, "discovery": {"network": "host"}},
+        "openrua-internal", "r", "open")
+    if distro == "humble":
+        assert "<useBuiltinTransports>false</useBuiltinTransports>" in r["peers_xml"]
+        assert r["env"] == ()
+    else:
+        assert r["peers_xml"] is None
+        assert r["env"] == ("FASTDDS_BUILTIN_TRANSPORTS=UDPv4",)
 
 
 def test_the_agent_is_given_the_proxy_url_its_sandbox_can_reach(monkeypatch):

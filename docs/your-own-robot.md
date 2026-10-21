@@ -16,6 +16,9 @@ type, `type: panda` on top so you only write what differs. Pass its
 path wherever a robot name is expected; the bundled names are the
 only ones looked up by name.
 
+[`openrua connect`](connect.md) writes this file with your coding agent,
+step by step, checking each step; the rest of this page is the format.
+
 ## Draft it from the graph
 
 Most of the profile is already on the robot's ROS 2 graph. With the

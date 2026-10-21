@@ -234,7 +234,12 @@ export class Chat {
     const quiet = state.active && this.lastEvent && Date.now() - this.lastEvent > QUIET_MS
       ? [yellow(`no output for ${elapsed(this.lastEvent)}`)] : [];
     const asking = state.settings?.permissions === 'ask' ? [muted('asks before commands')] : [];
-    const extra = robot.concat(quiet, asking, queued ? [`${queued} queued`] : [])
+    // Connecting a robot: each step's check, as OpenRUA ran it on the host.
+    const marks = {passed: green('✓'), failed: yellow('✗'), running: accent('…')};
+    const checks = Object.entries(state.checks ?? {});
+    const connecting = checks.length
+      ? [checks.map(([step, check]) => `${step} ${marks[check.status] ?? ''}`).join(' ')] : [];
+    const extra = robot.concat(connecting, quiet, asking, queued ? [`${queued} queued`] : [])
       .concat(state.connected || state.closed || this.client.readOnly ? []
         : [yellow(state.pause_reason?.startsWith('agent disconnected') ? plain(state.pause_reason) : 'agent disconnected')])
       .concat(requests ? [yellow(`${requests} question(s): type the answer, or /questions to choose`)] : [])

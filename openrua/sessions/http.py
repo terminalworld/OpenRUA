@@ -13,7 +13,7 @@ import hmac
 import json
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Awaitable, Callable
+from typing import Any, Awaitable, Callable
 from urllib.parse import parse_qs, urlsplit
 
 from openrua.artifacts import ArtifactReader
@@ -59,7 +59,8 @@ class LocalServer:
                  assets: dict[str, tuple[str, bytes]] | None = None,
                  artifacts: ArtifactReader | None = None,
                  snapshot: Callable[[], dict] | None = None,
-                 read_only: bool = False):
+                 read_only: bool = False,
+                 actions: dict[str, Callable[[dict], Awaitable[Any]]] | None = None):
         if not token or request_timeout <= 0 or max_body_bytes <= 0:
             raise ValueError("token and positive request limits are required")
         self.execution, self.end = execution, end
@@ -68,6 +69,9 @@ class LocalServer:
             raise ValueError("a session or explicit resource snapshot is required")
         self.snapshot = snapshot if snapshot is not None else execution.session.store.snapshot
         self.artifacts = artifacts
+        # Operations a resource owner adds (POST /api/actions/<name>, the
+        # body handed over as is): what this kind of session can also do.
+        self.actions = dict(actions or {})
         self.token = token
         self.request_timeout, self.max_body_bytes = request_timeout, max_body_bytes
         self.loop = asyncio.get_running_loop()
@@ -187,6 +191,11 @@ class LocalServer:
                         if body != {}:
                             raise ValueError("end takes an empty object")
                         future = owner.submit(owner.end())
+                    elif self.path.startswith("/api/actions/") and \
+                            self.path.removeprefix("/api/actions/") in owner.actions:
+                        if not isinstance(body, dict):
+                            raise ValueError("an action takes an object")
+                        future = owner.submit(owner.actions[self.path.removeprefix("/api/actions/")](body))
                     else:
                         self.reply(404, {"error": "unknown endpoint"})
                         return

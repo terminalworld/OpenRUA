@@ -208,11 +208,13 @@ class Execution:
                 if not self._closing:
                     self._lost(str(exc))
 
-    async def close(self) -> None:
+    async def close(self, handover: str | None = None) -> None:
         """Close the native connection, not the robot or the retained session.
 
         The resource owner separately stops its robot/sandbox before recording
         session closure. A native connection ending is not a physical stop.
+        ``handover`` names a planned move to new resources between turns:
+        recorded as such, with nothing paused.
         """
         async with self._gate:
             first_close = not self._closing
@@ -222,7 +224,10 @@ class Execution:
                 # Record uncertainty even if stopping the native process fails.
                 # Later clients must not see a still-running, connected session.
                 if first_close and self._owner:
-                    self.session.disconnected("native connection closing by its owner")
+                    if handover:
+                        self.session.handed_over(handover)
+                    else:
+                        self.session.disconnected("native connection closing by its owner")
             finally:
                 try:
                     if self._reader:

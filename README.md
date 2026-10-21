@@ -36,7 +36,8 @@ queue, and revisit saved observations without starting a new robot each turn.
 
 - [Start a shared session](examples/shared-session.md): OpenRUA TUI, browser, or plain CLI.
 - [Use the agent's original terminal](examples/first-task.md): launch a task with `openrua run`.
-- [Connect your robot](docs/your-own-robot.md): describe its ROS&nbsp;2 interfaces in a profile.
+- [Connect a real robot](docs/connect.md): `openrua connect`, your coding agent setting it up with you.
+- [Describe your robot](docs/your-own-robot.md): its ROS&nbsp;2 interfaces in a profile.
 - [Run experiments](docs/running-experiments.md): fresh trials, benchmark scoring, and recorded artifacts.
 
 > OpenRUA turns your robot into a coding project: your agent explores it

@@ -265,6 +265,30 @@ class Session:
             return None, [_event("connection_lost", reason=reason)]
         self.store.update(change)
 
+    def checked(self, step: str, status: str, summary: str = "", run: str = "") -> None:
+        """A check on the host (connecting a robot) started or ended:
+        ``status`` is running, passed or failed; ``run`` tells one run of
+        a step from the next."""
+        if status not in {"running", "passed", "failed"}:
+            raise ValueError("a check is running, passed or failed")
+        def change(state):
+            state.setdefault("checks", {})[step] = {"status": status, "summary": summary,
+                                                    "run": run}
+            return None, [_event("check", step=step, status=status, summary=summary, run=run)]
+        self.store.update(change)
+
+    def handed_over(self, reason: str) -> None:
+        """The agent's process is being moved to new resources on purpose
+        (a robot just connected gets its own terminal): no turn is lost,
+        so nothing is paused; the next owner reconnects the same
+        conversation."""
+        def change(state):
+            if state["active"]:
+                raise ValueError("a turn is running; hand over when it has finished")
+            state["connected"] = False
+            return None, [_event("handed_over", reason=reason)]
+        self.store.update(change)
+
     def robot_stopped(self, reason: str) -> None:
         """The robot's resources ended under the session (a driver that
         exited, say): recorded, and the queue held, so no instruction is

@@ -1,0 +1,16 @@
+# This robot's config for OpenRUA, written while connecting it (see
+# CONNECT.md next to it). Every TODO is a fact still to find out; the
+# file does not load until none is left. `check.py config` validates it.
+machine:
+  backend:
+    kind: real
+    ros_distro: TODO    # the drivers' ROS 2 distro: humble or jazzy
+    launch: TODO        # one command starting every driver; SIGINT stops them all
+    discovery:
+      network: host
+    build: {}           # image name: directory with its Dockerfile, relative to this file
+  robot:
+    model: TODO         # make and model, as the vendor names it
+    description: TODO   # one line: the arm, the gripper, the cameras
+  cameras:
+    list: []          # {name, type: cameras/<model>.yaml, mount: wrist | fixed}, one per camera

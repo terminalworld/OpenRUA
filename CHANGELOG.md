@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.15.0
+
+Connecting a real robot, with the coding agent doing the work.
+
+- **`openrua connect`** (or "Connect a real robot" in the first-run
+  menu) opens a session whose terminal reaches this computer's docker,
+  network and devices, working in the robot's folder
+  (`~/.openrua/robots/<name>/`: `robot.yaml`, `driver/`, `cameras/`,
+  `CONNECT.md`). The agent asks before each command that changes
+  something. Its `check.py <step>` asks OpenRUA to check a step on the
+  host: `host`, `drivers`, `probe` (the graph into `robot.draft.yaml`),
+  `config`, `robot` (started twice from `robot.yaml`, checked against
+  it), `done`. The status line shows each step's result. When `done`
+  passes, the session moves to the robot's own terminal and the same
+  conversation goes on there; `robot.yaml` becomes the default robot.
+- **Drivers on the same computer are found**: on the host network a
+  sandbox speaks UDP only (Jazzy through `FASTDDS_BUILTIN_TRANSPORTS`,
+  Humble through a Fast DDS profile), since containers there share the
+  host's addresses but not its shared memory, and found nothing of a
+  driver in another container. The same holds for `openrua probe --host`.
+- A session's owner may add operations of its own
+  (`POST /api/actions/<name>`), and may move the conversation to new
+  resources between turns without pausing it.
+
 ## 0.14.0
 
 Commands in the shared terminal, as in a coding agent's own.

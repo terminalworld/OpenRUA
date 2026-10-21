@@ -47,6 +47,10 @@ class RobotRequest:
     # Whether the agent asks before each command that changes something
     # ("ask") or runs it ("auto"); /permissions switches it later.
     permissions: str = "auto"
+    # The handle already exists with the agent's profile in it: a robot
+    # just connected takes over the session it was connected in, and the
+    # conversation goes on (its native record lives in that profile).
+    continuing: bool = False
 
 
 @dataclass
@@ -149,7 +153,10 @@ def open_robot(request: RobotRequest) -> LiveRobot:
     if workdir.exists() and (not workdir.is_dir() or any(workdir.iterdir())):
         raise UsageError(f"working directory is not empty: {workdir}",
                          hint="use --workspace <new-empty-directory>; existing files are retained")
-    state.reserve(request.name, request.home)
+    previous = state.load(request.name, request.home, require_running=False) \
+        if request.continuing else None
+    if not request.continuing:
+        state.reserve(request.name, request.home)
     workdir.mkdir(parents=True, exist_ok=True)
     limits = Limits(**(request.limits or {})).model_dump()
     network = ensure_internal_network()
@@ -160,7 +167,11 @@ def open_robot(request: RobotRequest) -> LiveRobot:
     # cfg["agent"] is already the chosen agent's (compose took --agent):
     # its model, version, login directory and options are that agent's.
     model = request.model or cfg_agent.get("model") or adapter.default_model
-    if key_file is not None:
+    if previous is not None:
+        # Prepared already; preparing again would replace it, and with it
+        # the conversation's native record.
+        mounts = tuple(previous["mounts"])
+    elif key_file is not None:
         print(f"[up] {adapter.name}: explicitly selected API authentication", flush=True)
         profile = adapter.prepare_api_profile(key_file, sandbox_dir / "profile", limits=limits)
     else:
@@ -169,6 +180,8 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                                             user_home=Path.home(), environment=os.environ, link=True)
         print(f"[up] {adapter.name} native login: {creds_home} (source: {creds_home.resolve()})", flush=True)
         profile = adapter.prepare_profile(creds_home, sandbox_dir / "profile", limits=limits)
+    if previous is None:
+        mounts = profile.mounts
     if cfg["machine"]["backend"]["kind"] == "sim":
         print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
               flush=True)
@@ -177,7 +190,7 @@ def open_robot(request: RobotRequest) -> LiveRobot:
     try:
         _, machine, _ = bring_up(
             cfg, workdir, sim_name, sandbox_name, suite, task_id, network,
-            internet_access(proxy_url), profile.mounts, request.ros_domain,
+            internet_access(proxy_url), mounts, request.ros_domain,
             robot_log=workdir / "robot.log", home=request.home)
     except Exception as e:  # noqa: BLE001
         # The sandbox directory stays for the read below; openrua clean sweeps it.
@@ -212,7 +225,7 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                    backend=cfg["machine"]["backend"]["kind"],
                    network=network,
                    proxy=agent_proxy_url(cfg["machine"]["backend"], proxy_url),
-                   limits=limits, permissions=request.permissions,
+                   limits=limits, permissions=request.permissions, mounts=list(mounts),
                    agent=adapter.name,
                    agent_spec=cfg_agent["name"], agent_version=cfg_agent.get("version"),
                    model=model,

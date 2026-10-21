@@ -99,5 +99,5 @@ def test_standalone_probe_needs_no_model_proxy_and_preserves_distro(
         assert calls[0]["static_peer"] == discovery["static_peers"]
         assert "<address>192.0.2.20</address>" in calls[0]["peers_xml"]
     if discovery["discovery_server"]:
-        assert calls[0]["env"] == ("ROS_DISCOVERY_SERVER=192.0.2.20:11811",)
+        assert "ROS_DISCOVERY_SERVER=192.0.2.20:11811" in calls[0]["env"]
     assert stopped == [calls[0]["name"]]
