@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from openrua.config.schema import TRIAL_LIMITS
 from openrua.runner import trial
 
 
@@ -23,11 +24,16 @@ class _Handle:
         self.calls.append("shutdown")
 
 
-def _harness(monkeypatch, tmp_path):
+def _harness(monkeypatch, tmp_path, seen=None):
     handle = _Handle()
+    seen = seen if seen is not None else []
     monkeypatch.setattr(trial, "ensure_internal_network", lambda: "net")
-    monkeypatch.setattr(trial, "ensure_proxy", lambda *a, **k: "http://p:8888")
-    monkeypatch.setattr(trial, "bring_up", lambda *a, **k: (tmp_path / "config.yaml", handle, 0))
+    monkeypatch.setattr(trial, "ensure_proxy", lambda network, whitelist:
+                        seen.append(("proxy", whitelist)) or "http://openrua-proxy-ab12cd34:8888")
+    def bring_up(cfg, dest, sim, sandbox, suite, task_id, network, internet, *a, **k):
+        seen.append(("internet", internet))
+        return tmp_path / "config.yaml", handle, 0
+    monkeypatch.setattr(trial, "bring_up", bring_up)
     monkeypatch.setattr(trial, "sandbox_down", lambda name: None)
     monkeypatch.setattr(trial, "run_preflight",
                         lambda cfg, sandbox, agent: {"ok": True, "checks": [("x", True)], "failed": []})
@@ -35,7 +41,7 @@ def _harness(monkeypatch, tmp_path):
     monkeypatch.setattr(trial, "_sandbox_version", lambda sandbox, agent: "9.9.9")
     token = tmp_path / "token.env"
     token.write_text("T=abcdefghijklmnopqrstuvwxyz0123456789\n")
-    cfg = {"agent": {"name": "claude-code"}, "protocol": {},
+    cfg = {"agent": {"name": "claude-code"}, "protocol": {"limits": TRIAL_LIMITS.model_dump()},
            "machine": {"backend": {"kind": "real", "discovery": {"network": "host"}},
                        "workspace_template": None}}
     return handle, cfg, token
@@ -78,6 +84,9 @@ def test_api_trial_uses_isolated_profile_and_redacts_key(monkeypatch, tmp_path, 
         else:
             assert (profile_dir / "api-key").read_text() == secret
             assert not (profile_dir / ".credentials.json").exists()
+            # a trial keeps the account's extras out (protocol.limits)
+            settings = json.loads((profile_dir / "settings.json").read_text())
+            assert settings["disableClaudeAiConnectors"] is True
     monkeypatch.setattr(trial.record, "finalize_trial", finalize)
     rec = trial.run_trial(cfg, tmp_path / "config.yaml", tmp_path / "run", "suite", 0, 0,
                           lambda ctx: {"operator": "fixture"}, 1.0,
@@ -90,3 +99,33 @@ def test_api_trial_uses_isolated_profile_and_redacts_key(monkeypatch, tmp_path, 
         trial.run_trial(cfg, tmp_path / "config.yaml", tmp_path / "conflict", "suite", 0, 0,
                         lambda _: None, 1.0, token_file="other.env", home=tmp_path / "home")
     assert not (tmp_path / "conflict").exists()
+
+
+def test_a_trial_is_kept_to_its_model_service_by_its_protocol(monkeypatch, tmp_path, proxy_address):
+    seen = []
+    handle, cfg, token = _harness(monkeypatch, tmp_path, seen)
+    contexts = []
+    rec = trial.run_trial(cfg, tmp_path / "bench.yaml", tmp_path / "runs" / "r3", "suite", 0, 0,
+                          lambda ctx: contexts.append(ctx) or {"operator": "none"}, 1.0,
+                          token_file=str(token), task="inspect", home=tmp_path / "home")
+    assert rec["anomaly"] is None
+    whitelist = "\n".join(trial.agents.get("claude-code").whitelist)
+    assert ("proxy", whitelist) in seen                       # the agent's own hosts
+    assert ("internet", "proxy:http://openrua-proxy-ab12cd34:8888") in seen
+    assert contexts[0]["limits"] == TRIAL_LIMITS.model_dump()
+    assert contexts[0]["proxy"] == proxy_address      # host network: by address
+    assert rec["limits"] == TRIAL_LIMITS.model_dump()
+
+
+def test_a_trial_whose_protocol_opens_the_internet_starts_no_proxy(monkeypatch, tmp_path):
+    seen = []
+    handle, cfg, token = _harness(monkeypatch, tmp_path, seen)
+    cfg["protocol"]["limits"] = {**TRIAL_LIMITS.model_dump(), "internet": "open"}
+    contexts = []
+    rec = trial.run_trial(cfg, tmp_path / "bench.yaml", tmp_path / "runs" / "r4", "suite", 0, 0,
+                          lambda ctx: contexts.append(ctx) or {"operator": "none"}, 1.0,
+                          token_file=str(token), task="inspect", home=tmp_path / "home")
+    assert rec["anomaly"] is None
+    assert not [x for x in seen if x[0] == "proxy"]
+    assert ("internet", "open") in seen
+    assert contexts[0]["proxy"] == "" and rec["limits"]["internet"] == "open"

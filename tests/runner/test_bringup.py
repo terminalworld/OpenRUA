@@ -1,4 +1,4 @@
-"""How the sandbox reaches the robot's graph and the proxy, per backend."""
+"""How the sandbox reaches the robot's graph and the outside world, per backend."""
 
 from openrua.runner import bringup
 
@@ -12,29 +12,60 @@ def test_peers_profile_lists_every_peer():
 
 def test_simulated_robot_shares_the_internal_network():
     r = bringup.sandbox_reachability({"kind": "sim"}, "openrua-internal", "rc-1-sim",
-                                     "http://openrua-proxy:8888")
+                                     "proxy:http://openrua-proxy-ab12cd34:8888")
     assert r["network"] == "openrua-internal" and r["static_peer"] == "rc-1-sim"
     assert "<address>rc-1-sim</address>" in r["peers_xml"]
-    assert r["internet"] == "proxy:http://openrua-proxy:8888" and r["env"] == ()
+    assert r["internet"] == "proxy:http://openrua-proxy-ab12cd34:8888" and r["env"] == ()
+    assert r["networks"] == ()       # the proxy is its only way out
+
+
+def test_a_simulated_robots_open_internet_is_a_routed_network_of_its_own():
+    # The internal network has no route out, so an open internet means
+    # joining a routed one too; OpenRUA's own, not docker's default bridge,
+    # where another container on the same ROS domain would see the
+    # sandbox's topics.
+    r = bringup.sandbox_reachability({"kind": "sim"}, "openrua-internal", "rc-1-sim", "open")
+    assert r["network"] == "openrua-internal" and r["internet"] == "open"
+    assert r["networks"] == (bringup.INTERNET_NETWORK,)
+    assert bringup.INTERNET_NETWORK not in ("bridge", "openrua-internal")
+    probe = bringup.sandbox_reachability({"kind": "sim"}, "openrua-internal", "rc-1-sim", "none")
+    assert probe["internet"] == "none" and probe["networks"] == ()
+
+
+def test_the_way_out_follows_the_proxy():
+    assert bringup.internet_access("http://openrua-proxy-ab12cd34:8888") \
+        == "proxy:http://openrua-proxy-ab12cd34:8888"
+    assert bringup.internet_access("") == "open"
 
 
 def test_real_robot_joins_the_host_network_and_reaches_the_proxy_by_address(monkeypatch):
-    monkeypatch.setattr(bringup, "proxy_url_from_network",
-                        lambda name, network="bridge": "http://172.17.0.9:8888")
+    asked = []
+    def by_address(name, network="bridge"):
+        asked.append(name)
+        return "http://172.17.0.9:8888"
+    monkeypatch.setattr(bringup, "proxy_url_from_network", by_address)
     host = bringup.sandbox_reachability(
-        {"kind": "real", "discovery": {"network": "host"}}, "openrua-internal", "r", "http://x")
+        {"kind": "real", "discovery": {"network": "host"}}, "openrua-internal", "r",
+        "proxy:http://openrua-proxy-ab12cd34:8888")
     assert host["network"] == "host" and host["static_peer"] is None
     assert host["internet"] == "proxy:http://172.17.0.9:8888"
+    assert asked == ["openrua-proxy-ab12cd34"]      # the proxy the URL names
+    assert host["networks"] == ()
+
+    # Without a proxy the host network is already the way out.
+    open_ = bringup.sandbox_reachability(
+        {"kind": "real", "discovery": {"network": "host"}}, "openrua-internal", "r", "open")
+    assert open_["internet"] == "open" and open_["networks"] == ()
 
     peers = bringup.sandbox_reachability(
         {"kind": "real", "discovery": {"static_peers": ["192.168.1.20", "192.168.1.21"]}},
-        "openrua-internal", "r", "http://x")
+        "openrua-internal", "r", "open")
     assert peers["static_peer"] == "192.168.1.20,192.168.1.21"
     assert peers["peers_xml"].count("<locator>") == 3
 
     server = bringup.sandbox_reachability(
         {"kind": "real", "discovery": {"discovery_server": "192.168.1.20:11811"}},
-        "openrua-internal", "r", "http://x")
+        "openrua-internal", "r", "open")
     assert server["env"] == ("ROS_DISCOVERY_SERVER=192.168.1.20:11811",)
     assert server["static_peer"] is None
 
@@ -42,10 +73,14 @@ def test_real_robot_joins_the_host_network_and_reaches_the_proxy_by_address(monk
 def test_the_agent_is_given_the_proxy_url_its_sandbox_can_reach(monkeypatch):
     # A real robot's sandbox is on the host network, where the proxy's
     # container name does not resolve: the agent CLI must get the address.
-    monkeypatch.setattr(bringup, "proxy_url_from_network",
-                        lambda name, network="bridge": "http://172.17.0.9:8888")
-    assert bringup.agent_proxy_url({"kind": "real"}, "http://openrua-proxy:8888") \
+    asked = []
+    def by_address(name, network="bridge"):
+        asked.append(name)
+        return "http://172.17.0.9:8888"
+    monkeypatch.setattr(bringup, "proxy_url_from_network", by_address)
+    assert bringup.agent_proxy_url({"kind": "real"}, "http://openrua-proxy-ab12cd34:8888") \
         == "http://172.17.0.9:8888"
+    assert asked == ["openrua-proxy-ab12cd34"]
     assert bringup.agent_proxy_url({"kind": "sim"}, "http://openrua-proxy:8888") \
         == "http://openrua-proxy:8888"
     assert bringup.agent_proxy_url({"kind": "real"}, "") == ""
@@ -211,13 +246,57 @@ def test_failed_driver_shutdown_still_cleans_sandbox_after_startup_error(tmp_pat
         raise RuntimeError("driver cleanup failed")
     monkeypatch.setattr(bringup, "resolve_robot_files", lambda *a: None)
     monkeypatch.setattr(bringup.record, "write_config", lambda *a: tmp_path / 'config.yaml')
-    monkeypatch.setattr(bringup, "sandbox_reachability", lambda *a: {})
+    monkeypatch.setattr(bringup, "sandbox_reachability", lambda *a: {"networks": ()})
     monkeypatch.setattr(bringup, "claim_domain", lambda *a: 0)
     monkeypatch.setattr(bringup.robot, "up", lambda *a, **k: SimpleNamespace(
         wait_ready=fail_ready, shutdown=fail_shutdown))
     monkeypatch.setattr(bringup, "sandbox_down", lambda name: calls.append(name))
     with pytest.raises(RuntimeError, match="driver cleanup failed"):
         bringup.bring_up({'machine': {'backend': {'kind': 'real'}}}, tmp_path,
-                         'robot', 'sandbox', None, None, 'network', 'proxy', (), None,
+                         'robot', 'sandbox', None, None, 'network', 'open', (), None,
                          tmp_path / 'robot.log')
     assert calls == ['driver', 'sandbox']
+
+
+def test_an_open_internet_creates_and_joins_the_routed_network(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    created, joined = [], []
+    monkeypatch.setattr(bringup, "resolve_robot_files", lambda *a: None)
+    monkeypatch.setattr(bringup.record, "write_config", lambda *a: tmp_path / 'config.yaml')
+    monkeypatch.setattr(bringup, "ensure_network",
+                        lambda name, internal: created.append((name, internal)) or name)
+    def claim(network, requested, start, stop):
+        start(7)
+        return 7
+    monkeypatch.setattr(bringup, "claim_domain", claim)
+    monkeypatch.setattr(bringup, "sandbox_up",
+                        lambda cfg, ws, **kw: joined.append((kw["internet"], kw["networks"])))
+    monkeypatch.setattr(bringup.robot, "up", lambda *a, **k: SimpleNamespace(
+        wait_ready=lambda: None, shutdown=lambda: None))
+    cfg = {'machine': {'backend': {'kind': 'sim', 'sandbox_image': 'img'}}}
+    bringup.bring_up(cfg, tmp_path, 'rc-sim', 'rc-sandbox', None, None,
+                     'openrua-internal', 'open', (), None, tmp_path / 'robot.log')
+    assert created == [(bringup.INTERNET_NETWORK, False)]
+    assert joined == [("open", (bringup.INTERNET_NETWORK,))]
+
+
+def test_a_proxied_sandbox_joins_no_routed_network(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    created, joined = [], []
+    monkeypatch.setattr(bringup, "resolve_robot_files", lambda *a: None)
+    monkeypatch.setattr(bringup.record, "write_config", lambda *a: tmp_path / 'config.yaml')
+    monkeypatch.setattr(bringup, "ensure_network",
+                        lambda name, internal: created.append(name) or name)
+    def claim(network, requested, start, stop):
+        start(7)
+        return 7
+    monkeypatch.setattr(bringup, "claim_domain", claim)
+    monkeypatch.setattr(bringup, "sandbox_up",
+                        lambda cfg, ws, **kw: joined.append((kw["internet"], kw["networks"])))
+    monkeypatch.setattr(bringup.robot, "up", lambda *a, **k: SimpleNamespace(
+        wait_ready=lambda: None, shutdown=lambda: None))
+    cfg = {'machine': {'backend': {'kind': 'sim', 'sandbox_image': 'img'}}}
+    bringup.bring_up(cfg, tmp_path, 'rc-sim', 'rc-sandbox', None, None, 'openrua-internal',
+                     'proxy:http://openrua-proxy-ab12cd34:8888', (), None, tmp_path / 'robot.log')
+    assert created == []
+    assert joined == [("proxy:http://openrua-proxy-ab12cd34:8888", ())]

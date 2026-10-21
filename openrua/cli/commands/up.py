@@ -17,6 +17,7 @@ from openrua import config
 from openrua.cli import updates
 from openrua.config import paths
 from openrua.runner.control import serve_control
+from openrua.runner.limits import add_limit_options, limit_overrides
 from openrua.runner.live import LiveRobot, RobotRequest, open_robot
 from openrua.runner.live_state import DEFAULT_NAME
 
@@ -69,7 +70,8 @@ def robot_request(args) -> RobotRequest:
         task_suite=args.task_suite, task_id=args.task_id, task=args.task,
         init_state=args.init_state,
         workspace=Path(args.workspace) if args.workspace else None,
-        ros_domain=args.ros_domain)
+        ros_domain=args.ros_domain, limits=limit_overrides(args))
+
 
 
 def open_session(args) -> Session:
@@ -141,6 +143,7 @@ def add_options(p, *, default_name=DEFAULT_NAME) -> None:
                    help="ROS_DOMAIN_ID (default: the lowest one no running robot "
                         "uses, so concurrent robots never share a graph; a real "
                         "robot: its own domain, 0)")
+    add_limit_options(p, "default: not limited")
 
 
 def add_parser(sub) -> None:

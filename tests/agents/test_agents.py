@@ -257,16 +257,15 @@ def test_no_direct_hooks_imports_outside_the_registry():
     assert not offenders, offenders
 
 
-def test_build_takes_install_and_whitelist_from_the_manifests(tmp_path):
-    from openrua.cli.commands.build import (default_agent, preinstall_for,
-                                            whitelist_for)
+def test_build_takes_the_install_from_the_manifests(tmp_path):
+    # The whitelist is no longer built into an image: a proxy gets its
+    # agent's hosts when it starts (proxy.up), so build reads installs only.
+    from openrua.cli.commands import build
+    from openrua.cli.commands.build import default_agent, preinstall_for
     a = agents.get("claude-code")
     assert default_agent(tmp_path) == "claude-code"      # the package default
     assert preinstall_for(None, tmp_path) == a.install
-    assert whitelist_for(["claude-code"], tmp_path).splitlines() == list(a.whitelist)
-    # several --agent: the union, each line once
-    assert whitelist_for(["claude-code", "claude-code"], tmp_path).splitlines() == \
-        list(a.whitelist)
+    assert not hasattr(build, "whitelist_for")
     # the user's defaults file picks the default agent
     (tmp_path / "config.yaml").write_text("agent: codex\n")
     assert default_agent(tmp_path) == "codex"
@@ -596,10 +595,28 @@ def test_collect_on_an_empty_profile_keeps_nothing(tmp_path):
         assert agent.collect(tmp_path / "empty", tmp_path / "trial") == [], agent.name
 
 
-def test_claude_profile_keeps_the_account_extras_out(tmp_path):
+def test_claude_profile_keeps_the_account_extras_out_when_limited(tmp_path):
     # The operator's claude.ai connectors, synced skills and plugins were
-    # loaded into a robot's sandbox; the session profile turns them off and
-    # keeps the operator's other settings.
+    # loaded into a robot's sandbox; a run limited on account_connectors
+    # turns them off in the session profile and keeps the operator's other
+    # settings.
+    import json
+    source = tmp_path / "login"
+    source.mkdir()
+    (source / ".credentials.json").write_text("{}")
+    (source / "settings.json").write_text(json.dumps({"theme": "dark"}))
+    agent = agents.get("claude-code")
+    limits = {"account_connectors": False}
+    prepared = agent.prepare_profile(source, tmp_path / "profile", limits=limits)
+    settings = json.loads((prepared.directory / "settings.json").read_text())
+    assert settings["theme"] == "dark" and settings["disableClaudeAiConnectors"] is True
+    assert settings["syncClaudeAiSkills"] is False and settings["syncClaudeAiPlugins"] is False
+    argv = agent.conversation("sandbox", "model", "http://proxy", limits=limits).argv
+    assert "ENABLE_CLAUDEAI_MCP_SERVERS=false" in argv
+
+
+def test_claude_profile_is_the_users_own_when_not_limited(tmp_path):
+    # A free session: the account's extras come along as the user has them.
     import json
     source = tmp_path / "login"
     source.mkdir()
@@ -608,12 +625,43 @@ def test_claude_profile_keeps_the_account_extras_out(tmp_path):
     agent = agents.get("claude-code")
     prepared = agent.prepare_profile(source, tmp_path / "profile")
     settings = json.loads((prepared.directory / "settings.json").read_text())
-    assert settings["theme"] == "dark" and settings["disableClaudeAiConnectors"] is True
-    assert settings["syncClaudeAiSkills"] is False and settings["syncClaudeAiPlugins"] is False
-    argv = agent.conversation("sandbox", "model", "http://proxy").argv
-    assert "ENABLE_CLAUDEAI_MCP_SERVERS=false" in argv
+    assert settings == {"theme": "dark"}
+    argv = agent.conversation("sandbox", "model", "").argv
+    assert not any(a.startswith("ENABLE_CLAUDEAI_MCP_SERVERS") for a in argv)
+    assert "--disallowedTools" not in argv
+    assert not any(a.startswith(("HTTPS_PROXY", "HTTP_PROXY")) for a in argv)
 
 
-def test_codex_runs_without_the_accounts_apps():
-    argv = agents.get("codex").conversation("sandbox", "model", "http://proxy").argv
+def test_claude_web_tools_follow_the_limit():
+    agent = agents.get("claude-code")
+    for argv in (agent.conversation("box", "m", "http://p", limits={"web_search": False}).argv,
+                 agent.launch_argv("box", "task", "m", 3, "http://p",
+                                   limits={"web_search": False}),
+                 agent.interactive_argv("box", "m", "http://p", limits={"web_search": False})):
+        i = argv.index("--disallowedTools")
+        assert argv[i + 1:i + 3] == ["WebSearch", "WebFetch"]
+    for argv in (agent.launch_argv("box", "task", "m", 3, "http://p",
+                                   limits={"web_search": True}),
+                 agent.interactive_argv("box", "m", "http://p")):
+        assert "--disallowedTools" not in argv
+
+
+def test_codex_runs_without_the_accounts_apps_when_limited():
+    codex = agents.get("codex")
+    limits = {"account_connectors": False, "web_search": False}
+    argv = codex.conversation("sandbox", "model", "http://proxy", limits=limits).argv
     assert "features.apps=false" in argv and 'sandbox_mode="danger-full-access"' in argv
+    assert 'web_search="disabled"' in argv
+    for argv in (codex.launch_argv("box", "task", "m", 3, "http://p", limits=limits),
+                 codex.interactive_argv("box", "m", "http://p", limits=limits)):
+        assert "features.apps=false" in argv and 'web_search="disabled"' in argv
+
+
+def test_codex_left_unlimited_passes_its_users_own_config():
+    # A limit the run leaves open passes nothing: the CLI does what its
+    # user's own config.toml says.
+    argv = agents.get("codex").conversation("sandbox", "model", "").argv
+    assert "features.apps=false" not in argv
+    assert not any(a.startswith("web_search=") for a in argv)
+    assert not any(a.startswith(("HTTPS_PROXY", "HTTP_PROXY")) for a in argv)
+    assert 'sandbox_mode="danger-full-access"' in argv

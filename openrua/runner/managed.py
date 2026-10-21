@@ -93,7 +93,7 @@ async def start(request: RobotRequest) -> ManagedSession:
         facts = live_state.load(request.name, request.home)
         adapter = agents.get(facts.get("agent_spec", facts["agent"]), request.home, version=facts.get("agent_version"))
         conversation = adapter.conversation(facts["sandbox"], facts["model"], facts["proxy"],
-                                            options=facts["options"])
+                                            options=facts["options"], limits=facts.get("limits"))
         if conversation is None:
             raise UnavailableError(
                 f"{adapter.name} does not support structured conversations",

@@ -13,6 +13,7 @@ from openrua.cli import updates
 from openrua.cli.preparation import prepare
 from openrua.errors import NotFound, UnavailableError, UsageError
 from openrua.runner import service, history
+from openrua.runner.limits import limit_overrides
 
 # Command arguments belong here; the service launcher only sees explicit argv.
 SELECTION = ('robot', 'sim', 'bench', 'agent', 'model')
@@ -158,6 +159,10 @@ def launch(args, values: dict[str, str]):
         value = getattr(args, key)
         if value is not None:
             argv.extend(['--' + key.replace('_', '-'), str(value)])
+    for key, value in limit_overrides(args).items():
+        flag = key.replace('_', '-')
+        argv.append(f'--{flag}' if value is True else f'--no-{flag}' if value is False
+                    else f'--{flag}={value}')
     logs = paths.launch_dir(name, args.home)
     return service.start(argv, directory / 'endpoint.json', logs / 'service.log', logs / 'start.lock')
 
@@ -264,7 +269,7 @@ def _run(args) -> int:
                                 lambda values: launch(args, values), models,
                                 lambda: history.entries(args.home),
                                 lambda name: history.open_session(args.home, name),
-                                environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress),
+                                environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress, limit_overrides(args)),
                                 authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']]))),
                                 resolve_agent=lambda name: authentication_choices(args.home, [name])[name])
         if result is None:
@@ -272,7 +277,7 @@ def _run(args) -> int:
         client, name = result
     else:
         validate_values(args.home, values)
-        prepare(args.home, values)
+        prepare(args.home, values, limits=limit_overrides(args))
         ok, report = check_values(args.home, values)
         if not ok:
             raise UnavailableError(report, hint='complete the preparation steps, then start again')

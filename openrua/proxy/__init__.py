@@ -1,15 +1,18 @@
-"""The proxy: the one route from the sandboxes to the internet.
+"""The proxy: the one route out for a sandbox limited to its model service.
 
-Sandboxes live on an internal docker network with no route out; this
-package is the single dual-homed relay (one interface on the internal
-net, one on the default bridge) that forwards only whitelisted hosts
-(tinyproxy, default-deny, 443 CONNECT). One proxy serves every sandbox;
-its lifetime spans campaigns, not trials.
+A run whose agent may reach only its model service puts the sandbox on
+an internal docker network with no route out; this package is the
+dual-homed relay (one interface on the internal net, one on the default
+bridge) that forwards only whitelisted hosts (tinyproxy, default-deny,
+443 CONNECT). One proxy serves every sandbox with the same whitelist;
+its lifetime spans campaigns, not trials. A run without that limit
+starts no proxy.
 
 Verbs:
-- ``build`` : whitelist (generic slot, one regex per line; empty = deny
-  all) -> proxy image (prints tag + digest).
-- ``up``    : idempotent ensure -> proxy URL (``http://<name>:8888``).
+- ``build`` : -> proxy image (prints tag + digest); the image holds no
+  whitelist.
+- ``up``    : whitelist (generic slot, one regex per line; empty = deny
+  all) -> idempotent ensure -> proxy URL (``http://<name>:8888``).
   Running means done; concurrent cold-start losers adopt the winner's
   instance; a live proxy is never ``rm -f``-ed (it would cut every
   in-flight session). Contrast sandbox.up, which always creates a fresh
@@ -23,9 +26,11 @@ and imports no other unit.
 """
 
 
+import hashlib
+
 from openrua.errors import UnavailableError
 
-NAME = "openrua-proxy"    # the standing container
+NAME = "openrua-proxy"    # the standing containers' name prefix
 IMAGE = "openrua-proxy"   # the image openrua build proxy produces
 PORT = 8888               # tinyproxy's listen port, also stamped on the image as a label
 
@@ -33,3 +38,9 @@ PORT = 8888               # tinyproxy's listen port, also stamped on the image a
 class ProxyError(UnavailableError):
     """Failure of a proxy verb (see SandboxError: libraries raise
     exceptions, only the command-line entry points exit)."""
+
+
+def name_for(whitelist: str) -> str:
+    """The standing proxy for this whitelist: the prefix plus the hash of
+    its hosts, so a proxy's name says which hosts it lets through."""
+    return f"{NAME}-{hashlib.sha256(whitelist.encode()).hexdigest()[:8]}"

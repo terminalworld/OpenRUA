@@ -24,6 +24,19 @@ the first real-robot day a person expected it to.
   CLI wrote (an unknown flag, say).
 - **Codex output reads as a person reads it**: your own message echoed
   back and empty reasoning are not shown, and a command appears once.
+- **A newer agent CLI is offered at start**, at most once a day: update
+  now (rebuilds the sandbox image), skip, or skip until the next version;
+  a CLI older than the minimum must be updated to start. `run` and `up`
+  print one line. The CLIs' own updaters are off inside the sandbox
+  (`DISABLE_AUTOUPDATER`, `check_for_update_on_startup=false`); a
+  manifest names where its newest release is read (`latest_release`).
+- **An interrupted motion is canceled**: `fjt_send.py` and
+  `gripper_cmd.py` cancel their goal on SIGINT, SIGTERM or SIGHUP before
+  exiting, as `ros2 action send_goal` does, instead of leaving the
+  controller to finish the motion.
+- **AGENTS.md in every workspace**: two sentences pointing any agent at
+  README.md and machine.yaml, read on its own by Codex and by Claude Code
+  in a project without a CLAUDE.md.
 
 ## 0.12.0
 
@@ -44,16 +57,36 @@ real-robot day.
   ros2 control CLI) when `openrua build sandbox --robot <file>` builds
   that robot's own sandbox image; a ROS workspace under
   `/opt/openrua/overlays/<name>` is sourced in every shell.
-- **The session record**: `$HOME` is `/home/robot`, so caches and logs no
-  longer land in `/workspace`. A session writes `provenance.json` (OpenRUA
-  version and commit, the robot config's hash and repository commit,
-  images).
-- **Account isolation**: Claude Code's claude.ai connectors and synced
-  skills and plugins, and Codex's ChatGPT apps, are off in every session.
+- **A robot's own driver images**: `backend.build` names the images a
+  launch command uses and the directories they are built from, as docker
+  compose's `build:`; `openrua build driver --robot <file>` builds them.
+  Starting a session builds what is missing: the driver images, and the
+  robot's own sandbox when it declares `sandbox_install`. `doctor` checks
+  the driver images.
+- **What the agent can reach**: three limits, `internet` (`open` or
+  `model-only`), `web_search` and `account_connectors` (the claude.ai
+  connectors and synced skills and plugins, the ChatGPT apps). A session
+  you start (`openrua`, `run`, `up`, `serve`) sets none of them: no proxy
+  starts and the agent CLI behaves as you have it set up; a simulated
+  robot's sandbox reaches the internet through `openrua-internet`, a
+  network only OpenRUA's sandboxes join. A benchmark trial applies its
+  config's `protocol.limits`, by default all three. `--internet`,
+  `--[no-]web-search` and `--[no-]account-connectors` set them on any of
+  these commands. Codex's `web_search` option is replaced by the limit.
   Codex's app-server runs with full access and no longer warns about
   bubblewrap.
-- **Proxy**: a standing proxy that does not allow the session's agent's
-  hosts is refused at start with the rebuild and replace commands.
+- **Proxy**: started only for `internet: model-only`, one standing proxy
+  per whitelist (`openrua-proxy-<hash of its hosts>`). The image holds no
+  whitelist; each proxy is given its hosts when it starts, so switching
+  agents needs no rebuild and never replaces a proxy in use. `openrua
+  build proxy` takes no `--agent`; `doctor` only warns when the image is
+  missing.
+- **The session record**: `$HOME` is `/workspace` again, so whatever the
+  agent writes under `~` stays in the record; ROS logs and the pip and
+  npm caches go to `/home/robot` (`ROS_HOME`, `XDG_CACHE_HOME`,
+  `npm_config_cache`). A session writes `provenance.json` (OpenRUA
+  version and commit, the robot config's hash and repository commit,
+  images, the agent CLI's version, the limits).
 - **Real robots**: no saved simulator or benchmark default applies to a
   real robot. A launch command runs in its file's directory
   (`backend.cwd`); shutdown sends SIGINT, SIGTERM and SIGKILL with

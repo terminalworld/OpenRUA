@@ -1,4 +1,4 @@
-"""Offer a newer agent CLI at start, the way Codex's own terminal does.
+"""Offer a newer agent CLI at start, as coding agents' own terminals do.
 
 The agent CLI lives in the sandbox image, so updating it means
 rebuilding that image (the layers below the CLI are reused). At most

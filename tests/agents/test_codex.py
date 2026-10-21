@@ -46,8 +46,14 @@ def test_launch_argv_is_headless_json_with_the_container_as_the_sandbox():
     assert "codex" in argv and "exec" in argv and "--json" in argv
     assert "--dangerously-bypass-approvals-and-sandbox" in argv
     assert "CODEX_HOME=/codex-home" in argv and "HTTPS_PROXY=http://proxy:8888" in argv
-    assert 'model_reasoning_effort="medium"' in argv and 'web_search="disabled"' in argv
+    assert 'model_reasoning_effort="medium"' in argv
+    assert not any(a.startswith("web_search=") for a in argv)    # not limited: the user's
     assert argv[-1] == "do it" and "--ephemeral" not in argv
+    limited = a.launch_argv("box", "do it", "gpt-5.6-sol", 100, "http://proxy:8888",
+                            limits={"web_search": False, "account_connectors": False})
+    assert 'web_search="disabled"' in limited and "features.apps=false" in limited
+    direct = a.launch_argv("box", "do it", "gpt-5.6-sol", 100, "")
+    assert not any(x.startswith(("HTTPS_PROXY", "HTTP_PROXY")) for x in direct)
     resumed = a.launch_argv("box", "Continue.", "m", 10, "http://p", resume=True, session_id="x")
     i = resumed.index("codex")
     assert resumed[i + 1:i + 4] == ["exec", "resume", "--last"]

@@ -3,15 +3,17 @@
     python3 -m openrua.sandbox.up --config <config.yaml> \
         --workspace <dir> [--task-suite S] [--image openrua-sandbox-jazzy] \
         [--network host|<docker-net>] [--static-peer <hostname>] \
-        [--ros-domain N] [--internet none|proxy:<url>|open] \
+        [--ros-domain N] [--internet none|proxy:<url>|open] [--join <docker-net> ...] \
         [--name <container>] [--mount SRC:DST ...] [--env K=V ...]
 
 Internet access (default ``none``): ``none`` pairs with a network that
 has no internet route; ``proxy:<url>`` sets HTTPS_PROXY/HTTP_PROXY at
 creation so everyone in the container (person or agent) goes through
-the whitelist proxy; ``open`` pairs with a routed network. Isolation is
-enforced by the network (docker --internal); this flag sets the one
-route out and keeps the intent explicit.
+the whitelist proxy; ``open`` pairs with a routed network: the given
+one, or one more named with ``--join`` (a sandbox on an internal network
+joins a routed one after creation). Isolation is enforced by the network
+(docker --internal); this flag sets the one route out and keeps the
+intent explicit.
 
 Value output: the container name (one line). File output: the seeded
 workspace under --workspace. State output: a running container attached
@@ -56,7 +58,7 @@ def up(cfg: dict, workspace: Path, *, image: str, network: str = "host",
        static_peer: str | None = None, ros_domain: int = 0,
        internet: str = "none", name: str | None = None,
        mounts: tuple[str, ...] = (), env: tuple[str, ...] = (),
-       run_args: tuple[str, ...] = (),
+       run_args: tuple[str, ...] = (), networks: tuple[str, ...] = (),
        seed_workspace: bool = True, peers_xml: str | None = None) -> str:
     """Create the live sandbox; returns its container name.
 
@@ -133,6 +135,12 @@ def up(cfg: dict, workspace: Path, *, image: str, network: str = "host",
         subprocess.run(["docker", "rm", "-f", name], capture_output=True)
         raise SandboxError(f"docker run failed for {name!r}:\n"
                            f"{r.stderr.strip()[-1000:]}")
+    for joined in networks:
+        j = subprocess.run(["docker", "network", "connect", joined, name],
+                           capture_output=True, text=True)
+        if j.returncode != 0:
+            raise SandboxError(_death_report(name, f"could not join network {joined!r}: "
+                                                   f"{j.stderr.strip()}"))
     if static_peer:
         w = subprocess.run(
             ["docker", "exec", "-i", name, "sh", "-c",
@@ -183,6 +191,10 @@ def main() -> int:
     ap.add_argument("--internet", default="none",
                     help="outside-world access: none (default) | "
                     "proxy:<url> (whitelist proxy, set at creation) | open")
+    ap.add_argument("--join", action="append", default=[], metavar="NETWORK",
+                    help="a further docker network to join after creation "
+                    "(repeatable); a routed one gives an internal-network "
+                    "sandbox the internet")
     ap.add_argument("--name", default=None,
                     help="container name (default: sandbox-<hex8>); an "
                     "existing name is replaced")
@@ -205,7 +217,7 @@ def main() -> int:
                   run_args=tuple(cfg.get("sandbox", {}).get("run_args", [])),
                   network=args.network, static_peer=args.static_peer,
                   ros_domain=args.ros_domain, internet=args.internet,
-                  name=args.name,
+                  name=args.name, networks=tuple(args.join),
                   mounts=tuple(args.mount), env=tuple(args.env),
                   seed_workspace=not args.no_seed)
     except SandboxError as e:

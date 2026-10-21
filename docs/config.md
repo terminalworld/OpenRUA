@@ -201,6 +201,7 @@ A real robot: its ROS 2 graph is already there or a launch command starts it.
 | `launch` | str \| null | None | command that brings the robot's ROS 2 graph up; null = already running |
 | `image` | str \| null | None | docker image the launch command runs in, on the host network (a vendor driver pinned to its own ROS release); null = run it on the host |
 | `discovery` | [Discovery](#discovery) | **required** | how the sandbox reaches the graph |
+| `build` | dict[str, str] | {} | images the launch command uses that are built from a directory here: image name -> directory holding its Dockerfile, relative to this file (as docker compose's build:). A missing one is built before a session starts; openrua build driver --robot <this file> rebuilds them |
 | `cwd` | str \| null | None | directory the launch command runs in on the host; default: the directory of the file declaring it, so the command may name its files relative to it |
 | `stop_timeout_s` | float | 30.0 | seconds shutdown waits after SIGINT, and again after SIGTERM, before SIGKILL: time for a driver to release the robot |
 | `sandbox_install` | str \| null | None | one-line shell chain, run as root when the sandbox image is built, installing what the agent needs to speak this robot's interfaces (vendor message definitions, a controller CLI); a ROS workspace built under /opt/openrua/overlays/<name> is sourced in every shell. No double quotes. Build it with openrua build sandbox --robot <this file> |
@@ -437,12 +438,23 @@ A benchmarks/<name>.yaml as written.
 | `base_cmd_policy` | 'queue' \| 'latest' | 'queue' | mobile base: queue every twist (one message = one tick) or let a new one replace the pending setpoint |
 | `base_cmd_queue` | int | 4 | mobile base, policy queue: the most ticks that may wait; a message beyond is dropped |
 | `stall_probe_timeout_s` | float | 600 | seconds a simulator job may run before the trial is declared wedged |
+| `limits` | [Limits](#limits) |  | what the agent may reach during a trial (openrua bench), over the trial defaults (model-only, no web search, no account connectors); free sessions take none of these |
 
 ## Clock
 
 | key | type | default | meaning |
 |---|---|---|---|
 | `mode` | 'paused' \| 'free_running' | 'paused' | paused: the world only advances with commands; free_running is the sub-experiment switch |
+
+## Limits
+
+What the agent may reach beyond the robot. The defaults are a free session's (openrua, run, up): nothing is limited, and the agent CLI behaves as its user has it set up.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `internet` | 'open' \| 'model-only' | 'open' | open: the sandbox reaches the internet; model-only: only the agent's model service and login, through a whitelist proxy |
+| `web_search` | bool | True | the agent CLI's own web search and web fetch tools |
+| `account_connectors` | bool | True | what the user's account brings beyond the CLI: its connectors or apps, and the skills and plugins it syncs |
 
 ## AgentConfig
 

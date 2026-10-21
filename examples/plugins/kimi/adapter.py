@@ -60,7 +60,7 @@ class Kimi(Agent):
     def login_hint(self, creds_home):
         return 'run kimi and /login for native subscription access; API use requires config set --auth api --api-key-file /absolute/path/to/key'
 
-    def prepare_profile(self, source, dest, *, require_credentials=True):
+    def prepare_profile(self, source, dest, *, require_credentials=True, limits=None):
         chosen, token_file = self._native(source)
         directory, _ = _copy_profile(source, dest, None, False, '')
         q = json.dumps
@@ -86,7 +86,7 @@ class Kimi(Agent):
             f'{token_file.parent.resolve()}:/kimi-home/credentials',
             f"{(source / 'oauth').resolve()}:/kimi-home/oauth"), secrets)
 
-    def prepare_api_profile(self, key_file, dest):
+    def prepare_api_profile(self, key_file, dest, *, limits=None):
         key = read_api_key(key_file)
         directory, _ = _copy_profile(key_file, dest, None, False, '')
         q = json.dumps
@@ -108,8 +108,10 @@ class Kimi(Agent):
             raise ValueError('use explicit API profile authentication for Kimi')
 
     def _env(self, proxy):
-        return ['-e', 'KIMI_CODE_HOME=/kimi-home', '-e', f'HTTPS_PROXY={proxy}', '-e', f'HTTP_PROXY={proxy}',
-                '-e', 'NO_PROXY=localhost,127.0.0.1']
+        # An empty proxy means the run goes out directly.
+        routed = ['-e', f'HTTPS_PROXY={proxy}', '-e', f'HTTP_PROXY={proxy}',
+                  '-e', 'NO_PROXY=localhost,127.0.0.1'] if proxy else []
+        return ['-e', 'KIMI_CODE_HOME=/kimi-home', *routed]
 
     def launch_argv(self, sandbox, prompt, model, max_turns, proxy, options=None,
                     session_id=None, resume=False, token_file=None, **unused):

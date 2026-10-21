@@ -22,6 +22,7 @@ than an uninterrupted one, the safe direction for comparability.
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import subprocess
@@ -47,6 +48,7 @@ def launcher_command(ctx: dict, agent, model: str, options: dict,
         *(["--home", str(ctx["home"])] if ctx.get("home") else []),
         "--session-id", session_id,
         "--proxy", ctx["proxy"],
+        "--limits", json.dumps(ctx["limits"]),
         *(["--token-file", str(ctx["token_file"])] if ctx.get("token_file")
           else []),
     ]

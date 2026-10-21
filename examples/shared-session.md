@@ -61,12 +61,12 @@ in advance, these commands are equivalent:
 ```sh
 openrua build --bench robocasa365
 openrua build sandbox --distro humble --agent codex
-openrua build proxy --agent codex
 openrua doctor panda-omron --sim robosuite --bench robocasa365 --agent codex
 ```
 
 `build --bench` builds the simulator image. It does not also install the agent
-in a sandbox or build the proxy. The first build downloads the simulator and
+in a sandbox. A session you start yourself needs no proxy: the agent reaches
+the internet as it does on your own machine. The first build downloads the simulator and
 its dependencies; allow it to finish before starting the session.
 
 ## 2. Start the terminal session

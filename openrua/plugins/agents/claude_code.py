@@ -5,7 +5,7 @@ this class with ``configs/agents/claude-code.yaml``:
 
 1. launch: the in-sandbox headless command (``claude -p``; permissions
    skipped inside the container; WebSearch/WebFetch disabled at the CLI
-   layer because server-side search cannot be proxied; stream-json
+   layer when the run's limits turn web search off; stream-json
    transcript on stdout).
 2. auth: a profile directory the CLI reads from ``CLAUDE_CONFIG_DIR``
    (the shared credentials file is bind-mounted, the rest copied), or a
@@ -35,14 +35,19 @@ from openrua.plugins.agents.claude_conversation import ClaudeConversation
 
 QUOTA_PHRASES = ("session limit", "rate limit", "weekly limit", "usage limit")
 # What the operator's claude.ai account carries beyond the CLI (its MCP
-# connectors, the skills and plugins it syncs) is not the robot's: kept
-# out of every sandbox profile. Read by Claude Code from user settings;
-# ENABLE_CLAUDEAI_MCP_SERVERS=false does the first for CLIs before the
-# setting existed.
+# connectors, the skills and plugins it syncs), kept out of a sandbox
+# profile when the run's limits say account_connectors: false. Read by
+# Claude Code from user settings; ENABLE_CLAUDEAI_MCP_SERVERS=false does
+# the first for CLIs before the setting existed.
 ISOLATION_SETTINGS = {"disableClaudeAiConnectors": True,
                       "syncClaudeAiSkills": False,
                       "syncClaudeAiPlugins": False}
 _REPLAY_TOOLS = ("Bash", "Write", "Edit")
+
+
+def _allowed(limits: dict | None, key: str) -> bool:
+    """Whether the run's limits leave ``key`` to the user (absent = yes)."""
+    return (limits or {}).get(key, True) is not False
 
 
 def _isolate(directory: Path) -> None:
@@ -57,13 +62,16 @@ class ClaudeCode(Agent):
     """Hooks only; every fact comes from the manifest."""
 
     def prepare_profile(self, source: Path, dest: Path, *,
-                        require_credentials: bool = True) -> PreparedProfile:
+                        require_credentials: bool = True,
+                        limits: dict | None = None) -> PreparedProfile:
         prepared = super().prepare_profile(source, dest,
                                            require_credentials=require_credentials)
-        _isolate(prepared.directory)
+        if not _allowed(limits, "account_connectors"):
+            _isolate(prepared.directory)
         return prepared
 
-    def prepare_api_profile(self, key_file: Path, dest: Path) -> PreparedProfile:
+    def prepare_api_profile(self, key_file: Path, dest: Path, *,
+                            limits: dict | None = None) -> PreparedProfile:
         key = read_api_key(key_file)
         directory, _ = _copy_profile(key_file, dest, None, False, "")
         with open(directory / "api-key", "x", encoding="utf-8",
@@ -74,20 +82,29 @@ class ClaudeCode(Agent):
         (directory / "settings.json").write_text(json.dumps({
             "apiKeyHelper": 'cat -- "${CLAUDE_CONFIG_DIR:?}/api-key"',
         }) + "\n")
-        _isolate(directory)
+        if not _allowed(limits, "account_connectors"):
+            _isolate(directory)
         return PreparedProfile(directory, self.sandbox_mounts(directory), lambda: [key])
 
     # ---------------------------------------------------------- launch
 
-    def _env(self, proxy: str, opts: dict[str, Any]) -> list[str]:
+    def _env(self, proxy: str, opts: dict[str, Any], limits: dict | None) -> list[str]:
         return [
             "-e", f"{self.credentials.config_env}={self.credentials.mount_point}",
-            "-e", f"HTTPS_PROXY={proxy}",
-            "-e", f"HTTP_PROXY={proxy}",
+            *(["-e", f"HTTPS_PROXY={proxy}", "-e", f"HTTP_PROXY={proxy}"] if proxy else []),
+            # The CLI is the sandbox image's: it changes when openrua
+            # rebuilds the image, never by itself in the middle of a run.
+            "-e", "DISABLE_AUTOUPDATER=1",
             "-e", f"BASH_DEFAULT_TIMEOUT_MS={opts['bash_timeout_ms']}",
             "-e", f"BASH_MAX_TIMEOUT_MS={opts['bash_max_timeout_ms']}",
-            "-e", "ENABLE_CLAUDEAI_MCP_SERVERS=false",
+            *([] if _allowed(limits, "account_connectors")
+              else ["-e", "ENABLE_CLAUDEAI_MCP_SERVERS=false"]),
         ]
+
+    @staticmethod
+    def _web(limits: dict | None) -> list[str]:
+        return [] if _allowed(limits, "web_search") else ["--disallowedTools", "WebSearch",
+                                                          "WebFetch"]
 
     def _opts(self, options: dict[str, Any] | None) -> dict[str, Any]:
         return {**self.default_options, **(options or {})}
@@ -95,7 +112,8 @@ class ClaudeCode(Agent):
     def launch_argv(self, sandbox: str, prompt: str, model: str, max_turns: int,
                     proxy: str, options: dict[str, Any] | None = None,
                     session_id: str | None = None, resume: bool = False,
-                    token_file: str | None = None, **_: Any) -> list[str]:
+                    token_file: str | None = None, limits: dict | None = None,
+                    **_: Any) -> list[str]:
         """``--resume`` names an existing session; ``--session-id`` creates
         the named one. They are not interchangeable, so pick by phase. A
         resumed launch carries no task restatement (the session holds it)."""
@@ -104,7 +122,7 @@ class ClaudeCode(Agent):
         if session_id:
             session = ["--resume", session_id] if resume else ["--session-id", session_id]
         return [
-            *self.exec_argv(sandbox, self._env(proxy, opts), token_file),
+            *self.exec_argv(sandbox, self._env(proxy, opts, limits), token_file),
             "claude",
             *session,
             "-p", prompt,
@@ -112,7 +130,7 @@ class ClaudeCode(Agent):
             "--effort", str(opts["effort"]),
             "--autocompact", str(opts["autocompact"]),
             "--dangerously-skip-permissions",
-            "--disallowedTools", "WebSearch", "WebFetch",
+            *self._web(limits),
             "--max-turns", str(max_turns),
             "--output-format", "stream-json",
             "--verbose",
@@ -120,29 +138,31 @@ class ClaudeCode(Agent):
 
     def interactive_argv(self, sandbox: str, model: str, proxy: str,
                          options: dict[str, Any] | None = None,
-                         prompt: str | None = None, **_: Any) -> list[str]:
-        """Same user, mounts and proxy as the headless launch; the optional
-        prompt becomes the opening message."""
+                         prompt: str | None = None, limits: dict | None = None,
+                         **_: Any) -> list[str]:
+        """Same user, mounts, proxy and limits as the headless launch; the
+        optional prompt becomes the opening message."""
         opts = self._opts(options)
         return [
-            *self.exec_argv(sandbox, self._env(proxy, opts), interactive=True),
-            "claude", "--model", model, "--effort", str(opts["effort"]),
+            *self.exec_argv(sandbox, self._env(proxy, opts, limits), interactive=True),
+            "claude", "--model", model, "--effort", str(opts["effort"]), *self._web(limits),
             *([prompt] if prompt else []),
         ]
 
     def conversation(self, sandbox: str, model: str, proxy: str,
                      options: dict[str, Any] | None = None,
-                     session_id: str | None = None, **_: Any) -> Conversation:
+                     session_id: str | None = None, limits: dict | None = None,
+                     **_: Any) -> Conversation:
         opts = self._opts(options)
         native_id = session_id or str(uuid4())
-        argv = [*self.exec_argv(sandbox, self._env(proxy, opts), stdin=True),
+        argv = [*self.exec_argv(sandbox, self._env(proxy, opts, limits), stdin=True),
                 self.binary, "-p", "--model", model,
                 "--effort", str(opts["effort"]), "--autocompact", str(opts["autocompact"]),
                 "--resume" if session_id else "--session-id", native_id,
                 "--input-format", "stream-json", "--output-format", "stream-json",
                 "--verbose", "--replay-user-messages", "--include-partial-messages",
                 "--permission-prompt-tool", "stdio", "--dangerously-skip-permissions",
-                "--disallowedTools", "WebSearch", "WebFetch"]
+                *self._web(limits)]
         return Conversation(argv, ClaudeConversation(native_id))
 
     # ------------------------------------------------------------ auth

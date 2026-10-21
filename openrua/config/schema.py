@@ -44,7 +44,7 @@ from __future__ import annotations
 import hashlib
 from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class Strict(BaseModel):
@@ -88,6 +88,26 @@ class Clock(Strict):
         "commands; free_running is the sub-experiment switch")
 
 
+class Limits(Strict):
+    """What the agent may reach beyond the robot. The defaults are a free
+    session's (openrua, run, up): nothing is limited, and the agent CLI
+    behaves as its user has it set up."""
+    internet: Literal["open", "model-only"] = Field(
+        default="open", description="open: the sandbox reaches the internet; model-only: "
+        "only the agent's model service and login, through a whitelist proxy")
+    web_search: bool = Field(default=True, description="the agent CLI's own web search "
+                             "and web fetch tools")
+    account_connectors: bool = Field(
+        default=True, description="what the user's account brings beyond the CLI: its "
+        "connectors or apps, and the skills and plugins it syncs")
+
+
+# A benchmark trial's limits unless its protocol says otherwise: the agent
+# reaches its model service and nothing else, so its results rest on the
+# robot's own surface.
+TRIAL_LIMITS = Limits(internet="model-only", web_search=False, account_connectors=False)
+
+
 class Protocol(Strict):
     trials_per_task: int = Field(default=10, description="episodes per task")
     max_turns: int = Field(default=500, description="agent turns before the trial stops")
@@ -109,6 +129,20 @@ class Protocol(Strict):
     stall_probe_timeout_s: float = Field(
         default=600, description="seconds a simulator job may run before the trial is "
         "declared wedged")
+    limits: Limits = Field(default_factory=lambda: TRIAL_LIMITS.model_copy(),
+                           description="what the agent may reach during a trial "
+                           "(openrua bench), over the trial defaults (model-only, no "
+                           "web search, no account connectors); free sessions take "
+                           "none of these")
+
+    @field_validator("limits", mode="before")
+    @classmethod
+    def _over_trial_limits(cls, given):
+        """A key the benchmark leaves out keeps the trial's limit, not a free
+        session's."""
+        if isinstance(given, dict):
+            return {**TRIAL_LIMITS.model_dump(), **given}
+        return given
 
 
 # ----------------------------------------------------------------- agent
@@ -252,6 +286,11 @@ class RealBackend(Strict):
                               "command runs in, on the host network (a vendor driver "
                               "pinned to its own ROS release); null = run it on the host")
     discovery: Discovery = Field(description="how the sandbox reaches the graph")
+    build: dict[str, str] = Field(
+        default_factory=dict, description="images the launch command uses that are "
+        "built from a directory here: image name -> directory holding its Dockerfile, "
+        "relative to this file (as docker compose's build:). A missing one is built "
+        "before a session starts; openrua build driver --robot <this file> rebuilds them")
     cwd: str | None = Field(default=None, description="directory the launch command runs "
                             "in on the host; default: the directory of the file declaring "
                             "it, so the command may name its files relative to it")

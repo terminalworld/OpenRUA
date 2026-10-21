@@ -173,27 +173,15 @@ def _agents_in_artifact(image: str, ctx: Context, kind: str, *, object_kind: str
 
 
 def check_proxy_image(ctx: Context) -> list[CheckResult]:
+    """Only a run that limits the agent to its model service (a benchmark
+    trial, by default) starts a proxy, so its absence is not an error."""
     image = proxy.IMAGE
-    names = " ".join(f"--agent {a.name}" for a in ctx.agents)
-    build = f"openrua build proxy {names}"
     if docker_inspect("image", image, "{{.Id}}") is None:
-        return [CheckResult("proxy-image", f"proxy image {image} missing", "error", hint=build)]
-    severity, detail = _agents_in_artifact(image, ctx, "whitelist")
-    return [CheckResult("proxy-image", f"proxy image {image} present", severity,
-                        detail=detail, hint=build if severity != "ok" else "")]
-
-
-def check_proxy_container(ctx: Context) -> list[CheckResult]:
-    """Check the standing container too: rebuilding its tag does not replace it."""
-    if docker_inspect("container", proxy.NAME, "{{.Id}}") is None:
-        return []
-    severity, detail = _agents_in_artifact(proxy.NAME, ctx, "whitelist", object_kind="container")
-    return [CheckResult("proxy-container", f"standing proxy {proxy.NAME} present", severity,
-                        detail=detail, hint=(
-                            "rebuilding the proxy image does not update this container; "
-                            "end sessions using it before removing it, then restart your session "
-                            "(see docs/install.md#updating-a-shared-proxy)"
-                        ) if severity != "ok" else "")]
+        return [CheckResult("proxy-image", f"proxy image {image} missing", "warning",
+                            detail="needed by runs that limit the agent to its model "
+                            "service (benchmark trials, or --internet model-only)",
+                            hint="openrua build proxy")]
+    return [CheckResult("proxy-image", f"proxy image {image} present")]
 
 
 def _build_hint(ctx: Context) -> str:
@@ -227,6 +215,13 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
             else:
                 out.append(CheckResult("robot-image", f"robot image {sim} present",
                                        detail=f"openrua {artifact_label(sim, sim_build.LABEL_VERSION) or '?'}"))
+    for driver in backend.get("build") or {}:
+        if docker_inspect("image", driver, "{{.Id}}") is None:
+            out.append(CheckResult(f"driver-image-{driver}", f"driver image {driver} missing",
+                                   "error", detail="a session builds it before it starts",
+                                   hint=f"openrua build driver --robot {ctx.robot}"))
+        else:
+            out.append(CheckResult(f"driver-image-{driver}", f"driver image {driver} present"))
     sandbox = backend["sandbox_image"]
     # A configured pin goes into the command, or the rebuild would
     # install the current release instead of the one the config asks for.
@@ -286,7 +281,7 @@ def check_login(ctx: Context) -> list[CheckResult]:
 
 
 CHECKS: tuple[Callable[[Context], list[CheckResult]], ...] = (
-    check_docker, check_home, check_bundled_agents, check_proxy_image, check_proxy_container,
+    check_docker, check_home, check_bundled_agents, check_proxy_image,
     check_robot_images, check_login,
 )
 

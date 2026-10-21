@@ -48,7 +48,8 @@ _WINDOWS = {300: "five_hour", 10080: "seven_day"}
 class Codex(Agent):
     """Hooks only; every fact comes from the manifest."""
 
-    def prepare_api_profile(self, key_file: Path, dest: Path) -> PreparedProfile:
+    def prepare_api_profile(self, key_file: Path, dest: Path, *,
+                            limits: dict | None = None) -> PreparedProfile:
         key = read_api_key(key_file)
         directory, _ = _copy_profile(key_file, dest, None, False, "")
         auth = directory / "auth.json"
@@ -61,25 +62,31 @@ class Codex(Agent):
     def _env(self, proxy: str) -> list[str]:
         return [
             "-e", f"{self.credentials.config_env}={self.credentials.mount_point}",
-            "-e", f"HTTPS_PROXY={proxy}",
-            "-e", f"HTTP_PROXY={proxy}",
+            *(["-e", f"HTTPS_PROXY={proxy}", "-e", f"HTTP_PROXY={proxy}"] if proxy else []),
         ]
 
     def _opts(self, options: dict[str, Any] | None) -> dict[str, Any]:
         return {**self.default_options, **(options or {})}
 
-    def _config_flags(self, opts: dict[str, Any]) -> list[str]:
-        # features.apps: the operator's ChatGPT apps (about a hundred tools,
-        # one of them a web search web_search does not govern) are not the
-        # robot's.
+    def _config_flags(self, opts: dict[str, Any], limits: dict | None) -> list[str]:
+        # A limit the run leaves open passes nothing: the CLI then does what
+        # its user's own config says. features.apps is the operator's
+        # ChatGPT apps (about a hundred tools, one of them a web search
+        # web_search does not govern).
+        limits = limits or {}
+        # The CLI is the sandbox image's: openrua offers updates, the CLI
+        # does not look for them.
         return ["-c", f'model_reasoning_effort="{opts["effort"]}"',
-                "-c", f'web_search="{opts["web_search"]}"',
-                "-c", "features.apps=false"]
+                "-c", "check_for_update_on_startup=false",
+                *(["-c", 'web_search="disabled"'] if limits.get("web_search") is False else []),
+                *(["-c", "features.apps=false"] if limits.get("account_connectors") is False
+                  else [])]
 
     def launch_argv(self, sandbox: str, prompt: str, model: str, max_turns: int,
                     proxy: str, options: dict[str, Any] | None = None,
                     session_id: str | None = None, resume: bool = False,
-                    token_file: str | None = None, **_: Any) -> list[str]:
+                    token_file: str | None = None, limits: dict | None = None,
+                    **_: Any) -> list[str]:
         opts = self._opts(options)
         verb = ["exec", "resume", "--last"] if resume else ["exec"]
         return [
@@ -90,28 +97,30 @@ class Codex(Agent):
             "--dangerously-bypass-approvals-and-sandbox",
             "-C", "/workspace",
             "--model", model,
-            *self._config_flags(opts),
+            *self._config_flags(opts, limits),
             prompt,
         ]
 
     def interactive_argv(self, sandbox: str, model: str, proxy: str,
                          options: dict[str, Any] | None = None,
-                         prompt: str | None = None, **_: Any) -> list[str]:
+                         prompt: str | None = None, limits: dict | None = None,
+                         **_: Any) -> list[str]:
         opts = self._opts(options)
         return [
             *self.exec_argv(sandbox, self._env(proxy), interactive=True),
             "codex", "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox",
-            "-C", "/workspace", "--model", model, *self._config_flags(opts),
+            "-C", "/workspace", "--model", model, *self._config_flags(opts, limits),
             *([prompt] if prompt else []),
         ]
 
     def conversation(self, sandbox: str, model: str, proxy: str,
                      options: dict[str, Any] | None = None,
-                     session_id: str | None = None, **_: Any) -> Conversation:
+                     session_id: str | None = None, limits: dict | None = None,
+                     **_: Any) -> Conversation:
         opts = self._opts(options)
         argv = [*self.exec_argv(sandbox, self._env(proxy), stdin=True),
                 self.binary, "app-server", "--listen", "stdio://",
-                *self._config_flags(opts),
+                *self._config_flags(opts, limits),
                 # The thread already runs with full access; said for the
                 # process too, so it does not look for a bubblewrap the
                 # container cannot use.

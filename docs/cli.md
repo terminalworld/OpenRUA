@@ -15,8 +15,10 @@ usage: openrua [-h] [--version] [--home HOME] [--robot ROBOT] [--sim SIM]
                [--bench BENCH] [--task-suite TASK_SUITE] [--task-id TASK_ID]
                [--init-state INIT_STATE] [--task TASK] [--name NAME] [--agent
                AGENT] [--workspace WORKSPACE] [--ros-domain ROS_DOMAIN]
-               [--model MODEL] [--gui | --tui UI | --cli] [--port PORT]
-               [--setup] [--resume [ID]] <verb> ...
+               [--internet {open,model-only}] [--web-search | --no-web-search]
+               [--account-connectors | --no-account-connectors] [--model
+               MODEL] [--gui | --tui UI | --cli] [--port PORT] [--setup]
+               [--resume [ID]] <verb> ...
 
 Open a robot conversation, or use ``openrua <verb> ...``.
 
@@ -55,6 +57,16 @@ start or reconnect (without a subcommand):
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
+  --internet {open,model-only}
+                        open, or only the agent's model service and login,
+                        through a whitelist proxy (default: not limited)
+  --web-search, --no-web-search
+                        the agent CLI's own web search and fetch tools
+                        (default: not limited)
+  --account-connectors, --no-account-connectors
+                        what your account brings beyond the CLI: its
+                        connectors or apps, synced skills and plugins
+                        (default: not limited)
   --model MODEL         model for a new session (default: the agent's
                         configuration)
   --gui                 open the browser instead of terminal chat
@@ -155,10 +167,10 @@ usage: openrua build [-h] [--bench NAME] [--sim NAME] [--all] [<unit>] ...
 
 Build simulator images from their declarations (--bench / --sim, repeatable;
 --all: every bundled benchmark), or one of the agent-side images (sandbox,
-proxy) or the ROS base. Bare `openrua build` makes the sandbox and proxy
-images for the default agent and the default benchmark's simulator image. The
-sandbox and proxy take their install line and whitelist from the manifests of
-the agents named with --agent.
+proxy), the ROS base, or a real robot's driver images. Bare `openrua build`
+makes the sandbox and proxy images for the default agent and the default
+benchmark's simulator image. The sandbox takes its install line from the
+manifests of the agents named with --agent.
 
 positional arguments:
   [<unit>]
@@ -176,7 +188,8 @@ options:
 |---|---|
 | `base` | the ROS base image simulator images build on |
 | `sandbox` | the agent terminal image |
-| `proxy` | the whitelist proxy image |
+| `driver` | the images a real robot's launch command uses, from the directories its config names (backend.build) |
+| `proxy` | the whitelist proxy image (runs that limit the agent to its model service start one per agent's hosts) |
 
 ### openrua build base
 
@@ -215,21 +228,26 @@ options:
                         install chain come from there
 ```
 
+### openrua build driver
+
+```
+usage: openrua build driver [-h] --robot NAME|PATH [--image IMAGE]
+
+options:
+  -h, --help         show this help message and exit
+  --robot NAME|PATH  the real robot
+  --image IMAGE      only this one of them
+```
+
 ### openrua build proxy
 
 ```
-usage: openrua build proxy [-h] [--agent AGENT] [--whitelist WHITELIST]
-                           [--tag TAG] [--port PORT]
+usage: openrua build proxy [-h] [--tag TAG] [--port PORT]
 
 options:
-  -h, --help            show this help message and exit
-  --agent AGENT         agent(s) whose hosts to allow; repeatable (default:
-                        the configured default)
-  --whitelist WHITELIST
-                        regexes, one per line, instead of the agents'
-                        manifests
+  -h, --help   show this help message and exit
   --tag TAG
-  --port PORT           listen port, baked in and labelled
+  --port PORT  listen port, baked in and labelled
 ```
 
 ## openrua run
@@ -239,7 +257,9 @@ usage: openrua run [-h] [--model MODEL] [--sim SIM] [--bench BENCH]
                    [--task-suite TASK_SUITE] [--task-id TASK_ID]
                    [--init-state INIT_STATE] [--task TASK] [--name NAME]
                    [--agent AGENT] [--workspace WORKSPACE]
-                   [--ros-domain ROS_DOMAIN]
+                   [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
+                   [--web-search | --no-web-search]
+                   [--account-connectors | --no-account-connectors]
                    [robot] [prompt]
 
 Bring a robot up, open the coding agent on its terminal with PROMPT as the
@@ -277,6 +297,16 @@ options:
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
+  --internet {open,model-only}
+                        open, or only the agent's model service and login,
+                        through a whitelist proxy (default: not limited)
+  --web-search, --no-web-search
+                        the agent CLI's own web search and fetch tools
+                        (default: not limited)
+  --account-connectors, --no-account-connectors
+                        what your account brings beyond the CLI: its
+                        connectors or apps, synced skills and plugins
+                        (default: not limited)
 ```
 
 ## openrua up
@@ -285,7 +315,9 @@ options:
 usage: openrua up [-h] [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
                   [--task-id TASK_ID] [--init-state INIT_STATE] [--task TASK]
                   [--name NAME] [--agent AGENT] [--workspace WORKSPACE]
-                  [--ros-domain ROS_DOMAIN]
+                  [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
+                  [--web-search | --no-web-search]
+                  [--account-connectors | --no-account-connectors]
                   [robot]
 
 Bring a robot up (simulated: boot its container; real: join its graph) with a
@@ -322,6 +354,16 @@ options:
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
+  --internet {open,model-only}
+                        open, or only the agent's model service and login,
+                        through a whitelist proxy (default: not limited)
+  --web-search, --no-web-search
+                        the agent CLI's own web search and fetch tools
+                        (default: not limited)
+  --account-connectors, --no-account-connectors
+                        what your account brings beyond the CLI: its
+                        connectors or apps, synced skills and plugins
+                        (default: not limited)
 ```
 
 ## openrua serve
@@ -331,7 +373,10 @@ usage: openrua serve [-h] [--sim SIM] [--bench BENCH]
                      [--task-suite TASK_SUITE] [--task-id TASK_ID]
                      [--init-state INIT_STATE] [--task TASK] [--name NAME]
                      [--agent AGENT] [--workspace WORKSPACE]
-                     [--ros-domain ROS_DOMAIN] [--model MODEL] [--port PORT]
+                     [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
+                     [--web-search | --no-web-search]
+                     [--account-connectors | --no-account-connectors]
+                     [--model MODEL] [--port PORT]
                      [robot]
 
 Run a local shared session independently of its connected clients.
@@ -363,6 +408,16 @@ options:
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
+  --internet {open,model-only}
+                        open, or only the agent's model service and login,
+                        through a whitelist proxy (default: not limited)
+  --web-search, --no-web-search
+                        the agent CLI's own web search and fetch tools
+                        (default: not limited)
+  --account-connectors, --no-account-connectors
+                        what your account brings beyond the CLI: its
+                        connectors or apps, synced skills and plugins
+                        (default: not limited)
   --model MODEL         model (default: the configured agent's)
   --port PORT           local port (default: choose a free port)
 ```
@@ -406,7 +461,7 @@ options:
 | `status` | snapshot, pending questions and message IDs |
 | `events` | read retained events after a cursor |
 | `send` | enqueue a message without waiting for its result |
-| `interrupt` | stop the running message; queued ones go next |
+| `interrupt` | interrupt a message and pause the queue |
 | `withdraw` | withdraw a queued message |
 | `resume` | release the currently confirmed pause |
 | `edit` | edit a queued message at its current revision |
@@ -586,6 +641,9 @@ usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
                      [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
                      [--record-every N] [--record-size WxH]
                      [--wall-clock-min WALL_CLOCK_MIN]
+                     [--internet {open,model-only}]
+                     [--web-search | --no-web-search]
+                     [--account-connectors | --no-account-connectors]
                      [--ros-domain ROS_DOMAIN]
                      [--credentials-dir CREDENTIALS_DIR]
                      [--token-file TOKEN_FILE] [--runs-root RUNS_ROOT]
@@ -636,6 +694,17 @@ options:
                         override of the config's
                         protocol.active_wall_clock_minutes (the config is the
                         default's single source)
+  --internet {open,model-only}
+                        open, or only the agent's model service and login,
+                        through a whitelist proxy (default: the config's
+                        protocol.limits)
+  --web-search, --no-web-search
+                        the agent CLI's own web search and fetch tools
+                        (default: the config's protocol.limits)
+  --account-connectors, --no-account-connectors
+                        what your account brings beyond the CLI: its
+                        connectors or apps, synced skills and plugins
+                        (default: the config's protocol.limits)
   --ros-domain ROS_DOMAIN
                         ROS_DOMAIN_ID for this run's containers (default: each
                         trial takes the lowest domain no running container

@@ -41,11 +41,12 @@ knowledge appears anywhere else.
 | `binary` | | the CLI executable inside the sandbox |
 | `install` | | one-line root shell chain that installs the CLI into the sandbox image; `{version}` in it is replaced by a pin when one is given |
 | `version` | | a pin the manifest itself carries; normally absent (see below) |
-| `whitelist` | | regexes of the hosts the CLI must reach through the proxy |
+| `whitelist` | | regexes of the hosts the CLI must reach (its model service and login); a run limited to the model service lets only these through its proxy |
 | `credentials` | | `dirname`, `filename`, `config_env`, `mount_point`, optional `native_dir`: a profile-directory login with native discovery |
 | `token_env` | | environment variable carrying a long-lived token (passed by file) |
 | `version_argv` | | command printing the CLI version (recorded per trial) |
 | `instruction_file` | | the instructions file the CLI reads on its own |
+| `latest_release` | | URL whose JSON names the newest release as `version` (an npm registry's `/latest`); `openrua` offers an update when the sandbox's CLI is older |
 | `default_options` | | knobs a config may override under `agent.options` |
 
 `openrua config schema` prints the same list with descriptions
@@ -72,10 +73,25 @@ transcript, so agents never read each other's). The
 manifest's fields are available on `self`. An agent's `capabilities` is
 the set of hooks its class overrides; `openrua agents` lists them.
 
+### The run's limits
+
+Every launch hook (`launch_argv`, `interactive_argv`, `conversation`)
+receives the run's `proxy` and, as a keyword, its `limits`: a dict with
+`internet`, `web_search` and `account_connectors`
+([what the agent can reach](install.md#what-the-agent-can-reach)). An
+empty `proxy` means none: the sandbox goes out directly, so set no proxy
+variables. A key that is absent, or `limits=None`, is not limited: pass
+nothing and let the CLI do what its user's own configuration says. When
+`web_search` or `account_connectors` is `false`, turn that off with the
+CLI's own flags. A CLI that reads such a setting only from its profile
+gets it in `prepare_profile(..., limits=...)` and
+`prepare_api_profile(..., limits=...)` instead.
+
 ### Preparing a native profile
 
 Since 0.8.0, both interactive startup and benchmark
-trials call `Agent.prepare_profile(source, dest, require_credentials=True)`.
+trials call `Agent.prepare_profile(source, dest, require_credentials=True,
+limits=None)`.
 The default preserves the existing JSON-settings and shared-credential-file
 layout; existing plugins do not need to override it. The package-level
 `openrua.agents.prepare_profile` tuple helper remains available for compatibility.
@@ -129,7 +145,7 @@ use. Doctor reports this distinction rather than declaring the account valid.
 ### Explicit API profiles
 
 Since 0.8.0, plugins can implement
-`prepare_api_profile(key_file, dest) -> PreparedProfile`. The caller invokes
+`prepare_api_profile(key_file, dest, limits=None) -> PreparedProfile`. The caller invokes
 this hook only for an explicit `auth.mode: api` selection. The plugin converts
 the selected raw key into its CLI's native session-local configuration and
 provides `read_secrets` for trial redaction. No native login profile is supplied,
@@ -160,9 +176,11 @@ entry_point: ./my_agent.py
 from openrua.agents import Agent
 
 class MyAgent(Agent):
-    def launch_argv(self, sandbox, prompt, model, max_turns, proxy, **_):
-        return [*self.exec_argv(sandbox, ["-e", f"HTTPS_PROXY={proxy}"]),
-                "my-agent", "--model", model, "--max-turns", str(max_turns), prompt]
+    def launch_argv(self, sandbox, prompt, model, max_turns, proxy, limits=None, **_):
+        env = ["-e", f"HTTPS_PROXY={proxy}"] if proxy else []
+        offline = ["--no-web"] if (limits or {}).get("web_search") is False else []
+        return [*self.exec_argv(sandbox, env),
+                "my-agent", "--model", model, "--max-turns", str(max_turns), *offline, prompt]
 
 HOOKS = MyAgent
 ```
@@ -188,13 +206,17 @@ def test_conforms():
 `claude-code` (`configs/agents/claude-code.yaml`,
 `plugins/agents/claude_code.py`): Claude Code, headless `claude -p` with
 the stream-json transcript, profile-directory, explicit API, or token login, quota and
-transcript accounting, shell/write/edit replay. It is the reference
-implementation for all of the above.
+transcript accounting, shell/write/edit replay. With `web_search: false`
+it disallows the WebSearch and WebFetch tools; with
+`account_connectors: false` the session's profile turns off the claude.ai
+connectors and the skills and plugins the account syncs. It is the
+reference implementation for all of the above.
 
 `codex` (`configs/agents/codex.yaml`, `plugins/agents/codex.py`): Codex,
 headless `codex exec --json` with approvals and the CLI's own sandbox
-switched off (the container is the sandbox) and web search disabled;
-login through a `CODEX_HOME` profile directory (`CODEX_HOME=<dir> codex
+switched off (the container is the sandbox); `web_search: false` passes
+`web_search="disabled"` and `account_connectors: false` turns off the
+ChatGPT apps (`features.apps=false`); login through a `CODEX_HOME` profile directory (`CODEX_HOME=<dir> codex
 login`) or an API key by file; shell commands replayed (its file-change
 events carry no content). Its stdout stream counts one turn per prompt,
 so `collect` keeps the CLI's own session log as `rollout.jsonl`, from
@@ -204,15 +226,15 @@ read. The CLI has no turn budget flag, so `protocol.max_turns` is
 carried by the runner across segments but not enforced inside a
 segment.
 
-Images carry one label per agent baked in (the hash of its install line
-or whitelist); `openrua doctor` reads them, so one sandbox image can
+Sandbox images carry one label per agent baked in (the hash of its
+install line); `openrua doctor` reads them, so one sandbox image can
 carry several agents and doctor still says which manifest changed.
 
 
 ## Structured conversations (experimental)
 
 A plugin may implement `conversation(sandbox, model, proxy, options=None,
-session_id=None)` in addition to batch execution and the native terminal.
+session_id=None, limits=None)` in addition to batch execution and the native terminal.
 The default returns `None`; existing plugins need no migration. The hook
 returns a `Conversation` containing a piped native-process command and a
 `ConversationProtocol`. Construction starts no process. This capability is

@@ -15,6 +15,7 @@ from openrua.config import (apply_suite_overrides, load_config, normalize_arms,
 from openrua.config import paths
 from openrua.errors import UsageError
 from openrua.runner import lock
+from openrua.runner.limits import add_limit_options, limit_overrides
 from openrua.runner import record
 from openrua.runner.operators import OPERATORS
 from openrua.runner.trial import run_trial
@@ -84,6 +85,7 @@ def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> Non
         help="override of the config's protocol.active_wall_clock_minutes "
         "(the config is the default's single source)",
     )
+    add_limit_options(ap, "default: the config's protocol.limits")
     ap.add_argument(
         "--ros-domain", type=int, default=None,
         help="ROS_DOMAIN_ID for this run's containers (default: each trial "
@@ -154,6 +156,9 @@ def run(args: argparse.Namespace) -> int:
             raise UsageError("--record-size takes WxH, like 1280x960")
     if args.wall_clock_min is None:
         args.wall_clock_min = resolve_wall_clock_min(cfg)
+    # Limits named on the command line go into the config itself, so the
+    # run's config.json and every trial's config.yaml say what applied.
+    cfg["protocol"]["limits"].update(limit_overrides(args))
     # The per-suite view, computed exactly once; everyone downstream
     # reads the resulting file.
     apply_suite_overrides(cfg, args.task_suite)
