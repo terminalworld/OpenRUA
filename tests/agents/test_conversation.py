@@ -189,3 +189,40 @@ def test_native_workspace_is_an_explicit_protocol_parameter():
     request = protocol.begin().outbound[0]
     request = protocol.receive({"id": request["id"], "result": {}}).outbound[-1]
     assert request["params"]["cwd"] == "/tmp/isolated-workspace"
+
+
+def test_codex_takes_a_message_during_a_turn_through_steer():
+    protocol = ready()
+    started(protocol)
+    request = protocol.steer("message-1", "message-2", "the cup is on the left").outbound[0]
+    assert request["method"] == "turn/steer"
+    assert request["params"]["expectedTurnId"] == "turn-1"
+    done = protocol.receive({"id": request["id"], "result": {"turnId": "turn-1"}})
+    assert [(e.kind, e.data["message_id"]) for e in done.events] == [("steer_delivered", "message-2")]
+    late = protocol.steer("message-1", "message-3", "too late").outbound[0]
+    refused = protocol.receive({"id": late["id"], "error": {"message": "no active turn to steer"}})
+    assert refused.events[0].kind == "steer_rejected" and protocol.ready
+
+
+def test_codex_turn_the_server_starts_is_the_agents_own():
+    protocol = ready()
+    update = protocol.receive({"method": "turn/started", "params": {
+        "threadId": "thread-1", "turn": {"id": "turn-9"}}})
+    assert update.events[0].kind == "turn_started" and update.events[0].data["origin"] == "agent"
+    assert completed(protocol, "turn-9").events[0].kind == "turn_finished"
+
+
+def test_codex_items_read_as_a_person_reads_them():
+    protocol = ready()
+    started(protocol)
+    def item(body):
+        return protocol.receive({"method": "item/completed", "params": {
+            "threadId": "thread-1", "turnId": "turn-1", "item": body}}).events[0]
+    assert item({"type": "userMessage", "id": "u", "content": []}).kind == "native"
+    assert item({"type": "reasoning", "id": "r", "summary": [], "content": []}).kind == "native"
+    command = item({"type": "commandExecution", "id": "c", "command": "/bin/bash -lc 'ls'",
+                    "cwd": "/workspace", "aggregatedOutput": "a\n"})
+    assert command.data["text"] == "/bin/bash -lc 'ls'" and "command" not in command.data["details"]
+    asked = item({"type": "agentMessage", "id": "q", "text": "Is the e-stop released?",
+                  "delivery": "async", "questions": [{"title": "Is the e-stop released?"}]})
+    assert asked.data["kind"] == "question"

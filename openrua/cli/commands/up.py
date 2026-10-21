@@ -13,6 +13,8 @@ import asyncio
 import signal
 from pathlib import Path
 
+from openrua import config
+from openrua.cli import updates
 from openrua.config import paths
 from openrua.runner.control import serve_control
 from openrua.runner.limits import add_limit_options, limit_overrides
@@ -50,6 +52,16 @@ class Session(LiveRobot):
      Ctrl-C here powers the robot off and keeps the workspace."""
 
 
+def notice_update(args) -> None:
+    """One line when a newer agent CLI is available (never a question:
+    up and run are for scripts too)."""
+    try:
+        composed = config.compose(args.robot, args.sim, args.bench, args.home, agent=args.agent)
+    except Exception:  # noqa: BLE001; the bring-up reports a bad selection itself
+        return
+    updates.notice(composed, args.home)
+
+
 def robot_request(args) -> RobotRequest:
     """Translate CLI options into the shared, explicit resource request."""
     return RobotRequest(
@@ -63,6 +75,7 @@ def robot_request(args) -> RobotRequest:
 
 
 def open_session(args) -> Session:
+    notice_update(args)
     live = open_robot(robot_request(args))
     return Session(**vars(live))
 

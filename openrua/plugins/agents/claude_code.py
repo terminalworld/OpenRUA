@@ -92,6 +92,9 @@ class ClaudeCode(Agent):
         return [
             "-e", f"{self.credentials.config_env}={self.credentials.mount_point}",
             *(["-e", f"HTTPS_PROXY={proxy}", "-e", f"HTTP_PROXY={proxy}"] if proxy else []),
+            # The CLI is the sandbox image's: it changes when openrua
+            # rebuilds the image, never by itself in the middle of a run.
+            "-e", "DISABLE_AUTOUPDATER=1",
             "-e", f"BASH_DEFAULT_TIMEOUT_MS={opts['bash_timeout_ms']}",
             "-e", f"BASH_MAX_TIMEOUT_MS={opts['bash_max_timeout_ms']}",
             *([] if _allowed(limits, "account_connectors")

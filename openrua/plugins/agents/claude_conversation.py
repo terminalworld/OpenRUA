@@ -2,7 +2,13 @@
 
 The CLI supplies no target turn on interrupt. Serialize turns and wait for
 both its result and any outstanding interrupt acknowledgement before another
-submit. The public owner must also pause its queue after interruption.
+submit.
+
+A user message written while a turn runs joins it: the CLI hands it to the
+model after the running tool calls and echoes it in place (checked on
+2.1.284: one result for both). Output the CLI produces with no turn open (it
+went on by itself when a background task finished) is a turn of the
+agent's own.
 """
 
 from __future__ import annotations
@@ -31,6 +37,7 @@ class ClaudeConversation(ConversationProtocol):
         self._requests: dict[str, tuple[dict, list[dict]]] = {}
         self._tool_calls: dict[str, tuple[str, str]] = {}
         self._finished_tools: set[str] = set()
+        self._steers: dict[str, str] = {}   # echoed uuid -> message ID it carried
 
     @property
     def can_submit(self) -> bool:
@@ -62,6 +69,21 @@ class ClaudeConversation(ConversationProtocol):
         self._message_id = None
         return Update([{"type": "user", "uuid": self._user_uuid,
                         "session_id": self.session_id, "parent_tool_use_id": None,
+                        "message": {"role": "user", "content": text}}])
+
+    @property
+    def can_steer(self) -> bool:
+        return self.ready and self._active is not None and self._accepted \
+            and not self._cancel_pending
+
+    def steer(self, turn_id: str, message_id: str, text: str) -> Update:
+        from uuid import uuid4
+        if turn_id != self._active or not self.can_steer:
+            raise ValueError("no running turn to join")
+        key = str(uuid4())
+        self._steers[key] = message_id
+        return Update([{"type": "user", "uuid": key, "session_id": self.session_id,
+                        "parent_tool_use_id": None,
                         "message": {"role": "user", "content": text}}])
 
     def interrupt(self, turn_id: str) -> Update:
@@ -110,10 +132,32 @@ class ClaudeConversation(ConversationProtocol):
             key = frame["request_id"]
             self._requests.pop(key, None)
             return Update(events=[Event("input_cancelled", self._active, {"request_id": key})])
+        if kind == "user" and frame.get("uuid") in self._steers:
+            message_id = self._steers.pop(frame["uuid"])
+            if self._active:
+                return Update(events=[Event("steer_delivered", self._active,
+                                            {"message_id": message_id})])
+            # The turn it joined had ended: the CLI took it as a new turn.
+            self._seen.add(message_id)
+            self._active, self._user_uuid = message_id, frame["uuid"]
+            self._accepted, self._interrupted, self._message_id = True, False, None
+            return Update(events=[Event("turn_started", message_id,
+                                        {"native_message_id": frame["uuid"]})])
         if kind == "user":
             events = self._tool_results(frame)
             if events:
                 return Update(events=events)
+        if not self._active and kind in ("assistant", "stream_event") and self.ready:
+            # The agent went on by itself: a turn of its own, so its output
+            # is shown and judged like any other.
+            from uuid import uuid4
+            turn_id = f"agent-{uuid4().hex}"
+            self._seen.add(turn_id)
+            self._active, self._user_uuid = turn_id, None
+            self._accepted, self._interrupted, self._message_id = True, False, None
+            update = Update(events=[Event("turn_started", turn_id, {"origin": "agent"})])
+            update.extend(self._receive(frame))
+            return update
         if not self._active:
             return Update(events=[Event("native", data=frame)])
         if kind == "user" and frame.get("uuid") == self._user_uuid:
@@ -199,9 +243,11 @@ class ClaudeConversation(ConversationProtocol):
             return Update(events=[Event("unsupported_request", self._active,
                                         {"request_id": key, "details": request})])
         if request["tool_name"] == "AskUserQuestion":
+            # Claude Code takes an answer outside the offered options too.
             questions = [{"id": str(i), "text": q["question"],
                           "choices": [o["label"] for o in q.get("options", [])],
-                          "multiple": q.get("multiSelect", False), "secret": False}
+                          "multiple": q.get("multiSelect", False), "allow_other": True,
+                          "secret": False}
                          for i, q in enumerate(request["input"]["questions"])]
         else:
             questions = [{"id": "decision", "text": request.get("description") or

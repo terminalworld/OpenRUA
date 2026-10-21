@@ -51,7 +51,7 @@ def test_trajectory_exit_reflects_native_result(monkeypatch, capsys, accepted, s
             self.accepted = accepted
         def get_result_async(self):
             assert accepted, 'a rejected goal has no result to await'
-            return NS(result=lambda: outcome)
+            return NS(result=lambda: outcome, done=lambda: True)
     class Client:
         def __init__(self, *args):
             pass
@@ -160,3 +160,48 @@ def test_ik_at_tcp_refuses_to_guess_the_offset(monkeypatch):
         'actuators': [{'kind': 'joint_trajectory', 'joints': ['a'], 'port': '/t'}]})
     with pytest.raises(SystemExit, match='tcp_offset_m'):
         module.main(['0', '0', '0', '0', '0', '0', '1', '--at', 'tcp'])
+
+
+def test_an_interrupted_trajectory_cancels_its_goal(monkeypatch, capsys):
+    """Like `ros2 action send_goal` on Ctrl-C: the goal is canceled before
+    the tool exits, so the controller does not finish the motion alone."""
+    import signal as signals
+    module = tool('fjt_send')
+    handlers, canceled = {}, []
+    class Handle:
+        accepted = True
+        def get_result_async(self):
+            return NS(done=lambda: False, result=lambda: None)
+        def cancel_goal_async(self):
+            canceled.append(True)
+            return NS(result=lambda: NS(goals_canceling=['goal']))
+    class Client:
+        def __init__(self, *args):
+            pass
+        def wait_for_server(self, **kwargs):
+            return True
+        def send_goal_async(self, goal):
+            return NS(result=Handle)
+    def spin(*args, **kwargs):
+        # the signal arrives while the arm moves
+        if signals.SIGINT in handlers and not canceled:
+            handlers[signals.SIGINT](signals.SIGINT, None)
+    node = NS(destroy_node=lambda: None)
+    modules = {
+        'rclpy': NS(init=lambda: None, create_node=lambda _: node,
+                    spin_until_future_complete=spin, shutdown=lambda: None),
+        'rclpy.action': NS(ActionClient=Client),
+        'action_msgs.msg': NS(GoalStatus=NS(STATUS_SUCCEEDED=4)),
+        'builtin_interfaces.msg': NS(Duration=NS),
+        'control_msgs.action': NS(FollowJointTrajectory=NS(Goal=lambda: NS(trajectory=NS()))),
+        'trajectory_msgs.msg': NS(JointTrajectoryPoint=NS),
+        'sensor_msgs.msg': NS(JointState=object),
+    }
+    for name, value in modules.items():
+        monkeypatch.setitem(sys.modules, name, value)
+    monkeypatch.setattr(module.signal, 'signal', lambda sig, handler: handlers.__setitem__(sig, handler))
+    monkeypatch.setattr(sys, 'argv', ['fjt_send.py', '0.1,-0.2', '2'])
+    monkeypatch.setattr(module, 'manifest_entry', lambda arm: {'joints': ['a', 'b'], 'port': '/trajectory'})
+    assert module.main() == 128 + signals.SIGINT
+    assert canceled == [True]
+    assert 'trajectory goal canceled' in capsys.readouterr().err

@@ -323,6 +323,15 @@ does not stop existing sessions.
 
 ## Update or remove
 
+The agent CLIs live in the sandbox image, so a newer CLI comes with a
+rebuild of that image. `openrua` looks for one at most once a day and,
+when the sandbox's CLI is older, asks before the session starts: update
+now (rebuild the sandbox), skip, or skip until the next version. A CLI
+older than OpenRUA can run must be updated to start. `openrua run` and
+`openrua up` print one line instead of asking; a pinned version
+(`agent.version`) is never offered an update; a trial never changes its
+CLI. Inside the sandbox the CLIs' own updaters are off.
+
 ```bash
 pip install -U openrua                   # then rebuild: a simulator image carries the package too
 openrua build --all                      # rebuild every simulator image (cached layers make it quick)

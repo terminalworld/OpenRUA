@@ -31,6 +31,8 @@ credentials:
   mount_point: /codex-home
 # An API key, passed to the CLI by file; bills the API, not a subscription.
 token_env: OPENAI_API_KEY
+# Where the newest release is named, for the update offer at start.
+latest_release: https://registry.npmjs.org/@openai/codex/latest
 version_argv: [codex, --version]
 instruction_file: AGENTS.md
 # Knobs a config may override under agent.options:

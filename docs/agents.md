@@ -46,6 +46,7 @@ knowledge appears anywhere else.
 | `token_env` | | environment variable carrying a long-lived token (passed by file) |
 | `version_argv` | | command printing the CLI version (recorded per trial) |
 | `instruction_file` | | the instructions file the CLI reads on its own |
+| `latest_release` | | URL whose JSON names the newest release as `version` (an npm registry's `/latest`); `openrua` offers an update when the sandbox's CLI is older |
 | `default_options` | | knobs a config may override under `agent.options` |
 
 `openrua config schema` prints the same list with descriptions

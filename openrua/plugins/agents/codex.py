@@ -74,7 +74,10 @@ class Codex(Agent):
         # ChatGPT apps (about a hundred tools, one of them a web search
         # web_search does not govern).
         limits = limits or {}
+        # The CLI is the sandbox image's: openrua offers updates, the CLI
+        # does not look for them.
         return ["-c", f'model_reasoning_effort="{opts["effort"]}"',
+                "-c", "check_for_update_on_startup=false",
                 *(["-c", 'web_search="disabled"'] if limits.get("web_search") is False else []),
                 *(["-c", "features.apps=false"] if limits.get("account_connectors") is False
                   else [])]

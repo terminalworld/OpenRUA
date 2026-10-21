@@ -77,7 +77,7 @@ export class ToolView {
 
 const RESULT = {
   failed: text => red(`✗ failed${text ? ': ' + text : ''}`),
-  interrupted: () => yellow('‖ interrupted · the queue is paused; /continue when ready'),
+  interrupted: () => yellow('‖ interrupted'),
   unknown: text => yellow(`? unknown outcome${text ? ': ' + text : ''} · inspect the robot, then resolve it with the session CLI`),
   withdrawn: () => muted('withdrawn'),
   reconciled: text => muted(`reconciled${text ? ': ' + text : ''}`),
@@ -101,8 +101,15 @@ export class Transcript extends Container {
 
   message(message) {
     const turn = this.turn(message.id);
-    const waiting = ['queued', 'dispatching'].includes(message.status);
-    turn.user.setText(`${accent('❯')} ${bold(plain(message.text))}${waiting ? muted(' · queued') : ''}`);
+    if (message.origin === 'agent') {
+      // A turn the agent started by itself, a background task having finished.
+      turn.user.setText(muted('⏺ the agent went on by itself'));
+    } else {
+      const note = ['queued', 'dispatching'].includes(message.status) ? ' · queued'
+        : message.status === 'steering' ? ' · joining the running turn'
+        : message.status === 'steered' ? ' · joined the running turn' : '';
+      turn.user.setText(`${accent('❯')} ${bold(plain(message.text))}${note ? muted(note) : ''}`);
+    }
     const result = RESULT[message.status];
     if (result) turn.result.setText(result(plain(message.uncertainty ?? message.resolution ?? '')));
     else if (message.status !== 'completed') turn.result.setText('');
@@ -127,8 +134,8 @@ export class Transcript extends Container {
     }
     if (!['text_delta', 'item'].includes(event.kind)) return;
     const itemId = data.item_id ?? 'text';
-    const message = event.kind === 'text_delta' || data.kind === 'message';
-    const item = this.item(turn, event.turn_id, itemId, message);
+    const message = event.kind === 'text_delta' || data.kind === 'message' || data.kind === 'question';
+    const item = this.item(turn, event.turn_id, itemId, message, data.kind === 'question');
     if (item.message) {
       item.set(event.kind === 'text_delta' ? item.text + plain(data.text) : plain(data.text ?? item.text));
     } else {
@@ -144,13 +151,15 @@ export class Transcript extends Container {
     }
   }
 
-  item(turn, turnId, itemId, message) {
+  item(turn, turnId, itemId, message, question = false) {
     if (!turn.items.has(itemId)) {
       let entry;
       if (message) {
         const component = new Markdown('', 0, 0, markdownTheme);
         entry = {text: '', message: true, set: text => { entry.text = text; component.setText(text); }};
-        turn.output.addChild(new Bullet(component));
+        // A question the agent asks without stopping: the answer is the next
+        // message typed.
+        turn.output.addChild(question ? new Bullet(component, () => yellow('?')) : new Bullet(component));
       } else {
         const view = new ToolView({label: 'Tool', phase: '', expanded: false});
         entry = {message: false, view};

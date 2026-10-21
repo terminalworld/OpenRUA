@@ -140,8 +140,10 @@ yet take over that shared conversation. For a native terminal with a robot that
 stays up between agent visits, use `up`, `agent`, and `down` as described in
 [First task in simulation](examples/first-task.md).
 
-In shared chat, new instructions queue behind the active turn. Interrupting
-pauses the queue for review; **Resume** continues it. Ending the session stops
+In shared chat, what you send while the agent works joins the running turn,
+as in a coding agent's own terminal; interrupting stops the turn and queued
+instructions go next. A failure pauses the queue for review, saying why;
+**Resume** continues it. Ending the session stops
 its resources while preserving files; deleting them is a separate operation.
 For development, `openrua serve` still runs the service in the foreground.
 Stopping that process ends its session, unlike closing one of its clients.

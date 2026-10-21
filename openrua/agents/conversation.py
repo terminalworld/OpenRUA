@@ -22,6 +22,10 @@ class Event:
     optional boolean multiple, allow_other and secret fields (default false).
     Replies contain choice labels or, when allowed, one free-text answer.
     Plugins map these fields to their native question and answer formats.
+    steer_delivered / steer_rejected name the message_id a steer carried. A
+    turn the agent starts by itself (a background task finished) arrives as
+    turn_started with a turn ID the owner never submitted and
+    data.origin "agent".
     """
     kind: str
     turn_id: str | None = None
@@ -70,6 +74,19 @@ class ConversationProtocol(ABC):
     def respond(self, request_id: str, answers: dict[str, list[str]]) -> Update:
         """Answer the questions supplied in an input_required event by their IDs."""
         ...
+
+    @property
+    def can_steer(self) -> bool:
+        """Whether a user message can join the running turn right now, the
+        way a coding agent's own terminal passes on what is typed while it
+        works. Default: never; the message waits for the turn to end."""
+        return False
+
+    def steer(self, turn_id: str, message_id: str, text: str) -> Update:
+        """Add ``text`` to the running turn ``turn_id``; the plugin later
+        emits steer_delivered, or steer_rejected so the owner queues it
+        again, naming ``message_id``."""
+        raise NotImplementedError("this agent cannot take a message during a turn")
 
 
 @dataclass(frozen=True)

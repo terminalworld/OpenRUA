@@ -9,8 +9,10 @@ from openrua.sandbox import workspace
 # Reviewed revision: discrepancies with the live graph are logged in
 # machine-discrepancies.yaml (worded as a robot config that can drift);
 # tools check where the arm ended up; cameras are entries with their own
-# topics; simulation-only statements live in machine.yaml.
-PINNED = "46d8c36100c519b8c587bb6bfc0da42018f1003d38913795c9c7b227453584a2"
+# topics; simulation-only statements live in machine.yaml. AGENTS.md points
+# any agent at README.md and machine.yaml; the motion tools cancel their
+# goal when interrupted.
+PINNED = "14124e656176a18041a4c8b0e570c731f5129d7c7be59d15c64b8a300ed61bf7"
 
 
 def test_workspace_template_hash_is_unchanged():

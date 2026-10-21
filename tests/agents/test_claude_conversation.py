@@ -222,3 +222,55 @@ def test_unknown_tool_result_is_retained_without_assigning_it_to_current_turn():
     started(protocol)
     assert not any(e.kind == 'item' for e in tool_result(protocol, 'unknown result').events)
     assert not protocol.can_submit
+
+
+def test_a_message_typed_during_a_turn_joins_it():
+    # Checked against the CLI: the message is handed to the model after the
+    # running tool calls, echoed in place, and the turn ends with one result.
+    protocol = ready()
+    started(protocol)
+    assert protocol.can_steer
+    frame = protocol.steer("turn-1", "message-2", "the ball moved left").outbound[0]
+    assert frame["type"] == "user" and frame["message"]["content"] == "the ball moved left"
+    echo = protocol.receive({**frame, "session_id": "session-1"})
+    assert [(e.kind, e.turn_id, e.data) for e in echo.events] == [
+        ("steer_delivered", "turn-1", {"message_id": "message-2"})]
+    assert result(protocol).events[-1].kind == "turn_finished"
+
+
+def test_a_steer_that_arrives_after_the_turn_becomes_its_own_turn():
+    protocol = ready()
+    started(protocol)
+    frame = protocol.steer("turn-1", "message-2", "and then place it").outbound[0]
+    result(protocol)
+    update = protocol.receive({**frame, "session_id": "session-1"})
+    assert [(e.kind, e.turn_id) for e in update.events] == [("turn_started", "message-2")]
+    assert result(protocol, uuid="result-2").events[-1].turn_id == "message-2"
+
+
+def test_output_with_no_turn_open_is_a_turn_of_the_agents_own():
+    # A background task finished after the turn ended and the CLI went on;
+    # its output used to be dropped, then counted under the next message.
+    protocol = ready()
+    started(protocol)
+    result(protocol)
+    update = protocol.receive({"type": "assistant", "session_id": "session-1", "message": {
+        "id": "msg-9", "content": [{"type": "text", "text": "The trajectory finished."}]}})
+    first = update.events[0]
+    assert first.kind == "turn_started" and first.data == {"origin": "agent"}
+    assert update.events[1].turn_id == first.turn_id
+    assert result(protocol, uuid="result-9").events[-1].turn_id == first.turn_id
+    assert protocol.can_submit
+
+
+def test_a_question_takes_an_answer_of_ones_own():
+    protocol = ready()
+    started(protocol)
+    asked = protocol.receive({"type": "control_request", "request_id": "q-1", "request": {
+        "subtype": "can_use_tool", "tool_name": "AskUserQuestion", "input": {"questions": [{
+            "question": "How should I proceed?", "header": "Next",
+            "options": [{"label": "Look first"}, {"label": "Retry"}], "multiSelect": False}]}}})
+    assert asked.events[0].data["questions"][0]["allow_other"] is True
+    reply = protocol.respond("q-1", {"0": ["use position control, then try other joints"]})
+    answers = reply.outbound[0]["response"]["response"]["updatedInput"]["answers"]
+    assert answers == {"How should I proceed?": "use position control, then try other joints"}

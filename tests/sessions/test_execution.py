@@ -110,7 +110,7 @@ def test_lost_submission_is_not_retried(tmp_path):
     asyncio.run(run())
 
 
-def test_interrupt_waits_for_native_start_and_keeps_next_message_paused(tmp_path):
+def test_interrupt_waits_for_native_start_then_the_next_message_goes(tmp_path):
     async def run():
         store, session, transport, execution = await setup(tmp_path)
         try:
@@ -122,10 +122,9 @@ def test_interrupt_waits_for_native_start_and_keeps_next_message_paused(tmp_path
             await until(lambda: any("interrupt" in f for f in transport.writes))
             await transport.frames.put({"kind": "turn_finished", "turn_id": first["id"],
                                         "data": {"status": "interrupted"}})
-            await until(lambda: store.snapshot()["state"]["active"] is None)
-            assert len([f for f in transport.writes if "submit" in f]) == 1
-            await execution.command("resume", pause_id=store.snapshot()["state"]["pause_id"])
-            assert len([f for f in transport.writes if "submit" in f]) == 2
+            # the queue goes on: the next message is submitted without a resume
+            await until(lambda: len([f for f in transport.writes if "submit" in f]) == 2)
+            assert not store.snapshot()["state"]["paused"]
         finally:
             await execution.close()
             store.close()
@@ -194,4 +193,28 @@ def test_stdio_transport_starts_in_explicit_workspace(tmp_path):
             assert await transport.read() is None
         finally:
             await transport.close()
+    asyncio.run(run())
+
+
+def test_a_native_process_that_ends_says_why(tmp_path):
+    # The agent CLI exited on an unknown flag; the session showed only
+    # "agent disconnected", and the reason sat in agent.stderr.log.
+    async def run():
+        store = SQLiteStore(tmp_path / "session.sqlite", initial_state())
+        session = Session(store)
+        transport = FakeTransport(session)
+        async def start_transport():
+            return transport
+        execution = Execution(session, Conversation(["fake"], FakeProtocol()), start_transport,
+                              tmp_path / "owner.lock",
+                              diagnostics=lambda: "error: unknown option '--autocompact'")
+        await execution.start()
+        try:
+            await until(lambda: store.snapshot()["state"]["connected"])
+            await transport.frames.put(None)
+            await until(lambda: not store.snapshot()["state"]["connected"])
+            assert "unknown option '--autocompact'" in store.snapshot()["state"]["pause_reason"]
+        finally:
+            await execution.close()
+            store.close()
     asyncio.run(run())

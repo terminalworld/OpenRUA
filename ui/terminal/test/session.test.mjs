@@ -75,15 +75,14 @@ test('Pi client shares the real owner queue, events, interruption and reconnect'
   assert.doesNotMatch(rendered, /\+2 lines/);
   await client.command('interrupt', {message_id: first.id});
   await call({op: 'frame', frame: {kind: 'turn_finished', turn_id: first.id, data: {status: 'interrupted'}}});
-  state = await until(client, s => s.paused && !s.active);
-  assert.equal(state.messages[1].status, 'queued');
-  const pause = state.pause_id;
+  // As in a coding agent's own terminal: the interrupt stops the turn, and
+  // the queued message goes next without a resume.
+  state = await until(client, s => s.active === second.id);
+  assert.equal(state.paused, false);
   client.close();
   const reconnected = new Controller(other, new Transcript(), 'reconnected');
   await reconnected.refresh();
   assert.equal(reconnected.state.messages.length, 2);
-  await other.command('resume', {pause_id: pause});
-  await until(other, s => s.active === second.id);
   const {writes} = await call({op: 'writes'});
   assert.deepEqual(writes.filter(w => w.submit).map(w => w.submit), [first.id, second.id]);
   assert.equal(writes.filter(w => w.interrupt).length, 1);
@@ -188,7 +187,7 @@ class Terminal {
   setProgress() {}
 }
 
-test('Pi keyboard editor submits, queues, confirms interruption and detaches', {timeout: 15000}, async t => {
+test('Pi keyboard editor submits, queues, interrupts on Escape and detaches', {timeout: 15000}, async t => {
   const {client, call} = await fixture(t);
   const terminal = new Terminal();
   const chat = new Chat(client, {terminal, pollMs: 20});
@@ -205,23 +204,20 @@ test('Pi keyboard editor submits, queues, confirms interruption and detaches', {
   terminal.input('Then wait'); terminal.input('\r');
   await until(client, s => s.messages.length === 2);
   while (chat.busy) await new Promise(r => setTimeout(r, 5));
+  // Escape stops the turn at once, as in a coding agent's own terminal.
   terminal.input('\x1b');
-  assert.notEqual(chat.panel, null);
-  // Cancel is selected by default, so Escape alone cannot interrupt motion.
-  let writes = (await call({op: 'writes'})).writes;
-  assert.equal(writes.filter(w => w.interrupt).length, 0);
-  terminal.input('\x1b[B'); terminal.input('\r');
+  assert.equal(chat.panel, null);
   await until(client, s => s.messages[0].cancel_requested);
   await call({op: 'frame', frame: {kind: 'turn_finished', turn_id: id, data: {status: 'interrupted'}}});
-  await until(client, s => s.paused && !s.active);
+  // ...and what was queued goes next.
+  await until(client, s => s.messages[1].status === 'dispatching' || s.messages[1].status === 'running');
   const observer = new Client(client.origin, client.token);
   t.after(() => observer.close());
   terminal.input('\x04');
   await running;
   state = (await observer.snapshot()).state;
   assert.equal(state.closed, false);
-  assert.equal(state.messages[1].status, 'queued');
-  assert.equal(state.paused, true);
+  assert.equal(state.paused, false);
   assert.equal(terminal.stopped, true);
 });
 
@@ -254,6 +250,33 @@ test('queued edits and question replies use the existing owner contracts', {time
   assert.deepEqual((await call({op: 'writes'})).writes.find(w => w.reply), {reply: 'q', answers: {target: ['bowl']}});
   await chat.submit('/resume');
   assert.deepEqual(await running, {action: 'history'});
+});
+
+test('a typed line answers the question the agent is waiting on', {timeout: 15000}, async t => {
+  // A person typed an answer while the agent waited on a question; it went
+  // into the queue as a new message and the agent kept waiting.
+  const {client, call} = await fixture(t);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20});
+  t.after(() => chat.stop());
+  const running = chat.run();
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  await chat.submit('Move joint 7');
+  const id = (await client.snapshot()).state.active;
+  await call({op: 'frame', frame: {kind: 'turn_started', turn_id: id, data: {}}});
+  await call({op: 'frame', frame: {kind: 'input_required', turn_id: id, data: {
+    request_id: 'q', questions: [{id: '0', text: 'How should I proceed?', choices: ['Look first', 'Retry'],
+      allow_other: true}]}}});
+  await until(client, s => !!s.requests.q);
+  await chat.refresh();
+  await chat.submit('use position control, then try the other joints');
+  await until(client, s => s.requests.q?.status !== 'pending');
+  const {writes} = await call({op: 'writes'});
+  assert.deepEqual(writes.find(w => w.reply),
+    {reply: 'q', answers: {0: ['use position control, then try the other joints']}});
+  assert.equal((await client.snapshot()).state.messages.length, 1);   // not queued as a message
+  terminal.input('\x04');
+  await running;
 });
 
 test('archive mode cannot enqueue or end a session', async () => {

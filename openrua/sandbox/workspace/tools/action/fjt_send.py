@@ -7,9 +7,13 @@ Joint names and action port come from machine.yaml (kind
 joint_trajectory); N must match that entry's joint count. --arm picks the
 arm on a multi-arm machine. After the result it prints the largest gap
 between target and /joint_states: a controller can report success short
-of the target, or report failure for a move that happened.
+of the target, or report failure for a move that happened. Interrupted
+(SIGINT, SIGTERM, SIGHUP) while the arm moves, it cancels the goal before
+exiting, as `ros2 action send_goal` does on Ctrl-C; otherwise the
+controller would finish the motion on its own.
 """
 import argparse
+import signal
 import sys
 from pathlib import Path
 
@@ -72,7 +76,21 @@ def main() -> int:
             print(f"trajectory goal rejected by {action}; no trajectory accepted", file=sys.stderr)
             return 1
         result = handle.get_result_async()
-        rclpy.spin_until_future_complete(node, result)
+        # A signal only sets a flag: the cancel request goes out from this
+        # loop, which wakes often enough to see it.
+        stop: list[int] = []
+        for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+            signal.signal(sig, lambda signum, _frame: stop.append(signum))
+        while not result.done() and not stop:
+            rclpy.spin_until_future_complete(node, result, timeout_sec=0.2)
+        if stop:
+            cancel = handle.cancel_goal_async()
+            rclpy.spin_until_future_complete(node, cancel, timeout_sec=5.0)
+            answer = cancel.result()
+            print("interrupted: trajectory goal "
+                  + ("canceled" if answer is not None and answer.goals_canceling
+                     else "cancel not confirmed; the arm may still be moving"), file=sys.stderr)
+            return 128 + stop[0]
         outcome = result.result()
         if outcome is None:
             print(f"trajectory result unavailable from {action}; outcome unknown", file=sys.stderr)

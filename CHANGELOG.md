@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.13.0
+
+The shared terminal now behaves the way a coding agent's own does, as on
+the first real-robot day a person expected it to.
+
+- **What you send while the agent works joins the running turn**, after
+  its current tool calls, instead of waiting for the turn to end: Claude
+  Code takes it as a user message mid-turn (checked against the CLI: one
+  turn, one result), Codex through `turn/steer`. An agent that cannot
+  leaves it queued. Its message shows as joining, then joined.
+- **Escape stops the turn at once** (no dialog) and the queue goes on;
+  interrupting no longer pauses it. A failed turn, a lost agent, an
+  unanswerable request or a stopped robot still pauses it, saying why.
+- **A question takes a typed answer**: while the agent waits on one,
+  what you type is the answer; Claude Code's questions accept an answer of
+  your own. Codex's async questions show as questions.
+- **A turn the agent starts by itself** (a background task finished, a
+  Codex goal) is shown as its own, instead of being dropped and then
+  counted under your next message.
+- **Quiet agents**: the status line says how long the agent has produced
+  nothing, past a minute; a lost agent's reason carries the last line its
+  CLI wrote (an unknown flag, say).
+- **Codex output reads as a person reads it**: your own message echoed
+  back and empty reasoning are not shown, and a command appears once.
+- **A newer agent CLI is offered at start**, at most once a day: update
+  now (rebuilds the sandbox image), skip, or skip until the next version;
+  a CLI older than the minimum must be updated to start. `run` and `up`
+  print one line. The CLIs' own updaters are off inside the sandbox
+  (`DISABLE_AUTOUPDATER`, `check_for_update_on_startup=false`); a
+  manifest names where its newest release is read (`latest_release`).
+- **An interrupted motion is canceled**: `fjt_send.py` and
+  `gripper_cmd.py` cancel their goal on SIGINT, SIGTERM or SIGHUP before
+  exiting, as `ros2 action send_goal` does, instead of leaving the
+  controller to finish the motion.
+- **AGENTS.md in every workspace**: two sentences pointing any agent at
+  README.md and machine.yaml, read on its own by Codex and by Claude Code
+  in a project without a CLAUDE.md.
+
 ## 0.12.0
 
 The sandbox and the session around a real robot, from the same first
