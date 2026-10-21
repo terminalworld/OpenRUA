@@ -31,6 +31,23 @@ or [30-action.md](30-action.md). The manifest is an index of the ROS
 graph; `ros2 topic list` / `ros2 action list` show the same ports live
 (and anything beyond the manifest).
 
+The manifest is what the machine's owner declared, and an owner can be
+wrong. Check a fact against the running system before relying on it
+(`ros2 topic info`, `ros2 interface show`, `ros2 param get`, a frame, a
+reading). When they disagree, work with what the system shows and
+record the difference in `machine-discrepancies.yaml` at the workspace
+root, one entry per fact, so a person can correct the config:
+
+```yaml
+- key: sensors[kind=camera, name=d405].depth     # where in machine.yaml
+  declared: /d405/depth/image_raw
+  observed: /d405/aligned_depth_to_color/image_raw
+  evidence: ros2 topic list shows no /d405/depth/image_raw; the aligned
+    topic publishes 16UC1 at 30 Hz
+```
+
+Leave `machine.yaml` itself as it is.
+
 ## 2. Software stack
 
 - **ROS 2** is the control middleware: everything is a topic, service

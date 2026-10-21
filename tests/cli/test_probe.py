@@ -9,7 +9,7 @@ from openrua.cli.commands import probe
 from openrua.errors import UnavailableError
 
 
-@pytest.mark.parametrize("command", ["ros2 topic list", "ros2 action list", "ros2 service list"])
+@pytest.mark.parametrize("command", ["ros2 topic list -t", "ros2 action list -t", "ros2 service list"])
 @pytest.mark.parametrize("named", [False, True])
 def test_query_failure_reports_native_error_without_a_draft(monkeypatch, capsys, command, named):
     stopped = []
@@ -51,16 +51,17 @@ def test_query_timeout_preserves_output_and_reports_a_fix(monkeypatch):
 
 def test_optional_urdf_failure_still_allows_a_draft(monkeypatch):
     def execute(argv, **kwargs):
-        if argv[-1] == "ros2 topic list":
-            return subprocess.CompletedProcess(argv, 0, "/joint_states\n", "")
-        if argv[-1] in ("ros2 action list", "ros2 service list"):
+        if argv[-1] == "ros2 topic list -t":
+            return subprocess.CompletedProcess(argv, 0, "/joint_states [sensor_msgs/msg/JointState]\n", "")
+        if argv[-1] in ("ros2 action list -t", "ros2 service list"):
             return subprocess.CompletedProcess(argv, 0, "", "")
         return subprocess.CompletedProcess(argv, 1, "", "no robot description available")
 
     monkeypatch.setattr(probe.subprocess, "run", execute)
     graph = probe.read_graph(probe._exec_in("robot-sandbox"))
-    assert graph == {"topics": ["/joint_states"], "actions": [], "services": [], "urdf": None}
-    assert "TODO: no revolute joints" in probe.draft_profile(graph, {"network": "host"})
+    assert graph == {"topics": {"/joint_states": "sensor_msgs/msg/JointState"}, "actions": {},
+                     "services": [], "urdf": None, "srdf": None, "controllers": {}}
+    assert "TODO: no trajectory controller" in probe.draft_profile(graph, {"network": "host"})
 
 
 @pytest.mark.parametrize("distro", ["humble", "jazzy"])
@@ -83,7 +84,7 @@ def test_standalone_probe_needs_no_model_proxy_and_preserves_distro(
     monkeypatch.setattr(probe, "sandbox_up", lambda *args, **kwargs: calls.append(kwargs))
     monkeypatch.setattr(probe, "sandbox_down", stopped.append)
     monkeypatch.setattr(probe, "read_graph", lambda run: {
-        "topics": [], "actions": [], "services": [], "urdf": None})
+        "topics": {}, "actions": {}, "services": [], "urdf": None})
     args = SimpleNamespace(name=None, home=None, image=None, distro=distro,
                            ros_domain=7, **discovery)
     assert probe.run(args) == 0

@@ -28,12 +28,17 @@ openrua probe --discovery-server 192.168.1.20:11811 > ur5e.yaml
 ```
 
 `probe` starts a throwaway sandbox that can see the graph, reads the
-topics, actions and services and `/robot_description`, and prints a
-profile: joint names and limits, base and hand frames, the ports it
-recognised, cameras, and whether MoveIt is up. Lines marked `TODO` need
-you: the model name, a one-line description, the planning group, and
-which of the found ports to keep. Delete any port the robot does not
-actually serve. A robot that is already up under OpenRUA can be
+topics, actions and services with their types, the joints each
+trajectory and gripper controller drives, `/robot_description` and
+`/robot_description_semantic`, and prints a profile: the arm's joints in
+its controller's order with their limits, the gripper's joint, base and
+hand frames, the planning group, the ports it recognised, and one entry
+per camera that publishes a CameraInfo. Lines marked `TODO` need you: the
+model name, a one-line description, the world frame, which end of the
+gripper's travel is open and what its driver does with a goal, each
+camera's type and mount, and which of the found ports to keep. A `TODO`
+is not a valid value, so the profile does not load until you decide.
+Delete any port the robot does not actually serve. A robot that is already up under OpenRUA can be
 probed from its own sandbox: `openrua probe --name openrua`.
 
 Use `--ros-domain` and `--distro` to match the running robot, for example
@@ -129,6 +134,19 @@ declares none. This omits camera entries from `machine.yaml` and camera
 checks from trial preflight; it does not disable sensors or restrict the
 agent's access to the graph. Real-driver trials do
 not require the simulator's `/clock` or forbid unlisted gripper interfaces.
+
+What no field can say goes under `notes:`, by the manifest kind it
+concerns (`timing`, `joint_trajectory`, `gripper`, `camera`, `planning`,
+...): how close the arm gets to a target, that the gripper reports a
+grasp as stalled, that the planning scene has no table. They reach the
+agent in `machine.yaml`, for the kinds the robot has.
+
+The agent is told that these facts are what you declared, to check
+them against the running graph, and to write any difference it finds to
+`machine-discrepancies.yaml` in its workspace (the fact's key, what you
+declared, what it observed, and the evidence) without editing
+`machine.yaml`. Read that file after a session and fold what is right
+into the profile.
 
 Startup waits for ROS graph visibility for up to five minutes. A stalled
 readiness command is stopped at that deadline, and its last output is included
