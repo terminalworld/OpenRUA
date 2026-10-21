@@ -237,7 +237,8 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
                     account_alias=args.account_alias, script=args.script,
                     token_file=args.token_file, home=home, task=args.task,
                     record_cameras=record_cameras, record_every=args.record_every,
-                    record_size=args.record_size,
+                    record_size=args.record_size, progress=getattr(args, "progress", None),
+                    judge=getattr(args, "judge", None),
                 )
             except lock.TrialLocked as e:
                 # Not a failure of this trial: someone else is doing it.

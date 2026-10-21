@@ -273,12 +273,15 @@ As a coding agent's own non-interactive command runs it without its terminal,
 this runs one trial: the robot comes up (simulated or real), the agent gets
 the task and works until it is done or a budget ends, the robot powers off,
 and everything lands under ``runs/<label>/<run id>/`` (transcript, result,
-provenance; ``openrua demo`` renders a simulated one). A benchmark scene
-states its task and judges success; a simulator's own scene judges success
-too, and takes the sentence given when it states no task; a real robot's task
-is the sentence given, and a person judges it. Like ``openrua bench``, which
-runs every task and seed of a benchmark this way, the agent may reach only its
-model service unless the limit flags say otherwise.
+provenance; ``openrua demo`` renders a simulated one). While the agent works,
+what it says and each command it runs show as they happen; Ctrl-C stops it and
+powers the robot off. A benchmark scene states its task and judges success; a
+simulator's own scene judges success too, and takes the sentence given when it
+states no task; a real robot's task is the sentence given, and at the end you
+are asked whether it was done (your answer is the result; the agent's last
+words are kept beside it). Like ``openrua bench``, which runs every task and
+seed of a benchmark this way, the agent may reach only its model service
+unless the limit flags say otherwise.
 
 positional arguments:
   robot                 robot: a type or your robot's file, by name or path;

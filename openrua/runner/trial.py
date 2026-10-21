@@ -32,6 +32,7 @@ from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_n
                                     internet_access, start_episode)
 from openrua.runner.motion import cancel_motion, motion_actions
 from openrua.runner.preflight import run_preflight
+from openrua.runner.session import last_words
 from openrua.sandbox import workspace
 from openrua.sandbox.down import down as sandbox_down
 from openrua.sandbox.down import stop_processes
@@ -224,14 +225,19 @@ def score(rec: dict, machine) -> None:
 def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
               wall_cap_min, ros_domain=None, credentials_dir=None, home=None,
               account_alias=None, script=None, token_file=None, task=None,
-              record_cameras=None, record_every=1, record_size=None):
+              record_cameras=None, record_every=1, record_size=None,
+              progress=None, judge=None):
     """One trial: claim the directory, bring the robot and sandbox up,
     start the episode, preflight, operate, score, write the record.
     ``task`` is the task sentence for a robot with no truth side (a real
     robot); a simulated robot's task comes from its bridge.
     ``record_cameras`` (None, or a tuple of camera names, empty for the
     profile's default) makes the robot write its frames under the trial,
-    one step in ``record_every``, at ``record_size`` (WxH) when given."""
+    one step in ``record_every``, at ``record_size`` (WxH) when given.
+    ``progress`` receives the agent's steps as it works (a person
+    watching); ``judge``, on a robot nothing scores, is asked whether the
+    task was done, given the agent's last words, and answers True, False
+    or None (no answer)."""
     selected_agent = cfg.get("agent", {})
     agent = agents.get(selected_agent.get("name"), home, version=selected_agent.get("version"))
     key_file = agents.api_key_file(agent, selected_agent.get("auth"))
@@ -332,6 +338,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             "script": script,
             "token_file": token_file,
             "home": home,
+            "progress": progress,
         })
         with held_interrupts():
             if op_meta.get("termination") == "stopped":
@@ -341,6 +348,12 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             else:
                 rec["success"] = None
                 rec["steps_total"] = None
+        # The agent's own account of how it went, beside the verdict.
+        rec["agent_final_message"] = last_words(trial_dir / "transcript.jsonl", agent)
+        if judge is not None and not scored:
+            answer = judge(rec["agent_final_message"])
+            if answer is not None:
+                rec["success"], rec["verdict"] = bool(answer), "person"
         rec["operator_meta"] = op_meta
         rec["termination"] = op_meta.get("termination", "operator_done")
         # Validity judgment (quota voiding and the like) belongs to

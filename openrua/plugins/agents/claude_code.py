@@ -412,6 +412,31 @@ class ClaudeCode(Agent):
 
     # ------------------------------------------------ action extraction
 
+    def steps(self, record: dict) -> list[dict]:
+        """Text and tool_use blocks of an assistant record; a user record's
+        tool_result blocks end them (an error result is a failure)."""
+        content = record.get("message", {}).get("content")
+        if not isinstance(content, list):
+            return []
+        out: list[dict] = []
+        for b in content:
+            if not isinstance(b, dict):
+                continue
+            if record.get("type") == "assistant" and b.get("type") == "text" \
+                    and str(b.get("text", "")).strip():
+                out.append({"kind": "text", "text": b["text"]})
+            elif record.get("type") == "assistant" and b.get("type") == "tool_use":
+                inp = b.get("input") if isinstance(b.get("input"), dict) else {}
+                shell = b.get("name") == "Bash"
+                target = next((str(inp[k]) for k in ("file_path", "path", "pattern", "url")
+                               if inp.get(k)), "")
+                label = inp.get("command") if shell else f"{b.get('name')} {target}".strip()
+                out.append({"kind": "start", "id": b.get("id"), "label": str(label or b.get("name")),
+                            "shell": shell})
+            elif record.get("type") == "user" and b.get("type") == "tool_result":
+                out.append({"kind": "end", "id": b.get("tool_use_id"), "ok": not b.get("is_error")})
+        return out
+
     def replay_ops(self, transcript: Path) -> list[dict]:
         """Bash (executed) and Write/Edit (file materialization; agents keep
         scripts in the sandbox's /tmp, which is not in the archived

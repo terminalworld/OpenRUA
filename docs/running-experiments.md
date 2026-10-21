@@ -24,7 +24,15 @@ recorded as one trial. A benchmark scene states its own task and judges
 success. A simulator's own scene judges success too, and takes the
 sentence you give when it states no task (robosuite's `Lift` states
 none). A real robot's task is the sentence you give; nothing resets it,
-and the verdict is recorded as not applicable, for you to judge.
+and at the end `exec` asks you whether the robot did it: your answer is
+the result (`verdict: person`), and Enter leaves it open
+(`verdict: not_applicable`). The agent's last words are kept beside it.
+
+While the agent works, `exec` shows what it says and each command or tool
+it runs, with whether it worked and how long it took; the outputs stay in
+the transcript. Ctrl-C stops the agent, cancels a real robot's motions,
+judges a simulated scene as it stands, powers the robot off and records
+the run as `stopped`.
 
 The run lands under `runs/<label>/<run id>/`: the label is the benchmark,
 else `<robot>-<simulator>`, else the robot file's name, and the run id is
@@ -109,7 +117,7 @@ its state; check it before restarting anything that launches trials.
 | `task_suite`, `task_id`, `init_state_id` | the trial key; `init_state_id` is the seed |
 | `task_language` | the task sentence the agent was given, from the benchmark's own files |
 | `init_state` | what the loader records about the episode's world (RoboCasa: the kitchen) |
-| `success` | the benchmark's own predicate, latched per step (any-step success); `null` on a real robot |
+| `success` | the benchmark's own predicate, latched per step (any-step success); on a real robot, the person's answer when `exec` asked (`verdict: person`), else `null` (`verdict: not_applicable`) |
 | `success_end_state` | the same predicate at the end of the episode |
 | `success_at` | step and time of the first success |
 | `steps_total` | simulator steps since reset |
@@ -121,6 +129,7 @@ its state; check it before restarting anything that launches trials.
 | `limits` | what the agent could reach: `internet`, `web_search`, `account_connectors` |
 | `wall_seconds` | the whole harness span (boot, preflight, operator, teardown) |
 | `active_wall_cap_min` | the active wall-clock budget the operator ran under |
+| `agent_final_message` | what the agent said last: its own account of how the task went |
 | `operator_meta` | the operator's own record, below |
 | `containers`, `ros_domain`, `account_alias` | the attempt's container names, DDS domain, and (optional) which login it used |
 

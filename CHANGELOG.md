@@ -9,6 +9,14 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- **Watch `openrua exec` work**: what the agent says and each command or
+  tool it runs show as they happen, with whether each worked and how long
+  it took, and a line that keeps time on what is still running; the
+  outputs stay in the run's transcript.
+- **You judge a real robot's run**: at the end of `openrua exec` on a real
+  robot you are asked whether it did the task, and your answer becomes the
+  result (`verdict: person`). Every run also keeps the agent's last words
+  (`agent_final_message`), its own account of how it went.
 - **Ctrl-C stops a run in order**: during `openrua exec` or `bench`, the
   agent and everything it started end, a real robot's motions are
   cancelled, a simulated scene is judged as it stands, the robot powers

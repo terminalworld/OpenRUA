@@ -136,7 +136,7 @@ shared memory), waits until the sandbox sees a node, and seeds the
 workspace from the profile. Plain `openrua` first builds what is missing:
 the driver images `backend.build` names, and the robot's own sandbox when
 it declares `backend.sandbox_install`. The handle's rpc answers not applicable,
-so a trial records no verdict on hardware. `openrua probe` drafts the
+so nothing scores a trial on hardware; `openrua exec` asks the person. `openrua probe` drafts the
 profile from the graph. Both paths expose ROS 2 to the agent; this interface
 choice alone does not establish real-hardware reliability. See
 [your-own-robot.md](your-own-robot.md) for setup and validation boundaries.
