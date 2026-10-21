@@ -252,6 +252,12 @@ class RealBackend(Strict):
                               "command runs in, on the host network (a vendor driver "
                               "pinned to its own ROS release); null = run it on the host")
     discovery: Discovery = Field(description="how the sandbox reaches the graph")
+    cwd: str | None = Field(default=None, description="directory the launch command runs "
+                            "in on the host; default: the directory of the file declaring "
+                            "it, so the command may name its files relative to it")
+    stop_timeout_s: float = Field(default=30.0, description="seconds shutdown waits after "
+                                  "SIGINT, and again after SIGTERM, before SIGKILL: time "
+                                  "for a driver to release the robot")
     sandbox_install: str | None = Field(
         default=None, description="one-line shell chain, run as root when the sandbox "
         "image is built, installing what the agent needs to speak this robot's "

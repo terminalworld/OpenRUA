@@ -186,12 +186,26 @@ meaning is in [config.md](config.md#machine).
 To open OpenRUA's shared terminal chat with your completed profile:
 
 ```bash
-openrua --robot ./ur5e.yaml --sim '' --bench '' --ros-domain 7
+openrua --robot ./ur5e.yaml --ros-domain 7
 ```
 
-The empty simulator and benchmark selections override any saved simulation
-defaults. OpenRUA validates the profile and prepares missing agent images before
-opening chat. It preserves your profile instead of sending it through the
+A real robot takes no saved simulator or benchmark default; name a benchmark
+with `--bench` to run its task on the robot. OpenRUA validates the profile and
+prepares missing agent images before opening chat.
+
+The launch command runs on the host in the directory of the robot's file
+(`backend.cwd` to choose another), so it may name the driver's files relative
+to it. Ending the session sends it SIGINT, then SIGTERM, then SIGKILL,
+waiting `backend.stop_timeout_s` (30 s by default) after each of the first
+two: give a driver that releases the robot before exiting the time it needs.
+If the launch command exits while the session runs (a driver that crashed
+after an emergency stop, say), the session says so in its service log and
+the terminal, and holds the queued instructions until you look.
+
+Leaving the terminal (Ctrl+D, Ctrl+C, /quit) does not end the session: the
+robot stays under its driver and the agent keeps its sandbox. The terminal
+says how to reconnect (`openrua --name <session>`) and how to end it
+(`/end`, or `openrua session --name <session> end`). It preserves your profile instead of sending it through the
 simulation setup menu. This is a software entry point; physical robot operation
 still requires validation on your hardware.
 

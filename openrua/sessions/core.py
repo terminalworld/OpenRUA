@@ -14,8 +14,11 @@ from openrua.sessions.store import Store
 
 
 def initial_state() -> dict:
+    # pause_reason and robot came later; a record without them reads as no
+    # reason given and no robot event seen.
     return {"format": 1, "pause_id": None, "messages": [], "active": None, "paused": False, "connected": False,
-            "closed": False, "native_session": None, "requests": {}}
+            "closed": False, "native_session": None, "requests": {}, "pause_reason": None,
+            "robot": None}
 
 
 def _message(state: dict, message_id: str) -> dict:
@@ -30,9 +33,12 @@ def _open(state: dict) -> None:
         raise ValueError("session is closed; its records are retained")
 
 
-def _pause(state: dict) -> None:
+def _pause(state: dict, reason: str) -> None:
+    """Hold the queue, saying why, so a client can tell a person what
+    stopped and what to do."""
     state["paused"] = True
     state["pause_id"] = str(uuid4())
+    state["pause_reason"] = reason
 
 
 def _event(kind: str, **data) -> dict:
@@ -111,7 +117,7 @@ class Session:
             if message["cancel_requested"]:
                 return None, []
             message["cancel_requested"] = True
-            _pause(state)
+            _pause(state, "interrupted")
             return None, [_event("interrupt_requested", message_id=message_id)]
         self.store.update(change)
 
@@ -155,14 +161,15 @@ class Session:
                     state["requests"] = {}
                     if status != "completed" or message["cancel_requested"]:
                         if not state["paused"]:
-                            _pause(state)
+                            _pause(state, "interrupted" if status == "interrupted"
+                                   or message["cancel_requested"] else f"the turn {status}")
                 elif event.kind == "input_required":
                     state["requests"][event.data["request_id"]] = {
                         "turn_id": event.turn_id, "status": "pending", **event.data}
                 elif event.kind == "input_cancelled":
                     state["requests"].pop(event.data["request_id"], None)
                 elif event.kind == "unsupported_request":
-                    _pause(state)
+                    _pause(state, "the agent asked for something this client cannot answer")
             return None, [record]
         self.store.update(change)
 
@@ -188,7 +195,7 @@ class Session:
     @staticmethod
     def _unknown(state: dict, reason: str) -> None:
         state["connected"] = False
-        _pause(state)
+        _pause(state, f"agent disconnected: {reason}")
         if state["active"]:
             message = _message(state, state["active"])
             message["status"] = "unknown"
@@ -200,6 +207,18 @@ class Session:
         def change(state):
             self._unknown(state, reason)
             return None, [_event("connection_lost", reason=reason)]
+        self.store.update(change)
+
+    def robot_stopped(self, reason: str) -> None:
+        """The robot's resources ended under the session (a driver that
+        exited, say): recorded, and the queue held, so no instruction is
+        sent to an agent whose robot is gone."""
+        def change(state):
+            if state["closed"] or (state.get("robot") or {}).get("status") == "stopped":
+                return None, []
+            state["robot"] = {"status": "stopped", "reason": reason}
+            _pause(state, f"robot stopped: {reason}")
+            return None, [_event("robot_stopped", reason=reason)]
         self.store.update(change)
 
     def recover(self) -> None:
@@ -236,6 +255,7 @@ class Session:
             if not pause_id or pause_id != state["pause_id"]:
                 raise ValueError("pause state changed; refresh before resuming")
             state["paused"] = False
+            state["pause_reason"] = None
             return None, [_event("queue_resumed")]
         self.store.update(change)
 

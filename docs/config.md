@@ -201,6 +201,8 @@ A real robot: its ROS 2 graph is already there or a launch command starts it.
 | `launch` | str \| null | None | command that brings the robot's ROS 2 graph up; null = already running |
 | `image` | str \| null | None | docker image the launch command runs in, on the host network (a vendor driver pinned to its own ROS release); null = run it on the host |
 | `discovery` | [Discovery](#discovery) | **required** | how the sandbox reaches the graph |
+| `cwd` | str \| null | None | directory the launch command runs in on the host; default: the directory of the file declaring it, so the command may name its files relative to it |
+| `stop_timeout_s` | float | 30.0 | seconds shutdown waits after SIGINT, and again after SIGTERM, before SIGKILL: time for a driver to release the robot |
 | `sandbox_install` | str \| null | None | one-line shell chain, run as root when the sandbox image is built, installing what the agent needs to speak this robot's interfaces (vendor message definitions, a controller CLI); a ROS workspace built under /opt/openrua/overlays/<name> is sourced in every shell. No double quotes. Build it with openrua build sandbox --robot <this file> |
 | `sandbox_image` | str \| null | None | agent terminal image; default: openrua-sandbox-<ros_distro>, with a hash of sandbox_install when there is one |
 

@@ -14,11 +14,13 @@ from openrua.robot.real.down import container_name, down
 
 class RealHandle(Handle):
     def __init__(self, name: str, proc: subprocess.Popen | None,
-                 probe_argv: list[str] | None, container: str | None = None):
+                 probe_argv: list[str] | None, container: str | None = None,
+                 stop_timeout_s: float = 30.0):
         self.name = name
         self.proc = proc
         self._probe = probe_argv
         self._container = container
+        self._stop_timeout_s = stop_timeout_s
 
     def wait_ready(self, timeout_s: float = 300.0) -> None:
         """Poll ``probe_argv`` until it exits 0 (the graph is visible), or
@@ -62,7 +64,11 @@ class RealHandle(Handle):
         return {"ok": True, "not_applicable": True, "cmd": obj.get("cmd")}
 
     def shutdown(self) -> None:
-        down(self.proc, self._container)
+        down(self.proc, self._container, self._stop_timeout_s)
+
+    def stopped(self) -> str | None:
+        code = None if self.proc is None else self.proc.poll()
+        return None if code is None else f"the launch command exited with {code}"
 
 
 def launch_argv(name: str, launch: str, image: str | None, ros_domain: int = 0) -> list[str]:
@@ -78,10 +84,12 @@ def launch_argv(name: str, launch: str, image: str | None, ros_domain: int = 0) 
 
 def up(name: str, launch: str | None, log_path: Path | None = None,
        probe_argv: list[str] | None = None, image: str | None = None,
-       ros_domain: int = 0) -> RealHandle:
-    """Start ``launch`` if given (on the host, or in ``image``), its output
-    streaming into ``log_path``; return the handle. ``probe_argv`` is what
-    ``wait_ready`` polls."""
+       ros_domain: int = 0, cwd: str | None = None,
+       stop_timeout_s: float = 30.0) -> RealHandle:
+    """Start ``launch`` if given (on the host in ``cwd``, or in ``image``),
+    its output streaming into ``log_path``; return the handle.
+    ``probe_argv`` is what ``wait_ready`` polls; ``stop_timeout_s`` is how
+    long shutdown waits after each signal."""
     proc = None
     if launch:
         if image:
@@ -90,5 +98,7 @@ def up(name: str, launch: str | None, log_path: Path | None = None,
             launch_argv(name, launch, image, ros_domain), stdin=subprocess.DEVNULL,
             env={**os.environ, "ROS_DOMAIN_ID": str(ros_domain)},
             stdout=(open(log_path, "w") if log_path else subprocess.DEVNULL),
-            stderr=subprocess.STDOUT, start_new_session=True)
-    return RealHandle(name, proc, probe_argv, container_name(name) if launch and image else None)
+            stderr=subprocess.STDOUT, start_new_session=True,
+            cwd=None if image else cwd)
+    return RealHandle(name, proc, probe_argv, container_name(name) if launch and image else None,
+                      stop_timeout_s)

@@ -7,6 +7,7 @@ agent conversation loop.
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from dataclasses import dataclass
@@ -19,6 +20,7 @@ from openrua.config.schema import sandbox_image
 from openrua.errors import UnavailableError, UsageError
 from openrua.proxy.up import ensure as ensure_proxy
 from openrua.runner import live_state as state
+from openrua.runner.record import session_provenance
 from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
                                     start_episode)
 from openrua.sandbox.down import down as sandbox_down
@@ -58,6 +60,10 @@ class LiveRobot:
     agent: str
     model: str
     power_off: Callable[[], None]
+    # Why the robot's resources ended on their own, once they have; the
+    # owner of a long-lived session polls it.
+    stopped: Callable[[], str | None] = lambda: None
+    robot_log: Path | None = None
 
 
 def check_agent_cli(sandbox: str, adapter, backend: dict, robot: str) -> None:
@@ -86,6 +92,14 @@ def check_agent_cli(sandbox: str, adapter, backend: dict, robot: str) -> None:
     raise UnavailableError(
         f"the sandbox's {adapter.name} is {found or 'unreadable'}; this session needs {want}",
         hint=build)
+
+
+def _robot_file(robot: str) -> Path | None:
+    """The robot's config file; None for a benchmark's inline machine."""
+    try:
+        return paths.find("robots", robot).resolve()
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def stop_resources(sandbox: str, shutdown_machine: Callable[[], None]) -> None:
@@ -159,6 +173,9 @@ def open_robot(request: RobotRequest) -> LiveRobot:
 
     try:
         check_agent_cli(sandbox_name, adapter, cfg["machine"]["backend"], composed.robot)
+        (sandbox_dir / "provenance.json").write_text(json.dumps(
+            session_provenance(_robot_file(composed.robot), cfg, paths.code_root()),
+            indent=2) + "\n")
     except BaseException:
         stop_resources(sandbox_name, machine.shutdown)
         raise
@@ -202,4 +219,5 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         robot=composed.robot, robot_model=robot.get("model", "?"), backend=where,
         benchmark=composed.benchmark,
         suite=suite, task_id=task_id, task=task,
-        agent=adapter.name, model=model, power_off=power_off)
+        agent=adapter.name, model=model, power_off=power_off,
+        stopped=getattr(machine, "stopped", lambda: None), robot_log=workdir / "robot.log")

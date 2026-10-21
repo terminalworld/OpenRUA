@@ -202,14 +202,15 @@ export class Chat {
     const requests = Object.values(state.requests).filter(r => r.status === 'pending').length;
     if (state.active && !this.started) this.started = Date.now();
     if (!state.active) this.started = null;
-    const extra = (queued ? [`${queued} queued`] : [])
+    const robot = state.robot?.status === 'stopped' ? [red(`robot stopped: ${plain(state.robot.reason)}`)] : [];
+    const extra = robot.concat(queued ? [`${queued} queued`] : [])
       .concat(state.connected || state.closed || this.client.readOnly ? [] : [yellow('agent disconnected')])
       .concat(requests ? [yellow(`${requests} question(s): /questions`)] : [])
       .concat(this.controller.pending ? [yellow('send unconfirmed: /retry')] : []);
     let head;
     if (this.client.readOnly) head = muted('◇ Read-only history');
     else if (state.closed) head = muted('◇ Closed');
-    else if (state.paused) head = yellow('‖ Paused · /queue to review, /continue to go on');
+    else if (state.paused) head = yellow(`‖ Paused${state.pause_reason ? ': ' + plain(state.pause_reason) : ''} · /queue to review, /continue to go on`);
     else if (state.active) head = accent(`${SPINNER[this.frame++ % SPINNER.length]} Working… ${elapsed(this.started)}`);
     else head = green('✓ Ready');
     this.status.setText([head, ...extra].join(muted(' · ')));

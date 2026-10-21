@@ -435,13 +435,38 @@ def test_build_sandbox_for_a_robot_adds_its_install(tmp_path, monkeypatch):
     lab.write_text("machine:\n  backend: {kind: real, ros_distro: humble, discovery: {network: host},"
                    " sandbox_install: apt-get install -y ros-humble-franka-msgs}\n"
                    "  robot: {model: Lab arm}\n  cameras: {list: []}\n")
-    built = {}
+    built, docker = {}, []
     monkeypatch.setattr(build_cmd, "build_sandbox", lambda **kw: built.update(kw) or (kw["tag"], "d"))
     monkeypatch.setattr(build_cmd, "_report_versions", lambda *a: None)
+    monkeypatch.setattr(build_cmd.subprocess, "run", lambda argv, **kw: docker.append(argv))
     tag, _ = build_cmd._sandbox(["codex@0.161.0"], None, "jazzy", None, None, tmp_path, str(lab))
     assert built["distro"] == "humble" and tag.startswith("openrua-sandbox-humble-")
+    # built as a candidate, tagged for real only once its CLIs checked out
+    assert built["tag"] == f"{tag}-candidate" and ["docker", "tag", built["tag"], tag] in docker
     assert built["preinstall"].endswith("&& apt-get install -y ros-humble-franka-msgs")
     assert "openrua.machine_install_sha256" in built["labels"]
     assert built["stamp"] == ""                       # pinned: the cache may serve
     build_cmd._sandbox(["codex"], None, "jazzy", None, None, tmp_path, str(lab))
     assert built["stamp"]                             # unpinned: a fresh install
+
+
+def test_a_real_robot_ignores_the_saved_simulation_defaults(tmp_path):
+    # The docs told real-robot users to pass --sim '' --bench '' so the
+    # saved default benchmark would not turn a free session into a trial.
+    lab = tmp_path / "lab.yaml"
+    lab.write_text("machine:\n  backend: {kind: real, discovery: {network: host}}\n"
+                   "  robot: {model: Lab arm}\n  cameras: {list: []}\n")
+    (tmp_path / "config.yaml").write_text("simulator: robosuite\nbenchmark: libero_pro\n")
+    c = compose(str(lab), home=tmp_path)
+    assert (c.simulator, c.benchmark) == (None, None) and "task" not in c.cfg
+    named = compose(str(lab), None, "libero_pro", tmp_path)    # named: still honoured
+    assert named.cfg["task"]["benchmark"] == "libero_pro"
+
+
+def test_a_launch_runs_where_its_file_is_unless_told_otherwise(tmp_path):
+    lab = tmp_path / "rig" / "lab.yaml"
+    lab.parent.mkdir()
+    lab.write_text("machine:\n  backend: {kind: real, launch: python3 driver/up.py,"
+                   " discovery: {network: host}}\n  robot: {model: Lab arm}\n  cameras: {list: []}\n")
+    backend = compose(str(lab), home=tmp_path).cfg["machine"]["backend"]
+    assert backend["cwd"] == str(lab.parent) and backend["stop_timeout_s"] == 30.0

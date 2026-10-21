@@ -26,3 +26,9 @@ class Handle:
     def shutdown(self) -> None:
         """Stop owned robot resources; report any unconfirmed shutdown."""
         raise NotImplementedError
+
+    def stopped(self) -> str | None:
+        """Why the robot's resources ended on their own, once they have
+        (a driver that exited, a simulator that died); None while they
+        run, or when the backend owns nothing it could watch."""
+        return None

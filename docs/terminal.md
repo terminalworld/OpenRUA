@@ -25,8 +25,9 @@ Escape returns to the previous menu. Only environment combinations with recorded
 startup checks are offered, with dependent fields updated together. Custom
 profiles remain available through explicit CLI options and config files.
 
-For example, `openrua --robot ./my-robot.yaml --sim '' --bench ''` uses a real
-robot profile with no inherited simulator or benchmark. A custom environment
+For example, `openrua --robot ./my-robot.yaml` uses a real robot profile; a
+real robot takes no saved simulator or benchmark default, only one named on the
+command line. A custom environment
 selected by a file path, including a saved default, is validated and prepared
 before opening chat directly; it is not replaced by a guided-menu selection.
 Use the file or `openrua config set` to edit custom defaults. `--setup` remains

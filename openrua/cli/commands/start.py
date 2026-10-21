@@ -59,6 +59,9 @@ def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
         values.update(robot=resolved.robot if not resolved.robot.startswith('(') else '',
                       sim=resolved.simulator or '',
                       agent=selected['name'], model=args.model or selected.get('model') or '')
+        if resolved.cfg['machine']['backend']['kind'] == 'real' and args.bench is None:
+            # a real robot takes no saved simulation defaults
+            values['bench'] = ''
     auth = selected.get('auth') or {}
     values.update(auth_mode=auth.get('mode', 'native'), api_key_file=auth.get('key_file') or '')
     return values, models

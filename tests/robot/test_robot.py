@@ -150,3 +150,29 @@ def test_owned_real_driver_uses_explicit_domain_not_host_default(tmp_path, monke
         assert log.read_text().strip() == str(domain)
     finally:
         handle.shutdown()
+
+
+def test_a_real_launch_that_exits_says_so_and_runs_where_its_file_is(tmp_path):
+    import time
+    from openrua.robot.real.up import up
+    handle = up("r", "pwd > where.txt; exit 3", log_path=tmp_path / "robot.log", cwd=str(tmp_path))
+    for _ in range(50):
+        if handle.stopped():
+            break
+        time.sleep(0.1)
+    assert handle.stopped() == "the launch command exited with 3"
+    assert (tmp_path / "where.txt").read_text().strip() == str(tmp_path)
+
+
+def test_stopping_a_launch_escalates_from_sigint_to_sigterm(tmp_path):
+    # A driver that ignores SIGINT still gets SIGTERM before SIGKILL, each
+    # after the declared wait.
+    import time
+    from openrua.robot.real.up import up
+    script = "trap '' INT; trap 'echo term >> got.txt; exit 0' TERM; while :; do sleep 0.1; done"
+    handle = up("r", script, cwd=str(tmp_path), stop_timeout_s=1.0)
+    time.sleep(0.3)
+    started = time.monotonic()
+    handle.shutdown()
+    assert (tmp_path / "got.txt").read_text().strip() == "term"
+    assert 0.9 < time.monotonic() - started < 5

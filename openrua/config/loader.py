@@ -26,7 +26,7 @@ from openrua.config import paths
 from openrua.config.schema import (SIM_CAMERA, Benchmark, CameraType, Machine,
                                    ResolvedConfig, RobotInstance, RobotInstanceOverType,
                                    RobotType, SimulatorProfile, UserConfig, sim_image)
-from openrua.errors import ConfigError, UsageError
+from openrua.errors import ConfigError, NotFound, UsageError
 
 
 def validate(model: type[BaseModel], data: Any, source: str | Path) -> BaseModel:
@@ -312,6 +312,14 @@ def _instance_machine(inst: dict, home: Path | None) -> dict:
     return dump(validate(Machine, m, f"{source} (over robot type {inst['type']})"))
 
 
+def _is_instance(robot: str, home: Path | None) -> bool:
+    """Whether ``robot`` names a robot instance (a file with machine:)."""
+    try:
+        return "machine" in (load_yaml(paths.find("robots", robot)) or {})
+    except NotFound:
+        return False
+
+
 def _who_embodies(robot: str, home: Path | None) -> list[str]:
     """Benchmarks whose scenes bring this robot type, for error hints."""
     out = []
@@ -354,6 +362,10 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
     user = load_user_config(paths.config_path(home))
     explicit_sim = sim
     # None inherits defaults; an explicit empty value selects no benchmark.
+    # A real robot named by the caller runs freely unless a benchmark is
+    # named too: a saved default benchmark is a simulation preference.
+    if bench is None and robot is not None and _is_instance(robot, home):
+        bench = ""
     bench = (user.benchmark or defaults.benchmark) if bench is None else bench
     b = bench_path = None
     if bench:
@@ -382,6 +394,9 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                                  "and takes no --sim")
             machine, simulator = _instance_machine(r, home), None
             resolve_cameras(machine, Path(r["source"]), r["source"])
+            # A launch command runs where its file is, so it may name the
+            # driver's files relative to it.
+            machine["backend"].setdefault("cwd", str(Path(r["source"]).resolve().parent))
         else:
             if not sim:
                 raise UsageError(f"{robot} is a robot type: name the simulator that "

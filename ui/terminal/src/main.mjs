@@ -31,6 +31,15 @@ try {
     try { result = await screen.run(); }
     finally { screen.stop(); process.removeListener('SIGINT', stop); process.removeListener('SIGTERM', stop); }
     if (values.output) await writeFile(values.output, JSON.stringify(result ?? {action: 'quit'}), {mode: 0o600, flag: 'wx'});
+    // Leaving the terminal leaves the session: on a real robot the arm stays
+    // under control, so say so and how to come back or end it.
+    const left = screen instanceof Chat && !screen.client.readOnly && screen.controller?.state
+      && !screen.controller.state.closed && !result?.action?.startsWith?.('history');
+    if (left && spec.name) {
+      console.log(`Session ${spec.name} is still running, robot and agent included.\n`
+        + `  reconnect: openrua --name ${spec.name}\n`
+        + `  end it and stop the robot: /end here, or openrua session --name ${spec.name} end`);
+    }
   }
 } catch (error) {
   console.error(error.message);

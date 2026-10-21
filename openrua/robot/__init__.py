@@ -54,7 +54,8 @@ def up(backend: dict, *, name: str, config_path: str, task_suite: str,
             record_every=record_every, record_size=record_size)
     if kind == "real":
         return real_up(name=name, launch=backend.get("launch"), log_path=log_path,
-                       probe_argv=probe_argv, image=backend.get("image"), ros_domain=ros_domain)
+                       probe_argv=probe_argv, image=backend.get("image"), ros_domain=ros_domain,
+                       cwd=backend.get("cwd"), stop_timeout_s=backend.get("stop_timeout_s", 30.0))
     raise ConfigError(f"machine.backend.kind must be one of {KINDS}, got {kind!r}")
 
 

@@ -81,6 +81,10 @@ class BridgeClient(Handle):
             raise TimeoutError(f"bridge not ready: {e}") from e
         raise TimeoutError("bridge not ready: control line answered not-ok")
 
+    def stopped(self) -> str | None:
+        code = self.proc.poll()
+        return None if code is None else f"the simulator exited with {code}"
+
     def shutdown(self) -> None:
         """Ask the bridge to stop; if it does not answer in seconds,
         remove the container."""

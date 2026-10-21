@@ -135,9 +135,17 @@ def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None):
     # docker from reusing an older build's layer for it.
     fresh = preinstall is None and any(not m.fields.get("version") for m in chosen)
     stamp = datetime.now(timezone.utc).isoformat() if fresh else ""
-    tag, digest = build_sandbox(preinstall=chain, distro=distro, robot_uid=robot_uid,
-                                tag=tag, labels=labels, stamp=stamp)
-    _report_versions(tag, chosen)
+    # Built under a candidate tag and checked before it takes the real one:
+    # a build whose CLI is too old must not replace a sandbox that works.
+    tag = tag or config.schema.sandbox_image(distro)
+    candidate = f"{tag}-candidate"
+    _, digest = build_sandbox(preinstall=chain, distro=distro, robot_uid=robot_uid,
+                              tag=candidate, labels=labels, stamp=stamp)
+    try:
+        _report_versions(candidate, chosen)
+        subprocess.run(["docker", "tag", candidate, tag], check=True)
+    finally:
+        subprocess.run(["docker", "rmi", candidate], capture_output=True)
     return tag, digest
 
 
