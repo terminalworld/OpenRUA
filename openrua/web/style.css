@@ -488,3 +488,30 @@ dialog::backdrop {
 #file-download {
   color: var(--accent);
 }
+
+#notice {
+  white-space: pre-line;
+}
+.notes span + span::before {
+  content: " · ";
+  color: var(--muted);
+}
+.notes .tone-muted {
+  color: var(--muted);
+}
+.notes .tone-good {
+  color: var(--accent);
+}
+.notes .tone-warn {
+  color: #8a5a00;
+}
+.notes .tone-bad {
+  color: #a1281f;
+}
+.agent label {
+  display: block;
+  margin-top: 10px;
+}
+.agent select {
+  width: 100%;
+}

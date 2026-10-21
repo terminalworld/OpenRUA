@@ -1,0 +1,95 @@
+// What a shared session means to the person in front of it, for every
+// client: the commands a person can type, what the session's state says,
+// and the notices its events carry. Pure: no terminal, no page. The browser
+// loads this file as served; the terminal ships a copy of it (its source
+// tree links here), so both read one text and only draw it their own way.
+
+// `clients` says where a command means something: the terminal's own
+// screens (tool folding, history, leaving) have no page counterpart, and
+// the page retries an unconfirmed send with its Send button.
+export const COMMANDS = [
+  {name: 'help', description: 'Keyboard shortcuts and commands', clients: ['terminal', 'browser']},
+  {name: 'tools', description: 'Expand or collapse a tool result', clients: ['terminal']},
+  {name: 'files', description: 'Browse saved workspace files and images', clients: ['terminal', 'browser']},
+  {name: 'queue', description: 'Inspect, edit or withdraw queued messages', clients: ['terminal', 'browser']},
+  {name: 'questions', description: 'Answer pending agent questions', clients: ['terminal', 'browser']},
+  {name: 'resume', description: 'Find an existing conversation', clients: ['terminal']},
+  {name: 'end', description: 'End execution while retaining the workspace and history', clients: ['terminal', 'browser']},
+  {name: 'interrupt', description: 'Stop the current turn; queued messages go on', clients: ['terminal', 'browser']},
+  {name: 'continue', description: 'Confirm continuation of the paused queue', clients: ['terminal', 'browser']},
+  {name: 'permissions', description: 'Ask before each command that changes something, or run without asking', clients: ['terminal', 'browser']},
+  {name: 'model', description: 'Show the model, or change it: /model <name>', clients: ['terminal', 'browser']},
+  {name: 'retry', description: 'Retry an unconfirmed send with the same request ID', clients: ['terminal']},
+  {name: 'quit', description: 'Leave; you choose whether the session keeps running', clients: ['terminal']},
+];
+
+export const commandsFor = client => COMMANDS.filter(c => c.clients.includes(client));
+
+export const PERMISSIONS = [
+  {value: 'ask', label: 'Ask before each command that changes something'},
+  {value: 'auto', label: 'Run commands without asking'},
+];
+
+// The agent's own commands (its /compact, its skills...), as it reported
+// them; typed, they go to the agent as a message, as in its own terminal.
+export function agentCommands(state) {
+  const ours = new Set(COMMANDS.map(c => c.name));
+  return (state?.agent_commands ?? [])
+    .filter(c => !ours.has(c.name))
+    .map(c => ({name: c.name, description: c.description || "the agent's own command"}));
+}
+
+// Split a typed line into a command: ours, the agent's, or none (a message).
+export function parseCommand(text, state) {
+  const trimmed = String(text).trim();
+  if (!trimmed.startsWith('/')) return null;
+  const [word, ...rest] = trimmed.split(/\s+/);
+  const name = word.slice(1);
+  if (COMMANDS.some(c => c.name === name)) return {kind: 'ours', name, args: rest};
+  if (agentCommands(state).some(c => c.name === name)) return {kind: 'agent', name, args: rest};
+  return {kind: 'unknown', name, args: rest};
+}
+
+// The session's state as one headline and its notes. A tone is a hint for
+// colour: plain, muted, good, warn, bad, busy. `readOnly` for a retained
+// conversation shown as history.
+export function status(state, {readOnly = false} = {}) {
+  if (!state) return {head: {kind: 'connecting', tone: 'muted', text: 'Connecting…'}, notes: []};
+  const notes = [];
+  if (state.robot?.status === 'stopped') notes.push({tone: 'bad', text: `robot stopped: ${state.robot.reason}`});
+  const checks = Object.entries(state.checks ?? {});
+  if (checks.length) notes.push({tone: 'plain', kind: 'checks', checks,
+    text: checks.map(([step, check]) => `${step} ${{passed: '✓', failed: '✗', running: '…'}[check.status] ?? ''}`).join(' ')});
+  if (state.settings?.permissions === 'ask') notes.push({tone: 'muted', text: 'asks before commands'});
+  const queued = state.messages.filter(m => m.status === 'queued').length;
+  if (queued) notes.push({tone: 'plain', text: `${queued} queued`});
+  if (!(state.connected || state.closed || readOnly)) notes.push({tone: 'warn',
+    text: state.pause_reason?.startsWith('agent disconnected') ? state.pause_reason : 'agent disconnected'});
+  const asking = Object.values(state.requests ?? {}).filter(r => r.status === 'pending').length;
+  if (asking) notes.push({tone: 'warn', kind: 'questions', text: `${asking} question(s): type the answer, or /questions to choose`});
+  let head;
+  if (readOnly) head = {kind: 'readonly', tone: 'muted', text: 'Read-only history'};
+  else if (state.closed) head = {kind: 'closed', tone: 'muted', text: 'Closed'};
+  else if (state.paused) head = {kind: 'paused', tone: 'warn',
+    text: `Paused${state.pause_reason ? ': ' + state.pause_reason : ''} · /queue to review, /continue to go on`};
+  else if (state.active) head = {kind: 'working', tone: 'busy', text: 'Working…'};
+  else head = {kind: 'ready', tone: 'good', text: 'Ready'};
+  return {head, notes};
+}
+
+// A notice an event carries for the person, or null.
+export function notice(record) {
+  const data = record?.data ?? {};
+  if (record?.kind === 'motion_canceled') {
+    const {canceled = [], failed = []} = data;
+    return [canceled.length ? `Motion canceled: ${canceled.join(', ')}` : '',
+      failed.length ? `No answer from ${failed.join(', ')}: use the emergency stop if it still moves` : '']
+      .filter(Boolean).join('\n') || null;
+  }
+  if (record?.kind === 'handed_over') return 'The robot is connected; the conversation moves to its own terminal.';
+  if (record?.kind === 'agent_event' && data.kind === 'setting_rejected') {
+    const {setting, value, reason} = data.data ?? {};
+    return `The agent did not take ${setting} ${value}${reason ? `: ${reason}` : ''}`;
+  }
+  return null;
+}

@@ -697,3 +697,32 @@ test('/permissions and /model change the agent; its own commands go to it', {tim
   await chat.submit('/nosuch');
   assert.match(chat.notice.text, /Unknown command/);
 });
+
+test('the terminal offers every command the shared list gives it', async () => {
+  // One list of commands for every client (openrua/web/session.mjs); a
+  // command added there without a handler here fails this.
+  const {commandsFor} = await import('../src/session.mjs');
+  const chat = new Chat({readOnly: false}, {terminal: new Terminal()});
+  assert.deepEqual(Object.keys(chat.handlers()).sort(), commandsFor('terminal').map(c => c.name).sort());
+});
+
+test('what the session means is read the same way by every client', async () => {
+  const {notice, parseCommand, status} = await import('../src/session.mjs');
+  const state = {messages: [{status: 'queued'}], requests: {r: {status: 'pending'}}, connected: false,
+    pause_reason: 'agent disconnected: exit 1', paused: true, pause_id: 'p', active: null, closed: false,
+    settings: {permissions: 'ask'}, robot: {status: 'stopped', reason: 'driver exited'},
+    checks: {host: {status: 'passed'}}, agent_commands: [{name: 'compact'}, {name: 'help'}]};
+  const {head, notes} = status(state);
+  assert.equal(head.kind, 'paused');
+  assert.deepEqual(notes.map(n => n.text), ['robot stopped: driver exited', 'host ✓', 'asks before commands',
+    '1 queued', 'agent disconnected: exit 1', '1 question(s): type the answer, or /questions to choose']);
+  assert.equal(status(state, {readOnly: true}).head.kind, 'readonly');
+  assert.deepEqual(parseCommand('/model m2', state), {kind: 'ours', name: 'model', args: ['m2']});
+  assert.equal(parseCommand('/compact', state).kind, 'agent');
+  assert.equal(parseCommand('/nope', state).kind, 'unknown');
+  assert.equal(parseCommand('lift the cube', state), null);
+  assert.equal(notice({kind: 'motion_canceled', data: {canceled: ['/fjt'], failed: []}}), 'Motion canceled: /fjt');
+  assert.match(notice({kind: 'agent_event', data: {kind: 'setting_rejected',
+    data: {setting: 'model', value: 'x', reason: 'unknown model'}}}), /did not take model x: unknown model/);
+  assert.equal(notice({kind: 'agent_event', data: {kind: 'item'}}), null);
+});

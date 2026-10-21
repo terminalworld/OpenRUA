@@ -67,11 +67,11 @@
               ><textarea
                 id="message"
                 rows="3"
-                placeholder="What would you like the robot to do?"
+                placeholder="What would you like the robot to do? (/help for commands)"
                 required
               ></textarea>
               <div class="compose-footer">
-                <span id="send-hint">New messages join the shared queue.</span
+                <span id="send-hint">New messages join the running turn when the agent can take one.</span
                 ><button id="send" class="primary">Send message ↑</button>
               </div>
             </form>
@@ -101,6 +101,7 @@
                 <span id="state" class="badge">Starting</span>
               </div>
               <p id="execution-description"></p>
+              <p id="notes" class="notes" aria-live="polite"></p>
               <button id="interrupt" disabled>Interrupt current turn</button
               ><button id="resume" class="primary" disabled>
                 Continue queued messages
@@ -110,6 +111,23 @@
                 motions to cancel; queued messages go next. It is not a
                 robot emergency stop.
               </p>
+            </section>
+            <section class="card agent">
+              <div class="section-heading">
+                <h2>Agent</h2>
+                <span id="agent-model" class="badge"></span>
+              </div>
+              <label for="permissions">Permissions</label
+              ><select id="permissions"></select>
+              <form id="model-form">
+                <label for="model">Model</label>
+                <div class="files-navigation">
+                  <input id="model" autocomplete="off" placeholder="model name" /><button>
+                    Change
+                  </button>
+                </div>
+              </form>
+              <p id="agent-commands" class="hint"></p>
             </section>
             <section id="questions" class="card" hidden>
               <h2>Agent needs your input</h2>

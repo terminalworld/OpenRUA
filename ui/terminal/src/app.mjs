@@ -1,25 +1,12 @@
 import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, SelectList, Spacer, Text,
   TuiMainScreen, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
+import {PERMISSIONS, agentCommands, commandsFor, notice, parseCommand, status} from './session.mjs';
 import {Transcript, Welcome, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
 
-const commands = [
-  {name: 'help', description: 'Keyboard shortcuts and commands'},
-  {name: 'tools', description: 'Expand or collapse a tool result'},
-  {name: 'files', description: 'Browse saved workspace files and images'},
-  {name: 'queue', description: 'Inspect, edit or withdraw queued messages'},
-  {name: 'questions', description: 'Answer pending agent questions'},
-  {name: 'resume', description: 'Find an existing conversation'},
-  {name: 'end', description: 'End execution while retaining the workspace and history'},
-  {name: 'interrupt', description: 'Stop the current turn; queued messages go on'},
-  {name: 'continue', description: 'Confirm continuation of the paused queue'},
-  {name: 'permissions', description: 'Ask before each command that changes something, or run without asking'},
-  {name: 'model', description: 'Show the model, or change it: /model <name>'},
-  {name: 'retry', description: 'Retry an unconfirmed send with the same request ID'},
-  {name: 'quit', description: 'Leave; you choose whether the session keeps running'},
-];
+const commands = commandsFor('terminal');
 
 const KEYS = 'Enter send (joins a running turn) · Ctrl+J newline · / commands · Esc interrupt · Ctrl+D leave';
 // The agent counts as quiet after this long without a new event: say so, so a
@@ -45,13 +32,10 @@ export class Chat {
     const record = this.transcript.event.bind(this.transcript);
     this.transcript.event = event => {
       this.lastEvent = Date.now(); record(event);
-      // An interrupt also stops the robot's motions; say whether it did.
-      if (event.kind === 'motion_canceled') {
-        const {canceled = [], failed = []} = event.data ?? {};
-        this.say([canceled.length ? `Motion canceled: ${canceled.join(', ')}` : '',
-          failed.length ? `No answer from ${failed.join(', ')}: use the emergency stop if it still moves` : '']
-          .filter(Boolean).join('\n'));
-      }
+      // What an event says to the person (an interrupt's cancelled motions,
+      // a setting the agent refused), as every client says it.
+      const said = notice(event);
+      if (said) this.say(said);
     };
     this.controller = new Controller(client, this.transcript);
     this.status = new Text('Connecting…', 0, 0);
@@ -227,30 +211,21 @@ export class Chat {
       // Coming back to a conversation that already has messages.
       this.welcome.seen = true; this.welcome.returning = state.messages.length > 0;
     }
-    const queued = state.messages.filter(message => message.status === 'queued').length;
-    const requests = Object.values(state.requests).filter(r => r.status === 'pending').length;
     if (state.active && !this.started) this.started = Date.now();
     if (!state.active) this.started = null;
-    const robot = state.robot?.status === 'stopped' ? [red(`robot stopped: ${plain(state.robot.reason)}`)] : [];
-    const quiet = state.active && this.lastEvent && Date.now() - this.lastEvent > QUIET_MS
-      ? [yellow(`no output for ${elapsed(this.lastEvent)}`)] : [];
-    const asking = state.settings?.permissions === 'ask' ? [muted('asks before commands')] : [];
+    const {head: said, notes} = status(state, {readOnly: this.client.readOnly});
+    const tone = {plain: text => text, muted, good: green, warn: yellow, bad: red, busy: accent};
     // Connecting a robot: each step's check, as OpenRUA ran it on the host.
     const marks = {passed: green('✓'), failed: yellow('✗'), running: accent('…')};
-    const checks = Object.entries(state.checks ?? {});
-    const connecting = checks.length
-      ? [checks.map(([step, check]) => `${step} ${marks[check.status] ?? ''}`).join(' ')] : [];
-    const extra = robot.concat(connecting, quiet, asking, queued ? [`${queued} queued`] : [])
-      .concat(state.connected || state.closed || this.client.readOnly ? []
-        : [yellow(state.pause_reason?.startsWith('agent disconnected') ? plain(state.pause_reason) : 'agent disconnected')])
-      .concat(requests ? [yellow(`${requests} question(s): type the answer, or /questions to choose`)] : [])
-      .concat(this.controller.pending ? [yellow('send unconfirmed: /retry')] : []);
-    let head;
-    if (this.client.readOnly) head = muted('◇ Read-only history');
-    else if (state.closed) head = muted('◇ Closed');
-    else if (state.paused) head = yellow(`‖ Paused${state.pause_reason ? ': ' + plain(state.pause_reason) : ''} · /queue to review, /continue to go on`);
-    else if (state.active) head = accent(`${SPINNER[this.frame++ % SPINNER.length]} Working… ${elapsed(this.started)}`);
-    else head = green('✓ Ready');
+    const extra = notes.map(note => note.kind === 'checks'
+      ? note.checks.map(([step, check]) => `${step} ${marks[check.status] ?? ''}`).join(' ')
+      : tone[note.tone](plain(note.text)));
+    if (state.active && this.lastEvent && Date.now() - this.lastEvent > QUIET_MS)
+      extra.splice(1, 0, yellow(`no output for ${elapsed(this.lastEvent)}`));
+    if (this.controller.pending) extra.push(yellow('send unconfirmed: /retry'));
+    const head = said.kind === 'working'
+      ? accent(`${SPINNER[this.frame++ % SPINNER.length]} Working… ${elapsed(this.started)}`)
+      : tone[said.tone]({readonly: '◇ ', closed: '◇ ', paused: '‖ ', ready: '✓ '}[said.kind] + plain(said.text));
     this.status.setText([head, ...extra].join(muted(' · ')));
     this.keys.setText(muted(KEYS));
     this.ui.requestRender();
@@ -269,12 +244,7 @@ export class Chat {
 
   // The agent's own commands (its /compact, its skills...), as it reported
   // them; typed, they go to the agent as a message, as in its own terminal.
-  agentCommands() {
-    const ours = new Set(commands.map(c => c.name));
-    return (this.controller.state?.agent_commands ?? [])
-      .filter(c => !ours.has(c.name))
-      .map(c => ({name: c.name, description: c.description || 'the agent\'s own command'}));
-  }
+  agentCommands() { return agentCommands(this.controller.state); }
 
   async configure(setting, value) {
     await this.client.command('configure', {setting, value});
@@ -290,70 +260,15 @@ export class Chat {
     }
     this.busy = true;
     try {
-      if (text.startsWith('/')) {
-        const state = this.controller.state;
-        const [name, ...rest] = text.trim().split(/\s+/);
-        const agent = this.agentCommands();
-        switch (name) {
-          case '/help': {
-            const theirs = agent.length ? ['', 'The agent\'s own:', ...agent.map(c => `/${c.name}: ${c.description}`)] : [];
-            this.say(commands.map(c => `/${c.name}: ${c.description}`).concat(theirs).join('\n')); break;
-          }
-          case '/permissions': {
-            if (this.client.readOnly) throw new Error('This is read-only history.');
-            if (rest[0]) { await this.configure('permissions', rest[0]); break; }
-            const now = state?.settings?.permissions;
-            this.picker('Permissions', [
-              {value: 'ask', label: `${now === 'ask' ? '✓ ' : '  '}Ask before each command that changes something`},
-              {value: 'auto', label: `${now === 'auto' ? '✓ ' : '  '}Run commands without asking`}],
-            value => this.configure('permissions', value).catch(error => this.say(error.message))); break;
-          }
-          case '/model': {
-            if (rest[0]) {
-              if (this.client.readOnly) throw new Error('This is read-only history.');
-              await this.configure('model', rest[0]);
-              this.say(`The model is ${rest[0]} from the next request.`); break;
-            }
-            this.say(`The model: ${plain(state?.settings?.model ?? 'unknown')}. Change it with /model <name>.`); break;
-          }
-          case '/files': await browseWorkspace(this); break;
-          case '/quit': this.stop(); break;
-          case '/resume':
-            if (!this.history) throw new Error('Use openrua --resume to select history.');
-            if (this.controller.pending) throw new Error('Resolve the unconfirmed send before changing conversations.');
-            this.result = {action: 'history'}; this.stop(); break;
-          case '/end':
-            if (this.client.readOnly) throw new Error('This is read-only history.');
-            this.confirm('End execution and release resources? The workspace and history will be retained.',
-              async () => { await this.client.end(); this.stop(); }); break;
-          case '/questions': this.questions(); break;
-          case '/retry': await this.controller.retry(); await this.refresh(); break;
-          case '/tools':
-            this.picker('Tool results', [...this.transcript.tools].map(([key, tool]) => ({value: key,
-              label: `${tool.expanded ? '▾' : '▸'} ${tool.label}`, description: `${tool.phase}${tool.details ? ' · ' + plain(String(tool.details.command ?? tool.details.file_path ?? '')).split('\n')[0] : ''}`})),
-              key => { this.transcript.toggleTool(key); this.ui.requestRender(); }); break;
-          case '/queue':
-            this.queue(); break;
-          case '/interrupt': {
-            // As in a coding agent's own terminal: stop now, no dialog; what
-            // is queued goes next.
-            const id = state?.active;
-            if (!id) throw new Error('No active turn.');
-            await this.client.command('interrupt', {message_id: id});
-            this.say('Interrupted. Queued messages go next.');
-            await this.refresh(); break;
-          }
-          case '/continue': {
-            const id = state?.pause_id;
-            if (!id) throw new Error('The queue is not paused.');
-            this.confirm('Review /queue first. Continue this paused queue?', () => this.client.command('resume', {pause_id: id})); break;
-          }
-          default:
-            if (!agent.some(c => `/${c.name}` === name)) throw new Error('Unknown command. Use /help.');
-            await this.controller.send(text.trim());
-            this.editor.addToHistory(text);
-            await this.refresh();
-        }
+      const command = parseCommand(text, this.controller.state);
+      if (command?.kind === 'ours') {
+        await this.handlers()[command.name](command.args);
+      } else if (command?.kind === 'agent') {
+        await this.controller.send(text.trim());
+        this.editor.addToHistory(text);
+        await this.refresh();
+      } else if (command) {
+        throw new Error('Unknown command. Use /help.');
       } else if (this.answerTyped(text)) {
         this.editor.addToHistory(text);
         this.say('');
@@ -368,6 +283,68 @@ export class Chat {
       if (!text.startsWith('/') && !this.editor.getText() &&
           (!this.controller.pending || this.controller.pending.text !== text)) this.editor.setText(text);
     } finally { this.busy = false; }
+  }
+
+  // One handler for each command the terminal offers (commandsFor('terminal')).
+  handlers() {
+    const state = this.controller.state;
+    const writable = () => { if (this.client.readOnly) throw new Error('This is read-only history.'); };
+    return {
+      help: async () => {
+        const agent = this.agentCommands();
+        const theirs = agent.length ? ['', 'The agent\'s own:', ...agent.map(c => `/${c.name}: ${c.description}`)] : [];
+        this.say(commands.map(c => `/${c.name}: ${c.description}`).concat(theirs).join('\n'));
+      },
+      permissions: async ([value]) => {
+        writable();
+        if (value) { await this.configure('permissions', value); return; }
+        const now = state?.settings?.permissions;
+        this.picker('Permissions', PERMISSIONS.map(p => ({value: p.value, label: `${now === p.value ? '✓ ' : '  '}${p.label}`})),
+          choice => this.configure('permissions', choice).catch(error => this.say(error.message)));
+      },
+      model: async ([value]) => {
+        if (value) {
+          writable();
+          await this.configure('model', value);
+          this.say(`The model is ${value} from the next request.`); return;
+        }
+        this.say(`The model: ${plain(state?.settings?.model ?? 'unknown')}. Change it with /model <name>.`);
+      },
+      files: async () => { await browseWorkspace(this); },
+      quit: async () => { this.stop(); },
+      resume: async () => {
+        if (!this.history) throw new Error('Use openrua --resume to select history.');
+        if (this.controller.pending) throw new Error('Resolve the unconfirmed send before changing conversations.');
+        this.result = {action: 'history'}; this.stop();
+      },
+      end: async () => {
+        writable();
+        this.confirm('End execution and release resources? The workspace and history will be retained.',
+          async () => { await this.client.end(); this.stop(); });
+      },
+      questions: async () => { this.questions(); },
+      retry: async () => { await this.controller.retry(); await this.refresh(); },
+      tools: async () => {
+        this.picker('Tool results', [...this.transcript.tools].map(([key, tool]) => ({value: key,
+          label: `${tool.expanded ? '▾' : '▸'} ${tool.label}`, description: `${tool.phase}${tool.details ? ' · ' + plain(String(tool.details.command ?? tool.details.file_path ?? '')).split('\n')[0] : ''}`})),
+          key => { this.transcript.toggleTool(key); this.ui.requestRender(); });
+      },
+      queue: async () => { this.queue(); },
+      interrupt: async () => {
+        // As in a coding agent's own terminal: stop now, no dialog; what is
+        // queued goes next.
+        const id = state?.active;
+        if (!id) throw new Error('No active turn.');
+        await this.client.command('interrupt', {message_id: id});
+        this.say('Interrupted. Queued messages go next.');
+        await this.refresh();
+      },
+      continue: async () => {
+        const id = state?.pause_id;
+        if (!id) throw new Error('The queue is not paused.');
+        this.confirm('Review /queue first. Continue this paused queue?', () => this.client.command('resume', {pause_id: id}));
+      },
+    };
   }
 
   async run() {
