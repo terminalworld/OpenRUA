@@ -78,7 +78,7 @@ fallback. Startup failures keep their logs in `~/.openrua/launches/NAME/`.
 | `/files` | Browse saved workspace files |
 | `/queue` | Inspect, edit or withdraw queued instructions |
 | `/questions` | Choose answers to agent questions (or type the answer) |
-| Escape or `/interrupt` | Stop the current turn; queued instructions go next |
+| Escape or `/interrupt` | Stop the current turn and cancel the robot's motions; queued instructions go next |
 | `/continue` | Confirm continuing a paused queue |
 | `/permissions` | Whether the agent asks before each command that changes something, or runs without asking |
 | `/model` | Show the model, or change it: `/model <name>` |

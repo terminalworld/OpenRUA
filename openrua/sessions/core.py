@@ -277,6 +277,15 @@ class Session:
             return None, [_event("check", step=step, status=status, summary=summary, run=run)]
         self.store.update(change)
 
+    def motion_canceled(self, outcome: dict[str, bool]) -> None:
+        """After an interrupt, the robot's motion actions were asked to
+        cancel every goal: which did, which did not answer."""
+        def change(state):
+            return None, [_event("motion_canceled",
+                                 canceled=[a for a, ok in outcome.items() if ok],
+                                 failed=[a for a, ok in outcome.items() if not ok])]
+        self.store.update(change)
+
     def handed_over(self, reason: str) -> None:
         """The agent's process is being moved to new resources on purpose
         (a robot just connected gets its own terminal): no turn is lost,
