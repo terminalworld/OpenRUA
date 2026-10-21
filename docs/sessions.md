@@ -157,7 +157,12 @@ openrua session --name shared edit MESSAGE_ID "Revised instruction" --revision 0
 openrua session --name shared withdraw MESSAGE_ID
 openrua session --name shared resume PAUSE_ID
 openrua session --name shared respond REQUEST_ID '{"question-id":["answer"]}'
+openrua session --name shared configure permissions ask    # or auto; model <name>
 ```
+
+A session starts with `--permissions auto` (the agent runs commands without
+asking) unless started with `--permissions ask`; either can be switched while it
+runs. Asked, the agent's request to run a command arrives as a question.
 
 Interrupting the agent is not an emergency stop for the robot. After interruption
 or failure the queue remains paused until explicitly resumed. If execution is

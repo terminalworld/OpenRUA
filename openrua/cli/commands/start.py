@@ -17,7 +17,7 @@ from openrua.runner.limits import limit_overrides
 
 # Command arguments belong here; the service launcher only sees explicit argv.
 SELECTION = ('robot', 'sim', 'bench', 'agent', 'model')
-RESOURCE_OPTIONS = ('task_suite', 'task_id', 'init_state', 'task', 'workspace', 'ros_domain', 'port')
+RESOURCE_OPTIONS = ('task_suite', 'task_id', 'init_state', 'task', 'workspace', 'ros_domain', 'permissions', 'port')
 
 
 def add_options(parser) -> None:

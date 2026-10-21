@@ -29,6 +29,7 @@ _ARGUMENTS = {
     "resume": {"pause_id": str},
     "resolve_unknown": {"message_id": str, "note": str},
     "respond": {"request_id": str, "answers": dict},
+    "configure": {"setting": str, "value": str},
 }
 
 

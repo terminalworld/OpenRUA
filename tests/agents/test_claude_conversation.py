@@ -274,3 +274,70 @@ def test_a_question_takes_an_answer_of_ones_own():
     reply = protocol.respond("q-1", {"0": ["use position control, then try other joints"]})
     answers = reply.outbound[0]["response"]["response"]["updatedInput"]["answers"]
     assert answers == {"How should I proceed?": "use position control, then try other joints"}
+
+
+def test_initialize_reports_the_agents_commands_and_its_permissions():
+    protocol = ClaudeConversation("session-1", permissions="ask")
+    request = protocol.begin().outbound[0]
+    response = ack(request)
+    response["response"]["response"] = {"commands": [
+        {"name": "compact", "description": "Clear history, keep a summary"}, {"bad": True}]}
+    events = protocol.receive(response).events
+    assert [e.kind for e in events] == ["ready", "setting", "commands"]
+    assert events[1].data == {"setting": "permissions", "value": "ask"}
+    assert events[2].data["commands"] == [{"name": "compact",
+                                           "description": "Clear history, keep a summary"}]
+
+
+@pytest.mark.parametrize("setting,value,subtype,field", [
+    ("permissions", "ask", "set_permission_mode", ("mode", "default")),
+    ("permissions", "auto", "set_permission_mode", ("mode", "bypassPermissions")),
+    ("model", "claude-haiku-4-5", "set_model", ("model", "claude-haiku-4-5")),
+])
+def test_settings_go_through_the_clis_own_controls(setting, value, subtype, field):
+    protocol = ready()
+    request = protocol.configure(setting, value).outbound[0]
+    assert request["request"]["subtype"] == subtype
+    assert request["request"][field[0]] == field[1]
+    events = protocol.receive(ack(request)).events
+    assert [(e.kind, e.data["setting"], e.data["value"]) for e in events] == [("setting", setting, value)]
+    assert protocol.can_submit
+
+
+def test_a_refused_setting_is_reported_and_the_connection_stays_usable():
+    protocol = ready()
+    request = protocol.configure("model", "no-such-model").outbound[0]
+    assert protocol.receive(ack(request, success=False)).events[0].kind == "setting_rejected"
+    assert protocol.can_submit
+    with pytest.raises(ValueError):
+        protocol.configure("permissions", "sometimes")
+
+
+def test_the_model_each_request_runs_on_is_reported():
+    protocol = ready()
+    started(protocol)
+    events = protocol.receive({"type": "system", "subtype": "init", "session_id": "session-1",
+                               "model": "claude-sonnet-5-5"}).events
+    assert ("setting", "model") in [(e.kind, e.data.get("setting")) for e in events]
+
+
+def test_clear_begins_a_new_native_conversation():
+    protocol = ready()
+    request = protocol.submit("turn-1", "/clear").outbound[0]
+    protocol.receive(request)
+    events = protocol.receive({"type": "system", "subtype": "init", "session_id": "session-2"}).events
+    assert events[0].kind == "session" and events[0].data == {
+        "session_id": "session-2", "identity_confirmed": True, "cleared": True}
+    assert protocol.session_id == "session-2"
+    with pytest.raises(ValueError, match="identity"):
+        protocol.receive({"type": "system", "session_id": "session-3"})
+
+
+def test_a_session_that_asks_starts_in_the_default_mode_and_may_switch():
+    plugin = agents.get("claude-code")
+    asking = plugin.conversation("box", "model", "", permissions="ask").argv
+    assert asking[asking.index("--permission-mode") + 1] == "default"
+    assert "--allow-dangerously-skip-permissions" in asking
+    assert "--dangerously-skip-permissions" not in asking
+    running = plugin.conversation("box", "model", "").argv
+    assert "--dangerously-skip-permissions" in running and "--permission-mode" not in running

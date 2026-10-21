@@ -152,7 +152,7 @@ class ClaudeCode(Agent):
     def conversation(self, sandbox: str, model: str, proxy: str,
                      options: dict[str, Any] | None = None,
                      session_id: str | None = None, limits: dict | None = None,
-                     **_: Any) -> Conversation:
+                     permissions: str = "auto", **_: Any) -> Conversation:
         opts = self._opts(options)
         native_id = session_id or str(uuid4())
         argv = [*self.exec_argv(sandbox, self._env(proxy, opts, limits), stdin=True),
@@ -161,9 +161,13 @@ class ClaudeCode(Agent):
                 "--resume" if session_id else "--session-id", native_id,
                 "--input-format", "stream-json", "--output-format", "stream-json",
                 "--verbose", "--replay-user-messages", "--include-partial-messages",
-                "--permission-prompt-tool", "stdio", "--dangerously-skip-permissions",
+                # Either mode can be switched to later (/permissions): asking
+                # starts in the default mode with skipping allowed.
+                "--permission-prompt-tool", "stdio",
+                *(["--allow-dangerously-skip-permissions", "--permission-mode", "default"]
+                  if permissions == "ask" else ["--dangerously-skip-permissions"]),
                 *self._web(limits)]
-        return Conversation(argv, ClaudeConversation(native_id))
+        return Conversation(argv, ClaudeConversation(native_id, permissions))
 
     # ------------------------------------------------------------ auth
 

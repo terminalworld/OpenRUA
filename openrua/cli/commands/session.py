@@ -76,7 +76,8 @@ def run(args) -> int:
         else:
             parameters = {"interrupt": ("message_id",), "resume": ("pause_id",),
                           "withdraw": ("message_id",), "edit": ("message_id", "text", "revision"),
-                          "resolve_unknown": ("message_id", "note")}
+                          "resolve_unknown": ("message_id", "note"),
+                          "configure": ("setting", "value")}
             result = client.command(operation, **{key: getattr(args, key) for key in parameters[operation]})
     except (RuntimeError, ValueError) as exc:
         raise UnavailableError(str(exc), hint="inspect openrua session --name <name> status before retrying") from exc
@@ -115,5 +116,9 @@ def add_parser(sub) -> None:
     respond = actions.add_parser("respond", help="answer a pending agent question")
     respond.add_argument("request_id")
     respond.add_argument("answers", help='JSON mapping question IDs to lists of answers')
+    configure = actions.add_parser("configure", help="change the agent's permissions (ask or "
+                                   "auto) or model for what it does next")
+    configure.add_argument("setting", choices=("permissions", "model"))
+    configure.add_argument("value", help="permissions: ask | auto; model: a model ID")
     actions.add_parser("end", help="stop owned resources and retain messages and workspace")
     p.set_defaults(fn=run)

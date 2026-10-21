@@ -624,3 +624,29 @@ test('dialogs open below the transcript in the editor slot and Escape closes the
   assert.equal((await client.snapshot()).state.messages[0].cancel_requested, false);
   chat.stop(); await running;
 });
+
+test('/permissions and /model change the agent; its own commands go to it', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const chat = new Chat(client, {terminal: new Terminal(), pollMs: 20});
+  t.after(() => chat.stop());
+  await chat.refresh();
+  await call({op: 'frame', frame: {kind: 'commands', data: {commands: [
+    {name: 'compact', description: 'summarize'}, {name: 'help', description: 'not shadowing ours'}]}}});
+  await until(client, s => (s.agent_commands ?? []).length === 2);
+  await chat.refresh();
+  assert.deepEqual(chat.agentCommands().map(c => c.name), ['compact']);
+  await chat.submit('/permissions ask');
+  assert.equal((await client.snapshot()).state.settings.permissions, 'ask');
+  assert.match(chat.status.text, /asks before commands/);
+  await chat.submit('/model other-model');
+  assert.equal((await client.snapshot()).state.settings.model, 'other-model');
+  const writes = (await call({op: 'writes'})).writes;
+  assert.deepEqual(writes.filter(w => w.configure).map(w => [w.configure, w.value]),
+    [['permissions', 'ask'], ['model', 'other-model']]);
+  // The agent's own command is a message to it; an unknown one is refused.
+  await chat.submit('/compact');
+  const state = await until(client, s => s.messages.length === 1);
+  assert.equal(state.messages[0].text, '/compact');
+  await chat.submit('/nosuch');
+  assert.match(chat.notice.text, /Unknown command/);
+});

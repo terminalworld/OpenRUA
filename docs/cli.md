@@ -15,10 +15,10 @@ usage: openrua [-h] [--version] [--home HOME] [--robot ROBOT] [--sim SIM]
                [--bench BENCH] [--task-suite TASK_SUITE] [--task-id TASK_ID]
                [--init-state INIT_STATE] [--task TASK] [--name NAME] [--agent
                AGENT] [--workspace WORKSPACE] [--ros-domain ROS_DOMAIN]
-               [--internet {open,model-only}] [--web-search | --no-web-search]
-               [--account-connectors | --no-account-connectors] [--model
-               MODEL] [--gui | --tui UI | --cli] [--port PORT] [--setup]
-               [--resume [ID]] <verb> ...
+               [--permissions {ask,auto}] [--internet {open,model-only}]
+               [--web-search | --no-web-search] [--account-connectors |
+               --no-account-connectors] [--model MODEL] [--gui | --tui UI |
+               --cli] [--port PORT] [--setup] [--resume [ID]] <verb> ...
 
 Open a robot conversation, or use ``openrua <verb> ...``.
 
@@ -57,6 +57,10 @@ start or reconnect (without a subcommand):
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
+  --permissions {ask,auto}
+                        ask: the agent asks before each command that changes
+                        something; auto: it runs them without asking
+                        (default); /permissions switches
   --internet {open,model-only}
                         open, or only the agent's model service and login,
                         through a whitelist proxy (default: not limited)
@@ -257,7 +261,8 @@ usage: openrua run [-h] [--model MODEL] [--sim SIM] [--bench BENCH]
                    [--task-suite TASK_SUITE] [--task-id TASK_ID]
                    [--init-state INIT_STATE] [--task TASK] [--name NAME]
                    [--agent AGENT] [--workspace WORKSPACE]
-                   [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
+                   [--ros-domain ROS_DOMAIN] [--permissions {ask,auto}]
+                   [--internet {open,model-only}]
                    [--web-search | --no-web-search]
                    [--account-connectors | --no-account-connectors]
                    [robot] [prompt]
@@ -297,6 +302,10 @@ options:
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
+  --permissions {ask,auto}
+                        ask: the agent asks before each command that changes
+                        something; auto: it runs them without asking
+                        (default); /permissions switches
   --internet {open,model-only}
                         open, or only the agent's model service and login,
                         through a whitelist proxy (default: not limited)
@@ -315,7 +324,8 @@ options:
 usage: openrua up [-h] [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
                   [--task-id TASK_ID] [--init-state INIT_STATE] [--task TASK]
                   [--name NAME] [--agent AGENT] [--workspace WORKSPACE]
-                  [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
+                  [--ros-domain ROS_DOMAIN] [--permissions {ask,auto}]
+                  [--internet {open,model-only}]
                   [--web-search | --no-web-search]
                   [--account-connectors | --no-account-connectors]
                   [robot]
@@ -354,6 +364,10 @@ options:
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
+  --permissions {ask,auto}
+                        ask: the agent asks before each command that changes
+                        something; auto: it runs them without asking
+                        (default); /permissions switches
   --internet {open,model-only}
                         open, or only the agent's model service and login,
                         through a whitelist proxy (default: not limited)
@@ -373,7 +387,8 @@ usage: openrua serve [-h] [--sim SIM] [--bench BENCH]
                      [--task-suite TASK_SUITE] [--task-id TASK_ID]
                      [--init-state INIT_STATE] [--task TASK] [--name NAME]
                      [--agent AGENT] [--workspace WORKSPACE]
-                     [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
+                     [--ros-domain ROS_DOMAIN] [--permissions {ask,auto}]
+                     [--internet {open,model-only}]
                      [--web-search | --no-web-search]
                      [--account-connectors | --no-account-connectors]
                      [--model MODEL] [--port PORT]
@@ -408,6 +423,10 @@ options:
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
                         a real robot: its own domain, 0)
+  --permissions {ask,auto}
+                        ask: the agent asks before each command that changes
+                        something; auto: it runs them without asking
+                        (default); /permissions switches
   --internet {open,model-only}
                         open, or only the agent's model service and login,
                         through a whitelist proxy (default: not limited)
@@ -467,6 +486,7 @@ options:
 | `edit` | edit a queued message at its current revision |
 | `resolve_unknown` | record checking an uncertain execution, without replaying it |
 | `respond` | answer a pending agent question |
+| `configure` | change the agent's permissions (ask or auto) or model for what it does next |
 | `end` | stop owned resources and retain messages and workspace |
 
 ### openrua session web
@@ -591,6 +611,19 @@ positional arguments:
 
 options:
   -h, --help  show this help message and exit
+```
+
+### openrua session configure
+
+```
+usage: openrua session configure [-h] {permissions,model} value
+
+positional arguments:
+  {permissions,model}
+  value                permissions: ask | auto; model: a model ID
+
+options:
+  -h, --help           show this help message and exit
 ```
 
 ### openrua session end

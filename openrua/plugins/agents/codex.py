@@ -116,7 +116,7 @@ class Codex(Agent):
     def conversation(self, sandbox: str, model: str, proxy: str,
                      options: dict[str, Any] | None = None,
                      session_id: str | None = None, limits: dict | None = None,
-                     **_: Any) -> Conversation:
+                     permissions: str = "auto", **_: Any) -> Conversation:
         opts = self._opts(options)
         argv = [*self.exec_argv(sandbox, self._env(proxy), stdin=True),
                 self.binary, "app-server", "--listen", "stdio://",
@@ -126,7 +126,8 @@ class Codex(Agent):
                 # container cannot use.
                 "-c", 'sandbox_mode="danger-full-access"']
         return Conversation(argv, CodexConversation(model, session_id=session_id,
-                                                    effort=opts["effort"]))
+                                                    effort=opts["effort"],
+                                                    permissions=permissions))
 
     def login_hint(self, creds_home: Path) -> str:
         return f"run {self.credentials.config_env}={creds_home} codex login"

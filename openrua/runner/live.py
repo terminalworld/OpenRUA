@@ -44,6 +44,9 @@ class RobotRequest:
     # What the agent may reach, over a free session's defaults (nothing
     # limited): config.schema.Limits field -> value.
     limits: dict | None = None
+    # Whether the agent asks before each command that changes something
+    # ("ask") or runs it ("auto"); /permissions switches it later.
+    permissions: str = "auto"
 
 
 @dataclass
@@ -209,7 +212,7 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                    backend=cfg["machine"]["backend"]["kind"],
                    network=network,
                    proxy=agent_proxy_url(cfg["machine"]["backend"], proxy_url),
-                   limits=limits,
+                   limits=limits, permissions=request.permissions,
                    agent=adapter.name,
                    agent_spec=cfg_agent["name"], agent_version=cfg_agent.get("version"),
                    model=model,

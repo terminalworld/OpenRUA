@@ -19,8 +19,9 @@ from openrua.agents.conversation import ConversationProtocol, Event, Update
 
 
 class ClaudeConversation(ConversationProtocol):
-    def __init__(self, session_id: str):
+    def __init__(self, session_id: str, permissions: str = "auto"):
         self.session_id = session_id
+        self.permissions = permissions
         self.ready = False
         self._confirmed = False
         self._begun = False
@@ -38,6 +39,8 @@ class ClaudeConversation(ConversationProtocol):
         self._tool_calls: dict[str, tuple[str, str]] = {}
         self._finished_tools: set[str] = set()
         self._steers: dict[str, str] = {}   # echoed uuid -> message ID it carried
+        self._settings: dict[str, tuple[str, str]] = {}  # request ID -> (setting, value)
+        self._clearing = False              # the running turn is /clear
 
     @property
     def can_submit(self) -> bool:
@@ -67,6 +70,7 @@ class ClaudeConversation(ConversationProtocol):
         self._user_uuid = str(uuid4())
         self._accepted = self._interrupted = False
         self._message_id = None
+        self._clearing = text.strip() == "/clear"
         return Update([{"type": "user", "uuid": self._user_uuid,
                         "session_id": self.session_id, "parent_tool_use_id": None,
                         "message": {"role": "user", "content": text}}])
@@ -86,6 +90,23 @@ class ClaudeConversation(ConversationProtocol):
                         "parent_tool_use_id": None,
                         "message": {"role": "user", "content": text}}])
 
+    def configure(self, setting: str, value: str) -> Update:
+        """Permission mode and model through the CLI's own control
+        requests; in effect from the next tool call or request."""
+        if setting == "permissions":
+            if value not in self.SETTINGS["permissions"]:
+                raise ValueError("permissions is ask or auto")
+            frame = self._control("set_permission_mode",
+                                  mode="default" if value == "ask" else "bypassPermissions")
+        elif setting == "model":
+            if not value:
+                raise ValueError("name a model")
+            frame = self._control("set_model", model=value)
+        else:
+            raise ValueError(f"unknown setting: {setting}")
+        self._settings[frame["request_id"]] = (setting, value)
+        return Update([frame])
+
     def interrupt(self, turn_id: str) -> Update:
         if turn_id != self._active or not self._accepted:
             raise ValueError("interrupt requires the active turn's echoed user message")
@@ -97,6 +118,13 @@ class ClaudeConversation(ConversationProtocol):
     def receive(self, frame: dict[str, Any]) -> Update:
         update = Update()
         native_session = frame.get("session_id")
+        if native_session and native_session != self.session_id and self._clearing:
+            # /clear began a new conversation: it is the session from now on.
+            self.session_id = native_session
+            self._clearing = False
+            update.events.append(Event("session", data={"session_id": native_session,
+                                                        "identity_confirmed": True,
+                                                        "cleared": True}))
         if native_session:
             if native_session != self.session_id:
                 self.ready = False
@@ -116,6 +144,11 @@ class ClaudeConversation(ConversationProtocol):
             if pending is None:
                 return Update(events=[Event("native", data=frame)])
             operation, turn_id = pending
+            setting = self._settings.pop(response.get("request_id"), None)
+            if setting is not None:
+                kind = "setting" if response.get("subtype") == "success" else "setting_rejected"
+                return Update(events=[Event(kind, data={"setting": setting[0], "value": setting[1],
+                                                        "error": response.get("error")})])
             if response.get("subtype") != "success":
                 self.ready = False
                 return Update(events=[Event("protocol_error", turn_id,
@@ -124,8 +157,14 @@ class ClaudeConversation(ConversationProtocol):
                 self.ready = True
                 # The ID was passed with --session-id/--resume. Confirmation
                 # arrives in a native session event after the first message.
-                return Update(events=[Event("ready", data={"session_id": self.session_id,
-                                                          "identity_confirmed": self._confirmed})])
+                commands = [{"name": c.get("name", ""), "description": c.get("description", "")}
+                            for c in (response.get("response") or {}).get("commands", [])
+                            if isinstance(c, dict) and c.get("name")]
+                return Update(events=[
+                    Event("ready", data={"session_id": self.session_id,
+                                         "identity_confirmed": self._confirmed}),
+                    Event("setting", data={"setting": "permissions", "value": self.permissions}),
+                    Event("commands", data={"commands": commands})])
             self._cancel_pending = False
             return Update(events=[Event("interrupt_acknowledged", turn_id)])
         if kind == "control_cancel_request":
@@ -147,6 +186,11 @@ class ClaudeConversation(ConversationProtocol):
             events = self._tool_results(frame)
             if events:
                 return Update(events=events)
+        if kind == "system" and frame.get("subtype") == "init" and frame.get("model"):
+            # Each request names the model it runs on.
+            return Update(events=[Event("native", self._active, frame),
+                                  Event("setting", data={"setting": "model",
+                                                         "value": frame["model"]})])
         if not self._active and kind in ("assistant", "stream_event") and self.ready:
             # The agent went on by itself: a turn of its own, so its output
             # is shown and judged like any other.
@@ -250,8 +294,13 @@ class ClaudeConversation(ConversationProtocol):
                           "secret": False}
                          for i, q in enumerate(request["input"]["questions"])]
         else:
-            questions = [{"id": "decision", "text": request.get("description") or
-                          f"Allow {request['tool_name']}?", "choices": ["allow", "deny"], "secret": False}]
+            # Say what would run or change, as Claude Code's own prompt does.
+            given = request.get("input") or {}
+            what = (f"Run `{given['command']}`?" if given.get("command")
+                    else f"{request['tool_name']} {given['file_path']}?" if given.get("file_path")
+                    else f"Allow {request['tool_name']}?")
+            questions = [{"id": "decision", "text": request.get("description") or what,
+                          "choices": ["allow", "deny"], "secret": False}]
         self._requests[key] = (request, questions)
         return Update(events=[Event("input_required", self._active,
                                     {"request_id": key, "questions": questions, "details": request})])

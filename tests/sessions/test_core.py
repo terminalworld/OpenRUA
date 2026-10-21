@@ -282,3 +282,19 @@ def test_a_stopped_robot_holds_the_queue_with_its_reason(session):
     assert session.take() is None                     # nothing goes to an agent without a robot
     session.robot_stopped("again")                    # recorded once
     assert state(session)["robot"]["reason"].endswith("134")
+
+
+def test_settings_and_the_agents_commands_are_kept_in_the_state(session):
+    session.native(Event("setting", data={"setting": "permissions", "value": "ask"}))
+    session.native(Event("setting", data={"setting": "model", "value": "m"}))
+    session.native(Event("commands", data={"commands": [{"name": "compact", "description": "d"}]}))
+    snapshot = state(session)
+    assert snapshot["settings"] == {"permissions": "ask", "model": "m"}
+    assert snapshot["agent_commands"] == [{"name": "compact", "description": "d"}]
+
+
+def test_only_clear_may_change_the_native_conversation(session):
+    with pytest.raises(ValueError, match="identity"):
+        session.native(Event("session", data={"session_id": "native-2"}))
+    session.native(Event("session", data={"session_id": "native-2", "cleared": True}))
+    assert state(session)["native_session"] == "native-2"

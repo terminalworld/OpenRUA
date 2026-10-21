@@ -19,8 +19,13 @@ from openrua.agents.conversation import ConversationProtocol, Event, Update
 
 
 class CodexConversation(ConversationProtocol):
-    def __init__(self, model: str, session_id: str | None = None, effort: str = "high", workspace: str = "/workspace"):
+    # What the person sets with /permissions, as Codex's approval policy.
+    APPROVAL = {"ask": "untrusted", "auto": "never"}
+
+    def __init__(self, model: str, session_id: str | None = None, effort: str = "high",
+                 workspace: str = "/workspace", permissions: str = "auto"):
         self.model = model
+        self.permissions = permissions
         self.workspace = workspace
         self.effort = effort
         self.thread_id = session_id
@@ -34,6 +39,7 @@ class CodexConversation(ConversationProtocol):
         self._early: list[dict] = []
         self._requests: dict[str, tuple[Any, str, list[dict]]] = {}
         self._steers: dict[int, str] = {}   # request ID -> message ID it carried
+        self._server_turn = False           # /compact: the server starts the turn
 
     @property
     def can_submit(self) -> bool:
@@ -59,9 +65,37 @@ class CodexConversation(ConversationProtocol):
         self._seen.add(turn_id)
         self._active = turn_id
         self._native_turn = None
+        command = text.strip()
+        if command == "/compact":
+            # As in Codex's own terminal; the server runs it as a turn.
+            self._server_turn = True
+            return Update([self._request("thread/compact/start", {"threadId": self.thread_id},
+                                         turn_id)])
+        if command == "/clear":
+            return Update([self._request("thread/start", self._thread_params(), turn_id)])
         return Update([self._request("turn/start", {
             "threadId": self.thread_id, "input": [{"type": "text", "text": text}],
-            "effort": self.effort}, turn_id)])
+            "effort": self.effort, "model": self.model,
+            "approvalPolicy": self.APPROVAL[self.permissions]}, turn_id)])
+
+    def _thread_params(self) -> dict:
+        return {"model": self.model, "cwd": self.workspace,
+                "approvalPolicy": self.APPROVAL[self.permissions], "sandbox": "danger-full-access"}
+
+    def configure(self, setting: str, value: str) -> Update:
+        """Kept here and sent with every turn, as Codex's own terminal does:
+        in effect from the next turn."""
+        if setting == "permissions":
+            if value not in self.APPROVAL:
+                raise ValueError("permissions is ask or auto")
+            self.permissions = value
+        elif setting == "model":
+            if not value:
+                raise ValueError("name a model")
+            self.model = value
+        else:
+            raise ValueError(f"unknown setting: {setting}")
+        return Update(events=[Event("setting", data={"setting": setting, "value": value})])
 
     @property
     def can_steer(self) -> bool:
@@ -90,6 +124,17 @@ class CodexConversation(ConversationProtocol):
         method = frame.get("method", "")
         if params.get("threadId") != self.thread_id:
             return Update(events=[Event("native", data=frame)])
+        if (self._server_turn and method == "turn/started" and self._active
+                and not self._native_turn):
+            # /compact's turn, started by the server: it is the running turn.
+            self._server_turn = False
+            self._native_turn = params["turn"]["id"]
+            update = Update(events=[Event("turn_started", self._active,
+                                          {"native_turn_id": self._native_turn})])
+            early, self._early = self._early, []
+            for message in early:
+                update.extend(self.receive(message))
+            return update
         if self._active and not self._native_turn:
             self._early.append(frame)
             return Update()
@@ -169,20 +214,35 @@ class CodexConversation(ConversationProtocol):
                                         {"operation": method, "error": frame["error"]})])
         result = frame.get("result", {})
         if method == "initialize":
-            params = {"model": self.model, "cwd": self.workspace,
-                      "approvalPolicy": "never", "sandbox": "danger-full-access"}
+            params = self._thread_params()
             verb = "thread/start"
             if self.thread_id:
                 verb = "thread/resume"
                 params["threadId"] = self.thread_id
             return Update([{"method": "initialized", "params": {}}, self._request(verb, params)])
+        if method == "thread/start" and turn_id is not None:
+            # /clear: a new thread is the conversation from now on.
+            self.thread_id = result["thread"]["id"]
+            self._active = None
+            return Update(events=[
+                Event("session", data={"session_id": self.thread_id, "cleared": True}),
+                Event("turn_finished", turn_id, {"status": "completed"})])
         if method in {"thread/start", "thread/resume"}:
             native_id = result["thread"]["id"]
             if self.thread_id and native_id != self.thread_id:
                 raise ValueError("resumed conversation identity differs from the requested thread")
             self.thread_id = native_id
             self.ready = True
-            return Update(events=[Event("ready", data={"session_id": native_id})])
+            return Update(events=[
+                Event("ready", data={"session_id": native_id}),
+                Event("setting", data={"setting": "permissions", "value": self.permissions}),
+                Event("setting", data={"setting": "model", "value": self.model}),
+                Event("commands", data={"commands": [
+                    {"name": "compact", "description": "summarize the conversation to free context"},
+                    {"name": "clear", "description": "start a new conversation"}]})])
+        if method == "thread/compact/start":
+            # The turn it runs arrives as the server's own turn/started.
+            return Update()
         if method == "turn/start":
             if turn_id != self._active:
                 raise ValueError("start acknowledgement does not match the outstanding turn")
@@ -205,7 +265,12 @@ class CodexConversation(ConversationProtocol):
                           "allow_other": bool(q.get("isOther")) or not q.get("options"),
                           "secret": q.get("isSecret", False)} for q in params["questions"]]
         elif method in {"item/commandExecution/requestApproval", "item/fileChange/requestApproval"}:
-            questions = [{"id": "decision", "text": params.get("reason") or "Allow this operation?",
+            # Say what would run, as Codex's own terminal does.
+            what = (f"Run `{params['command']}`?" if params.get("command")
+                    else "Apply this file change?" if method.startswith("item/fileChange")
+                    else "Allow this operation?")
+            text = f"{what} ({params['reason']})" if params.get("reason") else what
+            questions = [{"id": "decision", "text": text,
                           "choices": ["accept", "decline", "cancel"], "secret": False}]
         else:
             return Update(events=[Event("unsupported_request", self._active,

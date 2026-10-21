@@ -25,7 +25,12 @@ class Event:
     steer_delivered / steer_rejected name the message_id a steer carried. A
     turn the agent starts by itself (a background task finished) arrives as
     turn_started with a turn ID the owner never submitted and
-    data.origin "agent".
+    data.origin "agent". setting {setting, value} reports a setting now in
+    effect (see ConversationProtocol.configure), setting_rejected one the
+    agent refused. commands {commands: [{name, description}]} lists the
+    agent's own commands, typed as a message starting with "/". A turn
+    whose text is "/clear" starts a new native conversation: the plugin
+    then reports session with the new session_id and cleared true.
     """
     kind: str
     turn_id: str | None = None
@@ -87,6 +92,17 @@ class ConversationProtocol(ABC):
         emits steer_delivered, or steer_rejected so the owner queues it
         again, naming ``message_id``."""
         raise NotImplementedError("this agent cannot take a message during a turn")
+
+    # What configure accepts: "permissions" is "ask" (ask the person before
+    # each command that changes something) or "auto" (run without asking);
+    # "model" is a model ID the agent knows.
+    SETTINGS = {"permissions": ("ask", "auto"), "model": None}
+
+    def configure(self, setting: str, value: str) -> Update:
+        """Change ``setting`` (SETTINGS) for what the agent does next, the
+        way a coding agent's own /permissions and /model do; the plugin
+        emits setting once it is in effect. Default: unsupported."""
+        raise NotImplementedError("this agent's settings cannot be changed from here")
 
 
 @dataclass(frozen=True)
