@@ -65,6 +65,14 @@ result = future.result().get_result_async()
 wait(result.done, 'trajectory result')
 assert result.result().result.error_code == 0, str(result.result())
 checks = {'joint_states': True, 'camera_frame': True, 'trajectory': True}
+# A declared gripper joint is what the agent reads the gripper from.
+names = list(seen['joints'].name)
+for one in (cfg.get('arms') or [arm]):
+    grip_joint = (one.get('gripper') or {}).get('joint')
+    if grip_joint:
+        assert grip_joint in names, 'declared gripper joint %s not in /joint_states %s' % (grip_joint, names)
+        checks['gripper_joint'] = True
+checks['joint_names'] = names
 planning = cfg.get('planning') or {}
 if planning.get('moveit') and planning.get('planning_frame'):
     # The declared planning frame is what the docs tell the agent to use:
@@ -72,7 +80,7 @@ if planning.get('moveit') and planning.get('planning_frame'):
     # needs the TF arm chain to be connected.
     from moveit_msgs.srv import GetPositionFK
     from tf2_ros import Buffer, TransformListener
-    hand = arm.get('hand_frame', 'panda_hand')
+    hand = arm['hand_frame']
     tf_buffer = Buffer()
     TransformListener(tf_buffer, node)
     fk = node.create_client(GetPositionFK, '/compute_fk')
@@ -167,7 +175,7 @@ def main():
                   'task_id': composed.task_id, 'seed': 0, 'profiles_sha256': profile_digest(),
                   'checked_at': datetime.now(timezone.utc).isoformat(), 'images': images,
                   'checks': checks, 'agent_binaries': versions,
-                  'scope': 'Simulation startup, reset, ROS image and joint streams, no-op trajectory, declared planning frame against FK and TF, agent CLI versions. No model task or physical robot validation.'}
+                  'scope': 'Simulation startup, reset, ROS image and joint streams, declared gripper joint, no-op trajectory, declared planning frame against FK and TF, agent CLI versions. No model task or physical robot validation.'}
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2) + '\n')
         print('PASS: ' + str(args.output), flush=True)

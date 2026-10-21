@@ -76,6 +76,7 @@ robots:
     gripper:                 # the bridge reads a goal as open or closed,
       holds_partway: false   # whichever is nearer, and sets no force limit
       effort_honoured: false
+      joint: panda_right_finger_joint1   # robosuite 1.5 names the fingers right_
     control:                 # graph-side actuation behavior
       gripper:
         settle_steps: 10       # control ticks a gripper goal advances the world

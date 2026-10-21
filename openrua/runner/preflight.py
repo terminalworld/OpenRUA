@@ -74,6 +74,12 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
                            f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic info "
                            f"'{aports['twist']}'"
                            f" | grep -q 'Subscription count: [1-9]'\""))
+        grip_joint = (arm.get("gripper") or {}).get("joint")
+        if grip_joint:
+            # the declared joint is where the agent reads the gripper from
+            checks.append((f"gripper_joint_reported{sfx}",
+                           f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic echo --once "
+                           f"/joint_states | grep -q '{grip_joint}'\""))
         if aports.get("gripper"):
             checks.append((f"gripper_action{sfx}",
                            f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 action list | grep -qx "

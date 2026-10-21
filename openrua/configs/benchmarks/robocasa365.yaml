@@ -160,6 +160,7 @@ scenes:
       gripper:                 # the bridge reads a goal as open or closed,
         holds_partway: false   # whichever is nearer, and sets no force limit
         effort_honoured: false
+        joint: panda_right_finger_joint1
       control:
         gripper:
           settle_steps: 10

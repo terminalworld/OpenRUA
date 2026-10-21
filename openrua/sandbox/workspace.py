@@ -246,13 +246,12 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
             {"kind": "cartesian_twist", "port": aports.get("twist"),
              "type": "geometry_msgs/msg/TwistStamped",
              "frame": arm.get("base_frame"), **tag},
-            # Config extras spread first so the typed columns always
-            # win (a config "type" such as "holonomic" must not clobber
-            # the ROS message type); it survives as "drive".
-            {**{("drive" if k == "type" else k): v
-                for k, v in (arm.get("gripper") or {}).items()},
-             "kind": "gripper", "port": aports.get("gripper"),
-             "type": "control_msgs/action/GripperCommand", **tag},
+            # The typed columns first; the gripper's facts after them
+            # (a config "type" must not clobber the ROS message type).
+            {"kind": "gripper", "port": aports.get("gripper"),
+             "type": "control_msgs/action/GripperCommand", **tag,
+             **{k: v for k, v in (arm.get("gripper") or {}).items()
+                if k not in ("kind", "port", "type", "arm")}},
         ]
         arm_sensors.append(
             {"kind": "wrench", "port": aports.get("wrench"),
