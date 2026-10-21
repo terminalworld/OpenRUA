@@ -246,9 +246,11 @@ sandbox and a driver started by `backend.launch`, whether on the host or in
 `backend.image`. For an already-running external driver, select its existing
 domain; OpenRUA does not reconfigure it. The default domain is 0. On a real robot there is no simulator to ask,
 so the task sentence is the one you give (`exec`'s task, or `--task`
-on `up`), and a recorded run's `result.json` records `success: null`
-with `verdict: not_applicable`; preflight, the agent, the transcript and
-the provenance are the same as in simulation. A real robot takes no
+on `up`). At the end `exec` asks you whether the robot did it, and
+`result.json` records your answer as `success` with `verdict: person`
+(`success: null`, `verdict: not_applicable` when you skip it, or under
+`bench`); preflight, the agent, the transcript and the provenance are the
+same as in simulation. A real robot takes no
 `--sim`; it may take `--bench` to run a benchmark's task list on it.
 
 For an independently controlled native terminal, keep `openrua up` running and

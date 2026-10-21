@@ -26,6 +26,7 @@ import json
 import os
 import sys
 import subprocess
+import threading
 import time
 import uuid
 from pathlib import Path
@@ -91,6 +92,57 @@ def run_segment(cmd: list[str], trial_dir: Path, env: dict, timeout_s: float,
         meta["termination"] = "stopped"
         timed_out = False
     return t0, time.time(), timed_out
+
+
+def follow(transcript: Path, agent, progress, stop: threading.Event,
+           offset: int = 0) -> None:
+    """Hand each record the agent writes to its transcript, from byte
+    ``offset`` on, to ``progress`` as the agent's steps (``Agent.steps``),
+    until ``stop`` is set; what is written by then is read first. A view
+    only: a progress that fails is dropped, the trial goes on."""
+    pending = b""
+    while True:
+        done = stop.is_set()
+        try:
+            with open(transcript, "rb") as stream:
+                stream.seek(offset)
+                chunk = stream.read()
+        except OSError:
+            chunk = b""
+        offset += len(chunk)
+        *lines, pending = (pending + chunk).split(b"\n")
+        for line in lines:
+            try:
+                record = json.loads(line)
+            except ValueError:
+                continue
+            try:
+                for step in agent.steps(record) if isinstance(record, dict) else []:
+                    progress(step)
+            except Exception:  # noqa: BLE001; the view must never stop the run
+                return
+        if done:
+            return
+        stop.wait(0.5)
+
+
+def last_words(transcript: Path, agent) -> str:
+    """What the agent said last in its transcript (its own account of how
+    the task went), '' when it said nothing."""
+    said = ""
+    try:
+        lines = transcript.read_text(errors="replace").splitlines()
+    except OSError:
+        return said
+    for line in lines:
+        try:
+            record = json.loads(line)
+        except ValueError:
+            continue
+        for step in agent.steps(record) if isinstance(record, dict) else []:
+            if step.get("kind") == "text":
+                said = step["text"]
+    return said.strip()
 
 
 def wait_for_window(resets_at, ctx: dict, meta: dict, max_wait_s: float,
@@ -195,6 +247,9 @@ def agent_operator(ctx: dict) -> dict:
     env = launcher_env()
     meta: dict = {"operator": "agent", "agent": agent.name, "model": model,
                   "options": options, "session_id": session_id}
+    progress = ctx.get("progress")   # a person watching (openrua exec), else None
+    if progress is not None:
+        progress({"kind": "begin", "agent": agent.name})
     resume_on_wall = bool(protocol.get("resume_on_quota_wall", False))
     meta["resume_on_quota_wall"] = resume_on_wall
     max_wait_s = float(protocol.get("max_quota_wait_minutes", 360)) * 60
@@ -223,7 +278,20 @@ def agent_operator(ctx: dict) -> dict:
         # length here would carry a dead attempt's line count into a
         # fresh file and scan past its end.
         mark = _line_count(transcript) if resumed else 0
-        t0, t1, timed_out = run_segment(cmd, trial_dir, env, remaining_s, meta)
+        if not resumed:
+            transcript.write_text("")   # as the launcher does; a retry's old lines are not shown
+        watching = threading.Event()
+        if progress is not None:
+            viewer = threading.Thread(target=follow, daemon=True, args=(
+                transcript, agent, progress, watching,
+                transcript.stat().st_size if transcript.exists() else 0))
+            viewer.start()
+        try:
+            t0, t1, timed_out = run_segment(cmd, trial_dir, env, remaining_s, meta)
+        finally:
+            if progress is not None:
+                watching.set()
+                viewer.join(5)
         active_s += t1 - t0
         stopped = meta["termination"] == "stopped"
         if stopped:
@@ -274,6 +342,8 @@ def agent_operator(ctx: dict) -> dict:
         suspended_s += wait_s
         resumed = True
     summarize(meta, segments, last_quota, active_s, suspended_s, transcript, agent)
+    if progress is not None:
+        progress({"kind": "done"})   # the agent is gone, whatever it left running
     return meta
 
 

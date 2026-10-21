@@ -363,6 +363,16 @@ class Agent:
         budgets). Default: None, unknown."""
         return None
 
+    def steps(self, record: dict) -> list[dict]:
+        """What one transcript record says the agent is doing, for a person
+        watching it (``openrua exec``): ``{kind: "text", text}`` for what it
+        says; ``{kind: "start", id, label, shell}`` when it starts a command
+        or a tool (``shell``: a shell command, ``label`` the command, or the
+        tool and its target; a start may repeat with a fuller label);
+        ``{kind: "end", id, ok}`` when that one is done. Default: [],
+        nothing shown but the run's header and its result."""
+        return []
+
     def replay_ops(self, transcript: Path) -> list[dict]:
         """The agent's world-facing operations in order, each one of
         ``{kind: "shell", command}``, ``{kind: "write", path, content}`` or

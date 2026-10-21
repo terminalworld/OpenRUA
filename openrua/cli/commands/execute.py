@@ -5,10 +5,13 @@ terminal, this runs one trial: the robot comes up (simulated or real),
 the agent gets the task and works until it is done or a budget ends, the
 robot powers off, and everything lands under ``runs/<label>/<run id>/``
 (transcript, result, provenance; ``openrua demo`` renders a simulated
-one). A benchmark scene states its task and judges success; a
-simulator's own scene judges success too, and takes the sentence given
-when it states no task; a real robot's task is the sentence given, and a
-person judges it. Like ``openrua bench``, which runs every task and seed of a
+one). While the agent works, what it says and each command it runs show
+as they happen; Ctrl-C stops it and powers the robot off. A benchmark
+scene states its task and judges success; a simulator's own scene judges
+success too, and takes the sentence given when it states no task; a real
+robot's task is the sentence given, and at the end you are asked whether
+it was done (your answer is the result; the agent's last words are kept
+beside it). Like ``openrua bench``, which runs every task and seed of a
 benchmark this way, the agent may reach only its model service unless
 the limit flags say otherwise.
 """
@@ -16,10 +19,12 @@ the limit flags say otherwise.
 from __future__ import annotations
 
 import argparse
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 from openrua.cli import updates
+from openrua.cli.progress import Progress
 from openrua.config import compose, paths
 from openrua.errors import UsageError
 from openrua.runner.limits import LIMITS, add_limit_options
@@ -34,6 +39,18 @@ def _source(composed) -> Path:
     if composed.cfg["machine"]["backend"]["kind"] == "real":
         return paths.find("robots", composed.robot).resolve()
     return paths.find("simulators", composed.simulator).resolve()
+
+
+def ask_person(words: str) -> bool | None:
+    """Whether the robot did the task, as the person beside it says; None
+    for no answer (Enter, Ctrl-C, no terminal)."""
+    try:
+        answer = input("[exec] Did the robot do the task? [y]es / [n]o / Enter to skip: ")
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return None
+    answer = answer.strip().lower()
+    return True if answer in ("y", "yes") else False if answer in ("n", "no") else None
 
 
 def run(args) -> int:
@@ -68,7 +85,15 @@ def run(args) -> int:
     updates.notice(composed, home)
     print(f"[exec] {label}: {suite}:{task_id} seed {args.seed}; "
           f"recorded under {Path(args.runs_root or 'runs') / label / run_id}", flush=True)
-    return run_set(composed.cfg, _source(composed), trials, home, label)
+    trials.progress = Progress()
+    # Nothing scores a real robot: the person beside it does, when there is
+    # a terminal to ask on. The running line goes first.
+    trials.judge = (lambda words: (trials.progress.close(), ask_person(words))[1]) \
+        if real and sys.stdin.isatty() else None
+    try:
+        return run_set(composed.cfg, _source(composed), trials, home, label)
+    finally:
+        trials.progress.close()
 
 
 def add_parser(sub) -> None:

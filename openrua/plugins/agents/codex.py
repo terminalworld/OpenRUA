@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -289,6 +290,25 @@ class Codex(Agent):
                         "message": lines[i][:160], "resets_at": None}
         return None
 
+    def steps(self, record: dict) -> list[dict]:
+        """``agent_message`` items, ``command_execution`` items (started,
+        then completed with an exit code) and ``file_change`` items."""
+        item = record.get("item") or {}
+        event, kind, key = record.get("type"), item.get("type"), item.get("id")
+        if event == "item.completed" and kind == "agent_message" and str(item.get("text", "")).strip():
+            return [{"kind": "text", "text": item["text"]}]
+        if kind == "command_execution" and event in ("item.started", "item.completed"):
+            start = {"kind": "start", "id": key, "label": _unwrap(item.get("command", "")),
+                     "shell": True}
+            if event == "item.started":
+                return [start]
+            return [start, {"kind": "end", "id": key, "ok": item.get("exit_code") == 0}]
+        if event == "item.completed" and kind == "file_change":
+            paths = ", ".join(str(c.get("path", "")) for c in item.get("changes") or [])
+            return [{"kind": "start", "id": key, "label": f"edit {paths}".strip(), "shell": False},
+                    {"kind": "end", "id": key, "ok": item.get("status") == "completed"}]
+        return []
+
     def replay_ops(self, transcript: Path) -> list[dict]:
         """Shell commands in order (``command_execution`` items); file
         changes carry no content in the transcript and are not replayed.
@@ -309,6 +329,18 @@ class Codex(Agent):
                 for op, d in zip(ops, durations):
                     op["duration_s"] = d
         return ops
+
+
+def _unwrap(command: str) -> str:
+    """The command as the agent wrote it: Codex runs each one as
+    ``/bin/bash -lc '<command>'``."""
+    try:
+        words = shlex.split(command)
+    except ValueError:
+        return command
+    if len(words) == 3 and words[0].rsplit("/", 1)[-1] == "bash" and words[1] == "-lc":
+        return words[2]
+    return command
 
 
 def _exec_durations(rollout: Path) -> list[float]:
