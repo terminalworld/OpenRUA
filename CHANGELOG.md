@@ -9,6 +9,7 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- The README has a News section: releases and the paper, newest first.
 - `openrua bench` on a real robot runs the robot's startup checks before
   any trial, as a session does.
 - `--permissions` is an option of `openrua` and `openrua serve` only,
