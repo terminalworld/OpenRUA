@@ -103,11 +103,14 @@ def test_robot_type_alone_asks_for_a_simulator(tmp_path):
 
 def test_real_instance_brings_its_machine_over_its_type(tmp_path):
     lab = tmp_path / "lab-panda.yaml"                          # a file of your own: by path
+    (tmp_path / "cameras").mkdir()
+    (tmp_path / "cameras" / "wristcam.yaml").write_text(        # a camera type, by path
+        "model: Wrist cam\ntopics:\n  color: /{name}/image\n  info: /{name}/info\n")
     lab.write_text(
         "type: panda\n"
         "machine:\n"
         "  backend: {kind: real, ros_distro: humble, discovery: {network: host}}\n"
-        "  cameras: {list: [wrist]}\n"
+        "  cameras: {list: [{name: wrist, type: ./cameras/wristcam.yaml, mount: wrist}]}\n"
         "  robot: {model: Our lab Panda}\n"
         "  gripper: {holds_partway: true, effort_honoured: true}\n")
     # Free use has no invented benchmark, loader, suite or task index.
@@ -120,7 +123,10 @@ def test_real_instance_brings_its_machine_over_its_type(tmp_path):
     assert c.simulator is None and m["backend"]["kind"] == "real"
     assert m["robot"]["model"] == "Our lab Panda"               # instance over type
     assert m["robot"]["description"].startswith("7-joint")      # type's line kept
-    assert m["arm"]["joints"][0] == "panda_joint1" and m["cameras"]["list"] == ["wrist"]
+    assert m["arm"]["joints"][0] == "panda_joint1"
+    assert m["cameras"]["list"][0]["name"] == "wrist"
+    # the type is read relative to the file naming it, into the machine
+    assert m["cameras"]["types"]["./cameras/wristcam.yaml"]["model"] == "Wrist cam"
     assert m["backend"]["sandbox_image"] == "openrua-sandbox-humble"
     assert m["gripper"]["open"] == 0.04 and m["gripper"]["holds_partway"] is True
     with pytest.raises(UsageError):                            # an instance takes no --sim
@@ -137,7 +143,7 @@ def test_real_instance_brings_its_machine_over_its_type(tmp_path):
 def test_an_arm_without_frames_is_refused_not_given_panda_names(tmp_path):
     lab = tmp_path / "lab.yaml"
     lab.write_text(
-        "machine:\n  backend: {kind: real, discovery: {network: host}}\n"
+        "machine:\n  backend: {kind: real, discovery: {network: host}}\n  cameras: {list: []}\n"
         "  robot: {model: Lab arm}\n  arm: {joints: [j1], limits_rad: [[-1, 1]]}\n")
     with pytest.raises(config.ConfigError) as e:
         compose(str(lab), home=tmp_path)
@@ -161,7 +167,7 @@ def test_a_simulated_arm_names_its_bodies(tmp_path):
 def test_moveit_names_its_planning_group(tmp_path):
     lab = tmp_path / "lab.yaml"
     lab.write_text(
-        "machine:\n  backend: {kind: real, discovery: {network: host}}\n"
+        "machine:\n  backend: {kind: real, discovery: {network: host}}\n  cameras: {list: []}\n"
         "  robot: {model: Lab arm}\n  arm: {joints: [j1], limits_rad: [[-1, 1]]}\n"
         "  frames: {world: world, base: base_link}\n  planning: {moveit: true}\n")
     with pytest.raises(config.ConfigError) as e:
@@ -397,3 +403,15 @@ def test_every_bundled_gripper_resolves_with_its_behaviour():
             continue
         g = cfg["machine"]["gripper"]
         assert g["holds_partway"] is False and g["effort_honoured"] is False, (name, sim)
+
+
+def test_a_real_robot_names_each_cameras_type(tmp_path):
+    lab = tmp_path / "lab.yaml"
+    base = ("machine:\n  backend: {kind: real, discovery: {network: host}}\n"
+            "  robot: {model: Lab arm}\n")
+    lab.write_text(base)
+    with pytest.raises(config.ConfigError, match="lists its cameras"):
+        compose(str(lab), home=tmp_path)
+    lab.write_text(base + "  cameras: {list: [wrist]}\n")
+    with pytest.raises(config.ConfigError, match="needs its type"):
+        compose(str(lab), home=tmp_path)

@@ -6,11 +6,10 @@ Review agent-visible changes before updating this expected artifact hash.
 from openrua.config import load_config
 from openrua.sandbox import workspace
 
-# Reviewed revision: simulation-only statements moved to machine.yaml
-# (simulation section, notes); the gripper docs and tool are
-# direction-free, the manifest entry carrying unit, open, closed and
-# what the gripper does.
-PINNED = "1c7ee6fb6b87cd29b4fd11d34211398983040671dd52c61e6cdf182e13e1f83b"
+# Reviewed revision: cameras are entries with their own topics (cam_snap
+# and px2world read them from machine.yaml); simulation-only statements
+# live in machine.yaml; the gripper docs and tool are direction-free.
+PINNED = "c3d1edb3855fe096f9cf1ad2da8ef12fed28e014e82d69b5d16c6dabdfc5bbe2"
 
 
 def test_workspace_template_hash_is_unchanged():

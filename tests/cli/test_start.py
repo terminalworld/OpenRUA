@@ -264,7 +264,7 @@ def test_custom_environment_opens_tui_without_guided_replacement(tmp_path, monke
     from openrua.config import paths
     from openrua.terminal import launcher
     profile = tmp_path / (kind + '.yaml')
-    profile.write_text('type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n'
+    profile.write_text('type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n  cameras: {list: []}\n'
                        '  gripper: {holds_partway: true, effort_honoured: true}\n'
                        if kind == 'robot' else paths.find('benchmarks', 'capbench').read_text())
     if saved:
@@ -308,7 +308,7 @@ def test_explicit_empty_benchmark_does_not_reintroduce_saved_default(tmp_path):
 def test_custom_setup_explains_how_to_preserve_the_profile(tmp_path, monkeypatch):
     from openrua.terminal import launcher
     profile = tmp_path / 'robot.yaml'
-    profile.write_text('type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n'
+    profile.write_text('type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n  cameras: {list: []}\n'
                        '  gripper: {holds_partway: true, effort_honoured: true}\n')
     monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
     monkeypatch.setattr(start, 'prepare', lambda *a: pytest.fail('must not build'))

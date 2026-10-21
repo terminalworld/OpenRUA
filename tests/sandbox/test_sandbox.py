@@ -197,7 +197,7 @@ def test_manifest_drive_never_clobbers_the_ros_type():
     import yaml as _yaml
 
     from openrua.sandbox.workspace import write_machine_manifest
-    cfg = {"machine": {"ports": {"base_twist": "/cmd_vel"},
+    cfg = {"machine": {"ports": {"base_twist": "/cmd_vel"}, "cameras": {"list": []},
                        "base": {"type": "holonomic", "frame": "base_link"}}}
     import tempfile
     with tempfile.TemporaryDirectory() as d:
@@ -285,7 +285,7 @@ def _real_cfg(tmp_path) -> dict:
     lab = tmp_path / "lab.yaml"
     lab.write_text(
         "type: panda\nmachine:\n"
-        "  backend: {kind: real, discovery: {network: host}}\n"
+        "  backend: {kind: real, discovery: {network: host}}\n  cameras: {list: []}\n"
         "  robot: {model: Lab Panda}\n"
         "  gripper: {holds_partway: true, effort_honoured: true}\n"
         "  notes: {gripper: [stalls when it holds an object]}\n")

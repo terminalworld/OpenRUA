@@ -262,13 +262,63 @@ class RealBackend(Strict):
 Backend = Annotated[SimBackend | RealBackend, Field(discriminator="kind")]
 
 
+SIM_CAMERA = "openrua-sim"   # the simulation bridge's own camera type
+
+
+class CameraTopics(Strict):
+    """Where one camera's streams are, ``{name}`` standing for the
+    camera's name on this machine."""
+    color: str = Field(description="sensor_msgs/Image topic of the color stream")
+    info: str = Field(description="sensor_msgs/CameraInfo of the color stream")
+    depth: str | None = Field(default=None, description="sensor_msgs/Image depth topic; "
+                              "null = this camera has no depth")
+
+
+class DepthFacts(Strict):
+    encoding: Literal["32FC1", "16UC1"] = Field(description="depth image encoding; by ROS "
+                                                "REP 118, 32FC1 is metres and 16UC1 "
+                                                "millimetres")
+    aligned_to_color: bool = Field(description="whether depth pixels line up with the "
+                                   "color image (one set of intrinsics serves both)")
+
+
+class CameraType(Strict):
+    """A cameras/<type>.yaml: what is true of one kind of camera with one
+    driver, wherever it is mounted. OpenRUA bundles only its simulation
+    bridge's type; a real camera's file lives with the robot that uses
+    it and is named by path."""
+    model: str = Field(description="the camera as a person would name it")
+    driver: str | None = Field(default=None, description="the driver and how it is "
+                               "launched, as a person would repeat it")
+    topics: CameraTopics = Field(description="where its streams are")
+    depth: DepthFacts | None = Field(default=None, description="its depth stream; null = "
+                                     "no depth")
+
+
+class CameraEntry(Strict):
+    """One camera on a machine: its name there, its type, where it sits."""
+    name: str = Field(description="the camera's name on this machine ({name} in its "
+                      "type's topics)")
+    type: str = Field(description="camera type: a bundled name (openrua-sim) or a path, "
+                      "relative to the file naming it")
+    mount: Literal["wrist", "fixed"] | None = Field(default=None, description="on the "
+                                                     "arm's wrist, or fixed in the scene")
+    topics: CameraTopics | None = Field(default=None, description="this camera's topics "
+                                        "where they differ from its type's")
+
+
 class Cameras(Strict):
     resolution: tuple[int, int] = Field(default=(640, 480), description="width, height "
                                         "in pixels for every camera")
     # yaml key is ``list``; the attribute cannot be, so it carries an alias
-    names: list[str] | None = Field(default=None, alias="list",
-                                    description="camera names; [] = none declared; null = every "
-                                    "camera the scene defines")
+    names: list[str | CameraEntry] | None = Field(
+        default=None, alias="list", description="the cameras: a name is a camera of the "
+        "simulation bridge (type openrua-sim); a real robot names each camera's type "
+        "({name, type, mount}); [] = none; null = every camera the scene defines "
+        "(simulation only)")
+    types: dict[str, CameraType] | None = Field(
+        default=None, description="filled in by openrua: the camera types the list names, "
+        "read from their files, so every consumer reads the same topics")
     rate_hz: float = Field(default=2.0, description="wall-clock publish rate")
     render_mode: Literal["on_demand", "always"] = Field(
         default="on_demand", description="render a camera only while subscribed, or always")

@@ -94,7 +94,14 @@ _FIELD_NOTES = {
     "max_effort": "the GripperCommand max_effort a goal asks for unless\ntold otherwise",
     "holds_partway": "true: a position between open and closed is held;\nfalse: it is read as open or closed, whichever is nearer",
     "effort_honoured": "true: max_effort limits the grip; false: it is ignored",
-    "topics": "topic name pattern, one set per camera",
+    "name": "the camera's name on this machine",
+    "model": "the camera as a person would name it",
+    "mount": "wrist: moves with the arm; fixed: stands in the scene",
+    "color": "sensor_msgs/Image color stream",
+    "info": "sensor_msgs/CameraInfo of the color stream: intrinsics k,\nand header.frame_id, the optical frame its pixels are in",
+    "depth": "sensor_msgs/Image depth stream",
+    "depth_encoding": "32FC1 = metres, 16UC1 = millimetres (ROS REP 118)",
+    "depth_aligned": "true: depth pixels line up with the color image, so the\ncolor intrinsics and frame serve both",
     "discover": "shell command that lists what exists right now",
     "moveit": "whether a MoveIt planner is running on this machine",
     "move_action": "MoveIt's plan-and-execute action",
@@ -132,13 +139,48 @@ def _annotate(text: str) -> str:
     return "\n".join(out) + "\n"
 
 
+def _camera_entries(cams: dict) -> list[dict]:
+    """One sensor entry per declared camera, its topics filled in from
+    its type (machine.cameras.types, read by the loader). A scene that
+    decides its own cameras (list: null) gets the topic pattern and a
+    command that lists them."""
+    types, entries = cams.get("types") or {}, cams.get("list")
+
+    def streams(t: dict, topics: dict, name: str) -> dict:
+        out = {k: topics[k].replace("{name}", name)
+               for k in ("color", "info", "depth") if topics.get(k)}
+        if topics.get("depth") and t.get("depth"):
+            out["depth_encoding"] = t["depth"]["encoding"]
+            out["depth_aligned"] = t["depth"]["aligned_to_color"]
+        return out
+
+    if entries is None:
+        if "openrua-sim" not in types:
+            raise ValueError("machine.cameras.types is missing: write the manifest from "
+                             "a resolved config (openrua.config.compose)")
+        t = types["openrua-sim"]
+        suffix = t["topics"]["color"].split("{name}")[-1]
+        return [{"kind": "camera_set", **streams(t, t["topics"], "<name>"),
+                 "discover": f"ros2 topic list | grep {suffix}"}]
+    out = []
+    for e in entries:
+        e = {"name": e, "type": "openrua-sim"} if isinstance(e, str) else e
+        t = types[e["type"]]
+        entry = {"kind": "camera", "name": e["name"], "model": t["model"]}
+        if e.get("mount"):
+            entry["mount"] = e["mount"]
+        entry.update(streams(t, {**t["topics"], **(e.get("topics") or {})}, e["name"]))
+        out.append(entry)
+    return out
+
+
 def _simulation(cfg: dict, manifest: dict) -> dict:
     """The values a simulated machine's bridge acts on and a real robot
     does not have, read from the same config that starts the bridge."""
     m, protocol = cfg.get("machine", {}), cfg.get("protocol", {})
     kinds = {e["kind"] for e in manifest["actuators"]}
     sim = {"clock": protocol.get("clock", {}).get("mode", "paused")}
-    if any(s["kind"] == "camera_set" for s in manifest["sensors"]):
+    if any(s["kind"] in ("camera", "camera_set") for s in manifest["sensors"]):
         sim["camera_render"] = m.get("cameras", {}).get("render_mode", "on_demand")
         sim["camera_rate_hz"] = m.get("cameras", {}).get("rate_hz", 2.0)
     control = m.get("control", {})
@@ -202,13 +244,7 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
         arm_sensors.append(
             {"kind": "wrench", "port": aports.get("wrench"),
              "type": "geometry_msgs/msg/WrenchStamped", **tag})
-    camera_sensors = []
-    if m.get("cameras", {}).get("list") != []:
-        camera_sensors.append(
-            {"kind": "camera_set",
-             "topics": "/<name>/color/image_raw, /<name>/depth/image_raw, "
-                       "/<name>/color/camera_info",
-             "discover": "ros2 topic list | grep image_raw"})
+    camera_sensors = _camera_entries(m.get("cameras") or {})
     manifest = {
         "schema": "openrua/machine-manifest v1",
         "robot": m.get("robot", {}),
@@ -234,7 +270,7 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
     }
     manifest["actuators"] = [a for a in manifest["actuators"] if a.get("port")]
     manifest["sensors"] = [s for s in manifest["sensors"]
-                           if s.get("port") or s.get("topics")]
+                           if s.get("port") or s.get("color")]
     if m.get("backend", {}).get("kind") == "sim":
         manifest["simulation"] = _simulation(cfg, manifest)
     notes = _notes(m, manifest)

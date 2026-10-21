@@ -93,9 +93,28 @@ machine:
     twist: /servo_node/delta_twist_cmds
     wrench: /force_torque_sensor_broadcaster/wrench
   cameras:
-    list: [wrist_camera]
+    list:                    # each camera's name here, its type, and where it sits
+      - {name: wrist_camera, type: ./cameras/realsense-d435.yaml, mount: wrist}
   workspace_template: workspace
 ```
+
+A camera type is a file of its own, next to the robot's, saying what one
+camera with one driver publishes; `{name}` stands for the camera's name
+on the machine:
+
+```yaml
+# cameras/realsense-d435.yaml
+model: Intel RealSense D435
+driver: realsense2_camera (align_depth.enable:=true)
+topics:
+  color: /{name}/color/image_raw
+  info: /{name}/color/camera_info
+  depth: /{name}/aligned_depth_to_color/image_raw
+depth: {encoding: 16UC1, aligned_to_color: true}   # REP 118: 16UC1 is millimetres
+```
+
+OpenRUA bundles only its simulation bridge's camera type; a real camera's
+type lives with the robot that uses it.
 
 Every key is checked against the schema (`openrua config schema`
 prints all of them with their meaning); a misspelled key is an error,
@@ -105,11 +124,10 @@ check declared interfaces through `preflight` before starting the agent.
 Interactive sessions wait for graph visibility, without running the full trial
 gate. Neither check establishes safe physical operation.
 
-For a real robot, set `cameras.list: []` when the profile declares no cameras.
-This omits camera
-entries from `machine.yaml` and camera checks from trial preflight; it does not
-disable sensors or restrict the agent's access to the graph. `null` retains
-camera discovery using the documented topic convention. Real-driver trials do
+A real robot lists its cameras, each with its type; `cameras.list: []`
+declares none. This omits camera entries from `machine.yaml` and camera
+checks from trial preflight; it does not disable sensors or restrict the
+agent's access to the graph. Real-driver trials do
 not require the simulator's `/clock` or forbid unlisted gripper interfaces.
 
 Startup waits for ROS graph visibility for up to five minutes. A stalled

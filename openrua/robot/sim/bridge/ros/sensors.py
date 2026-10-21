@@ -2,9 +2,9 @@
 
 Graph shape copies franka_ros2 / standard camera-driver naming (zero
 invention): ``/clock``, ``/joint_states`` (effort from sim torques),
-per-camera ``/<name>/color/image_raw`` (rgb8) + ``/<name>/depth/image_raw``
-(32FC1, metric) + ``/<name>/color/camera_info`` (K from the engine's
-intrinsics), TF (world -> base/hand/camera optical frames; the
+per-camera color (rgb8), depth (32FC1, metric) and camera_info (K from
+the engine's intrinsics) on the topics the openrua-sim camera type
+declares (resolved into ``machine.cameras.types``), TF (world -> base/hand/camera optical frames; the
 eye-in-hand frame follows the arm because poses are read from the engine
 at publish time), and the estimated external wrench (``WrenchStamped``).
 
@@ -110,6 +110,13 @@ class SensorPublishers:
         names = cam_cfg.get("list")
         if not isinstance(names, list):
             names = self._engine.camera_names()
+        if any(not isinstance(n, str) for n in names):
+            raise ValueError("the simulation bridge renders only its own cameras: "
+                             "list them by name (type openrua-sim)")
+        topics = (cam_cfg.get("types") or {}).get("openrua-sim", {}).get("topics")
+        if names and not topics:
+            raise ValueError("machine.cameras.types carries no openrua-sim topics: "
+                             "boot the bridge from a resolved config (openrua compose)")
         self._cams = {}
         self._size = {}  # camera -> (w, h) it renders at; the config's unless the engine sizes it
         for name in names:
@@ -117,9 +124,9 @@ class SensorPublishers:
             self._size[name] = tuple(int(v) for v in
                                      self._engine.camera_size(name, self._cam_w, self._cam_h))
             self._cams[name] = {
-                "color": node.create_publisher(Image, f"/{topic}/color/image_raw", 1),
-                "depth": node.create_publisher(Image, f"/{topic}/depth/image_raw", 1),
-                "info": node.create_publisher(CameraInfo, f"/{topic}/color/camera_info", 1),
+                "color": node.create_publisher(Image, topics["color"].format(name=topic), 1),
+                "depth": node.create_publisher(Image, topics["depth"].format(name=topic), 1),
+                "info": node.create_publisher(CameraInfo, topics["info"].format(name=topic), 1),
             }
         # on_demand (default): render a camera only while someone is
         # subscribed to its color/depth stream. Agent-indistinguishable

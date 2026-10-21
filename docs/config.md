@@ -238,10 +238,50 @@ A simulated robot: a container running the bridge in the image its declaration w
 | key | type | default | meaning |
 |---|---|---|---|
 | `resolution` | list[int] | (640, 480) | width, height in pixels for every camera |
-| `list` | list[str] \| null | None | camera names; [] = none declared; null = every camera the scene defines |
+| `list` | list[str \| [CameraEntry](#cameraentry)] \| null | None | the cameras: a name is a camera of the simulation bridge (type openrua-sim); a real robot names each camera's type ({name, type, mount}); [] = none; null = every camera the scene defines (simulation only) |
+| `types` | dict[str, [CameraType](#cameratype)] \| null | None | filled in by openrua: the camera types the list names, read from their files, so every consumer reads the same topics |
 | `rate_hz` | float | 2.0 | wall-clock publish rate |
 | `render_mode` | 'on_demand' \| 'always' | 'on_demand' | render a camera only while subscribed, or always |
 | `record` | list[str] \| null | None | the cameras `openrua bench --record` captures when none are named: the first is a demo's main view, the second its inset |
+
+## CameraEntry
+
+One camera on a machine: its name there, its type, where it sits.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `name` | str | **required** | the camera's name on this machine ({name} in its type's topics) |
+| `type` | str | **required** | camera type: a bundled name (openrua-sim) or a path, relative to the file naming it |
+| `mount` | 'wrist' \| 'fixed' \| null | None | on the arm's wrist, or fixed in the scene |
+| `topics` | [CameraTopics](#cameratopics) \| null | None | this camera's topics where they differ from its type's |
+
+## CameraTopics
+
+Where one camera's streams are, ``{name}`` standing for the camera's name on this machine.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `color` | str | **required** | sensor_msgs/Image topic of the color stream |
+| `info` | str | **required** | sensor_msgs/CameraInfo of the color stream |
+| `depth` | str \| null | None | sensor_msgs/Image depth topic; null = this camera has no depth |
+
+## CameraType
+
+A cameras/<type>.yaml: what is true of one kind of camera with one driver, wherever it is mounted. OpenRUA bundles only its simulation bridge's type; a real camera's file lives with the robot that uses it and is named by path.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `model` | str | **required** | the camera as a person would name it |
+| `driver` | str \| null | None | the driver and how it is launched, as a person would repeat it |
+| `topics` | [CameraTopics](#cameratopics) | **required** | where its streams are |
+| `depth` | [DepthFacts](#depthfacts) \| null | None | its depth stream; null = no depth |
+
+## DepthFacts
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `encoding` | '32FC1' \| '16UC1' | **required** | depth image encoding; by ROS REP 118, 32FC1 is metres and 16UC1 millimetres |
+| `aligned_to_color` | bool | **required** | whether depth pixels line up with the color image (one set of intrinsics serves both) |
 
 ## Control
 

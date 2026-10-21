@@ -2,15 +2,21 @@
 """Convert one image pixel to world coordinates (depth + intrinsics + TF).
 
 Usage: python3 tools/perception/px2world.py <camera> <u> <v>
-Prints "x y z" in the world frame for pixel column u, row v of the
-camera's CURRENT depth frame. Exits nonzero if the pixel has no valid
-depth. Supports 32FC1 meters and 16UC1 millimeters per ROS REP 118.
-Pure geometry; which pixel is worth asking about is your call.
+Prints "x y z" in machine.yaml's frames.world for pixel column u, row v of
+the camera's color image, using its CURRENT depth frame. The camera's
+topics come from its machine.yaml entry; the frame its pixels are in is
+the CameraInfo's header.frame_id. Needs depth aligned to color
+(depth_aligned: true). Exits nonzero if the pixel has no valid depth or
+TF has no path from the camera to the world frame. Supports 32FC1 meters
+and 16UC1 millimeters per ROS REP 118. Pure geometry; which pixel is
+worth asking about is your call.
 """
 import struct
 import sys
+from pathlib import Path
 
 import numpy as np
+import yaml
 import rclpy
 from sensor_msgs.msg import CameraInfo, Image
 from tf2_ros import Buffer, TransformListener
@@ -48,17 +54,42 @@ def _grab(node, topic, msg_type, timeout=15.0):
     return got["m"]
 
 
+def camera_entry(name: str) -> tuple[dict, str]:
+    """The camera's machine.yaml entry (topics filled in) and the world frame."""
+    root = Path(__file__).resolve().parents[2]
+    m = yaml.safe_load((root / "machine.yaml").read_text())
+    world = (m.get("frames") or {}).get("world")
+    if not world:
+        raise SystemExit("machine.yaml names no frames.world to express points in")
+    sensors = m.get("sensors", [])
+    entry = next((e for e in sensors if e["kind"] == "camera" and e["name"] == name), None)
+    if entry is None:
+        pattern = next((e for e in sensors if e["kind"] == "camera_set"), None)
+        if pattern is None:
+            names = [e["name"] for e in sensors if e["kind"] == "camera"]
+            raise SystemExit(f"no camera {name!r} in machine.yaml; cameras: {', '.join(names)}")
+        entry = {k: (v.replace("<name>", name) if isinstance(v, str) else v)
+                 for k, v in pattern.items()}
+    if not entry.get("depth"):
+        raise SystemExit(f"camera {name} has no depth stream (machine.yaml)")
+    if entry.get("depth_aligned") is False:
+        raise SystemExit(f"camera {name}'s depth is not aligned to its color image; "
+                         "use its depth stream's own camera_info and frame instead")
+    return entry, world
+
+
 def main() -> None:
     if len(sys.argv) != 4:
         raise SystemExit(__doc__)
     cam, u, v = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+    entry, world = camera_entry(cam)
     rclpy.init()
     node = rclpy.create_node("px2world")
     tfbuf = Buffer()
     TransformListener(tfbuf, node)
 
-    depth = _grab(node, f"/{cam}/depth/image_raw", Image)
-    info = _grab(node, f"/{cam}/color/camera_info", CameraInfo)
+    depth = _grab(node, entry["depth"], Image)
+    info = _grab(node, entry["info"], CameraInfo)
     try:
         z = depth_meters(depth, u, v)
     except ValueError as exc:
@@ -68,13 +99,17 @@ def main() -> None:
     cx, cy = info.k[2], info.k[5]
     p_cam = np.array([(u - cx) * z / fx, (v - cy) * z / fy, z, 1.0])
 
-    frame = f"{cam}_optical_frame"
+    frame = info.header.frame_id
     end = node.get_clock().now().nanoseconds / 1e9 + 10.0
     while node.get_clock().now().nanoseconds / 1e9 < end:
         rclpy.spin_once(node, timeout_sec=0.2)
-        if tfbuf.can_transform("world", frame, rclpy.time.Time()):
+        if tfbuf.can_transform(world, frame, rclpy.time.Time()):
             break
-    t = tfbuf.lookup_transform("world", frame, rclpy.time.Time())
+    else:
+        raise SystemExit(f"TF has no transform from {frame} to {world} within 10 s: "
+                         "this camera is not placed in the robot's TF tree (check "
+                         f"ros2 run tf2_ros tf2_echo {world} {frame})")
+    t = tfbuf.lookup_transform(world, frame, rclpy.time.Time())
     q = t.transform.rotation
     x, y, zz, w = q.x, q.y, q.z, q.w
     R = np.array([
