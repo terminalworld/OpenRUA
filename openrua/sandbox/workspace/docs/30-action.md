@@ -10,7 +10,8 @@ CLI → rclpy → tool → notes.
 - **What**: track a joint-space trajectory; the primary way to move.
 - **Port**: `machine.yaml → actuators[kind=joint_trajectory]` gives the
   action name, the joint names (in order) and their limits.
-- **Tool**: `python3 tools/action/fjt_send.py <p1,...,pN> <seconds>`
+- **Tool**: `python3 tools/action/fjt_send.py <p1,...,pN> <seconds> [--arm LABEL]`
+  (prints the result and the largest gap between target and joint state)
 - **rclpy**: `ActionClient` (`control_msgs/action/FollowJointTrajectory`)
   sending a trajectory whose points have `positions` (one per joint,
   manifest order) and `time_from_start`; several points = one smooth

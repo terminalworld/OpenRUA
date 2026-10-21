@@ -321,3 +321,18 @@ def test_workspace_template_says_nothing_only_a_simulator_does():
         if path.is_file() and "__pycache__" not in path.parts:
             hit = words.search(path.read_text())
             assert not hit, f"{path.relative_to(PKG)}: {hit.group(0)!r}"
+
+
+def test_a_machine_of_cameras_alone_lists_no_joint_states(tmp_path):
+    # Seen with a camera-only session: machine.yaml listed /joint_states,
+    # which nobody published.
+    from openrua.runner.preflight import build_checks
+
+    class _Agent:
+        def credentials_check(self): return None
+        def sandbox_cli_check(self): return None
+    cfg = {"machine": {"backend": {"kind": "real"}, "arms": [], "cameras": {"list": []}}}
+    workspace.write_machine_manifest(cfg, tmp_path / "m.yaml")
+    kinds = {s["kind"] for s in yaml.safe_load((tmp_path / "m.yaml").read_text())["sensors"]}
+    assert "joint_state" not in kinds
+    assert "joint_states_flow" not in dict(build_checks(cfg, _Agent()))

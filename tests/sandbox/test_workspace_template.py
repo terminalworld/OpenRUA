@@ -6,11 +6,11 @@ Review agent-visible changes before updating this expected artifact hash.
 from openrua.config import load_config
 from openrua.sandbox import workspace
 
-# Reviewed revision: the agent checks declared facts and records differences
-# in machine-discrepancies.yaml; cameras are entries with their own topics;
-# simulation-only statements live in machine.yaml; the gripper docs and
-# tool are direction-free.
-PINNED = "5fe10195886f67786cc23b80d6f7609c5a06a8e1f21caa1378a4e3e7a98d6292"
+# Reviewed revision: trajectory and IK tools check where the arm ended up
+# and refuse to guess a TCP offset; the agent records differences from
+# declared facts; cameras are entries with their own topics; simulation-only
+# statements live in machine.yaml; the gripper docs are direction-free.
+PINNED = "646db928445ce2cae670e9400b5fb06488238cbb19c07574dc58b4f9974e4483"
 
 
 def test_workspace_template_hash_is_unchanged():

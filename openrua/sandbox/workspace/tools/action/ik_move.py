@@ -36,10 +36,6 @@ def parse_args(argv=None):
 
 def main(argv=None) -> None:
     args = parse_args(argv)
-    from moveit_msgs.srv import GetPositionIK
-    from sensor_msgs.msg import JointState
-    import rclpy
-
     x, y, z, qx, qy, qz, qw = (getattr(args, name)
                                for name in ("x", "y", "z", "qx", "qy", "qz", "qw"))
     seconds = args.seconds
@@ -54,12 +50,18 @@ def main(argv=None) -> None:
                          "list the robot's groups with: ros2 param get /move_group "
                          "robot_description_semantic")
     if at_tcp:
-        off = float(m.get("hand", {}).get("tcp_offset_m", 0.0))
+        if (m.get("hand") or {}).get("tcp_offset_m") is None:
+            raise SystemExit("--at tcp needs machine.yaml hand.tcp_offset_m, the hand "
+                             "frame -> fingertip distance; without it, aim the hand")
+        off = float(m["hand"]["tcp_offset_m"])
         # shift the target back along the hand's approach (+Z of the
         # hand frame, expressed in the planning frame via the quaternion)
         R = _quat_to_R(qx, qy, qz, qw)
         x, y, z = np.array([x, y, z]) - off * R[:, 2]
 
+    from moveit_msgs.srv import GetPositionIK
+    from sensor_msgs.msg import JointState
+    import rclpy
     rclpy.init()
     node = rclpy.create_node("ik_move")
     js = {}
@@ -78,15 +80,15 @@ def main(argv=None) -> None:
     req = GetPositionIK.Request()
     req.ik_request.group_name = planning["group"]
     req.ik_request.ik_link_name = m["frames"]["hand"]
-    # machine fact: leave frame_id empty; poses are interpreted in the
-    # planner's model frame, machine.yaml planning.planning_frame
+    # an empty frame_id is the planner's model frame, machine.yaml
+    # planning.planning_frame, the frame this tool's pose is given in
     req.ik_request.pose_stamped.header.frame_id = ""
     p = req.ik_request.pose_stamped.pose
     p.position.x, p.position.y, p.position.z = x, y, z
     p.orientation.x, p.orientation.y = qx, qy
     p.orientation.z, p.orientation.w = qz, qw
-    # seed with ARM joints only: a full /joint_states (finger joints
-    # included) can hang move_group's IK service indefinitely
+    # seed with the arm's joints only: the IK request is about the arm,
+    # and some planners stall on joints outside the group
     seed = JointState()
     arm = set(traj_entry["joints"])
     for n_, p_ in zip(js["m"].name, js["m"].position):

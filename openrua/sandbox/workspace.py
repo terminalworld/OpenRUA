@@ -145,6 +145,13 @@ def _annotate(text: str) -> str:
     return "\n".join(out) + "\n"
 
 
+def _has_joints(m: dict) -> bool:
+    """Whether the machine has anything that reports on /joint_states: an
+    arm, a gripper, or a mobile base."""
+    return bool(m.get("base") or any(a.get("joints") or a.get("gripper")
+                                      for a in m.get("arms", [])))
+
+
 def _camera_entries(cams: dict) -> list[dict]:
     """One sensor entry per declared camera, its topics filled in from
     its type (machine.cameras.types, read by the loader). A scene that
@@ -263,7 +270,10 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
              "type": "geometry_msgs/msg/Twist"},
         ],
         "sensors": [
-            {"kind": "joint_state", "port": "/joint_states",
+            # joint states come from whatever has joints; a machine of
+            # cameras alone publishes none
+            {"kind": "joint_state",
+             "port": "/joint_states" if _has_joints(m) else None,
              "type": "sensor_msgs/msg/JointState"},
             *arm_sensors,
             {"kind": "odometry", "port": ports.get("odom"),
