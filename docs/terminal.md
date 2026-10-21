@@ -80,6 +80,9 @@ fallback. Startup failures keep their logs in `~/.openrua/launches/NAME/`.
 | `/questions` | Choose answers to agent questions (or type the answer) |
 | Escape or `/interrupt` | Stop the current turn; queued instructions go next |
 | `/continue` | Confirm continuing a paused queue |
+| `/permissions` | Whether the agent asks before each command that changes something, or runs without asking |
+| `/model` | Show the model, or change it: `/model <name>` |
+| The agent's own commands | `/compact`, `/clear`, and what else the agent lists (Claude Code's skills and custom commands) go to the agent, as in its own terminal; `/help` lists them |
 | `/retry` | Retry an unconfirmed send with its original request ID |
 | `/resume` | Search retained conversations |
 | `/end` | Confirm ending execution, retaining history and workspace |

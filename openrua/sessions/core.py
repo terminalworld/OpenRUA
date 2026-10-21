@@ -160,11 +160,18 @@ class Session:
                 identity = event.data.get("session_id")
                 if not isinstance(identity, str) or not identity:
                     raise ValueError("native readiness requires a conversation identity")
-                if state["native_session"] and identity != state["native_session"]:
+                # /clear starts a new native conversation on purpose; any
+                # other change of identity is an error.
+                if (state["native_session"] and identity != state["native_session"]
+                        and not event.data.get("cleared")):
                     raise ValueError("native conversation identity changed")
                 state["native_session"] = identity
                 if event.kind == "ready":
                     state["connected"] = True
+            elif event.kind == "setting":
+                state.setdefault("settings", {})[event.data["setting"]] = event.data["value"]
+            elif event.kind == "commands":
+                state["agent_commands"] = event.data["commands"]
             elif event.kind == "protocol_error":
                 self._unknown(state, "native protocol error")
             elif event.kind in {"steer_delivered", "steer_rejected"}:

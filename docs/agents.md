@@ -234,7 +234,7 @@ carry several agents and doctor still says which manifest changed.
 ## Structured conversations (experimental)
 
 A plugin may implement `conversation(sandbox, model, proxy, options=None,
-session_id=None, limits=None)` in addition to batch execution and the native terminal.
+session_id=None, limits=None, permissions="auto")` in addition to batch execution and the native terminal.
 The default returns `None`; existing plugins need no migration. The hook
 returns a `Conversation` containing a piped native-process command and a
 `ConversationProtocol`. Construction starts no process. This capability is
@@ -267,6 +267,15 @@ alive independently of client connections.
   `allow_other` is true (questions without choices accept text).
   Unknown requests emit `unsupported_request` and
   never receive a fabricated approval.
+- `configure(setting, value)` changes what the agent does next, as its own
+  `/permissions` and `/model` do: `permissions` is `ask` (ask before each
+  command that changes something) or `auto`; `model` is a model ID. The
+  plugin reports `setting` once in effect (and the starting values when
+  ready), or `setting_rejected`. The default raises `NotImplementedError`.
+- `commands` lists the agent's own commands (`name`, `description`); a
+  client sends them as a message starting with `/`. A turn whose text is
+  `/clear` starts a new native conversation: the plugin then reports
+  `session` with the new `session_id` and `cleared: true`.
 - After `protocol_error`, malformed output, or transport loss, the owner must
   pause and reconcile outstanding work. It must not retry an uncertain action
   or interpret a disconnected client as cancellation.

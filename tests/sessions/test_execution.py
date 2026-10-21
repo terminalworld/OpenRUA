@@ -33,6 +33,9 @@ class FakeProtocol(ConversationProtocol):
         return Update(events=[Event(frame["kind"], frame.get("turn_id"), frame.get("data", {}))])
     def respond(self, request_id, answers):
         return Update([{"reply": request_id, "answers": answers}])
+    def configure(self, setting, value):
+        return Update([{"configure": setting, "value": value}],
+                      [Event("setting", data={"setting": setting, "value": value})])
 
 
 class FakeTransport:
@@ -217,4 +220,33 @@ def test_a_native_process_that_ends_says_why(tmp_path):
         finally:
             await execution.close()
             store.close()
+    asyncio.run(run())
+
+
+def test_configure_reaches_the_agent_at_once(tmp_path):
+    async def run():
+        store, session, transport, execution = await setup(tmp_path)
+        await execution.command("configure", setting="permissions", value="ask")
+        assert {"configure": "permissions", "value": "ask"} in transport.writes
+        assert store.snapshot()["state"]["settings"] == {"permissions": "ask"}
+        await execution.close()
+    asyncio.run(run())
+
+
+def test_an_agent_without_settings_says_so(tmp_path):
+    class Fixed(FakeProtocol):
+        configure = ConversationProtocol.configure
+    async def run():
+        store = SQLiteStore(tmp_path / "session.sqlite", initial_state())
+        session = Session(store)
+        transport = FakeTransport(session)
+        async def start_transport():
+            return transport
+        execution = Execution(session, Conversation(["fake"], Fixed()), start_transport,
+                              tmp_path / "owner.lock")
+        await execution.start()
+        await until(lambda: store.snapshot()["state"]["connected"])
+        with pytest.raises(NotImplementedError):
+            await execution.command("configure", setting="model", value="m")
+        await execution.close()
     asyncio.run(run())

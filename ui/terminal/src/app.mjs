@@ -15,6 +15,8 @@ const commands = [
   {name: 'end', description: 'End execution while retaining the workspace and history'},
   {name: 'interrupt', description: 'Stop the current turn; queued messages go on'},
   {name: 'continue', description: 'Confirm continuation of the paused queue'},
+  {name: 'permissions', description: 'Ask before each command that changes something, or run without asking'},
+  {name: 'model', description: 'Show the model, or change it: /model <name>'},
   {name: 'retry', description: 'Retry an unconfirmed send with the same request ID'},
   {name: 'quit', description: 'Detach; the session keeps running'},
 ];
@@ -59,12 +61,14 @@ export class Chat {
     this.status = new Text('Connecting…', 0, 0);
     this.notice = new Text('', 0, 0);
     this.editor = new Editor(this.ui, editorTheme);
-    // Only slash commands: do not complete unrelated host files outside the workspace.
-    const completion = new CombinedAutocompleteProvider(commands, process.cwd());
+    // Only slash commands: do not complete unrelated host files outside the
+    // workspace. The agent's own commands join ours once it has said them.
+    const completion = () => new CombinedAutocompleteProvider(
+      commands.concat(this.agentCommands()), process.cwd());
     this.editor.setAutocompleteProvider({
-      getSuggestions: (lines, row, col, options) => lines.length === 1 && /^\/[a-z]*$/.test(lines[0])
-        ? completion.getSuggestions(lines, row, col, options) : Promise.resolve(null),
-      applyCompletion: (...args) => completion.applyCompletion(...args),
+      getSuggestions: (lines, row, col, options) => lines.length === 1 && /^\/[\w:-]*$/.test(lines[0])
+        ? completion().getSuggestions(lines, row, col, options) : Promise.resolve(null),
+      applyCompletion: (...args) => completion().applyCompletion(...args),
     });
     this.pollMs = pollMs;
     this.done = false;
@@ -229,7 +233,8 @@ export class Chat {
     const robot = state.robot?.status === 'stopped' ? [red(`robot stopped: ${plain(state.robot.reason)}`)] : [];
     const quiet = state.active && this.lastEvent && Date.now() - this.lastEvent > QUIET_MS
       ? [yellow(`no output for ${elapsed(this.lastEvent)}`)] : [];
-    const extra = robot.concat(quiet, queued ? [`${queued} queued`] : [])
+    const asking = state.settings?.permissions === 'ask' ? [muted('asks before commands')] : [];
+    const extra = robot.concat(quiet, asking, queued ? [`${queued} queued`] : [])
       .concat(state.connected || state.closed || this.client.readOnly ? []
         : [yellow(state.pause_reason?.startsWith('agent disconnected') ? plain(state.pause_reason) : 'agent disconnected')])
       .concat(requests ? [yellow(`${requests} question(s): type the answer, or /questions to choose`)] : [])
@@ -256,6 +261,20 @@ export class Chat {
     if (!this.done) this.timer = setTimeout(() => { void this.poll(); }, this.pollMs);
   }
 
+  // The agent's own commands (its /compact, its skills...), as it reported
+  // them; typed, they go to the agent as a message, as in its own terminal.
+  agentCommands() {
+    const ours = new Set(commands.map(c => c.name));
+    return (this.controller.state?.agent_commands ?? [])
+      .filter(c => !ours.has(c.name))
+      .map(c => ({name: c.name, description: c.description || 'the agent\'s own command'}));
+  }
+
+  async configure(setting, value) {
+    await this.client.command('configure', {setting, value});
+    await this.refresh();
+  }
+
   async submit(text) {
     if (!text.trim() || this.done) return;
     if (this.busy) {
@@ -267,9 +286,30 @@ export class Chat {
     try {
       if (text.startsWith('/')) {
         const state = this.controller.state;
-        switch (text.trim()) {
-          case '/help':
-            this.say(commands.map(c => `/${c.name}: ${c.description}`).join('\n')); break;
+        const [name, ...rest] = text.trim().split(/\s+/);
+        const agent = this.agentCommands();
+        switch (name) {
+          case '/help': {
+            const theirs = agent.length ? ['', 'The agent\'s own:', ...agent.map(c => `/${c.name}: ${c.description}`)] : [];
+            this.say(commands.map(c => `/${c.name}: ${c.description}`).concat(theirs).join('\n')); break;
+          }
+          case '/permissions': {
+            if (this.client.readOnly) throw new Error('This is read-only history.');
+            if (rest[0]) { await this.configure('permissions', rest[0]); break; }
+            const now = state?.settings?.permissions;
+            this.picker('Permissions', [
+              {value: 'ask', label: `${now === 'ask' ? '✓ ' : '  '}Ask before each command that changes something`},
+              {value: 'auto', label: `${now === 'auto' ? '✓ ' : '  '}Run commands without asking`}],
+            value => this.configure('permissions', value).catch(error => this.say(error.message))); break;
+          }
+          case '/model': {
+            if (rest[0]) {
+              if (this.client.readOnly) throw new Error('This is read-only history.');
+              await this.configure('model', rest[0]);
+              this.say(`The model is ${rest[0]} from the next request.`); break;
+            }
+            this.say(`The model: ${plain(state?.settings?.model ?? 'unknown')}. Change it with /model <name>.`); break;
+          }
           case '/files': await browseWorkspace(this); break;
           case '/quit': this.stop(); break;
           case '/resume':
@@ -302,7 +342,11 @@ export class Chat {
             if (!id) throw new Error('The queue is not paused.');
             this.confirm('Review /queue first. Continue this paused queue?', () => this.client.command('resume', {pause_id: id})); break;
           }
-          default: throw new Error('Unknown command. Use /help.');
+          default:
+            if (!agent.some(c => `/${c.name}` === name)) throw new Error('Unknown command. Use /help.');
+            await this.controller.send(text.trim());
+            this.editor.addToHistory(text);
+            await this.refresh();
         }
       } else if (this.answerTyped(text)) {
         this.editor.addToHistory(text);

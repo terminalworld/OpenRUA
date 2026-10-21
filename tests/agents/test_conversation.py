@@ -226,3 +226,45 @@ def test_codex_items_read_as_a_person_reads_them():
     asked = item({"type": "agentMessage", "id": "q", "text": "Is the e-stop released?",
                   "delivery": "async", "questions": [{"title": "Is the e-stop released?"}]})
     assert asked.data["kind"] == "question"
+
+
+def test_codex_reports_settings_and_commands_when_ready():
+    protocol = CodexConversation("model", permissions="ask")
+    start = protocol.begin().outbound[0]
+    request = protocol.receive({"id": start["id"], "result": {}}).outbound[1]
+    assert request["params"]["approvalPolicy"] == "untrusted"
+    events = protocol.receive({"id": request["id"], "result": {"thread": {"id": "thread-1"}}}).events
+    assert [e.kind for e in events] == ["ready", "setting", "setting", "commands"]
+    assert {c["name"] for c in events[-1].data["commands"]} == {"compact", "clear"}
+
+
+def test_codex_settings_apply_from_the_next_turn():
+    protocol = ready()
+    assert protocol.configure("permissions", "ask").events[0].data == {
+        "setting": "permissions", "value": "ask"}
+    protocol.configure("model", "gpt-6-astra")
+    params = protocol.submit("message-1", "text").outbound[0]["params"]
+    assert params["approvalPolicy"] == "untrusted" and params["model"] == "gpt-6-astra"
+    with pytest.raises(ValueError):
+        protocol.configure("permissions", "sometimes")
+
+
+def test_codex_compact_runs_as_the_servers_turn():
+    protocol = ready()
+    request = protocol.submit("message-1", "/compact").outbound[0]
+    assert request["method"] == "thread/compact/start"
+    assert not protocol.receive({"id": request["id"], "result": {}}).events
+    update = protocol.receive({"method": "turn/started", "params": {
+        "threadId": "thread-1", "turn": {"id": "turn-9"}}})
+    assert [(e.kind, e.turn_id) for e in update.events] == [("turn_started", "message-1")]
+    assert completed(protocol, native="turn-9").events[0].turn_id == "message-1"
+
+
+def test_codex_clear_starts_a_new_thread():
+    protocol = ready()
+    request = protocol.submit("message-1", "/clear").outbound[0]
+    assert request["method"] == "thread/start"
+    events = protocol.receive({"id": request["id"], "result": {"thread": {"id": "thread-2"}}}).events
+    assert [e.kind for e in events] == ["session", "turn_finished"]
+    assert events[0].data == {"session_id": "thread-2", "cleared": True}
+    assert protocol.thread_id == "thread-2" and protocol.can_submit

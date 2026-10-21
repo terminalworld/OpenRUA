@@ -134,6 +134,12 @@ class Execution:
                     self._lost(str(exc))
                     raise
                 result = None
+            elif operation == "configure":
+                if not self._usable:
+                    raise ValueError("native connection is unavailable; nothing was changed")
+                await self._update(self.conversation.protocol.configure(params["setting"],
+                                                                        params["value"]))
+                result = None
             else:
                 operations = {"enqueue": self.session.enqueue, "edit": self.session.edit,
                               "withdraw": self.session.withdraw, "interrupt": self.session.interrupt,

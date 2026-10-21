@@ -70,7 +70,8 @@ def robot_request(args) -> RobotRequest:
         task_suite=args.task_suite, task_id=args.task_id, task=args.task,
         init_state=args.init_state,
         workspace=Path(args.workspace) if args.workspace else None,
-        ros_domain=args.ros_domain, limits=limit_overrides(args))
+        ros_domain=args.ros_domain, limits=limit_overrides(args),
+        permissions=getattr(args, "permissions", None) or "auto")
 
 
 
@@ -143,6 +144,9 @@ def add_options(p, *, default_name=DEFAULT_NAME) -> None:
                    help="ROS_DOMAIN_ID (default: the lowest one no running robot "
                         "uses, so concurrent robots never share a graph; a real "
                         "robot: its own domain, 0)")
+    p.add_argument("--permissions", choices=("ask", "auto"), default=None,
+                   help="ask: the agent asks before each command that changes something; "
+                   "auto: it runs them without asking (default); /permissions switches")
     add_limit_options(p, "default: not limited")
 
 

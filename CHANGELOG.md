@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.14.0
+
+Commands in the shared terminal, as in a coding agent's own.
+
+- **`/permissions`** switches between asking before each command that
+  changes something and running without asking; `--permissions ask|auto`
+  sets how a session starts, and `openrua session configure` does the same
+  from a script. Claude Code switches its permission mode; Codex sends its
+  approval policy with each turn. An approval names the command it would
+  run.
+- **`/model`** shows the model and changes it from the next request.
+- **The agent's own commands**: what the agent lists (Claude Code's
+  `/compact`, `/clear`, skills and custom commands) completes after `/` and
+  goes to the agent as a message; Codex's `/compact` and `/clear` run as
+  its own terminal runs them. `/help` lists them. After `/clear` the session
+  follows the new native conversation.
+
 ## 0.13.0
 
 The shared terminal now behaves the way a coding agent's own does, as on
