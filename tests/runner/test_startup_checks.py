@@ -65,3 +65,20 @@ def test_doctor_shows_each_startup_check(tmp_path):
     assert results[0].hint == "power the controller on"
     (tmp_path / "arm" / "controller-up").touch()
     assert all(r.severity == "ok" for r in doctor_checks.check_robot_ready(ctx))
+
+
+def test_a_benchmark_run_on_a_robot_that_is_not_ready_starts_no_trial(tmp_path, monkeypatch):
+    import argparse
+    from openrua.runner import main
+    (tmp_path / "arm").mkdir()
+    file = tmp_path / "arm" / "robot.yaml"
+    file.write_text(ROBOT)
+    ran = []
+    monkeypatch.setattr(main, "run_trial", lambda *a, **k: ran.append(a))
+    ap = argparse.ArgumentParser()
+    main.add_arguments(ap)
+    args = ap.parse_args(["--config", "libero_pro", "--robot", str(file), "--run-id", "hw",
+                          "--task-suite", "x", "--task", "pick", "--home", str(tmp_path / "home")])
+    with pytest.raises(UnavailableError, match="the controller answers"):
+        main.run(args)
+    assert ran == []

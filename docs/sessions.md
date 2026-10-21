@@ -11,10 +11,6 @@ For a first run, follow [Your first shared robot session](../examples/shared-ses
 It covers preparation, TUI, browser and CLI input, expected results, SSH forwarding,
 and shutdown. The commands below are the operation reference; implementation
 boundaries and validation evidence follow the user-facing instructions.
-Shared sessions are included from OpenRUA 0.1.0; default TUI startup and
-background hosting are included from 0.2.0. Automatic IDs and TUI `/resume`
-history selection are included from 0.3.0.
-Upgrade older installations before following this guide.
 
 The `openrua.sessions` package coordinates user messages and native agent
 connections. It does not plan robot actions or replace the coding agent's own
@@ -31,7 +27,7 @@ For ordinary use, `openrua` creates a new session with an automatic ID;
 starts or reconnects to a named session;
 `openrua --gui` selects the browser and `openrua --cli` selects plain chat.
 Choose **Prepare and start** in keyboard setup to build missing images and check
-readiness; **Save and check** only inspects preparation. Native login or explicit
+readiness; **Save and check preparation** only inspects preparation. Native login or explicit
 API configuration remains separate; OpenRUA never changes billing mode for you. The service runs in the background,
 with startup output in `~/.openrua/launches/<name>/service.log`.
 
@@ -56,8 +52,9 @@ openrua session --name shared status
 ```
 
 Each client may submit to the same queue. `chat` displays native text and tool
-activity and waits for its message; `session send` returns after acceptance,
-so another task can be queued while the current one runs. Ctrl-C in **chat**
+activity and waits for its message; `session send` returns after acceptance.
+A message sent while a turn runs joins that turn when the agent can take one
+(Claude Code, Codex); otherwise it waits in the queue. Ctrl-C in **chat**
 only detaches. To reconnect without submitting a message:
 
 ```sh
@@ -232,6 +229,7 @@ transport. The API is independent of agent vendors:
 | `GET /api/workspace/read?path=snaps/image.png` | File metadata, preview kind, MIME type and base64 bytes; UTF-8 text when available |
 | `POST /api/commands` | `{ "operation": "enqueue", "params": { ... } }` and other session operations |
 | `POST /api/end` with `{}` | Stop owned resources and return the final state snapshot in `result` |
+| `POST /api/actions/<name>` | An operation the session's owner adds, its body passed as is (`openrua connect` adds `check`) |
 
 A response timeout does not cancel an accepted command. Clients inspect the
 journal or use the original request identity to resolve uncertain acceptance.
@@ -393,7 +391,7 @@ pytest -q tests/web
 
 These optional tests use Chromium, the actual local HTTP server and SQLite,
 with a controlled native transport. They exercise shared CLI/browser messages,
-streamed output, edits, withdrawals, interrupted queues, explicit resumption,
+streamed output, edits, withdrawals, interrupted turns, explicit resumption,
 questions, lost acknowledgements, page reloads, disconnection, uncertain
 execution and failed shutdown. Workspace checks exercise image decoding,
 text escaping, byte-exact downloads, refresh and reconnection without submitting

@@ -158,16 +158,13 @@ in `examples/`.
 
 Each release archives a tested batch of useful changes. We currently use one
 release channel; experimental features retain explicit documentation of their
-limits. Add an entry to `CHANGELOG.md` with features, behavior changes, upgrade
-instructions, and validation scope, then bump `version` in `pyproject.toml`.
-
-Versions use `a.b.c`: increment `a` for a major product or core architecture
-change, including incompatible upgrades; increment `b` for a substantial batch
-of new features; increment `c` for fixes, small improvements, and compatibility
-adjustments. Reset subsequent components to zero when incrementing an earlier
-one. For example, guided terminal startup moves 0.1.0 to 0.2.0, while a fix to
-that startup would move 0.2.0 to 0.2.1. Documentation-only maintenance can ship
-with the next relevant package release.
+limits. A pull request adds its entry to `CHANGELOG.md` under
+`## Unreleased` (features, behavior changes, upgrade instructions, and
+validation scope) and does not change the version. Cutting a release turns
+`Unreleased` into the new version's section and sets `version` in
+`pyproject.toml` to match; the rule at the top of `CHANGELOG.md` says which
+number it gets. Documentation-only maintenance can ship with the next relevant
+package release.
 
 Commit and push the release preparation, check its CI, then tag that commit
 `v<version>` and push the tag. The Release workflow reruns the shared CI jobs

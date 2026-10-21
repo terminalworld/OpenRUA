@@ -9,6 +9,12 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- `openrua bench` on a real robot runs the robot's startup checks before
+  any trial, as a session does.
+- `--permissions` is an option of `openrua` and `openrua serve` only,
+  where it acts; `run` and `up` no longer accept it (the native terminal
+  keeps the agent CLI's own prompting).
+
 ## 0.13.0
 
 The shared terminal behaves the way a coding agent's own does, a real

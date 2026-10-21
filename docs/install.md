@@ -19,7 +19,7 @@ read_when:
 ## The package
 
 ```bash
-pip install -U 'openrua>=0.4.1'
+pip install -U openrua
 openrua --version
 ```
 
@@ -42,10 +42,11 @@ required. Rendering recorded demo videos still needs the `demo` extra:
 OpenRUA runs up to three containers: the robot (when simulated), the
 sandbox (the agent's terminal: `ros2`, `rclpy`, the docs, the agent's
 CLI) and, when a run limits the agent to its model service, the proxy
-(then the sandbox's only route out; see
+(then the sandbox's route out, and for a simulated robot its only one; see
 [what the agent can reach](#what-the-agent-can-reach)). **Prepare and start** in the product TUI automatically builds missing
 images for the selected environment and agent. Root `--cli` and `--gui` launches
-prepare them too. Browsing options or choosing **Save & check** never builds.
+prepare them too. Browsing options or choosing **Save and check preparation**
+never builds.
 First-time simulation builds can download large datasets. Progress is displayed,
 and logs are retained under `~/.openrua/preparation/` for retry.
 
@@ -53,7 +54,7 @@ For manual preparation, or the explicit `up`, `run` and `serve` commands (which
 still require prepared images), use:
 
 ```bash
-openrua build                            # sandbox + proxy for the default agent, and the default benchmark's simulator image
+openrua build                            # the default agent's sandbox, the proxy image, and the default benchmark's simulator image
 openrua build --bench libero_pro         # one simulator image; --bench / --sim repeatable, --all: every bundled benchmark
 openrua build sandbox --agent codex      # --distro jazzy (default) | humble; --agent claude-code (default), repeatable
 openrua build proxy                      # one image for every agent: each proxy gets its hosts when it starts
@@ -311,7 +312,9 @@ directory and version, including when `--agent` selects a different agent from
 the benchmark default. Repeat `--agent` to check several agents. One row per fact: the container engine, each image and
 whether its label still matches the manifests (the sandbox) or the
 declaration it was rendered from (the simulator image), a real robot's
-driver images, the agent login, the user directory. A missing proxy image
+driver images and each of its startup checks (`backend.startup_checks`, a
+failed one an error with its fix), the agent login, the user directory. A
+missing proxy image
 is a warning, not an error: only runs limited to the model service use it.
 Error and warning rows include repair guidance when available; the exit
 code is 1 only when an error is present, and on a pipe the report is JSON.
@@ -342,7 +345,7 @@ docker image rm $(docker image ls -q 'openrua-*')
 
 ## Keyboard terminal
 
-OpenRUA 0.6.0 includes the Pi terminal and its runtime in the ordinary install:
+The ordinary install includes the Pi terminal and its runtime:
 `pip install -U openrua`, then `openrua`. No separate Node/npm install is needed.
 `[pi]` and `[tui]` remain empty compatibility extras. Textual has been removed.
 See the [keyboard guide](terminal.md). Linux x86_64 is the tested distribution path.

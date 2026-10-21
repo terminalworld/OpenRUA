@@ -68,6 +68,11 @@ Use `/files` to browse saved observations and code, `/resume` to find earlier
 sessions, and `/end` to stop execution while keeping your work. **Ctrl+D** on an
 empty input detaches while the session continues running.
 
+For a real robot, run `openrua connect` (or choose **Connect a real robot** in
+the setup menu): your coding agent sets it up with you, and OpenRUA checks each
+step ([Connect a real robot](docs/connect.md)). At most once a day, `openrua`
+offers a newer agent CLI before the session starts.
+
 See the [walkthrough](examples/shared-session.md) for setup and continuous tasks,
 [terminal guide](docs/terminal.md) for controls, and
 [validation scope](docs/sessions.md#validation-scope) for what has been tested.
@@ -142,15 +147,20 @@ stays up between agent visits, use `up`, `agent`, and `down` as described in
 [First task in simulation](examples/first-task.md).
 
 In shared chat, what you send while the agent works joins the running turn,
-as in a coding agent's own terminal; interrupting stops the turn and queued
-instructions go next. A failure pauses the queue for review, saying why;
+as in a coding agent's own terminal. **Escape** stops the turn, asks the
+robot's motion actions (trajectory, gripper, planner) to cancel their goals,
+and queued instructions go next; it is not an emergency stop. A failure pauses
+the queue for review, saying why;
 **Resume** continues it. Ending the session stops
 its resources while preserving files; deleting them is a separate operation.
 For development, `openrua serve` still runs the service in the foreground.
 Stopping that process ends its session, unlike closing one of its clients.
 
 The default terminal uses **Enter** to send and **Ctrl+J** for a newline.
-Use `/tools`, `/files`, and `/queue` to open details on demand. Configuration,
+Use `/tools`, `/files`, and `/queue` to open details on demand, `/permissions`
+to choose whether the agent asks before each command that changes something,
+`/model` to change the model, and the agent's own commands (`/compact`,
+`/clear`, skills) as in its own terminal; `/help` lists them. Configuration,
 history, and confirmations use arrow keys, Enter, and Escape; no mouse is needed.
 `--tui pi` remains an explicit alias. See the [keyboard guide](ui/terminal/README.md).
 
@@ -195,7 +205,13 @@ see [Architecture](docs/architecture.md).
   and `--task-id` select a benchmark scene. Without a benchmark selection or saved
   benchmark default, robosuite uses its native `Lift` scene.
 - **Agent and model.** Choose `--agent` and optionally `--model` when starting
-  the session. Switching them inside a running conversation is not implemented.
+  the session. `/model <name>` changes the model from the next request; the
+  agent cannot be switched inside a running conversation.
+- **What the agent can reach.** A session you start sets no limits: the agent
+  reaches the internet as on your machine. `openrua bench` trials limit it to
+  its model service by default. `--internet`, `--[no-]web-search` and
+  `--[no-]account-connectors` set either
+  ([what the agent can reach](docs/install.md#what-the-agent-can-reach)).
 - **Custom profiles.** Pass a file with `--robot`, `--sim`, or `--bench` to use
   your own environment in the TUI. It is validated and prepared without being
   replaced by a guided choice. See [your own robot](docs/your-own-robot.md).
@@ -310,8 +326,14 @@ See the paper for baselines, evaluation protocols and detailed analysis.
 
 ## Use your own robot
 
-Draft a profile from the robot's live graph, finish the `TODO` lines,
-and pass it to `run`:
+The quickest way is `openrua connect my-arm`: your coding agent finds out
+what the robot is, builds and starts its ROS&nbsp;2 drivers and writes
+`robot.yaml` with you, and OpenRUA checks each step. When every check has
+passed, the same conversation goes on in the robot's own terminal. See
+[docs/connect.md](docs/connect.md).
+
+To write the profile yourself, draft it from the robot's live graph, finish
+the `TODO` lines, and pass it to `run`:
 
 ```bash
 openrua probe --host > my-ur5.yaml   # joints, limits, frames, ports, cameras from the graph
@@ -321,7 +343,11 @@ openrua run ./my-ur5.yaml "..."      # or: openrua config set --robot ./my-ur5.y
 The profile's `machine:` section is what the agent's `machine.yaml` is
 generated from: model, joint names and limits, frames,
 gripper, and the ports (`trajectory`, `gripper`, `twist`, `wrench`) the
-robot serves. Details in [docs/your-own-robot.md](docs/your-own-robot.md).
+robot serves. Its `backend:` says how the drivers start and stop: the images
+they are built from (`backend.build`), what the agent's sandbox installs to
+speak the robot (`backend.sandbox_install`), and the startup checks
+(`backend.startup_checks`) that run before every session, before a
+benchmark run and in `openrua doctor`. Details in [docs/your-own-robot.md](docs/your-own-robot.md).
 
 ## Simulation and benchmarks
 
@@ -366,8 +392,10 @@ and [contribution guide](CONTRIBUTING.md).
 | [examples/shared-session.md](examples/shared-session.md) | TUI, browser and CLI chat, queue checks, reconnection, saved images and shutdown |
 | [docs/terminal.md](docs/terminal.md) | TUI shortcuts, expandable panels, and current limitations |
 | [docs/sessions.md](docs/sessions.md) | shared-session operations, API, architecture and validation scope |
+| [docs/connect.md](docs/connect.md) | connecting a real robot with your coding agent, and what each step checks |
 | [docs/your-own-robot.md](docs/your-own-robot.md) | describing your robot in one profile |
 | [examples/real-robot.md](examples/real-robot.md) | the same flow on a real ROS&nbsp;2 arm |
+| [docs/setup-validation.md](docs/setup-validation.md) | which combinations the setup menu offers, and the checks behind them |
 | [docs/simulation.md](docs/simulation.md) | the simulator checkouts and GPU rendering |
 | [docs/podman.md](docs/podman.md) | machines without Docker |
 | [docs/demos.md](docs/demos.md) | recorded trials rendered as videos, one per task type |
@@ -377,7 +405,7 @@ and [contribution guide](CONTRIBUTING.md).
 | [docs/agents.md](docs/agents.md) | adding a coding agent |
 | [docs/architecture.md](docs/architecture.md) | the units and the layering contract |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | conventions for code, names and docs |
-| [CHANGELOG.md](CHANGELOG.md) | release changes and upgrade notes |
+| [CHANGELOG.md](CHANGELOG.md) | release changes, upgrade notes, and how versions are numbered |
 
 ## Citation
 

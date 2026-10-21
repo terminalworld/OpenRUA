@@ -71,7 +71,8 @@ them without installing host system software or collecting credentials in setup.
 
 Build output is streamed and retained in `~/.openrua/preparation/`. A failed
 build never launches the session. Retry reuses completed images and Docker's
-build cache. **Save & check** does not download, build or start a robot. Existing
+build cache. **Save and check preparation** does not download, build or start
+a robot. Existing
 images are reused; declaration-change warnings still require an explicit rebuild.
 A proxy's whitelist is given when it starts and its name carries the hash of
 those hosts, so switching agents starts another proxy instead of needing a

@@ -96,6 +96,7 @@ def add_parser(sub) -> None:
                        description=__doc__)
     p.add_argument("robot", nargs="?", default=None)
     up.add_options(p)
+    up.add_permissions_option(p)
     p.add_argument("--model", default=None, help="model (default: the configured agent's)")
     p.add_argument("--port", type=int, default=0, help="local port (default: choose a free port)")
     p.add_argument("--connect", default=None, metavar="FOLDER",

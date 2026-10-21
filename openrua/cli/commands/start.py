@@ -24,6 +24,7 @@ def add_options(parser) -> None:
     group = parser.add_argument_group('start or reconnect (without a subcommand)')
     group.add_argument('--robot', default=None, help='robot name or profile path for a new session')
     up.add_options(group, default_name=None)
+    up.add_permissions_option(group)
     group.add_argument('--model', default=None, help="model for a new session (default: the agent's configuration)")
     interface = group.add_mutually_exclusive_group()
     interface.add_argument('--gui', action='store_true', help='open the browser instead of terminal chat')

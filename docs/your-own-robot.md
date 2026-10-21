@@ -288,7 +288,8 @@ and what a person does when it fails:
         fix: plug the adapter into this computer
 ```
 
-Every check runs before every session (`openrua doctor` runs them too);
+Every check runs before every session and every benchmark run (`openrua
+doctor` runs them too);
 one that fails stops the start, and the message lists each failed check
 with its fix. If the robot itself changed, `openrua connect --dir <its
 folder>` goes on connecting it from there.

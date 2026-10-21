@@ -13,9 +13,11 @@ from openrua import agents, proxy
 from openrua.config import (apply_suite_overrides, load_config, normalize_arms,
                             resolve_wall_clock_min)
 from openrua.config import paths
-from openrua.errors import UsageError
+from openrua.errors import UnavailableError, UsageError
+from openrua.robot import not_ready
 from openrua.runner import lock
 from openrua.runner.limits import add_limit_options, limit_overrides
+from openrua.runner.live import not_ready_hint, not_ready_message
 from openrua.runner import record
 from openrua.runner.operators import OPERATORS
 from openrua.runner.trial import run_trial
@@ -141,6 +143,11 @@ def run(args: argparse.Namespace) -> int:
     if cfg["machine"]["backend"].get("kind") != "sim" and not args.task:
         raise UsageError("a real robot has no benchmark task to ask for",
                          hint="pass --task \"<what the agent should do>\"")
+    # A real robot's own startup checks, before any trial starts it.
+    unready = not_ready(cfg["machine"]["backend"])
+    if unready:
+        raise UnavailableError(not_ready_message(unready),
+                               hint=not_ready_hint(unready, cfg["machine"]["backend"]))
     if record_cameras is not None and cfg["machine"]["backend"].get("kind") != "sim":
         raise UsageError("a real robot has no renderer to record from",
                          hint="drop --record")
