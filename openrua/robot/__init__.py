@@ -19,11 +19,19 @@ from pathlib import Path
 
 from openrua.errors import ConfigError
 from openrua.robot.base import Handle  # noqa: F401  re-exported
-from openrua.robot.real.up import up as real_up
+from openrua.robot.real.up import failed_checks, up as real_up
 from openrua.robot.sim.down import down as sim_down
 from openrua.robot.sim.up import up as sim_up
 
 KINDS = ("sim", "real")
+
+
+def not_ready(backend: dict) -> list[dict]:
+    """A real robot's startup checks that do not hold; empty for a robot
+    without any, or a simulated one."""
+    if backend.get("kind") != "real":
+        return []
+    return failed_checks(backend.get("startup_checks") or [], backend.get("cwd"))
 
 
 def up(backend: dict, *, name: str, config_path: str, task_suite: str,

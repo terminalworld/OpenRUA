@@ -82,6 +82,22 @@ def launch_argv(name: str, launch: str, image: str | None, ros_domain: int = 0) 
     return ["bash", "-lc", launch]
 
 
+def failed_checks(checks: list[dict], cwd: str | None = None,
+                  timeout_s: float = 30.0) -> list[dict]:
+    """The startup checks that do not hold (each ``{name, run, fix}``),
+    every one run, so a person sees all there is to do at once."""
+    failed = []
+    for check in checks:
+        try:
+            ok = subprocess.run(["bash", "-c", check["run"]], cwd=cwd, capture_output=True,
+                                timeout=timeout_s).returncode == 0
+        except subprocess.TimeoutExpired:
+            ok = False
+        if not ok:
+            failed.append(check)
+    return failed
+
+
 def up(name: str, launch: str | None, log_path: Path | None = None,
        probe_argv: list[str] | None = None, image: str | None = None,
        ros_domain: int = 0, cwd: str | None = None,

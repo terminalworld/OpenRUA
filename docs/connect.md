@@ -52,4 +52,6 @@ The terminal's status line shows each step's last result.
 | First motion | `done` passes once every check above has; the session then moves to the robot's own terminal (no docker there) and the conversation goes on: with your word that the emergency stop is at hand, the gripper opens and closes once and one joint moves a few degrees |
 
 After the move, `robot.yaml` is your default robot, so `openrua` starts
-it. Only robots with a ROS 2 driver are in scope.
+it, after its own startup checks (`backend.startup_checks`: the
+controller answers, the devices are plugged in), which the agent writes
+while connecting it. Only robots with a ROS 2 driver are in scope.

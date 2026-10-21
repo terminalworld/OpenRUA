@@ -202,6 +202,7 @@ A real robot: its ROS 2 graph is already there or a launch command starts it.
 | `image` | str \| null | None | docker image the launch command runs in, on the host network (a vendor driver pinned to its own ROS release); null = run it on the host |
 | `discovery` | [Discovery](#discovery) | **required** | how the sandbox reaches the graph |
 | `build` | dict[str, str] | {} | images the launch command uses that are built from a directory here: image name -> directory holding its Dockerfile, relative to this file (as docker compose's build:). A missing one is built before a session starts; openrua build driver --robot <this file> rebuilds them |
+| `startup_checks` | list[[StartupCheck](#startupcheck)] | [] | what has to be true before the robot starts (its controller answers, its devices are plugged in), checked before every session; one that fails stops the start and says its fix |
 | `cwd` | str \| null | None | directory the launch command runs in on the host; default: the directory of the file declaring it, so the command may name its files relative to it |
 | `stop_timeout_s` | float | 30.0 | seconds shutdown waits after SIGINT, and again after SIGTERM, before SIGKILL: time for a driver to release the robot |
 | `sandbox_install` | str \| null | None | one-line shell chain, run as root when the sandbox image is built, installing what the agent needs to speak this robot's interfaces (vendor message definitions, a controller CLI); a ROS workspace built under /opt/openrua/overlays/<name> is sourced in every shell. No double quotes. Build it with openrua build sandbox --robot <this file> |
@@ -216,6 +217,16 @@ How the sandbox reaches a real robot's ROS 2 graph; exactly one key.
 | `network` | 'host' \| null | None | host: the sandbox joins the host network |
 | `static_peers` | list[str] \| null | None | peer addresses for ROS_STATIC_PEERS |
 | `discovery_server` | str \| null | None | host:port of a Fast DDS discovery server |
+
+## StartupCheck
+
+One thing that has to be true before a real robot starts.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `name` | str | **required** | what is checked, in a person's words |
+| `run` | str | **required** | shell command on this computer, run in the robot file's directory; exit 0 means it holds |
+| `fix` | str | **required** | what a person does when it does not |
 
 ## SimBackend
 

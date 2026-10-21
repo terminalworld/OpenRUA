@@ -59,7 +59,11 @@ is in `.openrua-checks/<step>.log`.
    `robot.draft.yaml`; `robot.yaml` takes its machine facts from there,
    plus what the graph cannot say (which end of the gripper's travel is
    open, what each camera is and where it is mounted, notes on how the
-   robot behaves). `config` passes when it loads with no TODO left.
+   robot behaves), and `backend.startup_checks`: what has to be true
+   before the robot can start (its controller answers, each device is
+   plugged in), each a command run on this computer with what a person
+   does when it fails. OpenRUA runs them before every start. `config`
+   passes when it loads with no TODO left.
 5. **The robot from its config** (`robot`): OpenRUA builds what is
    missing, starts the robot from `robot.yaml` twice, stopping it in
    between, and checks the live graph against what `robot.yaml`

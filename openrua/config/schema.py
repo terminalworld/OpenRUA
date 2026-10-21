@@ -275,6 +275,14 @@ class Discovery(Strict):
         return self
 
 
+class StartupCheck(Strict):
+    """One thing that has to be true before a real robot starts."""
+    name: str = Field(description="what is checked, in a person's words")
+    run: str = Field(description="shell command on this computer, run in the robot file's "
+                     "directory; exit 0 means it holds")
+    fix: str = Field(description="what a person does when it does not")
+
+
 class RealBackend(Strict):
     """A real robot: its ROS 2 graph is already there or a launch command starts it."""
     kind: Literal["real"] = Field(description="a real robot")
@@ -291,6 +299,10 @@ class RealBackend(Strict):
         "built from a directory here: image name -> directory holding its Dockerfile, "
         "relative to this file (as docker compose's build:). A missing one is built "
         "before a session starts; openrua build driver --robot <this file> rebuilds them")
+    startup_checks: list[StartupCheck] = Field(
+        default_factory=list, description="what has to be true before the robot starts "
+        "(its controller answers, its devices are plugged in), checked before every "
+        "session; one that fails stops the start and says its fix")
     cwd: str | None = Field(default=None, description="directory the launch command runs "
                             "in on the host; default: the directory of the file declaring "
                             "it, so the command may name its files relative to it")

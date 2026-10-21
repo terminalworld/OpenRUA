@@ -19,6 +19,7 @@ from openrua.config import apply_suite_overrides, compose, normalize_arms, paths
 from openrua.config.schema import Limits, sandbox_image
 from openrua.errors import UnavailableError, UsageError
 from openrua.proxy.up import ensure as ensure_proxy
+from openrua.robot import not_ready
 from openrua.runner import live_state as state
 from openrua.runner.record import session_provenance
 from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
@@ -108,6 +109,17 @@ def check_agent_cli(sandbox: str, adapter, backend: dict, robot: str) -> str | N
         hint=build)
 
 
+def not_ready_message(unready: list[dict]) -> str:
+    return "the robot is not ready to start: " + "; ".join(c["name"] for c in unready)
+
+
+def not_ready_hint(unready: list[dict], backend: dict) -> str:
+    """Each failed check's fix, then where to go on if the robot itself changed."""
+    fixes = "\n".join(f"{c['name']}: {c['fix']}" for c in unready)
+    where = backend.get("cwd")
+    return fixes + (f"\nif the robot itself changed: openrua connect --dir {where}" if where else "")
+
+
 def _robot_file(robot: str) -> Path | None:
     """The robot's config file; None for a benchmark's inline machine."""
     try:
@@ -141,6 +153,10 @@ def open_robot(request: RobotRequest) -> LiveRobot:
     if suite is not None:
         apply_suite_overrides(cfg, suite)
     normalize_arms(cfg)
+    unready = not_ready(cfg["machine"]["backend"])
+    if unready:
+        raise UnavailableError(not_ready_message(unready),
+                               hint=not_ready_hint(unready, cfg["machine"]["backend"]))
     cfg_agent = cfg["agent"]
     adapter = agents.get(cfg_agent["name"], request.home, version=cfg_agent.get("version"))
     try:
