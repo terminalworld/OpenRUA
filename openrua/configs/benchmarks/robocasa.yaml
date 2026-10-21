@@ -75,12 +75,16 @@ scenes:
       joint_name_map:
         robot0_: panda_
         gripper0_: panda_
+      gripper:                 # the bridge reads a goal as open or closed,
+        holds_partway: false   # whichever is nearer, and sets no force limit
+        effort_honoured: false
+        joint: panda_right_finger_joint1
       control:
         gripper:
-          open_threshold_m: 0.02
           settle_steps: 10
       tf:
         hand: false
         base_body: robot0_link0
+        hand_body: robot0_right_hand
       base:
         body: mobilebase0_base

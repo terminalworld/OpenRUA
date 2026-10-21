@@ -41,7 +41,7 @@ def _harness(monkeypatch, tmp_path):
     return handle, cfg, token
 
 
-def test_real_trial_uses_the_given_task_and_scores_nothing(monkeypatch, tmp_path):
+def test_real_trial_uses_the_given_task_and_scores_nothing(monkeypatch, tmp_path, proxy_address):
     handle, cfg, token = _harness(monkeypatch, tmp_path)
     run_dir = tmp_path / "runs" / "r1"
     rec = trial.run_trial(cfg, tmp_path / "bench.yaml", run_dir, "suite", 0, 0,
@@ -63,7 +63,7 @@ def test_real_trial_without_a_task_is_an_anomaly(monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize("name", ["codex", "claude-code"])
-def test_api_trial_uses_isolated_profile_and_redacts_key(monkeypatch, tmp_path, name):
+def test_api_trial_uses_isolated_profile_and_redacts_key(monkeypatch, tmp_path, name, proxy_address):
     handle, cfg, _ = _harness(monkeypatch, tmp_path)
     key_file = tmp_path / "key"
     secret = "synthetic-openrua-api-secret-for-redaction"

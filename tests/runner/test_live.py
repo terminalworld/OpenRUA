@@ -28,7 +28,7 @@ def resources(monkeypatch, tmp_path):
     return live.RobotRequest(home=tmp_path, name="robot", task="inspect"), calls, machine
 
 
-def test_direct_resource_api_needs_no_cli_and_keeps_workspace(resources):
+def test_direct_resource_api_needs_no_cli_and_keeps_workspace(resources, proxy_address):
     request, calls, _ = resources
     robot = live.open_robot(request)
     workspace = request.home / "sandboxes/robot/workspace/workspace"
@@ -40,7 +40,7 @@ def test_direct_resource_api_needs_no_cli_and_keeps_workspace(resources):
     assert live_state.load(request.name, request.home, require_running=False)["status"] == "stopped"
 
 
-def test_failed_state_save_closes_started_resources(resources, monkeypatch):
+def test_failed_state_save_closes_started_resources(resources, monkeypatch, proxy_address):
     request, calls, _ = resources
     def fail(*a, **kw):
         raise OSError("disk full")
@@ -50,7 +50,7 @@ def test_failed_state_save_closes_started_resources(resources, monkeypatch):
     assert calls == ["sandbox stopped", "robot stopped"]
 
 
-def test_stop_attempts_robot_even_when_sandbox_stop_fails(resources, monkeypatch):
+def test_stop_attempts_robot_even_when_sandbox_stop_fails(resources, monkeypatch, proxy_address):
     request, calls, _ = resources
     robot = live.open_robot(request)
     def fail(_):

@@ -34,12 +34,13 @@ A robots/<type>.yaml: what is true of this robot wherever it runs. No cameras, n
 | `frames` | [Frames](#frames) \| null | None | world, base and hand frames |
 | `arm` | [Arm](#arm) \| null | None | the arm (single-arm robots) |
 | `arms` | list[[ArmSpec](#armspec)] \| null | None | the arms (multi-arm robots); replaces arm, gripper and ports |
-| `gripper` | [Gripper](#gripper) \| null | None | the gripper; null = none |
+| `gripper` | [GripperPart](#gripperpart) \| null | None | the gripper's interface; null = none |
 | `hand` | [Hand](#hand) \| null | None | hand geometry |
 | `ports` | [Ports](#ports) |  | the ROS 2 names the robot serves (single arm) |
 | `planning` | [Planning](#planning) \| null | None | the MoveIt planner |
 | `base` | [Base](#base) \| null | None | the mobile base; null = fixed |
 | `workspace_template` | str \| null | 'workspace' | workspace tree seeded into the sandbox; null = none |
+| `notes` | dict['timing' \| 'joint_state' \| 'joint_trajectory' \| 'cartesian_twist' \| 'gripper' \| 'base_twist' \| 'odometry' \| 'wrench' \| 'camera' \| 'planning', list[str]] \| null | None | observations no field can say, by the manifest kind they concern: timing, joint_state, joint_trajectory, cartesian_twist, gripper, base_twist, odometry, wrench, camera, planning |
 
 ## RobotFacts
 
@@ -56,9 +57,9 @@ The TF frames the workspace docs refer to.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `world` | str | 'world' | the fixed frame the robot plans in |
-| `base` | str \| null | 'panda_link0' | the arm's root link |
-| `hand` | str \| null | 'panda_hand' | the hand frame that twist commands and IK targets refer to |
+| `world` | str | **required** | the fixed frame the robot plans in |
+| `base` | str \| null | **required** | the arm's root link |
+| `hand` | str \| null | None | the hand frame that twist commands and IK targets refer to; null = none |
 
 ## Arm
 
@@ -78,19 +79,24 @@ One arm of a multi-arm machine (machine.arms); single-arm profiles are normalise
 | `limits_rad` | list[list[float]] | [] | travel per joint as [min, max], radians |
 | `gripper` | [Gripper](#gripper) \| null | None | this arm's gripper; null = a tool with no gripper |
 | `ports` | [Ports](#ports) |  | this arm's ports |
-| `hand_body` | str | 'robot0_right_hand' | simulator body the hand frame is read from |
-| `tf_base_body` | str | 'robot0_base' | simulator body the base frame is read from |
-| `base_frame` | str | 'panda_link0' | the arm's root link |
-| `hand_frame` | str \| null | 'panda_hand' | the hand frame |
+| `hand_body` | str \| null | None | simulator body the hand frame is read from; required in simulation |
+| `tf_base_body` | str \| null | None | simulator body the base frame is read from; required in simulation |
+| `base_frame` | str | **required** | the arm's root link |
+| `hand_frame` | str \| null | None | the hand frame; null = none |
 
 ## Gripper
 
+A resolved gripper: interface and behaviour both declared.
+
 | key | type | default | meaning |
 |---|---|---|---|
-| `open_m` | float | **required** | fingers fully open: position of one finger, metres (the gap is twice this) |
-| `closed_m` | float | **required** | fingers fully closed: position of one finger, metres |
-| `max_effort` | float | **required** | force ceiling a GripperCommand goal may ask for, newtons |
-| `stops_at` | list[str] | ['open', 'closed'] | the only positions the gripper comes to rest at; a commanded width is read as open or closed |
+| `joint` | str \| null | None | the joint whose /joint_states position reports the gripper's; null = not declared |
+| `unit` | 'm' \| 'rad' | **required** | unit of the GripperCommand position and of the reporting joint |
+| `open` | float | **required** | the position that opens the gripper fully |
+| `closed` | float | **required** | the position that closes it fully; which way closes follows from the two |
+| `max_effort` | float | **required** | the GripperCommand max_effort a goal asks for unless told otherwise |
+| `holds_partway` | bool | **required** | true: a position between open and closed is held; false: it is read as open or closed, whichever is nearer |
+| `effort_honoured` | bool | **required** | true: max_effort limits the grip; false: it is ignored |
 
 ## Ports
 
@@ -104,6 +110,20 @@ ROS 2 names the machine exposes; null = this machine has no such port.
 | `wrench` | str \| null | None | WrenchStamped topic of the wrist force-torque sensor |
 | `base_twist` | str \| null | None | Twist topic driving a mobile base |
 | `odom` | str \| null | None | Odometry topic of a mobile base |
+
+## GripperPart
+
+Gripper keys as one file writes them: a robot type the interface, a simulator's embodiment or a real robot's instance the behaviour. The resolved machine needs them all (``Gripper``).
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `joint` | str \| null | None | the joint whose /joint_states position reports the gripper's; null = not declared |
+| `unit` | 'm' \| 'rad' \| null | None | unit of the GripperCommand position and of that joint |
+| `open` | float \| null | None | the position that opens the gripper fully |
+| `closed` | float \| null | None | the position that closes it fully; which way closes follows from the two |
+| `max_effort` | float \| null | None | the GripperCommand max_effort a goal asks for unless told otherwise |
+| `holds_partway` | bool \| null | None | true: a position between open and closed is held; false: it is read as open or closed, whichever is nearer |
+| `effort_honoured` | bool \| null | None | true: max_effort limits the grip; false: it is ignored |
 
 ## Hand
 
@@ -168,6 +188,7 @@ A robots/<name>.yaml describing one particular robot, usually a real one: its ``
 | `planning` | [Planning](#planning) \| null | None | the MoveIt planner |
 | `tf` | [Tf](#tf) \| null | None | what the bridge publishes on TF |
 | `base` | [Base](#base) \| null | None | the mobile base; null = fixed |
+| `notes` | dict['timing' \| 'joint_state' \| 'joint_trajectory' \| 'cartesian_twist' \| 'gripper' \| 'base_twist' \| 'odometry' \| 'wrench' \| 'camera' \| 'planning', list[str]] \| null | None | observations no field can say, by the manifest kind they concern: timing, joint_state, joint_trajectory, cartesian_twist, gripper, base_twist, odometry, wrench, camera, planning |
 
 ## RealBackend
 
@@ -217,10 +238,50 @@ A simulated robot: a container running the bridge in the image its declaration w
 | key | type | default | meaning |
 |---|---|---|---|
 | `resolution` | list[int] | (640, 480) | width, height in pixels for every camera |
-| `list` | list[str] \| null | None | camera names; [] = none declared; null = every camera the scene defines |
+| `list` | list[str \| [CameraEntry](#cameraentry)] \| null | None | the cameras: a name is a camera of the simulation bridge (type openrua-sim); a real robot names each camera's type ({name, type, mount}); [] = none; null = every camera the scene defines (simulation only) |
+| `types` | dict[str, [CameraType](#cameratype)] \| null | None | filled in by openrua: the camera types the list names, read from their files, so every consumer reads the same topics |
 | `rate_hz` | float | 2.0 | wall-clock publish rate |
 | `render_mode` | 'on_demand' \| 'always' | 'on_demand' | render a camera only while subscribed, or always |
 | `record` | list[str] \| null | None | the cameras `openrua bench --record` captures when none are named: the first is a demo's main view, the second its inset |
+
+## CameraEntry
+
+One camera on a machine: its name there, its type, where it sits.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `name` | str | **required** | the camera's name on this machine ({name} in its type's topics) |
+| `type` | str | **required** | camera type: a bundled name (openrua-sim) or a path, relative to the file naming it |
+| `mount` | 'wrist' \| 'fixed' \| null | None | on the arm's wrist, or fixed in the scene |
+| `topics` | [CameraTopics](#cameratopics) \| null | None | this camera's topics where they differ from its type's |
+
+## CameraTopics
+
+Where one camera's streams are, ``{name}`` standing for the camera's name on this machine.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `color` | str | **required** | sensor_msgs/Image topic of the color stream |
+| `info` | str | **required** | sensor_msgs/CameraInfo of the color stream |
+| `depth` | str \| null | None | sensor_msgs/Image depth topic; null = this camera has no depth |
+
+## CameraType
+
+A cameras/<type>.yaml: what is true of one kind of camera with one driver, wherever it is mounted. OpenRUA bundles only its simulation bridge's type; a real camera's file lives with the robot that uses it and is named by path.
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `model` | str | **required** | the camera as a person would name it |
+| `driver` | str \| null | None | the driver and how it is launched, as a person would repeat it |
+| `topics` | [CameraTopics](#cameratopics) | **required** | where its streams are |
+| `depth` | [DepthFacts](#depthfacts) \| null | None | its depth stream; null = no depth |
+
+## DepthFacts
+
+| key | type | default | meaning |
+|---|---|---|---|
+| `encoding` | '32FC1' \| '16UC1' | **required** | depth image encoding; by ROS REP 118, 32FC1 is metres and 16UC1 millimetres |
+| `aligned_to_color` | bool | **required** | whether depth pixels line up with the color image (one set of intrinsics serves both) |
 
 ## Control
 
@@ -235,7 +296,6 @@ Graph-side actuation behaviour (the facts below feed machine.yaml).
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `open_threshold_m` | float | 0.02 | GripperCommand position below this = close |
 | `settle_steps` | int | 10 | control ticks a gripper goal advances |
 
 ## TrajectoryControl
@@ -250,8 +310,8 @@ Graph-side actuation behaviour (the facts below feed machine.yaml).
 | key | type | default | meaning |
 |---|---|---|---|
 | `hand` | bool | False | bridge publishes hand frames (MoveIt-less runs) |
-| `base_body` | str | 'robot0_base' | simulator body the base frame is read from |
-| `hand_body` | str | 'robot0_right_hand' | simulator body the hand frame is read from (and FK targets) |
+| `base_body` | str \| null | None | simulator body the base frame is read from |
+| `hand_body` | str \| null | None | simulator body the hand frame is read from (and FK targets) |
 
 ## SimulatorProfile
 
@@ -264,6 +324,7 @@ A simulators/<engine>.yaml: the engine, its install, its native scene, and how i
 | `install` | [Install](#install) | **required** | what its image is made of, and the ROS distro |
 | `native` | [NativeScene](#nativescene) \| null | None | scene loaded with no benchmark; null = a benchmark is required |
 | `robots` | dict[str, [Embodiment](#embodiment)] | {} | robot type name -> how this engine drives it |
+| `notes` | dict['timing' \| 'joint_state' \| 'joint_trajectory' \| 'cartesian_twist' \| 'gripper' \| 'base_twist' \| 'odometry' \| 'wrench' \| 'camera' \| 'planning', list[str]] \| null | None | observations no field can say, by the manifest kind they concern: timing, joint_state, joint_trajectory, cartesian_twist, gripper, base_twist, odometry, wrench, camera, planning; for every robot this engine drives |
 
 ## Install
 
@@ -314,10 +375,12 @@ How an engine drives one robot type: the keys that depend on the simulator, merg
 | `controller_kp_scale` | float \| null | None | multiplier on the engine's joint position gains |
 | `joint_name_map` | dict[str, str] \| null | None | engine joint prefix -> published prefix |
 | `control` | [Control](#control) \| null | None | how goals are executed and judged |
+| `gripper` | [GripperPart](#gripperpart) \| null | None | gripper keys the engine decides: the joint it publishes and what it does with a goal (holds_partway, effort_honoured) |
 | `tf` | [Tf](#tf) \| null | None | what the bridge publishes on TF |
 | `planning` | [EmbodiedPlanning](#embodiedplanning) \| null | None | planner keys this world changes |
 | `base` | [Base](#base) \| null | None | mobile-base keys the engine decides (body, effective speed) |
 | `cameras` | [Cameras](#cameras) \| null | None | robot-mounted cameras this embodiment adds |
+| `notes` | dict['timing' \| 'joint_state' \| 'joint_trajectory' \| 'cartesian_twist' \| 'gripper' \| 'base_twist' \| 'odometry' \| 'wrench' \| 'camera' \| 'planning', list[str]] \| null | None | observations no field can say, by the manifest kind they concern: timing, joint_state, joint_trajectory, cartesian_twist, gripper, base_twist, odometry, wrench, camera, planning |
 
 ## EmbodiedPlanning
 
@@ -369,6 +432,7 @@ A benchmarks/<name>.yaml as written.
 | `clock` | [Clock](#clock) |  | how simulated time advances |
 | `horizon` | int | 1000000000 | simulator step cap (libero) |
 | `base_cmd_policy` | 'queue' \| 'latest' | 'queue' | mobile base: queue every twist (one message = one tick) or let a new one replace the pending setpoint |
+| `base_cmd_queue` | int | 4 | mobile base, policy queue: the most ticks that may wait; a message beyond is dropped |
 | `stall_probe_timeout_s` | float | 600 | seconds a simulator job may run before the trial is declared wedged |
 
 ## Clock
@@ -419,6 +483,7 @@ What a benchmark brings into the simulator's world.
 | `default_suite` | str \| null | None | the suite openrua run / up load when none is named; default: the first in task.suites |
 | `cameras` | [Cameras](#cameras) \| null | None | the scene cameras (over the simulator's native ones) |
 | `robots` | dict[str, [Embodiment](#embodiment)] | {} | robot type name -> embodiment this benchmark's assets add or adjust (merged over the simulator's) |
+| `notes` | dict['timing' \| 'joint_state' \| 'joint_trajectory' \| 'cartesian_twist' \| 'gripper' \| 'base_twist' \| 'odometry' \| 'wrench' \| 'camera' \| 'planning', list[str]] \| null | None | observations no field can say, by the manifest kind they concern: timing, joint_state, joint_trajectory, cartesian_twist, gripper, base_twist, odometry, wrench, camera, planning; for this benchmark's scenes |
 
 ## UserConfig
 

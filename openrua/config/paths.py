@@ -36,7 +36,7 @@ DEFAULT_HOME = "~/.openrua"
 CONFIG_FILENAME = "config.yaml"
 
 # The declarative kinds, one yaml per named entry.
-KINDS = ("robots", "simulators", "benchmarks", "agents")
+KINDS = ("robots", "simulators", "benchmarks", "agents", "cameras")
 # Kinds whose yaml names code under ``entry_point:``, and the package a
 # short name resolves in (``entry_point: foo`` -> openrua.plugins.agents.foo).
 ENTRY_POINT_PACKAGES = {

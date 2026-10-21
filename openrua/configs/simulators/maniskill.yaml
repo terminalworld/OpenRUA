@@ -31,9 +31,11 @@ robots:
     controller: pd_joint_pos # absolute joint targets; the gripper part is a normalised mimic joint
     joint_name_map:          # SAPIEN names are the URDF's: already the franka_ros2 names
       panda_: panda_
+    gripper:                 # the bridge reads a goal as open or closed,
+      holds_partway: false   # whichever is nearer, and sets no force limit
+      effort_honoured: false
     control:
       gripper:
-        open_threshold_m: 0.02
         settle_steps: 10
     tf:
       hand: false
@@ -43,9 +45,11 @@ robots:
     controller: pd_joint_pos # the Bridge real2sim agents get this mode from the simpler loader
     joint_name_map:
       "": ""                 # SAPIEN joint names (waist, shoulder, ...) are the published names
+    gripper:                 # the bridge reads a goal as open or closed,
+      holds_partway: false   # whichever is nearer, and sets no force limit
+      effort_honoured: false
     control:
       gripper:
-        open_threshold_m: 0.026 # finger travel is 0.015 (closed) to 0.037 (open)
         settle_steps: 10
     tf:
       hand: false

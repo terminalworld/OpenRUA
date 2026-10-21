@@ -80,25 +80,52 @@ _HEADER = """\
 #   port  the ROS name to address
 #   type  the message or action type; `ros2 interface show <type>`
 #         prints its fields
-# The docs are generic; the facts below are this machine's and win.
+# The values below are this robot's configuration as its integrator
+# wrote it; the docs are generic. Like any robot config it can drift from
+# the running system: where the live graph disagrees (topic names,
+# message types, frames, limits, sensor behaviour), the live graph is
+# authoritative. Discrepancies go in machine-discrepancies.yaml next to
+# this file (key, declared, observed, evidence) for review and merging
+# into the config; this file is regenerated from the config at every
+# bring-up.
 """
 
 _FIELD_NOTES = {
     "joints": "the joints this port drives, in the order its messages\nexpect them",
     "limits_rad": "travel per joint as [min, max], radians",
     "frame": "the TF frame this port's messages are expressed in",
-    "open_m": "fingers fully open: position of ONE finger, metres\n(the gap between the fingers is twice this)",
-    "closed_m": "fingers fully closed: position of ONE finger, metres",
-    "max_effort": "force ceiling a GripperCommand goal may ask for,\nnewtons. NOT honoured by this machine - see stops_at",
-    "stops_at": "the only positions this gripper comes to rest at. A\ncommanded width is read as open-or-closed; there is no\nholding it part-way, and no force limit",
-    "topics": "topic name pattern, one set per camera",
+    "joint": "the joint whose /joint_states position reports the\ngripper's",
+    "unit": "unit of the GripperCommand position and of that joint",
+    "open": "the position that opens the gripper fully",
+    "closed": "the position that closes it fully; which way closes\nfollows from open and closed",
+    "max_effort": "the GripperCommand max_effort a goal asks for unless\ntold otherwise",
+    "holds_partway": "true: a position between open and closed is held;\nfalse: it is read as open or closed, whichever is nearer",
+    "effort_honoured": "true: max_effort limits the grip; false: it is ignored",
+    "name": "the camera's name on this machine",
+    "model": "the camera as a person would name it",
+    "mount": "wrist: moves with the arm; fixed: stands in the scene",
+    "color": "sensor_msgs/Image color stream",
+    "info": "sensor_msgs/CameraInfo of the color stream: intrinsics k,\nand header.frame_id, the optical frame its pixels are in",
+    "depth": "sensor_msgs/Image depth stream",
+    "depth_encoding": "32FC1 = metres, 16UC1 = millimetres (ROS REP 118)",
+    "depth_aligned": "true: depth pixels line up with the color image, so the\ncolor intrinsics and frame serve both",
     "discover": "shell command that lists what exists right now",
     "moveit": "whether a MoveIt planner is running on this machine",
     "move_action": "MoveIt's plan-and-execute action",
-    "ik_service": "inverse-kinematics service (leave frame_id empty)",
+    "ik_service": "inverse-kinematics service",
+    "tcp_offset_m": "hand frame -> the point between the fingertips, along\nthe hand's approach axis, metres",
     "group": "the MoveIt planning group covering the arm",
     "planning_frame": "the frame MoveIt plans in",
     "arm": "which arm of a multi-arm machine this port belongs to",
+    "simulation": "how this simulated machine behaves where a real one\nwould not",
+    "clock": "paused: the world moves only while a command executes, so\nwaiting changes nothing, objects settle only as commands run,\nand seconds of motion can take minutes of wall time under\nload (a client timeout is not a failed motion); free_running:\nthe world runs with the wall clock",
+    "camera_render": "on_demand: a camera renders only while something\nsubscribes, so its topics can appear late; always: every\nframe is rendered",
+    "camera_rate_hz": "frames each camera publishes per wall-clock second",
+    "trajectory_goal_tolerance_rad": "a FollowJointTrajectory goal succeeds when every\njoint ends within this of its last point, radians",
+    "gripper_settle_ticks": "control ticks a gripper goal advances the world",
+    "base_command": "queue: each base Twist drives one control tick, then\nstops; latest: a new Twist replaces the one not yet applied",
+    "base_queue": "most base ticks that may wait; a Twist beyond is dropped",
+    "notes": "observations about this machine that no field can say,\nby the kind they concern",
     "drive": "the base's drive geometry",
 }
 
@@ -117,6 +144,80 @@ def _annotate(text: str) -> str:
         out.append(f"{line}  # {first}")
         out += [f"{pad}  # {r}" for r in rest]
     return "\n".join(out) + "\n"
+
+
+def _has_joints(m: dict) -> bool:
+    """Whether the machine has anything that reports on /joint_states: an
+    arm, a gripper, or a mobile base."""
+    return bool(m.get("base") or any(a.get("joints") or a.get("gripper")
+                                      for a in m.get("arms", [])))
+
+
+def _camera_entries(cams: dict) -> list[dict]:
+    """One sensor entry per declared camera, its topics filled in from
+    its type (machine.cameras.types, read by the loader). A scene that
+    decides its own cameras (list: null) gets the topic pattern and a
+    command that lists them."""
+    types, entries = cams.get("types") or {}, cams.get("list")
+
+    def streams(t: dict, topics: dict, name: str) -> dict:
+        out = {k: topics[k].replace("{name}", name)
+               for k in ("color", "info", "depth") if topics.get(k)}
+        if topics.get("depth") and t.get("depth"):
+            out["depth_encoding"] = t["depth"]["encoding"]
+            out["depth_aligned"] = t["depth"]["aligned_to_color"]
+        return out
+
+    if entries is None:
+        if "openrua-sim" not in types:
+            raise ValueError("machine.cameras.types is missing: write the manifest from "
+                             "a resolved config (openrua.config.compose)")
+        t = types["openrua-sim"]
+        suffix = t["topics"]["color"].split("{name}")[-1]
+        return [{"kind": "camera_set", **streams(t, t["topics"], "<name>"),
+                 "discover": f"ros2 topic list | grep {suffix}"}]
+    out = []
+    for e in entries:
+        e = {"name": e, "type": "openrua-sim"} if isinstance(e, str) else e
+        t = types[e["type"]]
+        entry = {"kind": "camera", "name": e["name"], "model": t["model"]}
+        if e.get("mount"):
+            entry["mount"] = e["mount"]
+        entry.update(streams(t, {**t["topics"], **(e.get("topics") or {})}, e["name"]))
+        out.append(entry)
+    return out
+
+
+def _simulation(cfg: dict, manifest: dict) -> dict:
+    """The values a simulated machine's bridge acts on and a real robot
+    does not have, read from the same config that starts the bridge."""
+    m, protocol = cfg.get("machine", {}), cfg.get("protocol", {})
+    kinds = {e["kind"] for e in manifest["actuators"]}
+    sim = {"clock": protocol.get("clock", {}).get("mode", "paused")}
+    if any(s["kind"] in ("camera", "camera_set") for s in manifest["sensors"]):
+        sim["camera_render"] = m.get("cameras", {}).get("render_mode", "on_demand")
+        sim["camera_rate_hz"] = m.get("cameras", {}).get("rate_hz", 2.0)
+    control = m.get("control", {})
+    if "joint_trajectory" in kinds:
+        sim["trajectory_goal_tolerance_rad"] = control.get("trajectory", {}).get(
+            "goal_tolerance_rad", 0.05)
+    if "gripper" in kinds:
+        sim["gripper_settle_ticks"] = control.get("gripper", {}).get("settle_steps", 10)
+    if "base_twist" in kinds:
+        sim["base_command"] = protocol.get("base_cmd_policy", "queue")
+        if sim["base_command"] == "queue":
+            sim["base_queue"] = protocol.get("base_cmd_queue", 4)
+    return sim
+
+
+def _notes(m: dict, manifest: dict) -> dict:
+    """The machine's notes for the kinds it actually has: an observation
+    about a base or a gripper means nothing on a machine without one."""
+    present = {e["kind"] for e in manifest["actuators"] + manifest["sensors"]}
+    present = {("camera" if k == "camera_set" else k) for k in present} | {"timing"}
+    if (m.get("planning") or {}).get("moveit"):
+        present.add("planning")
+    return {k: v for k, v in (m.get("notes") or {}).items() if k in present and v}
 
 
 def write_machine_manifest(cfg: dict, out: Path) -> None:
@@ -146,24 +247,17 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
             {"kind": "cartesian_twist", "port": aports.get("twist"),
              "type": "geometry_msgs/msg/TwistStamped",
              "frame": arm.get("base_frame"), **tag},
-            # Config extras spread first so the typed columns always
-            # win (a config "type" such as "holonomic" must not clobber
-            # the ROS message type); it survives as "drive".
-            {**{("drive" if k == "type" else k): v
-                for k, v in (arm.get("gripper") or {}).items()},
-             "kind": "gripper", "port": aports.get("gripper"),
-             "type": "control_msgs/action/GripperCommand", **tag},
+            # The typed columns first; the gripper's facts after them
+            # (a config "type" must not clobber the ROS message type).
+            {"kind": "gripper", "port": aports.get("gripper"),
+             "type": "control_msgs/action/GripperCommand", **tag,
+             **{k: v for k, v in (arm.get("gripper") or {}).items()
+                if k not in ("kind", "port", "type", "arm")}},
         ]
         arm_sensors.append(
             {"kind": "wrench", "port": aports.get("wrench"),
              "type": "geometry_msgs/msg/WrenchStamped", **tag})
-    camera_sensors = []
-    if m.get("cameras", {}).get("list") != []:
-        camera_sensors.append(
-            {"kind": "camera_set",
-             "topics": "/<name>/color/image_raw, /<name>/depth/image_raw, "
-                       "/<name>/color/camera_info",
-             "discover": "ros2 topic list | grep image_raw"})
+    camera_sensors = _camera_entries(m.get("cameras") or {})
     manifest = {
         "schema": "openrua/machine-manifest v1",
         "robot": m.get("robot", {}),
@@ -176,7 +270,10 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
              "type": "geometry_msgs/msg/Twist"},
         ],
         "sensors": [
-            {"kind": "joint_state", "port": "/joint_states",
+            # joint states come from whatever has joints; a machine of
+            # cameras alone publishes none
+            {"kind": "joint_state",
+             "port": "/joint_states" if _has_joints(m) else None,
              "type": "sensor_msgs/msg/JointState"},
             *arm_sensors,
             {"kind": "odometry", "port": ports.get("odom"),
@@ -189,7 +286,12 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
     }
     manifest["actuators"] = [a for a in manifest["actuators"] if a.get("port")]
     manifest["sensors"] = [s for s in manifest["sensors"]
-                           if s.get("port") or s.get("topics")]
+                           if s.get("port") or s.get("color")]
+    if m.get("backend", {}).get("kind") == "sim":
+        manifest["simulation"] = _simulation(cfg, manifest)
+    notes = _notes(m, manifest)
+    if notes:
+        manifest["notes"] = notes
     out.write_text(_HEADER + _annotate(
         yaml.safe_dump(manifest, sort_keys=False, width=1000)))
 

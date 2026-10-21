@@ -93,7 +93,7 @@ def main() -> None:
         t.angular.z = max(-1.0, min(1.0, dyaw * 2))
         pub.publish(t)
         rclpy.spin_once(node, timeout_sec=0.03)
-        if i % 100 == 99:  # progress check every ~100 ticks
+        if i % 100 == 99:  # progress check every ~100 iterations
             err = dist + abs(dyaw)
             if last_err is not None and err > last_err - 5e-3:
                 no_progress += 1

@@ -27,7 +27,7 @@ from control_msgs.action import FollowJointTrajectory, GripperCommand
 from geometry_msgs.msg import TwistStamped
 from rclpy.action import ActionServer
 
-from .arms import arm_specs
+from .arms import arm_specs, closes
 from .joints import build_joint_map
 
 _FD_EPS = 1e-6  # finite-difference step for the jacobian
@@ -41,11 +41,12 @@ class _ArmUnit:
         self.index = index
         self.label = spec.get("label", "")
         self.grip = -1.0  # persistent gripper state: -1 open, +1 close
-        joints = spec.get("joints") or [f"panda_joint{i}" for i in range(1, 8)]
+        joints = spec["joints"]
         self.arm_names = joints
         self.qadrs = np.array([owner._jmap[n][0] for n in joints])
-        self.hand_body = spec.get("hand_body", f"robot{index}_right_hand")
+        self.hand_body = spec["hand_body"]
         self.has_gripper = False  # the engine answers once the arms are bound
+        self.gripper = spec.get("gripper") or {}  # declared open/closed positions
         self.ports = spec.get("ports", {})
 
     def open_ports(self, node) -> None:
@@ -54,10 +55,13 @@ class _ArmUnit:
             node.create_subscription(
                 TwistStamped, ports["twist"],
                 lambda msg, a=self: owner._on_twist(a, msg), 10)
-        # GripperCommand action (franka_ros2 name). position >= threshold
-        # means open (Franka: 0.0 closed .. 0.04/finger open); the goal
-        # runs settle_steps control ticks so the fingers physically move.
+        # GripperCommand action: a position nearer the declared closed
+        # one closes, otherwise opens; the goal runs settle_steps control
+        # ticks so the fingers physically move.
         if ports.get("gripper") and self.has_gripper:
+            if not {"open", "closed"} <= self.gripper.keys():
+                raise ValueError(f"arm {self.label or 0} serves {ports['gripper']} "
+                                 "but its gripper declares no open/closed positions")
             ActionServer(node, GripperCommand, ports["gripper"],
                          lambda gh, a=self: owner._on_gripper_goal(a, gh))
         # FollowJointTrajectory (L3): native joint-space tracking.
@@ -97,7 +101,7 @@ class CommandPorts:
         self._base_vel = np.zeros(3)  # vx, vy, wz (JOINT_VELOCITY base)
         # Base command policy:
         #   "queue"  (default): one message = one tick, deterministic;
-        #            bounded by _BASE_QUEUE_MAX so a flood of messages
+        #            bounded by protocol.base_cmd_queue so a flood of messages
         #            cannot queue thousands of ticks of displacement.
         #   "latest" (real-robot semantics): a new message replaces the
         #            pending setpoint (a velocity setting, not a queued
@@ -106,14 +110,14 @@ class CommandPorts:
 
         self._base_policy = str(
             cfg.get("protocol", {}).get("base_cmd_policy", "queue"))
+        self._base_queue_max = int(
+            cfg.get("protocol", {}).get("base_cmd_queue", 4))
         self._base_lock = _threading.Lock()
         self._base_pending = 0
         self._base_dropped = 0
         self._latest_base = np.zeros(3)
 
         control = machine.get("control", {})
-        self._grip_threshold = float(
-            control.get("gripper", {}).get("open_threshold_m", 0.02))
         self._settle_steps = int(
             control.get("gripper", {}).get("settle_steps", 10))
         self._traj_tol_rad = float(
@@ -166,12 +170,10 @@ class CommandPorts:
 
         self._runner.submit(job, wait=False)
 
-    _BASE_QUEUE_MAX = 4  # flood fuse: max queued base ticks (policy "queue")
-
     def _on_base_twist(self, msg) -> None:
         """/cmd_vel (plain Twist): one message = one control tick of base
         motion at [vx, vy, wz]; the velocity does NOT persist beyond its
-        tick. Messages queue up to _BASE_QUEUE_MAX; excess is dropped
+        tick. Messages queue up to protocol.base_cmd_queue; excess is dropped
         (logged), like a real base's lossy command transport. Under policy
         "latest" a new message replaces the pending setpoint instead."""
         v = np.array([msg.linear.x, msg.linear.y, msg.angular.z], dtype=float)
@@ -181,7 +183,7 @@ class CommandPorts:
             if self._base_policy == "latest":
                 if self._base_pending:
                     return  # the queued tick consumes the newest setpoint
-            elif self._base_pending >= self._BASE_QUEUE_MAX:
+            elif self._base_pending >= self._base_queue_max:
                 self._base_dropped += 1
                 if self._base_dropped % 100 == 1:
                     import sys
@@ -245,7 +247,7 @@ class CommandPorts:
         self._runner.submit(job, wait=True)
 
     def _on_gripper_goal(self, arm: _ArmUnit, goal_handle):
-        close = goal_handle.request.command.position < self._grip_threshold
+        close = closes(goal_handle.request.command.position, arm.gripper)
         self.set_gripper(arm, close)
         goal_handle.succeed()
         result = GripperCommand.Result()

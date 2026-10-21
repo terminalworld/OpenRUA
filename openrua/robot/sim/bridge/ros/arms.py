@@ -16,3 +16,10 @@ def arm_specs(machine: dict) -> list[dict]:
             "resolved config (openrua bench writes it via normalize_arms); "
             "re-run the trial through `python -m openrua bench`")
     return arms
+
+
+def closes(position: float, gripper: dict) -> bool:
+    """Whether a GripperCommand position closes this gripper: it is
+    nearer the declared closed position than the open one, whichever
+    way the two lie and in whatever unit."""
+    return abs(position - gripper["closed"]) < abs(position - gripper["open"])

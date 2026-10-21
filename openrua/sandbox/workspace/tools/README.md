@@ -6,9 +6,9 @@ or write your own programs using the native ROS interfaces (see docs).
 
 | Tool | Usage | Operation |
 |---|---|---|
-| `perception/cam_snap.py` | `python3 tools/perception/cam_snap.py <camera_or_topic> [out.png]` | save a camera frame (color → PNG; depth → visualization PNG + numerical `.npy` array) |
-| `perception/px2world.py` | `python3 tools/perception/px2world.py <camera> <u> <v>` | convert a selected depth pixel to world coordinates using camera intrinsics and TF |
-| `action/fjt_send.py` | `python3 tools/action/fjt_send.py <p1,...,pN> <seconds>` | send a joint trajectory and wait for its result; rejection or failure returns a nonzero exit status; joint names and port come from `machine.yaml` |
-| `action/gripper_cmd.py` | `python3 tools/action/gripper_cmd.py <width_m>` | command a gripper position and print the result; `width_m` is the per-finger position |
+| `perception/cam_snap.py` | `python3 tools/perception/cam_snap.py <camera_or_topic> [out.png] [--depth]` | save a camera frame (color → PNG; depth → visualization PNG + numerical `.npy` array); topics come from the camera's `machine.yaml` entry |
+| `perception/px2world.py` | `python3 tools/perception/px2world.py <camera> <u> <v>` | convert a pixel to `frames.world` coordinates using the camera's depth, intrinsics and TF |
+| `action/fjt_send.py` | `python3 tools/action/fjt_send.py <p1,...,pN> <seconds> [--arm LABEL]` | send a joint trajectory, wait for its result, then print the largest gap between target and `/joint_states`; rejection or failure returns a nonzero exit status; joint names and port come from `machine.yaml` |
+| `action/gripper_cmd.py` | `python3 tools/action/gripper_cmd.py <open\|closed\|position> [--arm LABEL]` | command a gripper position and print the result; positions are in the gripper entry's `unit` |
 | `action/ik_move.py` | `python3 tools/action/ik_move.py <x> <y> <z> <qx> <qy> <qz> <qw> [seconds] [--at {tcp,hand}]` | request inverse kinematics in the planning frame, then execute the joint trajectory; see `docs/30-action.md` for planning-frame conventions |
 | `action/base_goto.py` | `python3 tools/action/base_goto.py <x> <y> [yaw_rad]` | drive a mobile base toward a world pose using odometry feedback; requires base and odometry ports in `machine.yaml` |

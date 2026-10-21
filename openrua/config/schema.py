@@ -103,6 +103,8 @@ class Protocol(Strict):
     base_cmd_policy: Literal["queue", "latest"] = Field(
         default="queue", description="mobile base: queue every twist (one message = "
         "one tick) or let a new one replace the pending setpoint")
+    base_cmd_queue: int = Field(default=4, description="mobile base, policy queue: the "
+                                "most ticks that may wait; a message beyond is dropped")
     stall_probe_timeout_s: float = Field(
         default=600, description="seconds a simulator job may run before the trial is "
         "declared wedged")
@@ -155,6 +157,20 @@ class AgentFacts(Strict):
 
 
 # --------------------------------------------------------------- machine
+
+# Observations about a machine that no field can say, grouped by the
+# manifest kind they concern (timing: how time behaves). Every file that
+# describes part of a machine may write them; they are joined in the
+# order robot type, simulator, embodiment, benchmark scene (or robot
+# type, then a real robot's instance), and machine.yaml carries the kinds
+# the machine actually has.
+NoteKind = Literal["timing", "joint_state", "joint_trajectory", "cartesian_twist",
+                   "gripper", "base_twist", "odometry", "wrench", "camera", "planning"]
+Notes = dict[NoteKind, list[str]]
+_NOTES_DESCRIPTION = ("observations no field can say, by the manifest kind they "
+                      "concern: timing, joint_state, joint_trajectory, cartesian_twist, "
+                      "gripper, base_twist, odometry, wrench, camera, planning")
+
 
 class Simulator(Strict):
     engine: str | None = Field(default=None, description="the bridge engine module "
@@ -246,13 +262,63 @@ class RealBackend(Strict):
 Backend = Annotated[SimBackend | RealBackend, Field(discriminator="kind")]
 
 
+SIM_CAMERA = "openrua-sim"   # the simulation bridge's own camera type
+
+
+class CameraTopics(Strict):
+    """Where one camera's streams are, ``{name}`` standing for the
+    camera's name on this machine."""
+    color: str = Field(description="sensor_msgs/Image topic of the color stream")
+    info: str = Field(description="sensor_msgs/CameraInfo of the color stream")
+    depth: str | None = Field(default=None, description="sensor_msgs/Image depth topic; "
+                              "null = this camera has no depth")
+
+
+class DepthFacts(Strict):
+    encoding: Literal["32FC1", "16UC1"] = Field(description="depth image encoding; by ROS "
+                                                "REP 118, 32FC1 is metres and 16UC1 "
+                                                "millimetres")
+    aligned_to_color: bool = Field(description="whether depth pixels line up with the "
+                                   "color image (one set of intrinsics serves both)")
+
+
+class CameraType(Strict):
+    """A cameras/<type>.yaml: what is true of one kind of camera with one
+    driver, wherever it is mounted. OpenRUA bundles only its simulation
+    bridge's type; a real camera's file lives with the robot that uses
+    it and is named by path."""
+    model: str = Field(description="the camera as a person would name it")
+    driver: str | None = Field(default=None, description="the driver and how it is "
+                               "launched, as a person would repeat it")
+    topics: CameraTopics = Field(description="where its streams are")
+    depth: DepthFacts | None = Field(default=None, description="its depth stream; null = "
+                                     "no depth")
+
+
+class CameraEntry(Strict):
+    """One camera on a machine: its name there, its type, where it sits."""
+    name: str = Field(description="the camera's name on this machine ({name} in its "
+                      "type's topics)")
+    type: str = Field(description="camera type: a bundled name (openrua-sim) or a path, "
+                      "relative to the file naming it")
+    mount: Literal["wrist", "fixed"] | None = Field(default=None, description="on the "
+                                                     "arm's wrist, or fixed in the scene")
+    topics: CameraTopics | None = Field(default=None, description="this camera's topics "
+                                        "where they differ from its type's")
+
+
 class Cameras(Strict):
     resolution: tuple[int, int] = Field(default=(640, 480), description="width, height "
                                         "in pixels for every camera")
     # yaml key is ``list``; the attribute cannot be, so it carries an alias
-    names: list[str] | None = Field(default=None, alias="list",
-                                    description="camera names; [] = none declared; null = every "
-                                    "camera the scene defines")
+    names: list[str | CameraEntry] | None = Field(
+        default=None, alias="list", description="the cameras: a name is a camera of the "
+        "simulation bridge (type openrua-sim); a real robot names each camera's type "
+        "({name, type, mount}); [] = none; null = every camera the scene defines "
+        "(simulation only)")
+    types: dict[str, CameraType] | None = Field(
+        default=None, description="filled in by openrua: the camera types the list names, "
+        "read from their files, so every consumer reads the same topics")
     rate_hz: float = Field(default=2.0, description="wall-clock publish rate")
     render_mode: Literal["on_demand", "always"] = Field(
         default="on_demand", description="render a camera only while subscribed, or always")
@@ -262,9 +328,16 @@ class Cameras(Strict):
 
 
 class GripperControl(Strict):
-    open_threshold_m: float = Field(default=0.02, description="GripperCommand position "
-                                    "below this = close")
     settle_steps: int = Field(default=10, description="control ticks a gripper goal advances")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _no_threshold(cls, data: Any) -> Any:
+        if isinstance(data, dict) and "open_threshold_m" in data:
+            raise ValueError("control.gripper.open_threshold_m was removed: delete it; "
+                             "a goal nearer the gripper's closed position than its open "
+                             "one closes it")
+        return data
 
 
 class TrajectoryControl(Strict):
@@ -305,10 +378,10 @@ class RobotFacts(Strict):
 
 class Frames(Strict):
     """The TF frames the workspace docs refer to."""
-    world: str = Field(default="world", description="the fixed frame the robot plans in")
-    base: str | None = Field(default="panda_link0", description="the arm's root link")
-    hand: str | None = Field(default="panda_hand", description="the hand frame that "
-                             "twist commands and IK targets refer to")
+    world: str = Field(description="the fixed frame the robot plans in")
+    base: str | None = Field(description="the arm's root link")
+    hand: str | None = Field(default=None, description="the hand frame that twist "
+                             "commands and IK targets refer to; null = none")
 
 
 class Arm(Strict):
@@ -318,16 +391,77 @@ class Arm(Strict):
                                                   "[min, max], radians")
 
 
-class Gripper(Strict):
-    open_m: float = Field(description="fingers fully open: position of one finger, "
-                          "metres (the gap is twice this)")
-    closed_m: float = Field(description="fingers fully closed: position of one finger, "
-                            "metres")
-    max_effort: float = Field(description="force ceiling a GripperCommand goal may ask "
-                              "for, newtons")
-    stops_at: list[str] = Field(default_factory=lambda: ["open", "closed"],
-                                description="the only positions the gripper comes to "
-                                "rest at; a commanded width is read as open or closed")
+_GRIPPER_RENAMED = {"open_m": "open", "closed_m": "closed"}
+
+
+def _refuse_old_gripper_keys(data: Any) -> Any:
+    """The metre-only keys predate grippers commanded in radians: refuse
+    them with the rewrite rather than an unknown-key error."""
+    if isinstance(data, dict):
+        old = [k for k in (*_GRIPPER_RENAMED, "stops_at") if k in data]
+        if old:
+            raise ValueError(
+                f"gripper keys {', '.join(old)} were replaced: write unit: m, "
+                "open: <open_m>, closed: <closed_m>; stops_at: [open, closed] "
+                "becomes holds_partway: false, written where the gripper is "
+                "driven (a simulator's robots.<type>.gripper, or a real robot's "
+                "machine.gripper)")
+    return data
+
+
+class GripperPart(Strict):
+    """Gripper keys as one file writes them: a robot type the interface,
+    a simulator's embodiment or a real robot's instance the behaviour.
+    The resolved machine needs them all (``Gripper``)."""
+    joint: str | None = Field(default=None, description="the joint whose /joint_states "
+                              "position reports the gripper's; null = not declared")
+    unit: Literal["m", "rad"] | None = Field(default=None, description="unit of the "
+                                             "GripperCommand position and of that joint")
+    open: float | None = Field(default=None, description="the position that opens the "
+                               "gripper fully")
+    closed: float | None = Field(default=None, description="the position that closes it "
+                                 "fully; which way closes follows from the two")
+    max_effort: float | None = Field(default=None, description="the GripperCommand "
+                                     "max_effort a goal asks for unless told otherwise")
+    holds_partway: bool | None = Field(default=None, description="true: a position between "
+                                       "open and closed is held; false: it is read as "
+                                       "open or closed, whichever is nearer")
+    effort_honoured: bool | None = Field(default=None, description="true: max_effort "
+                                         "limits the grip; false: it is ignored")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _old_keys(cls, data: Any) -> Any:
+        return _refuse_old_gripper_keys(data)
+
+
+class Gripper(GripperPart):
+    """A resolved gripper: interface and behaviour both declared."""
+    unit: Literal["m", "rad"] = Field(description="unit of the GripperCommand position "
+                                      "and of the reporting joint")
+    open: float = Field(description="the position that opens the gripper fully")
+    closed: float = Field(description="the position that closes it fully; which way "
+                          "closes follows from the two")
+    max_effort: float = Field(description="the GripperCommand max_effort a goal asks for "
+                              "unless told otherwise")
+    holds_partway: bool = Field(description="true: a position between open and closed "
+                                "is held; false: it is read as open or closed, "
+                                "whichever is nearer")
+    effort_honoured: bool = Field(description="true: max_effort limits the grip; false: "
+                                  "it is ignored")
+
+    @model_validator(mode="before")
+    @classmethod
+    def _behaviour_is_declared(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            missing = [k for k in ("holds_partway", "effort_honoured") if k not in data]
+            if missing:
+                raise ValueError(
+                    f"gripper needs {' and '.join(missing)}: what the executor does "
+                    "with a goal is declared where the gripper is driven, in a "
+                    "simulator's robots.<type>.gripper or a real robot's "
+                    "machine.gripper")
+        return data
 
 
 class Hand(Strict):
@@ -346,13 +480,20 @@ class Planning(Strict):
     planning_frame: str | None = Field(default=None, description="the frame MoveIt "
                                        "plans in")
 
+    @model_validator(mode="after")
+    def moveit_names_its_group(self):
+        if self.moveit and not self.group:
+            raise ValueError("moveit: true requires group, the MoveIt planning group "
+                             "covering the arm")
+        return self
+
 
 class Tf(Strict):
     hand: bool = Field(default=False, description="bridge publishes hand frames (MoveIt-less runs)")
-    base_body: str = Field(default="robot0_base", description="simulator body the base "
-                           "frame is read from")
-    hand_body: str = Field(default="robot0_right_hand", description="simulator body the "
-                           "hand frame is read from (and FK targets)")
+    base_body: str | None = Field(default=None, description="simulator body the base "
+                                  "frame is read from")
+    hand_body: str | None = Field(default=None, description="simulator body the hand "
+                                  "frame is read from (and FK targets)")
 
 
 class Base(Strict):
@@ -381,12 +522,12 @@ class ArmSpec(Strict):
     gripper: Gripper | None = Field(default=None, description="this arm's gripper; null = "
                                     "a tool with no gripper")
     ports: Ports = Field(default_factory=Ports, description="this arm's ports")
-    hand_body: str = Field(default="robot0_right_hand", description="simulator body the "
-                           "hand frame is read from")
-    tf_base_body: str = Field(default="robot0_base", description="simulator body the "
-                              "base frame is read from")
-    base_frame: str = Field(default="panda_link0", description="the arm's root link")
-    hand_frame: str | None = Field(default="panda_hand", description="the hand frame")
+    hand_body: str | None = Field(default=None, description="simulator body the hand "
+                                  "frame is read from; required in simulation")
+    tf_base_body: str | None = Field(default=None, description="simulator body the base "
+                                     "frame is read from; required in simulation")
+    base_frame: str = Field(description="the arm's root link")
+    hand_frame: str | None = Field(default=None, description="the hand frame; null = none")
 
 
 class Machine(Strict):
@@ -419,6 +560,7 @@ class Machine(Strict):
     planning: Planning | None = Field(default=None, description="the MoveIt planner")
     tf: Tf | None = Field(default=None, description="what the bridge publishes on TF")
     base: Base | None = Field(default=None, description="the mobile base; null = fixed")
+    notes: Notes | None = Field(default=None, description=_NOTES_DESCRIPTION)
 
 
 class RobotType(Strict):
@@ -430,7 +572,8 @@ class RobotType(Strict):
     arm: Arm | None = Field(default=None, description="the arm (single-arm robots)")
     arms: list[ArmSpec] | None = Field(default=None, description="the arms (multi-arm "
                                        "robots); replaces arm, gripper and ports")
-    gripper: Gripper | None = Field(default=None, description="the gripper; null = none")
+    gripper: GripperPart | None = Field(default=None, description="the gripper's interface; "
+                                        "null = none")
     hand: Hand | None = Field(default=None, description="hand geometry")
     ports: Ports = Field(default_factory=Ports, description="the ROS 2 names the robot "
                          "serves (single arm)")
@@ -438,6 +581,7 @@ class RobotType(Strict):
     base: Base | None = Field(default=None, description="the mobile base; null = fixed")
     workspace_template: str | None = Field(
         default="workspace", description="workspace tree seeded into the sandbox; null = none")
+    notes: Notes | None = Field(default=None, description=_NOTES_DESCRIPTION)
 
 
 class EmbodiedPlanning(Strict):
@@ -467,6 +611,10 @@ class Embodiment(Strict):
         default=None, description="engine joint prefix -> published prefix")
     control: Control | None = Field(default=None, description="how goals are executed "
                                     "and judged")
+    gripper: GripperPart | None = Field(default=None, description="gripper keys the "
+                                        "engine decides: the joint it publishes and what "
+                                        "it does with a goal (holds_partway, "
+                                        "effort_honoured)")
     tf: Tf | None = Field(default=None, description="what the bridge publishes on TF")
     planning: EmbodiedPlanning | None = Field(default=None, description="planner keys "
                                               "this world changes")
@@ -474,6 +622,7 @@ class Embodiment(Strict):
                               "decides (body, effective speed)")
     cameras: Cameras | None = Field(default=None, description="robot-mounted cameras this "
                                     "embodiment adds")
+    notes: Notes | None = Field(default=None, description=_NOTES_DESCRIPTION)
 
 
 class Checkout(Strict):
@@ -550,6 +699,8 @@ class SimulatorProfile(Strict):
                                        "benchmark; null = a benchmark is required")
     robots: dict[str, Embodiment] = Field(default_factory=dict, description="robot type "
                                           "name -> how this engine drives it")
+    notes: Notes | None = Field(default=None, description=_NOTES_DESCRIPTION + "; for "
+                                "every robot this engine drives")
 
 
 class Scenes(Strict):
@@ -562,6 +713,8 @@ class Scenes(Strict):
     robots: dict[str, Embodiment] = Field(default_factory=dict, description="robot type "
                                           "name -> embodiment this benchmark's assets add "
                                           "or adjust (merged over the simulator's)")
+    notes: Notes | None = Field(default=None, description=_NOTES_DESCRIPTION + "; for "
+                                "this benchmark's scenes")
 
 
 class RobotInstance(Strict):
@@ -571,6 +724,15 @@ class RobotInstance(Strict):
     type: str | None = Field(default=None, description="robot type this is an instance "
                              "of; its facts come first, machine: writes over them")
     machine: Machine = Field(description="backend (kind: real | sim) and facts")
+
+
+class RobotInstanceOverType(Strict):
+    """A RobotInstance that names its type: its machine: writes only part
+    of a machine (the type supplies the rest), so it is validated whole
+    once the type's facts are under it."""
+    type: str = Field(description="robot type this is an instance of")
+    machine: dict[str, Any] = Field(description="backend and the facts written over "
+                                    "the type's")
 
 
 class Benchmark(Strict):
@@ -624,6 +786,27 @@ class ResolvedConfig(Strict):
     def simulation_needs_a_task(self):
         if self.machine.backend.kind == "sim" and self.task is None:
             raise ValueError("a simulated robot requires a benchmark task or native scene")
+        return self
+
+    @model_validator(mode="after")
+    def arm_facts_are_declared(self):
+        """Every arm names its frames, and in simulation the bodies they are
+        read from. Nothing falls back to one robot's names."""
+        m = self.machine
+        sim = m.backend.kind == "sim"
+        if m.arms:
+            for i, arm in enumerate(m.arms):
+                if sim and not (arm.hand_body and arm.tf_base_body):
+                    raise ValueError(f"machine.arms[{i}]: a simulated arm requires "
+                                     "hand_body and tf_base_body")
+        elif m.arm is not None:
+            if m.frames is None:
+                raise ValueError("machine.frames is required for an arm (world, base, "
+                                 "hand)")
+            if sim and not (m.tf and m.tf.base_body and m.tf.hand_body):
+                raise ValueError("machine.tf.base_body and machine.tf.hand_body are "
+                                 "required for a simulated arm (write them in the "
+                                 "simulator's robots: entry)")
         return self
 
 

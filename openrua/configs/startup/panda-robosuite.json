@@ -8,12 +8,12 @@
   "suite": "Lift",
   "task_id": 0,
   "seed": 0,
-  "profiles_sha256": "f4322ed2e184bcc588684ec423e67bfd4954bf672cb59282d578e9fbda52070a",
-  "checked_at": "2026-10-11T10:06:28.279147+00:00",
+  "profiles_sha256": "c095969793d4b56ac850cc833cbe990bb9ad45368aa9fbd2ae91e739c89c1388",
+  "checked_at": "2026-10-21T12:52:58.797987+00:00",
   "images": {
     "robot": {
       "name": "openrua-sim-robosuite",
-      "id": "sha256:66a2545006d11952bcc1f98601c69d3abd4e106ecaa780315327c55c3e37d4a1"
+      "id": "sha256:cda15b1b0f5fdcaaf84b59afb8ddfd90263e906ad21d85015fd9c862c841fc7f"
     },
     "sandbox": {
       "name": "openrua-sandbox-humble",
@@ -24,11 +24,23 @@
     "joint_states": true,
     "camera_frame": true,
     "trajectory": true,
+    "gripper_joint": true,
+    "joint_names": [
+      "panda_joint1",
+      "panda_joint2",
+      "panda_joint3",
+      "panda_joint4",
+      "panda_joint5",
+      "panda_joint6",
+      "panda_joint7",
+      "panda_right_finger_joint1",
+      "panda_right_finger_joint2"
+    ],
     "planning_frame": true
   },
   "agent_binaries": {
     "claude-code": "2.1.251 (Claude Code)",
     "codex": "codex-cli 0.153.4"
   },
-  "scope": "Simulation startup, reset, ROS image and joint streams, no-op trajectory, declared planning frame against FK and TF, agent CLI versions. No model task or physical robot validation."
+  "scope": "Simulation startup, reset, ROS image and joint streams, declared gripper joint, no-op trajectory, declared planning frame against FK and TF, agent CLI versions. No model task or physical robot validation."
 }

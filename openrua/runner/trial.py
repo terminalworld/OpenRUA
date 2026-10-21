@@ -26,7 +26,8 @@ from openrua.config import paths
 from openrua.proxy.up import ensure as ensure_proxy
 from openrua.runner import lock
 from openrua.runner import record
-from openrua.runner.bringup import bring_up, ensure_internal_network, start_episode
+from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
+                                    start_episode)
 from openrua.runner.preflight import run_preflight
 from openrua.sandbox import workspace
 from openrua.sandbox.down import down as sandbox_down
@@ -283,7 +284,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             "sim": sim_name,
             "task_language": task_language,
             "active_wall_clock_min": wall_cap_min,
-            "proxy": proxy_url,
+            "proxy": agent_proxy_url(cfg["machine"]["backend"], proxy_url),
             "script": script,
             "token_file": token_file,
             "home": home,

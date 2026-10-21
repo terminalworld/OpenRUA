@@ -1,0 +1,11 @@
+# The simulation bridge's cameras: one color, depth and intrinsics stream
+# per camera, depth rendered from the same viewpoint as color. A camera
+# named by a bare name in a simulator's or benchmark's cameras.list is
+# this type; the bridge publishes these topics.
+model: OpenRUA simulation camera
+driver: the OpenRUA simulation bridge
+topics:
+  color: /{name}/color/image_raw
+  info: /{name}/color/camera_info
+  depth: /{name}/depth/image_raw
+depth: {encoding: 32FC1, aligned_to_color: true}

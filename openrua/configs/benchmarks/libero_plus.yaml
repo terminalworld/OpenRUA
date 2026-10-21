@@ -68,4 +68,5 @@ scenes:
     record: [agentview, robot0_eye_in_hand]
   robots:
     panda:
+      gripper: {joint: panda_finger_joint1}   # LIBERO's robosuite 1.4 names the fingers without right_
       controller_kp_scale: 10  # robosuite 1.4: stock kp=50 tracks ~15% of a 20 Hz setpoint

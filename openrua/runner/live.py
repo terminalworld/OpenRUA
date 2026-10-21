@@ -17,7 +17,8 @@ from openrua.config import apply_suite_overrides, compose, normalize_arms, paths
 from openrua.errors import UnavailableError, UsageError
 from openrua.proxy.up import ensure as ensure_proxy
 from openrua.runner import live_state as state
-from openrua.runner.bringup import bring_up, ensure_internal_network, start_episode
+from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
+                                    start_episode)
 from openrua.sandbox.down import down as sandbox_down
 
 
@@ -110,8 +111,11 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                                             user_home=Path.home(), environment=os.environ, link=True)
         print(f"[up] {adapter.name} native login: {creds_home} (source: {creds_home.resolve()})", flush=True)
         profile = adapter.prepare_profile(creds_home, sandbox_dir / "profile")
-    print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
-          flush=True)
+    if cfg["machine"]["backend"]["kind"] == "sim":
+        print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
+              flush=True)
+    else:
+        print(f"[up] sandbox {sandbox_name}; waiting for the robot's ROS 2 graph", flush=True)
     try:
         _, machine, _ = bring_up(
             cfg, workdir, sim_name, sandbox_name, suite, task_id, network, proxy_url,
@@ -136,7 +140,9 @@ def open_robot(request: RobotRequest) -> LiveRobot:
             task = request.task or ""
         state.save(request.name, request.home, status="running", sim=sim_name, sandbox=sandbox_name,
                    backend=cfg["machine"]["backend"]["kind"],
-                   network=network, proxy=proxy_url, agent=adapter.name,
+                   network=network,
+                   proxy=agent_proxy_url(cfg["machine"]["backend"], proxy_url),
+                   agent=adapter.name,
                    agent_spec=cfg_agent["name"], agent_version=cfg_agent.get("version"),
                    model=model,
                    auth_mode="api" if key_file is not None else "native",

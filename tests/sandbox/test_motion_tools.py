@@ -60,26 +60,34 @@ def test_trajectory_exit_reflects_native_result(monkeypatch, capsys, accepted, s
         def send_goal_async(self, goal):
             calls.append(goal)
             return NS(result=Handle)
-    node = NS(destroy_node=lambda: calls.append('destroy'))
+    def subscribe(_type, topic, callback, _depth):
+        # the arm ended where it was sent
+        callback(NS(name=['a', 'b'], position=[.1, -.2]))
+    node = NS(destroy_node=lambda: calls.append('destroy'), create_subscription=subscribe,
+              get_clock=lambda: NS(now=lambda: NS(nanoseconds=0)))
     modules = {
         'rclpy': NS(init=lambda: None, create_node=lambda _: node,
                     spin_until_future_complete=lambda *a, **kw: None,
+                    spin_once=lambda *a, **kw: None,
                     shutdown=lambda: calls.append('shutdown')),
         'rclpy.action': NS(ActionClient=Client),
         'action_msgs.msg': NS(GoalStatus=NS(STATUS_SUCCEEDED=4)),
         'builtin_interfaces.msg': NS(Duration=NS),
         'control_msgs.action': NS(FollowJointTrajectory=NS(Goal=lambda: NS(trajectory=NS()))),
         'trajectory_msgs.msg': NS(JointTrajectoryPoint=NS),
+        'sensor_msgs.msg': NS(JointState=object),
     }
     for name, value in modules.items():
         monkeypatch.setitem(sys.modules, name, value)
     monkeypatch.setattr(sys, 'argv', ['fjt_send.py', '0.1,-0.2', '2'])
-    monkeypatch.setattr(module, 'manifest_entry', lambda: {'joints': ['a', 'b'], 'port': '/trajectory'})
+    monkeypatch.setattr(module, 'manifest_entry', lambda arm: {'joints': ['a', 'b'], 'port': '/trajectory'})
     assert module.main() == expected
     assert calls[0].trajectory.joint_names == ['a', 'b']
     assert calls[0].trajectory.points[0].positions == [.1, -.2]
     assert calls[-2:] == ['destroy', 'shutdown']
     output = capsys.readouterr()
+    if accepted:   # it reads where the arm ended up, whatever the result said
+        assert 'largest gap to target: 0.0000 rad' in output.out
     if not accepted:
         assert 'rejected' in output.err
     elif expected:
@@ -129,3 +137,26 @@ def test_ik_requests_the_manifest_hand_link(monkeypatch, point, expected_z):
     assert requests[0].ik_request.ik_link_name == 'custom_hand'
     assert requests[0].ik_request.group_name == 'custom_arm'
     assert requests[0].ik_request.pose_stamped.pose.position.z == pytest.approx(expected_z)
+
+
+def test_ik_without_a_planning_group_stops_before_any_request(monkeypatch):
+    module = tool('ik_move')
+    manifest = {'frames': {'hand': 'custom_hand'}, 'planning': {'ik_service': '/ik'},
+                'actuators': [{'kind': 'joint_trajectory', 'joints': ['joint_a']}]}
+    monkeypatch.setitem(sys.modules, 'rclpy', NS(init=lambda: pytest.fail('rclpy used')))
+    monkeypatch.setitem(sys.modules, 'moveit_msgs.srv', NS(GetPositionIK=NS()))
+    monkeypatch.setitem(sys.modules, 'sensor_msgs.msg', NS(JointState=NS()))
+    monkeypatch.setattr(module, 'manifest', lambda: manifest)
+    with pytest.raises(SystemExit) as error:
+        module.main(['.1', '.2', '.3', '0', '0', '0', '1'])
+    assert 'planning group' in str(error.value.code)
+
+
+def test_ik_at_tcp_refuses_to_guess_the_offset(monkeypatch):
+    # Without hand.tcp_offset_m, --at tcp used to aim the hand silently.
+    module = tool('ik_move')
+    monkeypatch.setattr(module, 'manifest', lambda: {
+        'frames': {'hand': 'h'}, 'hand': {}, 'planning': {'group': 'arm'},
+        'actuators': [{'kind': 'joint_trajectory', 'joints': ['a'], 'port': '/t'}]})
+    with pytest.raises(SystemExit, match='tcp_offset_m'):
+        module.main(['0', '0', '0', '0', '0', '0', '1', '--at', 'tcp'])

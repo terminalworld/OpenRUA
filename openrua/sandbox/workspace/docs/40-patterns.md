@@ -4,31 +4,31 @@ Cross-cutting habits that save turns and time.
 
 ## P1. Act → verify, every time
 
-The clock only moves with activity (10-machine.md §4), so verification
-is sensor re-reads, never waits:
+Verification is re-reading sensors after the command completes, never
+waiting and assuming (10-machine.md §4):
 
 1. command (30-action) → 2. re-read the relevant sensor (20-perception)
 → 3. compare with what you intended → 4. correct or continue.
 
 Motion: compare the joint state against your target. Manipulation:
-finger gap + a fresh camera frame. World changes: before/after frames
+the gripper's reported position + a fresh camera frame. World changes: before/after frames
 from the same camera.
 
 ## P2. Coarse-to-fine motion
 
 Large repositioning with one trajectory move (fast, accurate over big
-spans), final approach with short servo bursts (small, sensed,
-correctable). Avoid many small trajectory hops and long blind servo
-streams alike.
+spans), final approach in small sensed steps: short servo bursts where
+the machine has a `cartesian_twist` port, short trajectory moves
+otherwise. Avoid long blind moves of either kind.
 
 ## P3. Approach–grasp–verify (generic pick pattern)
 
 1. Snapshot cameras; locate the target object in the image (pixels +
    depth + intrinsics → world position, 20-perception B3).
 2. Move above it (IK → trajectory), open the gripper.
-3. Descend with short servo bursts, watching a wrist camera if present.
-4. Close the gripper; verify the grasp: finger gap above `closed_m`,
-   wrench change on contact.
+3. Descend in small steps (P2), watching a wrist camera if present.
+4. Close the gripper; verify the grasp: the reported position stops
+   short of the gripper's `closed`, wrench change on contact.
 5. Lift and confirm visually (fresh frame) before moving on.
 
 Placing is the mirror: position above the destination, descend, open,
@@ -43,6 +43,7 @@ retreat, verify with a fresh frame.
 | gripper "closed" but nothing held | closed on air | reopen, re-approach lower/centered, use the wrist camera |
 | image looks stale | pulled an old frame | snapshot again after the motion completed |
 | a port seems missing | wrong name assumed | `ros2 topic list` / `ros2 action list`, then `ros2 topic info` |
+| machine.yaml disagrees with the graph | the config has drifted | the live graph is authoritative; log the discrepancy in `machine-discrepancies.yaml` (10-machine.md §1) |
 
 ## Session-runtime facts
 

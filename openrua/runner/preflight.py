@@ -13,8 +13,6 @@ from __future__ import annotations
 
 import subprocess
 
-_DEF_GRIPPER = "/franka_gripper/gripper_action"
-
 # Per-check ceiling for the ROS topic/action/flow probes. A ceiling, not
 # a settle time: `topic echo --once` returns the instant the first
 # message lands, so a healthy bring-up pays nothing; the timeout only
@@ -45,8 +43,9 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
         checks.append(("clock_topic",
                        f"timeout {_CHECK_TIMEOUT_S} bash -c "
                        "'until ros2 topic list | grep -qx /clock; do sleep 1; done'"))
-    checks.append(("joint_states_flow",
-                   f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once /joint_states"))
+    if m.get("base") or any(a.get("joints") or a.get("gripper") for a in m.get("arms", [])):
+        checks.append(("joint_states_flow",
+                       f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once /joint_states"))
     # Declared frames are a promise: the pixel-to-world tool needs the
     # camera/world transform as much as depth and intrinsics, so the
     # transform stream is asserted, not assumed.
@@ -75,6 +74,12 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
                            f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic info "
                            f"'{aports['twist']}'"
                            f" | grep -q 'Subscription count: [1-9]'\""))
+        grip_joint = (arm.get("gripper") or {}).get("joint")
+        if grip_joint:
+            # the declared joint is where the agent reads the gripper from
+            checks.append((f"gripper_joint_reported{sfx}",
+                           f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic echo --once "
+                           f"/joint_states | grep -q '{grip_joint}'\""))
         if aports.get("gripper"):
             checks.append((f"gripper_action{sfx}",
                            f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 action list | grep -qx "
@@ -84,11 +89,11 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
                            f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once "
                            f"'{aports['wrench']}'"))
     if simulated and not any(a.get("ports", {}).get("gripper") for a in m.get("arms", [])):
-        # The configured simulator must not expose its default gripper
-        # when that capability was removed from the scene.
+        # A scene that removed the gripper must not still serve one: no
+        # GripperCommand action at all, whatever its name.
         checks.append(("gripper_absent",
-                       f"timeout {_CHECK_TIMEOUT_S} bash -c \"! ros2 action list | grep -qx "
-                       f"'{_DEF_GRIPPER}'\""))
+                       f"timeout {_CHECK_TIMEOUT_S} bash -c \"! ros2 action list -t | grep -q "
+                       "'control_msgs/action/GripperCommand'\""))
     if ports.get("base_twist"):
         checks.append(("base_twist_subscribed",
                        f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic info "
@@ -97,24 +102,33 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
     if ports.get("odom"):
         checks.append(("odom_flow",
                        f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once '{ports['odom']}'"))
-    # An empty list explicitly declares no cameras. None retains discovery.
-    if m.get("cameras", {}).get("list") != []:
-        # Cameras: at least one color stream must actually deliver a frame
-        # (list may be null = scene-defined; discover instead of assuming).
+    # Cameras: every declared camera's streams must deliver (the
+    # pixel-to-world tool dies without depth and intrinsics); a scene
+    # that decides its cameras (list: null) must deliver at least one,
+    # found by its type's topic pattern. [] declares none.
+    cams = m.get("cameras", {})
+    types = cams.get("types") or {}
+    entries = cams.get("list")
+    if entries is None and types.get("openrua-sim"):
+        t = types["openrua-sim"]["topics"]
+        color, depth, info = (t[k].split("{name}")[-1] for k in ("color", "depth", "info"))
         checks.append(("camera_frame_flow",
-                       "timeout 60 bash -c 'cam=$(ros2 topic list | grep -m1 "
-                       "color/image_raw) && [ -n \"$cam\" ] && "
-                       "ros2 topic echo --once \"$cam\" >/dev/null'"))
-        # machine.yaml promises depth and intrinsics with every color stream;
-        # the pixel-to-world tool dies without them, so the promise is
-        # asserted, not assumed.
+                       f"timeout 60 bash -c 'cam=$(ros2 topic list | grep -m1 {color}$) && "
+                       "[ -n \"$cam\" ] && ros2 topic echo --once \"$cam\" >/dev/null'"))
         checks.append(("camera_depth_intrinsics_flow",
-                       "timeout 60 bash -c 'cam=$(ros2 topic list | grep -m1 "
-                       "color/image_raw) && [ -n \"$cam\" ] && "
-                       "base=${cam%/color/image_raw} && "
-                       "ros2 topic echo --once \"$base/depth/image_raw\" "
-                       ">/dev/null && ros2 topic echo --once "
-                       "\"$base/color/camera_info\" >/dev/null'"))
+                       f"timeout 60 bash -c 'cam=$(ros2 topic list | grep -m1 {color}$) && "
+                       f"[ -n \"$cam\" ] && base=${{cam%{color}}} && "
+                       f"ros2 topic echo --once \"$base{depth}\" >/dev/null && "
+                       f"ros2 topic echo --once \"$base{info}\" >/dev/null'"))
+    for e in entries or []:
+        e = {"name": e, "type": "openrua-sim"} if isinstance(e, str) else e
+        topics = {**types[e["type"]]["topics"], **(e.get("topics") or {})}
+        streams = [topics[k].replace("{name}", e["name"])
+                   for k in ("color", "depth", "info") if topics.get(k)]
+        checks.append((f"camera_flow_{e['name']}",
+                       f"timeout {_CHECK_TIMEOUT_S} bash -c '"
+                       + " && ".join(f"ros2 topic echo --once {t} >/dev/null" for t in streams)
+                       + "'"))
     # The workspace tools must actually run: import each tool module
     # (all carry __main__ guards, so an import checks dependencies and
     # syntax without side effects).

@@ -13,7 +13,7 @@ FIELDS = ('robot', 'sim', 'bench')
 def profile_digest() -> str:
     """Invalidate startup evidence when bundled environment declarations change."""
     digest = hashlib.sha256()
-    for kind in ('robots', 'simulators', 'benchmarks'):
+    for kind in ('robots', 'simulators', 'benchmarks', 'cameras'):
         root = paths.bundled(kind)
         for path in sorted(root.rglob('*')):
             if path.is_file():

@@ -23,7 +23,8 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from openrua.config import paths
-from openrua.config.schema import (Benchmark, Machine, ResolvedConfig, RobotInstance,
+from openrua.config.schema import (SIM_CAMERA, Benchmark, CameraType, Machine,
+                                   ResolvedConfig, RobotInstance, RobotInstanceOverType,
                                    RobotType, SimulatorProfile, UserConfig, sim_image)
 from openrua.errors import ConfigError, UsageError
 
@@ -138,8 +139,11 @@ def load_robot(robot: str, home: Path | None = None) -> tuple[str, dict]:
     if "machine" in data:
         # Only the keys the file wrote, so an instance over a type replaces
         # exactly what it says (defaults are filled in after the merge).
-        inst = validate(RobotInstance, data, p)
-        return "instance", inst.model_dump(exclude_unset=True, by_alias=True)
+        # Over a type the machine is partial (the type's gripper interface,
+        # the instance's gripper behaviour) and is validated after the merge.
+        model = RobotInstanceOverType if data.get("type") else RobotInstance
+        inst = validate(model, data, p).model_dump(exclude_unset=True, by_alias=True)
+        return "instance", {**inst, "source": str(p)}
     return "type", dump(validate(RobotType, data, p))
 
 
@@ -217,16 +221,34 @@ def image_owner(sim: str, bench: str | None = None) -> str:
     return paths.find("simulators", sim).stem
 
 
+def join_notes(*layers: dict | None) -> dict:
+    """Notes from each file that describes part of a machine, in the
+    order given, joined kind by kind: a later file adds to an earlier
+    one's observations instead of replacing them."""
+    out: dict = {}
+    for layer in layers:
+        for kind, lines in (layer or {}).items():
+            out.setdefault(kind, []).extend(lines)
+    return out
+
+
 def assemble(robot_type: dict, embodiments: list[dict], install: dict,
              cameras: dict | None, source: str, engine: str | None = None,
-             image: str = "") -> dict:
+             image: str = "", sim_notes: dict | None = None,
+             scene_notes: dict | None = None) -> dict:
     """robot type + embodiments (simulator's, then the benchmark's) +
     install + the resolved engine + the image -> the ``machine:`` dict
     (Machine, validated). Later embodiments write over earlier ones,
-    key by key."""
+    key by key; notes are joined: robot type, simulator, embodiments,
+    benchmark scene."""
     m = copy.deepcopy(robot_type)
+    notes = join_notes(robot_type.get("notes"), sim_notes,
+                       *(e.get("notes") for e in embodiments), scene_notes)
     for e in embodiments:
-        _merge(m, e)
+        _merge(m, {k: v for k, v in e.items() if k != "notes"})
+    m.pop("notes", None)
+    if notes:
+        m["notes"] = notes
     if cameras is not None:
         m["cameras"] = copy.deepcopy(cameras)
     backend = {"kind": "sim", "ros_distro": install["ros_distro"],
@@ -238,17 +260,56 @@ def assemble(robot_type: dict, embodiments: list[dict], install: dict,
     return dump(validate(Machine, m, source))
 
 
+def resolve_cameras(machine: dict, declared_in: Path | None, source: str) -> dict:
+    """Read the camera types ``machine.cameras.list`` names into
+    ``machine.cameras.types``, in place: the bridge, preflight, the
+    manifest and the tools then read one set of topics. A bare name is a
+    camera of the simulation bridge; a real robot names each camera's
+    type, and declares none with ``[]``. Type paths are relative to the
+    file naming them."""
+    cams = machine.setdefault("cameras", {})
+    entries = cams.get("list")
+    real = machine.get("backend", {}).get("kind") == "real"
+    if entries is None and real:
+        raise ConfigError(f"{source}: a real robot lists its cameras",
+                          hint="cameras: {list: [{name: <name>, type: <type file>, "
+                               "mount: wrist|fixed}]}, or list: [] for none")
+    wanted = set()
+    for e in entries if entries is not None else [SIM_CAMERA]:
+        if isinstance(e, str):
+            if real and entries is not None:
+                raise ConfigError(f"{source}: camera {e!r} needs its type on a real robot",
+                                  hint=f"{{name: {e}, type: <type file>, mount: wrist|fixed}}")
+            wanted.add(SIM_CAMERA)
+        else:
+            wanted.add(e["type"])
+    types = {}
+    for t in sorted(wanted):
+        spec = Path(t).expanduser()
+        if paths.is_path(t) and not spec.is_absolute() and declared_in is not None:
+            spec = declared_in.parent / spec
+        p = paths.find("cameras", spec if paths.is_path(t) else t)
+        types[t] = dump(validate(CameraType, load_yaml(p), p))
+    cams["types"] = types
+    return machine
+
+
 def _instance_machine(inst: dict, home: Path | None) -> dict:
     """An instance's machine over its type's facts (when it names one)."""
+    source = inst.get("source", "robot instance")
     if not inst.get("type"):
-        return dump(validate(Machine, inst["machine"], "robot instance"))
+        return dump(validate(Machine, inst["machine"], source))
     kind, facts = load_robot(inst["type"], home)
     if kind != "type":
         raise ConfigError(f"robot instance names type {inst['type']!r}, which is itself "
                           "an instance (has a machine: section)")
     m = copy.deepcopy(facts)
-    _merge(m, inst["machine"])
-    return dump(validate(Machine, m, f"instance of {inst['type']}"))
+    notes = join_notes(facts.get("notes"), inst["machine"].get("notes"))
+    _merge(m, {k: v for k, v in inst["machine"].items() if k != "notes"})
+    m.pop("notes", None)
+    if notes:
+        m["notes"] = notes
+    return dump(validate(Machine, m, f"{source} (over robot type {inst['type']})"))
 
 
 def _who_embodies(robot: str, home: Path | None) -> list[str]:
@@ -308,6 +369,7 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
     composed_install = None
     if b is not None and b.get("machine") and not robot:
         machine, simulator, robot = b["machine"], None, "(inline machine:)"
+        resolve_cameras(machine, bench_path, str(bench_path))
     else:
         if not robot:
             raise UsageError("name a robot",
@@ -319,6 +381,7 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                 raise UsageError(f"{robot} is a robot instance with its own machine: "
                                  "and takes no --sim")
             machine, simulator = _instance_machine(r, home), None
+            resolve_cameras(machine, Path(r["source"]), r["source"])
         else:
             if not sim:
                 raise UsageError(f"{robot} is a robot type: name the simulator that "
@@ -347,7 +410,10 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                                f"{robot} on {sim}" + (f" for {bench}" if bench else ""),
                                engine=paths.entry_point("simulators", s["entry_point"],
                                                         paths.find("simulators", sim)),
-                               image=sim_image(image_owner(sim, bench)))
+                               image=sim_image(image_owner(sim, bench)),
+                               sim_notes=s.get("notes"),
+                               scene_notes=(b or {}).get("scenes", {}).get("notes"))
+            resolve_cameras(machine, None, f"{robot} on {sim}")
             simulator = sim
     if b is not None:
         cfg = {k: copy.deepcopy(v) for k, v in b.items()
@@ -439,18 +505,23 @@ def normalize_arms(cfg: dict) -> dict:
     if not m or "arms" in m:
         return cfg
     ports = m.get("ports", {})
-    m["arms"] = [{
+    tf = m.get("tf", {})
+    frames = m.get("frames", {})
+    arm = {
         "label": "",
         "joints": m.get("arm", {}).get("joints", []),
         "limits_rad": m.get("arm", {}).get("limits_rad", []),
         "gripper": m.get("gripper"),
         "ports": {k: ports[k] for k in
                   ("trajectory", "gripper", "twist", "wrench") if ports.get(k)},
-        "hand_body": m.get("tf", {}).get("hand_body", "robot0_right_hand"),
-        "tf_base_body": m.get("tf", {}).get("base_body", "robot0_base"),
-        "base_frame": m.get("frames", {}).get("base", "panda_link0"),
-        "hand_frame": m.get("frames", {}).get("hand", "panda_hand"),
-    }]
+        "hand_body": tf.get("hand_body"),
+        "tf_base_body": tf.get("base_body"),
+        "base_frame": frames.get("base"),
+        "hand_frame": frames.get("hand"),
+    }
+    # The schema already required what a robot needs; only the written
+    # facts are copied, never a stand-in.
+    m["arms"] = [{k: v for k, v in arm.items() if v is not None or k == "gripper"}]
     return cfg
 
 

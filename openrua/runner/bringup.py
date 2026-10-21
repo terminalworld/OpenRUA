@@ -56,6 +56,16 @@ def peers_profile(peers: list[str]) -> str:
     return FASTDDS_PEERS_XML.format(locators=locators)
 
 
+def agent_proxy_url(backend: dict, proxy_url: str, proxy_name: str = proxy.NAME) -> str:
+    """The proxy URL as the sandbox can reach it: by container name on the
+    internal docker network, by address from the host network a real
+    robot's sandbox joins. The agent CLI started inside the sandbox must be
+    given this one, not the name-based URL."""
+    if not proxy_url or backend.get("kind") != "real":
+        return proxy_url
+    return proxy_url_from_network(proxy_name)
+
+
 def sandbox_reachability(backend: dict, network: str, robot_name: str,
                          proxy_url: str, proxy_name: str = proxy.NAME) -> dict:
     """How the sandbox reaches the robot's graph and the proxy, as
@@ -76,7 +86,7 @@ def sandbox_reachability(backend: dict, network: str, robot_name: str,
                 "internet": f"proxy:{proxy_url}" if proxy_url else "none", "env": ()}
     discovery = backend.get("discovery", {})
     out = {"network": "host", "static_peer": None, "peers_xml": None,
-           "internet": f"proxy:{proxy_url_from_network(proxy_name)}" if proxy_url else "none",
+           "internet": f"proxy:{agent_proxy_url(backend, proxy_url, proxy_name)}" if proxy_url else "none",
            "env": ()}
     if discovery.get("static_peers"):
         peers = list(discovery["static_peers"])

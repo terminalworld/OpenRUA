@@ -11,8 +11,7 @@ arm:
   joints: [waist, shoulder, elbow, forearm_roll, wrist_angle, wrist_rotate]
   limits_rad: [[-3.14, 3.14], [-1.88, 1.99], [-2.15, 1.61],
                [-3.14, 3.14], [-1.75, 2.15], [-3.14, 3.14]]
-gripper: {open_m: 0.037, closed_m: 0.015, max_effort: 60.0,
-          stops_at: [open, closed]}
+gripper: {unit: m, open: 0.037, closed: 0.015, max_effort: 60.0}   # GripperCommand position: one finger, metres
 hand: {tcp_offset_m: 0.0}   # the hand frame is the gripper's own tcp link
 ports:                       # interbotix ros2_control-shaped names
   twist: /servo_node/delta_twist_cmds                    # TwistStamped

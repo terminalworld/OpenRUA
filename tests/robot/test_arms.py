@@ -24,3 +24,15 @@ def test_delta_mode_commanded_clips_others_zero():
     t = arm_targets(q, dq, idx=0, absolute=False, out_max=out)
     assert np.allclose(t[0], [1.0, -0.25])   # clipped to [-1, 1] per joint
     assert np.allclose(t[1], [0.0, 0.0])     # zero delta = hold
+
+
+def test_gripper_goal_closes_toward_the_declared_closed_end():
+    # A goal closes when it is nearer the declared closed position: the
+    # metre-valued Panda (closed below open) and a radian Robotiq (closed
+    # above open) alike, and the midpoint reads as open as it always did.
+    from openrua.robot.sim.bridge.ros.arms import closes
+    panda = {"open": 0.04, "closed": 0.0}
+    robotiq = {"open": 0.0, "closed": 0.79}
+    assert closes(0.0, panda) and closes(0.019, panda) and not closes(0.02, panda)
+    assert not closes(0.04, panda)
+    assert closes(0.79, robotiq) and closes(0.5, robotiq) and not closes(0.1, robotiq)

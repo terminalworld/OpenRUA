@@ -28,6 +28,39 @@ native:                      # `openrua run <robot> --sim robosuite` with no --b
     rate_hz: 2               # wall-clock render/publish rate (pull-style; never steps)
     record: [agentview, robot0_eye_in_hand]  # --record default: main view, inset
 
+# Observations about robosuite-backed machines that no field can say,
+# joined into machine.yaml for the kinds a machine has (robot type, then
+# this file, then the embodiment, then the benchmark scene).
+notes:
+  timing:
+    - At the start of an episode the scene may not have settled; objects
+      can sit slightly above their supports until commands run.
+  joint_trajectory:
+    - Give large moves 2 to 4 s; shorter durations overshoot.
+    - A tolerance violation at the end of a long goal is usually
+      controller lag, not an obstruction; resending the same goal
+      typically converges.
+  gripper:
+    - The reported finger position takes a few ticks to settle, and the
+      measured full opening sits slightly under open.
+  camera:
+    - Side-view cameras overestimate the height of low, flat objects near
+      their edges; cross-view disagreement on such objects usually traces
+      to this.
+  odometry:
+    - Arm contact and reaction forces can move the mobile base by
+      centimetres; re-read odometry after arm work before trusting a
+      stored base pose.
+  planning:
+    - IK reads poses, and FK returns them, in planning.planning_frame
+      whatever the message headers say; leave frame_id empty in IK
+      requests.
+    - Collision meshes carry about a centimetre of padding; trust
+      measurements over nominals.
+    - IK and FK requests hang when their robot_state carries joints
+      outside the arm, finger joints included; seed them with the arm
+      joints only.
+
 robots:
   panda:
     engine_model: Panda      # robosuite's name for it
@@ -40,13 +73,18 @@ robots:
     joint_name_map:          # robosuite internal -> franka_ros2 published names
       robot0_: panda_
       gripper0_: panda_
+    gripper:                 # the bridge reads a goal as open or closed,
+      holds_partway: false   # whichever is nearer, and sets no force limit
+      effort_honoured: false
+      joint: panda_right_finger_joint1   # robosuite 1.5 names the fingers right_
     control:                 # graph-side actuation behavior
       gripper:
-        open_threshold_m: 0.02 # GripperCommand position below this = close
         settle_steps: 10       # control ticks a gripper goal advances the world
     tf:
       hand: false            # robot_state_publisher (MoveIt stack) owns the
                              # arm chain; the bridge keeps base + cameras
+      base_body: robot0_base
+      hand_body: robot0_right_hand
     planning:
       planning_frame: world  # MoveIt's model frame: the SRDF's floating virtual joint
                              # world->panda_link0 follows the bridge's TF, so IK reads

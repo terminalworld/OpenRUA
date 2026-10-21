@@ -6,8 +6,11 @@ Review agent-visible changes before updating this expected artifact hash.
 from openrua.config import load_config
 from openrua.sandbox import workspace
 
-# Reviewed revision: the TF arm chain is connected; frame comments follow machine.yaml.
-PINNED = "4f9286340e2da1a53eff81e09a1c2be44c8c3413b61b464e5cebea193e55d550"
+# Reviewed revision: discrepancies with the live graph are logged in
+# machine-discrepancies.yaml (worded as a robot config that can drift);
+# tools check where the arm ended up; cameras are entries with their own
+# topics; simulation-only statements live in machine.yaml.
+PINNED = "46d8c36100c519b8c587bb6bfc0da42018f1003d38913795c9c7b227453584a2"
 
 
 def test_workspace_template_hash_is_unchanged():

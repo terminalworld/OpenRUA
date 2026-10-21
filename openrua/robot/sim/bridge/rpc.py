@@ -121,7 +121,7 @@ class ControlChannel:
 class Monitor:
     def __init__(self, env, task_ctx: dict, loader, engine, sim,
                  on_reset=None, record: "Recording | None" = None,
-                 hand_body: str = "robot0_right_hand"):
+                 hand_body: str | None = None):
         self._env = env
         self._hand_body = hand_body  # the debug hand verb's body (the first arm's)
         self._ctx = task_ctx

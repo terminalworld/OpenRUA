@@ -45,8 +45,8 @@ section: what → port → CLI → rclpy → tool → notes.
 - **Port**: `machine.yaml → sensors[kind=wrench].port`
   (`geometry_msgs/msg/WrenchStamped`).
 - **CLI**: `ros2 topic echo <port> --once`
-- **Notes**: baseline is not zero (gravity); watch for *changes* on
-  contact, not absolute values.
+- **Notes**: the baseline is not zero; watch for *changes* on contact,
+  not absolute values.
 
 ### A4. Odometry (kind `odometry` (only on mobile machines))
 
@@ -59,31 +59,34 @@ section: what → port → CLI → rclpy → tool → notes.
 - **Notes**: read before and after driving (30-action D); displacement
   is your evidence the base actually moved.
 
-## B. Vision (kind `camera_set`)
+## B. Vision (kind `camera`, or `camera_set` when the scene decides)
 
-### B1. Discover the cameras
+### B1. Find the cameras
 
-- The manifest entry gives the topic pattern and the discovery command:
-  `ros2 topic list | grep image_raw`. Each camera `<name>` publishes
-  color, depth and intrinsics topics per that pattern.
+- Each `camera` entry in the manifest is one camera: its `name`, `model`,
+  `mount` (wrist or fixed) and the exact `color`, `info` and `depth`
+  topics, with the depth encoding and whether depth is aligned to color.
+- A `camera_set` entry instead gives a topic pattern and a command that
+  lists the cameras the scene has.
 
 ### B2. Grab a color frame
 
 - **Tool**: `python3 tools/perception/cam_snap.py <name>` → `<name>.png`,
   then open the PNG (read the file).
-- **rclpy**: subscribe to the topic, convert with
+- **rclpy**: subscribe to the entry's `color` topic, convert with
   `cv_bridge.CvBridge().imgmsg_to_cv2(msg, "bgr8")`.
 
 ### B3. Depth and intrinsics
 
-- Depth: same pattern on the depth topic (`cam_snap.py` accepts a full
-  topic path). ROS REP 118 defines `32FC1` depth in meters and `16UC1`
-  depth in millimeters. `cam_snap.py` saves native values unchanged in
-  `.npy`; check the message encoding before using them for measurements.
-  Convert with `imgmsg_to_cv2(msg, "passthrough")`.
-- Intrinsics: `ros2 topic echo /<name>/color/camera_info --once`
-  (`k` = 3×3 camera matrix); pixels + depth → 3D points in the camera
-  optical frame, then TF into `world`.
+- Depth: the entry's `depth` topic (`cam_snap.py <name> --depth`). ROS
+  REP 118 defines `32FC1` depth in meters and `16UC1` depth in
+  millimeters; the entry's `depth_encoding` says which. `cam_snap.py`
+  saves native values unchanged in `.npy`. Convert with
+  `imgmsg_to_cv2(msg, "passthrough")`.
+- Intrinsics: `ros2 topic echo <info> --once` (`k` = 3×3 camera matrix;
+  `header.frame_id` = the optical frame the pixels are in). With depth
+  aligned to color, pixels + depth → 3D points in that frame, then TF
+  into `frames.world`.
 
 ## C. Graph introspection (beyond the manifest)
 
@@ -94,19 +97,18 @@ section: what → port → CLI → rclpy → tool → notes.
 
 ## Sensor-surface facts
 
-- TF stamps are sim-time and a cached buffer can serve stale poses
-  after motion; the FK service gives the hand pose for given joints.
+- A TF buffer kept from before a motion can serve stale poses; look up
+  after the motion with a fresh listener. When the planner offers an FK
+  service (`ros2 service list | grep fk`), it gives the hand pose for
+  given joints.
 - `/robot_description` publishes with TRANSIENT_LOCAL durability; a
   plain subscription misses it; request that QoS.
-- Camera topics may appear in the graph lazily; the manifest's
-  camera_set entry is authoritative, `ros2 node info` shows the full set.
-- Oblique (side-view) cameras systematically overestimate the height of
-  low, flat objects near their edges; cross-view disagreement on such
-  objects usually traces to this.
-- The odometry topic publishes only as the sim advances.
+- This machine's own sensor observations are under `notes` in
+  machine.yaml.
 
 **Tool**: `python3 tools/perception/px2world.py <camera> <u> <v>`;
-depth + intrinsics + TF for one pixel, printed as world x y z in meters.
-The tool supports `32FC1` and `16UC1`, including row padding and either byte
-order. It expects the documented camera topic/frame naming and depth aligned
-with the color calibration; inspect and adapt it for other camera layouts.
+depth + intrinsics + TF for one pixel, printed as x y z in `frames.world`,
+metres. It reads the camera's topics from its manifest entry and the
+optical frame from its CameraInfo; it needs depth aligned to color, and
+TF has to connect the camera to the world frame (a camera nobody
+calibrated into the robot's TF tree has no such path).

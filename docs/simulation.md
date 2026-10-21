@@ -33,6 +33,18 @@ robots, a robot knows neither.
   run on robosuite 1.5 under Humble; RoboCasa's assets bring the
   `panda-omron` body robosuite's own lack.
 
+The robot type says how its gripper is addressed (`unit`, `open`,
+`closed`, `max_effort`); the embodiment says what the bridge does with a
+goal (`holds_partway`, `effort_honoured`): every bundled bridge reads a
+goal as open or closed, whichever is nearer, and sets no force limit.
+Cameras named by a bare name are the bridge's own type, `openrua-sim`
+(`configs/cameras/openrua-sim.yaml`), which says where their streams
+are. A simulated machine's `machine.yaml` carries a `simulation:`
+section (clock, camera rendering, trajectory tolerance, base command
+policy) and the `notes:` the simulator, the embodiment and the benchmark
+write about what the agent will meet; observations that hold only in
+simulation go there, not into the generic workspace docs.
+
 ## The image
 
 A simulated robot runs in one image that holds its whole environment:

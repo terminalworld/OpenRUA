@@ -97,7 +97,7 @@ def test_profile_preparation_does_not_destroy_source_or_previous_files_on_missin
     assert saved.read_text() == "keep"
 
 
-def test_live_and_trial_consume_the_external_profile_hook(external_profile, tmp_path, monkeypatch):
+def test_live_and_trial_consume_the_external_profile_hook(external_profile, tmp_path, monkeypatch, proxy_address):
     agent, source = external_profile
     cfg = {"machine": {"backend": {"kind": "real"}, "robot": {"model": "fixture"}},
            "agent": {"name": "profile-agent", "credentials_dir": str(source)}, "protocol": {}}

@@ -197,7 +197,7 @@ def test_manifest_drive_never_clobbers_the_ros_type():
     import yaml as _yaml
 
     from openrua.sandbox.workspace import write_machine_manifest
-    cfg = {"machine": {"ports": {"base_twist": "/cmd_vel"},
+    cfg = {"machine": {"ports": {"base_twist": "/cmd_vel"}, "cameras": {"list": []},
                        "base": {"type": "holonomic", "frame": "base_link"}}}
     import tempfile
     with tempfile.TemporaryDirectory() as d:
@@ -233,20 +233,19 @@ def test_manifest_two_arms_two_of_everything(tmp_path):
 
 
 # --------------------------------------------- manifest explains itself
-# The gripper on every robosuite-backed machine is binary: robosuite's
-# own PandaGripper.format_action takes np.sign(action), so a commanded
-# width is read as open-or-closed and max_effort is never honoured. That
-# is a PER-MACHINE fact (multi-finger hands pass the action through
-# untouched), so it lives on the manifest, not in the generic docs, and
-# the docs must not promise the force-limited behaviour they used to
-# (seen in the handover failures).
+# What a gripper does with a commanded position is a per-machine fact:
+# robosuite's bridge reads a goal as open or closed and sets no force
+# limit, a Robotiq on a real arm holds any position and limits force. So
+# it lives on the manifest, declared where the gripper is driven, and the
+# docs and the field notes only define the keys.
 
-def test_gripper_entry_declares_the_binary_stops(tmp_path):
+def test_gripper_entry_carries_interface_and_behaviour(tmp_path):
     out = tmp_path / "machine.yaml"
     workspace.write_machine_manifest(_cfg(), out)
     grip = next(a for a in yaml.safe_load(out.read_text())["actuators"]
                 if a["kind"] == "gripper")
-    assert grip["stops_at"] == ["open", "closed"]
+    assert (grip["unit"], grip["open"], grip["closed"]) == ("m", 0.04, 0.0)
+    assert grip["holds_partway"] is False and grip["effort_honoured"] is False
 
 
 def test_manifest_defines_every_fact_key_it_carries(tmp_path):
@@ -255,13 +254,15 @@ def test_manifest_defines_every_fact_key_it_carries(tmp_path):
     out = tmp_path / "machine.yaml"
     workspace.write_machine_manifest(_cfg(), out)
     text = out.read_text()
-    for key in ("open_m", "closed_m", "max_effort", "stops_at",
-                "limits_rad", "joints"):
+    for key in ("unit", "open", "closed", "max_effort", "holds_partway",
+                "effort_honoured", "limits_rad", "joints"):
         assert f"{key}:" in text, f"{key} missing from the manifest"
         line = next(ln for ln in text.splitlines()
                     if ln.lstrip().lstrip("- ").startswith(f"{key}:"))
         assert "#" in line, f"{key} carries a value but no definition"
-    assert "newtons" in text and "NOT honoured" in text  # max_effort
+    # definitions only: what this machine does is the value, not the note
+    gripper = text.split("kind: gripper", 1)[1].split("- kind:", 1)[0]
+    assert "NOT honoured" not in gripper and "metres" not in gripper
     assert yaml.safe_load(text)["schema"].startswith("openrua/")
 
 
@@ -269,4 +270,69 @@ def test_action_doc_does_not_promise_a_force_limited_gripper():
     doc = (PKG / "workspace" / "docs" / "30-action.md").read_text()
     assert "stalls on contact" not in doc
     assert "keeps squeezing" not in doc
-    assert "stops_at" in doc  # points at the manifest instead
+    assert "holds_partway" in doc  # points at the manifest instead
+    assert "PER-FINGER" not in doc and "open_m" not in doc
+
+
+# ------------------------------------- simulation facts stay with simulators
+# The generic workspace serves every machine. What only a simulator does
+# (paused clock, on-demand rendering, queued base ticks, robosuite's
+# observations) reaches the agent through machine.yaml: a simulation:
+# section on simulated machines, and notes from whoever declared them.
+
+def _real_cfg(tmp_path) -> dict:
+    from openrua.config import compose, normalize_arms
+    lab = tmp_path / "lab.yaml"
+    lab.write_text(
+        "type: panda\nmachine:\n"
+        "  backend: {kind: real, discovery: {network: host}}\n  cameras: {list: []}\n"
+        "  robot: {model: Lab Panda}\n"
+        "  gripper: {holds_partway: true, effort_honoured: true}\n"
+        "  notes: {gripper: [stalls when it holds an object]}\n")
+    return normalize_arms(compose(str(lab), home=tmp_path).cfg)
+
+
+def test_simulation_section_only_on_a_simulated_machine(tmp_path):
+    workspace.write_machine_manifest(_cfg(), tmp_path / "sim.yaml")
+    sim = yaml.safe_load((tmp_path / "sim.yaml").read_text())
+    assert sim["simulation"]["clock"] == "paused"
+    assert "notes" in sim and "planning" in sim["notes"]          # robosuite's observations
+    workspace.write_machine_manifest(_real_cfg(tmp_path), tmp_path / "real.yaml")
+    real = yaml.safe_load((tmp_path / "real.yaml").read_text())
+    assert "simulation" not in real
+    assert real["notes"] == {"gripper": ["stalls when it holds an object"]}
+
+
+def test_notes_are_joined_by_kind_and_kept_to_the_kinds_present(tmp_path):
+    from openrua.config.loader import join_notes
+    assert join_notes({"gripper": ["a"]}, None, {"gripper": ["b"], "timing": ["t"]}) == \
+        {"gripper": ["a", "b"], "timing": ["t"]}
+    cfg = _cfg()
+    cfg["machine"]["notes"]["base_twist"] = ["no base on this machine"]
+    workspace.write_machine_manifest(cfg, tmp_path / "m.yaml")
+    assert "base_twist" not in yaml.safe_load((tmp_path / "m.yaml").read_text())["notes"]
+
+
+def test_workspace_template_says_nothing_only_a_simulator_does():
+    import re
+    words = re.compile(r"sim-time|sim-second|paused|\btick|agentview|panda|robot0|/clock",
+                       re.IGNORECASE)
+    for path in (PKG / "workspace").rglob("*"):
+        if path.is_file() and "__pycache__" not in path.parts:
+            hit = words.search(path.read_text())
+            assert not hit, f"{path.relative_to(PKG)}: {hit.group(0)!r}"
+
+
+def test_a_machine_of_cameras_alone_lists_no_joint_states(tmp_path):
+    # Seen with a camera-only session: machine.yaml listed /joint_states,
+    # which nobody published.
+    from openrua.runner.preflight import build_checks
+
+    class _Agent:
+        def credentials_check(self): return None
+        def sandbox_cli_check(self): return None
+    cfg = {"machine": {"backend": {"kind": "real"}, "arms": [], "cameras": {"list": []}}}
+    workspace.write_machine_manifest(cfg, tmp_path / "m.yaml")
+    kinds = {s["kind"] for s in yaml.safe_load((tmp_path / "m.yaml").read_text())["sensors"]}
+    assert "joint_state" not in kinds
+    assert "joint_states_flow" not in dict(build_checks(cfg, _Agent()))

@@ -88,7 +88,7 @@ def test_api_profile_is_isolated_and_rejects_destructive_paths(tmp_path):
 
 
 @pytest.mark.parametrize("name", ["codex", "claude-code"])
-def test_live_api_start_skips_native_discovery_and_records_only_mode(tmp_path, monkeypatch, name):
+def test_live_api_start_skips_native_discovery_and_records_only_mode(tmp_path, monkeypatch, name, proxy_address):
     agent = agents.get(name)
     key_file = tmp_path / "key"
     key_file.write_text("synthetic-secret-for-live-profile")

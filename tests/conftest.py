@@ -29,3 +29,15 @@ def requires_image(name: str):
     """Skip the test unless the docker image ``name`` is built."""
     return pytest.mark.skipif(not image_present(name),
                               reason=f"docker image {name} not built here")
+
+
+@pytest.fixture
+def proxy_address(monkeypatch):
+    """A real robot's sandbox sits on the host network and reaches the
+    proxy by address, which OpenRUA reads from the running proxy
+    container. Tests that start a real robot with the bring-up faked
+    stand in for that container, so they pass where none runs (CI)."""
+    from openrua.runner import bringup
+    monkeypatch.setattr(bringup, "proxy_url_from_network",
+                        lambda name=None, *a, **k: "http://172.17.0.2:8888")
+    return "http://172.17.0.2:8888"

@@ -113,11 +113,12 @@ def test_build_one_unit_still_works(monkeypatch, tmp_path):
     assert args.fn(args) == 0 and built == [("humble", None)]
 
 
-def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path):
+def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path, proxy_address):
     from types import SimpleNamespace
 
     profile = tmp_path / "robot.yaml"
-    profile.write_text("type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n")
+    profile.write_text("type: panda\nmachine:\n  backend: {kind: real, discovery: {network: host}}\n  cameras: {list: []}\n"
+                       "  gripper: {holds_partway: true, effort_honoured: true}\n")
     calls = []
     machine = SimpleNamespace(shutdown=lambda: calls.append("shutdown"))
 
