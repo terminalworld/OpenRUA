@@ -1,5 +1,56 @@
 # Changelog
 
+## 0.11.0
+
+What a machine is now comes from its config, not from OpenRUA's
+simulated Panda. Seen on the first real robot (a Franka Panda with a
+Robotiq 2F-85, a wrist ZED Mini and a RealSense D405): the workspace told
+the agent things true only of the simulated Panda, and the agent acted on
+them.
+
+- **Grippers** are declared by their command interface and what their
+  driver does: the robot type writes `unit` (m or rad), `open`, `closed`,
+  `max_effort` and, when known, the `joint` reporting the position; the
+  simulator's embodiment or the real robot's instance writes
+  `holds_partway` and `effort_honoured`. The old `open_m`, `closed_m`,
+  `stops_at` and `control.gripper.open_threshold_m` fail with the rewrite.
+  The bridge closes on a goal nearer `closed` than `open`, which keeps
+  every bundled behaviour and works in either direction and unit.
+  `gripper_cmd.py` takes `open`, `closed` or a position, and `--arm`.
+- **Cameras** have types: `configs/cameras/<type>.yaml` (or a file next
+  to the robot's) says where a camera's color, intrinsics and depth
+  topics are and the depth encoding. A bare name is the simulation
+  bridge's own type, `openrua-sim`; a real robot lists each camera with
+  its type and mount, or `[]`. machine.yaml has one entry per camera with
+  its exact topics; preflight checks every declared camera; `cam_snap`
+  takes a camera name and gives up after a timeout; `px2world` reads the
+  optical frame from CameraInfo and the world frame from `frames.world`.
+- **Simulation stays with simulators**: a simulated machine's
+  machine.yaml has a `simulation:` section (clock, camera rendering,
+  trajectory tolerance, base command policy and queue depth), and
+  observations no field can say are `notes:` by manifest kind, written by
+  the robot type, simulator, embodiment, benchmark scene or real
+  instance. robosuite's observations moved out of the generic docs into
+  its file; a test keeps simulator words out of the workspace template.
+- **The agent checks declared facts** and writes differences to
+  `machine-discrepancies.yaml` for a person to fold into the config.
+- **probe** reads typed topic and action lists, takes the arm's joints
+  from its trajectory controller and the gripper's from its controller,
+  the planning group and hand from the SRDF, and drafts one camera per
+  CameraInfo; what only the owner knows stays TODO and fails validation.
+- **Tools**: `fjt_send` prints the largest gap between target and joint
+  state after the result, and takes `--arm`; `ik_move --at tcp` refuses
+  to guess a missing TCP offset. A machine without joints lists no
+  `/joint_states`.
+- **Real robots**: the agent gets the proxy address its sandbox can reach
+  (it got the container name, which does not resolve on the host
+  network), and startup no longer announces a booting simulator.
+- **Panda defaults removed**: a robot names its own frames, simulator
+  bodies and planning group; a missing one is an error, not a silent
+  Panda name.
+- Startup evidence regenerated for all four offered environments; the
+  check now also asserts the declared gripper joint.
+
 ## 0.10.21
 
 - Fix ROS discovery inside a container on Humble images (robosuite's own scenes, CaP-Bench, RoboCasa365). The Fast DDS initial-peers profile that stands in for `ROS_STATIC_PEERS` replaced the default multicast peer, so processes in one container never discovered each other: in the robot container, robot_state_publisher and move_group received no `/joint_states` or TF from the bridge, which left the TF arm chain unpublished and MoveIt's floating base at the origin; in the sandbox, two of the agent's own nodes could not talk. The profile now keeps the multicast peer next to the static ones. Jazzy images (LIBERO-PRO) were not affected.
