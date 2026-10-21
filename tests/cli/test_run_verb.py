@@ -113,7 +113,7 @@ def test_build_one_unit_still_works(monkeypatch, tmp_path):
     assert args.fn(args) == 0 and built == [("humble", None)]
 
 
-def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path):
+def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path, proxy_address):
     from types import SimpleNamespace
 
     profile = tmp_path / "robot.yaml"
