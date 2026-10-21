@@ -8,12 +8,14 @@ agent conversation loop.
 from __future__ import annotations
 
 import os
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
 from openrua import agents
 from openrua.config import apply_suite_overrides, compose, normalize_arms, paths
+from openrua.config.schema import sandbox_image
 from openrua.errors import UnavailableError, UsageError
 from openrua.proxy.up import ensure as ensure_proxy
 from openrua.runner import live_state as state
@@ -58,6 +60,34 @@ class LiveRobot:
     power_off: Callable[[], None]
 
 
+def check_agent_cli(sandbox: str, adapter, backend: dict, robot: str) -> None:
+    """Refuse a sandbox whose agent CLI is not the pinned version, or is
+    older than every flag the adapter passes needs, before the agent
+    starts: an old CLI otherwise exits on the first unknown flag and the
+    session shows only a disconnected agent. The error says how to
+    rebuild the sandbox."""
+    check = adapter.sandbox_cli_check()
+    if not check:
+        return
+    r = subprocess.run(["docker", "exec", sandbox, "bash", "-c", check[1]],
+                       capture_output=True, text=True, timeout=60)
+    if r.returncode == 0:
+        return
+    found = subprocess.run(["docker", "exec", sandbox, *adapter.version_argv],
+                           capture_output=True, text=True, timeout=60).stdout.strip()
+    want = f"version {adapter.version}" if adapter.version else f"{adapter.min_version} or newer"
+    pin = f"@{adapter.version}" if adapter.version else ""
+    if backend.get("sandbox_install"):
+        build = f"openrua build sandbox --robot {robot} --agent {adapter.name}{pin}"
+    else:
+        image, distro = backend["sandbox_image"], backend.get("ros_distro", "jazzy")
+        tag = "" if image == sandbox_image(distro) else f" --tag {image}"
+        build = f"openrua build sandbox --distro {distro}{tag} --agent {adapter.name}{pin}"
+    raise UnavailableError(
+        f"the sandbox's {adapter.name} is {found or 'unreadable'}; this session needs {want}",
+        hint=build)
+
+
 def stop_resources(sandbox: str, shutdown_machine: Callable[[], None]) -> None:
     """Attempt both shutdowns and report failures without declaring success."""
     failures = []
@@ -98,7 +128,8 @@ def open_robot(request: RobotRequest) -> LiveRobot:
     state.reserve(request.name, request.home)
     workdir.mkdir(parents=True, exist_ok=True)
     network = ensure_internal_network()
-    proxy_url = ensure_proxy(network)
+    proxy_url = ensure_proxy(network, whitelists={
+        adapter.name: agents.fact_sha256(adapter, "whitelist")})
     # cfg["agent"] is already the chosen agent's (compose took --agent):
     # its model, version, login directory and options are that agent's.
     model = request.model or cfg_agent.get("model") or adapter.default_model
@@ -125,6 +156,12 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         # The sandbox directory stays for the read below; openrua clean sweeps it.
         raise UnavailableError(f"[up] robot failed to come up: {e}",
                                hint=f"read {workdir / 'robot.log'}") from e
+
+    try:
+        check_agent_cli(sandbox_name, adapter, cfg["machine"]["backend"], composed.robot)
+    except BaseException:
+        stop_resources(sandbox_name, machine.shutdown)
+        raise
 
     def power_off() -> None:
         print("\n[down] powering off", flush=True)

@@ -8,8 +8,8 @@ binary: claude
 # the running sandbox has no internet). NodeSource 20.x because the distro
 # node is v18 on 24.04 but v12 on 22.04; one source for every distro.
 # {version} is replaced with a pin when one is given (openrua build sandbox
-# --agent claude-code@2.1.226, or agent.version in a config); without a
-# pin the current release is installed and no version check is minted.
+# --agent claude-code@2.1.301, or agent.version in a config); without a
+# pin the release current at build time is installed.
 install: >-
   apt-get update
   && apt-get install -y --no-install-recommends curl ca-certificates
@@ -34,6 +34,10 @@ credentials:
 # A long-lived token from `claude setup-token`, passed to the CLI by file.
 token_env: CLAUDE_CODE_OAUTH_TOKEN
 version_argv: [claude, --version]
+# The oldest release seen taking every flag below (--autocompact is newer
+# than 2.1.197, which exits on it); an older sandbox CLI is refused before
+# the agent starts.
+min_version: 2.1.251
 instruction_file: CLAUDE.md
 # Knobs a config may override under agent.options. All pinned explicitly
 # so a CLI update cannot shift them:

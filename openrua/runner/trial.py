@@ -223,7 +223,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         "containers": {"sim": sim_name, "sandbox": sandbox_name},
         "ros_domain": ros_domain,   # None until bring_up picked one
     }
-    proxy_url = ensure_proxy(network)
+    proxy_url = ensure_proxy(network, whitelists={
+        agent.name: agents.fact_sha256(agent, "whitelist")})
     if account_alias:
         rec["account_alias"] = account_alias
     creds_home = None if key_file is not None else agents.resolve_profile(agent, credentials_dir or cfg.get('agent', {}).get('credentials_dir'),

@@ -415,3 +415,33 @@ def test_a_real_robot_names_each_cameras_type(tmp_path):
     lab.write_text(base + "  cameras: {list: [wrist]}\n")
     with pytest.raises(config.ConfigError, match="needs its type"):
         compose(str(lab), home=tmp_path)
+
+
+def test_a_robot_that_installs_its_own_interfaces_gets_its_own_sandbox(tmp_path):
+    lab = tmp_path / "lab.yaml"
+    base = ("machine:\n  backend: {kind: real, ros_distro: humble, discovery: {network: host}%s}\n"
+            "  robot: {model: Lab arm}\n  cameras: {list: []}\n")
+    lab.write_text(base % "")
+    assert compose(str(lab), home=tmp_path).cfg["machine"]["backend"]["sandbox_image"] \
+        == "openrua-sandbox-humble"
+    lab.write_text(base % ", sandbox_install: apt-get install -y ros-humble-franka-msgs")
+    image = compose(str(lab), home=tmp_path).cfg["machine"]["backend"]["sandbox_image"]
+    assert image.startswith("openrua-sandbox-humble-") and len(image.split("-")[-1]) == 8
+
+
+def test_build_sandbox_for_a_robot_adds_its_install(tmp_path, monkeypatch):
+    from openrua.cli.commands import build as build_cmd
+    lab = tmp_path / "lab.yaml"
+    lab.write_text("machine:\n  backend: {kind: real, ros_distro: humble, discovery: {network: host},"
+                   " sandbox_install: apt-get install -y ros-humble-franka-msgs}\n"
+                   "  robot: {model: Lab arm}\n  cameras: {list: []}\n")
+    built = {}
+    monkeypatch.setattr(build_cmd, "build_sandbox", lambda **kw: built.update(kw) or (kw["tag"], "d"))
+    monkeypatch.setattr(build_cmd, "_report_versions", lambda *a: None)
+    tag, _ = build_cmd._sandbox(["codex@0.161.0"], None, "jazzy", None, None, tmp_path, str(lab))
+    assert built["distro"] == "humble" and tag.startswith("openrua-sandbox-humble-")
+    assert built["preinstall"].endswith("&& apt-get install -y ros-humble-franka-msgs")
+    assert "openrua.machine_install_sha256" in built["labels"]
+    assert built["stamp"] == ""                       # pinned: the cache may serve
+    build_cmd._sandbox(["codex"], None, "jazzy", None, None, tmp_path, str(lab))
+    assert built["stamp"]                             # unpinned: a fresh install

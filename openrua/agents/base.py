@@ -137,6 +137,7 @@ class Agent:
     token_env: str | None = None        # env var carrying a long-lived token, when
                                         # the CLI accepts one (passed by file)
     version_argv: tuple[str, ...] | None = None   # prints the CLI version (provenance)
+    min_version: str | None = None      # oldest CLI that takes this adapter's flags
     instruction_file: str | None = None  # the instructions file this CLI reads on
                                          # its own at start, if any; declared only,
                                          # nothing is seeded from it yet
@@ -277,9 +278,20 @@ class Agent:
         return None
 
     def sandbox_cli_check(self) -> tuple[str, str] | None:
-        """(name, bash) preflight check run inside the sandbox before the
-        agent starts (a version pin, say). Default: None, no check."""
-        return None
+        """(name, bash) check run inside the sandbox before the agent
+        starts: the CLI is the pinned version, and no older than
+        ``min_version``. None when there is nothing to check or no
+        ``version_argv`` to ask."""
+        if not self.version_argv or not (self.version or self.min_version):
+            return None
+        # No single quotes inside: the whole check is one bash -c '...'.
+        argv = " ".join(self.version_argv)
+        parts = [f'v="$({argv} | grep -oE "[0-9]+([.][0-9]+)+" | head -1)"', '[ -n "$v" ]']
+        if self.version:
+            parts.append(f'[ "$v" = "{self.version}" ]')
+        if self.min_version:
+            parts.append(f'printf "%s\\n%s\\n" {self.min_version} "$v" | sort -V -C')
+        return ("sandbox_cli_version", "bash -c '" + " && ".join(parts) + "'")
 
     def login_hint(self, creds_home: Path) -> str:
         """One line telling the operator how to log this CLI in with

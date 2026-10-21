@@ -113,7 +113,7 @@ def test_build_one_unit_still_works(monkeypatch, tmp_path):
     assert args.fn(args) == 0 and built == [("humble", None)]
 
 
-def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path, proxy_address):
+def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path, proxy_address, agent_cli_ok):
     from types import SimpleNamespace
 
     profile = tmp_path / "robot.yaml"
@@ -130,9 +130,9 @@ def test_real_robot_opens_without_a_benchmark_or_reset(monkeypatch, tmp_path, pr
 
     monkeypatch.setattr(live, "bring_up", bring_up)
     monkeypatch.setattr(live, "ensure_internal_network", lambda: "internal")
-    monkeypatch.setattr(live, "ensure_proxy", lambda _: "http://proxy")
+    monkeypatch.setattr(live, "ensure_proxy", lambda *a, **k: "http://proxy")
     from openrua.agents import Agent, PreparedProfile
-    monkeypatch.setattr(Agent, "prepare_profile", lambda self, source, dest: PreparedProfile(dest, ()))
+    monkeypatch.setattr(Agent, "prepare_profile", lambda self, source, dest, **kw: PreparedProfile(dest, ()))
     monkeypatch.setattr(live, "sandbox_down", lambda _: calls.append("sandbox down"))
     monkeypatch.setattr(live, "start_episode", lambda *a: pytest.fail("must not reset a real robot"))
     args = build_parser().parse_args(["--home", str(tmp_path / "home"), "up", str(profile),

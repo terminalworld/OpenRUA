@@ -103,6 +103,27 @@ machine:
   workspace_template: workspace
 ```
 
+The agent can only call a service or read a topic whose type definition
+is installed in its sandbox. When the robot speaks a vendor's own
+messages (a Franka's `franka_msgs` for its robot mode and error
+recovery, say), declare how to install them, one line run as root when
+the sandbox image is built; a ROS workspace built under
+`/opt/openrua/overlays/<name>` is sourced in every shell:
+
+```yaml
+  backend:
+    sandbox_install: >-
+      apt-get update && apt-get install -y --no-install-recommends git
+      ros-humble-controller-manager-msgs ros-humble-ros2controlcli
+      && git clone https://github.com/vendor/driver /tmp/src/driver
+      && . /opt/ros/humble/setup.sh && cd /tmp/src
+      && colcon build --packages-select vendor_msgs --install-base /opt/openrua/overlays/vendor
+```
+
+Then `openrua build sandbox --robot ./ur5e.yaml` builds that robot's own
+sandbox image (its name carries a hash of the install), and `doctor`
+says when the install has changed since.
+
 A camera type is a file of its own, next to the robot's, saying what one
 camera with one driver publishes; `{name}` stands for the camera's name
 on the machine:

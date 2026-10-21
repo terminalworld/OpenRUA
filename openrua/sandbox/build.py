@@ -46,12 +46,15 @@ def _docker_build(dockerfile: Path, context: Path, tag: str,
 def build(preinstall: str = "", distro: str = "jazzy",
           robot_uid: int | None = None,
           tag: str | None = None,
-          labels: dict[str, str] | None = None) -> tuple[str, str]:
+          labels: dict[str, str] | None = None,
+          stamp: str = "") -> tuple[str, str]:
     """Build the sandbox image for a ROS 2 distro; returns (tag, digest).
     The tag defaults to openrua-sandbox-<distro>, the name a profile's
     ros_distro resolves to. ``labels`` are
     stamped on the image alongside the preinstall hash (the caller adds
-    one per agent, so doctor can check each selected agent)."""
+    one per agent, so doctor can check each selected agent). A new
+    ``stamp`` rebuilds the install layer instead of reusing a cached one:
+    the caller passes one when the chain installs the current release."""
     # Contract: PREINSTALL is a single-line command chain without double
     # quotes (the one quoting hazard of string-valued build args).
     if '"' in preinstall or "\n" in preinstall.strip():
@@ -67,7 +70,7 @@ def build(preinstall: str = "", distro: str = "jazzy",
     return tag, _docker_build(
         _HERE / "sandbox.Dockerfile", _HERE, tag,
         {"ROS_DISTRO": distro, "ROBOT_UID": str(uid),
-         "PREINSTALL": preinstall}, labels)
+         "PREINSTALL": preinstall, "PREINSTALL_STAMP": stamp}, labels)
 
 
 def main() -> int:

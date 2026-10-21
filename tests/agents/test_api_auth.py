@@ -88,7 +88,7 @@ def test_api_profile_is_isolated_and_rejects_destructive_paths(tmp_path):
 
 
 @pytest.mark.parametrize("name", ["codex", "claude-code"])
-def test_live_api_start_skips_native_discovery_and_records_only_mode(tmp_path, monkeypatch, name, proxy_address):
+def test_live_api_start_skips_native_discovery_and_records_only_mode(tmp_path, monkeypatch, name, proxy_address, agent_cli_ok):
     agent = agents.get(name)
     key_file = tmp_path / "key"
     key_file.write_text("synthetic-secret-for-live-profile")
@@ -98,7 +98,7 @@ def test_live_api_start_skips_native_discovery_and_records_only_mode(tmp_path, m
         cfg=cfg, suite=None, task_id=None, robot="fixture", simulator=None, benchmark=None))
     monkeypatch.setattr(live.agents, "resolve_profile", lambda *a, **kw: pytest.fail("must not discover native auth"))
     monkeypatch.setattr(live, "ensure_internal_network", lambda: "fixture")
-    monkeypatch.setattr(live, "ensure_proxy", lambda _: "fixture")
+    monkeypatch.setattr(live, "ensure_proxy", lambda *a, **k: "fixture")
     mounts = []
     def bring_up(*args, **kwargs):
         mounts.extend(args[8])

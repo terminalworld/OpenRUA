@@ -69,8 +69,12 @@ class Codex(Agent):
         return {**self.default_options, **(options or {})}
 
     def _config_flags(self, opts: dict[str, Any]) -> list[str]:
+        # features.apps: the operator's ChatGPT apps (about a hundred tools,
+        # one of them a web search web_search does not govern) are not the
+        # robot's.
         return ["-c", f'model_reasoning_effort="{opts["effort"]}"',
-                "-c", f'web_search="{opts["web_search"]}"']
+                "-c", f'web_search="{opts["web_search"]}"',
+                "-c", "features.apps=false"]
 
     def launch_argv(self, sandbox: str, prompt: str, model: str, max_turns: int,
                     proxy: str, options: dict[str, Any] | None = None,
@@ -107,17 +111,13 @@ class Codex(Agent):
         opts = self._opts(options)
         argv = [*self.exec_argv(sandbox, self._env(proxy), stdin=True),
                 self.binary, "app-server", "--listen", "stdio://",
-                *self._config_flags(opts)]
+                *self._config_flags(opts),
+                # The thread already runs with full access; said for the
+                # process too, so it does not look for a bubblewrap the
+                # container cannot use.
+                "-c", 'sandbox_mode="danger-full-access"']
         return Conversation(argv, CodexConversation(model, session_id=session_id,
                                                     effort=opts["effort"]))
-
-    def sandbox_cli_check(self) -> tuple[str, str] | None:
-        """The CLI inside the sandbox is the pinned version; no check
-        without a pin."""
-        if not self.version:
-            return None
-        return ("sandbox_cli_matches_pin",
-                f"bash -c 'codex --version | grep -qF {self.version}'")
 
     def login_hint(self, creds_home: Path) -> str:
         return f"run {self.credentials.config_env}={creds_home} codex login"

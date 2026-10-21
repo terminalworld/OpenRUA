@@ -18,8 +18,9 @@ def resources(monkeypatch, tmp_path):
         cfg=cfg, suite=None, task_id=None, robot="test", simulator=None, benchmark=None))
     monkeypatch.setattr(live, "normalize_arms", lambda _: None)
     monkeypatch.setattr(live, "ensure_internal_network", lambda: "network")
-    monkeypatch.setattr(live, "ensure_proxy", lambda _: "proxy")
+    monkeypatch.setattr(live, "ensure_proxy", lambda *a, **k: "proxy")
     adapter = SimpleNamespace(name="fake", default_model="model", default_options={},
+                              whitelist=(), install="",
                               prepare_profile=lambda source, dest: PreparedProfile(dest, ()))
     monkeypatch.setattr(live.agents, "get", lambda *a, **kw: adapter)
     machine = SimpleNamespace(shutdown=lambda: calls.append("robot stopped"))
@@ -28,7 +29,7 @@ def resources(monkeypatch, tmp_path):
     return live.RobotRequest(home=tmp_path, name="robot", task="inspect"), calls, machine
 
 
-def test_direct_resource_api_needs_no_cli_and_keeps_workspace(resources, proxy_address):
+def test_direct_resource_api_needs_no_cli_and_keeps_workspace(resources, proxy_address, agent_cli_ok):
     request, calls, _ = resources
     robot = live.open_robot(request)
     workspace = request.home / "sandboxes/robot/workspace/workspace"
@@ -40,7 +41,7 @@ def test_direct_resource_api_needs_no_cli_and_keeps_workspace(resources, proxy_a
     assert live_state.load(request.name, request.home, require_running=False)["status"] == "stopped"
 
 
-def test_failed_state_save_closes_started_resources(resources, monkeypatch, proxy_address):
+def test_failed_state_save_closes_started_resources(resources, monkeypatch, proxy_address, agent_cli_ok):
     request, calls, _ = resources
     def fail(*a, **kw):
         raise OSError("disk full")
@@ -50,7 +51,7 @@ def test_failed_state_save_closes_started_resources(resources, monkeypatch, prox
     assert calls == ["sandbox stopped", "robot stopped"]
 
 
-def test_stop_attempts_robot_even_when_sandbox_stop_fails(resources, monkeypatch, proxy_address):
+def test_stop_attempts_robot_even_when_sandbox_stop_fails(resources, monkeypatch, proxy_address, agent_cli_ok):
     request, calls, _ = resources
     robot = live.open_robot(request)
     def fail(_):

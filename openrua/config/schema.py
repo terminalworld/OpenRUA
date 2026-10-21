@@ -41,6 +41,7 @@ Leaf module: imports nothing from openrua.
 
 from __future__ import annotations
 
+import hashlib
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -189,11 +190,15 @@ def sim_image(name: str) -> str:
     return f"openrua-sim-{name}"
 
 
-def sandbox_image(distro: str) -> str:
+def sandbox_image(distro: str, install: str | None = None) -> str:
     """The agent terminal image for a ROS 2 distro; openrua build sandbox
     tags it so. The sandbox runs the robot's distro: cross-distro
-    message definitions break service responses."""
-    return f"openrua-sandbox-{distro}"
+    message definitions break service responses. A robot that installs
+    its own interface packages gets an image of its own, named by a hash
+    of that install, so no other robot's sandbox is overwritten."""
+    if not install:
+        return f"openrua-sandbox-{distro}"
+    return f"openrua-sandbox-{distro}-{hashlib.sha256(install.encode()).hexdigest()[:8]}"
 
 
 class SimBackend(Strict):
@@ -247,15 +252,23 @@ class RealBackend(Strict):
                               "command runs in, on the host network (a vendor driver "
                               "pinned to its own ROS release); null = run it on the host")
     discovery: Discovery = Field(description="how the sandbox reaches the graph")
+    sandbox_install: str | None = Field(
+        default=None, description="one-line shell chain, run as root when the sandbox "
+        "image is built, installing what the agent needs to speak this robot's "
+        "interfaces (vendor message definitions, a controller CLI); a ROS workspace "
+        "built under /opt/openrua/overlays/<name> is sourced in every shell. No double "
+        "quotes. Build it with openrua build sandbox --robot <this file>")
 
     sandbox_image: str | None = Field(default=None, description="agent terminal image; "
-                                      "default: openrua-sandbox-<ros_distro>")
+                                      "default: openrua-sandbox-<ros_distro>, with a hash "
+                                      "of sandbox_install when there is one")
 
     @model_validator(mode="after")
     def _derive(self):
         if self.image and not self.launch:
             raise ValueError("backend.image needs a launch command to run in it")
-        self.sandbox_image = self.sandbox_image or sandbox_image(self.ros_distro)
+        self.sandbox_image = self.sandbox_image or sandbox_image(self.ros_distro,
+                                                                 self.sandbox_install)
         return self
 
 
@@ -859,6 +872,10 @@ class AgentManifest(Strict):
                                   "an auth token")
     version_argv: list[str] | None = Field(default=None, description="command printing the "
                                            "agent's version")
+    min_version: str | None = Field(default=None, description="the oldest CLI release "
+                                    "that accepts every flag this adapter passes; a "
+                                    "sandbox with an older one is refused before the "
+                                    "agent starts")
     instruction_file: str | None = Field(default=None, description="the file the agent "
                                          "reads instructions from, e.g. AGENTS.md")
     default_options: dict[str, Any] = Field(default_factory=dict, description="knobs a "

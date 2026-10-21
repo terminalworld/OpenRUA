@@ -79,10 +79,26 @@ it was rendered from. Those labels are how `doctor` later knows
 whether an image is stale.
 
 A manifest pins no version, so `build sandbox` installs the agent's
-current release. To pin one, say so where you build and where you run:
-`openrua build sandbox --agent claude-code@2.1.226` and `agent.version:
-"2.1.226"` in the config; preflight then checks the sandbox's CLI
-against it, and every trial records the version it saw.
+release current at build time (it never reuses an older build's layer
+for that), and prints the version each CLI got. To pin one, say so where
+you build and where you run: `openrua build sandbox --agent
+claude-code@2.1.301` and `agent.version: "2.1.301"` in the config;
+`doctor` then suggests the pinned rebuild. A manifest may also name the
+oldest release that takes every flag its adapter passes (`min_version`;
+Claude Code's is 2.1.251): a build that produces an older one fails, and
+a session or trial on a sandbox with an older one is refused before the
+agent starts, with the rebuild command. Every trial records the version
+it saw.
+
+A robot whose agent needs interface packages beyond ROS's own (a vendor's
+message definitions, the ros2 control CLI) declares the install in its
+config (`backend.sandbox_install`) and gets a sandbox image of its own:
+`openrua build sandbox --robot ./my-robot.yaml`. See
+[your-own-robot.md](your-own-robot.md).
+
+The sandbox keeps the agent's login profile, but not the operator's
+account extras: Claude Code's claude.ai connectors and synced skills and
+plugins, and Codex's ChatGPT apps, are turned off in every session.
 
 ## Logging an agent in
 
@@ -266,8 +282,10 @@ the report is JSON.
 ### Updating a shared proxy
 
 The proxy is shared by sessions. If `doctor` reports a manifest mismatch,
-rebuild the sandbox or proxy with the agents you need, repeating `--agent` to
-include more than one. For example:
+or a session refuses to start because the standing proxy does not allow
+its agent's hosts (switching a robot from one agent to another does
+this), rebuild the sandbox or proxy with the agents you need, repeating
+`--agent` to include more than one. For example:
 
 ```sh
 openrua build proxy --agent claude-code --agent codex

@@ -34,11 +34,34 @@ from openrua.agents.conversation import Conversation
 from openrua.plugins.agents.claude_conversation import ClaudeConversation
 
 QUOTA_PHRASES = ("session limit", "rate limit", "weekly limit", "usage limit")
+# What the operator's claude.ai account carries beyond the CLI (its MCP
+# connectors, the skills and plugins it syncs) is not the robot's: kept
+# out of every sandbox profile. Read by Claude Code from user settings;
+# ENABLE_CLAUDEAI_MCP_SERVERS=false does the first for CLIs before the
+# setting existed.
+ISOLATION_SETTINGS = {"disableClaudeAiConnectors": True,
+                      "syncClaudeAiSkills": False,
+                      "syncClaudeAiPlugins": False}
 _REPLAY_TOOLS = ("Bash", "Write", "Edit")
+
+
+def _isolate(directory: Path) -> None:
+    """Merge ISOLATION_SETTINGS into the profile's settings.json."""
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    path = directory / "settings.json"
+    settings = json.loads(path.read_text()) if path.is_file() else {}
+    path.write_text(json.dumps({**settings, **ISOLATION_SETTINGS}, indent=2) + "\n")
 
 
 class ClaudeCode(Agent):
     """Hooks only; every fact comes from the manifest."""
+
+    def prepare_profile(self, source: Path, dest: Path, *,
+                        require_credentials: bool = True) -> PreparedProfile:
+        prepared = super().prepare_profile(source, dest,
+                                           require_credentials=require_credentials)
+        _isolate(prepared.directory)
+        return prepared
 
     def prepare_api_profile(self, key_file: Path, dest: Path) -> PreparedProfile:
         key = read_api_key(key_file)
@@ -51,6 +74,7 @@ class ClaudeCode(Agent):
         (directory / "settings.json").write_text(json.dumps({
             "apiKeyHelper": 'cat -- "${CLAUDE_CONFIG_DIR:?}/api-key"',
         }) + "\n")
+        _isolate(directory)
         return PreparedProfile(directory, self.sandbox_mounts(directory), lambda: [key])
 
     # ---------------------------------------------------------- launch
@@ -62,6 +86,7 @@ class ClaudeCode(Agent):
             "-e", f"HTTP_PROXY={proxy}",
             "-e", f"BASH_DEFAULT_TIMEOUT_MS={opts['bash_timeout_ms']}",
             "-e", f"BASH_MAX_TIMEOUT_MS={opts['bash_max_timeout_ms']}",
+            "-e", "ENABLE_CLAUDEAI_MCP_SERVERS=false",
         ]
 
     def _opts(self, options: dict[str, Any] | None) -> dict[str, Any]:
@@ -119,14 +144,6 @@ class ClaudeCode(Agent):
                 "--permission-prompt-tool", "stdio", "--dangerously-skip-permissions",
                 "--disallowedTools", "WebSearch", "WebFetch"]
         return Conversation(argv, ClaudeConversation(native_id))
-
-    def sandbox_cli_check(self) -> tuple[str, str] | None:
-        """The CLI inside the sandbox is the pinned version; no check
-        without a pin."""
-        if not self.version:
-            return None
-        return ("sandbox_cli_matches_pin",
-                f"bash -c 'claude --version | grep -qF {self.version}'")
 
     # ------------------------------------------------------------ auth
 

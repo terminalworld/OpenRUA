@@ -222,3 +222,19 @@ def test_container_start_failure_keeps_original_docker_error(monkeypatch):
                         SimpleNamespace(returncode=125, stderr="permission denied by daemon"))
     with pytest.raises(ProxyError, match="permission denied by daemon"):
         up.ensure("target")
+
+
+def test_a_proxy_without_the_agents_hosts_is_refused_with_the_fix(monkeypatch):
+    # Switching a rig from Claude Code to Codex left a proxy that allowed
+    # only Anthropic's hosts; Codex met a 403 mid-session.
+    import json
+    from openrua.proxy import up as proxy_up
+    labels = {"openrua.agent.claude-code.whitelist_sha256": "abc"}
+    monkeypatch.setattr(proxy_up, "_inspect", lambda kind, target, fmt: json.dumps(labels))
+    proxy_up._serves("openrua-proxy", {"claude-code": "abc"})          # carried: fine
+    with pytest.raises(proxy_up.ProxyError) as e:
+        proxy_up._serves("openrua-proxy", {"codex": "def"})
+    assert "openrua build proxy --agent claude-code --agent codex" in str(e.value)
+    assert "docker rm -f openrua-proxy" in str(e.value)
+    labels.clear()                                   # built before per-agent labels
+    proxy_up._serves("openrua-proxy", {"codex": "def"})

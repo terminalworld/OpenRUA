@@ -38,11 +38,13 @@ def test_pins_come_from_the_caller_not_the_manifest():
     latest = agents.get("claude-code")
     assert latest.version is None and "{version}" not in latest.install
     assert "claude-code@" not in latest.install          # the current release
-    assert latest.sandbox_cli_check() is None            # nothing to check against
-    pinned = agents.get("claude-code@2.1.226")
-    assert pinned.version == "2.1.226" and "claude-code@2.1.226" in pinned.install
+    # unpinned, the sandbox CLI is still checked against the adapter's floor
+    name, cmd = latest.sandbox_cli_check()
+    assert name == "sandbox_cli_version" and latest.min_version in cmd
+    pinned = agents.get("claude-code@2.1.301")
+    assert pinned.version == "2.1.301" and "claude-code@2.1.301" in pinned.install
     name, cmd = pinned.sandbox_cli_check()
-    assert name == "sandbox_cli_matches_pin" and "2.1.226" in cmd
+    assert name == "sandbox_cli_version" and '"$v" = "2.1.301"' in cmd
     assert agents.get("claude-code", version="2.1.100").version == "2.1.100"
     assert agents.split_pin("codex@0.153.4") == ("codex", "0.153.4")
 
@@ -50,11 +52,27 @@ def test_pins_come_from_the_caller_not_the_manifest():
 def test_preflight_includes_version_checks():
     from openrua.runner.preflight import build_checks
     cfg = load_config(LIBERO_CFG)
-    names = [n for n, _ in build_checks(cfg, agents.get("claude-code@2.1.226"))]
-    assert "sandbox_cli_matches_pin" in names
+    names = [n for n, _ in build_checks(cfg, agents.get("claude-code@2.1.301"))]
+    assert "sandbox_cli_version" in names
     assert "credentials_readable" in names
-    # without a pin there is nothing to check the sandbox CLI against
-    assert "sandbox_cli_matches_pin" not in [n for n, _ in build_checks(cfg, agents.get("claude-code"))]
+    # a manifest with neither a pin nor a floor has nothing to check against
+    plain = agents.get("codex")
+    assert plain.min_version is None
+    assert "sandbox_cli_version" not in [n for n, _ in build_checks(cfg, plain)]
+
+
+def test_version_check_takes_the_pin_and_the_floor():
+    import subprocess
+    agent = agents.get("claude-code")
+    _, cmd = agent.sandbox_cli_check()
+    def run(version):
+        fake = f"claude() {{ echo '{version} (Claude Code)'; }}; export -f claude; "
+        return subprocess.run(["bash", "-c", fake + cmd], capture_output=True).returncode
+    assert run("2.1.301") == 0 and run(agent.min_version) == 0
+    assert run("2.1.197") != 0                       # exits on --autocompact
+    pinned = agents.get("claude-code@2.1.301")
+    _, cmd = pinned.sandbox_cli_check()
+    assert run("2.1.301") == 0 and run("2.1.302") != 0
 
 
 # -------------------------------------------------- credentials pipeline
@@ -576,3 +594,26 @@ def test_collect_on_an_empty_profile_keeps_nothing(tmp_path):
     for listed in agents.available():
         agent = listed.agent
         assert agent.collect(tmp_path / "empty", tmp_path / "trial") == [], agent.name
+
+
+def test_claude_profile_keeps_the_account_extras_out(tmp_path):
+    # The operator's claude.ai connectors, synced skills and plugins were
+    # loaded into a robot's sandbox; the session profile turns them off and
+    # keeps the operator's other settings.
+    import json
+    source = tmp_path / "login"
+    source.mkdir()
+    (source / ".credentials.json").write_text("{}")
+    (source / "settings.json").write_text(json.dumps({"theme": "dark"}))
+    agent = agents.get("claude-code")
+    prepared = agent.prepare_profile(source, tmp_path / "profile")
+    settings = json.loads((prepared.directory / "settings.json").read_text())
+    assert settings["theme"] == "dark" and settings["disableClaudeAiConnectors"] is True
+    assert settings["syncClaudeAiSkills"] is False and settings["syncClaudeAiPlugins"] is False
+    argv = agent.conversation("sandbox", "model", "http://proxy").argv
+    assert "ENABLE_CLAUDEAI_MCP_SERVERS=false" in argv
+
+
+def test_codex_runs_without_the_accounts_apps():
+    argv = agents.get("codex").conversation("sandbox", "model", "http://proxy").argv
+    assert "features.apps=false" in argv and 'sandbox_mode="danger-full-access"' in argv

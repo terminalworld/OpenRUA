@@ -6,8 +6,8 @@ default_model: gpt-5.6-sol
 binary: codex
 # Root shell that installs the CLI into the sandbox image (build time only).
 # {version} is replaced with a pin when one is given (openrua build sandbox
-# --agent codex@0.153.4, or agent.version in a config); without a pin the
-# current release is installed and no version check is minted.
+# --agent codex@0.161.0, or agent.version in a config); without a pin the
+# release current at build time is installed.
 install: >-
   apt-get update
   && apt-get install -y --no-install-recommends curl ca-certificates

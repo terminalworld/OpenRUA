@@ -195,6 +195,7 @@ options:
 usage: openrua build sandbox [-h] [--agent NAME[@VERSION]]
                              [--preinstall PREINSTALL] [--distro DISTRO]
                              [--robot-uid ROBOT_UID] [--tag TAG]
+                             [--robot NAME|PATH]
 
 options:
   -h, --help            show this help message and exit
@@ -209,6 +210,9 @@ options:
   --robot-uid ROBOT_UID
                         container uid (default: the current user)
   --tag TAG             image tag (default: openrua-sandbox-<distro>)
+  --robot NAME|PATH     a real robot whose config declares
+                        backend.sandbox_install: its distro, image name and
+                        install chain come from there
 ```
 
 ### openrua build proxy

@@ -201,7 +201,8 @@ A real robot: its ROS 2 graph is already there or a launch command starts it.
 | `launch` | str \| null | None | command that brings the robot's ROS 2 graph up; null = already running |
 | `image` | str \| null | None | docker image the launch command runs in, on the host network (a vendor driver pinned to its own ROS release); null = run it on the host |
 | `discovery` | [Discovery](#discovery) | **required** | how the sandbox reaches the graph |
-| `sandbox_image` | str \| null | None | agent terminal image; default: openrua-sandbox-<ros_distro> |
+| `sandbox_install` | str \| null | None | one-line shell chain, run as root when the sandbox image is built, installing what the agent needs to speak this robot's interfaces (vendor message definitions, a controller CLI); a ROS workspace built under /opt/openrua/overlays/<name> is sourced in every shell. No double quotes. Build it with openrua build sandbox --robot <this file> |
+| `sandbox_image` | str \| null | None | agent terminal image; default: openrua-sandbox-<ros_distro>, with a hash of sandbox_install when there is one |
 
 ## Discovery
 
@@ -533,6 +534,7 @@ configs/agents/<name>.yaml: the facts about one coding agent, no code. The modul
 | `credentials` | [Credentials](#credentials) \| null | None | profile-directory login; null = token only |
 | `token_env` | str \| null | None | environment variable carrying an auth token |
 | `version_argv` | list[str] \| null | None | command printing the agent's version |
+| `min_version` | str \| null | None | the oldest CLI release that accepts every flag this adapter passes; a sandbox with an older one is refused before the agent starts |
 | `instruction_file` | str \| null | None | the file the agent reads instructions from, e.g. AGENTS.md |
 | `default_options` | dict[str, Any] | {} | knobs a config may override under agent.options |
 | `entry_point` | str \| null | None | the module behind this manifest, exposing HOOKS (an Agent subclass): a bundled name under plugins/agents/ or a path to a module of your own, relative to this file |

@@ -228,14 +228,25 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
                 out.append(CheckResult("robot-image", f"robot image {sim} present",
                                        detail=f"openrua {artifact_label(sim, sim_build.LABEL_VERSION) or '?'}"))
     sandbox = backend["sandbox_image"]
-    names = " ".join(f"--agent {a.name}" for a in ctx.agents)
-    tag = "" if sandbox == config.schema.sandbox_image(backend["ros_distro"]) else f" --tag {sandbox}"
-    build = f"openrua build sandbox --distro {backend['ros_distro']}{tag} {names}"
+    # A configured pin goes into the command, or the rebuild would
+    # install the current release instead of the one the config asks for.
+    names = " ".join(f"--agent {a.name}" + (f"@{a.version}" if a.version else "")
+                     for a in ctx.agents)
+    machine = backend.get("sandbox_install")
+    if machine:
+        build = f"openrua build sandbox --robot {ctx.robot} {names}"
+    else:
+        tag = ("" if sandbox == config.schema.sandbox_image(backend["ros_distro"])
+               else f" --tag {sandbox}")
+        build = f"openrua build sandbox --distro {backend['ros_distro']}{tag} {names}"
     if docker_inspect("image", sandbox, "{{.Id}}") is None:
         out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} missing", "error",
                                hint=build))
     else:
         severity, detail = _agents_in_artifact(sandbox, ctx, "install")
+        if machine and artifact_label(sandbox, "openrua.machine_install_sha256") != _sha(machine):
+            severity = "warning"
+            detail = "the robot's sandbox_install changed since the image was built"
         out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} present", severity,
                                detail=detail, hint=build if severity != "ok" else ""))
     return out

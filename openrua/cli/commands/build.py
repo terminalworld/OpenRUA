@@ -16,9 +16,13 @@ the only place an agent's install and hosts are written down.
 
 from __future__ import annotations
 
+import hashlib
+import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 
 from openrua import agents, config, proxy
+from openrua.errors import UnavailableError, UsageError
 from openrua.config import paths
 from openrua.config.schema import sim_image
 from openrua.proxy.build import build as build_proxy
@@ -98,7 +102,7 @@ def run(args) -> int:
         built = [build_base(distro=args.distro, tag=args.tag)]
     elif unit == "sandbox":
         built = [_sandbox(args.agent, args.preinstall, args.distro, args.robot_uid,
-                          args.tag, args.home)]
+                          args.tag, args.home, getattr(args, "robot", None))]
     else:
         built = [_proxy(args.agent, args.whitelist, args.tag, args.port, args.home)]
     for tag, digest in built:
@@ -106,11 +110,55 @@ def run(args) -> int:
     return 0
 
 
-def _sandbox(agent, preinstall, distro, robot_uid, tag, home):
+def robot_install(robot: str, home: Path | None) -> dict:
+    """The sandbox facts a real robot's config declares: its distro, its
+    sandbox image and the install chain for its interface packages."""
+    composed = config.compose(robot, "", "", home)
+    backend = composed.cfg["machine"]["backend"]
+    if backend["kind"] != "real":
+        raise UsageError(f"{robot} is not a real robot instance; --robot names one",
+                         hint="openrua build sandbox --distro <distro> builds the shared image")
+    return backend
+
+
+def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None):
     chosen = manifests_for(agent, home)
-    preinstall = preinstall if preinstall is not None else agents.preinstall(chosen)
-    return build_sandbox(preinstall=preinstall, distro=distro, robot_uid=robot_uid,
-                         tag=tag, labels=agent_labels(chosen, "install"))
+    labels = agent_labels(chosen, "install")
+    chain = preinstall if preinstall is not None else agents.preinstall(chosen)
+    if robot:
+        backend = robot_install(robot, home)
+        distro, tag = backend["ros_distro"], tag or backend["sandbox_image"]
+        machine = backend.get("sandbox_install") or ""
+        chain = " && ".join(c for c in (chain, machine) if c)
+        labels["openrua.machine_install_sha256"] = hashlib.sha256(machine.encode()).hexdigest()
+    # An unpinned agent installs whatever is current: a fresh stamp keeps
+    # docker from reusing an older build's layer for it.
+    fresh = preinstall is None and any(not m.fields.get("version") for m in chosen)
+    stamp = datetime.now(timezone.utc).isoformat() if fresh else ""
+    tag, digest = build_sandbox(preinstall=chain, distro=distro, robot_uid=robot_uid,
+                                tag=tag, labels=labels, stamp=stamp)
+    _report_versions(tag, chosen)
+    return tag, digest
+
+
+def _report_versions(image: str, chosen: list[agents.Manifest]) -> None:
+    """Say which CLI each agent got, and refuse an image whose CLI is
+    older than its adapter's flags need: better at build time than as a
+    disconnected agent at the first session."""
+    for m in chosen:
+        agent = agents.get(m.name, version=m.fields.get("version"))
+        if not agent.version_argv:
+            continue
+        found = subprocess.run(["docker", "run", "--rm", "--entrypoint", "", image,
+                                *agent.version_argv], capture_output=True, text=True)
+        print(f"[build] {m.name}: {found.stdout.strip() or found.stderr.strip()}", flush=True)
+        check = agent.sandbox_cli_check()
+        if check and subprocess.run(["docker", "run", "--rm", "--entrypoint", "", image,
+                                     "bash", "-c", check[1]]).returncode:
+            want = agent.version or f"{agent.min_version} or newer"
+            raise UnavailableError(f"{image} carries {m.name} {found.stdout.strip()}, "
+                                   f"not {want}",
+                                   hint=f"pin a release with --agent {m.name}@<version>")
 
 
 def _proxy(agent, whitelist, tag, port, home):
@@ -153,6 +201,9 @@ def add_parser(sub) -> None:
     s.add_argument("--robot-uid", type=int, default=None,
                    help="container uid (default: the current user)")
     s.add_argument("--tag", default=None, help="image tag (default: openrua-sandbox-<distro>)")
+    s.add_argument("--robot", default=None, metavar="NAME|PATH",
+                   help="a real robot whose config declares backend.sandbox_install: "
+                   "its distro, image name and install chain come from there")
 
     x = units.add_parser("proxy", help="the whitelist proxy image")
     x.add_argument("--agent", action="append", default=None,
