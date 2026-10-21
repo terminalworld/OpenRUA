@@ -1,71 +1,23 @@
 # Changelog
 
+Versions are 0.b.c until the config format, the commands and the agent
+plugin contract are declared stable, at 1.0.0. A release that asks you
+to change something (a config key removed or renamed, a command flag
+removed, a default that changes what a run does, an incompatible plugin
+contract) raises b; any other release raises c. Changes collect under
+Unreleased until a release is cut, and the release decides its number.
+
 ## Unreleased
-
-- **An interrupt stops the robot too**: Escape or `/interrupt` stops the
-  agent's turn through its own CLI, as before, and now also asks the
-  robot's motion actions (each arm's trajectory and gripper ports, the
-  planner's move action) to cancel every goal, so a motion stops whatever
-  started it: a tool, a script of the agent's own, or a command Codex
-  keeps running after its turn is interrupted. The terminal says which
-  actions canceled and names any that did not answer. It is not an
-  emergency stop.
-
-## 0.16.0
-
-- **A real robot's startup checks**: `backend.startup_checks` lists what
-  has to be true before the robot starts (its controller answers, its
-  devices are plugged in), each a command on this computer with the fix a
-  person applies when it fails. They run before every session and in
-  `openrua doctor`; one that fails stops the start and lists every failed
-  check with its fix, and where to go on connecting the robot if it
-  changed. `openrua connect` has the agent write them.
-
-## 0.15.0
-
-Connecting a real robot, with the coding agent doing the work.
-
-- **`openrua connect`** (or "Connect a real robot" in the first-run
-  menu) opens a session whose terminal reaches this computer's docker,
-  network and devices, working in the robot's folder
-  (`~/.openrua/robots/<name>/`: `robot.yaml`, `driver/`, `cameras/`,
-  `CONNECT.md`). The agent asks before each command that changes
-  something. Its `check.py <step>` asks OpenRUA to check a step on the
-  host: `host`, `drivers`, `probe` (the graph into `robot.draft.yaml`),
-  `config`, `robot` (started twice from `robot.yaml`, checked against
-  it), `done`. The status line shows each step's result. When `done`
-  passes, the session moves to the robot's own terminal and the same
-  conversation goes on there; `robot.yaml` becomes the default robot.
-- **Drivers on the same computer are found**: on the host network a
-  sandbox speaks UDP only (Jazzy through `FASTDDS_BUILTIN_TRANSPORTS`,
-  Humble through a Fast DDS profile), since containers there share the
-  host's addresses but not its shared memory, and found nothing of a
-  driver in another container. The same holds for `openrua probe --host`.
-- A session's owner may add operations of its own
-  (`POST /api/actions/<name>`), and may move the conversation to new
-  resources between turns without pausing it.
-
-## 0.14.0
-
-Commands in the shared terminal, as in a coding agent's own.
-
-- **`/permissions`** switches between asking before each command that
-  changes something and running without asking; `--permissions ask|auto`
-  sets how a session starts, and `openrua session configure` does the same
-  from a script. Claude Code switches its permission mode; Codex sends its
-  approval policy with each turn. An approval names the command it would
-  run.
-- **`/model`** shows the model and changes it from the next request.
-- **The agent's own commands**: what the agent lists (Claude Code's
-  `/compact`, `/clear`, skills and custom commands) completes after `/` and
-  goes to the agent as a message; Codex's `/compact` and `/clear` run as
-  its own terminal runs them. `/help` lists them. After `/clear` the session
-  follows the new native conversation.
 
 ## 0.13.0
 
-The shared terminal now behaves the way a coding agent's own does, as on
-the first real-robot day a person expected it to.
+The shared terminal behaves the way a coding agent's own does, a real
+robot is connected with the coding agent doing the work, and an
+interrupt stops the robot's motions too. Changes you may notice:
+interrupting no longer pauses the queue, and it now cancels the goals on
+the robot's motion actions.
+
+### The terminal
 
 - **What you send while the agent works joins the running turn**, after
   its current tool calls, instead of waiting for the turn to end: Claude
@@ -99,6 +51,55 @@ the first real-robot day a person expected it to.
 - **AGENTS.md in every workspace**: two sentences pointing any agent at
   README.md and machine.yaml, read on its own by Codex and by Claude Code
   in a project without a CLAUDE.md.
+- **`/permissions`** switches between asking before each command that
+  changes something and running without asking; `--permissions ask|auto`
+  sets how a session starts, and `openrua session configure` does the same
+  from a script. Claude Code switches its permission mode; Codex sends its
+  approval policy with each turn. An approval names the command it would
+  run.
+- **`/model`** shows the model and changes it from the next request.
+- **The agent's own commands**: what the agent lists (Claude Code's
+  `/compact`, `/clear`, skills and custom commands) completes after `/` and
+  goes to the agent as a message; Codex's `/compact` and `/clear` run as
+  its own terminal runs them. `/help` lists them. After `/clear` the session
+  follows the new native conversation.
+
+### Real robots
+
+- **`openrua connect`** (or "Connect a real robot" in the first-run
+  menu) opens a session whose terminal reaches this computer's docker,
+  network and devices, working in the robot's folder
+  (`~/.openrua/robots/<name>/`: `robot.yaml`, `driver/`, `cameras/`,
+  `CONNECT.md`). The agent asks before each command that changes
+  something. Its `check.py <step>` asks OpenRUA to check a step on the
+  host: `host`, `drivers`, `probe` (the graph into `robot.draft.yaml`),
+  `config`, `robot` (started twice from `robot.yaml`, checked against
+  it), `done`. The status line shows each step's result. When `done`
+  passes, the session moves to the robot's own terminal and the same
+  conversation goes on there; `robot.yaml` becomes the default robot.
+- **Drivers on the same computer are found**: on the host network a
+  sandbox speaks UDP only (Jazzy through `FASTDDS_BUILTIN_TRANSPORTS`,
+  Humble through a Fast DDS profile), since containers there share the
+  host's addresses but not its shared memory, and found nothing of a
+  driver in another container. The same holds for `openrua probe --host`.
+- A session's owner may add operations of its own
+  (`POST /api/actions/<name>`), and may move the conversation to new
+  resources between turns without pausing it.
+- **A real robot's startup checks**: `backend.startup_checks` lists what
+  has to be true before the robot starts (its controller answers, its
+  devices are plugged in), each a command on this computer with the fix a
+  person applies when it fails. They run before every session and in
+  `openrua doctor`; one that fails stops the start and lists every failed
+  check with its fix, and where to go on connecting the robot if it
+  changed. `openrua connect` has the agent write them.
+- **An interrupt stops the robot too**: Escape or `/interrupt` stops the
+  agent's turn through its own CLI, as before, and now also asks the
+  robot's motion actions (each arm's trajectory and gripper ports, the
+  planner's move action) to cancel every goal, so a motion stops whatever
+  started it: a tool, a script of the agent's own, or a command Codex
+  keeps running after its turn is interrupted. The terminal says which
+  actions canceled and names any that did not answer. It is not an
+  emergency stop.
 
 ## 0.12.0
 
