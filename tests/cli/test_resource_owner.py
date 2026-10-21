@@ -13,7 +13,7 @@ from openrua.cli.commands import clean, down
 from openrua.errors import UnavailableError
 
 
-@pytest.mark.parametrize("mode", ["up", "run"])
+@pytest.mark.parametrize("mode", ["up"])
 def test_down_reaches_native_resource_owner_and_retains_workspace(tmp_path, mode):
     bootstrap = tmp_path / "owner.py"
     bootstrap.write_text('''
@@ -22,7 +22,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from openrua import robot
 from openrua.cli import build_parser, state
-from openrua.cli.commands import up, run
+from openrua.cli.commands import up
 root = Path(sys.argv[1])
 mode = sys.argv[2]
 directory = root / 'sandboxes' / 'owned'
@@ -42,10 +42,6 @@ def stop():
     state.stopped('owned', root)
 up.open_session = lambda args: SimpleNamespace(power_off=stop,
     banner=lambda: 'resource owner ready', header=lambda *args: 'resource owner ready')
-run.agents.get = lambda *args, **kwargs: SimpleNamespace(interactive_argv=lambda *a, **k: [
-    sys.executable, '-c',
-    'import time,sys; from pathlib import Path; p=Path(sys.argv[1]); '
-    'exec("while not p.exists(): time.sleep(.02)")', str(workspace / 'driver-stopped')])
 args = build_parser().parse_args(['--home', str(root), mode, 'fake', '--name', 'owned'])
 try:
     raise SystemExit(args.fn(args))

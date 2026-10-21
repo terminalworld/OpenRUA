@@ -50,8 +50,8 @@ never builds.
 First-time simulation builds can download large datasets. Progress is displayed,
 and logs are retained under `~/.openrua/preparation/` for retry.
 
-For manual preparation, or the explicit `up`, `run` and `serve` commands (which
-still require prepared images), use:
+For manual preparation, or the explicit `up`, `exec`, `bench` and `serve`
+commands (which still require prepared images), use:
 
 ```bash
 openrua build                            # the default agent's sandbox, the proxy image, and the default benchmark's simulator image
@@ -117,7 +117,7 @@ Three limits say what the agent may reach beyond the robot:
 | `web_search` | `true` \| `false` | the agent CLI's own web search and web fetch tools |
 | `account_connectors` | `true` \| `false` | what your account brings beyond the CLI: its connectors or apps, and the skills and plugins it syncs |
 
-A session you start yourself (`openrua`, `run`, `up`, `serve`) sets none
+A session you start yourself (`openrua`, `up`, `serve`) sets none
 of them: the agent CLI behaves as you have it set up, no proxy starts,
 and the sandbox reaches the internet directly (a simulated robot's
 sandbox also joins `openrua-internet`, a network only OpenRUA's
@@ -125,11 +125,11 @@ sandboxes are on, so no other container shares its ROS 2 traffic; a real
 robot's sandbox is on the host network). Turn one on for a session with
 `--internet model-only`, `--no-web-search` or `--no-account-connectors`.
 
-A benchmark trial (`openrua bench`) applies its config's
-`protocol.limits`, by default all three: the agent reaches its model
-service and nothing else. A benchmark config may change them, and the
-same flags on `openrua bench` override them for a run (`--internet open`,
-`--web-search`, `--account-connectors`). The run's `config.json` and each
+A recorded run (`openrua exec`, or a benchmark trial under `openrua bench`)
+applies its config's `protocol.limits`, by default all three: the agent
+reaches its model service and nothing else. A benchmark config may change
+them, and the same flags on `openrua exec` or `openrua bench` override them
+for a run (`--internet open`, `--web-search`, `--account-connectors`). The run's `config.json` and each
 trial's record say which applied; a session's `provenance.json` records
 its limits and the agent CLI version the sandbox reported.
 
@@ -275,7 +275,7 @@ agent's facts and default model. The keys are listed in
 
 `~/.openrua` (`$OPENRUA_HOME`, `--home`) holds your defaults in
 `config.yaml`, logins in `credentials/`, and session files in
-`sandboxes/<name>/`. Ending `run`, interrupting `up`, or calling `down`
+`sandboxes/<name>/`. Interrupting `up`, or calling `down`,
 stops the session's resources but retains its workspace, native agent
 profile (including any conversation records written by the agent), logs
 and state. This does not resume a stopped robot or agent conversation. A shared service
@@ -330,8 +330,8 @@ The agent CLIs live in the sandbox image, so a newer CLI comes with a
 rebuild of that image. `openrua` looks for one at most once a day and,
 when the sandbox's CLI is older, asks before the session starts: update
 now (rebuild the sandbox), skip, or skip until the next version. A CLI
-older than OpenRUA can run must be updated to start. `openrua run` and
-`openrua up` print one line instead of asking; a pinned version
+older than OpenRUA can run must be updated to start. `openrua up` prints
+one line instead of asking; a pinned version
 (`agent.version`) is never offered an update; a trial never changes its
 CLI. Inside the sandbox the CLIs' own updaters are off.
 

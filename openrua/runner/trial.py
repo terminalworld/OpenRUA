@@ -96,7 +96,9 @@ def episode_task(rec: dict, machine, scored: bool, seed: int, task: str | None) 
     may fill ``init_state``; robocasa names the kitchen)."""
     if scored:
         info = start_episode(machine, seed)
-        language = info.get("language", "")
+        # A scene that states no task of its own (a simulator's native
+        # scene) takes the caller's sentence; it still judges success.
+        language = info.get("language", "") or task or ""
         if info.get("init_state"):
             rec["init_state"] = info["init_state"]
     else:
@@ -104,7 +106,7 @@ def episode_task(rec: dict, machine, scored: bool, seed: int, task: str | None) 
         rec["verdict"] = "not_applicable"
     rec["task_language"] = language
     if not language.strip():
-        raise RuntimeError("empty task: the bridge returned none"
+        raise RuntimeError("empty task: the scene states none; give one as a sentence"
                            if scored else "empty task: a real robot needs --task")
     return language
 

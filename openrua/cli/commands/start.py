@@ -80,7 +80,7 @@ def authentication_choices(home: Path, names: list[str]) -> dict:
         adapter = agents.get(name, home, version=selected.get('version'))
         if 'conversation' not in adapter.capabilities:
             raise UsageError(f'{adapter.name} does not support shared chat',
-                             hint='use this plugin with openrua run or select a conversation-capable agent')
+                             hint='use this plugin in its own terminal (openrua up, then openrua agent) or select a conversation-capable agent')
         auth = selected.get('auth') or {}
         result[name] = {'api': 'prepare_api_profile' in adapter.capabilities,
                         'auth_mode': auth.get('mode', 'native'),
@@ -132,7 +132,7 @@ def validate_values(home: Path, values: dict[str, str]) -> dict:
         raise UsageError(str(exc), hint='choose native login, or API key file with a readable raw-key file') from exc
     if 'conversation' not in adapter.capabilities:
         raise UsageError(f'{adapter.name} does not support shared chat',
-                         hint='use this plugin with openrua run or select a conversation-capable agent')
+                         hint='use this plugin in its own terminal (openrua up, then openrua agent) or select a conversation-capable agent')
     return cfg
 
 

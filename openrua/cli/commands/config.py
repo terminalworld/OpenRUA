@@ -5,7 +5,7 @@ The defaults file is ``~/.openrua/config.yaml``: the robot, simulator,
 benchmark and agent a command uses when it names none; under
 ``agents.<name>`` what this machine knows about each agent (model,
 version pin, login directory, options); the sandbox's docker flags.
-``set`` writes the flags it is given into it (the same flags ``run``
+``set`` writes the flags it is given into it (the same flags a session
 takes; the agent facts under the agent named or defaulted), ``show``
 prints it, ``schema`` prints every key of the resolved config with its
 meaning.
@@ -71,13 +71,13 @@ def run(args) -> int:
 def add_parser(sub) -> None:
     p = sub.add_parser("config", help="your defaults (robot, simulator, benchmark, agent)",
                        description="Your defaults file, ~/.openrua/config.yaml: `config set` "
-                       "writes the flags it is given into it (the same flags run takes), "
+                       "writes the flags it is given into it (the same flags a session takes), "
                        "`config show` prints it, `config schema` prints the resolved "
                        "config's JSON schema, every key with its meaning.")
     p.add_argument("what", choices=("show", "set", "schema"), help="what to do")
     p.add_argument("--robot", default=None, help="robot a command uses when it names none")
     p.add_argument("--sim", default=None, help="simulator, likewise")
-    p.add_argument("--bench", default=None, help="benchmark whose world run / up load by "
+    p.add_argument("--bench", default=None, help="benchmark whose world a session loads by "
                    "default (null = the simulator's native scene)")
     p.add_argument("--agent", default=None, help="agent a command uses when it names none "
                    "(openrua agents)")

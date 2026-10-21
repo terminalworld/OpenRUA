@@ -370,7 +370,7 @@ One repository the image clones at a pinned commit.
 
 ## NativeScene
 
-What ``openrua run <robot> --sim <engine>`` loads with no benchmark.
+What a session on ``<robot> --sim <engine>`` loads with no benchmark.
 
 | key | type | default | meaning |
 |---|---|---|---|
@@ -506,7 +506,7 @@ What a benchmark brings into the simulator's world.
 
 | key | type | default | meaning |
 |---|---|---|---|
-| `default_suite` | str \| null | None | the suite openrua run / up load when none is named; default: the first in task.suites |
+| `default_suite` | str \| null | None | the suite a session loads when none is named; default: the first in task.suites |
 | `cameras` | [Cameras](#cameras) \| null | None | the scene cameras (over the simulator's native ones) |
 | `robots` | dict[str, [Embodiment](#embodiment)] | {} | robot type name -> embodiment this benchmark's assets add or adjust (merged over the simulator's) |
 | `notes` | dict['timing' \| 'joint_state' \| 'joint_trajectory' \| 'cartesian_twist' \| 'gripper' \| 'base_twist' \| 'odometry' \| 'wrench' \| 'camera' \| 'planning', list[str]] \| null | None | observations no field can say, by the manifest kind they concern: timing, joint_state, joint_trajectory, cartesian_twist, gripper, base_twist, odometry, wrench, camera, planning; for this benchmark's scenes |
@@ -521,7 +521,7 @@ A defaults file: the package's configs/config.yaml or ~/.openrua/config.yaml. Fo
 | `agents` | dict[str, [AgentFacts](#agentfacts)] | {} | agent name -> this machine's facts about it (model, version, credentials_dir, options) |
 | `robot` | str \| null | None | robot when a command names none |
 | `simulator` | str \| null | None | simulator when a command names none (and the robot is a type) |
-| `benchmark` | str \| null | None | benchmark whose world openrua run / up load when --bench is not given; null = the simulator's native scene |
+| `benchmark` | str \| null | None | benchmark whose world a session loads when --bench is not given; null = the simulator's native scene |
 | `sandbox` | [SandboxConfig](#sandboxconfig) |  | how this machine starts the sandbox |
 
 ## AgentFacts
