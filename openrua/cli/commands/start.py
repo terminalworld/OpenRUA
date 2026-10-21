@@ -200,17 +200,17 @@ def run(args) -> int:
 
 
 def offer_update(args, values: dict) -> bool:
-    """Offer a newer agent CLI before the session starts (see updates);
-    False when the user chose to quit. Only at an interactive terminal."""
+    """Offer a newer OpenRUA and a newer agent CLI before the session
+    starts (see updates); False when the person chose to quit or to run
+    the new OpenRUA. Only at an interactive terminal."""
     if not (sys.stdin.isatty() and sys.stdout.isatty()):
         return True
     try:
         composed = config.compose(values['robot'], values['sim'], values['bench'], args.home,
                                   agent=values['agent'] or None, model=values['model'] or None)
-        offer = updates.offer_for(composed, args.home)
     except Exception:  # noqa: BLE001; an incomplete selection is the setup screen's job
-        return True
-    return offer is None or updates.ask(offer, args.home)
+        composed = None
+    return all(updates.ask(offer, args.home) for offer in updates.offers(composed, args.home))
 
 
 def _run(args) -> int:

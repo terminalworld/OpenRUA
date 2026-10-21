@@ -105,7 +105,6 @@ start or reconnect (without a subcommand):
 | `config` | your defaults (robot, simulator, benchmark, agent) |
 | `clean` | explicitly delete retained session files |
 | `doctor` | check the install: docker, images, simulator, login |
-| `run` | removed: use openrua, openrua exec, or up + agent |
 
 Without a subcommand, an unnamed launch opens setup with a new session ID. An explicit name reconnects to the named shared session. `--gui` selects the browser, `--cli` plain chat, `--resume [ID]` selects history, and `--setup` edits the shared defaults. With no interface selected, non-interactive invocations print help.
 
@@ -972,21 +971,6 @@ options:
                         build (default: the robot's config, else the
                         configured default)
   --json                machine-readable output
-```
-
-## openrua run
-
-```
-usage: openrua run [-h]
-
-``openrua run``: removed; it says where its uses went. It opened the coding
-agent's own terminal on a robot, from before OpenRUA had a terminal of its
-own. Talking to the agent is ``openrua``; its own terminal is ``openrua up``
-and then ``openrua agent``; the agent doing a task on its own, recorded, is
-``openrua exec``. This stub goes in the next release.
-
-options:
-  -h, --help  show this help message and exit
 ```
 
 ## Exit codes

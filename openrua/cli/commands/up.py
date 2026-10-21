@@ -52,12 +52,12 @@ class Session(LiveRobot):
 
 
 def notice_update(args) -> None:
-    """One line when a newer agent CLI is available (never a question:
-    up is for scripts too)."""
+    """One line when a newer OpenRUA or agent CLI is available (never a
+    question: up is for scripts too)."""
     try:
         composed = config.compose(args.robot, args.sim, args.bench, args.home, agent=args.agent)
     except Exception:  # noqa: BLE001; the bring-up reports a bad selection itself
-        return
+        composed = None
     updates.notice(composed, args.home)
 
 

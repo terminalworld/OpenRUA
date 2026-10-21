@@ -9,6 +9,14 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- **OpenRUA keeps itself up to date**: `openrua` checks PyPI at most once a
+  day and, when a newer OpenRUA is out, offers to update now, skip, or skip
+  until the next version, as Codex does; updating runs the installer's own
+  upgrade (pip, uv or pipx), and the next `openrua` is the new version.
+  `up` and `exec` print one line. A source checkout is never offered one.
+- `openrua run` is gone, its pointer too.
+- The README's News reads as news.
+
 ## 0.14.0
 
 One task done by the agent on its own and recorded, on any robot, with
