@@ -17,6 +17,11 @@ openrua exec panda "lift the cube" --sim robosuite
 openrua exec ./my-robot.yaml "put the cup on the plate"
 ```
 
+It needs the images prepared, as `openrua doctor` checks (for the
+robosuite lines: `openrua build --sim robosuite`, `openrua build sandbox
+--distro humble`, and `openrua build proxy`, since the run limits the agent
+to its model service).
+
 `openrua exec` gives the agent one task and lets it work on its own, as
 `codex exec` or `claude -p` do: the robot comes up, the agent works until
 it is done or a budget ends, the robot powers off, and the run is
