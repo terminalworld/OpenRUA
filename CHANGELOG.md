@@ -9,6 +9,16 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- The sandbox's file that lets `python3 -I` find rclpy now lists
+  directories, computed when the image is built, after a robot's own
+  install, instead of running code at every Python start: the form Python
+  keeps ([PEP 829](https://peps.python.org/pep-0829/) deprecates `.pth`
+  lines that run code from Python 3.15). A sandbox built by 0.18.0 keeps
+  working; `openrua doctor` suggests the rebuild.
+- Sourcing the sandbox's ROS setup (`/etc/openrua-ros.sh`) succeeds on a
+  sandbox without robot overlays; it returned 1, so a command chained
+  after it with `&&` never ran.
+
 ## 0.18.0
 
 Rebuild the sandbox (`openrua doctor` gives the command): `python3 -I`

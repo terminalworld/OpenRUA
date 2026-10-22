@@ -341,3 +341,13 @@ def test_a_machine_of_cameras_alone_lists_no_joint_states(tmp_path):
     kinds = {s["kind"] for s in yaml.safe_load((tmp_path / "m.yaml").read_text())["sensors"]}
     assert "joint_state" not in kinds
     assert "joint_states_flow" not in dict(build_checks(cfg, _Agent()))
+
+
+def test_the_path_file_for_isolated_python_lists_directories_only():
+    # python3 -I ignores PYTHONPATH; a .pth file brings ROS's directories
+    # back. Plain path lines, written after the robot's own install: the
+    # form Python keeps (PEP 829 deprecates .pth lines that run code).
+    recipe = (REPO / "openrua" / "sandbox" / "sandbox.Dockerfile").read_text()
+    write = recipe[recipe.index("openrua-ros-path.pth") - 200:recipe.index("openrua-ros-path.pth")]
+    assert "import" not in write and 'tr ":"' in write
+    assert recipe.index("openrua-ros-path.pth") > recipe.index('bash -c "${PREINSTALL}"')

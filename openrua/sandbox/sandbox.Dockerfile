@@ -56,17 +56,9 @@ RUN userdel -r ubuntu 2>/dev/null; \
 RUN mkdir -p /opt/openrua/overlays \
     && printf '%s\n' \
        "source /opt/ros/${ROS_DISTRO}/setup.bash" \
-       'for overlay in /opt/openrua/overlays/*/local_setup.bash; do [ -f "$overlay" ] && source "$overlay"; done' \
+       'for overlay in /opt/openrua/overlays/*/local_setup.bash; do if [ -f "$overlay" ]; then source "$overlay"; fi; done' \
        > /etc/openrua-ros.sh \
     && echo "source /etc/openrua-ros.sh" >> /etc/bash.bashrc
-# `python3 -I` (isolated mode; a coding agent may run a file it did not
-# write that way) ignores PYTHONPATH, and ROS 2 and every overlay hand
-# their Python packages over through it: rclpy would be missing. A .pth
-# file in the system site-packages is read in isolated mode too; this one
-# puts PYTHONPATH's entries back, after the system's own, whatever the
-# shell has sourced.
-RUN echo 'import os, sys; sys.path.extend(p for p in os.environ.get("PYTHONPATH", "").split(os.pathsep) if p and p not in sys.path)' \
-       > /usr/lib/python3/dist-packages/openrua-ros-path.pth
 USER robot
 WORKDIR /workspace
 ENV HOME=/workspace \
@@ -99,4 +91,14 @@ USER root
 ARG PREINSTALL=""
 ARG PREINSTALL_STAMP=""
 RUN if [ -n "${PREINSTALL}" ]; then bash -c "${PREINSTALL}"; fi
+# `python3 -I` (isolated mode; a coding agent may run a file it did not
+# write that way) ignores PYTHONPATH, through which ROS 2 and every overlay
+# hand over their Python packages: rclpy would be missing. A .pth file in
+# the system site-packages is read in isolated mode too. This one lists
+# the directories PYTHONPATH holds once ROS and the overlays installed
+# above are sourced, one per line: computed from that environment here,
+# after the install, and plain paths, the form Python keeps (PEP 829
+# deprecates .pth lines that run code). Missing directories are skipped.
+RUN bash -c 'source /etc/openrua-ros.sh && tr ":" "\n" <<< "$PYTHONPATH"' \
+       > /usr/lib/python3/dist-packages/openrua-ros-path.pth
 USER robot
