@@ -28,7 +28,7 @@ import yaml
 
 from openrua import agents
 from openrua.agents.registry import split_pin
-from openrua.config import compose, paths
+from openrua.config import compose, paths, projects
 from openrua.config.loader import default_agent_name, layer_agent, load_user_config
 from openrua.config.schema import Limits, RobotInstance, sandbox_image
 from openrua.errors import UnavailableError, UsageError
@@ -53,6 +53,7 @@ class ConnectRequest:
     agent: str | None = None
     model: str | None = None
     distro: str = "jazzy"   # the connecting terminal's ROS 2 (the robot's comes later)
+    project: Path | None = None
 
 
 def robot_file(folder: Path) -> Path:
@@ -200,6 +201,9 @@ def open_connect(request: ConnectRequest, continuing: bool = False) -> LiveRobot
                workspace=str(folder), task="", limits=limits, permissions="ask",
                mounts=list(profile_mounts), robot=str(robot_file(folder)),
                robot_model="being connected", connect={"folder": str(folder)})
+    if request.project is not None:
+        facts = state.load(request.name, request.home)
+        state.save(request.name, request.home, **{**facts, 'project': str(request.project.resolve())})
 
     def power_off() -> None:
         sandbox_down(sandbox_name)
@@ -383,7 +387,8 @@ def _append(out, log: Path) -> None:
 FIRST_MOTION = (
     "The robot is up in its own terminal now, started from robot.yaml, which is "
     "the default robot from here on (openrua starts it). This terminal has no "
-    "docker; /workspace holds the robot's machine.yaml, docs and tools. Last step: "
+    "docker; read the workspace instructions for the current robot's machine "
+    "manifest, docs and tools. Last step: "
     "with the person's word that the emergency stop is at hand, open and close the "
     "gripper once and move one joint a few degrees, then say how it went.")
 
@@ -449,7 +454,7 @@ class ConnectFlow:
         settings = self.owned.store.snapshot()["state"].get("settings") or {}
         request = RobotRequest(home=self.request.home, name=self.request.name, robot=file,
                                agent=self.agent, model=settings.get("model"), continuing=True,
-                               permissions=settings.get("permissions", "ask"))
+                               permissions=settings.get("permissions", "ask"), project=self.request.project)
         print("[connect] every check passed: moving to the robot's own terminal", flush=True)
         try:
             await self.owned.move_to(lambda: open_robot(request),
@@ -466,4 +471,7 @@ class ConnectFlow:
         self.server.execution = self.owned.execution
         subprocess.call([sys.executable, "-m", "openrua", "--home", str(self.request.home),
                          "config", "set", "--robot", file], stdout=subprocess.DEVNULL)
+        if self.request.project is not None:
+            projects.save_selection(self.request.project, dict(robot=file, sim='', bench='', agent=self.agent,
+                                                               model=settings.get('model') or ''))
         await self._say(FIRST_MOTION)

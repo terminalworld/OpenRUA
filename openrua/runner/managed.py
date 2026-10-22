@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import fcntl
 from pathlib import Path
 from typing import Callable
 
@@ -37,6 +38,7 @@ class ManagedSession:
         self._native_stopped = False
         self._robot_stopped = False
         self._watch: asyncio.Task | None = None
+        self.resource_lock = None
 
     def watch_robot(self, interval_s: float = 2.0) -> None:
         """Notice when the robot's resources end under the session (a
@@ -107,22 +109,26 @@ class ManagedSession:
                 raise UnavailableError("; ".join(errors), hint="inspect the service log and retry ending the session")
             self.execution.session.close()
             self._ended = True
+            if self.resource_lock is not None:
+                self.resource_lock.close()
+                self.resource_lock = None
 
 
 async def _open_execution(name: str, home: Path, store: SQLiteStore,
-                          resume: bool = False) -> Execution:
+                          resume: bool = False, reopen: bool = False) -> Execution:
     """The agent's native process for this session's resources, started.
     ``resume`` continues the session's native conversation (its settings
     too) instead of beginning one."""
     facts = live_state.load(name, home)
     adapter = agents.get(facts.get("agent_spec", facts["agent"]), home, version=facts.get("agent_version"))
     current = store.snapshot()["state"] if resume else {}
+    native_session = current.get('native_session') if not (reopen and not current.get('messages')) else None
     settings = current.get("settings") or {}
     conversation = adapter.conversation(
         facts["sandbox"], settings.get("model") or facts["model"], facts["proxy"],
         options=facts["options"], limits=facts.get("limits"),
         permissions=settings.get("permissions") or facts.get("permissions", "auto"),
-        **({"session_id": current["native_session"]} if current.get("native_session") else {}))
+        **({"session_id": native_session} if native_session else {}))
     if conversation is None:
         raise UnavailableError(
             f"{adapter.name} does not support structured conversations",
@@ -133,7 +139,10 @@ async def _open_execution(name: str, home: Path, store: SQLiteStore,
         return await StdioTransport.start(conversation.argv, stderr)
     execution = Execution(Session(store), conversation, transport, directory / "conversation.lock",
                           diagnostics=lambda: _last_words(stderr))
-    await execution.start()
+    await execution.start(reopen=reopen,
+                          context_note=('The robot connection has restarted. Read /robot/machine.yaml and acquire '
+                                        'current observations before continuing; the physical scene may have changed. '
+                                        'Past actions and queued instructions have not been replayed.') if reopen else None)
     return execution
 
 
@@ -146,17 +155,47 @@ async def start(request: RobotRequest, open_resources: Callable | None = None) -
     returns the resources' handle (a robot by default; the connecting
     terminal for ``openrua connect``).
     """
-    robot = (open_resources or open_robot)(request)
+    lock_path = paths.launch_dir(request.name, request.home) / 'resources.lock'
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    resource_lock = lock_path.open('a')
+    try:
+        fcntl.flock(resource_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        resource_lock.close()
+        raise UnavailableError('this session already has a resource owner',
+                               hint='connect to it using --resume') from exc
+    continuing = getattr(request, 'continuing', False)
+    if continuing:
+        try:
+            previous = live_state.load(request.name, request.home, require_running=False)
+            if not request.project or previous.get('project') != str(request.project.resolve()) or previous.get('status') != 'stopped':
+                raise ValueError('only a confirmed stopped conversation in this project can be reopened')
+            database = SQLiteStore.open_readonly(paths.sandbox_dir(request.name, request.home) / 'conversation.sqlite')
+            try:
+                if not database.snapshot()['state']['closed']:
+                    raise ValueError('conversation is not ended; inspect its existing owner')
+            finally:
+                database.close()
+        except BaseException:
+            resource_lock.close()
+            raise
+    try:
+        robot = (open_resources or open_robot)(request)
+    except BaseException:
+        resource_lock.close()
+        raise
     store = None
     execution = None
     try:
         facts = live_state.load(request.name, request.home)
         directory = paths.sandbox_dir(request.name, request.home)
         store = SQLiteStore(directory / "conversation.sqlite", initial_state())
-        execution = await _open_execution(request.name, request.home, store)
+        execution = await _open_execution(request.name, request.home, store,
+                                           resume=continuing, reopen=continuing)
         managed = ManagedSession(robot, execution, store, WorkspaceFiles(Path(facts["workspace"])),
                                  name=request.name, home=request.home)
         execution.on_interrupt = managed.cancel_motion
+        managed.resource_lock = resource_lock
         managed.watch_robot()
         return managed
     except BaseException:
@@ -168,5 +207,8 @@ async def start(request: RobotRequest, open_resources: Callable | None = None) -
                 robot.power_off()
             finally:
                 if store is not None:
+                    if continuing:
+                        Session(store).close()
                     store.close()
+                resource_lock.close()
         raise

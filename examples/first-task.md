@@ -92,6 +92,8 @@ motion on Esc; on a real robot, keep the emergency stop at hand here.
 
 ## 2. What the agent sees
 
+Recorded `exec` and `bench` trials start with this fresh workspace:
+
 ```
 /workspace
   AGENTS.md            points any agent at README.md and machine.yaml
@@ -112,6 +114,10 @@ can inspect the live graph to discover available interfaces. Recorded runs
 (`exec`, `bench`) also run preflight checks before the agent starts; `up` does
 not perform that trial-level validation. The tools are ordinary `rclpy` scripts the agent may read, copy or
 ignore.
+
+Interactive `openrua`, `up` and `agent` instead mount your persistent project
+at `/workspace`, with current robot materials under `/robot`. Existing code
+and instructions are kept. See [robot projects](../docs/projects.md).
 
 ## 3. What a session looks like
 
@@ -144,8 +150,8 @@ An `exec` run stops by itself; its record stays under `runs/`.
 A robot `openrua agent` started goes off when you answer yes as the agent
 exits (or later with `openrua down --name <name>`); `Ctrl-C` in the terminal
 of `up` powers its robot off. Either way both containers are removed, and the
-workspace the agent left behind, snapshots and scripts included, stays under
-`~/.openrua/sandboxes/<name>/workspace/workspace/`.
+project directory retains the agent's code, snapshots and notes. Conversation
+records and native profiles remain under `~/.openrua/sandboxes/<name>/`.
 
 ## Next
 

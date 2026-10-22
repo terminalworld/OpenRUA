@@ -120,10 +120,45 @@ export class Setup extends Screen {
 
 }
 
+export class Workspace extends Screen {
+  constructor(spec, terminal) {
+    super(terminal);
+    this.path = spec.path;
+    this.ui.addChild(new Text(`Use and trust this robot workspace?\n${plain(spec.path)}\n\nYour coding agent can read, change and run files here.\nOpenRUA will keep project files and run records in this directory.`, 0, 1));
+    this.body = new Container(); this.ui.addChild(this.body);
+    this.ui.addChild(new Text(plain(spec.notice), 0, 1));
+    const menu = new SelectList([
+      {value: 'trust', label: 'Yes, use and trust this directory'},
+      {value: 'choose', label: 'No, choose another directory'},
+      {value: 'create', label: 'Create a project directory'},
+      {value: 'quit', label: 'Quit'},
+    ], 6, selectTheme);
+    menu.onCancel = () => this.finish();
+    menu.onSelect = item => {
+      if (item.value === 'trust') this.finish({action: 'trust', path: spec.path});
+      else if (item.value === 'quit') this.finish();
+      else {
+        this.body.clear();
+        this.body.addChild(new Text(item.value === 'create' ? 'New directory path' : 'Directory path', 0, 1));
+        const input = new Input({prompt: '> '});
+        input.onEscape = () => this.finish({action: 'choose', path: spec.path});
+        input.onSubmit = value => this.finish({action: 'choose', path: value.trim()});
+        this.body.addChild(input); this.ui.setFocus(input); this.ui.requestRender();
+      }
+    };
+    this.body.addChild(menu); this.ui.setFocus(menu);
+  }
+}
+
 export class History extends Screen {
   constructor(spec, terminal) {
     super(terminal);
-    this.ui.addChild(new Text('Resume a conversation\nEnded or unavailable sessions open read-only.', 0, 1));
+    this.ui.addChild(new Text(`Resume a conversation\n${plain(spec.scope ?? 'All projects')}\n`
+      + 'Ended project conversations can reconnect; older records open read-only.'
+      + (spec.can_all ? '\nTab: switch between this project and all projects' : ''), 0, 1));
+    if (spec.can_all) this.ui.addInputListener(data => {
+      if (matchesKey(data, 'tab')) { this.finish({action: 'scope'}); return {consume: true}; }
+    });
     this.input = new Input({prompt: 'Search: '});
     this.rows = spec.rows;
     this.listContainer = new Container();
@@ -142,10 +177,12 @@ export class History extends Screen {
     const query = this.input.getValue().toLocaleLowerCase();
     const rows = this.rows.filter(row => `${row.title} ${row.id}`.toLocaleLowerCase().includes(query));
     this.list = new SelectList(rows.map(row => ({value: row.id,
-      label: `${plain(row.title)} · ${plain(row.id)}`, description: `${plain(row.status)} · ${plain(row.time)}`})), 10, selectTheme);
+      label: `${plain(row.title)} · ${plain(row.id)}`, description: `${plain(row.status)} · ${plain(row.time)}${row.project ? ' · ' + plain(row.project) : ''}`})), 10, selectTheme);
     this.list.onSelect = item => this.finish({action: 'select', id: item.value});
     this.list.onCancel = () => this.finish();
-    this.listContainer.clear(); this.listContainer.addChild(this.list);
+    this.listContainer.clear();
+    if (!rows.length) this.listContainer.addChild(new Text('No conversations match this project or search.', 0, 1));
+    this.listContainer.addChild(this.list);
   }
 
 }

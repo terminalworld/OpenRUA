@@ -79,12 +79,36 @@ def connection(client) -> dict:
     return {'read_only': True, 'reason': client.reason, 'snapshot': snapshot, 'events': events}
 
 
-def choose_history(list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None):
+def workspace(directory: str, screen=run_screen) -> str | None:
+    """Ask about the exact chosen path before the caller creates any files."""
     notice = ''
     while True:
-        result = screen({'mode': 'history', 'rows': list_sessions(), 'notice': notice})
+        result = screen({'mode': 'workspace', 'path': directory, 'notice': notice})
         if result['action'] == 'quit':
             return None
+        if result['action'] not in {'trust', 'choose'} or not isinstance(result.get('path'), str):
+            raise RuntimeError('Invalid workspace selection; nothing was trusted.')
+        candidate = Path(result['path']).expanduser().resolve() if result['path'].strip() else None
+        if candidate is None or (candidate.exists() and not candidate.is_dir()):
+            notice = 'Choose a directory path.'
+            continue
+        if result['action'] == 'trust' and str(candidate) == directory:
+            return directory
+        directory, notice = str(candidate), ''
+
+
+def choose_history(list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None,
+                   list_all=None, scope=None, all_projects=False):
+    notice = ''
+    while True:
+        result = screen({'mode': 'history', 'rows': (list_all if all_projects and list_all else list_sessions)(),
+                         'notice': notice, 'scope': 'All projects' if all_projects else scope,
+                         'can_all': list_all is not None})
+        if result['action'] == 'quit':
+            return None
+        if result['action'] == 'scope' and list_all is not None:
+            all_projects = not all_projects
+            continue
         if result['action'] != 'select' or not isinstance(result.get('id'), str):
             raise RuntimeError('Invalid history selection; no session was opened.')
         try:
@@ -95,7 +119,7 @@ def choose_history(list_sessions, open_session, screen=run_screen, *, environmen
 
 def setup(values, choices, location, save, check, launch, agent_models,
           list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None, authentication=None, resolve_agent=None,
-          connect=None, ready=None, sign_in=None):
+          connect=None, ready=None, sign_in=None, list_all=None, scope=None):
     notice = ''
     authentication = dict(authentication or {})
     drafts = {}
@@ -107,7 +131,7 @@ def setup(values, choices, location, save, check, launch, agent_models,
         if action == 'quit':
             return None
         if action == 'history':
-            selected = choose_history(list_sessions, open_session, screen)
+            selected = choose_history(list_sessions, open_session, screen, list_all=list_all, scope=scope)
             if selected:
                 return selected
             continue
@@ -165,7 +189,8 @@ def setup(values, choices, location, save, check, launch, agent_models,
             notice = str(exc) + '\n' + getattr(exc, 'hint', '')
 
 
-def chat(client, name, list_sessions, open_session, screen=run_screen, *, facts=None):
+def chat(client, name, list_sessions, open_session, screen=run_screen, *, facts=None,
+         list_all=None, scope=None):
     while True:
         spec = {'mode': 'chat', 'name': name, 'connection': connection(client),
                 'facts': facts(name) if facts else {}}
@@ -177,8 +202,10 @@ def chat(client, name, list_sessions, open_session, screen=run_screen, *, facts=
                   else screen(spec))
         if result['action'] == 'quit':
             return 0
-        if result['action'] != 'history':
+        if result['action'] not in {'history', 'history_all'}:
             raise RuntimeError('Invalid chat result; no action was taken.')
-        selected = choose_history(list_sessions, open_session, screen)
+        selected = choose_history(list_sessions, open_session, screen, list_all=list_all,
+                                  scope=(facts(name).get('project') if facts else scope),
+                                  all_projects=result['action'] == 'history_all')
         if selected:
             client, name = selected

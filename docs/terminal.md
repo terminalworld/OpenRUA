@@ -70,10 +70,15 @@ reused. **Save and check preparation** only checks preparation. Logs remain in
 and [your agent's login](install.md#your-agents-login).
 
 Use `openrua --setup`, `openrua config set`, or `config.yaml` to change the same
-shared defaults. Each ordinary launch creates a new ID. `/resume` in chat,
-the setup menu's resume entry, or `openrua --resume` searches history, sessions
-still running first. A running session reconnects to its owner; ended or unavailable sessions open read-only
-without restarting resources or replaying actions. `--resume ID` selects one
+shared defaults. Each ordinary launch creates a new ID in the current project
+directory; the first use asks whether you trust it. `--workspace DIR` selects
+another project. `/resume` in chat, the setup menu's resume entry, or
+`openrua --resume` searches this project's history, sessions still running
+first. `/resume --all`, `--resume --all`, or Tab in the picker shows every
+project. A running session reconnects to its owner; a confirmed ended project
+conversation reconnects to fresh robot resources without replaying old actions
+or queued instructions. Older or uncertain sessions open read-only.
+See [robot projects](projects.md). `--resume ID` selects one
 directly. Explicit `--name NAME` still starts or connects to that named session.
 
 `openrua chat --tui --name NAME` also opens this keyboard interface for an
@@ -101,7 +106,7 @@ OpenRUA's own greeting; the agent has not looked at anything yet.
 | `/model` | Show the model, or change it: `/model <name>` |
 | The agent's own commands | `/compact`, `/clear`, and what else the agent lists (Claude Code's skills and custom commands) go to the agent, as in its own terminal; `/help` lists them |
 | `/retry` | Retry an unconfirmed send with its original request ID |
-| `/resume` | Search retained conversations |
+| `/resume` | Resume this project's conversations; `--all` searches all projects |
 | `/end` | Confirm ending execution, retaining history and workspace |
 | Ctrl+D on empty input or `/quit` | Leave, then choose: Enter keeps the session (and its robot) running in the background, `e` ends it, keeping its files |
 

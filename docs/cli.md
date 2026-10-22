@@ -14,11 +14,12 @@ Generated from the parsers by `scripts/render_docs.py`; edit the
 usage: openrua [-h] [--version] [--home HOME] [--robot ROBOT] [--sim SIM]
                [--bench BENCH] [--task-suite TASK_SUITE] [--task-id TASK_ID]
                [--init-state INIT_STATE] [--task TASK] [--name NAME] [--agent
-               AGENT] [--workspace WORKSPACE] [--ros-domain ROS_DOMAIN]
-               [--internet {open,model-only}] [--web-search | --no-web-search]
-               [--account-connectors | --no-account-connectors] [--permissions
-               {ask,auto}] [--model MODEL] [--gui | --tui UI | --cli] [--port
-               PORT] [--setup] [--resume [ID]] <verb> ...
+               AGENT] [--workspace WORKSPACE] [--trust-workspace]
+               [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
+               [--web-search | --no-web-search] [--account-connectors |
+               --no-account-connectors] [--permissions {ask,auto}] [--model
+               MODEL] [--gui | --tui UI | --cli] [--port PORT] [--setup]
+               [--resume [ID]] [--all] <verb> ...
 
 Open a robot conversation, or use ``openrua <verb> ...``.
 
@@ -51,8 +52,10 @@ start or reconnect (without a subcommand):
                         automatic ID
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
-                        new or empty working directory, retained after
-                        shutdown (default: <home>/sandboxes/<name>/workspace)
+                        persistent robot project directory (default: the
+                        current directory)
+  --trust-workspace     explicitly trust the workspace without an interactive
+                        question
   --ros-domain ROS_DOMAIN
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
@@ -79,8 +82,10 @@ start or reconnect (without a subcommand):
   --port PORT           local service port for a new session (default: a free
                         port)
   --setup               edit shared defaults in the keyboard setup menu
-  --resume [ID]         choose a previous conversation, or reconnect by its
+  --resume [ID]         resume a conversation in this workspace, optionally by
                         ID/name
+  --all                 with --resume, show conversations from all project
+                        directories
 ```
 
 | command | does |
@@ -337,9 +342,11 @@ options:
 usage: openrua up [-h] [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
                   [--task-id TASK_ID] [--init-state INIT_STATE] [--task TASK]
                   [--name NAME] [--agent AGENT] [--workspace WORKSPACE]
-                  [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
+                  [--trust-workspace] [--ros-domain ROS_DOMAIN]
+                  [--internet {open,model-only}]
                   [--web-search | --no-web-search]
                   [--account-connectors | --no-account-connectors]
+                  [--model MODEL]
                   [robot]
 
 Bring a robot up (simulated: boot its container; real: join its graph) with a
@@ -370,8 +377,10 @@ options:
   --name NAME           session handle (default: openrua)
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
-                        new or empty working directory, retained after
-                        shutdown (default: <home>/sandboxes/<name>/workspace)
+                        persistent robot project directory (default: the
+                        current directory)
+  --trust-workspace     explicitly trust the workspace without an interactive
+                        question
   --ros-domain ROS_DOMAIN
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
@@ -386,6 +395,7 @@ options:
                         what your account brings beyond the CLI: its
                         connectors or apps, synced skills and plugins
                         (default: not limited)
+  --model MODEL         model (default: the project's or configured agent's)
 ```
 
 ## openrua connect
@@ -393,6 +403,7 @@ options:
 ```
 usage: openrua connect [-h] [--dir DIR] [--agent AGENT] [--model MODEL]
                        [--distro {jazzy,humble}] [--name NAME]
+                       [--workspace WORKSPACE] [--trust-workspace]
                        [robot]
 
 ``openrua connect``: connect a real robot, with your coding agent doing the
@@ -416,6 +427,10 @@ options:
                         the connecting terminal's ROS 2; the robot's own comes
                         from its drivers
   --name NAME           session ID (default: a new one)
+  --workspace WORKSPACE
+                        robot project after connection (default: the current
+                        directory)
+  --trust-workspace     explicitly trust the project without a question
 ```
 
 ## openrua serve
@@ -425,11 +440,13 @@ usage: openrua serve [-h] [--sim SIM] [--bench BENCH]
                      [--task-suite TASK_SUITE] [--task-id TASK_ID]
                      [--init-state INIT_STATE] [--task TASK] [--name NAME]
                      [--agent AGENT] [--workspace WORKSPACE]
-                     [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
+                     [--trust-workspace] [--ros-domain ROS_DOMAIN]
+                     [--internet {open,model-only}]
                      [--web-search | --no-web-search]
                      [--account-connectors | --no-account-connectors]
                      [--permissions {ask,auto}] [--model MODEL] [--port PORT]
-                     [--connect FOLDER] [--distro {jazzy,humble}]
+                     [--resume-conversation] [--connect FOLDER]
+                     [--distro {jazzy,humble}]
                      [robot]
 
 Run a local shared session independently of its connected clients.
@@ -455,8 +472,10 @@ options:
   --name NAME           session handle (default: openrua)
   --agent AGENT         agent to open (default: the config's)
   --workspace WORKSPACE
-                        new or empty working directory, retained after
-                        shutdown (default: <home>/sandboxes/<name>/workspace)
+                        persistent robot project directory (default: the
+                        current directory)
+  --trust-workspace     explicitly trust the workspace without an interactive
+                        question
   --ros-domain ROS_DOMAIN
                         ROS_DOMAIN_ID (default: the lowest one no running
                         robot uses, so concurrent robots never share a graph;
@@ -477,6 +496,9 @@ options:
                         (default); /permissions switches
   --model MODEL         model (default: the configured agent's)
   --port PORT           local port (default: choose a free port)
+  --resume-conversation
+                        restart an ended project conversation without
+                        replaying actions
   --connect FOLDER      connect a real robot instead (see openrua connect):
                         FOLDER is the robot's adaptation folder, the
                         connecting terminal's workspace
@@ -684,6 +706,7 @@ options:
 usage: openrua agent [-h] [--name NAME] [--agent AGENT] [--model MODEL]
                      [--robot ROBOT] [--sim SIM] [--bench BENCH]
                      [--ros-domain ROS_DOMAIN] [--task TASK]
+                     [--workspace WORKSPACE] [--trust-workspace]
                      [[agent] [message] ...]
 
 ``openrua agent``: your coding agent's own terminal, on a robot.
@@ -718,6 +741,10 @@ options:
   --ros-domain ROS_DOMAIN
                         its ROS_DOMAIN_ID
   --task TASK           a real robot's task sentence, for its workspace
+  --workspace WORKSPACE
+                        persistent project directory (default: the current
+                        directory)
+  --trust-workspace     explicitly trust this directory without a question
 ```
 
 ## openrua down

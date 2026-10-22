@@ -4,7 +4,7 @@ import {readFile, writeFile} from 'node:fs/promises';
 import {createInterface} from 'node:readline/promises';
 import {Client} from './client.mjs';
 import {Chat} from './app.mjs';
-import {ArchiveClient, History, Setup} from './screens.mjs';
+import {ArchiveClient, History, Setup, Workspace} from './screens.mjs';
 
 // Pi tells terminals that draw pictures apart by variables an SSH connection
 // drops; these two travel: iTerm2 sends LC_TERMINAL, kitty sets TERM. Under
@@ -47,6 +47,7 @@ try {
     const spec = values.input ? JSON.parse(await readFile(values.input, 'utf8')) : {mode: 'chat'};
     let screen;
     if (spec.mode === 'setup') screen = new Setup(spec);
+    else if (spec.mode === 'workspace') screen = new Workspace(spec);
     else if (spec.mode === 'history') screen = new History(spec);
     else if (spec.mode === 'chat') {
       const client = values.endpoint ? await Client.fromFile(values.endpoint)

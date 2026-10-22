@@ -37,10 +37,13 @@ openrua --resume
 openrua --resume ID
 ```
 
-New sessions receive automatic IDs; `openrua --resume` lists retained
-conversations, running ones first. History selection reconnects to the original
-execution owner; ended or unavailable conversations open read-only, without
-restarting a robot or replaying instructions.
+New sessions receive automatic IDs in the current project directory, whose
+first use asks for trust. `openrua --resume` lists this project's retained
+conversations, running ones first; `--all` or Tab in the picker shows every
+project. Live conversations reconnect to their owner. Confirmed ended project
+conversations reconnect to fresh robot resources with their native identity;
+past actions and queued instructions are not replayed. Older or uncertain
+records remain read-only. See [robot projects](../../docs/projects.md).
 
 ## Keyboard interaction
 

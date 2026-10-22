@@ -136,3 +136,29 @@ def test_done_asks_the_flow_to_move_once_the_turn_ends(tmp_path, monkeypatch):
     flow.checks, flow._move = done, False
     result = asyncio.run(flow.check({"step": "done"}))
     assert result["status"] == "passed" and flow._move
+
+
+def test_connecting_hands_the_robot_to_the_selected_project(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from openrua.config import projects
+    async def run():
+        root, folder = tmp_path / 'project', tmp_path / 'robot'
+        root.mkdir(); folder.mkdir()
+        flow = connect.ConnectFlow.__new__(connect.ConnectFlow)
+        flow.request = connect.ConnectRequest(home=tmp_path / 'home', name='connecting', folder=folder, project=root)
+        flow.folder, flow.agent = folder, 'codex@0.134.0'
+        requests = []
+        monkeypatch.setattr(connect, 'open_robot', lambda request: requests.append(request))
+        monkeypatch.setattr(connect.subprocess, 'call', lambda *a, **k: 0)
+        async def move(factory, reason):
+            factory()
+        async def say(text):
+            pass
+        flow.owned = SimpleNamespace(move_to=move, execution=object(),
+                                     store=SimpleNamespace(snapshot=lambda: {'state': {'settings': {'model': 'chosen', 'permissions': 'ask'}}}))
+        flow.server, flow._say = SimpleNamespace(), say
+        await flow._move_to_robot()
+        assert requests[0].project == root and requests[0].continuing
+        assert projects.selection(root)['robot'] == str(folder / 'robot.yaml')
+        assert projects.selection(root)['agent'] == 'codex@0.134.0'
+    asyncio.run(run())

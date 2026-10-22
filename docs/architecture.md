@@ -181,9 +181,26 @@ does not automatically replay work. `config.settings` supplies a validated,
 atomic update shared by CLI and TUI configuration; direct file edits remain
 supported and are read at subsequent starts.
 
-Session history is a read-only discovery adapter in `runner/history.py`, using
+Session history discovery is a read-only adapter in `runner/history.py`, using
 the existing conversation journal and endpoint handshake. IDs are generated
 for unnamed product launches; titles derive from the first instruction. Legacy
 named directories remain valid without migration. The TUI history picker
 receives listing and opening callbacks, and never imports storage or execution
-modules. Opening retained records cannot restart an owner or issue commands.
+modules. Its default listing filters by the exact recorded project directory;
+all-project discovery is explicit. The CLI's separate opening callback can
+reconnect confirmed ended project conversations to fresh resources. A resource
+lock excludes simultaneous owners before startup, and native identity/profile
+reuse is distinct from creating a new conversation. Reopening withdraws old
+queued messages, preserves uncertain outcomes, and records a scene-check
+reminder with the next ordinary user instruction. Discovery itself never
+restarts resources.
+
+Interactive projects mount their host directory directly at `/workspace`.
+`sandbox/project.py` appends project guidance once and prepares fresh robot
+materials outside the project, mounted read-only at `/robot`. Per-run config
+and robot logs are under `<project>/.openrua/runs/`; private profiles, owner
+state and conversation journals remain in the user directory. `config/projects`
+owns exact-directory trust records and non-secret project environment choices.
+The CLI obtains consent before project writes. `bring_up` accepts an explicit
+workspace and seeding policy; trials retain their original fresh-workspace
+defaults. See [robot projects](projects.md).

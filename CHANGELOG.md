@@ -9,6 +9,26 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- Interactive robot work uses the current directory as a persistent project.
+  A first-use trust screen offers this directory, another directory, or a new
+  one; `--workspace DIR` chooses one explicitly and `--trust-workspace`
+  accepts it for scripts. Existing project files and directory permissions
+  are retained. Robot documentation and tools are separate under `/robot`;
+  per-run config and robot logs live in the project's `.openrua/runs/`.
+  Project guidance helps the agent organize code, observations and handoff
+  notes. Environment selections are saved per project without credentials.
+- Opening a project starts a new conversation. `--resume` and `/resume`
+  search only that directory; `--all` and the picker's Tab switch include
+  all projects and older records. Confirmed ended project conversations can
+  continue their native agent conversation on fresh robot resources, retaining
+  model and permission settings, without replaying old actions or queued work.
+  The next instruction carries a reminder to inspect the current scene.
+- Upgrade: `--workspace` on interactive entry points now names the project
+  directory itself, which can contain existing files. Previously it named
+  an empty run directory containing a `workspace/` child. Existing records
+  remain readable through `--resume --all`. Recorded task and benchmark
+  trials retain their fresh-workspace protocol and original starter template.
+
 ## 0.18.4
 
 - `openrua agent` is one command: with no robot up it starts one (the

@@ -6,8 +6,10 @@ import asyncio
 import secrets
 import signal
 from pathlib import Path
+from dataclasses import replace
 
 from openrua.cli.commands import up
+from openrua.cli import workspace
 from openrua.web import assets
 from openrua.config import paths
 from openrua.agents.base import NotSignedIn
@@ -23,11 +25,12 @@ async def serve(args) -> None:
     flow = None
     if getattr(args, "connect", None):
         request = ConnectRequest(home=args.home, name=args.name, folder=Path(args.connect),
-                                 agent=args.agent, model=args.model, distro=args.distro)
+                                 agent=args.agent, model=args.model, distro=args.distro,
+                                 project=Path(args.workspace) if args.workspace else None)
         owned = await managed.start(request, open_resources=open_connect)
         flow = ConnectFlow(owned, request)
     else:
-        owned = await managed.start(up.robot_request(args))
+        owned = await managed.start(replace(up.robot_request(args), continuing=getattr(args, 'resume_conversation', False)))
     server = None
     view = None
     published = False
@@ -92,6 +95,11 @@ async def serve(args) -> None:
 
 
 def run(args) -> int:
+    if args.workspace:
+        selected = workspace.choose(args.workspace, args.home, accept=args.trust_workspace)
+        if selected is None:
+            return 0
+        args.workspace = str(selected)
     try:
         asyncio.run(serve(args))
     except OpenRUAError:
@@ -111,6 +119,8 @@ def add_parser(sub) -> None:
     up.add_permissions_option(p)
     p.add_argument("--model", default=None, help="model (default: the configured agent's)")
     p.add_argument("--port", type=int, default=0, help="local port (default: choose a free port)")
+    p.add_argument('--resume-conversation', action='store_true',
+                   help='restart an ended project conversation without replaying actions')
     p.add_argument("--connect", default=None, metavar="FOLDER",
                    help="connect a real robot instead (see openrua connect): FOLDER is the "
                    "robot's adaptation folder, the connecting terminal's workspace")

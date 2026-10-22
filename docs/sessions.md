@@ -23,7 +23,10 @@ editable queue, see [Terminal chat](terminal.md). It uses this same service.
 ## Start and connect
 
 For ordinary use, `openrua` creates a new session with an automatic ID;
-`openrua --resume` finds a previous conversation and `--name NAME` explicitly
+the current directory is its persistent project, confirmed with a workspace
+trust question on first use. `--workspace DIR` chooses another directory.
+See [robot projects](projects.md) for file organization and continuing work.
+`openrua --resume` finds a previous conversation in this project and `--name NAME` explicitly
 starts or reconnects to a named session;
 `openrua --gui` selects the browser and `openrua --cli` selects plain chat.
 Choose **Prepare and start** in keyboard setup to set up Docker and the agent's
@@ -33,12 +36,20 @@ configuration remains a choice of your own; OpenRUA never changes billing mode
 for you. The service runs in the background,
 with startup output in `~/.openrua/launches/<name>/service.log`.
 
-To come back, `openrua --resume` lists the conversations, running ones first;
+To come back, `openrua --resume` lists this project's conversations, running ones first;
+`openrua --resume --all` includes other projects and older unassigned sessions.
 `openrua --name NAME` (with `--gui` or `--cli`) reconnects to one by name.
 Startup options cannot change a running conversation. The agent's original terminal (`openrua up`,
 then `openrua agent`) is a separate session that cannot take over a shared
 conversation, and `openrua exec` holds no conversation at all
 ([first task](../examples/first-task.md)).
+
+Selecting a confirmed ended project conversation reconnects its native agent
+conversation to fresh robot resources. It withdraws the old queue and sends
+no historical actions. The next user instruction includes a reminder to
+inspect the current machine and scene. Older records and unknown executions
+remain read-only; [project history](projects.md#resume-a-conversation) explains
+the distinction.
 
 The following foreground form is useful for development and debugging:
 

@@ -71,8 +71,16 @@ Missing either one? `openrua` sets it up with you.
 
 ```sh
 pip install -U openrua
+mkdir my-robot-project
+cd my-robot-project
 openrua
 ```
+
+**Your project directory.** OpenRUA asks whether you trust this workspace;
+you can use it, choose another directory or create one. Programs, observations
+and notes stay here across sessions. Opening the same directory again starts
+a new conversation; `--resume` finds this project's earlier ones, and
+`--resume --all` searches every project ([robot projects](docs/projects.md)).
 
 **A simulated robot.** In the setup menu, pick a robot and a scene, then
 **Prepare and start**. The first start builds the images, which takes a few
@@ -336,6 +344,7 @@ and [contribution guide](CONTRIBUTING.md).
 | [examples/shared-session.md](examples/shared-session.md) | TUI, browser and CLI chat, queue checks, reconnection, saved images and shutdown |
 | [docs/terminal.md](docs/terminal.md) | TUI shortcuts, expandable panels, and current limitations |
 | [docs/sessions.md](docs/sessions.md) | shared-session operations, API, architecture and validation scope |
+| [docs/projects.md](docs/projects.md) | persistent project files, workspace trust and project-scoped conversations |
 | [docs/connect.md](docs/connect.md) | connecting a real robot with your coding agent, and what each step checks |
 | [docs/your-own-robot.md](docs/your-own-robot.md) | describing your robot in one profile |
 | [examples/real-robot.md](examples/real-robot.md) | the same flow on a real ROS&nbsp;2 arm |

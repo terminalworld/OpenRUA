@@ -14,7 +14,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from openrua.cli import docker_setup
+from openrua.cli import docker_setup, workspace
 from openrua.cli.commands import login, start
 from openrua.config import paths
 from openrua.errors import UsageError
@@ -22,7 +22,7 @@ from openrua.runner import history, service
 
 
 def launch(home: Path, robot: str, folder: Path | None = None, agent: str | None = None,
-           model: str | None = None, distro: str = "jazzy", name: str | None = None):
+           model: str | None = None, distro: str = "jazzy", name: str | None = None, project: Path | None = None):
     """Start the connecting session's service; returns (client, session name)."""
     folder = (folder or paths.home(home) / "robots" / robot).expanduser()
     name = name or history.new_id()
@@ -32,6 +32,8 @@ def launch(home: Path, robot: str, folder: Path | None = None, agent: str | None
     argv = [sys.executable, "-m", "openrua", "--home", str(home), "serve",
             "--connect", str(folder.resolve()), "--name", name, "--distro", distro,
             "--permissions", "ask"]
+    if project is not None:
+        argv += ['--workspace', str(project)]
     for key, value in (("agent", agent), ("model", model)):
         if value:
             argv += [f"--{key}", value]
@@ -43,11 +45,14 @@ def launch(home: Path, robot: str, folder: Path | None = None, agent: str | None
 
 
 def run(args) -> int:
+    selected = workspace.choose(args.workspace or Path.cwd(), args.home, accept=args.trust_workspace)
+    if selected is None:
+        return 0
     if sys.stdin.isatty() and sys.stdout.isatty():
         docker_setup.ensure()
         login.ensure(args.home, args.agent)
     client, name = launch(args.home, args.robot, Path(args.dir) if args.dir else None,
-                          args.agent, args.model, args.distro, args.name)
+                          args.agent, args.model, args.distro, args.name, project=selected)
     return start.open_terminal(args.home, client, name)
 
 
@@ -64,4 +69,6 @@ def add_parser(sub) -> None:
     p.add_argument("--distro", default="jazzy", choices=("jazzy", "humble"),
                    help="the connecting terminal's ROS 2; the robot's own comes from its drivers")
     p.add_argument("--name", default=None, help="session ID (default: a new one)")
+    p.add_argument('--workspace', default=None, help='robot project after connection (default: the current directory)')
+    p.add_argument('--trust-workspace', action='store_true', help='explicitly trust the project without a question')
     p.set_defaults(fn=run)

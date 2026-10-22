@@ -68,7 +68,8 @@ def up(cfg: dict, workspace: Path, *, image: str, network: str = "host",
        internet: str = "none", name: str | None = None,
        mounts: tuple[str, ...] = (), env: tuple[str, ...] = (),
        run_args: tuple[str, ...] = (), networks: tuple[str, ...] = (),
-       seed_workspace: bool = True, peers_xml: str | None = None) -> str:
+       seed_workspace: bool = True, peers_xml: str | None = None,
+       preserve_permissions: bool = False) -> str:
     """Create the live sandbox; returns its container name.
 
     ``cfg`` is the resolved config (it seeds the workspace); everything
@@ -105,7 +106,8 @@ def up(cfg: dict, workspace: Path, *, image: str, network: str = "host",
     # else: mount the dir AS-IS (replaying an archived workspace, custom
     # content); the caller owns what is inside.
     ws.mkdir(parents=True, exist_ok=True)  # no-template configs
-    ws.chmod(0o777)  # container's non-root uid must be able to write
+    if not preserve_permissions:
+        ws.chmod(0o777)  # container's non-root uid must be able to write
 
     if static_peer and not peers_xml:
         raise SandboxError(
@@ -160,6 +162,13 @@ def up(cfg: dict, workspace: Path, *, image: str, network: str = "host",
         capture_output=True, text=True).stdout.strip()
     if not alive:
         raise SandboxError(_death_report(name, "exited at creation"))
+    if preserve_permissions:
+        writable = subprocess.run(['docker', 'exec', '-u', 'robot', name, 'test', '-w', '/workspace'],
+                                  capture_output=True, text=True)
+        if writable.returncode:
+            raise SandboxError(_death_report(name, 'robot user cannot write the project directory; '
+                               'rebuild the sandbox for this host user with openrua build sandbox, '
+                               'or choose a directory that user can write'))
     return name
 
 

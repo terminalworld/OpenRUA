@@ -281,7 +281,8 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
              mounts: tuple[str, ...], ros_domain: int | None, robot_log: Path,
              home: Path | None = None,
              record_cameras: tuple[str, ...] | None = None,
-             record_every: int = 1, record_size: str | None = None
+             record_every: int = 1, record_size: str | None = None,
+             workspace: Path | None = None, seed_workspace: bool = True
              ) -> tuple[Path, robot.Handle, int]:
     """Write the config, start the sandbox, then the robot.
 
@@ -316,12 +317,14 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     def start_sandbox(domain: int) -> str:
         sandbox_up(
             cfg,
-            dest / "workspace",
+            workspace if workspace is not None else dest / "workspace",
             image=backend["sandbox_image"],
             run_args=tuple(cfg.get("sandbox", {}).get("run_args", [])),
             ros_domain=domain,
             name=sandbox_name,
             mounts=mounts,
+            seed_workspace=seed_workspace,
+            preserve_permissions=workspace is not None,
             **reach,
         )
         return sandbox_name

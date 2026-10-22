@@ -70,8 +70,8 @@ def test_up_preserves_nonempty_external_directory_before_launch(monkeypatch, tmp
     monkeypatch.setattr(live, "ensure_internal_network", lambda: pytest.fail("must not start"))
     args = build_parser().parse_args(["--home", str(tmp_path / "home"), "up", str(profile),
                                       "--workspace", str(external)])
-    with pytest.raises(UsageError, match="not empty"):
-        up.open_session(args)
+    with pytest.raises(UsageError, match="not been trusted"):
+        up.run(args)
     assert program.read_text() == "keep"
 
 
