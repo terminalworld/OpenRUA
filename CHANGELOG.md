@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.18.2
+
 - A new computer gets set up with you. When you start a session or
   connect a robot (or run `openrua connect`, `openrua login`) and Docker is
   missing, your user may not use it yet, or its service is stopped,
