@@ -80,6 +80,7 @@ class ClaudeCode(Agent):
         # when no config directory is named. Seen stale, a session took itself
         # for the first one after an upgrade, which reads no AGENTS.md. Each
         # session starts from a fresh one instead.
+        prepared.directory.mkdir(mode=0o700, parents=True, exist_ok=True)
         (prepared.directory / STATE_FILE).write_text(json.dumps(FRESH_STATE) + "\n")
         if not _allowed(limits, "account_connectors"):
             _isolate(prepared.directory)
