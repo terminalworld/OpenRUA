@@ -36,7 +36,7 @@ instructions, inspect tool activity, manage the queue, and revisit saved
 observations without starting a new robot each turn.
 
 - [Start a shared session](examples/shared-session.md): OpenRUA TUI, browser, or plain CLI.
-- [Run one task, or use the agent's original terminal](examples/first-task.md): `openrua exec` records the agent doing a task on its own; `openrua up` and `openrua agent` open its own terminal on the robot.
+- [Run one task, or use the agent's original terminal](examples/first-task.md): `openrua exec` records the agent doing a task on its own; `openrua agent` opens its own terminal on the robot.
 - [Connect a real robot](docs/connect.md): `openrua connect`, your coding agent setting it up with you.
 - [Describe your robot](docs/your-own-robot.md): its ROS&nbsp;2 interfaces in a profile.
 - [Run experiments](docs/running-experiments.md): fresh trials, benchmark scoring, and recorded artifacts.
@@ -111,9 +111,10 @@ session running; `openrua --resume` brings you back.
 
 The first three share one conversation and its queue: join from any of them,
 leave, and come back with `openrua --resume` ([shared sessions](docs/sessions.md)).
-The [terminal guide](docs/terminal.md) has the keys and commands. To use the
-agent's own original terminal on the robot instead, see
-[first task](examples/first-task.md#1a-bring-the-robot-up).
+The [terminal guide](docs/terminal.md) has the keys and commands. To work in
+the agent's own original terminal instead, run `openrua agent` (or
+`openrua agent codex`): it starts a robot when none is up
+([first task](examples/first-task.md#1a-the-agents-own-terminal)).
 
 ## How it works
 
@@ -331,7 +332,7 @@ and [contribution guide](CONTRIBUTING.md).
 | page | read when |
 |---|---|
 | [docs/install.md](docs/install.md) | setting a machine up: Docker, your agent's login, images, doctor |
-| [examples/first-task.md](examples/first-task.md) | your first task on the simulated Panda: one recorded run with `exec`, and the agent's original terminal with `up` and `agent` |
+| [examples/first-task.md](examples/first-task.md) | your first task on the simulated Panda: one recorded run with `exec`, and the agent's original terminal with `openrua agent` |
 | [examples/shared-session.md](examples/shared-session.md) | TUI, browser and CLI chat, queue checks, reconnection, saved images and shutdown |
 | [docs/terminal.md](docs/terminal.md) | TUI shortcuts, expandable panels, and current limitations |
 | [docs/sessions.md](docs/sessions.md) | shared-session operations, API, architecture and validation scope |

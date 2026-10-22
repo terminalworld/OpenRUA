@@ -70,3 +70,68 @@ def test_agent_passes_the_sessions_limits(tmp_path, monkeypatch):
     args = build_parser().parse_args(["--home", str(tmp_path), "agent", "--name", "robot"])
     agent.run(args)
     assert launched == [[str({"internet": "open", "web_search": False})]]
+
+
+def test_the_first_word_names_an_agent_when_it_is_one(tmp_path):
+    manifest = plugin(tmp_path)
+    assert agent._split([]) == (None, None)
+    assert agent._split(["claude-code"]) == ("claude-code", None)
+    assert agent._split(["claude-code", "open the drawer"]) == ("claude-code", "open the drawer")
+    assert agent._split([str(manifest), "hi"]) == (str(manifest), "hi")
+    assert agent._split(["open the drawer"]) == (None, "open the drawer")
+    with pytest.raises(Exception, match="one opening message"):
+        agent._split(["open", "the", "drawer"])
+
+
+def test_without_a_name_the_newest_robot_up_is_opened(tmp_path, monkeypatch):
+    import os
+    import time
+    manifest = plugin(tmp_path)
+    for name, age in (("older", 100), ("newer", 0)):
+        live_state.save(name, tmp_path, agent="custom-display", agent_spec=str(manifest),
+                        agent_version="2.0", sandbox=f"{name}-sandbox", model="m", proxy="")
+        control = tmp_path / "sandboxes" / name / "control.json"
+        control.write_text("{}")
+        os.utime(control, (time.time() - age, time.time() - age))
+    live_state.save("stopped", tmp_path, status="stopped", agent="x", sandbox="stopped-sandbox",
+                    model="m", proxy="")
+    monkeypatch.setattr(agent.subprocess, "run", lambda argv, **kw: SimpleNamespace(stdout="true\n"))
+    assert agent._running(tmp_path) == ["newer", "older"]
+    launched = []
+    monkeypatch.setattr(agent.os, "execvp", lambda binary, argv: launched.append(argv))
+    agent.run(build_parser().parse_args(["--home", str(tmp_path), "agent", "hello"]))
+    assert launched[0][2] == "newer-sandbox" and launched[0][4] == "hello"
+
+
+def test_with_none_up_it_starts_one_and_asks_to_turn_it_off(tmp_path, monkeypatch):
+    manifest = plugin(tmp_path)
+    started, ended, called = [], [], []
+
+    def start_robot(args, name):
+        started.append(name)
+        live_state.save("fresh", tmp_path, agent="custom-display", agent_spec=str(manifest),
+                        agent_version="2.0", sandbox="fresh-sandbox", model="m", proxy="",
+                        backend="real")
+        return "fresh", SimpleNamespace(wait=lambda timeout: 0)
+    monkeypatch.setattr(agent, "_running", lambda home: [])
+    monkeypatch.setattr(agent, "_start_robot", start_robot)
+    monkeypatch.setattr(agent.sys, "stdin", SimpleNamespace(isatty=lambda: True))
+    monkeypatch.setattr(agent.sys, "stdout", SimpleNamespace(isatty=lambda: True, write=lambda s: None, flush=lambda: None))
+    monkeypatch.setattr(agent.subprocess, "call", lambda argv: called.append(argv) or 0)
+    monkeypatch.setattr(agent.Client, "from_file", lambda path: SimpleNamespace(end=lambda: ended.append(path)))
+    monkeypatch.setattr("builtins.input", lambda prompt: "")
+    monkeypatch.setattr(agent.os, "execvp", lambda *a: pytest.fail("a robot it started is not exec'd into"))
+    agent.run(build_parser().parse_args(["--home", str(tmp_path), "agent", str(manifest), "go"]))
+    assert started == [str(manifest)] and called[0][2] == "fresh-sandbox" and called[0][4] == "go"
+    assert ended and ended[0].name == "control.json"
+
+
+def test_no_answer_to_the_turn_off_question_leaves_the_robot_running(tmp_path, monkeypatch, capsys):
+    ended = []
+    monkeypatch.setattr(agent.Client, "from_file", lambda path: SimpleNamespace(end=lambda: ended.append(path)))
+    def interrupted(prompt):
+        raise KeyboardInterrupt
+    monkeypatch.setattr("builtins.input", interrupted)
+    args = build_parser().parse_args(["--home", str(tmp_path), "agent"])
+    agent._turn_off(args, "fresh", SimpleNamespace(wait=lambda timeout: 0))
+    assert not ended and "openrua down --name fresh" in capsys.readouterr().out

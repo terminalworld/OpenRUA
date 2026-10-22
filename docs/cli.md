@@ -96,7 +96,7 @@ start or reconnect (without a subcommand):
 | `serve` | own a robot and shared native conversation for local clients |
 | `chat` | chat with an existing shared agent, or reconnect to its events |
 | `session` | inspect, queue messages, pause/resume or end a shared session |
-| `agent` | open a coding agent on the robot's terminal |
+| `agent` | your coding agent's own terminal, on a robot |
 | `down` | power a robot and its terminal off, retaining session files |
 | `bench` | run a benchmark: one trial per task and seed |
 | `ps` | list the attempts running under a runs root (--all: stale claims too) |
@@ -682,19 +682,42 @@ options:
 
 ```
 usage: openrua agent [-h] [--name NAME] [--agent AGENT] [--model MODEL]
-                     [prompt]
+                     [--robot ROBOT] [--sim SIM] [--bench BENCH]
+                     [--ros-domain ROS_DOMAIN] [--task TASK]
+                     [[agent] [message] ...]
 
-Open the configured coding agent interactively on a live robot's terminal
-(docker exec into its sandbox).
+``openrua agent``: your coding agent's own terminal, on a robot.
+
+    openrua agent                           the configured agent
+    openrua agent <name>                    a named one (openrua agents), or a manifest's path
+    openrua agent <name> "open the drawer"  with an opening message
+
+With a robot already up (``openrua up``, or an earlier ``openrua agent``
+kept running) the agent opens on it: the newest, or the one ``--name``
+names. Otherwise OpenRUA starts one first, the way ``openrua`` does
+(Docker and the agent's sign-in set up with you, missing images built,
+the saved robot unless ``--robot``, ``--sim`` or ``--bench`` say
+otherwise), and when the agent exits asks whether to turn it off. This
+is the agent's own interface: its Esc stops the agent, not a motion it
+already sent.
 
 positional arguments:
-  prompt         opening message
+  [agent] [message]     the agent to open (openrua agents lists them; default:
+                        the configured one), then an opening message
 
 options:
-  -h, --help     show this help message and exit
-  --name NAME    the robot's handle (default: openrua)
-  --agent AGENT  agent (default: the one `up` opened)
-  --model MODEL  model (default: the one `up` recorded)
+  -h, --help            show this help message and exit
+  --name NAME           the robot's handle (default: the newest robot up, else
+                        a new one)
+  --agent AGENT         agent, as the first word does
+  --model MODEL         model (default: the one the robot recorded)
+  --robot ROBOT         robot to start when none is up (default: the saved
+                        one)
+  --sim SIM             its simulator (default: the saved one)
+  --bench BENCH         its benchmark (default: the saved one)
+  --ros-domain ROS_DOMAIN
+                        its ROS_DOMAIN_ID
+  --task TASK           a real robot's task sentence, for its workspace
 ```
 
 ## openrua down
