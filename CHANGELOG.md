@@ -9,6 +9,22 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- `openrua robots` also lists the robots `openrua connect` connected on
+  this computer (`~/.openrua/robots/<name>/`), each with the path that
+  names it.
+- A file of your own given to `openrua config set` (or saved from the
+  setup menu) is stored by its full path: a relative one named a
+  different file, or none, when `openrua` ran from another directory.
+- Leaving the terminal with the session kept running points to
+  `openrua --resume` to come back.
+- Docs: what changed since 0.13 is now described everywhere. Ctrl+D asks
+  whether to keep the session; Esc stops the turn and the arm's motion
+  (the agent's own terminal stops only the agent); Docker and the
+  sign-in are set up with you; a real robot's task is always your
+  sentence; the cameras' live view and its API. Shared chat is no longer
+  called experimental, and the README's interface table shows the
+  everyday entries without `--name`.
+
 ## 0.18.2
 
 - A new computer gets set up with you. When you start a session or

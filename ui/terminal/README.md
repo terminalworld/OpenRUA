@@ -9,27 +9,27 @@ agent runtime or model provider is imported.
 
 ## Start
 
-Pi is the default terminal in OpenRUA 0.6.0. All interaction uses the keyboard:
+The terminal comes with the package; all interaction uses the keyboard:
 
 ```sh
-pip install -U 'openrua>=0.6.0'
+pip install -U openrua
 openrua
 ```
 
-The wheel includes the frontend and its dependency resources. Ordinary pip
-installation includes the packaged Node runtime, so users need neither a separate
-Node/npm install nor a second terminal. This distribution path has been tested
-on Linux x86_64. Other runtime platforms and terminal IMEs need further trials.
+The wheel includes the frontend, its dependency resources and a packaged Node
+runtime, so users need neither a separate Node/npm install nor a second
+terminal. This distribution path has been tested on Linux x86_64. Other runtime
+platforms and terminal IMEs need further trials.
 
-The keyboard setup shows the same robot, simulator, benchmark, agent, and model
-configuration as the existing clients. Use arrows and Enter to edit fields or
-choose available profiles. **Save and check** reports missing images or login;
-**Prepare and start** builds missing images with progress and retained logs,
-then starts the existing background service after checks pass. Environment
-selectors are linked and offer only combinations with recorded startup evidence;
-see [setup validation](../../docs/setup-validation.md).
-Save and check does not build. Agent login still uses the native CLI. CLI configuration
-and direct edits to `config.yaml` remain supported.
+The setup screen offers the robot, simulator, benchmark, agent and model
+combinations with recorded startup evidence
+([setup validation](../../docs/setup-validation.md)), and three actions:
+**Save and check preparation** reports what is missing and builds nothing;
+**Prepare and start** sets up Docker and the agent's sign-in when they are
+missing, builds missing images with progress and retained logs, then starts the
+background service once the checks pass; **Connect a real robot** opens
+`openrua connect`. CLI configuration and direct edits to `config.yaml` remain
+supported.
 
 ```sh
 openrua --setup
@@ -37,8 +37,8 @@ openrua --resume
 openrua --resume ID
 ```
 
-You can also reconnect to a named running session using `--name NAME`. New
-sessions receive automatic IDs. History selection reconnects to the original
+New sessions receive automatic IDs; `openrua --resume` lists retained
+conversations, running ones first. History selection reconnects to the original
 execution owner; ended or unavailable conversations open read-only, without
 restarting a robot or replaying instructions.
 
@@ -46,32 +46,30 @@ restarting a robot or replaying instructions.
 
 | Input | Result |
 | --- | --- |
-| Enter | Send through the shared queue |
+| Enter | Send; while the agent works, the message joins its running turn |
 | Ctrl+J | Insert a newline |
-| `/` | Complete available commands |
-| `/files` | Browse saved workspace files and images |
-| `/tools` | Select a tool result to expand or collapse |
-| `/queue` | Select a queued instruction to inspect, edit, or withdraw |
-| `/questions` | Answer pending agent questions, then confirm submission |
-| `/resume` | Find another retained conversation |
-| Esc or `/interrupt` | Confirm interruption of the current turn |
-| `/continue` | Confirm continuation of the paused queue |
-| `/retry` | Retry an unconfirmed send using its original request ID |
-| `/end` | Confirm ending execution while keeping history and workspace |
-| Ctrl+D on an empty input, or `/quit` | Detach without ending the session |
-| Ctrl+C | Clear a draft; detach if the input is empty |
+| `/` | Complete OpenRUA's commands and the agent's own |
+| Esc or `/interrupt` | Stop the current turn and cancel the robot's motions; queued messages go next |
+| Ctrl+D on an empty input, or `/quit` | Leave: Enter keeps the session running, `e` ends it |
+| Ctrl+C | Clear a draft; leave as Ctrl+D does if the input is empty |
 
-Selection lists use arrows, Enter, and Escape. Interruption, queue continuation,
-withdrawal, answering questions, and ending execution require explicit choices.
-Edits carry the message revision, so another client's change is not overwritten.
-A disconnected client never automatically resends a robot instruction.
-For multiple-choice questions and optional text replies, see the
+`/help` lists every other command (`/files`, `/watch`, `/tools`, `/queue`,
+`/questions`, `/permissions`, `/model`, `/continue`, `/retry`, `/resume`,
+`/end`) and the agent's own; the [terminal guide](../../docs/terminal.md)
+describes them. The terminal and the browser take their commands from one
+list, `openrua/web/session.mjs`.
+
+Selection lists use arrows, Enter, and Escape. Queue continuation, withdrawal,
+answering questions, and ending execution ask for confirmation. Edits carry the
+message revision, so another client's change is not overwritten. A disconnected
+client never automatically resends a robot instruction. For multiple-choice
+questions and optional text replies, see the
 [question controls](../../docs/terminal.md#work-in-the-conversation).
 
 Requests containing secret inputs and resolution of unknown execution results
-still use the existing clients. In-session agent/model switching and a persistent
-multi-panel layout are not implemented. Automated tests do not establish
-real-terminal IME, SSH, clipboard, or long-transcript usability.
+use the browser or the session CLI. Switching the agent inside a conversation
+and a persistent multi-panel layout are not implemented. Automated tests do not
+establish real-terminal IME, SSH, clipboard, or long-transcript usability.
 
 ## Saved workspace files
 
@@ -81,7 +79,8 @@ draft. Select Refresh directory or press `r` in a preview to fetch the latest
 saved content. Text previews scroll with arrows, Page Up/Down, Home and End.
 Pi displays images using the terminal's supported image protocol; unsupported
 formats or terminals show metadata instead. The existing browser can display
-and download saved images. These are saved observations, not a live video feed.
+and download saved images. These are saved observations; `/watch` gives the
+cameras live, in the browser.
 
 This is read-only access through the same workspace API as the browser. It does
 not send an agent message or execute a file. Symlinks, paths outside the workspace,
@@ -98,7 +97,7 @@ From the repository root, prepare the existing Python development environment:
 
 ```sh
 . .venv/bin/activate
-pip install -e '.[dev,pi]' build
+pip install -e '.[dev]' build
 npm ci --prefix ui/terminal --ignore-scripts
 npm test --prefix ui/terminal
 python scripts/terminal_assets.py prepare
@@ -112,14 +111,14 @@ service with `npm start --prefix ui/terminal -- --endpoint PATH`.
 
 ```sh
 python -m build
-python scripts/check_dist.py --dist dist --version 0.6.0
+python scripts/check_dist.py --dist dist --version "$(python -c 'from openrua import __version__; print(__version__)')"
 ```
 
 Distribution builds check the asset manifest, source hashes, and locked
 versions. The source archive carries prepared dependencies and can build its
 wheel without npm. Upstream resources and license files remain intact. The
-clean-install check exercises both the default frontend and Pi, including
-pseudo-terminal configuration startup and detachment with no Node on PATH.
+clean-install check exercises the terminal, including pseudo-terminal
+configuration startup and leaving it, with no Node on PATH.
 
 Session tests use the actual local HTTP service and SQLite store, with
 controlled native-agent events. They cover shared input, event replay, tool

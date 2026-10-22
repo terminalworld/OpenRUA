@@ -150,12 +150,12 @@ def render_config() -> str:
     from openrua.config import schema
 
     roots = [
-        (schema.RobotType, "robots/<type>.yaml (bundled or ~/.openrua/robots/): a robot type"),
-        (schema.RobotInstance, "robots/<name>.yaml: a particular robot (type: + machine:)"),
-        (schema.SimulatorProfile, "simulators/<engine>.yaml (bundled or ~/.openrua/simulators/)"),
-        (schema.Benchmark, "benchmarks/<name>.yaml (bundled or ~/.openrua/benchmarks/)"),
+        (schema.RobotType, "robots/<type>.yaml (bundled, or a file of your own by its path): a robot type"),
+        (schema.RobotInstance, "a particular robot, type: + machine: (openrua connect writes ~/.openrua/robots/<name>/robot.yaml)"),
+        (schema.SimulatorProfile, "simulators/<engine>.yaml (bundled, or a file of your own by its path)"),
+        (schema.Benchmark, "benchmarks/<name>.yaml (bundled, or a file of your own by its path)"),
         (schema.UserConfig, "~/.openrua/config.yaml and the package's configs/config.yaml"),
-        (schema.AgentManifest, "agents/<name>.yaml (bundled or ~/.openrua/agents/)"),
+        (schema.AgentManifest, "agents/<name>.yaml (bundled, or a file of your own by its path)"),
         (schema.ResolvedConfig, "<trial>/config.yaml, the resolved view every party reads"),
     ]
     seen: list[type[BaseModel]] = []

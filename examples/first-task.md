@@ -79,6 +79,9 @@ injected: no tool list, no API, no planner. The agent reaches the
 internet as it does on your machine; `openrua up --internet model-only`
 limits it to its model service, through the proxy image `openrua build proxy`
 makes ([what the agent can reach](../docs/install.md#what-the-agent-can-reach)).
+This is the agent's own interface, so its Esc stops the agent only: a motion
+it already sent runs on. OpenRUA's terminal and browser also cancel the arm's
+motion on Esc; on a real robot, keep the emergency stop at hand here.
 
 ## 2. What the agent sees
 

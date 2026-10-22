@@ -35,9 +35,9 @@ Before building a wheel, source archive, or simulator image from a source checko
 `python scripts/terminal_assets.py prepare` after `npm ci`. Builds verify the
 prepared resources against source and lockfile hashes. The source archive
 includes these assets and can build its wheel without npm. Editable installs
-remain possible without asset preparation; selecting Pi requires prepared
-assets and the `pi` runtime extra. Release CI builds both distributions and
-checks clean installation, including Pi startup without a system Node.
+remain possible without asset preparation; the terminal then needs prepared
+assets in the checkout. Release CI builds both distributions and checks clean
+installation, including the terminal's startup without a system Node.
 
 The workspace template hash is pinned in
 `tests/sandbox/test_workspace_template.py`. An intentional change to the

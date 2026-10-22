@@ -22,7 +22,11 @@ def update(home: Path, names: dict, facts: dict | None = None) -> dict:
         fcntl.flock(lock, fcntl.LOCK_EX)
         load_user_config(path)
         data = (load_yaml(path) if path.is_file() else {}) or {}
-        data.update(names)
+        # A file of your own is saved as a full path: a relative one would
+        # name a different file, or none, from another directory.
+        data.update({key: str(Path(value).expanduser().resolve())
+                     if isinstance(value, str) and paths.is_path(value) else value
+                     for key, value in names.items()})
         if facts:
             agent = names.get('agent') or data.get('agent') or load_user_config(paths.package_config_path()).agent
             data.setdefault('agents', {}).setdefault(agent, {}).update(facts)

@@ -26,16 +26,17 @@ profile you write yourself.
    openrua doctor ./my-robot.yaml
    ```
 
-3. Bring it up with the task sentence the agent will be given, then open
-   the agent in a second terminal:
+3. Talk to the agent on the robot in OpenRUA's terminal:
 
    ```bash
-   openrua up ./my-robot.yaml --ros-domain <id> --task "stack the red cube on the green one"
-   openrua agent
+   openrua --robot ./my-robot.yaml --ros-domain <id>
    ```
 
-   `openrua --robot ./my-robot.yaml --ros-domain <id>` opens OpenRUA's shared
-   chat on the robot instead.
+   `openrua config set --robot ./my-robot.yaml` makes it the default, so
+   plain `openrua` starts it. To use the agent's own original terminal
+   instead, bring the robot up with `openrua up ./my-robot.yaml --ros-domain
+   <id>` and run `openrua agent` in a second terminal; there Esc stops the
+   agent but not the arm's motion, so keep the emergency stop at hand.
 
 4. Or have the agent do the task on its own, with the run recorded:
 

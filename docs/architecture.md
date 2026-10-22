@@ -37,7 +37,7 @@ Its queue orders user instructions, not individual robot movements.
 | `openrua/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, the module each names under `entry_point`), the launcher, credentials staging, the prompts. | `python -m openrua.agents launch` |
 | `openrua/runner/` | composition and ownership: `live.py` opens robot resources, `live_state.py` retains their state, `managed.py` adds a native conversation and shared execution owner (and moves it to new resources between turns), `connect.py` is `openrua connect`: the connecting terminal, the checks it asks the host for, and the move to the robot's own terminal. Trial execution stays separate: `main.py` (`openrua bench`, and `run_set`, the trial loop `openrua exec` shares), `limits.py` (the limit flags), `bringup.py` (one resolved config to sandbox + robot, and the sandbox's way out), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua serve`, `up`, `exec`, `bench` |
 | `openrua/demo/` | a video from a recorded trial's files (`frames/`, `ops.jsonl`): `compose.py` renders the terminal beside the cameras. Reads files, imports `errors` only; its libraries are the `demo` extra. | `openrua demo` |
-| `openrua/sessions/` | shared user-message queue, durable events and native connection ownership through injected storage/transport contracts; independent of robot task planning. See [sessions.md](sessions.md). | `serve`, `chat`, `session` (experimental) |
+| `openrua/sessions/` | shared user-message queue, durable events and native connection ownership through injected storage/transport contracts; independent of robot task planning. See [sessions.md](sessions.md). | `openrua`, `--gui`, `--cli`; `serve`, `chat`, `session` for explicit operation |
 | `openrua/web/` | bundled browser assets, supplied to the HTTP server by its caller. The browser consumes the session API. | `openrua session --name NAME web` |
 | `openrua/artifacts.py` | bounded, read-only workspace file access; the owner supplies the root and reader to the HTTP server. | file operations in the session API |
 | `openrua/terminal/` and `ui/terminal/` | Pi launcher and frontend. The launcher receives configuration/history operations as callbacks; chat consumes the same local session API. Private temporary files carry screen input/output. Prepared JS resources ship in the wheel; the runtime is included in the default pip installation. | `openrua` |
@@ -71,7 +71,9 @@ openrua-proxy-<hash>, openrua-internal, openrua-internet  standing proxies (one 
 ~/.openrua/                                             the user directory ($OPENRUA_HOME, --home); written by the tool, not by hand
   config.yaml                                            your defaults (openrua config set)
   credentials/<agent>/                                   login profiles
+  robots/<name>/                                         a robot openrua connect connected on this computer: robot.yaml, driver/, cameras/
   sandboxes/<name>/                                      session workspace, profile copy and state; retained until explicitly deleted with openrua clean
+  launches/<name>/                                       a session's startup log
 ./runs/                                                 trial data (--runs-root)
 ```
 
@@ -107,13 +109,16 @@ shared ones go.
 - `sessions` depends on agent contracts and injected storage/transport, never
   robot resources, vendor plugins, configuration, or CLI code. Agent plugins
   do not import session coordination.
-- `tui` consumes `sessions.client`; it does not import execution internals.
+- The terminal (`openrua/terminal/`, `ui/terminal/`) uses the session API; it
+  does not import execution internals.
   `web` supplies static assets and is not imported by session coordination.
 - Workspace artifact readers are independent leaves. Their root and limits
   are passed in by the resource owner, not discovered through global state.
 - `demo` reads a trial directory and imports `errors` only; recording
-  itself is the bridge's (a `Recording` handed to its monitor) and is
-  switched on by `openrua bench --record`, never by the demo unit.
+  itself is the bridge's for a simulated robot (a `Recording` handed to its
+  monitor) and the runner's camera tap for a real one, switched on by
+  `--record` on `exec` or `bench` (a real robot's `exec` records unless
+  `--no-record`), never by the demo unit.
 - `cli`, `doctor` and `testing` sit above the units; no unit imports them.
 
 The contract is stated in `pyproject.toml` (import-linter) and again in

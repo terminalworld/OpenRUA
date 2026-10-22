@@ -89,7 +89,7 @@ testpaths = ["tests"]
 #   terminal    keyboard presentation through injected operations and the session API.
 #   web         browser assets supplied by the caller to the HTTP adapter.
 #   artifacts   read-only workspace access with explicit root and limits.
-#   cli         the command line (openrua up | down | agent | run | ...);
+#   cli         the command line (openrua, exec, connect, up | down | agent | ...);
 #               one module per verb, composing the units above
 #   config, errors, testing
 #               leaves shared by the host side: the schema, the loader and

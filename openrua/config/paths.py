@@ -5,15 +5,18 @@ Bundled files ship inside the installed package: declarative files under
 ``agents/``) and, for the kinds that need code, one module per entry in
 the package ``ENTRY_POINT_PACKAGES`` names. A short name resolves there
 and nowhere else; anything else (a slash or a suffix) is a path to a
-file of your own. There is no lookup in the user directory: extensions
-enter the repository or travel as a path.
+file of your own. There is no lookup by name in the user directory:
+extensions enter the repository or travel as a path.
 
 The user directory, ``~/.openrua`` unless overridden, holds only what
 the tool writes, in two kinds: what you would not want deleted,
-``config.yaml`` (openrua config set) and ``credentials/`` (logins); and
-retained session materials, ``sandboxes/<name>/`` (its
-workspace, its copy of the agent's profile, what ``up`` remembers),
-which ``down`` preserves and ``openrua clean`` explicitly deletes. It reaches this
+``config.yaml`` (openrua config set), ``credentials/`` (logins) and
+``robots/<name>/`` (a robot ``openrua connect`` connected on this
+computer, listed by ``connected_robots`` and passed by its path); and
+retained session materials, ``sandboxes/<name>/`` (its workspace, its
+copy of the agent's profile, what ``up`` remembers) and
+``launches/<name>/`` (a session's startup log), which ``down`` preserves
+and ``openrua clean`` explicitly deletes. It reaches this
 module as a parameter (``home=``); the CLI entry point reads
 ``OPENRUA_HOME`` and ``--home`` once and passes the result down.
 Nothing here reads the environment.
@@ -112,6 +115,14 @@ def available(kind: str) -> list[Entry]:
     base = bundled(kind)
     return [Entry(p.stem, p) for p in sorted(base.glob("*.yaml"))
             if not p.name.startswith(("_", "."))]
+
+
+def connected_robots(home_dir: Path | None = None) -> list[Entry]:
+    """The robots ``openrua connect`` connected on this computer: each
+    folder under ``robots/`` with its ``robot.yaml``, by folder name."""
+    base = home(home_dir) / "robots"
+    return [Entry(d.name, d / "robot.yaml") for d in sorted(base.glob("*"))
+            if (d / "robot.yaml").is_file()] if base.is_dir() else []
 
 
 def is_path(spec: str) -> bool:

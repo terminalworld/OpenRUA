@@ -86,9 +86,9 @@ step, up to a first small motion with the emergency stop at hand
 ([Connect a real robot](docs/connect.md)).
 
 **While it works.** Enter sends, Esc stops the agent and the arm's motion,
-`/watch` shows a camera live and `/help` lists the rest
-([terminal guide](docs/terminal.md)). Ctrl+D leaves and lets the session keep
-running; `openrua --resume` brings you back.
+`/watch` opens the robot's cameras live in the browser and `/help` lists the
+rest ([terminal guide](docs/terminal.md)). Ctrl+D asks whether to keep the
+session running; `openrua --resume` brings you back.
 
 ### Next
 
@@ -104,15 +104,16 @@ running; `openrua --resume` brings you back.
 
 | Interface | Entry | When you leave |
 |---|---|---|
-| OpenRUA TUI | `openrua --name chat-demo` | Ctrl+D asks: keep the shared session running (Enter), or end it |
-| Browser | `openrua --gui --name chat-demo` | Closing the page leaves the shared session running |
-| Plain CLI | `openrua --cli --name chat-demo` | Leaving the client keeps the shared session running |
-| Native agent terminal | `openrua up panda --sim robosuite --bench capbench --agent codex --name native-demo`, then `openrua agent --name native-demo` in a second terminal | Exiting the agent leaves the robot up; Ctrl-C in `up` or `openrua down --name native-demo` powers it off |
+| OpenRUA TUI | `openrua` | Ctrl+D asks: keep the session running (Enter), or end it |
+| Browser | `openrua --gui` | Closing the page leaves the session running |
+| Plain CLI | `openrua --cli` | Leaving keeps the session running |
 | One task, on its own | `openrua exec panda "lift the cube" --sim robosuite` | Nothing to leave: the robot powers off when the agent is done, and the run stays under `runs/` |
 
 The first three share one conversation and its queue: join from any of them,
-leave, and come back ([shared sessions](docs/sessions.md)). The
-[terminal guide](docs/terminal.md) has the keys and commands.
+leave, and come back with `openrua --resume` ([shared sessions](docs/sessions.md)).
+The [terminal guide](docs/terminal.md) has the keys and commands. To use the
+agent's own original terminal on the robot instead, see
+[first task](examples/first-task.md#1a-bring-the-robot-up).
 
 ## How it works
 
@@ -168,7 +169,8 @@ see [Architecture](docs/architecture.md).
 - **Defaults.** Save common choices with `openrua config set`; explicit command
   arguments override them. [Configuration](docs/config.md) documents the fields.
 - **Available extensions.** `openrua robots`, `openrua simulators`,
-  `openrua benchmarks`, and `openrua agents` list the bundled and local choices.
+  `openrua benchmarks`, and `openrua agents` list the bundled choices;
+  `openrua robots` also lists the robots connected on this computer.
   `openrua benchmarks libero_pro` lists its suites and tasks.
 
 ## Supported robots
@@ -185,7 +187,7 @@ it, come from the other two kinds of file.
 | `aloha-agilex` | AgileX Cobot Magic with two ARX X5 arms | `robotwin` |
 | *your robot* | any ROS&nbsp;2 arm or mobile manipulator, real | its own file; see [docs/your-own-robot.md](docs/your-own-robot.md) |
 
-`openrua robots` prints this list from the files on disk, yours included.
+`openrua robots` prints this list, and the robots connected on this computer.
 
 ## Supported simulators
 
@@ -243,7 +245,8 @@ remains unsupported, and robot tasks remain unvalidated. They are not default se
 
 Bring your own agent. An agent is a manifest (how to install its CLI in the sandbox, which
 hosts it talks to, how it logs in) and a small hooks class (how to
-launch it); everything else is optional. Pass yours as a path
+launch it, and how to hold a conversation, which OpenRUA's terminal, browser
+and `openrua connect` need). Pass yours as a path
 (`--agent ./my-agent.yaml`) or send a pull request;
 `openrua agents` lists what is available and what each can do. See
 [docs/agents.md](docs/agents.md).

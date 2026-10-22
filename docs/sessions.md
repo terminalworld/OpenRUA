@@ -14,7 +14,7 @@ boundaries and validation evidence follow the user-facing instructions.
 
 The `openrua.sessions` package coordinates user messages and native agent
 connections. It does not plan robot actions or replace the coding agent's own
-workflow. The experimental local service connects the existing robot startup path to
+workflow. The local service connects the existing robot startup path to
 this coordinator. CLI and browser clients use the same HTTP API.
 
 For a chat-first terminal with streamed replies, collapsible tools and an
@@ -26,14 +26,16 @@ For ordinary use, `openrua` creates a new session with an automatic ID;
 `openrua --resume` finds a previous conversation and `--name NAME` explicitly
 starts or reconnects to a named session;
 `openrua --gui` selects the browser and `openrua --cli` selects plain chat.
-Choose **Prepare and start** in keyboard setup to build missing images and check
-readiness; **Save and check preparation** only inspects preparation. Native login or explicit
-API configuration remains separate; OpenRUA never changes billing mode for you. The service runs in the background,
+Choose **Prepare and start** in keyboard setup to set up Docker and the agent's
+sign-in when they are missing, build missing images and check readiness;
+**Save and check preparation** only inspects preparation. Explicit API
+configuration remains a choice of your own; OpenRUA never changes billing mode
+for you. The service runs in the background,
 with startup output in `~/.openrua/launches/<name>/service.log`.
 
-To reconnect, pass only the session's name and the interface
-(`openrua --name NAME`, with `--gui` or `--cli`); startup options cannot
-change a running conversation. The agent's original terminal (`openrua up`,
+To come back, `openrua --resume` lists the conversations, running ones first;
+`openrua --name NAME` (with `--gui` or `--cli`) reconnects to one by name.
+Startup options cannot change a running conversation. The agent's original terminal (`openrua up`,
 then `openrua agent`) is a separate session that cannot take over a shared
 conversation, and `openrua exec` holds no conversation at all
 ([first task](../examples/first-task.md)).
@@ -88,7 +90,9 @@ physical robot state.
 
 ## Browser client
 
-With `serve` running, open its browser client from another terminal:
+`openrua --gui` starts a session in the browser, and `openrua --gui --name NAME`
+opens a running one there. With `serve` running, the explicit form from another
+terminal is:
 
 ```sh
 openrua session --name shared web
@@ -181,8 +185,8 @@ openrua session --name shared configure permissions ask    # or auto; model <nam
 ```
 
 A session starts with `--permissions auto` (the agent runs commands without
-asking) unless started with `--permissions ask`; either can be switched while it
-runs. Asked, the agent's request to run a command arrives as a question.
+asking) unless started with `--permissions ask`, as `openrua connect` starts
+one; either can be switched while it runs. Asked, the agent's request to run a command arrives as a question.
 
 An interrupt stops the agent's turn through its own CLI and asks the robot's
 motion actions (each arm's trajectory and gripper ports, the planner's move
@@ -237,7 +241,8 @@ printed in startup messages. Native records and the SQLite journal are private
 session data. Do not publish them as application assets.
 
 All API requests require `Authorization: Bearer TOKEN`. The bundled
-browser assets (`/`, `/app.js`, `/workspace.js`, `/style.css`) are public on the
+browser assets (`/`, `/app.js`, `/session.mjs`, `/workspace.js`, `/cameras.js`,
+`/style.css`) are public on the
 local origin. Workspace reads require the same token as other API requests;
 journal and profile files are not exposed through the file reader. The server checks the Host
 and browser Origin, sends no CORS allowance, and rejects oversized bodies.
@@ -250,6 +255,8 @@ transport. The API is independent of agent vendors:
 | `GET /api/events?after=N&limit=1000` | Ordered retained events after N |
 | `GET /api/workspace/list?path=snaps` | Bounded directory entries with kind, size and modification time |
 | `GET /api/workspace/read?path=snaps/image.png` | File metadata, preview kind, MIME type and base64 bytes; UTF-8 text when available |
+| `GET /api/cameras` | The robot's camera names |
+| `GET /api/cameras/frame?name=wrist` | That camera's latest frame (base64, with its age); the session reads a camera only while someone asks |
 | `POST /api/commands` | `{ "operation": "enqueue", "params": { ... } }` and other session operations |
 | `POST /api/end` with `{}` | Stop owned resources and return the final state snapshot in `result` |
 | `POST /api/actions/<name>` | An operation the session's owner adds, its body passed as is (`openrua connect` adds `check`) |
@@ -379,7 +386,7 @@ removed the session containers and retained the workspace. Each turn had a
 15-minute validation limit; no control program or grasp strategy was supplied
 with the natural-language requests. This single task is not a reliability
 estimate, a matched model comparison, or a benchmark score. See
-[agents.md](agents.md#structured-conversations-experimental) for protocol checks.
+[agents.md](agents.md#structured-conversations) for protocol checks.
 
 With the 0.10.11 workspace, Claude Code (`claude-opus-5`, native login)
 also completed observation, cube lift, and placement in one native session.

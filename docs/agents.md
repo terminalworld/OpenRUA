@@ -36,21 +36,22 @@ knowledge appears anywhere else.
 | Key | Required | Meaning |
 |---|---|---|
 | `name` | yes | the name configs use under `agent.name` |
+| `title` | | the agent's name as people write it (`Claude Code`), shown in the terminal and in the sign-in offer |
 | `default_model` | yes | model when the config names none |
 | `entry_point` | for launch | the module behind the manifest: a bundled name (`plugins/agents/<name>.py`) or a path relative to the manifest (`./my_agent.py`) |
 | `binary` | | the CLI executable inside the sandbox |
 | `install` | | one-line root shell chain that installs the CLI into the sandbox image; `{version}` in it is replaced by a pin when one is given |
 | `version` | | a pin the manifest itself carries; normally absent (see below) |
 | `whitelist` | | regexes of the hosts the CLI must reach (its model service and login); a run limited to the model service lets only these through its proxy |
-| `credentials` | | `dirname`, `filename`, `config_env`, `mount_point`, optional `native_dir`: a profile-directory login with native discovery |
+| `credentials` | | `dirname`, `filename`, `config_env`, `mount_point`, optional `native_dir`: a profile-directory login with native discovery; optional `login`: the CLI's own sign-in command, which `openrua login` runs in the sandbox image |
 | `token_env` | | environment variable carrying a long-lived token (passed by file) |
 | `version_argv` | | command printing the CLI version (recorded per trial) |
 | `min_version` | | the oldest CLI release that takes every flag the hooks pass; a build that produces an older one fails, and a session or trial on a sandbox with an older one is refused with the rebuild command |
 | `latest_release` | | URL whose JSON names the newest release as `version` (an npm registry's `/latest`); `openrua` offers an update when the sandbox's CLI is older |
 | `default_options` | | knobs a config may override under `agent.options` |
 
-`openrua config schema` prints the same list with descriptions
-(`AgentManifest`).
+[config.md](config.md#agentmanifest) lists the same keys with their
+descriptions.
 
 ## The hooks module
 
@@ -59,9 +60,13 @@ method is required, `launch_argv`: the command that runs the agent
 headless on a task inside the sandbox (`openrua exec`, `openrua bench`),
 transcript on stdout;
 `self.exec_argv(sandbox, env, token_file)` gives the `docker exec`
-prefix every agent shares.
+prefix every agent shares. OpenRUA's own terminal, its browser, plain
+chat and `openrua connect` hold a conversation through a second hook,
+`conversation` ([structured conversations](#structured-conversations));
+an agent without it runs headless and in its own terminal only.
 Every other hook has a documented default, and a consumer that finds the
-default does without: `interactive_argv` (`openrua agent`),
+default does without: `interactive_argv` (`openrua agent`), `steps`
+(what `openrua exec` shows while the agent works),
 `sandbox_cli_check`, `login_hint`, `token_hint`, the quota hooks
 (`quota_probe_argv`, `quota_window_open`, `matches_quota_anomaly`,
 `read_rate_limits`, `quota_since`), the transcript hooks (`read_final`,
@@ -217,8 +222,8 @@ reference implementation for all of the above.
 headless `codex exec --json` with approvals and the CLI's own sandbox
 switched off (the container is the sandbox); `web_search: false` passes
 `web_search="disabled"` and `account_connectors: false` turns off the
-ChatGPT apps (`features.apps=false`); login through a `CODEX_HOME` profile directory (`CODEX_HOME=<dir> codex
-login`) or an API key by file; shell commands replayed (its file-change
+ChatGPT apps (`features.apps=false`); login through a `CODEX_HOME` profile directory (`openrua login codex`, or
+`CODEX_HOME=<dir> codex login` with the CLI on the host) or an API key by file; shell commands replayed (its file-change
 events carry no content). Its stdout stream counts one turn per prompt,
 so `collect` keeps the CLI's own session log as `rollout.jsonl`, from
 which turns are model responses (the unit Claude Code's transcript
@@ -232,15 +237,16 @@ install line); `openrua doctor` reads them, so one sandbox image can
 carry several agents and doctor still says which manifest changed.
 
 
-## Structured conversations (experimental)
+## Structured conversations
 
 A plugin may implement `conversation(sandbox, model, proxy, options=None,
 session_id=None, limits=None, permissions="auto")` in addition to batch execution and the native terminal.
 The default returns `None`; existing plugins need no migration. The hook
 returns a `Conversation` containing a piped native-process command and a
 `ConversationProtocol`. Construction starts no process. This capability is
-consumed by the experimental shared `serve` / `chat` CLI and browser client
-(`openrua session --name NAME web`), using the same session API.
+consumed by OpenRUA's shared sessions: its terminal (`openrua`), the browser
+(`openrua --gui`), plain chat (`--cli`) and `openrua connect`, all through the
+same session API.
 
 The protocol is independent of transport and contains all vendor-specific
 message knowledge. An execution owner serializes calls, writes each returned

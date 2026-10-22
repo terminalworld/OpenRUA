@@ -30,10 +30,6 @@ _LAYERS = _BRIDGE | {"openrua.runner.preflight", "openrua.runner.record",
                      "openrua.sandbox"}
 FORBIDDEN = {
     "terminal": {"openrua"},
-    "tui": {"openrua.robot", "openrua.runner", "openrua.sandbox", "openrua.proxy",
-            "openrua.agents", "openrua.plugins", "openrua.config", "openrua.cli",
-            "openrua.sessions.core", "openrua.sessions.execution", "openrua.sessions.store",
-            "openrua.sessions.http"},
     "artifacts.py": {"openrua"},
     # inside the bridge: the three parts never see each other; main may
     # import all three; nothing imports outward

@@ -45,7 +45,8 @@ gripper's travel is open and what its driver does with a goal, each
 camera's type and mount, and which of the found ports to keep. A `TODO`
 is not a valid value, so the profile does not load until you decide.
 Delete any port the robot does not actually serve. A robot that is already up under OpenRUA can be
-probed from its own sandbox: `openrua probe --name openrua`.
+probed from its own sandbox: `openrua probe --name <session>`, with the
+session's ID as `openrua --resume` lists it.
 
 Use `--ros-domain` and `--distro` to match the running robot, for example
 `openrua probe --host --ros-domain 7 --distro humble > ur5e.yaml`.
@@ -62,8 +63,8 @@ its trailing document separator. Check the command's exit status before using th
 
 ## What the agent reads
 
-`openrua up` generates the agent's `machine.yaml` from the assembled
-`machine:` section. The agent's docs explain how to read it; you supply
+Every session and run generates the agent's `machine.yaml` from the
+assembled `machine:` section. The agent's docs explain how to read it; you supply
 the facts:
 
 ```yaml
@@ -210,8 +211,8 @@ To open OpenRUA's shared terminal chat with your completed profile:
 openrua --robot ./ur5e.yaml --ros-domain 7
 ```
 
-A real robot takes no saved simulator or benchmark default; name a benchmark
-with `--bench` to run its task on the robot. OpenRUA validates the profile and
+A real robot takes no saved simulator or benchmark default; its task is
+always the sentence you give. OpenRUA validates the profile and
 builds what is missing before opening chat: the driver images
 `backend.build` names, and the sandbox (the robot's own when it declares
 `backend.sandbox_install`). With `openrua config set --robot ./ur5e.yaml`
@@ -226,10 +227,10 @@ If the launch command exits while the session runs (a driver that crashed
 after an emergency stop, say), the session says so in its service log and
 the terminal, and holds the queued instructions until you look.
 
-Leaving the terminal (Ctrl+D, Ctrl+C, /quit) does not end the session: the
-robot stays under its driver and the agent keeps its sandbox. The terminal
-says how to reconnect (`openrua --name <session>`) and how to end it
-(`/end`, or `openrua session --name <session> end`). It preserves your profile instead of sending it through the
+Leaving the terminal (Ctrl+D, Ctrl+C, /quit) asks whether to keep the
+session running. Kept, the robot stays under its driver and the agent keeps
+its sandbox; `openrua --resume` brings you back, and `/end` or
+`openrua session --name <session> end` ends it. It preserves your profile instead of sending it through the
 simulation setup menu. This is a software entry point; physical robot operation
 still requires validation on your hardware.
 
@@ -254,7 +255,8 @@ on `up`). At the end `exec` asks you whether the robot did it, and
 (`success: null`, `verdict: not_applicable` when you skip it, or under
 `bench`); preflight, the agent, the transcript and the provenance are the
 same as in simulation. A real robot takes no
-`--sim`; it may take `--bench` to run a benchmark's task list on it.
+`--sim`; under `openrua bench --robot <file> --task "..."` a benchmark lends it
+its protocol and agent settings, not its tasks.
 
 For an independently controlled native terminal, keep `openrua up` running and
 use `openrua agent --name <name>` in another terminal. `openrua down --name <name>`
