@@ -1,6 +1,7 @@
 import {existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {Container, Markdown, Spacer, Text, truncateToWidth, visibleWidth, wrapTextWithAnsi} from '@earendil-works/pi-tui';
+import {toolSummary} from './session.mjs';
 
 // Control bytes must not become terminal instructions, including OSC clipboard writes.
 export const plain = value => String(value ?? '').replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, '');
@@ -109,17 +110,7 @@ export class ToolView {
 
   invalidate() {}
 
-  static summary(details) {
-    if (details === undefined) return '';
-    if (details && typeof details === 'object') {
-      const value = details.command ?? details.file_path ?? details.path ?? details.pattern ?? details.url;
-      if (typeof value === 'string') return value.split('\n')[0];
-      const keys = Object.keys(details);
-      if (!keys.length) return '';
-      return keys.map(key => `${key}: ${typeof details[key] === 'string' ? details[key].split('\n')[0] : JSON.stringify(details[key])}`).join(', ');
-    }
-    return String(details);
-  }
+  static summary(details) { return toolSummary(details); }
 
   render(width) {
     const {phase, label, details, output, expanded} = this.tool;

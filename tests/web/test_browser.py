@@ -319,3 +319,33 @@ def test_the_page_changes_the_agents_settings_and_says_what_events_say(tmp_path)
         await playwright.expect(page.locator("#notice")).to_have_text("/quit is a terminal command.")
         assert store.snapshot()["state"]["messages"] == []   # none of it went to the agent
     asyncio.run(browser_case(tmp_path, check))
+
+
+def test_a_typed_line_answers_the_question_the_agent_waits_on(tmp_path):
+    # As in the terminal: free text answers it; a line that is none of a
+    # closed question's choices sends you to its form; nothing is queued.
+    async def check(page, store, native, server):
+        await send(page, "Turn joint 7")
+        first = store.snapshot()["state"]["active"]
+        await emit(native, "input_required", first, request_id="how", questions=[
+            {"id": "mode", "text": "Position or velocity?", "secret": False}])
+        await playwright.expect(page.locator("#notes")).to_contain_text("type the answer")
+        await send(page, "position, then try the other joints")
+        await until(lambda: any("reply" in f for f in native.writes))
+        assert native.writes[-1] == {"reply": "how", "answers": {"mode": ["position, then try the other joints"]}}
+        await emit(native, "input_required", first, request_id="ok", questions=[
+            {"id": "go", "text": "Allow this action?", "choices": ["Allow", "Deny"], "secret": False}])
+        await playwright.expect(page.locator("#questions")).to_be_visible()
+        await page.locator("#message").fill("maybe")
+        await page.locator("#send").click()
+        await playwright.expect(page.locator("#notice")).to_have_text("Answer this question in its form.")
+        assert len(store.snapshot()["state"]["messages"]) == 1
+        await emit(native, "item", first, item_id="t", kind="command", phase="completed",
+                   text="Bash", details={"command": "ros2 topic list\nmore"}, output="/joint_states")
+        await playwright.expect(page.locator(".tool summary")).to_have_text("completed · Bash(ros2 topic list)")
+        # The closing text repeats what the turn already showed: not twice.
+        await emit(native, "text_delta", first, item_id="reply", text="Joint 7 turned.")
+        await emit(native, "turn_finished", first, status="completed", text="Joint 7 turned.")
+        await playwright.expect(page.locator(".turn-result")).to_have_text("")
+        await playwright.expect(page.locator(".agent-output")).to_have_text("Joint 7 turned.")
+    asyncio.run(browser_case(tmp_path, check))

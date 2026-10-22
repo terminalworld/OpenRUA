@@ -1,7 +1,7 @@
 import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, SelectList, Spacer, Text,
   TuiMainScreen, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
-import {PERMISSIONS, agentCommands, commandsFor, notice, parseCommand, status} from './session.mjs';
+import {PERMISSIONS, agentCommands, commandsFor, notice, parseCommand, status, typedAnswer} from './session.mjs';
 import {Transcript, Welcome, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
@@ -167,16 +167,10 @@ export class Chat {
   // coding agent's own terminal; a question with several parts, or a secret,
   // goes through /questions.
   answerTyped(text) {
-    const pending = Object.values(this.controller.state?.requests ?? {}).filter(r => r.status === 'pending');
-    if (!pending.length) return false;
-    const request = pending[0];
-    const [question] = request.questions;
-    if (request.questions.length !== 1 || question.secret
-        || (question.choices?.length && !question.allow_other && !question.choices.includes(text.trim()))) {
-      this.questions();
-      return true;
-    }
-    void this.client.command('respond', {request_id: request.request_id, answers: {[question.id]: [text.trim()]}})
+    const typed = typedAnswer(this.controller.state, text);
+    if (!typed) return false;
+    if (typed.kind === 'choose') { this.questions(); return true; }
+    void this.client.command('respond', {request_id: typed.request_id, answers: typed.answers})
       .then(() => this.refresh()).catch(error => this.say(error.message));
     return true;
   }

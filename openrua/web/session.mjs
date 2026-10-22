@@ -93,3 +93,34 @@ export function notice(record) {
   }
   return null;
 }
+
+// What a typed line does while the agent waits on a question: answers it
+// when it can (one question, no secret, free text or one of its choices),
+// or needs the question's own view ("choose"); null when none is pending.
+export function typedAnswer(state, text) {
+  const pending = Object.values(state?.requests ?? {}).filter(r => r.status === 'pending');
+  if (!pending.length) return null;
+  const request = pending[0];
+  const [question] = request.questions;
+  const answer = String(text).trim();
+  // A choice typed in any case is that choice, as the agent wrote it.
+  const chosen = question.choices?.find(c => c.toLowerCase() === answer.toLowerCase());
+  if (request.questions.length !== 1 || question.secret
+      || (question.choices?.length && !question.allow_other && chosen === undefined))
+    return {kind: 'choose', request_id: request.request_id};
+  return {kind: 'answer', request_id: request.request_id, answers: {[question.id]: [chosen ?? answer]}};
+}
+
+// A tool call's one-line summary of what it was given: the command, the
+// file, the pattern, or its arguments.
+export function toolSummary(details) {
+  if (details === undefined || details === null) return '';
+  if (typeof details === 'object') {
+    const value = details.command ?? details.file_path ?? details.path ?? details.pattern ?? details.url;
+    if (typeof value === 'string') return value.split('\n')[0];
+    const keys = Object.keys(details);
+    if (!keys.length) return '';
+    return keys.map(key => `${key}: ${typeof details[key] === 'string' ? details[key].split('\n')[0] : JSON.stringify(details[key])}`).join(', ');
+  }
+  return String(details);
+}

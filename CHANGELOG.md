@@ -15,7 +15,10 @@ Unreleased until a release is cut, and the release decides its number.
   notes (stopped robot, connecting checks, questions, a quiet minute) and
   the same notices (cancelled motions, a setting the agent refused). Both
   clients read commands, status and notices from one file, and tests fail
-  when a command is added without a handler in either.
+  when a command is added without a handler in either. In the page, a
+  typed line answers the question the agent waits on, a tool shows what it
+  ran (`Bash(ros2 topic list)`), and the agent's closing words show once.
+- Typing a question's choice answers it in any case (`Allow` for `allow`).
 - **Claude Code reads AGENTS.md in every session**: each session used to
   start from a copy of Claude's own state file, which on some machines was
   long stale and made the CLI skip AGENTS.md, so the agent could answer

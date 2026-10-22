@@ -6,6 +6,8 @@ import {
   notice as eventNotice,
   parseCommand,
   status,
+  toolSummary,
+  typedAnswer,
 } from "/session.mjs";
 const $ = (id) => document.getElementById(id);
 const make = (tag, text, className) => {
@@ -113,7 +115,15 @@ function event(record) {
     t = turns.get(e.turn_id);
   if (!t) return;
   if (e.kind === "turn_finished") {
-    t.result.textContent = data.text || data.error?.message || data.status;
+    // A completed turn's closing text repeats what the agent already said;
+    // it shows only when the turn showed nothing else, as in the terminal.
+    const shown = [...outputs.keys()].some((id) => id.startsWith(`${e.turn_id}:`));
+    t.result.textContent =
+      data.status === "completed"
+        ? shown
+          ? ""
+          : data.text || ""
+        : data.error?.message || data.status;
     return;
   }
   if (!["text_delta", "item"].includes(e.kind)) return;
@@ -138,8 +148,10 @@ function event(record) {
         : data.text || out.text;
     out.el.textContent = out.text;
   } else {
+    if (data.details !== undefined) out.given = data.details;
+    const given = toolSummary(out.given);
     out.el.querySelector("summary").textContent =
-      `${data.phase} · ${data.text || data.kind}`;
+      `${data.phase} · ${data.text || data.kind}${given ? `(${given})` : ""}`;
     if (data.details !== undefined) out.details = JSON.stringify(data.details, null, 2);
     if (data.output !== undefined) out.output = String(data.output ?? "");
     const sections = [];
@@ -264,7 +276,7 @@ function render() {
       : state.paused
       ? `Paused${state.pause_reason ? `: ${state.pause_reason}` : ""}. Queued instructions are retained. Review them before continuing.`
       : state.active
-        ? "The agent is working. New messages will wait their turn."
+        ? "The agent is working. A new message joins its turn when the agent can take one."
         : state.connected
           ? "Ready for your next instruction."
           : "Waiting for the native agent connection.";
@@ -306,7 +318,7 @@ function render() {
     ? "Awaiting acceptance. Retry keeps the same request ID."
     : state.paused
       ? "Your message will remain queued until you continue."
-      : "New messages join the shared queue.";
+      : "New messages join the running turn when the agent can take one.";
   $("queue-count").textContent = queued.length;
   $("queue").replaceChildren();
   if (!queued.length)
@@ -504,6 +516,19 @@ $("compose").onsubmit = async (e) => {
     } catch (err) {
       notice(err.message);
     }
+    return;
+  }
+  // While the agent waits on a question, a typed line answers it, as in
+  // the terminal.
+  const answer = pending ? null : typedAnswer(state, $("message").value);
+  if (answer?.kind === "choose") {
+    handlers.questions();
+    notice("Answer this question in its form.");
+    return;
+  }
+  if (answer) {
+    if (await act("respond", { request_id: answer.request_id, answers: answer.answers }))
+      $("message").value = "";
     return;
   }
   if (!pending) {
