@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.18.1
+
 - The sandbox's file that lets `python3 -I` find rclpy now lists
   directories, computed when the image is built, after a robot's own
   install, instead of running code at every Python start: the form Python
