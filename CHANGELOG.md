@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.18.3
+
 - `openrua robots` also lists the robots `openrua connect` connected on
   this computer (`~/.openrua/robots/<name>/`), each with the path that
   names it.
