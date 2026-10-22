@@ -726,3 +726,16 @@ test('what the session means is read the same way by every client', async () => 
     data: {setting: 'model', value: 'x', reason: 'unknown model'}}}), /did not take model x: unknown model/);
   assert.equal(notice({kind: 'agent_event', data: {kind: 'item'}}), null);
 });
+
+test('a typed line answers a question the same way in every client', async () => {
+  const {typedAnswer, toolSummary} = await import('../src/session.mjs');
+  const asking = questions => ({requests: {r: {request_id: 'r', status: 'pending', questions}}});
+  assert.equal(typedAnswer({requests: {}}, 'hi'), null);
+  assert.deepEqual(typedAnswer(asking([{id: 'q', text: 'How?'}]), ' position '),
+    {kind: 'answer', request_id: 'r', answers: {q: ['position']}});
+  assert.equal(typedAnswer(asking([{id: 'q', choices: ['Allow', 'Deny']}]), 'maybe').kind, 'choose');
+  assert.deepEqual(typedAnswer(asking([{id: 'q', choices: ['allow', 'deny']}]), 'Allow').answers, {q: ['allow']});
+  assert.equal(typedAnswer(asking([{id: 'q', secret: true}]), 'pw').kind, 'choose');
+  assert.equal(toolSummary({command: 'ls\nmore'}), 'ls');
+  assert.equal(toolSummary({file_path: '/workspace/a.md'}), '/workspace/a.md');
+});
