@@ -43,7 +43,6 @@ version_argv: [claude, --version]
 # than 2.1.197, which exits on it); an older sandbox CLI is refused before
 # the agent starts.
 min_version: 2.1.251
-instruction_file: CLAUDE.md
 # Knobs a config may override under agent.options. All pinned explicitly
 # so a CLI update cannot shift them:
 # - effort: reasoning level (low, medium, high, xhigh, max)

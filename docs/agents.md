@@ -46,7 +46,6 @@ knowledge appears anywhere else.
 | `token_env` | | environment variable carrying a long-lived token (passed by file) |
 | `version_argv` | | command printing the CLI version (recorded per trial) |
 | `min_version` | | the oldest CLI release that takes every flag the hooks pass; a build that produces an older one fails, and a session or trial on a sandbox with an older one is refused with the rebuild command |
-| `instruction_file` | | the instructions file the CLI reads on its own |
 | `latest_release` | | URL whose JSON names the newest release as `version` (an npm registry's `/latest`); `openrua` offers an update when the sandbox's CLI is older |
 | `default_options` | | knobs a config may override under `agent.options` |
 
