@@ -93,7 +93,7 @@ class Execution:
         # robot's motions canceled), started without holding the queue.
         self.on_interrupt: Callable[[], Awaitable[None]] | None = None
 
-    async def start(self) -> None:
+    async def start(self, *, reopen: bool = False, context_note: str | None = None) -> None:
         if self._owner is not None:
             raise RuntimeError("execution owner already started")
         self._owner_path.parent.mkdir(parents=True, exist_ok=True)
@@ -105,6 +105,11 @@ class Execution:
             raise RuntimeError("this session already has an execution owner; connect to it instead") from exc
         self._owner = owner
         try:
+            if reopen:
+                if context_note is None:
+                    self.session.reopen()
+                else:
+                    self.session.reopen(context_note)
             if self.session.store.snapshot()["state"]["closed"]:
                 raise ValueError("session is closed; start a new session to keep these records")
             self.session.recover()
@@ -170,7 +175,10 @@ class Execution:
         if protocol.can_submit:
             message = self.session.take()
             if message:
-                await self._update(protocol.submit(message["id"], message["text"]))
+                text = message['text']
+                if message.get('context_note'):
+                    text = '[Runtime update]\n' + message['context_note'] + '\n\n[User message]\n' + text
+                await self._update(protocol.submit(message["id"], text))
         # What is typed while a turn runs joins it, where the agent can take
         # it, the way a coding agent's own terminal passes it on.
         while protocol.can_steer:

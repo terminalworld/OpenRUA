@@ -89,7 +89,7 @@ def test_without_a_name_the_newest_robot_up_is_opened(tmp_path, monkeypatch):
     manifest = plugin(tmp_path)
     for name, age in (("older", 100), ("newer", 0)):
         live_state.save(name, tmp_path, agent="custom-display", agent_spec=str(manifest),
-                        agent_version="2.0", sandbox=f"{name}-sandbox", model="m", proxy="")
+                        agent_version="2.0", sandbox=f"{name}-sandbox", model="m", proxy="", project=os.getcwd())
         control = tmp_path / "sandboxes" / name / "control.json"
         control.write_text("{}")
         os.utime(control, (time.time() - age, time.time() - age))
@@ -113,7 +113,7 @@ def test_with_none_up_it_starts_one_and_asks_to_turn_it_off(tmp_path, monkeypatc
                         agent_version="2.0", sandbox="fresh-sandbox", model="m", proxy="",
                         backend="real")
         return "fresh", SimpleNamespace(wait=lambda timeout: 0)
-    monkeypatch.setattr(agent, "_running", lambda home: [])
+    monkeypatch.setattr(agent, "_running", lambda home, project=None: [])
     monkeypatch.setattr(agent, "_start_robot", start_robot)
     monkeypatch.setattr(agent.sys, "stdin", SimpleNamespace(isatty=lambda: True))
     monkeypatch.setattr(agent.sys, "stdout", SimpleNamespace(isatty=lambda: True, write=lambda s: None, flush=lambda: None))

@@ -9,6 +9,15 @@ from openrua.errors import UsageError
 
 
 @pytest.fixture(autouse=True)
+def trusted_project(tmp_path, monkeypatch):
+    from openrua.config import projects
+    root = tmp_path / 'project'
+    root.mkdir()
+    monkeypatch.chdir(root)
+    projects.trust(root, tmp_path)
+
+
+@pytest.fixture(autouse=True)
 def no_update_offers(monkeypatch):
     """What npm and PyPI hold today must not turn a start into a question
     (tests/cli/test_updates.py covers the offers themselves)."""

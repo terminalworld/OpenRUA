@@ -101,6 +101,8 @@ class Session:
                 return None, []
             for message in state["messages"]:
                 if message["status"] == "queued":
+                    if state.get('context_note') and not message['text'].lstrip().startswith('/'):
+                        message['context_note'] = state.pop('context_note')
                     message["status"] = "dispatching"
                     state["active"] = message["id"]
                     return message, [_event("dispatch_started", message_id=message["id"])]
@@ -346,6 +348,36 @@ class Session:
             state["paused"] = False
             state["pause_reason"] = None
             return None, [_event("queue_resumed")]
+        self.store.update(change)
+
+    def reopen(self, note: str = 'Execution resources restarted. Check the current environment before continuing.') -> None:
+        """Continue an ended conversation without replaying prior queued work."""
+        def change(state):
+            if not state['closed']:
+                raise ValueError('conversation is not ended; connect to its owner instead')
+            if state['active']:
+                raise ValueError('conversation still has active execution; inspect it before reopening')
+            withdrawn = []
+            for message in state['messages']:
+                if message['status'] == 'queued':
+                    message['status'] = 'withdrawn'
+                    withdrawn.append(message['id'])
+            for request in state['requests'].values():
+                if request['status'] == 'pending':
+                    request['status'] = 'expired'
+            state['closed'] = state['connected'] = False
+            if not state['messages']:
+                state['native_session'] = None
+            state['robot'] = None
+            state['context_note'] = note
+            if any(m['status'] == 'unknown' for m in state['messages']):
+                _pause(state, 'inspect the current robot and reconcile uncertain execution')
+            else:
+                state['paused'] = False
+                state['pause_reason'] = None
+                state['pause_id'] = None
+            return None, [_event('session_reopened', withdrawn=withdrawn,
+                                  note=note)]
         self.store.update(change)
 
     def close(self) -> None:

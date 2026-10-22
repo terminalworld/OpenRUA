@@ -14,7 +14,8 @@ from pathlib import Path
 
 from openrua import config
 from openrua.cli import updates
-from openrua.config import paths
+from openrua.cli import workspace
+from openrua.config import paths, projects
 from openrua.runner.control import serve_control
 from openrua.runner.limits import add_limit_options, limit_overrides
 from openrua.runner.live import LiveRobot, RobotRequest, open_robot
@@ -68,7 +69,7 @@ def robot_request(args) -> RobotRequest:
         benchmark=args.bench, agent=args.agent, model=getattr(args, "model", None),
         task_suite=args.task_suite, task_id=args.task_id, task=args.task,
         init_state=args.init_state,
-        workspace=Path(args.workspace) if args.workspace else None,
+        project=Path(args.workspace) if args.workspace else None,
         ros_domain=args.ros_domain, limits=limit_overrides(args),
         permissions=getattr(args, "permissions", None) or "auto")
 
@@ -114,6 +115,14 @@ async def _run(args) -> int:
 
 
 def run(args) -> int:
+    selected = workspace.choose(args.workspace or Path.cwd(), args.home,
+                                accept=args.trust_workspace)
+    if selected is None:
+        return 0
+    args.workspace = str(selected)
+    for key, value in projects.selection(selected).items():
+        if getattr(args, key, None) is None:
+            setattr(args, key, value)
     return asyncio.run(_run(args))
 
 
@@ -138,7 +147,9 @@ def add_options(p, *, default_name=DEFAULT_NAME) -> None:
                          "optional session name or ID; omitted for a new automatic ID"))
     p.add_argument("--agent", default=None, help="agent to open (default: the config's)")
     p.add_argument("--workspace", default=None,
-                   help="new or empty working directory, retained after shutdown (default: <home>/sandboxes/<name>/workspace)")
+                   help="persistent robot project directory (default: the current directory)")
+    p.add_argument("--trust-workspace", action="store_true",
+                   help="explicitly trust the workspace without an interactive question")
     p.add_argument("--ros-domain", type=int, default=None,
                    help="ROS_DOMAIN_ID (default: the lowest one no running robot "
                         "uses, so concurrent robots never share a graph; a real "
@@ -164,4 +175,5 @@ def add_parser(sub) -> None:
                    help="robot: a type or your robot's file (openrua robots), by name "
                    "or path; default: --bench's robot, else the user config's default")
     add_options(p)
+    p.add_argument('--model', default=None, help="model (default: the project's or configured agent's)")
     p.set_defaults(fn=run)

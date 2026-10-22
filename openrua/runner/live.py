@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Callable
 
 from openrua import agents
-from openrua.config import apply_suite_overrides, compose, normalize_arms, paths
+from openrua.config import apply_suite_overrides, compose, normalize_arms, paths, projects
 from openrua.config.schema import Limits, sandbox_image
 from openrua.errors import UnavailableError, UsageError
 from openrua.proxy.up import ensure as ensure_proxy
@@ -27,6 +27,7 @@ from openrua.runner.record import session_provenance
 from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
                                     internet_access, start_episode)
 from openrua.sandbox.down import down as sandbox_down
+from openrua.sandbox import project
 
 
 @dataclass(frozen=True)
@@ -43,6 +44,7 @@ class RobotRequest:
     task: str | None = None
     init_state: int = 0
     workspace: Path | None = None
+    project: Path | None = None
     ros_domain: int | None = None
     # What the agent may reach, over a free session's defaults (nothing
     # limited): config.schema.Limits field -> value.
@@ -164,23 +166,27 @@ def open_robot(request: RobotRequest) -> LiveRobot:
     if unready:
         raise UnavailableError(not_ready_message(unready),
                                hint=not_ready_hint(unready, cfg["machine"]["backend"]))
+    previous = state.load(request.name, request.home, require_running=False) \
+        if request.continuing else None
     cfg_agent = cfg["agent"]
-    adapter = agents.get(cfg_agent["name"], request.home, version=cfg_agent.get("version"))
-    try:
-        key_file = agents.api_key_file(adapter, cfg_agent.get("auth"))
-    except ValueError as exc:
-        raise UsageError(str(exc), hint="check the selected API key file, or use openrua config set --auth native") from exc
+    adapter = agents.get(cfg_agent["name"], request.home,
+                         version=previous.get('agent_version') if previous else cfg_agent.get("version"))
+    key_file = None
+    if previous is None:
+        try:
+            key_file = agents.api_key_file(adapter, cfg_agent.get("auth"))
+        except ValueError as exc:
+            raise UsageError(str(exc), hint="check the selected API key file, or use openrua config set --auth native") from exc
     sim_name, sandbox_name = state.container_names(request.name)
     sandbox_dir = paths.sandbox_dir(request.name, request.home)
     workdir = Path(request.workspace or sandbox_dir / "workspace").resolve()
-    if workdir.exists() and (not workdir.is_dir() or any(workdir.iterdir())):
+    if request.project is None and workdir.exists() and (not workdir.is_dir() or any(workdir.iterdir())):
         raise UsageError(f"working directory is not empty: {workdir}",
                          hint="use --workspace <new-empty-directory>; existing files are retained")
-    previous = state.load(request.name, request.home, require_running=False) \
-        if request.continuing else None
     if not request.continuing:
         state.reserve(request.name, request.home)
-    workdir.mkdir(parents=True, exist_ok=True)
+    if request.project is None:
+        workdir.mkdir(parents=True, exist_ok=True)
     limits = Limits(**(request.limits or {})).model_dump()
     network = ensure_internal_network()
     # A proxy only when the agent may reach no more than its model
@@ -205,6 +211,14 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         profile = adapter.prepare_profile(creds_home, sandbox_dir / "profile", limits=limits)
     if previous is None:
         mounts = profile.mounts
+    project_root = request.project.expanduser().resolve() if request.project is not None else None
+    if project_root is not None:
+        materials = sandbox_dir / "robot-materials"
+        project.prepare(cfg, project_root, materials)
+        projects.save_selection(project_root, dict(robot=composed.robot, sim=composed.simulator or '',
+                                                   bench=composed.benchmark or '', agent=cfg_agent['name'], model=model))
+        workdir = project.run_directory(project_root, request.name)
+        mounts = (*(m for m in mounts if not m.endswith(":/robot:ro")), f"{materials}:/robot:ro")
     if cfg["machine"]["backend"]["kind"] == "sim":
         print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
               flush=True)
@@ -214,7 +228,8 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         _, machine, _ = bring_up(
             cfg, workdir, sim_name, sandbox_name, suite, task_id, network,
             internet_access(proxy_url), mounts, request.ros_domain,
-            robot_log=workdir / "robot.log", home=request.home)
+            robot_log=workdir / "robot.log", home=request.home,
+            **({"workspace": project_root, "seed_workspace": False} if project_root is not None else {}))
     except Exception as e:  # noqa: BLE001
         # The sandbox directory stays for the read below; openrua clean sweeps it.
         raise UnavailableError(f"[up] robot failed to come up: {e}",
@@ -236,7 +251,7 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         print("\n[down] powering off", flush=True)
         stop_resources(sandbox_name, machine.shutdown)
         state.stopped(request.name, request.home)
-        print(f"[down] files retained at {sandbox_dir}; workspace: {workdir / 'workspace'}")
+        print(f"[down] files retained at {sandbox_dir}; workspace: {project_root or workdir / 'workspace'}")
 
     robot = cfg["machine"].get("robot", {})
     try:
@@ -252,15 +267,16 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                    agent=adapter.name, agent_title=adapter.title or adapter.name,
                    agent_spec=cfg_agent["name"], agent_version=cfg_agent.get("version"),
                    model=model,
-                   auth_mode="api" if key_file is not None else "native",
+                   auth_mode=previous.get('auth_mode', 'native') if previous else "api" if key_file is not None else "native",
                    options={**adapter.default_options,
                             **cfg.get("agent", {}).get("options", {})},
-                   workspace=str(workdir / "workspace"), task=task,
+                   workspace=str(project_root or workdir / "workspace"), task=task,
+                   **({"project": str(project_root), "run_directory": str(workdir)} if project_root is not None else {}),
                    # What the terminal shows in its header; the resolved config is
                    # the source and these are its names, not a second copy of facts.
                    robot=composed.robot, robot_model=robot.get("model"),
                    simulator=composed.simulator, benchmark=composed.benchmark,
-                   suite=suite, task_id=task_id)
+                   suite=suite, task_id=task_id, init_state=request.init_state)
     except BaseException:
         stop_resources(sandbox_name, machine.shutdown)
         raise

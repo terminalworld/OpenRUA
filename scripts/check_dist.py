@@ -15,12 +15,18 @@ import venv
 def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Path | None = None) -> None:
     """Exercise real TTY startup and detachment without starting robot resources."""
     import pty
+    import fcntl
+    import struct
+    import termios
     master, slave = pty.openpty()
-    child = subprocess.Popen([str(executable), '--home', str(home)],
+    # Check the full external manifest path in a known viewport.
+    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 30, 180, 0, 0))
+    child = subprocess.Popen([str(executable), '--home', str(home), '--workspace', str(home / 'project')],
                              stdin=slave, stdout=slave, stderr=slave, env=environment)
     os.close(slave)
     output = bytearray()
     stage = -3 if manifest else 0
+    trusted = False
     try:
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline and child.poll() is None:
@@ -29,6 +35,10 @@ def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Pa
                     output.extend(os.read(master, 65536))
                 except OSError:
                     break
+            if not trusted and b'Use and trust this robot workspace?' in output:
+                os.write(master, b'\r')
+                output.clear(); trusted = True
+                continue
             if stage == -3 and b'Configure a new robot conversation' in output:
                 os.write(master, b'\x1b[B' * 3 + b'\r')
                 output.clear(); stage = -2
@@ -52,6 +62,8 @@ def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Pa
             elif stage == 3 and b'Do not paste the key here' in output:
                 os.write(master, b'\x04')
                 stage = 4
+        if child.poll() is None and stage != 4:
+            raise AssertionError(f'Terminal check stopped at stage {stage}:\n' + output.decode(errors='replace'))
         if child.poll() is None:
             child.wait(timeout=5)
         assert stage == 4 and child.returncode == 0, output.decode(errors='replace')

@@ -307,20 +307,24 @@ connected on this computer in `robots/<name>/`, and session files in
 `sandboxes/<name>/` and `launches/<name>/`. Interrupting `up`, or calling `down`,
 stops the session's resources but retains its workspace, native agent
 profile (including any conversation records written by the agent), logs
-and state. This does not resume a stopped robot or agent conversation. A shared service
+and state. Project files remain in your chosen directory. A shared service
 started by `openrua` runs independently of the client: end it with `/end` in
 the terminal, **End session** in the browser, the end choice when you leave
 the terminal, or `openrua session --name NAME end`.
 
 Startup output is retained in `launches/<name>/service.log`, including errors
 before a session becomes ready. These startup diagnostics are separate from
-the workspace and native agent logs under `sandboxes/<name>/`.
+native agent logs under `sandboxes/<name>/`. The current project has its own
+environment choices and per-run robot logs; see [robot projects](projects.md).
 
 Run `openrua` for a new automatically named session while retaining the earlier
 one. Explicit `--name` values must not overwrite retained work. An
-existing session directory or nonempty `--workspace` is never overwritten.
-The default workspace is `sandboxes/<name>/workspace/workspace/`;
-`--workspace <directory>` places it at `<directory>/workspace/` instead.
+existing session directory is never overwritten. The default workspace is
+the current directory itself; `--workspace <directory>` selects another
+persistent project. Its existing files remain intact. First use asks whether
+you trust the directory. `--resume` lists the current project's conversations;
+`--resume --all` includes every project and older records. Confirmed ended
+project conversations can reconnect to fresh resources without replaying work.
 
 Deletion is explicit: `openrua clean --name <name>` deletes one stopped
 session; `openrua clean` deletes all stopped sessions. Adding `--all` also

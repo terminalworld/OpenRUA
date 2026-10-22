@@ -94,9 +94,12 @@ def run(args) -> int:
                     prompt = input("you> ")
                 except EOFError:
                     break
-            if interactive and prompt.strip() == '/resume':
+            if interactive and prompt.strip() in {'/resume', '/resume --all'}:
                 from openrua.cli.commands.start import choose_history
-                selected = choose_history(args.home)
+                from openrua.runner.history import project_directory
+                from pathlib import Path
+                selected = choose_history(args.home, project=Path(project_directory(args.home, args.name) or Path.cwd()),
+                                          all_projects=prompt.strip() == '/resume --all')
                 if selected:
                     client, name = selected
                     if getattr(client, 'read_only', False):

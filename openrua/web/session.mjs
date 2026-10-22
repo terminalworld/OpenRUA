@@ -14,7 +14,7 @@ export const COMMANDS = [
   {name: 'watch', description: "See the robot's cameras live, in a browser", clients: ['terminal', 'browser']},
   {name: 'queue', description: 'Inspect, edit or withdraw queued messages', clients: ['terminal', 'browser']},
   {name: 'questions', description: 'Answer pending agent questions', clients: ['terminal', 'browser']},
-  {name: 'resume', description: 'Find an existing conversation', clients: ['terminal']},
+  {name: 'resume', description: 'Resume in this project; --all shows every project', clients: ['terminal']},
   {name: 'end', description: 'End execution while retaining the workspace and history', clients: ['terminal', 'browser']},
   {name: 'interrupt', description: 'Stop the current turn; queued messages go on', clients: ['terminal', 'browser']},
   {name: 'continue', description: 'Confirm continuation of the paused queue', clients: ['terminal', 'browser']},
@@ -81,6 +81,7 @@ export function status(state, {readOnly = false} = {}) {
 // A notice an event carries for the person, or null.
 export function notice(record) {
   const data = record?.data ?? {};
+  if (record?.kind === 'session_reopened') return data.note ?? 'Conversation reopened; observe the current scene before continuing.';
   if (record?.kind === 'motion_canceled') {
     const {canceled = [], failed = []} = data;
     return [canceled.length ? `Motion canceled: ${canceled.join(', ')}` : '',

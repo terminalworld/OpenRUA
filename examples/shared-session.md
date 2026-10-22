@@ -18,7 +18,10 @@ task below. See [validation scope](../docs/sessions.md#validation-scope).
 
 ## Guided setup
 
-Run `openrua` for a new session with an automatic ID. The TUI links robot,
+Run `openrua` for a new session with an automatic ID. First it asks
+whether you trust the current directory as your project; you can choose or
+create another one. Your files remain there across conversations; see
+[robot projects](../docs/projects.md). The TUI links robot,
 simulator and benchmark choices using recorded startup checks. **Prepare and
 start** saves a valid selection, sets up Docker and the agent's sign-in when
 they are missing, builds missing images with visible progress, then starts the
@@ -196,17 +199,19 @@ openrua session --name chat-demo events
 ```
 
 The service exits after successful resource shutdown. Status and events remain
-readable from disk. With the default user directory, the workspace is at
-`~/.openrua/sandboxes/chat-demo/workspace/workspace/`; the event journal and
+readable from disk. The workspace is your project directory; the event journal and
 native stderr log are stored in `~/.openrua/sandboxes/chat-demo/`.
 If you used `--home`, use that same directory for every client command.
 
-Use `/resume` or `openrua --resume` to open an ended conversation read-only.
-Its `/files` browser reads the recorded workspace without restarting the robot
-or agent. Missing files do not prevent reading the retained transcript.
+Use `/resume` or `openrua --resume` to find this project's conversations.
+A confirmed ended project conversation reconnects to fresh robot resources
+with its native agent conversation; old actions and queued messages are not
+replayed. `--resume --all` also shows other projects and older unassigned
+records, which remain available read-only.
 
 Starting with the old name does not resume the ended robot.
-Use a new name to keep earlier work. When you intentionally want to delete a
+Running `openrua` again creates a new conversation with the same project files.
+When you intentionally want to delete a
 stopped session and its retained materials, run `openrua clean --name chat-demo`.
 
 ## What to check

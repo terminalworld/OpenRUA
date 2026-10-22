@@ -314,10 +314,11 @@ export class Chat {
           + `then press Watch under Cameras.\n${this.client.token}\nThe key opens this session: keep it to yourself.`);
       },
       quit: async () => { this.stop(); },
-      resume: async () => {
+      resume: async (args) => {
         if (!this.history) throw new Error('Use openrua --resume to select history.');
         if (this.controller.pending) throw new Error('Resolve the unconfirmed send before changing conversations.');
-        this.result = {action: 'history'}; this.stop();
+        if (args.some(arg => arg !== '--all')) throw new Error('Use /resume or /resume --all.');
+        this.result = {action: args.includes('--all') ? 'history_all' : 'history'}; this.stop();
       },
       end: async () => {
         writable();

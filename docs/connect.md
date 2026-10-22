@@ -7,6 +7,11 @@ read_when:
 
 # Connect a real robot
 
+Start in your robot project directory, or select one with `--workspace DIR`.
+The first use asks whether you trust that directory. Driver setup still has
+its own robot folder; once connecting succeeds, the conversation moves to the
+project you selected and saves that robot as its project default.
+
 ```bash
 openrua connect my-arm            # or: openrua, then "Connect a real robot"
 ```

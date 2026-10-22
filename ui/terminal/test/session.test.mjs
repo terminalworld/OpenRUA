@@ -739,3 +739,37 @@ test('a typed line answers a question the same way in every client', async () =>
   assert.equal(toolSummary({command: 'ls\nmore'}), 'ls');
   assert.equal(toolSummary({file_path: '/workspace/a.md'}), '/workspace/a.md');
 });
+
+test('workspace consent can accept, choose another directory, or quit', async () => {
+  const {Workspace} = await import('../src/screens.mjs');
+  const firstTerminal = new Terminal();
+  const first = new Workspace({path: '/project', notice: ''}, firstTerminal);
+  const accepted = first.run(); firstTerminal.input('\r');
+  assert.deepEqual(await accepted, {action: 'trust', path: '/project'});
+  const otherTerminal = new Terminal();
+  const other = new Workspace({path: '/project', notice: ''}, otherTerminal);
+  const chosen = other.run(); otherTerminal.input('\x1b[B'); otherTerminal.input('\r');
+  otherTerminal.input('/another'); otherTerminal.input('\r');
+  assert.deepEqual(await chosen, {action: 'choose', path: '/another'});
+  const quitTerminal = new Terminal();
+  const quit = new Workspace({path: '/project', notice: ''}, quitTerminal);
+  const canceled = quit.run(); quitTerminal.input('\x04');
+  assert.deepEqual(await canceled, {action: 'quit'});
+});
+
+test('history scope switch is explicit and shows project identity', async () => {
+  const {History} = await import('../src/screens.mjs');
+  const terminal = new Terminal();
+  const history = new History({rows: [{id: 'a', title: 'Cup', status: 'Ended', time: '', project: '/project'}],
+    scope: '/project', can_all: true}, terminal);
+  const result = history.run();
+  assert.match(history.ui.children.map(c => c.render?.(100)?.join('\n') ?? '').join('\n'), /\/project/);
+  terminal.input('\t');
+  assert.deepEqual(await result, {action: 'scope'});
+});
+
+test('/resume --all opens all-project history without sending an agent instruction', async () => {
+  const chat = new Chat({readOnly: true}, {terminal: new Terminal(), history: true});
+  await chat.submit('/resume --all');
+  assert.deepEqual(chat.result, {action: 'history_all'});
+});

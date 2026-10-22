@@ -42,7 +42,8 @@ def stop():
     state.stopped('owned', root)
 up.open_session = lambda args: SimpleNamespace(power_off=stop,
     banner=lambda: 'resource owner ready', header=lambda *args: 'resource owner ready')
-args = build_parser().parse_args(['--home', str(root), mode, 'fake', '--name', 'owned'])
+args = build_parser().parse_args(['--home', str(root), mode, 'fake', '--name', 'owned',
+                                  '--workspace', str(root / 'project'), '--trust-workspace'])
 try:
     raise SystemExit(args.fn(args))
 finally:

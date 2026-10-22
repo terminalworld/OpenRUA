@@ -66,6 +66,7 @@ export class Welcome {
     const box = [muted('╭' + '─'.repeat(inner + 2) + '╮'),
       ...body.map(line => `${edge} ${line}${' '.repeat(Math.max(0, inner - visibleWidth(line)))} ${edge}`),
       muted('╰' + '─'.repeat(inner + 2) + '╯')];
+    if (f.project) box.push(muted(`  project ${plain(f.project)}`));
     return below.trim() ? box.concat(below) : box;
   }
 }

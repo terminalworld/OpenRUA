@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 import asyncio
 import secrets
+import yaml
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -51,18 +52,30 @@ def describe(directory: Path) -> dict:
     if wal.is_file():
         updated = max(updated, wal.stat().st_mtime)
     return dict(id=directory.name, title=title, updated=updated,
+                project=project_directory(directory.parent.parent, directory.name),
                 time=datetime.fromtimestamp(updated, timezone.utc).strftime('%Y-%m-%d %H:%M UTC'),
                 status='Ended' if state['closed'] else 'Running' if _answers(directory / 'endpoint.json')
                 else 'Not answering' if (directory / 'endpoint.json').exists() else 'Execution status unknown')
 
 
-def entries(home: Path) -> list[dict]:
+def project_directory(home: Path, name: str) -> str | None:
+    """A recorded project identity, without inferring one from nearby files."""
+    try:
+        facts = live_state.load(name, home, require_running=False)
+    except (NotFound, OSError, ValueError, TypeError, yaml.YAMLError):
+        return None
+    return str(Path(facts['project']).resolve()) if facts.get('project') else None
+
+
+def entries(home: Path, workspace: Path | None = None) -> list[dict]:
     root = paths.sandboxes_dir(home)
     if not root.exists():
         return []
     records = []
     for directory in root.iterdir():
         if directory.is_symlink() or not directory.is_dir() or not (directory / 'conversation.sqlite').is_file():
+            continue
+        if workspace is not None and project_directory(home, directory.name) != str(workspace.resolve()):
             continue
         try:
             records.append(describe(directory))
@@ -137,7 +150,7 @@ class ArchiveClient:
 
 
 ROBOT_FACTS = ('robot', 'robot_model', 'simulator', 'benchmark', 'suite', 'task_id', 'task',
-               'agent', 'agent_title', 'model', 'backend', 'status', 'workspace')
+               'agent', 'agent_title', 'model', 'backend', 'status', 'workspace', 'project')
 
 
 def robot_facts(home: Path, name: str) -> dict:

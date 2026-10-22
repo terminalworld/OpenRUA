@@ -25,9 +25,9 @@ import time
 from pathlib import Path
 
 from openrua import agents
-from openrua.cli import docker_setup, state
+from openrua.cli import docker_setup, state, workspace
 from openrua.cli.commands import login, start
-from openrua.config import paths
+from openrua.config import paths, projects
 from openrua.errors import UnavailableError, UsageError
 from openrua.runner import history
 from openrua.sessions.client import Client
@@ -54,7 +54,7 @@ def _split(words: list[str]) -> tuple[str | None, str | None]:
     return agent, (words[0] if words else None)
 
 
-def _running(home: Path) -> list[str]:
+def _running(home: Path, project: Path | None = None) -> list[str]:
     """Robots up for the agent's own terminal, newest first: their owner
     still holds the control endpoint and the sandbox is running."""
     found = []
@@ -65,6 +65,8 @@ def _running(home: Path) -> list[str]:
         try:
             facts = state.load(directory.name, home)
         except Exception:  # noqa: BLE001; a stopped or unreadable one is not up
+            continue
+        if project is not None and facts.get('project') != str(project.resolve()):
             continue
         alive = subprocess.run(["docker", "inspect", "-f", "{{.State.Running}}", facts.get("sandbox", "")],
                                capture_output=True, text=True).stdout.strip() == "true"
@@ -88,24 +90,30 @@ def _argv(args, name: str, agent: str | None, prompt: str | None) -> tuple[list[
     return argv, st
 
 
-def _start_robot(args, agent: str | None) -> tuple[str, subprocess.Popen]:
+def _start_robot(args, agent: str | None) -> tuple[str, subprocess.Popen] | None:
     """Start a robot for the agent's terminal in the background, as
     ``openrua up`` would, and wait until it is up."""
+    selected = workspace.choose(getattr(args, 'workspace', None) or Path.cwd(), args.home,
+                                accept=getattr(args, 'trust_workspace', False))
+    if selected is None:
+        return None
     docker_setup.ensure()
     name = args.name or history.new_id()
     values, _ = start.values_for(argparse.Namespace(
         home=args.home, robot=args.robot, sim=args.sim, bench=args.bench,
-        agent=agent, model=args.model, name=name))
+        agent=agent, model=args.model, name=name, workspace=str(selected)))
     if not values["robot"] and not values["bench"]:
         raise UsageError("no robot to start", hint="openrua agent --robot <robot> (openrua robots "
                          "lists them), or openrua config set --robot <robot>")
     start.prepare(args.home, values, lambda line: None if line.startswith(("Checking", "Reusing"))
                   else print(line, flush=True))
     login.ensure(args.home, values["agent"] or None, values.get("auth_mode", "native"))
+    projects.save_selection(selected, values)
     argv = [sys.executable, "-m", "openrua", "--home", str(args.home), "up"]
     argv += [values["robot"]] if values["robot"] else []
     argv += ["--sim", values["sim"], "--bench", values["bench"], "--name", name]
-    for flag, value in (("--agent", values["agent"]), ("--ros-domain", args.ros_domain),
+    argv += ['--workspace', str(selected)]
+    for flag, value in (("--agent", values["agent"]), ('--model', values['model']), ("--ros-domain", args.ros_domain),
                         ("--task", args.task)):
         if value not in (None, ""):
             argv += [flag, str(value)]
@@ -169,7 +177,7 @@ def run(args) -> int:
             hint=f"openrua chat --name {args.name}; use a separate up session for a native terminal")
     if args.name and state.path(args.name, args.home).is_file():
         name, owner = args.name, None
-    elif args.name is None and (up := _running(args.home)):
+    elif args.name is None and (up := _running(args.home, Path(getattr(args, 'workspace', None) or Path.cwd()))):
         name, owner = up[0], None
         if len(up) > 1:
             print(f"Opening the agent on {name}, the newest of {len(up)} robots up "
@@ -177,7 +185,10 @@ def run(args) -> int:
     else:
         if not (sys.stdin.isatty() and sys.stdout.isatty()):
             raise UsageError("the agent's terminal needs an interactive terminal")
-        name, owner = _start_robot(args, agent)
+        started = _start_robot(args, agent)
+        if started is None:
+            return 0
+        name, owner = started
     argv, st = _argv(args, name, agent, prompt)
     if st.get("backend") == "real":
         print("This is the agent's own terminal: Esc stops the agent, not a motion it "
@@ -211,4 +222,6 @@ def add_parser(sub) -> None:
     p.add_argument("--bench", default=None, help="its benchmark (default: the saved one)")
     p.add_argument("--ros-domain", type=int, default=None, help="its ROS_DOMAIN_ID")
     p.add_argument("--task", default=None, help="a real robot's task sentence, for its workspace")
+    p.add_argument('--workspace', default=None, help='persistent project directory (default: the current directory)')
+    p.add_argument('--trust-workspace', action='store_true', help='explicitly trust this directory without a question')
     p.set_defaults(fn=run)
