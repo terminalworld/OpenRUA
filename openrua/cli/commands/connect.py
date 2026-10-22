@@ -14,7 +14,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from openrua.cli.commands import start
+from openrua.cli import docker_setup
+from openrua.cli.commands import login, start
 from openrua.config import paths
 from openrua.errors import UsageError
 from openrua.runner import history, service
@@ -42,6 +43,9 @@ def launch(home: Path, robot: str, folder: Path | None = None, agent: str | None
 
 
 def run(args) -> int:
+    if sys.stdin.isatty() and sys.stdout.isatty():
+        docker_setup.ensure()
+        login.ensure(args.home, args.agent)
     client, name = launch(args.home, args.robot, Path(args.dir) if args.dir else None,
                           args.agent, args.model, args.distro, args.name)
     return start.open_terminal(args.home, client, name)

@@ -181,9 +181,6 @@ class ClaudeCode(Agent):
 
     # ------------------------------------------------------------ auth
 
-    def login_hint(self, creds_home: Path) -> str:
-        return f"run {self.credentials.config_env}={creds_home} claude login"
-
     def token_hint(self, token_file: Path | str) -> str:
         """Minting authorises whichever account is logged in to the browser,
         not the one the profile environment variable points at."""

@@ -9,6 +9,26 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- A new computer gets set up with you. When you start a session or
+  connect a robot (or run `openrua connect`, `openrua login`) and Docker is
+  missing, your user may not use it yet, or its service is stopped,
+  OpenRUA says why it is needed and offers the fix, showing the commands
+  and running them only on a yes. The setup menu itself opens without it. When the agent
+  you start a session or connect a robot with is not signed in, it offers
+  to sign it in there and then.
+- `openrua login [agent]` signs your coding agent in by running the
+  agent's own sign-in inside the sandbox image, so its CLI need not be
+  installed on the computer: a link to open in any browser and a code.
+  Each agent's manifest names its sign-in (`credentials.login`). A missing
+  login now says `run openrua login <agent>`; the old hint's
+  `claude login` is no longer a Claude Code command (`claude auth login`
+  is).
+- README: Quick start is the path from a bare computer to a robot doing
+  something, with details behind links. The CaP-Bench demo walkthrough
+  moved to [running-experiments.md](docs/running-experiments.md#a-first-trial-and-its-video);
+  [install.md](docs/install.md) gains a Docker section and explains the
+  agent's login before the images.
+
 ## 0.18.1
 
 - The sandbox's file that lets `python3 -I` find rclpy now lists

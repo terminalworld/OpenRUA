@@ -576,6 +576,7 @@ Where an agent keeps its login and how the sandbox is told about it.
 | `config_env` | str | **required** | environment variable naming the profile directory |
 | `mount_point` | str | **required** | where the profile is mounted inside the sandbox |
 | `native_dir` | str \| null | None | native profile directory relative to the host user home |
+| `login` | list[str] \| null | None | the CLI's own sign-in command, run in the sandbox image by openrua login |
 
 ## ResolvedConfig
 

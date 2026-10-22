@@ -908,6 +908,7 @@ class Credentials(Strict):
     config_env: str = Field(description="environment variable naming the profile directory")
     mount_point: str = Field(description="where the profile is mounted inside the sandbox")
     native_dir: str | None = Field(default=None, description="native profile directory relative to the host user home")
+    login: list[str] | None = Field(default=None, description="the CLI's own sign-in command, run in the sandbox image by openrua login")
 
 
 class AgentManifest(Strict):

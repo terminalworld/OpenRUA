@@ -34,6 +34,9 @@ credentials:
   filename: .credentials.json
   config_env: CLAUDE_CONFIG_DIR
   mount_point: /claude-config
+  # Its own sign-in, which openrua login runs in the sandbox image: a link
+  # to open in a browser, then the code the page shows, pasted back.
+  login: [claude, auth, login]
 # A long-lived token from `claude setup-token`, passed to the CLI by file.
 token_env: CLAUDE_CODE_OAUTH_TOKEN
 # Where the newest release is named, for the update offer at start.

@@ -210,3 +210,42 @@ def test_invalid_plugin_keeps_setup_editable_and_original_selection():
         None, None, {}, None, None, screen, resolve_agent=resolve)
     assert specs[1]['values'] == values
     assert 'plugin file not found' in specs[1]['notice']
+
+
+def test_docker_and_the_sign_in_are_set_up_when_a_start_needs_them():
+    # The menu opens without them (browsing and saving need neither). The
+    # terminal is plain between screens: Docker is set up there before the
+    # images are built, and the sign-in once the agent's sandbox image
+    # exists, both before anything starts.
+    values = dict(robot='panda', sim='robosuite', bench='', agent='test', model='', name='unique')
+    calls = []
+    results = iter([{'action': 'start', 'values': values}])
+    launcher.setup(values, {}, 'config', lambda v: calls.append('save'),
+        lambda v: (calls.append('check') or True, 'Ready'),
+        lambda v: calls.append('launch') or 'client', {}, lambda: [], lambda n: None,
+        lambda spec: next(results), prepare=lambda v, progress: calls.append('prepare'),
+        ready=lambda v: calls.append('docker'), sign_in=lambda v: calls.append('sign in'))
+    assert calls == ['save', 'docker', 'prepare', 'sign in', 'check', 'launch']
+    calls.clear()
+    results = iter([{'action': 'connect', 'values': values}])
+    launcher.setup(values, {}, 'config', lambda v: None, lambda v: pytest.fail('no check'),
+        lambda v: pytest.fail('no launch'), {}, lambda: [], lambda n: None,
+        lambda spec: next(results), connect=lambda v: calls.append('connect') or 'connected',
+        ready=lambda v: calls.append('docker'), sign_in=lambda v: calls.append('sign in'))
+    assert calls == ['docker', 'sign in', 'connect']
+
+
+def test_a_declined_sign_in_stays_editable_with_the_command():
+    from openrua.errors import AuthError
+    values = dict(robot='panda', sim='robosuite', bench='', agent='test', model='', name='unique')
+    results = iter([{'action': 'connect', 'values': values}, {'action': 'quit'}])
+    notices = []
+    def screen(spec):
+        notices.append(spec['notice'])
+        return next(results)
+    def sign_in(v):
+        raise AuthError('Test is not signed in on this computer', hint='run openrua login test')
+    assert launcher.setup(values, {}, 'config', lambda v: None, lambda v: None,
+        lambda v: pytest.fail('must not launch'), {}, lambda: [], lambda n: None, screen,
+        connect=lambda v: pytest.fail('must not connect'), sign_in=sign_in) is None
+    assert 'not signed in' in notices[1] and 'openrua login test' in notices[1]

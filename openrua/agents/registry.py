@@ -131,7 +131,10 @@ def compose(m: Manifest) -> Agent:
     entry = fields.pop("entry_point", None)
     cls = _load_hooks(entry) if entry else Agent
     if fields.get("credentials") is not None:
-        fields["credentials"] = Credentials(**fields["credentials"])
+        creds = dict(fields["credentials"])
+        if creds.get("login") is not None:
+            creds["login"] = tuple(creds["login"])
+        fields["credentials"] = Credentials(**creds)
     fields["whitelist"] = tuple(fields.get("whitelist", ()))
     if fields.get("version_argv") is not None:
         fields["version_argv"] = tuple(fields["version_argv"])

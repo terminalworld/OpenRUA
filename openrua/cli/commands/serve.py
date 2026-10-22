@@ -10,7 +10,8 @@ from pathlib import Path
 from openrua.cli.commands import up
 from openrua.web import assets
 from openrua.config import paths
-from openrua.errors import UnavailableError
+from openrua.agents.base import NotSignedIn
+from openrua.errors import AuthError, OpenRUAError, UnavailableError
 from openrua.runner import managed
 from openrua.robot.cameras import CameraView
 from openrua.runner.connect import ConnectFlow, ConnectRequest, open_connect
@@ -93,6 +94,10 @@ async def serve(args) -> None:
 def run(args) -> int:
     try:
         asyncio.run(serve(args))
+    except OpenRUAError:
+        raise
+    except NotSignedIn as exc:
+        raise AuthError(str(exc), hint=exc.hint) from exc
     except (OSError, RuntimeError, ValueError) as exc:
         raise UnavailableError(str(exc), hint="inspect the retained session logs; use a new --name to start again") from exc
     return 0

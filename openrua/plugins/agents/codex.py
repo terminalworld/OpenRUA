@@ -130,9 +130,6 @@ class Codex(Agent):
                                                     effort=opts["effort"],
                                                     permissions=permissions))
 
-    def login_hint(self, creds_home: Path) -> str:
-        return f"run {self.credentials.config_env}={creds_home} codex login"
-
     def token_hint(self, token_file: Path | str) -> str:
         return (f"write an API key as umask 077 && printf '{self.token_env}=%s\\n' "
                 f"'<key>' > {token_file}")

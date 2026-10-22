@@ -7,9 +7,9 @@ import sys
 from pathlib import Path
 
 from openrua import agents, config, doctor
-from openrua.cli.commands import chat, connect, session, up
+from openrua.cli.commands import chat, connect, login, session, up
 from openrua.config import paths, settings, startup
-from openrua.cli import updates
+from openrua.cli import docker_setup, updates
 from openrua.cli.preparation import prepare
 from openrua.errors import NotFound, UnavailableError, UsageError
 from openrua.runner import service, history
@@ -246,6 +246,7 @@ def _run(args) -> int:
         except (OSError, ValueError, KeyError, RuntimeError) as exc:
             raise UnavailableError(str(exc), hint='inspect the retained service log and session status before restarting') from exc
         return open_interface(args, client, args.name)
+    interactive = sys.stdin.isatty() and sys.stdout.isatty()
     values, models = values_for(args)
     if not offer_update(args, values):
         return 0
@@ -273,6 +274,9 @@ def _run(args) -> int:
                                 environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress, limit_overrides(args)),
                                 authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']]))),
                                 resolve_agent=lambda name: authentication_choices(args.home, [name])[name],
+                                ready=lambda values: docker_setup.ensure(),
+                                sign_in=lambda values: login.ensure(args.home, values['agent'] or None,
+                                                                    values.get('auth_mode', 'native')),
                                 connect=lambda values: connect.launch(args.home, 'my-robot',
                                                                       agent=values['agent'] or None,
                                                                       model=values['model'] or None))
@@ -281,7 +285,11 @@ def _run(args) -> int:
         client, name = result
     else:
         validate_values(args.home, values)
+        if interactive:
+            docker_setup.ensure()
         prepare(args.home, values, limits=limit_overrides(args))
+        if interactive:
+            login.ensure(args.home, values['agent'] or None, values.get('auth_mode', 'native'))
         ok, report = check_values(args.home, values)
         if not ok:
             raise UnavailableError(report, hint='complete the preparation steps, then start again')

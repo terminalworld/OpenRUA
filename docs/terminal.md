@@ -19,7 +19,8 @@ pip install -U openrua
 openrua
 ```
 
-The runtime is included. No separate Node/npm install or frontend flag is needed.
+The runtime is included. No separate Node/npm install or frontend flag is needed
+(`--tui pi` remains an explicit alias for this terminal).
 Use arrows and Enter to choose robot, simulator, benchmark, agent and model;
 Escape returns to the previous menu. Only environment combinations with recorded
 startup checks are offered, with dependent fields updated together. Custom
