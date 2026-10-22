@@ -49,10 +49,6 @@ observations without starting a new robot each turn.
 
 ## 🔥 News
 
-- **[2026-10-22]** 👋 **Your agent knows it's on a robot from the very first message.** A welcome tells you which robot you're on and what to try, Claude Code reads the workspace's AGENTS.md in every session, and the photos your agent takes are a Ctrl+click away. ([v0.15.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.15.0))
-- **[2026-10-22]** 👀 **Watch `openrua exec` work, and stop it any time.** Every command the agent runs shows as it happens; Ctrl-C stops the agent and powers the robot off safely; on a real robot, you decide whether it succeeded. ([v0.15.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.15.0))
-- **[2026-10-22]** 🌐 **The browser does what the terminal does.** Switch `/permissions` and `/model`, answer the agent by typing, and follow the same status from a browser tab. ([v0.15.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.15.0))
-- **[2026-10-21]** 🔔 **OpenRUA keeps itself up to date.** Like Codex, it tells you when a new release is out and installs it with one keypress. ([v0.14.1](https://github.com/terminalworld/OpenRUA/releases/tag/v0.14.1))
 - **[2026-10-21]** 🎯 **Hand your agent a task and let it work on its own.** `openrua exec` runs it in simulation or on a real robot and keeps a full record of the run. ([v0.14.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.14.0))
 - **[2026-10-21]** 🦾 **Your coding agent can now set up a real robot for you.** Run [`openrua connect`](docs/connect.md): Claude Code or Codex works out what the robot is, builds its ROS&nbsp;2 drivers and writes its config with you, and OpenRUA checks every step. ([v0.13.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.13.0))
 - **[2026-10-21]** ⌨️ **Talk to your robot the way you talk to Claude Code and Codex.** Send a follow-up while the agent works, switch `/permissions` and `/model` on the fly, and press Esc to stop the agent and the arm's motion together. ([v0.13.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.13.0))
