@@ -9,6 +9,10 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- Agent manifests no longer take `instruction_file`, which nothing read:
+  every workspace carries AGENTS.md, and both Claude Code and Codex read
+  it. A manifest that still names it is refused; delete the line.
+
 ## 0.16.0
 
 Two-arm robots, checked before the first real one. Changes you may notice:

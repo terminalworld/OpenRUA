@@ -140,9 +140,6 @@ class Agent:
     version_argv: tuple[str, ...] | None = None   # prints the CLI version (provenance)
     min_version: str | None = None      # oldest CLI that takes this adapter's flags
     latest_release: str | None = None   # URL naming the newest release (JSON `version`)
-    instruction_file: str | None = None  # the instructions file this CLI reads on
-                                         # its own at start, if any; declared only,
-                                         # nothing is seeded from it yet
     default_options: dict[str, Any] = {}  # knobs a config may override under
                                           # ``agent.options``
 

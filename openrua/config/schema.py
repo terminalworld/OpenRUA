@@ -935,8 +935,6 @@ class AgentManifest(Strict):
                                     "that accepts every flag this adapter passes; a "
                                     "sandbox with an older one is refused before the "
                                     "agent starts")
-    instruction_file: str | None = Field(default=None, description="the file the agent "
-                                         "reads instructions from, e.g. AGENTS.md")
     latest_release: str | None = Field(default=None, description="URL whose JSON body "
                                        "names the newest release as `version` (an npm "
                                        "registry's /latest); openrua offers an update "
