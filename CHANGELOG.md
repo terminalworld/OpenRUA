@@ -9,6 +9,15 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.15.0
+
+The first minutes with a robot, `openrua exec`, and the browser. Changes
+you may notice: a benchmark trial's agent sees a little differently
+(Claude Code now reads the workspace's AGENTS.md, which gains one
+sentence, and on Humble the `ros2` commands lose an error line);
+`exec` and `bench` stopped by Ctrl-C record `stopped` and exit 130;
+leaving the terminal asks whether to keep the session running.
+
 - **The browser catches up with the terminal**: an Agent panel switches
   permissions and the model and lists the agent's own commands; the
   message box takes the same `/` commands; the page shows the same status
