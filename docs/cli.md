@@ -85,7 +85,7 @@ start or reconnect (without a subcommand):
 
 | command | does |
 |---|---|
-| `robots` | list the bundled robots |
+| `robots` | list the bundled robots and the ones connected here |
 | `simulators` | list the bundled simulators |
 | `benchmarks` | list the bundled benchmarks (or one benchmark's suites and tasks) |
 | `agents` | list the bundled agents |
@@ -114,8 +114,9 @@ Without a subcommand, an unnamed launch opens setup with a new session ID. An ex
 ```
 usage: openrua robots [-h] [--json]
 
-Every robot shipped in the package. A file of your own is not listed; pass it
-as a path where a name is expected.
+Every robot shipped in the package, then the robots openrua connect connected
+on this computer, each with its path. A file of your own elsewhere is not
+listed; pass it as a path where a name is expected.
 
 options:
   -h, --help  show this help message and exit
@@ -127,8 +128,8 @@ options:
 ```
 usage: openrua simulators [-h] [--json]
 
-Every simulator shipped in the package. A file of your own is not listed; pass
-it as a path where a name is expected.
+Every simulator shipped in the package. A file of your own elsewhere is not
+listed; pass it as a path where a name is expected.
 
 options:
   -h, --help  show this help message and exit
@@ -140,10 +141,10 @@ options:
 ```
 usage: openrua benchmarks [-h] [--json] [name]
 
-Every benchmark shipped in the package. A file of your own is not listed; pass
-it as a path where a name is expected. With a name: that benchmark's suites,
-each suite's task ids and sentences, and what a seed means, for choosing
---task-suite, --task-ids and --seeds.
+Every benchmark shipped in the package. A file of your own elsewhere is not
+listed; pass it as a path where a name is expected. With a name: that
+benchmark's suites, each suite's task ids and sentences, and what a seed
+means, for choosing --task-suite, --task-ids and --seeds.
 
 positional arguments:
   name        a benchmark (name or path) to show in full
@@ -158,8 +159,8 @@ options:
 ```
 usage: openrua agents [-h] [--json]
 
-Every agent shipped in the package. A file of your own is not listed; pass it
-as a path where a name is expected.
+Every agent shipped in the package. A file of your own elsewhere is not
+listed; pass it as a path where a name is expected.
 
 options:
   -h, --help  show this help message and exit

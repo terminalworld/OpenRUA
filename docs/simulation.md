@@ -14,8 +14,8 @@ robots, a robot knows neither.
 
 - `simulators/<engine>.yaml` (`openrua simulators`): the engine, its
   install (what its image is made of, and the ROS distro that goes
-  with its Python), the native scene `openrua up <robot> --sim
-  <engine>` loads with no benchmark, and `robots:`, how the engine
+  with its Python), the native scene a session loads with no benchmark
+  (`openrua --robot <robot> --sim <engine>`), and `robots:`, how the engine
   drives each robot type it embodies (controller, gains, joint-name
   map). The bundled `robosuite` embodies `panda` and loads its `Lift`
   scene; `maniskill` (SAPIEN 3, PhysX on the CPU, Vulkan rendering
@@ -68,13 +68,15 @@ An image is named after the declaration it came from,
 `openrua-sim-<name>`. A benchmark that writes no install key of its
 own runs in its simulator's image (`capbench` in `openrua-sim-robosuite`,
 `calvin` in `openrua-sim-calvin`); one that brings anything, a fork or
-an asset download, gets its own. Every LIBERO-family benchmark installs
-its fork as the `libero` package, so each has an image of its own, and
-one loader serves them all (`entry_point: libero`).
+an asset download, gets its own. LIBERO, LIBERO-PRO, LIBERO-Plus
+and LIBERO-Mem each install their fork as the `libero` package, so each
+has an image of its own, and one loader serves them all
+(`entry_point: libero`); RoboCerebra, also on a LIBERO fork, has a loader
+of its own.
 
 Inside the image the checkouts live under `/opt/openrua/simulators/`
-(`{root}` in a shell tail) and the venv at `/opt/openrua/venv/`
-(`{venv}`); a file the shell needs from the declaration's own
+(`{root}` in a shell tail) and the venv beside them at
+`/opt/openrua/simulators/.venv` (`{venv}`); a file the shell needs from the declaration's own
 directory, `<name>/` next to `<name>.yaml`, is copied in as `{here}`.
 The package in the venv is your checkout when `openrua` runs from one,
 else the release at the same version from PyPI. The container mounts
@@ -100,22 +102,14 @@ patches and its assets in one number.
 
 ## Rendering
 
-Rendering is EGL; with no GPU it falls back to llvmpipe (slow but
-correct, and what the reported runs used). `install.gpus: true` (in the
+MuJoCo (robosuite, VLABench) renders through EGL; with no GPU it falls
+back to llvmpipe (slow but correct, and what the reported runs used).
+SAPIEN (ManiSkill, RoboTwin) renders through Vulkan, lavapipe without a
+GPU, and CALVIN on the CPU. `install.gpus: true` (in the
 simulator file or a benchmark's `install:`) injects the NVIDIA driver
 when the host has nvidia-container-toolkit (under podman the same flag
 resolves through CDI: `nvidia-ctk cdi generate` once, see
 docs/podman.md).
-
-## Native DDS address messages
-
-With Fast DDS 2.6.12 on ROS 2 Humble, a container hostname can produce
-`IP_LOCATOR Error ... error format. Expected X.X.X.X` before DNS resolution
-succeeds. The native parser first checks for a literal IPv4 address, then
-[resolves hostnames through DNS](https://github.com/eProsima/Fast-DDS/blob/v2.6.12/src/cpp/rtps/xmlparser/XMLElementParser.cpp#L2946-L2963).
-This message alone does not mean robot communication failed. If startup
-checks or ROS requests also fail, inspect those errors; an actual DNS lookup
-failure reports `DNS server did not return any IPv4 address`.
 
 ## A simulator or benchmark of your own
 
@@ -137,7 +131,8 @@ result answers every name in `ENGINE_INTERFACE`
 (`openrua/robot/sim/bridge/engines/__init__.py` lists them with their
 units and conventions: joint addressing, poses, camera renders and
 intrinsics, action assembly, FK). Bundled engines live under
-`openrua/robot/sim/bridge/engines/` (`robosuite`); yours sits next to
+`openrua/robot/sim/bridge/engines/` (`robosuite`, `maniskill`, `robotwin`,
+`calvin`, `vlabench`); yours sits next to
 your simulator file (`entry_point: ./my_engine.py`) and is passed with
 `--sim ./my-sim.yaml`. A robot the engine's own assets lack is
 declared under the benchmark's `scenes.robots`, as RoboCasa365 does

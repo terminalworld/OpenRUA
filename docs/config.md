@@ -16,12 +16,12 @@ same information as JSON Schema.
 
 | file | schema |
 |---|---|
-| `robots/<type>.yaml (bundled or ~/.openrua/robots/): a robot type` | [RobotType](#robottype) |
-| `robots/<name>.yaml: a particular robot (type: + machine:)` | [RobotInstance](#robotinstance) |
-| `simulators/<engine>.yaml (bundled or ~/.openrua/simulators/)` | [SimulatorProfile](#simulatorprofile) |
-| `benchmarks/<name>.yaml (bundled or ~/.openrua/benchmarks/)` | [Benchmark](#benchmark) |
+| `robots/<type>.yaml (bundled, or a file of your own by its path): a robot type` | [RobotType](#robottype) |
+| `a particular robot, type: + machine: (openrua connect writes ~/.openrua/robots/<name>/robot.yaml)` | [RobotInstance](#robotinstance) |
+| `simulators/<engine>.yaml (bundled, or a file of your own by its path)` | [SimulatorProfile](#simulatorprofile) |
+| `benchmarks/<name>.yaml (bundled, or a file of your own by its path)` | [Benchmark](#benchmark) |
 | `~/.openrua/config.yaml and the package's configs/config.yaml` | [UserConfig](#userconfig) |
-| `agents/<name>.yaml (bundled or ~/.openrua/agents/)` | [AgentManifest](#agentmanifest) |
+| `agents/<name>.yaml (bundled, or a file of your own by its path)` | [AgentManifest](#agentmanifest) |
 | `<trial>/config.yaml, the resolved view every party reads` | [ResolvedConfig](#resolvedconfig) |
 
 ## RobotType

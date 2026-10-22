@@ -12,7 +12,6 @@ OpenRUA's TUI, browser, or plain CLI as clients. They share the same agent
 conversation and queue. OpenRUA manages delivery and resources; the agent
 still decides which ROS commands and programs to execute.
 
-Shared chat remains experimental.
 Bounded three-turn observation and gripper-control checks have passed with
 both Claude Code and Codex; they do not establish success on the blender-lid
 task below. See [validation scope](../docs/sessions.md#validation-scope).
@@ -21,8 +20,9 @@ task below. See [validation scope](../docs/sessions.md#validation-scope).
 
 Run `openrua` for a new session with an automatic ID. The TUI links robot,
 simulator and benchmark choices using recorded startup checks. **Prepare and
-start** saves a valid selection, builds missing images with visible progress,
-checks the agent login, then starts the background service and opens chat.
+start** saves a valid selection, sets up Docker and the agent's sign-in when
+they are missing, builds missing images with visible progress, then starts the
+background service and opens chat.
 Existing images are reused; failed builds keep logs for retry. **Save and check
 preparation** reports preparation without downloading or starting resources.
 
@@ -50,10 +50,10 @@ openrua serve --help
 openrua session --help
 ```
 
-Configure the selected agent's native login using the instructions in
-[Logging an agent in](../docs/install.md#logging-an-agent-in).
-This uses the agent's own CLI and login profile. You need an available model
-and account quota when you send a task.
+If the selected agent is not signed in on this computer, **Prepare and start**
+offers its sign-in, or run `openrua login codex` first
+([your agent's login](../docs/install.md#your-agents-login)). You need an
+available model and account quota when you send a task.
 
 The setup action prepares missing images automatically. To prepare them manually
 in advance, these commands are equivalent:
@@ -85,15 +85,16 @@ the configured default, or select one available to your account.
 
 Wait for chat to open. Type an instruction and press **Enter** to send;
 **Ctrl+J** inserts a newline. `/queue` opens queued instructions; `/tools`
-opens tool output. **Ctrl+D** on empty input detaches without stopping the service. If port 8765 is
+opens tool output. **Ctrl+D** on empty input asks whether to keep the session
+running: press Enter to keep it, as the next steps need. If port 8765 is
 occupied or `chat-demo` has retained work from an ended session, choose a new
 port or name. Existing records are never overwritten.
 
 ## 3. Reconnect or open the browser
 
 This walkthrough uses `--name chat-demo` so its commands can refer to the same
-session. In ordinary use, omit the name for an automatic ID and use `/resume`
-in the startup form or chat to find it later.
+session. In ordinary use, omit the name for an automatic ID and come back with
+`openrua --resume`, which lists running sessions first.
 
 After leaving the TUI, reconnect without repeating startup options:
 
@@ -110,8 +111,8 @@ TUI. Use it to inspect saved images. In the TUI, `/files` opens the same workspa
 images on supported terminals; see
 [workspace controls](../ui/terminal/README.md#saved-workspace-files).
 
-In a free terminal on the same execution host (detach with Ctrl+D first if
-the TUI is occupying it):
+In a free terminal on the same execution host (leave the TUI first with Ctrl+D
+and Enter, which keeps the session running, if it is occupying the terminal):
 
 ```sh
 openrua --gui --name chat-demo
@@ -125,7 +126,7 @@ for **Ready**. Send this message from either client:
 The page should show your message, agent output, and tool activity. In
 **Workspace files**, open `snaps` and select `first.png` after the agent saves
 it. Use **Refresh** if needed. This is a saved observation with a modification
-time, not a continuous camera feed. If the agent reports an error, inspect it;
+time; for the cameras live, press **Watch** under **Cameras**. If the agent reports an error, inspect it;
 a completed turn alone does not prove the requested image was saved.
 
 ### If the execution host is a remote server
@@ -144,7 +145,7 @@ web server or provide a hosted mobile app.
 
 ## 4. Submit from both clients and reconnect
 
-While a browser-requested turn is running, submit another message from terminal B:
+While a browser-requested turn is running, submit another message from another terminal:
 
 ```sh
 openrua session --name chat-demo send "Summarize what you observed. Do not move the robot."

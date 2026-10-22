@@ -47,8 +47,8 @@ a previous conversation, or `/resume` inside the TUI. Use
 `openrua --gui` for the browser and `openrua --cli` for plain text chat.
 The first-run form saves to the same file as `openrua config set`.
 See [Your first shared robot session](../examples/shared-session.md) for a full
-example, or [First task in simulation](../examples/first-task.md) for the
-agent's original terminal.
+example, or [First task in simulation](../examples/first-task.md) for one task
+with `openrua exec` and the agent's original terminal.
 
 `openrua --help` lists commands and startup options; [cli.md](cli.md) has every
 flag. The old `[tui]` extra remains accepted for compatibility but is no longer
@@ -302,13 +302,15 @@ agent's facts and default model. The keys are listed in
 ## The user directory
 
 `~/.openrua` (`$OPENRUA_HOME`, `--home`) holds your defaults in
-`config.yaml`, logins in `credentials/`, and session files in
-`sandboxes/<name>/`. Interrupting `up`, or calling `down`,
+`config.yaml`, logins in `credentials/`, the robots `openrua connect`
+connected on this computer in `robots/<name>/`, and session files in
+`sandboxes/<name>/` and `launches/<name>/`. Interrupting `up`, or calling `down`,
 stops the session's resources but retains its workspace, native agent
 profile (including any conversation records written by the agent), logs
 and state. This does not resume a stopped robot or agent conversation. A shared service
-started by `openrua` runs independently of the client: use **End session**, or
-`openrua session --name NAME end`, to stop it explicitly.
+started by `openrua` runs independently of the client: end it with `/end` in
+the terminal, **End session** in the browser, the end choice when you leave
+the terminal, or `openrua session --name NAME end`.
 
 Startup output is retained in `launches/<name>/service.log`, including errors
 before a session becomes ready. These startup diagnostics are separate from
@@ -375,7 +377,7 @@ CLI. Inside the sandbox the CLIs' own updaters are off.
 pip install -U openrua                   # then rebuild: a simulator image carries the package too
 openrua build --all                      # rebuild every simulator image (cached layers make it quick)
 pip uninstall openrua
-rm -r ~/.openrua                         # defaults, logins, sandboxes
+rm -r ~/.openrua                         # defaults, logins, connected robots' folders, sandboxes
 docker image rm $(docker image ls -q 'openrua-*')
 ```
 

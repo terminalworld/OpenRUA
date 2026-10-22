@@ -60,10 +60,14 @@ their own guides and are not added to the default agent list.
 See [API configuration](install.md#explicit-api-authentication) for CLI commands
 and file permissions. Local checks do not call a model or verify account quota.
 
-**Prepare and start** saves a valid selection, builds missing images with logs,
-checks readiness and opens chat. Existing images are reused. **Save and check
-preparation** only checks preparation. Logs remain in `~/.openrua/preparation/` for retry.
-See [setup validation](setup-validation.md) and [native login discovery](install.md#logging-an-agent-in).
+**Prepare and start** saves a valid selection, sets up Docker when it is
+missing or not usable (the commands are shown and run only on a yes; see
+[Docker](install.md#docker)), builds missing images with logs, offers the
+agent's sign-in when it is not signed in, checks readiness and opens chat.
+**Connect a real robot** sets up the same two first. Existing images are
+reused. **Save and check preparation** only checks preparation. Logs remain in
+`~/.openrua/preparation/` for retry. See [setup validation](setup-validation.md)
+and [your agent's login](install.md#your-agents-login).
 
 Use `openrua --setup`, `openrua config set`, or `config.yaml` to change the same
 shared defaults. Each ordinary launch creates a new ID. `/resume` in chat,
@@ -132,13 +136,14 @@ path on this computer: in Cursor or VS Code, which draw no pictures in their
 terminal, Ctrl+click opens it. A file the agent names under `/workspace` in a
 reply gets the same path under its message.
 Escape returns, `r` refreshes, and the chat draft is preserved. Saved images
-are observations, not a live video stream. Ended or unavailable conversations also support `/files` from history, using
+are observations, not a live video stream; `/watch` gives the cameras live, in
+the browser. Ended or unavailable conversations also support `/files` from history, using
 the recorded workspace on disk. This starts only a temporary local read-only
 viewer, never the robot or agent. Missing files are reported without losing
 access to the transcript. The browser also provides image viewing and downloads.
 
 Secret-input questions and reconciliation of unknown execution outcomes use
-the [session CLI](sessions.md), so these operations also require no mouse.
+the browser or the [session CLI](sessions.md), which needs no mouse.
 Switching the agent inside a session and persistent multi-panel layouts remain
 unimplemented; `/model` changes the model. Linux x86_64 installation and real PTY startup are tested;
 terminal-specific image support and physical IMEs depend on the terminal.

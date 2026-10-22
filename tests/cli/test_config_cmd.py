@@ -71,3 +71,33 @@ def test_a_defaulted_simulator_does_not_break_a_real_instance(tmp_path):
     (tmp_path / "config.yaml").write_text("simulator: robosuite\n")
     c = compose(str(lab), None, "libero_pro", tmp_path)
     assert c.simulator is None and c.cfg["machine"]["backend"]["kind"] == "real"
+
+
+def test_a_file_of_your_own_is_saved_by_its_full_path(tmp_path, monkeypatch):
+    # A relative path would name a different file, or none, from another
+    # directory; the defaults keep the one you meant.
+    (tmp_path / "work").mkdir()
+    (tmp_path / "work" / "my-arm.yaml").write_text("type: panda\n")
+    monkeypatch.chdir(tmp_path / "work")
+    assert _run(["--home", str(tmp_path), "config", "set", "--robot", "./my-arm.yaml",
+                 "--agent", "claude-code"]) == 0
+    text = (tmp_path / "config.yaml").read_text()
+    assert f"robot: {tmp_path / 'work' / 'my-arm.yaml'}\n" in text and "agent: claude-code\n" in text
+
+
+def test_robots_lists_the_ones_connected_on_this_computer(tmp_path, capsys):
+    import json
+    connected = tmp_path / "robots" / "my-arm"
+    connected.mkdir(parents=True)
+    (connected / "robot.yaml").write_text(
+        "type: panda\nmachine:\n  robot: {model: My Arm, description: a test arm}\n"
+        "  backend: {kind: real}\n")
+    (tmp_path / "robots" / "half-done").mkdir()   # connecting not finished: no robot.yaml yet
+    assert _run(["--home", str(tmp_path), "robots"]) == 0
+    out = capsys.readouterr().out
+    assert "connected on this computer" in out and "my-arm" in out and "half-done" not in out
+    assert str(connected / "robot.yaml") in out
+    assert _run(["--home", str(tmp_path), "robots", "--json"]) == 0
+    rows = json.loads(capsys.readouterr().out)
+    assert [r["name"] for r in rows if r.get("connected")] == ["my-arm"]
+    assert "panda" in [r["name"] for r in rows if not r.get("connected")]

@@ -30,7 +30,7 @@ async function leave(name, client, facts) {
     await client.end();
     console.log(`Session ${name} ended; its files are kept (openrua --resume shows it).`);
   } else {
-    console.log(`Still running. Come back: openrua --name ${name} · end it: openrua session --name ${name} end`);
+    console.log(`Still running. Come back: openrua --resume · end it: openrua session --name ${name} end`);
   }
 }
 

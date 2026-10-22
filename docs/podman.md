@@ -66,7 +66,8 @@ string and the flags the sandbox took.
 
 ## GPU rendering
 
-`machine.backend.gpus: true` passes `--gpus all`, which Podman resolves
+`install.gpus: true` (in the simulator file or a benchmark's `install:`)
+passes `--gpus all`, which Podman resolves
 through the Container Device Interface. Generate the spec once on a
 machine with the NVIDIA driver installed:
 

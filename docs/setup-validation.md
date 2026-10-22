@@ -60,14 +60,17 @@ claiming guided support.
 
 Recorded evidence does not mean that images or credentials are already present
 on another machine. **Prepare and start** validates the selected combination,
-builds missing images through the existing `openrua build` commands, then runs
-the preparation checks and starts the session. The simulator's ROS distribution
+sets up Docker when it is missing or not usable, builds missing images through
+the existing `openrua build` commands, offers the agent's sign-in when it is
+not signed in, then runs the preparation checks and starts the session. The simulator's ROS distribution
 selects the sandbox image; the selected agent supplies its installation manifest.
 A real robot's driver images (`backend.build`) and its own sandbox image (when it
 declares `backend.sandbox_install`) are built the same way. The proxy image is
 prepared only for a session limited to the model service (`--internet model-only`).
-Docker itself and agent login are prerequisites; OpenRUA reports how to resolve
-them without installing host system software or collecting credentials in setup.
+Docker and the agent's login are prerequisites. When either is missing, setup
+shows the commands that set it up and runs them only on a yes
+([Docker](install.md#docker), [your agent's login](install.md#your-agents-login));
+the sign-in is the agent's own, so OpenRUA never handles the account's password.
 
 Build output is streamed and retained in `~/.openrua/preparation/`. A failed
 build never launches the session. Retry reuses completed images and Docker's
