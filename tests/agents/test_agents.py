@@ -84,8 +84,12 @@ def test_version_check_takes_the_pin_and_the_floor():
 def test_prepare_profile_requires_credentials(tmp_path):
     import pytest
     a = agents.get("claude-code")
-    with pytest.raises(RuntimeError, match="credentials missing"):
+    with pytest.raises(RuntimeError, match="not signed in") as caught:
         agents.prepare_profile(tmp_path, a, tmp_path / "profile")
+    # the fix comes with it: OpenRUA's own sign-in, with the directory when
+    # it is not the CLI's own
+    assert caught.value.hint == f"run openrua login claude-code --dir {tmp_path}"
+    assert a.login_hint(Path.home() / ".claude") == "run openrua login claude-code"
 
 
 def test_prepare_profile_copies_profile_but_never_the_credentials(tmp_path):

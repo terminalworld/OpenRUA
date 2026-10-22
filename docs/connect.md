@@ -12,7 +12,9 @@ openrua connect my-arm            # or: openrua, then "Connect a real robot"
 ```
 
 The setup menu's entry connects a robot named `my-robot`, in
-`~/.openrua/robots/my-robot/`.
+`~/.openrua/robots/my-robot/`. When Docker is not ready or your agent is
+not signed in yet, OpenRUA offers to set that up first
+([install.md](install.md#docker)).
 
 This opens a session whose terminal reaches what connecting a robot
 needs: this computer's docker, its network (the robot's controller and

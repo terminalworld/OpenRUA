@@ -79,7 +79,7 @@ def test_missing_pieces_are_errors_with_a_fix_and_stale_labels_are_warnings(tmp_
     assert "model-only" in by["proxy-image"].detail
     assert by["sandbox-image"].severity == "warning" and "build sandbox --distro jazzy" in by["sandbox-image"].hint
     assert by["login-claude-code"].severity == "error"
-    assert "claude login" in by["login-claude-code"].hint
+    assert by["login-claude-code"].hint.startswith("run openrua login claude-code;")
     assert "setup-token" in by["login-claude-code"].hint        # the token route too
     assert not r.ok
 

@@ -49,6 +49,16 @@ class Credentials:
     config_env: str
     mount_point: str
     native_dir: str | None = None
+    login: tuple[str, ...] | None = None
+
+
+class NotSignedIn(RuntimeError):
+    """The agent has no login where a session reads it; ``hint`` says how
+    to sign in (the command line shows it as the fix)."""
+
+    def __init__(self, message: str, hint: str = "") -> None:
+        super().__init__(message)
+        self.hint = hint
 
 
 @dataclass(frozen=True)
@@ -83,7 +93,7 @@ def _copy_profile(source: Path, dest: Path, credentials: Credentials | None,
     if dest.is_symlink() or resolved_dest == resolved_source or resolved_dest in resolved_source.parents:
         raise ValueError("profile destination must be separate from the native login directory")
     if shared is not None and not shared.is_file():
-        raise RuntimeError(f"credentials missing: {login_hint}")
+        raise NotSignedIn("the agent is not signed in on this computer", hint=login_hint)
     if dest.exists():
         shutil.rmtree(dest)
     dest.mkdir(parents=True, mode=0o700)
@@ -311,7 +321,13 @@ class Agent:
 
     def login_hint(self, creds_home: Path) -> str:
         """One line telling the operator how to log this CLI in with
-        ``creds_home`` as its profile directory. Default: a generic line."""
+        ``creds_home`` as its profile directory. Default: ``openrua login``
+        when the manifest names the CLI's sign-in (with ``--dir`` when the
+        directory is not the CLI's own), else a generic line."""
+        c = self.credentials
+        if c is not None and c.login:
+            own = c.native_dir and Path(creds_home).resolve() == (Path.home() / c.native_dir).resolve()
+            return f"run openrua login {self.name}" + ("" if own else f" --dir {creds_home}")
         return (f"log the {self.name} CLI in with its profile directory "
                 f"set to {creds_home}")
 

@@ -73,6 +73,39 @@ Three operators:
 
 A task on a real robot is recorded with `openrua exec` (above).
 
+## A first trial and its video
+
+One CaP-Bench Lift trial with its cameras recorded, rendered as a video
+with the commands the agent typed beside the robot's views. Prepare once
+(Docker running, the agent signed in):
+
+```sh
+pip install -U 'openrua[demo]'
+openrua build --bench capbench
+openrua build sandbox --distro humble --agent claude-code
+openrua build proxy  # a trial limits the agent to its model service through it
+openrua doctor panda --sim robosuite --bench capbench --agent claude-code
+```
+
+Then run and render:
+
+```sh
+openrua bench --config capbench --run-id lift-demo \
+  --task-suite capbench_lift --task-ids 0 --seeds 0 \
+  --operator agent --record --record-every 4 --wall-clock-min 10
+openrua demo runs/capbench/lift-demo/trials/capbench_lift-0/seed0 --speed 4
+```
+
+The video is `demo.mp4` in that trial directory; `result.json` has the
+benchmark's verdict and `provenance.json` the resolved configuration and
+software versions. The bundled CaP-Bench configuration selects Claude
+Opus 5 at high reasoning effort; `--agent` and `--model` select another.
+The same `bench` command with `--operator none` and no recording checks
+startup and the interfaces without a model call. One trial shows the
+method; the [paper](https://arxiv.org/abs/2610.02459)'s aggregate results
+come from its full task and seed sets, model settings and budgets.
+Recording adds rendering time to the run.
+
 ## Where it lands
 
 ```

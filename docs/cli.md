@@ -103,6 +103,7 @@ start or reconnect (without a subcommand):
 | `demo` | render a recorded trial as a video (terminal + cameras) |
 | `probe` | draft a robot profile from a live ROS 2 graph |
 | `config` | your defaults (robot, simulator, benchmark, agent) |
+| `login` | sign your coding agent in on this computer |
 | `clean` | explicitly delete retained session files |
 | `doctor` | check the install: docker, images, simulator, login |
 
@@ -937,6 +938,29 @@ options:
                         API use is explicit
   --api-key-file API_KEY_FILE
                         file containing a raw key, used only with --auth api
+```
+
+## openrua login
+
+```
+usage: openrua login [-h] [--dir DIR] [agent]
+
+``openrua login``: sign your coding agent in on this computer. The agent's own
+sign-in (its manifest's ``credentials.login``) runs inside OpenRUA's sandbox
+image, where its CLI is installed already, so nothing else is installed here.
+It shows a link to open in any browser, and a code to paste back or to enter
+on the page. The login is written to the directory every session reads it from
+(the CLI's own in your home directory, unless your config names another), and
+sessions use it from the next start on. ``openrua`` offers this by itself when
+the agent you start with is not signed in.
+
+positional arguments:
+  agent       the agent to sign in (default: the configured one; openrua
+              agents lists them)
+
+options:
+  -h, --help  show this help message and exit
+  --dir DIR   the login directory (default: the one sessions read)
 ```
 
 ## openrua clean

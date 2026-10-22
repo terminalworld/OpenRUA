@@ -103,7 +103,7 @@ def test_profile_preparation_does_not_destroy_source_or_previous_files_on_missin
     dest.mkdir()
     saved = dest / "retained.json"
     saved.write_text("keep")
-    with pytest.raises(RuntimeError, match="credentials missing"):
+    with pytest.raises(RuntimeError, match="not signed in"):
         agent.prepare_profile(source, dest)
     assert saved.read_text() == "keep"
     link = tmp_path / "alias"

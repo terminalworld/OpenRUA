@@ -95,7 +95,7 @@ def choose_history(list_sessions, open_session, screen=run_screen, *, environmen
 
 def setup(values, choices, location, save, check, launch, agent_models,
           list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None, authentication=None, resolve_agent=None,
-          connect=None):
+          connect=None, sign_in=None):
     notice = ''
     authentication = dict(authentication or {})
     drafts = {}
@@ -116,6 +116,10 @@ def setup(values, choices, location, save, check, launch, agent_models,
             # Connecting a robot starts from the agent chosen here; the robot
             # is what the session finds out.
             try:
+                # Between screens the terminal is plain, so a sign-in the
+                # agent still needs happens here, before anything starts.
+                if sign_in is not None:
+                    sign_in(incoming)
                 print('Starting the connecting terminal; this can take a minute...', flush=True)
                 return connect(incoming)
             except Exception as exc:
@@ -145,6 +149,8 @@ def setup(values, choices, location, save, check, launch, agent_models,
             save(values)
             if action == 'start' and prepare:
                 prepare(values, lambda line: print(line, flush=True))
+            if action == 'start' and sign_in is not None:
+                sign_in(values)
             print('Checking preparation...', flush=True)
             ok, notice = check(values)
             if ok and action == 'start':

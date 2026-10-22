@@ -16,6 +16,7 @@
     openrua demo <trial>                   a video of a recorded trial
     openrua probe --host                   draft a profile from a live graph
     openrua config schema                  every config key and its meaning
+    openrua login [agent]                  sign your coding agent in
     openrua doctor [robot]                 check docker, images, simulator, login
 
 Each verb is a module under ``commands/`` with ``add_parser`` and

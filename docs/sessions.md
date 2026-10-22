@@ -31,6 +31,13 @@ readiness; **Save and check preparation** only inspects preparation. Native logi
 API configuration remains separate; OpenRUA never changes billing mode for you. The service runs in the background,
 with startup output in `~/.openrua/launches/<name>/service.log`.
 
+To reconnect, pass only the session's name and the interface
+(`openrua --name NAME`, with `--gui` or `--cli`); startup options cannot
+change a running conversation. The agent's original terminal (`openrua up`,
+then `openrua agent`) is a separate session that cannot take over a shared
+conversation, and `openrua exec` holds no conversation at all
+([first task](../examples/first-task.md)).
+
 The following foreground form is useful for development and debugging:
 
 Use the same robot, simulator, benchmark and agent selections as `up`. The

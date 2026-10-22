@@ -1,5 +1,5 @@
 ---
-summary: Requirements, installing the package, building the images, logging an agent in, and the doctor that checks it all
+summary: Requirements, Docker, installing the package, your agent's login, building the images, and the doctor that checks it all
 read_when:
   - You are setting OpenRUA up on a machine for the first time
   - openrua doctor is red and you want to know what a row means
@@ -12,9 +12,26 @@ read_when:
 
 | | |
 |---|---|
-| OS | Linux. Docker Engine, or rootless Podman providing the `docker` command ([podman.md](podman.md)) |
+| OS | Linux, with [Docker](#docker) (or rootless Podman providing the `docker` command: [podman.md](podman.md)) |
 | Python | 3.10 or newer on the host; everything else (ROS 2, the simulators, the agent CLIs) lives in the images |
-| Agent | a Claude Code login (Claude subscription or API key) or a Codex login (ChatGPT subscription or OpenAI API key) |
+| Agent | [Claude Code or Codex, signed in](#your-agents-login): a Claude or ChatGPT subscription, or an API key |
+
+## Docker
+
+OpenRUA runs the robot, the simulator and your agent's terminal in Docker
+containers: they stay apart from each other and from the rest of the
+computer, and the same images run on any Linux machine. A real robot's
+drivers run in containers too.
+
+When Docker is missing, your user may not use it yet, or its service is
+stopped, `openrua` says so when it starts and offers the fix: Docker's own
+install script ([get.docker.com](https://get.docker.com)), joining the
+`docker` group, or starting the service. It shows the commands first and runs
+them only if you agree; sudo asks for your password. `openrua connect` and
+`openrua login` do the same. To set it up yourself, follow
+[Docker's install guide](https://docs.docker.com/engine/install/) and its
+[post-install steps](https://docs.docker.com/engine/install/linux-postinstall/)
+(Docker as a non-root user).
 
 ## The package
 
@@ -36,6 +53,52 @@ agent's original terminal.
 flag. The old `[tui]` extra remains accepted for compatibility but is no longer
 required. Rendering recorded demo videos still needs the `demo` extra:
 `pip install 'openrua[demo]'`.
+
+## Your agent's login
+
+Your coding agent does the work, so OpenRUA needs your Claude Code or Codex
+account: a Claude or ChatGPT subscription, or an API key. Every session's
+agent uses the one login stored on this computer.
+
+Already signed in on this computer (`~/.claude` or `~/.codex`)? OpenRUA uses
+that login. If not, `openrua` offers to sign you in when you start a session
+or connect a robot, or you run it yourself:
+
+```bash
+openrua login           # the configured agent
+openrua login codex     # or the one you name
+```
+
+The agent's own sign-in runs inside OpenRUA's sandbox image, so its CLI need
+not be installed on this computer: open the link it shows in any browser,
+then paste the code back (Claude Code) or enter the code it shows on the page
+(Codex). With the CLI installed here, its own sign-in does the same
+(`claude auth login`, `codex login`). To bill an API key instead, choose it in
+the setup menu or see [explicit API authentication](#explicit-api-authentication);
+OpenRUA never switches to API billing after a login error.
+
+OpenRUA reuses existing file-based native logins. With no explicit profile
+selection, it discovers `~/.claude` or `~/.codex` and, when the OpenRUA account
+path is absent, links `~/.openrua/credentials/<agent>` to that directory at
+startup. OAuth credential files are not copied. Doctor is read-only and shows
+the actual source selected for the sandbox.
+
+Precedence is explicit `credentials_dir`, the agent's native environment
+variable (`CLAUDE_CONFIG_DIR` or `CODEX_HOME`), an existing OpenRUA profile,
+then the native default directory. Existing directories and symlinks are never
+overwritten or silently switched to another account. To clear an obsolete
+explicit path, use `openrua config set --agent claude-code --credentials-dir null`
+(or `--agent codex`). Already-running sandboxes retain their selected login;
+start a new session to use a changed source. If native re-login replaces the
+credential file, also start a new sandbox so its file mount uses the new file.
+
+Logins held only in an OS keychain cannot be discovered as files by a Linux
+sandbox. Use the native CLI's supported file-based login on the execution host;
+see [Claude authentication](https://code.claude.com/docs/en/authentication) and
+[Codex authentication](https://developers.openai.com/codex/auth/).
+An expired, unrefreshable native login requires signing in again. Discovering a
+file does not repair revoked tokens. OpenRUA does not silently switch accounts
+or retry failed robot instructions after authentication failure.
 
 ## The images
 
@@ -138,43 +201,7 @@ whitelist, named after the hash of its hosts (`openrua-proxy-<hash>`),
 with the hosts the agent's manifest lists. A different agent gets its own
 proxy; no rebuild is needed and a proxy in use is never replaced.
 
-## Logging an agent in
-
-For the native login commands below, the corresponding agent CLI must also
-be installed on the host. The sandbox build installs its own copy for execution;
-it does not install the host command. Use the CLI's normal interactive login.
-
-OpenRUA reuses existing file-based native logins. With no explicit profile
-selection, it discovers `~/.claude` or `~/.codex` and, when the OpenRUA account
-path is absent, links `~/.openrua/credentials/<agent>` to that directory at
-startup. OAuth credential files are not copied. Doctor is read-only and shows
-the actual source selected for the sandbox.
-
-Precedence is explicit `credentials_dir`, the agent's native environment
-variable (`CLAUDE_CONFIG_DIR` or `CODEX_HOME`), an existing OpenRUA profile,
-then the native default directory. Existing directories and symlinks are never
-overwritten or silently switched to another account. To clear an obsolete
-explicit path, use `openrua config set --agent claude-code --credentials-dir null`
-(or `--agent codex`). Already-running sandboxes retain their selected login;
-start a new session to use a changed source. If native re-login replaces the
-credential file, also start a new sandbox so its file mount uses the new file.
-
-If not already signed in, use the native CLI:
-
-```bash
-claude login
-codex login
-```
-
-Logins held only in an OS keychain cannot be discovered as files by a Linux
-sandbox. Use the native CLI's supported file-based login on the execution host;
-see [Claude authentication](https://code.claude.com/docs/en/authentication) and
-[Codex authentication](https://developers.openai.com/codex/auth/).
-An expired, unrefreshable native login requires signing in again. Discovering a
-file does not repair revoked tokens. OpenRUA does not silently switch accounts
-or retry failed robot instructions after authentication failure.
-
-### Explicit API authentication
+## Explicit API authentication
 
 Claude Code and Codex support separate API profiles for ordinary terminal chat,
 native terminal sessions, and benchmark trials.

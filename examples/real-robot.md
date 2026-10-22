@@ -6,9 +6,10 @@ read_when:
 
 # A real robot
 
-To have your coding agent connect the robot with you, run `openrua connect`
-([Connect a real robot](../docs/connect.md)); it writes the profile, its
-drivers and its startup checks, step by step. The steps below are for a
+The shortest path is `openrua connect` (or **Connect a real robot** in the
+setup menu): your coding agent connects the robot with you and writes its
+profile, drivers and startup checks, step by step
+([Connect a real robot](../docs/connect.md)). The steps below are for a
 profile you write yourself.
 
 1. With the robot's ROS 2 stack running, draft a profile from its graph
@@ -44,9 +45,11 @@ profile you write yourself.
 
    The agent reaches only its model service, through the image
    `openrua build proxy` makes; `--internet open` lifts that. The run lands
-   under `runs/my-robot/<run id>/`: transcript, commands, workspace,
-   `result.json` and `provenance.json`. Nothing resets the robot, and you
-   judge the result (`success: null`, `verdict: not_applicable`).
+   under `runs/my-robot/<run id>/`: transcript, commands, workspace, the
+   cameras' frames, `result.json` and `provenance.json`. Nothing resets the
+   robot. At the end you are asked whether it did the task, with the agent's
+   own last words beside the question, and the run records your answer
+   (`verdict: person`); without a terminal to ask at, `success` stays `null`.
 
 Interactive startup waits for ROS graph visibility. Recorded runs additionally
 run preflight checks on the declared control interfaces, joint names, TF and

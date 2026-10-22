@@ -30,6 +30,10 @@ credentials:
   filename: auth.json
   config_env: CODEX_HOME
   mount_point: /codex-home
+  # Its own sign-in, which openrua login runs in the sandbox image: a link
+  # and a one-time code to enter there (device code: nothing has to reach
+  # back into the container).
+  login: [codex, login, --device-auth]
 # An API key, passed to the CLI by file; bills the API, not a subscription.
 token_env: OPENAI_API_KEY
 # Where the newest release is named, for the update offer at start.

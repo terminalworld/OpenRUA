@@ -61,105 +61,43 @@ observations without starting a new robot each turn.
 
 ## Quick start
 
-### Chat with a robot
+**Before you start**, have on a Linux computer:
 
-Use a Linux host with Docker or a supported Podman setup and an existing
-Claude Code or Codex login ([installation](docs/install.md)).
+- **[Docker](docs/install.md#docker)**: the robot, the simulator and your agent's terminal run in containers.
+- **[Claude Code or Codex](docs/install.md#your-agents-login)**, signed in with your account: your coding agent does the work.
+
+Missing either one? `openrua` sets it up with you when it starts.
 
 ```sh
 pip install -U openrua
 openrua
 ```
 
-The keyboard-first TUI guides environment selection and prepares missing images.
-Each launch creates a new session; no name is required. Type an instruction and
-press **Enter**, for example:
+**A simulated robot.** In the setup menu, pick a robot and a scene, then
+**Prepare and start**. The first start builds the images, which takes a few
+minutes. Then tell the agent what you want, for example:
 
-> Inspect the workspace documentation and describe the scene without moving the robot.
+> Look through the cameras and describe the scene, without moving the robot.
 
-Use `/files` to browse saved observations and code, `/resume` to find earlier
-sessions, and `/end` to stop execution while keeping your work. **Ctrl+D** on an
-empty input leaves and asks whether to keep the session running in the
-background or end it.
+**A real robot.** Choose **Connect a real robot** (or run `openrua connect`).
+Your agent sets the robot up with you, step by step, and OpenRUA checks each
+step, up to a first small motion with the emergency stop at hand
+([Connect a real robot](docs/connect.md)).
 
-For a real robot, run `openrua connect` (or choose **Connect a real robot** in
-the setup menu): your coding agent sets it up with you, and OpenRUA checks each
-step ([Connect a real robot](docs/connect.md)). At most once a day, `openrua`
-offers a newer agent CLI before the session starts.
+**While it works.** Enter sends, Esc stops the agent and the arm's motion,
+`/watch` shows a camera live and `/help` lists the rest
+([terminal guide](docs/terminal.md)). Ctrl+D leaves and lets the session keep
+running; `openrua --resume` brings you back.
 
-See the [walkthrough](examples/shared-session.md) for setup and continuous tasks,
-[terminal guide](docs/terminal.md) for controls, and
-[validation scope](docs/sessions.md#validation-scope) for what has been tested.
-Shared chat remains experimental.
+### Next
 
-Native Claude Code or Codex login is the default. To use an API key, explicitly
-select it in `openrua --setup` or through the
-[API configuration guide](docs/install.md#explicit-api-authentication).
-OpenRUA never switches to API billing after a login error.
-
-### Have the agent do one task
-
-`openrua exec` gives the agent one task and lets it work on its own, as
-`codex exec` or `claude -p` do. The robot powers off when the agent is done,
-and the run is recorded under `runs/`:
-
-```sh
-openrua build --sim robosuite
-openrua build sandbox --distro humble
-openrua build proxy   # the run limits the agent to its model service
-openrua exec panda "lift the cube" --sim robosuite
-```
-
-The simulator's own `Lift` scene takes your sentence and judges success; a
-benchmark scene (`--bench`, `--task-suite`, `--task-id`, `--seed`) states its
-own task. On a real robot the task is the sentence you give
-(`openrua exec ./my-robot.yaml "put the cup on the plate"`), and you judge
-the result. [Running experiments](docs/running-experiments.md) describes what
-a run records.
-
-### Run a benchmark and make a demo
-
-For researchers, the CLI runs fresh benchmark trials and saves the code,
-observations, transcripts, scores, and configuration needed to inspect a run.
-The following example runs **one CaP-Bench Lift trial**, records its cameras,
-and renders a video with terminal commands beside the robot views.
-
-Install the demo dependencies and prepare the environment once (Docker must
-be running; an existing native Claude Code login is reused):
-
-```sh
-pip install -U 'openrua[demo]'
-claude login  # only if not already signed in
-openrua build --bench capbench
-openrua build sandbox --distro humble --agent claude-code
-openrua build proxy  # a trial limits the agent to its model service through it
-openrua doctor panda --sim robosuite --bench capbench --agent claude-code
-```
-
-Then run and render:
-
-```sh
-openrua bench --config capbench --run-id lift-demo \
-  --task-suite capbench_lift --task-ids 0 --seeds 0 \
-  --operator agent --record --record-every 4 --wall-clock-min 10
-openrua demo runs/capbench/lift-demo/trials/capbench_lift-0/seed0 --speed 4
-```
-
-The video is saved as `demo.mp4` in that trial directory. Its `result.json`
-reports the benchmark verdict, and `provenance.json` records the resolved
-configuration and software versions. This small, recorded run demonstrates the
-method; reproducing the paper's aggregate results requires its full task/seed
-sets, model settings, and evaluation budgets. Recording also adds rendering cost.
-The bundled CaP-Bench configuration selects Claude Opus 5 with high reasoning
-effort; `--agent` and `--model` can select another available configuration.
-
-Native login requires the corresponding host CLI. See [installation](docs/install.md)
-for prerequisites and credentials. To check the benchmark setup without a model
-call, use the same `bench` command with `--operator none` and omit recording;
-this checks startup and interfaces, not task success. See
-[running experiments](docs/running-experiments.md) for full runs and recorded
-replays of existing trials, and the [paper](https://arxiv.org/abs/2610.02459)
-for the experimental protocol.
+- **One task, on its own.** `openrua exec` hands the agent a task and records
+  the run, as `claude -p` or `codex exec` do ([first task](examples/first-task.md)).
+- **Benchmarks and demo videos.** Run a benchmark's tasks, scored by its own
+  success predicates, and render a trial as a video
+  ([running experiments](docs/running-experiments.md)).
+- **Your robot, described by hand.** Draft its profile from the live graph
+  instead of connecting it with your agent ([your own robot](docs/your-own-robot.md)).
 
 ## Choose your interface
 
@@ -171,33 +109,9 @@ for the experimental protocol.
 | Native agent terminal | `openrua up panda --sim robosuite --bench capbench --agent codex --name native-demo`, then `openrua agent --name native-demo` in a second terminal | Exiting the agent leaves the robot up; Ctrl-C in `up` or `openrua down --name native-demo` powers it off |
 | One task, on its own | `openrua exec panda "lift the cube" --sim robosuite` | Nothing to leave: the robot powers off when the agent is done, and the run stays under `runs/` |
 
-The first three use one shared queue per session. These examples explicitly
-name a session; omitting `--name` creates a new one with an automatic ID.
-To reconnect to a running session, pass only its name and interface choice;
-startup options cannot change an active conversation. Existing `chat` and
-`session` commands remain available for explicit client operations.
-The native agent terminal is a separate session using the agent's original
-TUI; it cannot take over a shared conversation. `openrua exec` holds no
-conversation at all: one task, one recorded run. Both are described in
-[First task in simulation](examples/first-task.md).
-
-In shared chat, what you send while the agent works joins the running turn,
-as in a coding agent's own terminal. **Escape** stops the turn, asks the
-robot's motion actions (trajectory, gripper, planner) to cancel their goals,
-and queued instructions go next; it is not an emergency stop. A failure pauses
-the queue for review, saying why;
-**Resume** continues it. Ending the session stops
-its resources while preserving files; deleting them is a separate operation.
-For development, `openrua serve` still runs the service in the foreground.
-Stopping that process ends its session, unlike closing one of its clients.
-
-The default terminal uses **Enter** to send and **Ctrl+J** for a newline.
-Use `/tools`, `/files`, and `/queue` to open details on demand, `/permissions`
-to choose whether the agent asks before each command that changes something,
-`/model` to change the model, and the agent's own commands (`/compact`,
-`/clear`, skills) as in its own terminal; `/help` lists them. Configuration,
-history, and confirmations use arrow keys, Enter, and Escape; no mouse is needed.
-`--tui pi` remains an explicit alias. See the [keyboard guide](ui/terminal/README.md).
+The first three share one conversation and its queue: join from any of them,
+leave, and come back ([shared sessions](docs/sessions.md)). The
+[terminal guide](docs/terminal.md) has the keys and commands.
 
 ## How it works
 
@@ -376,14 +290,8 @@ openrua --robot ./my-ur5.yaml        # chat with the agent on it; or: openrua co
 openrua exec ./my-ur5.yaml "put the cup on the plate"   # one task on its own, recorded
 ```
 
-The profile's `machine:` section is what the agent's `machine.yaml` is
-generated from: model, joint names and limits, frames,
-gripper, and the ports (`trajectory`, `gripper`, `twist`, `wrench`) the
-robot serves. Its `backend:` says how the drivers start and stop: the images
-they are built from (`backend.build`), what the agent's sandbox installs to
-speak the robot (`backend.sandbox_install`), and the startup checks
-(`backend.startup_checks`) that run before every session, before every
-recorded run and in `openrua doctor`. Details in [docs/your-own-robot.md](docs/your-own-robot.md).
+The profile says what the machine is and how its drivers start and stop
+([your own robot](docs/your-own-robot.md)).
 
 ## Simulation and benchmarks
 
@@ -397,17 +305,10 @@ openrua bench --config libero_pro --run-id demo \
             --task-suite libero_goal_task --task-ids 0,1 --seeds 0 --operator agent
 ```
 
-Every trial writes `result.json` (verdict, preflight, termination,
-token accounting), `provenance.json` (code and simulator commits, image
-digests, config and prompt hashes), the agent's full transcript, and
-the workspace it left behind; the run directory keeps a `SUMMARY.md`
-regenerated from those files after every trial. Building the simulator checkouts:
-[docs/simulation.md](docs/simulation.md).
-
-A trial replays from its own `commands.sh`, and a replay with
-`--record` renders as a video, terminal on the left, cameras on the
-right (`openrua demo <trial>`; see
-[running-experiments.md](docs/running-experiments.md#making-a-demo-video)).
+Every trial keeps its verdict, provenance, the agent's transcript and the
+workspace it left, and replays from its own commands; a replay renders as a
+video, terminal on the left and cameras on the right
+([running experiments](docs/running-experiments.md)).
 
 ## Architecture
 
@@ -425,7 +326,7 @@ and [contribution guide](CONTRIBUTING.md).
 
 | page | read when |
 |---|---|
-| [docs/install.md](docs/install.md) | setting a machine up: images, logins, doctor |
+| [docs/install.md](docs/install.md) | setting a machine up: Docker, your agent's login, images, doctor |
 | [examples/first-task.md](examples/first-task.md) | your first task on the simulated Panda: one recorded run with `exec`, and the agent's original terminal with `up` and `agent` |
 | [examples/shared-session.md](examples/shared-session.md) | TUI, browser and CLI chat, queue checks, reconnection, saved images and shutdown |
 | [docs/terminal.md](docs/terminal.md) | TUI shortcuts, expandable panels, and current limitations |

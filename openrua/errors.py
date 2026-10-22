@@ -59,6 +59,7 @@ class AuthError(OpenRUAError):
     code = "noperm"
 
 
+
 class ConfigError(OpenRUAError, ValueError):
     """A config file that does not fit the schema; the message names the
     file and every offending key path."""
