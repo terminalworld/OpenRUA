@@ -60,7 +60,8 @@ class LocalServer:
                  artifacts: ArtifactReader | None = None,
                  snapshot: Callable[[], dict] | None = None,
                  read_only: bool = False,
-                 actions: dict[str, Callable[[dict], Awaitable[Any]]] | None = None):
+                 actions: dict[str, Callable[[dict], Awaitable[Any]]] | None = None,
+                 cameras: Any = None):
         if not token or request_timeout <= 0 or max_body_bytes <= 0:
             raise ValueError("token and positive request limits are required")
         self.execution, self.end = execution, end
@@ -69,6 +70,9 @@ class LocalServer:
             raise ValueError("a session or explicit resource snapshot is required")
         self.snapshot = snapshot if snapshot is not None else execution.session.store.snapshot
         self.artifacts = artifacts
+        # The robot's cameras for a person watching (robot.cameras.CameraView):
+        # names() and frame(name); None when the session has none to show.
+        self.cameras = cameras
         # Operations a resource owner adds (POST /api/actions/<name>, the
         # body handed over as is): what this kind of session can also do.
         self.actions = dict(actions or {})
@@ -146,6 +150,13 @@ class LocalServer:
                             raise ValueError("use one after cursor and one limit")
                         value = owner.execution.session.store.events(
                             int(query.get("after", ["0"])[0]), int(query.get("limit", ["1000"])[0]))
+                    elif target.path == "/api/cameras" and not target.query and owner.cameras is not None:
+                        value = {"cameras": owner.cameras.names()}
+                    elif target.path == "/api/cameras/frame" and owner.cameras is not None:
+                        query = parse_qs(target.query, strict_parsing=True)
+                        if set(query) != {"name"} or len(query["name"]) != 1:
+                            raise ValueError("name one camera")
+                        value = owner.cameras.frame(query["name"][0])
                     elif target.path in ("/api/workspace/list", "/api/workspace/read") and owner.artifacts is not None:
                         query = parse_qs(target.query, strict_parsing=True, keep_blank_values=True)
                         if set(query) - {"path"} or any(len(v) != 1 for v in query.values()):

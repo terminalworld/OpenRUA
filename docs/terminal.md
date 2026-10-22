@@ -87,6 +87,7 @@ OpenRUA's own greeting; the agent has not looked at anything yet.
 | Enter / Ctrl+J | Send / insert newline |
 | `/tools` | Expand or collapse a tool call, with its details and output |
 | `/files` | Browse saved workspace files |
+| `/watch` | See the robot's cameras live: the session's browser address and key to open it with (a terminal shows no video) |
 | `/queue` | Inspect, edit or withdraw queued instructions |
 | `/questions` | Choose answers to agent questions (or type the answer) |
 | Escape or `/interrupt` | Stop the current turn and cancel the robot's motions; queued instructions go next |

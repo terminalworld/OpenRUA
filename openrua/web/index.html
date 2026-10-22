@@ -77,6 +77,16 @@
             </form>
           </section>
           <aside>
+            <section class="card cameras">
+              <div class="section-heading">
+                <h2>Cameras</h2>
+                <button id="camera-watch" type="button" disabled>Watch</button>
+              </div>
+              <label class="sr-only" for="camera-name">Camera</label
+              ><select id="camera-name" disabled></select>
+              <img id="camera-frame" alt="The selected camera's latest frame" hidden />
+              <p id="camera-status" class="hint" role="status"></p>
+            </section>
             <section class="card">
               <h2>Workspace files</h2>
               <p class="hint">

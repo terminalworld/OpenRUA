@@ -20,6 +20,7 @@ from openrua.config.schema import Limits, sandbox_image
 from openrua.errors import UnavailableError, UsageError
 from openrua.proxy.up import ensure as ensure_proxy
 from openrua.robot import not_ready
+from openrua.robot.cameras import camera_topics
 from openrua.runner import live_state as state
 from openrua.runner.motion import cancel_motion, motion_actions
 from openrua.runner.record import session_provenance
@@ -76,6 +77,8 @@ class LiveRobot:
     # owner of a long-lived session polls it.
     stopped: Callable[[], str | None] = lambda: None
     robot_log: Path | None = None
+    # (camera name -> color topic, topic pattern): what a person watching sees
+    cameras: tuple = ({}, None)
     # Cancel every goal on the robot's motion actions: what an interrupt
     # does to the robot. Returns each action's outcome.
     stop_motion: Callable[[], dict[str, bool]] = lambda: {}
@@ -271,4 +274,5 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         suite=suite, task_id=task_id, task=task,
         agent=adapter.name, model=model, power_off=power_off,
         stopped=getattr(machine, "stopped", lambda: None), robot_log=workdir / "robot.log",
+        cameras=camera_topics(cfg),
         stop_motion=lambda actions=motion_actions(cfg["machine"]): cancel_motion(sandbox_name, actions))

@@ -11,6 +11,7 @@ export const COMMANDS = [
   {name: 'help', description: 'Keyboard shortcuts and commands', clients: ['terminal', 'browser']},
   {name: 'tools', description: 'Expand or collapse a tool result', clients: ['terminal']},
   {name: 'files', description: 'Browse saved workspace files and images', clients: ['terminal', 'browser']},
+  {name: 'watch', description: "See the robot's cameras live, in a browser", clients: ['terminal', 'browser']},
   {name: 'queue', description: 'Inspect, edit or withdraw queued messages', clients: ['terminal', 'browser']},
   {name: 'questions', description: 'Answer pending agent questions', clients: ['terminal', 'browser']},
   {name: 'resume', description: 'Find an existing conversation', clients: ['terminal']},

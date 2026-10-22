@@ -22,6 +22,17 @@ import subprocess
 _CHECK_TIMEOUT_S = 60
 
 
+def _arrives(topic: str) -> str:
+    """A snippet passing once ``topic`` delivers a message. A topic the
+    sandbox has not discovered yet makes ``ros2 topic echo`` give up at
+    once, and a real robot's graph is found over the network a moment
+    after the sandbox starts (a simulated one is waited for through
+    /clock first): so it is asked again until it answers, within the
+    ceiling."""
+    return (f"timeout {_CHECK_TIMEOUT_S} bash -c 'until ros2 topic echo --once {topic} "
+            ">/dev/null 2>&1; do sleep 1; done'")
+
+
 def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
     """(name, bash snippet exiting 0 on pass) pairs, from the resolved
     config after suite overrides, the same source machine.yaml is
@@ -44,13 +55,12 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
                        f"timeout {_CHECK_TIMEOUT_S} bash -c "
                        "'until ros2 topic list | grep -qx /clock; do sleep 1; done'"))
     if m.get("base") or any(a.get("joints") or a.get("gripper") for a in m.get("arms", [])):
-        checks.append(("joint_states_flow",
-                       f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once /joint_states"))
+        checks.append(("joint_states_flow", _arrives("/joint_states")))
     # Declared frames are a promise: the pixel-to-world tool needs the
     # camera/world transform as much as depth and intrinsics, so the
     # transform stream is asserted, not assumed.
     if m.get("frames"):
-        checks.append(("tf_flow", f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once /tf"))
+        checks.append(("tf_flow", _arrives("/tf")))
     # Per-arm checks over the normalized view (normalize_arms wrote
     # machine.arms into the resolved config); a single-arm machine has
     # one unlabeled arm and mints the unsuffixed check names.
@@ -125,10 +135,7 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
         topics = {**types[e["type"]]["topics"], **(e.get("topics") or {})}
         streams = [topics[k].replace("{name}", e["name"])
                    for k in ("color", "depth", "info") if topics.get(k)]
-        checks.append((f"camera_flow_{e['name']}",
-                       f"timeout {_CHECK_TIMEOUT_S} bash -c '"
-                       + " && ".join(f"ros2 topic echo --once {t} >/dev/null" for t in streams)
-                       + "'"))
+        checks.append((f"camera_flow_{e['name']}", " && ".join(_arrives(t) for t in streams)))
     # The workspace tools must actually run: import each tool module
     # (all carry __main__ guards, so an import checks dependencies and
     # syntax without side effects).

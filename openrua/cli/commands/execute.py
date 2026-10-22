@@ -5,7 +5,8 @@ terminal, this runs one trial: the robot comes up (simulated or real),
 the agent gets the task and works until it is done or a budget ends, the
 robot powers off, and everything lands under ``runs/<label>/<run id>/``
 (transcript, result, provenance; ``openrua demo`` renders a simulated
-one). While the agent works, what it says and each command it runs show
+one; a real robot's cameras are recorded too, unless --no-record).
+While the agent works, what it says and each command it runs show
 as they happen; Ctrl-C stops it and powers the robot off. A benchmark
 scene states its task and judges success; a simulator's own scene judges
 success too, and takes the sentence given when it states no task; a real
@@ -53,6 +54,17 @@ def ask_person(words: str) -> bool | None:
     return True if answer in ("y", "yes") else False if answer in ("n", "no") else None
 
 
+def recording(args, real: bool) -> tuple[str, ...] | None:
+    """The cameras to record (empty: all), or None. A real robot's run
+    cannot be replayed, so it is recorded unless --no-record says not to;
+    a simulated one can, so it is recorded only when --record asks."""
+    if args.no_record:
+        return None
+    if args.record is not None:
+        return tuple(c.strip() for c in args.record.split(",") if c.strip())
+    return () if real else None
+
+
 def run(args) -> int:
     home = paths.home(args.home)
     # A sentence for a simulated robot names the simulator's own scene,
@@ -76,8 +88,7 @@ def run(args) -> int:
     run_id = args.run_id or datetime.now(timezone.utc).strftime("exec-%Y%m%d-%H%M%S")
     trials = argparse.Namespace(
         task=args.task, task_suite=suite, task_ids=[task_id], seeds=[args.seed],
-        operator="agent", record=None if args.record is None else tuple(
-            c.strip() for c in args.record.split(",") if c.strip()),
+        operator="agent", record=recording(args, real),
         record_every=1, record_size=None, wall_clock_min=args.wall_clock_min,
         runs_root=args.runs_root, run_id=run_id, ros_domain=args.ros_domain,
         credentials_dir=None, account_alias=None, script=None, token_file=None,
@@ -120,7 +131,9 @@ def add_parser(sub) -> None:
     p.add_argument("--ros-domain", type=int, default=None,
                    help="ROS_DOMAIN_ID (default: a free one; a real robot: 0)")
     p.add_argument("--record", nargs="?", const="", default=None, metavar="CAMERAS",
-                   help="record a simulated robot's cameras for openrua demo (names, or "
-                   "none for the robot's default)")
+                   help="record the cameras for openrua demo (names, or none for all); "
+                   "a real robot's run is recorded anyway, two frames a second")
+    p.add_argument("--no-record", action="store_true",
+                   help="do not record a real robot's cameras")
     add_limit_options(p, "default: only the model service, as in a benchmark run")
     p.set_defaults(fn=run)

@@ -10,5 +10,6 @@ def assets() -> dict[str, tuple[str, bytes]]:
         ("/app.js", "app.js", "text/javascript; charset=utf-8"),
         ("/workspace.js", "workspace.js", "text/javascript; charset=utf-8"),
         ("/session.mjs", "session.mjs", "text/javascript; charset=utf-8"),
+        ("/cameras.js", "cameras.js", "text/javascript; charset=utf-8"),
         ("/style.css", "style.css", "text/css; charset=utf-8"),
     )}
