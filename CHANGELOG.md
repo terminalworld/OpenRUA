@@ -9,6 +9,13 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.16.0
+
+Two-arm robots, checked before the first real one. Changes you may notice:
+`fjt_send.py` leads with `canceled` or `aborted` for a goal ended
+elsewhere, and on a multi-arm machine `machine.yaml` lists each arm's
+own frames, so a two-arm benchmark trial's agent sees a little more.
+
 - **Two-arm robots**, checked on a simulated two-arm graph and with a live
   agent driving both arms: `openrua probe` drafts one `arms:` entry per
   trajectory controller (it took the first and left the rest in a
