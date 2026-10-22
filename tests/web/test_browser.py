@@ -349,3 +349,35 @@ def test_a_typed_line_answers_the_question_the_agent_waits_on(tmp_path):
         await playwright.expect(page.locator(".turn-result")).to_have_text("")
         await playwright.expect(page.locator(".agent-output")).to_have_text("Joint 7 turned.")
     asyncio.run(browser_case(tmp_path, check))
+
+
+def test_the_page_shows_a_camera_live_once_watched(tmp_path):
+    import base64
+    asked = []
+
+    class View:
+        def names(self):
+            return ["scene", "wrist"]
+        def frame(self, name):
+            asked.append(name)
+            # a 1x1 PNG, as a tap would hand over a frame
+            png = base64.b64encode(bytes.fromhex(
+                "89504e470d0a1a0a0000000d4948445200000001000000010806000000"
+                "1f15c4890000000d49444154789c6360f8cfc0f01f0005fe02fea7d6a4"
+                "940000000049454e44ae426082")).decode()
+            return {"name": name, "t": 1.0, "age_s": 0.2, "mime": "image/png", "data": png}
+
+    async def check(page, store, native, server):
+        await playwright.expect(page.locator("#camera-frame")).to_be_hidden()
+        assert asked == []                     # nothing is read until someone watches
+        await page.locator("#camera-watch").click()
+        await playwright.expect(page.locator("#camera-frame")).to_be_visible()
+        await playwright.expect(page.locator("#camera-status")).to_have_text("Live · now")
+        assert await page.locator("#camera-name option").all_text_contents() == ["scene", "wrist"]
+        await page.locator("#camera-name").select_option("wrist")
+        await until(lambda: asked and asked[-1] == "wrist")
+        await page.locator("#camera-watch").click()   # Stop
+        stopped = len(asked)
+        await page.wait_for_timeout(1000)
+        assert len(asked) <= stopped + 1
+    asyncio.run(browser_case(tmp_path, check, cameras=View()))

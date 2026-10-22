@@ -1,4 +1,5 @@
 import { workspaceBrowser } from "/workspace.js";
+import { cameraView } from "/cameras.js";
 import {
   PERMISSIONS,
   agentCommands,
@@ -67,6 +68,7 @@ async function api(path, body) {
   return value;
 }
 const files = workspaceBrowser(api);
+const cameras = cameraView(api);
 async function command(operation, params) {
   return (await api("/api/commands", { operation, params })).result;
 }
@@ -416,6 +418,7 @@ $("connect-form").onsubmit = async (e) => {
     $("login-error").textContent = "";
     if (pending) $("message").value = pending.text;
     files.connect();
+    cameras.connect();
     await sync();
     clearInterval(timer);
     timer = setInterval(sync, 800);
@@ -426,6 +429,7 @@ $("connect-form").onsubmit = async (e) => {
 };
 $("disconnect").onclick = () => {
   files.disconnect();
+  cameras.disconnect();
   generation++;
   clearInterval(timer);
   token = "";
@@ -458,6 +462,10 @@ export const handlers = {
     $("files-path").focus();
   },
   queue: () => $("queue").scrollIntoView({ block: "center" }),
+  watch: () => {
+    $("camera-watch").scrollIntoView({ block: "center" });
+    if ($("camera-watch").textContent === "Watch") $("camera-watch").click();
+  },
   questions: () => {
     if ($("questions").hidden) throw new Error("No pending questions.");
     $("questions").scrollIntoView({ block: "center" });
@@ -581,6 +589,7 @@ $("end").onclick = async () => {
     state = closed.state;
     for (const message of state.messages) turn(message);
     files.disconnect();
+    cameras.disconnect();
     connection("Session ended", true);
     notice("Session ended. Your conversation and workspace are retained.");
   } catch (e) {

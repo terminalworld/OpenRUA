@@ -26,6 +26,7 @@ from pathlib import Path
 from openrua import agents
 from openrua.config import paths
 from openrua.proxy.up import ensure as ensure_proxy
+from openrua.robot.cameras import CameraTap, camera_topics
 from openrua.runner import lock
 from openrua.runner import record
 from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
@@ -158,6 +159,24 @@ def operate(cfg: dict, machine, sandbox_name: str, operator, ctx: dict) -> dict:
     if stall:
         raise RuntimeError(stall["msg"])
     return op_meta
+
+
+REAL_RECORD_FPS = 2.0   # frames a second per camera: enough to see a run, light on the robot's computer
+
+
+def record_cameras_of(cfg: dict, sandbox: str, frames: Path, names: tuple[str, ...]) -> CameraTap:
+    """A real robot renders nothing: its frames come from its camera
+    topics, REAL_RECORD_FPS a second, into the frames/ layout ``openrua
+    demo`` reads. ``names`` picks cameras (empty: all of them)."""
+    named, _ = camera_topics(cfg)
+    chosen = {n: t for n, t in named.items() if not names or n in names}
+    missing = sorted(set(names) - set(named))
+    if missing or not chosen:
+        raise ValueError(f"no camera to record named {', '.join(missing) or 'on this robot'}"
+                         f"; it has: {', '.join(sorted(named)) or 'none'}")
+    tap = CameraTap(sandbox, chosen, fps=REAL_RECORD_FPS, record=frames)
+    tap.start()
+    return tap
 
 
 @contextmanager
@@ -301,6 +320,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     # orphan it and kill the rest of the invocation's queue.
     sandbox_live = False
     machine = None
+    tap = None
+    real = cfg.get("machine", {}).get("backend", {}).get("kind") == "real"
     try:
         # The trial's resolved suite view: computed once (main applied
         # the overrides), written as an artifact by bring_up and read by
@@ -310,9 +331,12 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             cfg, trial_dir, sim_name, sandbox_name, task_suite, task_id,
             network, internet_access(proxy_url), profile.mounts,
             ros_domain, robot_log=trial_dir / "bridge.log", home=home,
-            record_cameras=record_cameras, record_every=record_every,
+            record_cameras=None if real else record_cameras, record_every=record_every,
             record_size=record_size)
         sandbox_live = True
+        if real and record_cameras is not None:
+            tap = record_cameras_of(cfg, sandbox_name, trial_dir / "frames", record_cameras)
+            rec["recorded_cameras"] = sorted(tap.cameras)
         # The CLI version that actually ran: read inside the sandbox.
         rec["agent_version"] = _sandbox_version(sandbox_name, agent)
         task_language = episode_task(rec, machine, scored, seed, task)
@@ -378,6 +402,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         rec["anomaly_traceback"] = traceback.format_exc()
     finally:
         with held_interrupts():
+            if tap is not None:
+                tap.stop()
             if machine is not None:
                 machine.shutdown()
             if sandbox_live:

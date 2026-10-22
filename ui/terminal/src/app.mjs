@@ -305,6 +305,14 @@ export class Chat {
         this.say(`The model: ${plain(state?.settings?.model ?? 'unknown')}. Change it with /model <name>.`);
       },
       files: async () => { await browseWorkspace(this); },
+      watch: async () => {
+        // A terminal shows no video: the cameras play in the session's
+        // browser page (Cursor and VS Code open the address on Ctrl+click).
+        writable();
+        if (!this.client.origin) throw new Error('Open the session in a browser: openrua session --name NAME web');
+        this.say(`See the cameras live: open ${this.client.origin} in a browser, paste this session key, `
+          + `then press Watch under Cameras.\n${this.client.token}\nThe key opens this session: keep it to yourself.`);
+      },
       quit: async () => { this.stop(); },
       resume: async () => {
         if (!this.history) throw new Error('Use openrua --resume to select history.');

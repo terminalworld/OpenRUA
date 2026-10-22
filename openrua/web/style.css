@@ -515,3 +515,16 @@ dialog::backdrop {
 .agent select {
   width: 100%;
 }
+.cameras select {
+  width: 100%;
+}
+.cameras img {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 6px;
+  background: #000;
+}
+.cameras img[hidden] {
+  display: none;
+}

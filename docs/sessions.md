@@ -98,6 +98,13 @@ so a retry after a lost response uses the original request identity.
 The page shows messages from all clients, streamed agent text, tool activity,
 and queued instructions. You can edit or withdraw queued messages, interrupt
 the current turn, confirm queue continuation, and answer native agent questions.
+The **Cameras** panel shows the robot's cameras live, one at a time, a few
+frames a second: press **Watch** (or type `/watch`). Nothing is read from the
+cameras until someone watches, and reading stops when the tab is hidden or
+**Stop** is pressed (the service stops its grabber a little after the last
+request). A simulated camera renders only while it is read and the world moves
+only while a command runs, so between commands the picture holds still and a
+motion arrives as its end state.
 The **Agent** panel switches permissions (ask before each command that changes
 something, or run without asking) and the model, and lists the agent's own
 commands. The message box takes the same `/` commands as the terminal where

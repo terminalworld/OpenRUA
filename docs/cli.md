@@ -263,7 +263,7 @@ usage: openrua exec [-h] [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
                     [--model MODEL] [--run-id RUN_ID] [--runs-root RUNS_ROOT]
                     [--wall-clock-min WALL_CLOCK_MIN]
                     [--ros-domain ROS_DOMAIN] [--record [CAMERAS]]
-                    [--internet {open,model-only}]
+                    [--no-record] [--internet {open,model-only}]
                     [--web-search | --no-web-search]
                     [--account-connectors | --no-account-connectors]
                     [robot] [task]
@@ -273,15 +273,16 @@ As a coding agent's own non-interactive command runs it without its terminal,
 this runs one trial: the robot comes up (simulated or real), the agent gets
 the task and works until it is done or a budget ends, the robot powers off,
 and everything lands under ``runs/<label>/<run id>/`` (transcript, result,
-provenance; ``openrua demo`` renders a simulated one). While the agent works,
-what it says and each command it runs show as they happen; Ctrl-C stops it and
-powers the robot off. A benchmark scene states its task and judges success; a
-simulator's own scene judges success too, and takes the sentence given when it
-states no task; a real robot's task is the sentence given, and at the end you
-are asked whether it was done (your answer is the result; the agent's last
-words are kept beside it). Like ``openrua bench``, which runs every task and
-seed of a benchmark this way, the agent may reach only its model service
-unless the limit flags say otherwise.
+provenance; ``openrua demo`` renders a simulated one; a real robot's cameras
+are recorded too, unless --no-record). While the agent works, what it says and
+each command it runs show as they happen; Ctrl-C stops it and powers the robot
+off. A benchmark scene states its task and judges success; a simulator's own
+scene judges success too, and takes the sentence given when it states no task;
+a real robot's task is the sentence given, and at the end you are asked
+whether it was done (your answer is the result; the agent's last words are
+kept beside it). Like ``openrua bench``, which runs every task and seed of a
+benchmark this way, the agent may reach only its model service unless the
+limit flags say otherwise.
 
 positional arguments:
   robot                 robot: a type or your robot's file, by name or path;
@@ -309,8 +310,10 @@ options:
                         protocol's)
   --ros-domain ROS_DOMAIN
                         ROS_DOMAIN_ID (default: a free one; a real robot: 0)
-  --record [CAMERAS]    record a simulated robot's cameras for openrua demo
-                        (names, or none for the robot's default)
+  --record [CAMERAS]    record the cameras for openrua demo (names, or none
+                        for all); a real robot's run is recorded anyway, two
+                        frames a second
+  --no-record           do not record a real robot's cameras
   --internet {open,model-only}
                         open, or only the agent's model service and login,
                         through a whitelist proxy (default: only the model

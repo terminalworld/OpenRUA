@@ -155,7 +155,7 @@ def _has_joints(m: dict) -> bool:
                                       for a in m.get("arms", [])))
 
 
-def _camera_entries(cams: dict) -> list[dict]:
+def camera_entries(cams: dict) -> list[dict]:
     """One sensor entry per declared camera, its topics filled in from
     its type (machine.cameras.types, read by the loader). A scene that
     decides its own cameras (list: null) gets the topic pattern and a
@@ -262,7 +262,7 @@ def write_machine_manifest(cfg: dict, out: Path) -> None:
         arm_sensors.append(
             {"kind": "wrench", "port": aports.get("wrench"),
              "type": "geometry_msgs/msg/WrenchStamped", **tag})
-    camera_sensors = _camera_entries(m.get("cameras") or {})
+    camera_sensors = camera_entries(m.get("cameras") or {})
     manifest = {
         "schema": "openrua/machine-manifest v1",
         "robot": m.get("robot", {}),

@@ -12,6 +12,7 @@ from openrua.web import assets
 from openrua.config import paths
 from openrua.errors import UnavailableError
 from openrua.runner import managed
+from openrua.robot.cameras import CameraView
 from openrua.runner.connect import ConnectFlow, ConnectRequest, open_connect
 from openrua.sessions.client import write_endpoint
 from openrua.sessions.http import LocalServer
@@ -27,6 +28,7 @@ async def serve(args) -> None:
     else:
         owned = await managed.start(up.robot_request(args))
     server = None
+    view = None
     published = False
     endpoint = paths.sandbox_dir(args.name, args.home) / "endpoint.json"
     loop = asyncio.get_running_loop()
@@ -36,9 +38,12 @@ async def serve(args) -> None:
         for sig in (signal.SIGINT, signal.SIGTERM):
             loop.add_signal_handler(sig, stopped.set)
             signals.append(sig)
+        # The robot the session holds now: a robot just connected moves to
+        # its own terminal, and the view follows.
+        view = CameraView(lambda: owned.robot)
         server = LocalServer(owned.execution, owned.end, secrets.token_urlsafe(32), port=args.port,
                              assets=assets(), artifacts=owned.artifacts,
-                             actions={"check": flow.check} if flow else None)
+                             actions={"check": flow.check} if flow else None, cameras=view)
         server.start()
         write_endpoint(endpoint, server.url, server.token)
         published = True
@@ -65,6 +70,8 @@ async def serve(args) -> None:
                 print(f"[serve] shutdown incomplete: {exc}; service kept open for retry", flush=True)
                 stopped.clear()
     finally:
+        if view is not None:
+            view.close()
         if flow:
             await flow.close()
         for sig in signals:

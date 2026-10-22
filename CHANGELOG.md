@@ -9,6 +9,16 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- **See your robot live**: the browser's Cameras panel shows the robot's
+  cameras a few frames a second, one camera at a time, read only while
+  someone watches; `/watch` in the terminal says how to open it.
+- **A real robot's run is recorded**: `openrua exec` on a real robot keeps
+  its cameras, two frames a second, in the run (`--no-record` to skip;
+  `--record CAMERAS` picks them), and `openrua demo` turns it into a video
+  of the agent's commands beside the cameras, as for a simulated run.
+- A real robot's preflight waits for its topics to arrive: the first
+  `ros2 topic echo` used to give up on a topic not yet discovered, which
+  stopped a real robot's `exec` or `bench` before the agent started.
 - Agent manifests no longer take `instruction_file`, which nothing read:
   every workspace carries AGENTS.md, and both Claude Code and Codex read
   it. A manifest that still names it is refused; delete the line.

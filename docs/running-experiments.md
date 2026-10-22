@@ -86,7 +86,7 @@ A task on a real robot is recorded with `openrua exec` (above).
     transcript.jsonl          the agent's full session (operator agent)
     commands.sh               what ran: the agent's shell, write and edit operations, or the replayed file
     ops.jsonl                 the same operations with output heads and wall times
-    frames/                   every sim step's camera frames (--record only)
+    frames/                   camera frames: a simulated robot's sim steps (--record), a real robot's cameras two a second
     bridge.log, moveit.log    the robot's own logs
     workspace/                what the agent left in /workspace
     attempts/                 earlier attempts of the same trial, moved aside
@@ -232,5 +232,14 @@ clip gets short enough for a README. Rendering needs the `demo` extra: `pip inst
 
 `--record` works on a live agent run too, but rendering every step
 costs wall clock on whole-room scenes, which the agent's budget would
-pay for; record the replay, not the experiment. Frames are a
-simulator's: a real robot has none to record.
+pay for; record the replay, not the experiment.
+
+A real robot's run cannot be replayed, so `openrua exec` records its
+cameras unless `--no-record` says not to (`--record wrist,scene` picks
+cameras; `bench` records a real robot only with `--record`). The frames
+come from the cameras' ROS topics, two a second, into the same
+`frames/` layout, each numbered with its wall time, and `openrua demo`
+composes them with the agent's commands in the same way. The grabber
+reads a camera's `/compressed` topic when there is one and runs at a low
+CPU priority, so the robot's control loop on the same computer comes
+first.

@@ -18,6 +18,7 @@ from openrua.config import (apply_suite_overrides, load_config, normalize_arms,
 from openrua.config import paths
 from openrua.errors import UnavailableError, UsageError
 from openrua.robot import not_ready
+from openrua.robot.cameras import camera_topics
 from openrua.runner import lock
 from openrua.runner.limits import add_limit_options, limit_overrides
 from openrua.runner.live import not_ready_hint, not_ready_message
@@ -192,9 +193,16 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
         raise UnavailableError(not_ready_message(unready),
                                hint=not_ready_hint(unready, cfg["machine"]["backend"]))
     if record_cameras is not None and cfg["machine"]["backend"].get("kind") != "sim":
-        raise UsageError("a real robot has no renderer to record from",
-                         hint="drop --record")
-    if record_cameras == () and not cfg["machine"].get("cameras", {}).get("record"):
+        # A real robot's frames come from its camera topics; one without
+        # cameras has nothing to record.
+        named, _ = camera_topics(cfg)
+        missing = sorted(set(record_cameras) - set(named))
+        if missing:
+            raise UsageError(f"no camera named {', '.join(missing)} to record",
+                             hint=f"this robot has: {', '.join(sorted(named)) or 'no cameras'}")
+        if not named:
+            record_cameras = None
+    elif record_cameras == () and not cfg["machine"].get("cameras", {}).get("record"):
         raise UsageError("--record needs camera names: the robot profile sets no "
                          "cameras.record", hint="pass --record <main>,<inset> or add "
                          "cameras.record to the profile")
