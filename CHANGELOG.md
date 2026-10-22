@@ -25,6 +25,8 @@ Unreleased until a release is cut, and the release decides its number.
   continue their native agent conversation on fresh robot resources, retaining
   model and permission settings, without replaying old actions or queued work.
   The next instruction carries a reminder to inspect the current scene.
+  Missing project directories keep their history read-only instead of being
+  recreated during resume.
 - Upgrade: `--workspace` on interactive entry points now names the project
   directory itself, which can contain existing files. Previously it named
   an empty run directory containing a `workspace/` child. Existing records

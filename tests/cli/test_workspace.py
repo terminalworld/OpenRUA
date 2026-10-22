@@ -101,3 +101,19 @@ def test_a_bundled_agent_version_pin_is_not_saved_as_a_file_path(tmp_path):
     projects.save_selection(tmp_path, dict(robot='panda', sim='robosuite', bench='',
                                            agent='codex@0.134.0', model=''))
     assert projects.selection(tmp_path)['agent'] == 'codex@0.134.0'
+
+
+def test_resuming_a_missing_project_keeps_history_without_recreating_it(tmp_path, monkeypatch):
+    from openrua.runner import live_state
+    from openrua.sessions.core import initial_state
+    from openrua.sessions.store import SQLiteStore
+    root = tmp_path / 'removed-project'
+    state = initial_state()
+    state['closed'] = True
+    SQLiteStore(tmp_path / 'sandboxes/old/conversation.sqlite', state).close()
+    live_state.save('old', tmp_path, status='stopped', backend='sim', project=str(root), workspace=str(root))
+    monkeypatch.setattr(start.service, 'start', lambda *a, **k: pytest.fail('do not restart missing projects'))
+    monkeypatch.setattr(start.workspace, 'choose', lambda *a, **k: pytest.fail('do not recreate missing projects'))
+    client, name = start.open_history(tmp_path, 'old')
+    assert client.read_only and 'missing' in client.reason
+    assert not root.exists()

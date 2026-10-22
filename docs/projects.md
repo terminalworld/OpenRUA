@@ -102,6 +102,8 @@ Older sessions without a project identity and sessions with unknown execution
 status remain available as read-only history under `--resume --all`. Starting
 another conversation in a project always works independently of restoring an
 old conversation.
+If the recorded project directory is missing, its conversation remains
+read-only; resume does not create an empty replacement project.
 
 Conversation journals, execution endpoints and native profiles remain under
 `~/.openrua/sandboxes/<session>/`; startup logs remain under
