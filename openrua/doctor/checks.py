@@ -18,6 +18,7 @@ from pathlib import Path
 
 
 from openrua import agents, config, proxy
+from openrua.sandbox import build as sandbox_build
 from openrua.robot import not_ready
 from openrua.config import compose, paths
 from openrua.doctor.report import CheckResult, Report
@@ -256,6 +257,9 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
         if machine and artifact_label(sandbox, "openrua.machine_install_sha256") != _sha(machine):
             severity = "warning"
             detail = "the robot's sandbox_install changed since the image was built"
+        if artifact_label(sandbox, sandbox_build.RECIPE_LABEL) != sandbox_build.recipe_sha256():
+            severity = "warning"
+            detail = "built from an older sandbox recipe than this OpenRUA's"
         out.append(CheckResult("sandbox-image", f"sandbox image {sandbox} present", severity,
                                detail=detail, hint=build if severity != "ok" else ""))
     return out

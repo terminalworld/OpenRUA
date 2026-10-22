@@ -26,7 +26,8 @@ def test_all_green_when_everything_is_in_place(tmp_path, monkeypatch):
     monkeypatch.setattr(doctor.checks, "docker_inspect", _fake_docker({
         "openrua-proxy": {},
         "openrua-sim-libero_pro": {},
-        "openrua-sandbox-jazzy": {"openrua.preinstall_sha256": want_pi}}))
+        "openrua-sandbox-jazzy": {"openrua.preinstall_sha256": want_pi,
+                                  "openrua.recipe_sha256": doctor.checks.sandbox_build.recipe_sha256()}}))
     monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
     creds = paths.credentials_dir(tmp_path) / a.name
     creds.mkdir(parents=True)
@@ -277,3 +278,18 @@ def test_login_requires_a_readable_nonempty_regular_file(tmp_path):
         assert result.severity == ('ok' if kind == 'present' else 'error')
         if kind == 'present': assert 'authentication and quota' in result.detail
         else: assert result.hint
+
+
+def test_a_sandbox_built_from_an_older_recipe_is_a_warning_with_the_rebuild(tmp_path, monkeypatch):
+    import hashlib
+    monkeypatch.setattr(doctor.checks, "engine_error", lambda: "")
+    a = agents.get("claude-code")
+    monkeypatch.setattr(doctor.checks, "docker_inspect", _fake_docker({
+        "openrua-proxy": {}, "openrua-sim-libero_pro": {},
+        "openrua-sandbox-jazzy": {"openrua.preinstall_sha256": hashlib.sha256(a.install.encode()).hexdigest(),
+                                  "openrua.recipe_sha256": "older"}}))
+    monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
+    r = doctor.run(robot="panda", home=tmp_path, bench="libero_pro", checks=(doctor.checks.check_robot_images,))
+    row = next(c for c in r.checks if c.id == "sandbox-image")
+    assert row.severity == "warning" and "older sandbox recipe" in row.detail
+    assert row.hint.startswith("openrua build sandbox")

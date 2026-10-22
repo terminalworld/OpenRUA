@@ -9,6 +9,13 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- `python3 -I` in the sandbox finds rclpy and the robot's own message
+  packages. Isolated mode ignores PYTHONPATH, through which ROS 2 and a
+  robot's overlays hand over their Python packages, and Claude Code runs
+  a file it did not write that way, so an agent's script could not import
+  rclpy. Rebuild the sandbox to get it: `openrua doctor` now says when a
+  sandbox image was built from an older recipe, with the command.
+
 ## 0.17.0
 
 See the robot live, and keep a real robot's run on video. Changes you may

@@ -59,6 +59,14 @@ RUN mkdir -p /opt/openrua/overlays \
        'for overlay in /opt/openrua/overlays/*/local_setup.bash; do [ -f "$overlay" ] && source "$overlay"; done' \
        > /etc/openrua-ros.sh \
     && echo "source /etc/openrua-ros.sh" >> /etc/bash.bashrc
+# `python3 -I` (isolated mode; a coding agent may run a file it did not
+# write that way) ignores PYTHONPATH, and ROS 2 and every overlay hand
+# their Python packages over through it: rclpy would be missing. A .pth
+# file in the system site-packages is read in isolated mode too; this one
+# puts PYTHONPATH's entries back, after the system's own, whatever the
+# shell has sourced.
+RUN echo 'import os, sys; sys.path.extend(p for p in os.environ.get("PYTHONPATH", "").split(os.pathsep) if p and p not in sys.path)' \
+       > /usr/lib/python3/dist-packages/openrua-ros-path.pth
 USER robot
 WORKDIR /workspace
 ENV HOME=/workspace \

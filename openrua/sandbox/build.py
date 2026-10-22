@@ -43,6 +43,15 @@ def _docker_build(dockerfile: Path, context: Path, tag: str,
         capture_output=True, text=True, check=True).stdout.strip()
 
 
+RECIPE_LABEL = "openrua.recipe_sha256"
+
+
+def recipe_sha256() -> str:
+    """The sandbox recipe as it reads today: the image carries the one it
+    was built from, so doctor can tell an image built from an older one."""
+    return hashlib.sha256((_HERE / "sandbox.Dockerfile").read_bytes()).hexdigest()
+
+
 def build(preinstall: str = "", distro: str = "jazzy",
           robot_uid: int | None = None,
           tag: str | None = None,
@@ -65,7 +74,7 @@ def build(preinstall: str = "", distro: str = "jazzy",
     # The image says what was baked into it: doctor compares this label
     # with the install chain the selected agents would emit today.
     labels = {"openrua.preinstall_sha256": hashlib.sha256(preinstall.encode()).hexdigest(),
-              **(labels or {})}
+              RECIPE_LABEL: recipe_sha256(), **(labels or {})}
     tag = tag or f"openrua-sandbox-{distro}"
     return tag, _docker_build(
         _HERE / "sandbox.Dockerfile", _HERE, tag,
