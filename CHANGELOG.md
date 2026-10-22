@@ -9,6 +9,13 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.17.0
+
+See the robot live, and keep a real robot's run on video. Changes you may
+notice: an agent manifest that names `instruction_file` is refused (delete
+the line), and `openrua exec` on a real robot records its cameras unless
+`--no-record` says not to.
+
 - **See your robot live**: the browser's Cameras panel shows the robot's
   cameras a few frames a second, one camera at a time, read only while
   someone watches; `/watch` in the terminal says how to open it.
