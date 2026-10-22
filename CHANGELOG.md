@@ -9,6 +9,12 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.18.0
+
+Rebuild the sandbox (`openrua doctor` gives the command): `python3 -I`
+in it now finds rclpy, which changes what an agent's scripts can do in a
+trial.
+
 - `python3 -I` in the sandbox finds rclpy and the robot's own message
   packages. Isolated mode ignores PYTHONPATH, through which ROS 2 and a
   robot's overlays hand over their Python packages, and Claude Code runs
