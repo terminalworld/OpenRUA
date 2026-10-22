@@ -49,6 +49,7 @@ observations without starting a new robot each turn.
 
 ## 🔥 News
 
+- **[2026-10-22]** 📁 **Your robot is a coding project.** Open OpenRUA in a directory, keep programs and notes there, and continue in a new conversation the next day. Resume searches this project's history; `--all` shows every project. ([v0.19.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.19.0))
 - **[2026-10-22]** 🧰 **Bring OpenRUA to your own robot, starting from a bare computer.** Missing Docker or an agent login? `openrua` sets them up with you, and your coding agent connects the robot step by step. ([v0.18.2](https://github.com/terminalworld/OpenRUA/releases/tag/v0.18.2))
 - **[2026-10-22]** 👀 **Watch your robot through its own eyes.** The browser shows its cameras live while the agent works, and every real-robot `openrua exec` run is recorded, ready to become a demo video with `openrua demo`. ([v0.17.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.17.0))
 - **[2026-10-21]** 🎯 **Hand your agent a task and let it work on its own.** `openrua exec` runs it in simulation or on a real robot and keeps a full record of the run. ([v0.14.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.14.0))

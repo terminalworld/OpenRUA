@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.19.0
+
 - Interactive robot work uses the current directory as a persistent project.
   A first-use trust screen offers this directory, another directory, or a new
   one; `--workspace DIR` chooses one explicitly and `--trust-workspace`
