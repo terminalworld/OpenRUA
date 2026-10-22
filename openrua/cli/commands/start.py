@@ -189,6 +189,9 @@ def open_history(home: Path, name: str):
     facts = live_state.load(name, home, require_running=False)
     if facts.get('status') != 'stopped' or facts.get('backend') == 'connect':
         return client, name
+    if not Path(project).is_dir():
+        client.reason = 'Project directory is missing; retained conversation is read-only.'
+        return client, name
     settings = snapshot.get('settings') or {}
     facts['model'] = settings.get('model') or facts.get('model')
     selected = workspace.choose(project, home)
