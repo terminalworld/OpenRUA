@@ -109,7 +109,8 @@ class Codex(Agent):
         opts = self._opts(options)
         return [
             *self.exec_argv(sandbox, self._env(proxy), interactive=True),
-            "codex", "--skip-git-repo-check", "--dangerously-bypass-approvals-and-sandbox",
+            # --skip-git-repo-check is exec's flag; the interactive CLI refuses it.
+            "codex", "--dangerously-bypass-approvals-and-sandbox",
             "-C", "/workspace", "--model", model, *self._config_flags(opts, limits),
             *([prompt] if prompt else []),
         ]

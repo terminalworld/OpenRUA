@@ -9,6 +9,19 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- `openrua agent` is one command: with no robot up it starts one (the
+  saved robot, or `--robot`, `--sim`, `--bench`; Docker, the sign-in and
+  missing images set up as `openrua` does), opens the agent's own
+  terminal, and asks as the agent exits whether to turn the robot off.
+  With a robot up it opens on the newest one, or the one `--name` names
+  (its default is no longer `openrua`). The first word may name the
+  agent: `openrua agent codex "open the drawer"`.
+- The agent's own terminal opens straight to work: Claude Code no longer
+  shows its first-run screens and folder-trust question in the sandbox
+  (each session starts from a fresh state that has them done, with no
+  cached switches), and Codex starts at all (it was given `exec`'s
+  `--skip-git-repo-check`, which its interactive CLI refuses).
+
 ## 0.18.3
 
 - `openrua robots` also lists the robots `openrua connect` connected on

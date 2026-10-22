@@ -34,9 +34,10 @@ profile you write yourself.
 
    `openrua config set --robot ./my-robot.yaml` makes it the default, so
    plain `openrua` starts it. To use the agent's own original terminal
-   instead, bring the robot up with `openrua up ./my-robot.yaml --ros-domain
-   <id>` and run `openrua agent` in a second terminal; there Esc stops the
-   agent but not the arm's motion, so keep the emergency stop at hand.
+   instead, run `openrua agent --robot ./my-robot.yaml --ros-domain <id>`:
+   it starts the robot, and as the agent exits asks whether to turn it off.
+   There Esc stops the agent but not the arm's motion, so keep the emergency
+   stop at hand.
 
 4. Or have the agent do the task on its own, with the run recorded:
 

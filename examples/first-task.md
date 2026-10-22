@@ -36,10 +36,25 @@ service unless `--internet open` says otherwise. The run is recorded under
 transcript, `commands.sh`, `result.json`, `provenance.json` and the workspace
 the agent left ([where it lands](../docs/running-experiments.md#where-it-lands)).
 
-The rest of this page opens the agent's original terminal on the same scene,
-in its two-terminal form, which keeps the robot up between agent visits.
+The rest of this page opens the agent's original terminal on the same scene.
 
-## 1a. Bring the robot up
+## 1a. The agent's own terminal
+
+```bash
+openrua agent "open the bottom drawer of the cabinet" --robot panda --sim robosuite --bench libero_pro
+```
+
+With no robot up, this starts one first (the saved robot, or the one
+`--robot`, `--sim` and `--bench` name), showing its progress, then opens the
+agent: Claude Code by default, `openrua agent codex` for Codex. When the agent
+exits it asks whether to turn the robot off; kept running, `openrua agent`
+opens the agent on it again, and `openrua down --name <name>` turns it off
+later. `--task-suite` is not taken here; to pick another scene, use the
+two-terminal form below. If no benchmark is selected on the command line or in
+saved defaults, robosuite loads its native `Lift` scene, a table and a cube.
+
+To keep the robot up under your own control across several agent visits,
+bring it up in one terminal:
 
 ```bash
 openrua up panda --sim robosuite --bench libero_pro
@@ -60,20 +75,12 @@ The command stays in the foreground:
 ```
 
 `--task-suite` and `--task-id` pick another scene from the benchmark;
-`--init-state` another initial layout of the same scene. If no benchmark is
-selected on the command line or in saved defaults, robosuite loads its native
-`Lift` scene, a table and a cube.
+`--init-state` another initial layout of the same scene. Then run
+`openrua agent` in a second terminal: it opens on the robot that is up.
 
-## 1b. Hand the agent the task
+## 1b. What the agent gets
 
-In a second terminal:
-
-```bash
-openrua agent "open the bottom drawer of the cabinet"
-```
-
-This opens the agent `up` was configured with (Claude Code by default,
-`--agent codex` for Codex) inside the sandbox, as user `robot` in
+`openrua agent` opens the agent inside the sandbox, as user `robot` in
 `/workspace`, with the sentence as its opening message. Nothing else is
 injected: no tool list, no API, no planner. The agent reaches the
 internet as it does on your machine; `openrua up --internet model-only`
@@ -122,8 +129,8 @@ python3 tools/perception/cam_snap.py robot0_eye_in_hand /workspace/robot0_eye_in
 
 From there it is ROS 2: a pixel-to-world lookup, an IK move or a
 `FollowJointTrajectory` goal, a `GripperCommand`, another snapshot to
-check. To watch from the outside while `up` runs, open a shell in the same
-sandbox:
+check. To watch from the outside while the robot is up, open a shell in the
+same sandbox:
 
 ```bash
 docker exec -it -u robot -w /workspace openrua-sandbox bash
@@ -134,9 +141,11 @@ ros2 topic echo /joint_states --once
 
 An `exec` run stops by itself; its record stays under `runs/`.
 
-`Ctrl-C` in the first terminal of `up` powers the robot off and removes both
-containers. The workspace the agent left behind, snapshots and scripts
-included, stays under `~/.openrua/sandboxes/openrua/workspace/workspace/`.
+A robot `openrua agent` started goes off when you answer yes as the agent
+exits (or later with `openrua down --name <name>`); `Ctrl-C` in the terminal
+of `up` powers its robot off. Either way both containers are removed, and the
+workspace the agent left behind, snapshots and scripts included, stays under
+`~/.openrua/sandboxes/<name>/workspace/workspace/`.
 
 ## Next
 

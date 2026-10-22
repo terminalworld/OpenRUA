@@ -51,6 +51,11 @@ def _allowed(limits: dict | None, key: str) -> bool:
 
 
 STATE_FILE = ".claude.json"
+# The state each session starts from: past the CLI's first-run screens,
+# with the sandbox's workspace trusted, as every headless launch already
+# runs there; no cached switches.
+FRESH_STATE = {"hasCompletedOnboarding": True,
+               "projects": {"/workspace": {"hasTrustDialogAccepted": True}}}
 
 
 def _isolate(directory: Path) -> None:
@@ -74,8 +79,8 @@ class ClaudeCode(Agent):
         # can be long stale: the CLI keeps its live state in ~/.claude.json
         # when no config directory is named. Seen stale, a session took itself
         # for the first one after an upgrade, which reads no AGENTS.md. Each
-        # session builds its own.
-        (prepared.directory / STATE_FILE).unlink(missing_ok=True)
+        # session starts from a fresh one instead.
+        (prepared.directory / STATE_FILE).write_text(json.dumps(FRESH_STATE) + "\n")
         if not _allowed(limits, "account_connectors"):
             _isolate(prepared.directory)
         return prepared

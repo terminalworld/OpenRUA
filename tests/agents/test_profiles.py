@@ -85,8 +85,13 @@ def test_a_claude_session_builds_its_own_cli_state(tmp_path):
     (source / ".claude.json").write_text('{"cachedGrowthBookFeatures": {}}')
     profile = agent.prepare_profile(source, tmp_path / "session")
     assert (profile.directory / "settings.json").read_text() == '{"model": "opus"}'
-    assert not (profile.directory / ".claude.json").exists()
-    assert (source / ".claude.json").exists()   # the user's own file is left alone
+    # its own state: none of the stale switches, past the first-run screens,
+    # the workspace trusted (the agent's own terminal opens straight to work)
+    import json
+    state = json.loads((profile.directory / ".claude.json").read_text())
+    assert "cachedGrowthBookFeatures" not in state and state["hasCompletedOnboarding"] is True
+    assert state["projects"]["/workspace"]["hasTrustDialogAccepted"] is True
+    assert (source / ".claude.json").read_text() == '{"cachedGrowthBookFeatures": {}}'   # left alone
 
 
 def test_profile_preparation_does_not_destroy_source_or_previous_files_on_missing_login(tmp_path):

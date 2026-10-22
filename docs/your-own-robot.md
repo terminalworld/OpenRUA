@@ -239,7 +239,7 @@ commands:
 
 ```bash
 openrua doctor ./ur5e.yaml         # images, login, startup checks, and that the file loads
-openrua up ./ur5e.yaml --ros-domain 7 --task "move the arm to the home pose"   # then openrua agent in a second terminal
+openrua agent --robot ./ur5e.yaml --ros-domain 7 --task "move the arm to the home pose"   # the agent's own terminal on it
 openrua exec ./ur5e.yaml "move the arm to the home pose" --ros-domain 7        # the agent does it on its own; the run is recorded
 openrua config set --robot ./ur5e.yaml                                         # or make it the default
 ```
@@ -250,7 +250,7 @@ sandbox and a driver started by `backend.launch`, whether on the host or in
 `backend.image`. For an already-running external driver, select its existing
 domain; OpenRUA does not reconfigure it. The default domain is 0. On a real robot there is no simulator to ask,
 so the task sentence is the one you give (`exec`'s task, or `--task`
-on `up`). At the end `exec` asks you whether the robot did it, and
+on `agent` or `up`). At the end `exec` asks you whether the robot did it, and
 `result.json` records your answer as `success` with `verdict: person`
 (`success: null`, `verdict: not_applicable` when you skip it, or under
 `bench`); preflight, the agent, the transcript and the provenance are the
@@ -258,9 +258,12 @@ same as in simulation. A real robot takes no
 `--sim`; under `openrua bench --robot <file> --task "..."` a benchmark lends it
 its protocol and agent settings, not its tasks.
 
-For an independently controlled native terminal, keep `openrua up` running and
-use `openrua agent --name <name>` in another terminal. `openrua down --name <name>`
-asks that resource owner to stop the sandbox and any driver it launched. Driver launch commands
+`openrua agent` starts the robot when none is up and, as the agent exits,
+asks whether to turn it off; its Esc stops the agent, not a motion already
+sent, so keep the emergency stop at hand. To keep the robot up under your own
+control, run `openrua up` in one terminal and `openrua agent` in another.
+`openrua down --name <name>` asks the robot's owner to stop the sandbox and any
+driver it launched. Driver launch commands
 must stay in the foreground so their owner can wait for shutdown; omit `launch`
 to join an externally managed graph, which OpenRUA leaves running.
 
