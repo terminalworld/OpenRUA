@@ -9,10 +9,11 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
-- A new computer gets set up with you. When Docker is missing, your user
-  may not use it yet, or its service is stopped, `openrua` (and
-  `openrua connect`, `openrua login`) says why it is needed and offers the
-  fix, showing the commands and running them only on a yes. When the agent
+- A new computer gets set up with you. When you start a session or
+  connect a robot (or run `openrua connect`, `openrua login`) and Docker is
+  missing, your user may not use it yet, or its service is stopped,
+  OpenRUA says why it is needed and offers the fix, showing the commands
+  and running them only on a yes. The setup menu itself opens without it. When the agent
   you start a session or connect a robot with is not signed in, it offers
   to sign it in there and then.
 - `openrua login [agent]` signs your coding agent in by running the

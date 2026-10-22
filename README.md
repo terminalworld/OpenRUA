@@ -66,7 +66,7 @@ observations without starting a new robot each turn.
 - **[Docker](docs/install.md#docker)**: the robot, the simulator and your agent's terminal run in containers.
 - **[Claude Code or Codex](docs/install.md#your-agents-login)**, signed in with your account: your coding agent does the work.
 
-Missing either one? `openrua` sets it up with you when it starts.
+Missing either one? `openrua` sets it up with you.
 
 ```sh
 pip install -U openrua

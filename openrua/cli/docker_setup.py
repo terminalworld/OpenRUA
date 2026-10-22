@@ -1,7 +1,7 @@
 """Docker on this computer, set up with the person when it is not ready.
 
 OpenRUA runs the robot, the simulator and the agent's terminal in
-containers. Before a start at a terminal: when Docker is not installed,
+containers. When a start needs it, at a terminal: when Docker is not installed,
 this user may not use it yet, or its service is stopped, say so and
 offer the fix, which runs only on a yes and asks for the sudo password
 itself. Joining the docker group counts from the next login; this start

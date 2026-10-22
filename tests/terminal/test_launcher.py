@@ -212,10 +212,11 @@ def test_invalid_plugin_keeps_setup_editable_and_original_selection():
     assert 'plugin file not found' in specs[1]['notice']
 
 
-def test_sign_in_comes_after_the_images_and_before_the_check_or_the_connect():
-    # The terminal is plain between screens: a sign-in the agent still
-    # needs happens there, once its sandbox image exists and before
-    # anything starts.
+def test_docker_and_the_sign_in_are_set_up_when_a_start_needs_them():
+    # The menu opens without them (browsing and saving need neither). The
+    # terminal is plain between screens: Docker is set up there before the
+    # images are built, and the sign-in once the agent's sandbox image
+    # exists, both before anything starts.
     values = dict(robot='panda', sim='robosuite', bench='', agent='test', model='', name='unique')
     calls = []
     results = iter([{'action': 'start', 'values': values}])
@@ -223,15 +224,15 @@ def test_sign_in_comes_after_the_images_and_before_the_check_or_the_connect():
         lambda v: (calls.append('check') or True, 'Ready'),
         lambda v: calls.append('launch') or 'client', {}, lambda: [], lambda n: None,
         lambda spec: next(results), prepare=lambda v, progress: calls.append('prepare'),
-        sign_in=lambda v: calls.append('sign in'))
-    assert calls == ['save', 'prepare', 'sign in', 'check', 'launch']
+        ready=lambda v: calls.append('docker'), sign_in=lambda v: calls.append('sign in'))
+    assert calls == ['save', 'docker', 'prepare', 'sign in', 'check', 'launch']
     calls.clear()
     results = iter([{'action': 'connect', 'values': values}])
     launcher.setup(values, {}, 'config', lambda v: None, lambda v: pytest.fail('no check'),
         lambda v: pytest.fail('no launch'), {}, lambda: [], lambda n: None,
         lambda spec: next(results), connect=lambda v: calls.append('connect') or 'connected',
-        sign_in=lambda v: calls.append('sign in'))
-    assert calls == ['sign in', 'connect']
+        ready=lambda v: calls.append('docker'), sign_in=lambda v: calls.append('sign in'))
+    assert calls == ['docker', 'sign in', 'connect']
 
 
 def test_a_declined_sign_in_stays_editable_with_the_command():

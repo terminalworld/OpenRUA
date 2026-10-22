@@ -16,6 +16,16 @@ def no_update_offers(monkeypatch):
     monkeypatch.setattr(updates, "offers", lambda composed, home: [])
 
 
+@pytest.fixture(autouse=True)
+def ready_computer(monkeypatch):
+    """Whether this computer has Docker and an agent login must not turn a
+    start into a question either (tests/cli/test_first_run.py covers them)."""
+    from openrua.cli import docker_setup
+    from openrua.cli.commands import login
+    monkeypatch.setattr(docker_setup, "ensure", lambda *a, **k: None)
+    monkeypatch.setattr(login, "ensure", lambda *a, **k: None)
+
+
 def args(tmp_path, *flags):
     return build_parser().parse_args(['--home', str(tmp_path), *flags])
 

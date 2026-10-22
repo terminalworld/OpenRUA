@@ -24,7 +24,8 @@ computer, and the same images run on any Linux machine. A real robot's
 drivers run in containers too.
 
 When Docker is missing, your user may not use it yet, or its service is
-stopped, `openrua` says so when it starts and offers the fix: Docker's own
+stopped, `openrua` says so when you start a session or connect a robot,
+and offers the fix: Docker's own
 install script ([get.docker.com](https://get.docker.com)), joining the
 `docker` group, or starting the service. It shows the commands first and runs
 them only if you agree; sudo asks for your password. `openrua connect` and

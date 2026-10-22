@@ -247,8 +247,6 @@ def _run(args) -> int:
             raise UnavailableError(str(exc), hint='inspect the retained service log and session status before restarting') from exc
         return open_interface(args, client, args.name)
     interactive = sys.stdin.isatty() and sys.stdout.isatty()
-    if interactive:
-        docker_setup.ensure()
     values, models = values_for(args)
     if not offer_update(args, values):
         return 0
@@ -276,6 +274,7 @@ def _run(args) -> int:
                                 environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress, limit_overrides(args)),
                                 authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']]))),
                                 resolve_agent=lambda name: authentication_choices(args.home, [name])[name],
+                                ready=lambda values: docker_setup.ensure(),
                                 sign_in=lambda values: login.ensure(args.home, values['agent'] or None,
                                                                     values.get('auth_mode', 'native')),
                                 connect=lambda values: connect.launch(args.home, 'my-robot',
@@ -286,6 +285,8 @@ def _run(args) -> int:
         client, name = result
     else:
         validate_values(args.home, values)
+        if interactive:
+            docker_setup.ensure()
         prepare(args.home, values, limits=limit_overrides(args))
         if interactive:
             login.ensure(args.home, values['agent'] or None, values.get('auth_mode', 'native'))
