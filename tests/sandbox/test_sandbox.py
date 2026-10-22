@@ -230,6 +230,11 @@ def test_manifest_two_arms_two_of_everything(tmp_path):
     wrench = [s for s in man["sensors"] if s["kind"] == "wrench"]
     assert len(wrench) == 2
     assert not man.get("planning")   # machine.yaml promises no planner
+    # each arm says its own frames: the machine's frames name one arm only
+    assert all(t["base_frame"] and "hand_frame" in t for t in traj)
+    assert traj[0]["base_frame"] != traj[1]["base_frame"]
+    assert "base_frame: " in out.read_text() and "# this arm's root link" in out.read_text()
+    assert "model: " in out.read_text() and "the camera as a person" not in out.read_text()
 
 
 # --------------------------------------------- manifest explains itself

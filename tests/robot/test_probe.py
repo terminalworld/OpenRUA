@@ -121,3 +121,45 @@ def test_native_urdf_converter_accepts_ros_topic_document_separator(monkeypatch,
     monkeypatch.setattr(sys, "stdin", io.StringIO('<robot name="fixture"><link name="base"/></robot>' + separator))
     exec(_URDF_FACTS, {})
     assert json.loads(capsys.readouterr().out)["name"] == "fixture"
+
+
+def test_a_machine_with_two_arms_is_drafted_arm_by_arm():
+    import json
+    urdf = {"name": "duo", "root": "world", "links": [],
+            "joints": [{"name": f"{side}_joint{i}", "type": "revolute", "lower": -2.9, "upper": 2.9,
+                        "parent": f"{side}_base_link" if i == 1 else f"{side}_link{i - 1}",
+                        "child": f"{side}_link{i}"}
+                       for side in ("left", "right") for i in (1, 2)]
+                      + [{"name": f"{side}_finger_joint", "type": "prismatic", "lower": 0.0,
+                          "upper": 0.04, "parent": f"{side}_hand", "child": f"{side}_finger"}
+                         for side in ("left", "right")]}
+
+    def run(cmd):
+        if cmd == "ros2 topic list -t":
+            return "/joint_states [sensor_msgs/msg/JointState]\n"
+        if cmd == "ros2 action list -t":
+            return "".join(f"/{side}_arm_controller/follow_joint_trajectory [control_msgs/action/FollowJointTrajectory]\n"
+                           f"/{side}_gripper_controller/gripper_cmd [control_msgs/action/GripperCommand]\n"
+                           for side in ("right", "left"))
+        if cmd == "ros2 service list":
+            return ""
+        for side in ("left", "right"):
+            if cmd.startswith(f"ros2 param get /{side}_arm_controller joints"):
+                return f"String values are: ['{side}_joint1', '{side}_joint2']\n"
+            if cmd.startswith(f"ros2 param get /{side}_gripper_controller joint"):
+                return f"String value is: {side}_finger_joint\n"
+        if "robot_description_semantic" in cmd:
+            return ""
+        return json.dumps(urdf)
+
+    text = draft_profile(read_graph(run), {"network": "host"})
+    m = yaml.safe_load(text)["machine"]
+    assert "arm" not in m and "ports" not in m
+    left, right = m["arms"]
+    assert (left["label"], right["label"]) == ("left", "right")
+    assert right["joints"] == ["right_joint1", "right_joint2"]
+    assert right["base_frame"] == "right_base_link"
+    assert right["gripper"]["joint"] == "right_finger_joint"
+    assert right["ports"] == {"trajectory": "/right_arm_controller/follow_joint_trajectory",
+                              "gripper": "/right_gripper_controller/gripper_cmd"}
+    assert left["hand_frame"] == "TODO" and right["gripper"]["unit"] == "TODO"

@@ -71,7 +71,7 @@ def test_trajectory_exit_reflects_native_result(monkeypatch, capsys, accepted, s
                     spin_once=lambda *a, **kw: None,
                     shutdown=lambda: calls.append('shutdown')),
         'rclpy.action': NS(ActionClient=Client),
-        'action_msgs.msg': NS(GoalStatus=NS(STATUS_SUCCEEDED=4)),
+        'action_msgs.msg': NS(GoalStatus=NS(STATUS_SUCCEEDED=4, STATUS_CANCELED=5, STATUS_ABORTED=6)),
         'builtin_interfaces.msg': NS(Duration=NS),
         'control_msgs.action': NS(FollowJointTrajectory=NS(Goal=lambda: NS(trajectory=NS()))),
         'trajectory_msgs.msg': NS(JointTrajectoryPoint=NS),
@@ -94,6 +94,17 @@ def test_trajectory_exit_reflects_native_result(monkeypatch, capsys, accepted, s
         assert 'native diagnostic' in output.err
     else:
         assert not output.err
+    if accepted:   # the goal's fate leads: a canceled goal is not "done"
+        assert output.out.startswith({4: 'done', 5: 'canceled', 6: 'aborted'}[status])
+
+
+def test_a_position_list_may_start_with_a_negative_number():
+    module = tool('fjt_send')
+    assert module.positional_last(['-0.5,0.2', '2', '--arm', 'right']) == \
+        ['--arm', 'right', '--', '-0.5,0.2', '2']
+    assert module.positional_last(['--arm', 'left', '0.1,0', '1']) == \
+        ['--arm', 'left', '--', '0.1,0', '1']
+    assert module.positional_last(['-h']) == ['-h', '--']
 
 
 @pytest.mark.parametrize('point,expected_z', [('hand', .3), ('tcp', .2)])
@@ -191,7 +202,7 @@ def test_an_interrupted_trajectory_cancels_its_goal(monkeypatch, capsys):
         'rclpy': NS(init=lambda: None, create_node=lambda _: node,
                     spin_until_future_complete=spin, shutdown=lambda: None),
         'rclpy.action': NS(ActionClient=Client),
-        'action_msgs.msg': NS(GoalStatus=NS(STATUS_SUCCEEDED=4)),
+        'action_msgs.msg': NS(GoalStatus=NS(STATUS_SUCCEEDED=4, STATUS_CANCELED=5, STATUS_ABORTED=6)),
         'builtin_interfaces.msg': NS(Duration=NS),
         'control_msgs.action': NS(FollowJointTrajectory=NS(Goal=lambda: NS(trajectory=NS()))),
         'trajectory_msgs.msg': NS(JointTrajectoryPoint=NS),
