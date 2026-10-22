@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.18.4
+
 - `openrua agent` is one command: with no robot up it starts one (the
   saved robot, or `--robot`, `--sim`, `--bench`; Docker, the sign-in and
   missing images set up as `openrua` does), opens the agent's own
