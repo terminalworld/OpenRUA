@@ -13,6 +13,7 @@ exiting, as `ros2 action send_goal` does on Ctrl-C; otherwise the
 controller would finish the motion on its own.
 """
 import argparse
+import re
 import signal
 import sys
 from pathlib import Path
@@ -35,13 +36,28 @@ def manifest_entry(arm: str | None) -> dict:
     return entry
 
 
+def positional_last(argv: list[str]) -> list[str]:
+    """Options first, then the positions and seconds after "--": a list
+    that starts with a negative number (-0.5,0.2,...) reads to argparse
+    as an option otherwise."""
+    options, values, words = [], [], iter(argv)
+    for word in words:
+        if word == "--arm":
+            options += [word, next(words, "")]
+        elif word.startswith("-") and not re.fullmatch(r"-[\d.][\d.,eE+-]*", word):
+            options.append(word)
+        else:
+            values.append(word)
+    return options + ["--"] + values
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("positions", help="comma-separated joint positions, radians")
     ap.add_argument("seconds", type=float, help="time to reach them")
     ap.add_argument("--arm", default=None, help="arm label on a multi-arm machine")
-    args = ap.parse_args()
+    args = ap.parse_args(positional_last(sys.argv[1:]))
     import rclpy
     from action_msgs.msg import GoalStatus
     from builtin_interfaces.msg import Duration
@@ -96,7 +112,11 @@ def main() -> int:
             print(f"trajectory result unavailable from {action}; outcome unknown", file=sys.stderr)
             return 1
         code = outcome.result.error_code
-        print(f"done error_code={code}" + ("" if code == 0 else " (nonzero = tracking problem)"))
+        # What happened to the goal first: a goal canceled or aborted by
+        # someone else is not "done", whatever its error code says.
+        said = {GoalStatus.STATUS_SUCCEEDED: "done", GoalStatus.STATUS_CANCELED: "canceled",
+                GoalStatus.STATUS_ABORTED: "aborted"}.get(outcome.status, f"status {outcome.status}")
+        print(f"{said} error_code={code}" + ("" if code == 0 else " (nonzero = tracking problem)"))
         # Where the arm is, by its own sensors.
         seen = {}
         node.create_subscription(JointState, "/joint_states",

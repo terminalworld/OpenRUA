@@ -36,7 +36,10 @@ trajectory and gripper controller drives, `/robot_description` and
 `/robot_description_semantic`, and prints a profile: the arm's joints in
 its controller's order with their limits, the gripper's joint, base and
 hand frames, the planning group, the ports it recognised, and one entry
-per camera that publishes a CameraInfo. Lines marked `TODO` need you: the
+per camera that publishes a CameraInfo. A graph with several trajectory
+controllers gets one `arms:` entry per controller (its label from the
+controller's name, its joints, limits and root link, and the gripper whose
+name it shares). Lines marked `TODO` need you: the
 model name, a one-line description, the world frame, which end of the
 gripper's travel is open and what its driver does with a goal, each
 camera's type and mount, and which of the found ports to keep. A `TODO`

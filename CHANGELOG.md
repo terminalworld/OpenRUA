@@ -9,6 +9,17 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- **Two-arm robots**, checked on a simulated two-arm graph and with a live
+  agent driving both arms: `openrua probe` drafts one `arms:` entry per
+  trajectory controller (it took the first and left the rest in a
+  comment); `machine.yaml` gives each arm its own base and hand frame;
+  an interrupt cancels both arms' motions.
+- `fjt_send.py` takes a position list that starts with a negative number
+  (`-1.0,0.3,...`; argparse read it as an option), and a goal canceled or
+  aborted elsewhere prints `canceled` or `aborted`, not `done`.
+- In `machine.yaml`, the robot's `model` no longer carries the camera's
+  comment.
+
 ## 0.15.0
 
 The first minutes with a robot, `openrua exec`, and the browser. Changes

@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import ast
 import json
+import re
 from typing import Callable
 
 Run = Callable[[str], str]
@@ -34,7 +35,7 @@ joints = [j for j in r.joints if j.type in ("revolute", "prismatic", "continuous
 print(json.dumps({
     "name": r.name,
     "root": r.get_root(),
-    "joints": [{"name": j.name, "type": j.type,
+    "joints": [{"name": j.name, "type": j.type, "parent": j.parent, "child": j.child,
                 "lower": getattr(j.limit, "lower", None) if j.limit else None,
                 "upper": getattr(j.limit, "upper", None) if j.limit else None}
                for j in joints],
@@ -174,6 +175,18 @@ def draft_profile(graph: dict, discovery: dict, *, ros_distro: str | None = None
     y.append("    world: TODO   # the fixed frame points are expressed in (often the arm's root)")
     y.append(f"    base: {u.get('root') or 'TODO'}")
     y.append(f"    hand: {hand or 'TODO'}" + ("" if hand else "   # the link IK targets"))
+    if len(trajectories) > 1:
+        # Several arms: one entry each, its gripper and ports with it.
+        y.extend(_arms_lines(trajectories, grippers, controllers, joints, srdf))
+        twist_wrench = [t for t in twists + wrenches]
+        if twist_wrench:
+            y.append("  # also on the graph: " + ", ".join(twist_wrench)
+                     + "   # TODO: under the ports of the arm each belongs to")
+        if moveit:
+            y.extend(_planning_lines(actions, services, None, srdf, u))
+        y.extend(_camera_lines(topics))
+        y.append("  workspace_template: workspace")
+        return "\n".join(y) + "\n"
     if arm_joints:
         y.append("  arm:   # the joints " + trajectories[0] + " drives, in its order")
         y.append("    joints: [" + ", ".join(arm_joints) + "]")
@@ -198,14 +211,7 @@ def draft_profile(graph: dict, discovery: dict, *, ros_distro: str | None = None
         y.append("    holds_partway: TODO   # true if a position between open and closed is held")
         y.append("    effort_honoured: TODO   # true if max_effort limits the grip")
     if moveit:
-        y.append("  planning:")
-        y.append("    moveit: true")
-        y.append(f"    move_action: {'/move_action' if '/move_action' in actions else 'TODO'}")
-        ik = next((s for s in services if s.endswith("compute_ik")), None)
-        y.append(f"    ik_service: {ik or 'TODO'}")
-        y.append(f"    group: {group or 'TODO'}" + ("" if group else "   # the MoveIt planning group"))
-        virtual = (srdf.get("virtual_joints") or [{}])[0].get("parent_frame")
-        y.append(f"    planning_frame: {virtual or u.get('root') or 'TODO'}")
+        y.extend(_planning_lines(actions, services, group, srdf, u))
     ports = {"trajectory": trajectories[0] if trajectories else None,
              "gripper": grippers[0] if grippers else None,
              "twist": twists[0] if len(twists) == 1 else None,
@@ -225,6 +231,84 @@ def draft_profile(graph: dict, discovery: dict, *, ros_distro: str | None = None
     y.extend(_camera_lines(topics))
     y.append("  workspace_template: workspace")
     return "\n".join(y) + "\n"
+
+
+def _planning_lines(actions: dict, services: list[str], group: str | None, srdf: dict,
+                    urdf: dict) -> list[str]:
+    y = ["  planning:", "    moveit: true",
+         f"    move_action: {'/move_action' if '/move_action' in actions else 'TODO'}"]
+    ik = next((s for s in services if s.endswith("compute_ik")), None)
+    y.append(f"    ik_service: {ik or 'TODO'}")
+    y.append(f"    group: {group or 'TODO'}" + ("" if group else "   # the MoveIt planning group"))
+    virtual = (srdf.get("virtual_joints") or [{}])[0].get("parent_frame")
+    y.append(f"    planning_frame: {virtual or urdf.get('root') or 'TODO'}")
+    return y
+
+
+# Words a controller's name carries that say what kind of controller it is,
+# not which arm: what is left names the arm (left_arm_controller -> left).
+_KIND_WORDS = {"arm", "arms", "controller", "controllers", "joint", "trajectory", "position",
+               "follow", "gripper", "hand", "cmd", "command", "action"}
+
+
+def _label(action: str) -> str:
+    """Which arm an action belongs to, from its name: the words of its
+    namespace that are not about the kind of controller."""
+    words = re.split(r"[/_]+", "/".join(action.strip("/").split("/")[:-1]))
+    return "_".join(w for w in words if w and w.lower() not in _KIND_WORDS)
+
+
+def _arms_lines(trajectories: list[str], grippers: list[str], controllers: dict,
+                joints: dict, srdf: dict) -> list[str]:
+    """``arms:`` for a machine with several trajectory controllers: each
+    arm is one controller's joints; a gripper goes with the arm whose name
+    it shares (else, as many grippers as arms, in order)."""
+    labels = {t: _label(t) for t in trajectories}
+    paired = {t: next((g for g in grippers if _label(g) and _label(g) == labels[t]), None)
+              for t in trajectories}
+    if not any(paired.values()) and len(grippers) == len(trajectories):
+        paired = dict(zip(trajectories, grippers))
+    y = ["  arms:   # one entry per trajectory controller on the graph"]
+    for t in trajectories:
+        arm_joints = list(controllers.get(t) or [])
+        _, hand = _planning_group(srdf, arm_joints)
+        first = joints.get(arm_joints[0], {}) if arm_joints else {}
+        y.append(f"    - label: {labels[t] or 'TODO'}   # how the docs name this arm")
+        if arm_joints:
+            y.append("      joints: [" + ", ".join(arm_joints) + "]   # in the order " + t + " takes")
+            lim = ", ".join(f"[{_num(joints.get(j, {}).get('lower'))}, "
+                            f"{_num(joints.get(j, {}).get('upper'))}]" for j in arm_joints)
+            y.append(f"      limits_rad: [{lim}]")
+        else:
+            y.append("      joints: []   # TODO: the controller did not name its joints")
+            y.append("      limits_rad: []")
+        y.append(f"      base_frame: {first.get('parent') or 'TODO'}   # the arm's root link")
+        y.append(f"      hand_frame: {hand or 'TODO'}" + ("" if hand else "   # the link IK targets"))
+        g = paired.get(t)
+        if g:
+            joint = controllers.get(g)
+            j = joints.get(joint or "", {})
+            travel = (f"; the joint is {j['type']} and travels {_num(j.get('lower'))} .. "
+                      f"{_num(j.get('upper'))}" if j else "")
+            y.append(f"      gripper:   # {g}")
+            y.append(f"        joint: {joint or 'TODO'}")
+            y.append(f"        unit: TODO   # m or rad: the GripperCommand position's unit{travel}")
+            y.append("        open: TODO   # the position that opens it fully")
+            y.append("        closed: TODO   # the position that closes it fully")
+            y.append("        max_effort: TODO   # the max_effort a goal asks for")
+            y.append("        holds_partway: TODO   # true if a position between open and closed is held")
+            y.append("        effort_honoured: TODO   # true if max_effort limits the grip")
+        else:
+            y.append("      gripper: null   # TODO if this arm has one: no gripper matched it by name")
+        y.append("      ports:")
+        y.append(f"        trajectory: {t}")
+        if g:
+            y.append(f"        gripper: {g}")
+    unmatched = [g for g in grippers if g not in paired.values()]
+    if unmatched:
+        y.append("  # also on the graph (gripper): " + ", ".join(unmatched)
+                 + "   # TODO: under the arm each belongs to")
+    return y
 
 
 def _planning_group(srdf: dict, arm_joints: list[str]) -> tuple[str | None, str | None]:

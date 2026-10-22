@@ -12,8 +12,9 @@ from openrua.sandbox import workspace
 # topics; simulation-only statements live in machine.yaml. AGENTS.md points
 # any agent at README.md and machine.yaml, and says /workspace is the one
 # place kept after the session; the motion tools cancel their goal when
-# interrupted.
-PINNED = "f8f5ac893ca3dbf4df4127bf5d1780664ee37df55dcc4f68ed5ad8dc4ba512ab"
+# interrupted; fjt_send takes a position list that starts with a negative
+# number and says "canceled" for a goal canceled elsewhere.
+PINNED = "6793f35c604decb76f08e972816c51f31e11abb131a7806c6b02f103989299fc"
 
 
 def test_workspace_template_hash_is_unchanged():
