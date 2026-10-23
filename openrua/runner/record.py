@@ -207,7 +207,7 @@ def provenance(cfg_path: Path, cfg: dict, args, agent, template_hash: str,
                prompt: str, code_root: Path, proxy_image: str,
                resume_prompt: str | None = None) -> dict:
     """The reproduction record. ``prompt`` is the same string the launcher
-    formats (one source: the runner passes agents.PROMPT); ``resume_prompt``
+    formats (the runner passes the selected template); ``resume_prompt``
     is the other string an agent can be shown, the one a trial resumed
     after a quota wall receives, pinned for the same reason."""
 

@@ -26,15 +26,16 @@ openrua exec panda --bench libero_pro
 ```
 
 The robot container boots its scene and MoveIt (about a minute), the
-sandbox is created with the workspace seeded, and the agent gets the
+sandbox mounts your current project at `/workspace`, and the agent gets the
 scene's task, "open the bottom drawer of the cabinet", the way `codex exec`
 or `claude -p` take one: it works on its own until it is done or its wall
 clock (`--wall-clock-min`) ends, and then the robot powers off. The
 benchmark's own predicate judges success. The agent reaches only its model
 service unless `--internet open` says otherwise. The run is recorded under
-`runs/libero_pro/exec-<UTC time>/trials/libero_goal_task-0/seed0/`: the
-transcript, `commands.sh`, `result.json`, `provenance.json` and the workspace
-the agent left ([where it lands](../docs/running-experiments.md#where-it-lands)).
+`.openrua/runs/exec-<UTC time>/trials/libero_goal_task-0/seed0/`: the
+transcript, `commands.sh`, `result.json` and `provenance.json`. Project files
+remain in your directory. First use asks you to trust it; unattended first use
+requires `--trust-workspace` ([robot projects](../docs/projects.md)).
 
 The rest of this page opens the agent's original terminal on the same scene.
 
@@ -92,7 +93,10 @@ motion on Esc; on a real robot, keep the emergency stop at hand here.
 
 ## 2. What the agent sees
 
-Recorded `exec` and `bench` trials start with this fresh workspace:
+`exec`, `openrua`, `up` and `agent` mount your persistent project at
+`/workspace`, with current robot materials read-only under `/robot`.
+Existing code and instructions are kept. A benchmark trial instead starts
+with a fresh workspace containing the robot materials:
 
 ```
 /workspace
@@ -115,9 +119,8 @@ can inspect the live graph to discover available interfaces. Recorded runs
 not perform that trial-level validation. The tools are ordinary `rclpy` scripts the agent may read, copy or
 ignore.
 
-Interactive `openrua`, `up` and `agent` instead mount your persistent project
-at `/workspace`, with current robot materials under `/robot`. Existing code
-and instructions are kept. See [robot projects](../docs/projects.md).
+In a project, use `/robot/README.md`, `/robot/machine.yaml` and tool paths
+under `/robot/tools/`. See [robot projects](../docs/projects.md).
 
 ## 3. What a session looks like
 
@@ -145,7 +148,8 @@ ros2 topic echo /joint_states --once
 
 ## 4. Stop
 
-An `exec` run stops by itself; its record stays under `runs/`.
+An `exec` run stops by itself; its record stays under `.openrua/runs/` and
+its project files remain in the working directory.
 
 A robot `openrua agent` started goes off when you answer yes as the agent
 exits (or later with `openrua down --name <name>`); `Ctrl-C` in the terminal

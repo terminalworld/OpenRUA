@@ -1,5 +1,5 @@
 ---
-summary: Recording one task with openrua exec or a task set with openrua bench, what lands under runs/, and what every record field means
+summary: Running a project task with exec or isolated benchmark trials with bench, their records, and what each field means
 read_when:
   - You want the agent to do one task on its own, with the run recorded
   - You want to reproduce or extend reported results
@@ -26,13 +26,24 @@ libero_pro` and the sandbox of its ROS distro.
 `openrua exec` gives the agent one task and lets it work on its own, as
 `codex exec` or `claude -p` do: the robot comes up, the agent works until
 it is done or a budget ends, the robot powers off, and the run is
-recorded as one trial. A benchmark scene states its own task and judges
-success. A simulator's own scene judges success too, and takes the
-sentence you give when it states no task (robosuite's `Lift` states
-none). A real robot's task is the sentence you give; nothing resets it,
+recorded as one trial. A benchmark scene supplies a default task and judges
+success. An explicit sentence is the agent's task; the scene's success
+predicate stays the same. A simulator's own scene judges success too;
+give a sentence when it states no task (robosuite's `Lift` states none).
+A real robot's task is the sentence you give; nothing resets it,
 and at the end `exec` asks you whether the robot did it: your answer is
 the result (`verdict: person`), and Enter leaves it open
 (`verdict: not_applicable`). The agent's last words are kept beside it.
+
+The working directory is your persistent [robot project](projects.md), shared
+with the interactive interfaces. Existing files and project instructions are
+available to the agent; each invocation starts a new session. `-C DIR`,
+`--cd DIR` or `--workspace DIR` selects another directory. Use the project's
+saved robot with `openrua exec "<task>"`, or override it with `--robot` or
+the original two-position spelling above. First use asks for directory trust;
+unattended first use requires `--trust-workspace`.
+The project's saved scene is retained for a new task; `--bench ""` selects
+the simulator's native scene instead.
 
 While the agent works, `exec` shows what it says and each command or tool
 it runs, with whether it worked and how long it took; the outputs stay in
@@ -40,9 +51,12 @@ the transcript. Ctrl-C stops the agent, cancels a real robot's motions,
 judges a simulated scene as it stands, powers the robot off and records
 the run as `stopped`.
 
-The run lands under `runs/<label>/<run id>/`: the label is the benchmark,
-else `<robot>-<simulator>`, else the robot file's name, and the run id is
-`--run-id` or `exec-<UTC time>`. `--agent`, `--model`, `--wall-clock-min`,
+The run lands under the project's `.openrua/runs/<run id>/`; the run id is
+`--run-id` or `exec-<UTC time>`, with a suffix when already taken.
+`--runs-root DIR` instead records under `DIR/<label>/<run id>/`: the label
+is the benchmark, else `<robot>-<simulator>`, else the robot file's name.
+This changes the record location, not the working directory.
+`--agent`, `--model`, `--wall-clock-min`,
 `--ros-domain`, `--runs-root`, `--record` and the limit flags work as they
 do for `bench`; the rest of the protocol comes from the benchmark's config,
 else its defaults.
@@ -57,6 +71,11 @@ openrua bench --config libero_pro --run-id demo \
 
 A run is one benchmark config, one task suite, and a set of task ids
 and seeds; each (task, seed) pair is one trial, run in sequence.
+Each trial starts with a fresh workspace, using the benchmark's starter
+template and the original trial prompt. It does not read your current project
+files or settings. Use `bench` for isolated evaluation, even for a single task
+and seed. `exec --bench` uses the same scene and scoring but also supplies your
+project files; it is a project run.
 `openrua benchmarks <name>` shows what there is to choose from: the
 suites, each suite's task ids with their sentences (read from the
 benchmark's own files, in its simulator image), and what a seed means
@@ -115,7 +134,7 @@ Recording adds rendering time to the run.
 ## Where it lands
 
 ```
-<--runs-root, default ./runs>/<benchmark, or exec's label>/<--run-id>/
+<--runs-root, default ./runs>/<benchmark>/<--run-id>/
   config.json                 the run's arguments
   SUMMARY.md                  rewritten after every trial
   trials/<suite>-<task_id>/seed<N>/
@@ -130,6 +149,11 @@ Recording adds rendering time to the run.
     workspace/                what the agent left in /workspace
     attempts/                 earlier attempts of the same trial, moved aside
 ```
+
+The tree above is for `bench`. A project `exec` run has the same record files
+under `.openrua/runs/<run id>/` (or the explicit `--runs-root` location), plus
+the opening `prompt.txt` template. Its `/workspace` is the project directory,
+retained in place instead of copied into the trial record.
 
 A trial directory identifies a (suite, task, seed); a rerun of the
 same trial moves the previous attempt under `attempts/` and never
@@ -189,7 +213,10 @@ its patches and its assets),
 template's hash, `agent_cli` (name and version pin), `container_engine`
 and `sandbox_run_args`, `gpu_render`, `record` (the cameras recorded,
 or null), `host`, `ros_domain`, and the run's task ids and seeds. Two trials with equal hashes and digests ran the
-same experiment.
+same declared trial inputs. Project `exec` records a `project` path and
+`robot_materials_template_sha256` in place of `workspace_template_sha256`:
+the template describes `/robot`, while project contents may evolve between
+runs. Equal template and image hashes do not identify equal project files.
 
 ## Budgets and quota walls
 

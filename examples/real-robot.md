@@ -47,11 +47,14 @@ profile you write yourself.
 
    The agent reaches only its model service, through the image
    `openrua build proxy` makes; `--internet open` lifts that. The run lands
-   under `runs/my-robot/<run id>/`: transcript, commands, workspace, the
+   under `.openrua/runs/<run id>/`: transcript, commands, the
    cameras' frames, `result.json` and `provenance.json`. Nothing resets the
    robot. At the end you are asked whether it did the task, with the agent's
    own last words beside the question, and the run records your answer
    (`verdict: person`); without a terminal to ask at, `success` stays `null`.
+   The current directory is the project workspace, shared with interactive
+   sessions; its files remain after shutdown. Use `-C DIR` to choose another
+   project and `--trust-workspace` for unattended first use.
 
 Interactive startup waits for ROS graph visibility. Recorded runs additionally
 run preflight checks on the declared control interfaces, joint names, TF and

@@ -34,7 +34,7 @@ from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_n
 from openrua.runner.motion import cancel_motion, motion_actions
 from openrua.runner.preflight import run_preflight
 from openrua.runner.session import last_words
-from openrua.sandbox import workspace
+from openrua.sandbox import project, workspace
 from openrua.sandbox.down import down as sandbox_down
 from openrua.sandbox.down import stop_processes
 
@@ -94,17 +94,22 @@ def claim(trial_dir: Path, stem: str):
     return held
 
 
-def episode_task(rec: dict, machine, scored: bool, seed: int, task: str | None) -> str:
+def episode_task(rec: dict, machine, scored: bool, seed: int, task: str | None,
+                 *, override: bool = False) -> str:
     """Start the episode and return its task sentence. A simulated robot
     is reset to ``seed`` and asked; a real robot has no truth side, so
     the caller's sentence is the task and the verdict is not
-    applicable. Records what identifies the episode's world (a loader
+    applicable. A project task can override a simulated scene's instruction;
+    its original instruction is retained beside the task the agent receives.
+    Records what identifies the episode's world (a loader
     may fill ``init_state``; robocasa names the kitchen)."""
     if scored:
         info = start_episode(machine, seed)
         # A scene that states no task of its own (a simulator's native
         # scene) takes the caller's sentence; it still judges success.
-        language = info.get("language", "") or task or ""
+        language = task if override and task is not None else info.get("language", "") or task or ""
+        if override and task is not None and info.get('language') != language:
+            rec['scene_task_language'] = info.get('language', '')
         if info.get("init_state"):
             rec["init_state"] = info["init_state"]
     else:
@@ -245,11 +250,13 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
               wall_cap_min, ros_domain=None, credentials_dir=None, home=None,
               account_alias=None, script=None, token_file=None, task=None,
               record_cameras=None, record_every=1, record_size=None,
-              progress=None, judge=None):
+              progress=None, judge=None, project_root: Path | None = None,
+              prompt_template: str | None = None):
     """One trial: claim the directory, bring the robot and sandbox up,
     start the episode, preflight, operate, score, write the record.
     ``task`` is the task sentence for a robot with no truth side (a real
-    robot); a simulated robot's task comes from its bridge.
+    robot); a simulated robot's task comes from its bridge unless a project
+    invocation supplies its own instruction.
     ``record_cameras`` (None, or a tuple of camera names, empty for the
     profile's default) makes the robot write its frames under the trial,
     one step in ``record_every``, at ``record_size`` (WxH) when given.
@@ -287,6 +294,10 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         "ros_domain": ros_domain,   # None until bring_up picked one
     }
     limits = cfg["protocol"]["limits"]
+    if project_root is not None:
+        project_root = project_root.expanduser().resolve()
+        rec['project'] = str(project_root)
+        rec['robot_materials_template_sha256'] = rec.pop('workspace_template_sha256')
     rec["limits"] = limits
     proxy_url = (ensure_proxy(network, "\n".join(agent.whitelist))
                  if limits["internet"] == "model-only" else "")
@@ -323,28 +334,40 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     tap = None
     real = cfg.get("machine", {}).get("backend", {}).get("kind") == "real"
     try:
+        mounts = profile.mounts
+        if project_root is not None:
+            materials = paths.sandbox_dir(stem, home) / 'robot-materials'
+            project.prepare(cfg, project_root, materials)
+            mounts = (*mounts, f'{materials}:/robot:ro')
+        prompt_file = None
+        if prompt_template is not None:
+            prompt_file = trial_dir / 'prompt.txt'
+            prompt_file.write_text(prompt_template)
         # The trial's resolved suite view: computed once (main applied
         # the overrides), written as an artifact by bring_up and read by
         # every party below. bring_up tears its own sandbox down if the
         # robot fails, so sandbox_live flips only on success.
         config_path, machine, rec["ros_domain"] = bring_up(
             cfg, trial_dir, sim_name, sandbox_name, task_suite, task_id,
-            network, internet_access(proxy_url), profile.mounts,
+            network, internet_access(proxy_url), mounts,
             ros_domain, robot_log=trial_dir / "bridge.log", home=home,
             record_cameras=None if real else record_cameras, record_every=record_every,
-            record_size=record_size)
+            record_size=record_size,
+            **({'workspace': project_root, 'seed_workspace': False} if project_root is not None else {}))
         sandbox_live = True
         if real and record_cameras is not None:
             tap = record_cameras_of(cfg, sandbox_name, trial_dir / "frames", record_cameras)
             rec["recorded_cameras"] = sorted(tap.cameras)
         # The CLI version that actually ran: read inside the sandbox.
         rec["agent_version"] = _sandbox_version(sandbox_name, agent)
-        task_language = episode_task(rec, machine, scored, seed, task)
+        task_language = episode_task(rec, machine, scored, seed, task,
+                                     override=project_root is not None)
         # Preflight: every verifiable promise the workspace docs make,
         # asserted from the sandbox before the agent starts. Red refuses
         # the trial as an anomaly; the agent never pays for a wrong
         # description.
-        conf = run_preflight(cfg, sandbox_name, agent)
+        conf = run_preflight(cfg, sandbox_name, agent,
+                             **({'materials_root': '/robot'} if project_root is not None else {}))
         rec["preflight"] = conf["checks"]
         if not conf["ok"]:
             raise RuntimeError(f"preflight failed: {','.join(conf['failed'])}")
@@ -363,6 +386,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             "token_file": token_file,
             "home": home,
             "progress": progress,
+            **({'prompt_file': prompt_file} if prompt_file is not None else {}),
         })
         with held_interrupts():
             if op_meta.get("termination") == "stopped":

@@ -49,6 +49,7 @@ observations without starting a new robot each turn.
 
 ## 🔥 News
 
+- **[2026-10-23]** 📂 **Run a task in the same robot project.** `openrua exec "<task>"` reuses your code and notes, with a separate record for each run. `bench` keeps isolated evaluation workspaces. ([v0.20.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.20.0))
 - **[2026-10-22]** 📁 **Your robot is a coding project.** Open OpenRUA in a directory, keep programs and notes there, and continue in a new conversation the next day. Resume searches this project's history; `--all` shows every project. ([v0.19.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.19.0))
 - **[2026-10-22]** 🧰 **Bring OpenRUA to your own robot, starting from a bare computer.** Missing Docker or an agent login? `openrua` sets them up with you, and your coding agent connects the robot step by step. ([v0.18.2](https://github.com/terminalworld/OpenRUA/releases/tag/v0.18.2))
 - **[2026-10-22]** 👀 **Watch your robot through its own eyes.** The browser shows its cameras live while the agent works, and every real-robot `openrua exec` run is recorded, ready to become a demo video with `openrua demo`. ([v0.17.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.17.0))
@@ -101,8 +102,8 @@ session running; `openrua --resume` brings you back.
 
 ### Next
 
-- **One task, on its own.** `openrua exec` hands the agent a task and records
-  the run, as `claude -p` or `codex exec` do ([first task](examples/first-task.md)).
+- **One task, on its own.** `openrua exec "<task>"` works in the same project
+  and records the run, as `claude -p` or `codex exec` do ([first task](examples/first-task.md)).
 - **Benchmarks and demo videos.** Run a benchmark's tasks, scored by its own
   success predicates, and render a trial as a video
   ([running experiments](docs/running-experiments.md)).
@@ -116,7 +117,7 @@ session running; `openrua --resume` brings you back.
 | OpenRUA TUI | `openrua` | Ctrl+D asks: keep the session running (Enter), or end it |
 | Browser | `openrua --gui` | Closing the page leaves the session running |
 | Plain CLI | `openrua --cli` | Leaving keeps the session running |
-| One task, on its own | `openrua exec panda "lift the cube" --sim robosuite` | Nothing to leave: the robot powers off when the agent is done, and the run stays under `runs/` |
+| One task, on its own | `openrua exec panda "lift the cube" --sim robosuite` | The robot powers off when the agent is done; project files stay, with records under `.openrua/runs/` |
 
 The first three share one conversation and its queue: join from any of them,
 leave, and come back with `openrua --resume` ([shared sessions](docs/sessions.md)).
@@ -319,8 +320,9 @@ openrua bench --config libero_pro --run-id demo \
             --task-suite libero_goal_task --task-ids 0,1 --seeds 0 --operator agent
 ```
 
-Every trial keeps its verdict, provenance, the agent's transcript and the
-workspace it left, and replays from its own commands; a replay renders as a
+Every benchmark trial keeps its verdict, provenance, the agent's transcript
+and the workspace it left. Project `exec` runs retain their workspace in
+the project itself. A trial replays from its own commands; a replay renders as a
 video, terminal on the left and cameras on the right
 ([running experiments](docs/running-experiments.md)).
 

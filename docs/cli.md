@@ -14,9 +14,9 @@ Generated from the parsers by `scripts/render_docs.py`; edit the
 usage: openrua [-h] [--version] [--home HOME] [--robot ROBOT] [--sim SIM]
                [--bench BENCH] [--task-suite TASK_SUITE] [--task-id TASK_ID]
                [--init-state INIT_STATE] [--task TASK] [--name NAME] [--agent
-               AGENT] [--workspace WORKSPACE] [--trust-workspace]
-               [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
-               [--web-search | --no-web-search] [--account-connectors |
+               AGENT] [-C WORKSPACE] [--trust-workspace] [--ros-domain
+               ROS_DOMAIN] [--internet {open,model-only}] [--web-search |
+               --no-web-search] [--account-connectors |
                --no-account-connectors] [--permissions {ask,auto}] [--model
                MODEL] [--gui | --tui UI | --cli] [--port PORT] [--setup]
                [--resume [ID]] [--all] <verb> ...
@@ -51,7 +51,7 @@ start or reconnect (without a subcommand):
   --name NAME           optional session name or ID; omitted for a new
                         automatic ID
   --agent AGENT         agent to open (default: the config's)
-  --workspace WORKSPACE
+  -C, --cd, --workspace WORKSPACE
                         persistent robot project directory (default: the
                         current directory)
   --trust-workspace     explicitly trust the workspace without an interactive
@@ -265,7 +265,8 @@ options:
 ## openrua exec
 
 ```
-usage: openrua exec [-h] [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
+usage: openrua exec [-h] [--robot ROBOT] [-C WORKSPACE] [--trust-workspace]
+                    [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
                     [--task-id TASK_ID] [--seed SEED] [--agent AGENT]
                     [--model MODEL] [--run-id RUN_ID] [--runs-root RUNS_ROOT]
                     [--wall-clock-min WALL_CLOCK_MIN]
@@ -273,45 +274,54 @@ usage: openrua exec [-h] [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
                     [--no-record] [--internet {open,model-only}]
                     [--web-search | --no-web-search]
                     [--account-connectors | --no-account-connectors]
-                    [robot] [task]
+                    [task_or_robot] [task]
 
 ``openrua exec``: the agent does one task on its own, and the run is recorded.
 As a coding agent's own non-interactive command runs it without its terminal,
-this runs one trial: the robot comes up (simulated or real), the agent gets
-the task and works until it is done or a budget ends, the robot powers off,
-and everything lands under ``runs/<label>/<run id>/`` (transcript, result,
-provenance; ``openrua demo`` renders a simulated one; a real robot's cameras
-are recorded too, unless --no-record). While the agent works, what it says and
-each command it runs show as they happen; Ctrl-C stops it and powers the robot
-off. A benchmark scene states its task and judges success; a simulator's own
-scene judges success too, and takes the sentence given when it states no task;
-a real robot's task is the sentence given, and at the end you are asked
-whether it was done (your answer is the result; the agent's last words are
-kept beside it). Like ``openrua bench``, which runs every task and seed of a
-benchmark this way, the agent may reach only its model service unless the
+this works in the current project: the robot comes up (simulated or real), the
+agent gets the task and works until it is done or a budget ends, the robot
+powers off, and records land under ``.openrua/runs/<run id>/`` (transcript,
+result, provenance; ``openrua demo`` renders a simulated one; a real robot's
+cameras are recorded too, unless --no-record). While the agent works, what it
+says and each command it runs show as they happen; Ctrl-C stops it and powers
+the robot off. A benchmark scene supplies a default task and judges success;
+an explicit sentence is the agent's task, without changing the scene's success
+predicate. A real robot's task is the sentence given, and at the end you are
+asked whether it was done (your answer is the result; the agent's last words
+are kept beside it). Like ``openrua bench``, which runs every task and seed of
+a benchmark this way, the agent may reach only its model service unless the
 limit flags say otherwise.
 
 positional arguments:
-  robot                 robot: a type or your robot's file, by name or path;
-                        default: --bench's robot, else your default
+  task_or_robot         task sentence, or a robot name/file followed by its
+                        task
   task                  the task, as a sentence: a real robot's, or a
-                        simulator's own scene's when it states none (a
-                        benchmark scene states its own)
+                        simulator's own scene's (default: the scene's task)
 
 options:
   -h, --help            show this help message and exit
-  --sim SIM             simulator for a robot type (openrua simulators)
+  --robot ROBOT         robot name or file (default: the project's, else your
+                        default)
+  -C, --cd, --workspace WORKSPACE
+                        persistent project directory (default: the current
+                        directory)
+  --trust-workspace     explicitly trust the project without an interactive
+                        question
+  --sim SIM             simulator for a robot type (default: the project's or
+                        configured one)
   --bench BENCH         benchmark whose scene to load (openrua benchmarks);
-                        default: the simulator's own scene
+                        default: the project's; an empty value selects the
+                        native scene
   --task-suite TASK_SUITE
                         scene suite (default: the scene's)
   --task-id TASK_ID     task in the suite (default: the scene's)
   --seed SEED           initial state of a simulated scene
-  --agent AGENT         agent (default: the configured one)
-  --model MODEL         model (default: the agent's)
+  --agent AGENT         agent (default: the project's or configured one)
+  --model MODEL         model (default: the project's or agent's)
   --run-id RUN_ID       the run's name (default: exec-<UTC time>)
   --runs-root RUNS_ROOT
-                        where runs land (default: ./runs)
+                        record runs under DIR/<label>/ (default: the project's
+                        .openrua/runs/)
   --wall-clock-min WALL_CLOCK_MIN
                         active minutes before the run stops (default: the
                         protocol's)
@@ -341,7 +351,7 @@ options:
 ```
 usage: openrua up [-h] [--sim SIM] [--bench BENCH] [--task-suite TASK_SUITE]
                   [--task-id TASK_ID] [--init-state INIT_STATE] [--task TASK]
-                  [--name NAME] [--agent AGENT] [--workspace WORKSPACE]
+                  [--name NAME] [--agent AGENT] [-C WORKSPACE]
                   [--trust-workspace] [--ros-domain ROS_DOMAIN]
                   [--internet {open,model-only}]
                   [--web-search | --no-web-search]
@@ -376,7 +386,7 @@ options:
                         simulated robot's comes from the scene)
   --name NAME           session handle (default: openrua)
   --agent AGENT         agent to open (default: the config's)
-  --workspace WORKSPACE
+  -C, --cd, --workspace WORKSPACE
                         persistent robot project directory (default: the
                         current directory)
   --trust-workspace     explicitly trust the workspace without an interactive
@@ -439,9 +449,8 @@ options:
 usage: openrua serve [-h] [--sim SIM] [--bench BENCH]
                      [--task-suite TASK_SUITE] [--task-id TASK_ID]
                      [--init-state INIT_STATE] [--task TASK] [--name NAME]
-                     [--agent AGENT] [--workspace WORKSPACE]
-                     [--trust-workspace] [--ros-domain ROS_DOMAIN]
-                     [--internet {open,model-only}]
+                     [--agent AGENT] [-C WORKSPACE] [--trust-workspace]
+                     [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
                      [--web-search | --no-web-search]
                      [--account-connectors | --no-account-connectors]
                      [--permissions {ask,auto}] [--model MODEL] [--port PORT]
@@ -471,7 +480,7 @@ options:
                         simulated robot's comes from the scene)
   --name NAME           session handle (default: openrua)
   --agent AGENT         agent to open (default: the config's)
-  --workspace WORKSPACE
+  -C, --cd, --workspace WORKSPACE
                         persistent robot project directory (default: the
                         current directory)
   --trust-workspace     explicitly trust the workspace without an interactive
