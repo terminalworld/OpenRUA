@@ -175,6 +175,24 @@ def test_empty_project_skips_without_docker_or_credentials(tmp_path, monkeypatch
     assert len(reports) == 1 and reports[0]['status'] == 'skipped'
 
 
+@pytest.mark.parametrize('location', ['.', 'runtime', 'skill-reviews', 'linked-state'])
+def test_review_refuses_private_state_inside_project_before_capture(tmp_path, monkeypatch, location):
+    home = tmp_path if location == 'skill-reviews' else tmp_path / 'project' / location
+    project = home / 'skill-reviews' if location == 'skill-reviews' else tmp_path / 'project'
+    project.mkdir(parents=True)
+    if location == 'linked-state':
+        home = tmp_path / 'external-home'
+        home.mkdir()
+        (home / 'skill-reviews').symlink_to(project)
+    monkeypatch.setattr(skill_review, 'select', lambda *a, **k: pytest.fail('no record capture'))
+    from openrua.errors import UsageError
+    with pytest.raises(UsageError, match='outside the robot project'):
+        skill_review.run(project, home, agents.get('codex'), {}, image='unused', model='unused',
+                         since=None, max_records=1, max_bytes=1000, max_file_bytes=1000,
+                         max_files=10, max_events=10, seconds=10)
+    assert not (project / '.openrua').exists()
+
+
 def test_unknown_report_does_not_restart_and_reading_does_not_modify_it(apparatus):
     result = apparatus.run()
     path = Path(result['output']) / 'report.json'

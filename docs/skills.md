@@ -189,6 +189,8 @@ openrua skills add .openrua/skill-reviews/REVIEW_ID/proposed/.agents/skills/came
 
 The selected record and project input copies remain private under
 `~/.openrua/skill-reviews/REVIEW_ID/input/`, outside the project repository.
+If you select another `--home`, keep that directory and its review state outside
+the project; overlapping storage is refused before input capture.
 Read a relative evidence path with:
 
 ```sh

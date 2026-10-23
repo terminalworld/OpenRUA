@@ -9,6 +9,13 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.21.4
+
+- Skill reviews refuse a user directory or private review state located inside
+  the selected robot project, before reading records or creating job files.
+  The error gives a command for selecting an outside user directory. This keeps
+  internal profiles and review inputs out of ordinary project context.
+
 ## 0.21.3
 
 - `openrua skills review` reviews completed conversations and exec records
