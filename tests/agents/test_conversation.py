@@ -26,6 +26,45 @@ def started(protocol, local="message-1", native="turn-1"):
     assert update.events[0].turn_id == local
 
 
+def test_native_auto_reviewer_uses_workspace_policy_and_can_be_switched_off():
+    protocol = CodexConversation('model', permissions='ask')
+    initialize = protocol.begin().outbound[0]
+    thread = protocol.receive({'id': initialize['id'], 'result': {}}).outbound[1]
+    ready_event = protocol.receive({'id': thread['id'], 'result': {
+        'thread': {'id': 'thread-1'}, 'approvalsReviewer': 'user'}})
+    modes = next(e.data['choices'] for e in ready_event.events if e.kind == 'setting' and e.data['setting'] == 'permissions')
+    assert any(mode['value'] == 'auto-review' for mode in modes)
+    protocol.configure('permissions', 'auto-review')
+    params = protocol.submit('reviewed', 'inspect').outbound[0]['params']
+    assert params['approvalPolicy'] == 'on-request' and params['approvalsReviewer'] == 'auto_review'
+    assert params['sandboxPolicy'] == {'type': 'workspaceWrite', 'writableRoots': ['/workspace'], 'networkAccess': True}
+    protocol.configure('permissions', 'auto')
+    assert protocol._approval_params() == {'approvalPolicy': 'never', 'approvalsReviewer': 'user'}
+    assert protocol._sandbox_policy() == {'type': 'dangerFullAccess'}
+
+
+def test_an_old_native_server_cannot_silently_claim_automatic_review():
+    protocol = ready()
+    with pytest.raises(ValueError, match='did not advertise'):
+        protocol.configure('permissions', 'auto-review')
+    protocol = CodexConversation('model', permissions='auto-review')
+    initialize = protocol.begin().outbound[0]
+    thread = protocol.receive({'id': initialize['id'], 'result': {}}).outbound[1]
+    with pytest.raises(ValueError, match='not confirmed'):
+        protocol.receive({'id': thread['id'], 'result': {'thread': {'id': 'thread-1'}}})
+
+
+def test_native_review_notifications_are_visible_as_review_results():
+    protocol = ready()
+    started(protocol)
+    params = {'threadId': 'thread-1', 'turnId': 'turn-1', 'reviewId': 'review-1',
+              'action': {'type': 'command', 'command': 'python3 check.py'},
+              'review': {'status': 'approved', 'riskLevel': 'low', 'rationale': 'An authorized local file check.'}}
+    event = protocol.receive({'method': 'item/autoApprovalReview/completed', 'params': params}).events[0]
+    assert event.kind == 'item' and event.data['phase'] == 'completed'
+    assert event.data['text'] == 'Native approval review' and 'authorized local file' in event.data['output']
+
+
 def completed(protocol, native="turn-1", status="completed"):
     return protocol.receive({"method": "turn/completed", "params": {
         "threadId": protocol.thread_id, "turn": {"id": native, "status": status}}})
@@ -282,7 +321,7 @@ def test_codex_old_server_skill_discovery_failure_does_not_break_the_conversatio
 def test_codex_settings_apply_from_the_next_turn():
     protocol = ready()
     assert protocol.configure("permissions", "ask").events[0].data == {
-        "setting": "permissions", "value": "ask"}
+        "setting": "permissions", "value": "ask", "effective_from": "next_turn"}
     protocol.configure("model", "gpt-6-astra")
     params = protocol.submit("message-1", "text").outbound[0]["params"]
     assert params["approvalPolicy"] == "untrusted" and params["model"] == "gpt-6-astra"

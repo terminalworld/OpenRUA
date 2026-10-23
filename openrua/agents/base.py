@@ -154,6 +154,7 @@ class Agent:
                                         # the proxy (tinyproxy filter syntax)
     credentials: Credentials | None = None   # profile-directory login, or None
     skills: SkillLocations | None = None
+    permission_modes: tuple[str, ...] = ('ask', 'auto')
     token_env: str | None = None        # env var carrying a long-lived token, when
                                         # the CLI accepts one (passed by file)
     version_argv: tuple[str, ...] | None = None   # prints the CLI version (provenance)
@@ -314,11 +315,12 @@ class Agent:
 
     def sandbox_cli_check(self) -> tuple[str, str] | None:
         """(name, bash) check run inside the sandbox before the agent
-        starts: the CLI is the pinned version, and no older than
-        ``min_version``. None when there is nothing to check or no
-        ``version_argv`` to ask."""
-        if not self.version_argv or not (self.version or self.min_version):
+        starts: the CLI works, is the pinned version when requested, and
+        is no older than ``min_version``. None without ``version_argv``."""
+        if not self.version_argv:
             return None
+        if not (self.version or self.min_version):
+            return ('sandbox_cli_version', self.version_probe() + ' >/dev/null')
         # No single quotes inside: the whole check is one bash -c '...'.
         parts = [f'v="$({self.version_probe()} | grep -oE "[0-9]+([.][0-9]+)+" | head -1)"',
                  '[ -n "$v" ]']

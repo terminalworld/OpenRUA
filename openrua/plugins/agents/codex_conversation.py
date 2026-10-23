@@ -21,10 +21,18 @@ from openrua.agents.conversation import ConversationProtocol, Event, Update
 
 class CodexConversation(ConversationProtocol):
     # What the person sets with /permissions, as Codex's approval policy.
-    APPROVAL = {"ask": "untrusted", "auto": "never"}
+    APPROVAL = {"ask": "untrusted", "auto": "never", "auto-review": "on-request"}
+    SETTINGS = {'permissions': tuple(APPROVAL), 'model': None}
+    PERMISSIONS = [
+        {"value": "ask", "label": "Ask for approval", "description": "Native untrusted command policy in the robot terminal"},
+        {"value": "auto-review", "label": "Approve for me", "description": "Native workspace sandbox and automatic review of escalation requests"},
+        {"value": "auto", "label": "Full access", "description": "Run without command approvals inside the robot terminal"},
+    ]
 
     def __init__(self, model: str, session_id: str | None = None, effort: str = "high",
                  workspace: str = "/workspace", permissions: str = "auto"):
+        if permissions not in self.APPROVAL:
+            raise ValueError('permissions is ask, auto-review or auto')
         self.model = model
         self.permissions = permissions
         self.workspace = workspace
@@ -42,6 +50,7 @@ class CodexConversation(ConversationProtocol):
         self._steers: dict[int, str] = {}   # request ID -> message ID it carried
         self._server_turn = False           # /compact: the server starts the turn
         self._skill_text: str | None = None
+        self._reviewer_supported = False
 
     @property
     def can_submit(self) -> bool:
@@ -57,7 +66,8 @@ class CodexConversation(ConversationProtocol):
             raise ValueError("connection initialization already started")
         self._begun = True
         return Update([self._request("initialize", {"clientInfo": {
-            "name": "openrua", "title": "OpenRUA", "version": version("openrua")}})])
+            "name": "openrua", "title": "OpenRUA", "version": version("openrua")},
+            "capabilities": {"experimentalApi": True}})])
 
     def submit(self, turn_id: str, text: str) -> Update:
         if not self.can_submit:
@@ -84,18 +94,29 @@ class CodexConversation(ConversationProtocol):
         return Update([self._request("turn/start", {
             "threadId": self.thread_id, "input": [{"type": "text", "text": text}, *skills],
             "effort": self.effort, "model": self.model,
-            "approvalPolicy": self.APPROVAL[self.permissions]}, turn_id)])
+            **self._approval_params(), 'sandboxPolicy': self._sandbox_policy()}, turn_id)])
+
+    def _sandbox_policy(self) -> dict:
+        if self.permissions == 'auto-review':
+            return {'type': 'workspaceWrite', 'writableRoots': [self.workspace], 'networkAccess': True}
+        return {'type': 'dangerFullAccess'}
+
+    def _approval_params(self) -> dict:
+        return {"approvalPolicy": self.APPROVAL[self.permissions],
+                'approvalsReviewer': 'auto_review' if self.permissions == 'auto-review' else 'user'}
 
     def _thread_params(self) -> dict:
         return {"model": self.model, "cwd": self.workspace,
-                "approvalPolicy": self.APPROVAL[self.permissions], "sandbox": "danger-full-access"}
+                **self._approval_params(), "sandbox": 'workspace-write' if self.permissions == 'auto-review' else 'danger-full-access'}
 
     def configure(self, setting: str, value: str) -> Update:
         """Kept here and sent with every turn, as Codex's own terminal does:
         in effect from the next turn."""
         if setting == "permissions":
             if value not in self.APPROVAL:
-                raise ValueError("permissions is ask or auto")
+                raise ValueError("permissions is ask, auto-review or auto")
+            if value == 'auto-review' and not self._reviewer_supported:
+                raise ValueError('This native app-server did not advertise approval reviewer support; update the agent CLI.')
             self.permissions = value
         elif setting == "model":
             if not value:
@@ -103,7 +124,8 @@ class CodexConversation(ConversationProtocol):
             self.model = value
         else:
             raise ValueError(f"unknown setting: {setting}")
-        return Update(events=[Event("setting", data={"setting": setting, "value": value})])
+        return Update(events=[Event("setting", data={"setting": setting, "value": value,
+                                                     "effective_from": "next_turn"})])
 
     @property
     def can_steer(self) -> bool:
@@ -171,6 +193,14 @@ class CodexConversation(ConversationProtocol):
         if method == "item/agentMessage/delta":
             return Update(events=[Event("text_delta", self._active,
                                         {"text": params["delta"], "item_id": params["itemId"]})])
+        if method in {'item/autoApprovalReview/started', 'item/autoApprovalReview/completed'}:
+            review = params['review']
+            finished = method.endswith('/completed')
+            return Update(events=[Event('item', self._active, {
+                'phase': ('completed' if review['status'] == 'approved' else 'failed') if finished else 'started',
+                'item_id': 'approval-review-' + params['reviewId'], 'kind': 'activity',
+                'text': 'Native approval review', 'details': params.get('action', {}),
+                'output': '\n'.join(str(value) for value in (review['status'], review.get('riskLevel'), review.get('rationale')) if value)})])
         if method in {"item/started", "item/completed"}:
             return self._item(method, params["item"])
         return Update(events=[Event("native", self._active, frame)])
@@ -265,6 +295,12 @@ class CodexConversation(ConversationProtocol):
                 Event("session", data={"session_id": self.thread_id, "cleared": True}),
                 Event("turn_finished", turn_id, {"status": "completed"})])
         if method in {"thread/start", "thread/resume"}:
+            self._reviewer_supported = 'approvalsReviewer' in result
+            if self.permissions == 'auto-review' and (
+                    result.get('approvalsReviewer') != 'auto_review'
+                    or result.get('approvalPolicy') != 'on-request'
+                    or result.get('sandbox', {}).get('type') != 'workspaceWrite'):
+                raise ValueError('Native automatic approval review was not confirmed; no turn was started.')
             native_id = result["thread"]["id"]
             if self.thread_id and native_id != self.thread_id:
                 raise ValueError("resumed conversation identity differs from the requested thread")
@@ -272,7 +308,9 @@ class CodexConversation(ConversationProtocol):
             self.ready = True
             return Update(events=[
                 Event("ready", data={"session_id": native_id}),
-                Event("setting", data={"setting": "permissions", "value": self.permissions}),
+                Event("setting", data={"setting": "permissions", "value": self.permissions,
+                                       "choices": [choice for choice in self.PERMISSIONS
+                                                   if choice['value'] != 'auto-review' or self._reviewer_supported]}),
                 Event("setting", data={"setting": "model", "value": self.model}),
                 Event("commands", data={"commands": [
                     {"name": "compact", "description": "summarize the conversation to free context"},

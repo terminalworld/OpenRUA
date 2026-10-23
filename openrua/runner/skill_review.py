@@ -87,7 +87,7 @@ def _copy_skill_baseline(snapshot: reviews.Snapshot, selected: list[str], baseli
         for root in (baseline, workspace / 'proposed'):
             target = root / relative
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, target)
+            shutil.copy2(source, target)
 
 
 def _worker(adapter, profile, workspace: Path, inputs: Path, runtime: Path, image: str,
@@ -233,7 +233,7 @@ def run(project: Path, home: Path, adapter, settings: dict, *, image: str, model
         reviews.write_json(inputs / 'manifest.json', manifest)
         reviews.write_json(output / 'manifest.json', manifest)
         _copy_skill_baseline(snapshot, skill_paths, output / 'baseline', workspace)
-        signature = {'files': sorted((item['path'], item['sha256']) for item in manifest['files']),
+        signature = {'files': sorted((item['path'], item['sha256'], item['mode']) for item in manifest['files']),
                      'agent': adapter.name, 'model': model, 'options': settings.get('options', {}),
                      'image': image, 'version_requested': adapter.version, 'prompt': reviews.digest(PROMPT.encode())}
         result['fingerprint'] = reviews.digest(json.dumps(signature, sort_keys=True).encode())

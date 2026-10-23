@@ -271,6 +271,8 @@ def test_a_pause_says_why(session):
     assert state(session)["pause_reason"] is None
     session.disconnected("native process ended")
     assert state(session)["pause_reason"] == "agent disconnected: native process ended"
+    with pytest.raises(ValueError, match='cannot reconnect'):
+        session.resume(state(session)['pause_id'])
 
 
 def test_a_stopped_robot_holds_the_queue_with_its_reason(session):
@@ -285,11 +287,14 @@ def test_a_stopped_robot_holds_the_queue_with_its_reason(session):
 
 
 def test_settings_and_the_agents_commands_are_kept_in_the_state(session):
+    choices = [{'value': 'ask', 'label': 'Manual'}, {'value': 'auto-review', 'label': 'Auto'}]
+    session.native(Event("setting", data={"setting": "permissions", "value": "ask", "choices": choices}))
     session.native(Event("setting", data={"setting": "permissions", "value": "ask"}))
     session.native(Event("setting", data={"setting": "model", "value": "m"}))
     session.native(Event("commands", data={"commands": [{"name": "compact", "description": "d"}]}))
     snapshot = state(session)
     assert snapshot["settings"] == {"permissions": "ask", "model": "m"}
+    assert snapshot['setting_choices']['permissions'] == choices
     assert snapshot["agent_commands"] == [{"name": "compact", "description": "d"}]
 
 

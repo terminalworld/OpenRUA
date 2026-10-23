@@ -98,6 +98,66 @@ def test_foreground_changes_are_retained_and_reported(apparatus, monkeypatch):
     assert 'Proposed improvement' in (Path(result['output']) / 'changes.diff').read_text()
 
 
+def test_review_preserves_executable_resources_and_reports_mode_only_edits(apparatus, monkeypatch):
+    a = apparatus
+    source = write_skill(a.root / '.agents/skills') / 'check.sh'
+    source.write_text('#!/bin/sh\nprintf "camera fixture\\n"\n')
+    source.chmod(0o750)
+
+    def worker(*args):
+        workspace, inputs = args[2:4]
+        relative = '.agents/skills/camera-check/check.sh'
+        assert (inputs / 'project' / relative).stat().st_mode & 0o777 == 0o750
+        assert (workspace / 'proposed' / relative).stat().st_mode & 0o777 == 0o750
+        (workspace / 'proposed' / relative).chmod(0o755)
+        return 'completed'
+
+    monkeypatch.setattr(skill_review, '_worker', worker)
+    result = a.run()
+    assert result['status'] == 'completed', result
+    assert source.stat().st_mode & 0o777 == 0o750
+    change = next(row for row in result['changes'] if row['path'].endswith('check.sh'))
+    assert change['before_sha256'] == change['after_sha256']
+    assert (change['before_mode'], change['after_mode']) == (0o750, 0o755)
+    assert not change['source_changed']
+    assert (Path(result['output']) / 'proposed' / change['path']).stat().st_mode & 0o777 == 0o755
+
+
+def test_permission_changes_make_a_new_input_set(apparatus, monkeypatch):
+    a = apparatus
+    source = write_skill(a.root / '.agents/skills') / 'SKILL.md'
+    calls = []
+    monkeypatch.setattr(skill_review, '_worker', lambda *a: calls.append(True) or 'completed')
+    assert a.run()['status'] == 'completed'
+    source.chmod(0o640)
+    assert a.run()['status'] == 'completed'
+    assert len(calls) == 2
+
+
+def test_readonly_copies_are_redacted_without_changing_source_permissions(apparatus, monkeypatch):
+    a = apparatus
+    source = write_skill(a.root / '.agents/skills') / 'SKILL.md'
+    secret = a.key.read_text()
+    source.write_text(source.read_text() + '\n' + secret)
+    source.chmod(0o444)
+
+    def worker(*args):
+        for root in (args[2] / 'proposed', args[3] / 'project'):
+            path = root / '.agents/skills/camera-check/SKILL.md'
+            assert path.stat().st_mode & 0o777 == 0o444
+            assert secret not in path.read_text()
+        return 'completed'
+
+    monkeypatch.setattr(skill_review, '_worker', worker)
+    result = a.run()
+    assert result['status'] == 'completed', result
+    assert source.stat().st_mode & 0o777 == 0o444 and secret in source.read_text()
+    for root in ('baseline', 'proposed'):
+        path = Path(result['output']) / root / '.agents/skills/camera-check/SKILL.md'
+        assert path.stat().st_mode & 0o777 == 0o444
+        assert secret not in path.read_text()
+
+
 def test_linked_skill_keeps_its_actual_owner_and_supporting_files(apparatus, monkeypatch):
     a = apparatus
     owner = write_skill(a.root / 'methods')
@@ -173,6 +233,16 @@ def test_empty_project_skips_without_docker_or_credentials(tmp_path, monkeypatch
     assert main(['--home', str(home), 'skills', '-C', str(root), '--trust-workspace', 'review', '--json']) == 0
     reports = skill_review.reports(root)
     assert len(reports) == 1 and reports[0]['status'] == 'skipped'
+
+
+def test_pinned_review_uses_the_agents_configured_api_profile(apparatus, monkeypatch):
+    a = apparatus
+    (a.home / 'config.yaml').write_text('agent: codex\nagents:\n  codex:\n    auth:\n      mode: api\n      key_file: '
+                                       + str(a.key) + '\n')
+    monkeypatch.setattr(skill_review.agents, 'resolve_profile', lambda *a, **k: pytest.fail('API selection must not use native credentials'))
+    assert main(['--home', str(a.home), 'skills', '-C', str(a.root), '--trust-workspace',
+                 'review', '--agent', 'codex@0.163.0', '--json']) == 0
+    assert len(a.calls) == 1
 
 
 @pytest.mark.parametrize('location', ['.', 'runtime', 'skill-reviews', 'linked-state'])

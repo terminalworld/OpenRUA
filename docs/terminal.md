@@ -102,7 +102,7 @@ OpenRUA's own greeting; the agent has not looked at anything yet.
 | `/questions` | Choose answers to agent questions (or type the answer) |
 | Escape or `/interrupt` | Stop the current turn and cancel the robot's motions; queued instructions go next |
 | `/continue` | Confirm continuing a paused queue |
-| `/permissions` | Whether the agent asks before each command that changes something, or runs without asking (`--permissions ask\|auto` sets how a session starts: `auto` by default, `ask` under `openrua connect`) |
+| `/permissions` | Choose the current agent's native permission mode; `--permissions MODE` selects a startup mode (`auto` is the legacy bypass default, `ask` under `openrua connect`) |
 | `/model` | Show the model, or change it: `/model <name>` |
 | The agent's own commands | `/compact`, `/clear`, and what else the agent lists (Claude Code's skills and custom commands) go to the agent, as in its own terminal; `/help` lists them |
 | `/retry` | Retry an unconfirmed send with its original request ID |
@@ -126,11 +126,62 @@ until polling succeeds again. The recovered status reflects the shared session;
 your unsent draft and queued instructions remain intact. Connection recovery does
 not retry a send whose result is unconfirmed; use `/retry` with its original ID.
 
-For `/questions`, single choices use Enter. Multiple-choice requests use
+If the native agent connection has ended, `/continue` cannot reconnect it. Read
+the session's `agent.stderr.log` and service log first. Malformed native stdout
+is retained in `agent.stderr.invalid-output.log`; this private file may contain
+agent output, so inspect it locally before sharing. Blank lines alone do not
+break a native JSON connection. Queued instructions are not automatically
+replayed after a disconnection.
+
+Pending questions and command approvals open automatically below the transcript,
+with a highlighted **Your response is needed** heading. The status changes to
+**Waiting for your response**, rather than continuing to show Working. Existing
+draft text is kept. Escape hides the question; `/questions` reopens it, and the
+waiting status remains until the request is answered. Another client's answer
+closes an obsolete question dialog automatically.
+
+For question dialogs, single choices use Enter. Multiple-choice requests use
 Space or Enter to toggle selections, followed by **Continue**. When the native
 agent allows a custom answer, **Write another answer** opens a text editor.
 Escape cancels without sending; a final confirmation sends the collected
 answers. Replies answer the pending question rather than enqueueing a new task.
+
+Follow-up messages use a compact pending area: **Queued** means waiting for a
+turn, **Sending to agent** means dispatch is in progress, and **Adding to current
+turn** means native delivery is awaiting confirmation. After the agent confirms
+receipt, the message leaves this area and appears in conversation history, at
+the turn it joined. Receipt does not mean the requested work has completed.
+
+## Native permission modes
+
+`/permissions` shows the modes supplied by the active agent connection. Claude
+Code offers Manual, Auto, Accept edits, Plan, Don't ask and Bypass permissions.
+Codex offers Ask for approval, Approve for me and Full access when its app-server
+supports automatic review. Older connections retain their supported choices.
+
+```sh
+openrua --permissions auto-review
+# Or, in a shared conversation:
+/permissions auto-review
+```
+
+`auto-review` selects Claude Code's native `auto` mode or Codex's native automatic
+reviewer. OpenRUA does not approve requests on their behalf. Codex uses
+`on-request` approvals with a native workspace-write sandbox; networking remains
+available for the robot interfaces, subject to the container's own limits.
+Native review activity and its decision appear in the conversation. A native
+rejection is shown rather than silently enabling unrestricted access.
+
+The legacy value `auto` continues to mean bypassing command approvals; it does
+not mean automatic review. Select Auto or Approve for me in the menu, or use
+`auto-review`, for native review. Claude Code also accepts `acceptEdits`, `plan`
+and `dontAsk`. Unsupported modes are refused by the selected plugin.
+
+Codex permission changes apply from the next turn. A question already awaiting
+a response still needs an answer. Claude Code mode changes are confirmed through
+its native control protocol. Native account, model and managed-policy
+requirements still apply. These modes govern the agent's tools inside its robot
+terminal; the robot's driver checks and connection procedure remain separate.
 
 ## Current scope
 

@@ -9,6 +9,32 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.21.5
+
+- Connecting from setup now saves the selected agent, model and authentication
+  before sign-in and startup, without requiring a robot configuration. CLI
+  connections respect API authentication, including pinned agent selections;
+  relative custom manifests keep their saved settings after reopening.
+- Startup verifies the selected agent CLI before reusing a sandbox image and
+  rebuilds incompatible images through the normal preparation flow. Missing
+  BuildKit working-directory failures include storage and builder diagnostics.
+  Real-robot checks also prepare the robot's actual sandbox before handover,
+  including a different ROS distro from the connecting terminal. Unpinned
+  agents are checked for a working CLI rather than silently accepting absence.
+- Skill review snapshots and candidates preserve file permissions. Mode-only
+  changes are reported alongside content differences without modifying sources.
+- Pending questions open automatically in the terminal with a clear waiting
+  status and explicit response review. Drafts are retained, dismissed questions
+  stay accessible, and answers from other clients close stale question dialogs.
+  Follow-up messages show compact pending delivery states and move into the
+  conversation once received by the agent.
+- Permission menus use native agent choices. Claude Code Auto mode and Codex's
+  automatic approval reviewer are available through `auto-review`, with native
+  results and rejections retained. Legacy `auto` keeps its bypass semantics.
+- Native JSON transport ignores blank lines and retains malformed output in a
+  private diagnostic file before pausing. Disconnected sessions explain that
+  `/continue` cannot reconnect the native process.
+
 ## 0.21.4
 
 - Skill reviews refuse a user directory or private review state located inside

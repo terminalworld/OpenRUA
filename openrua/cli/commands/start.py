@@ -9,7 +9,7 @@ from pathlib import Path
 from openrua import agents, config, doctor
 from openrua.cli.commands import chat, connect, login, session, up
 from openrua.config import paths, projects, settings, startup
-from openrua.cli import docker_setup, updates, workspace
+from openrua.cli import agent_settings, docker_setup, updates, workspace
 from openrua.cli.preparation import prepare
 from openrua.errors import NotFound, UnavailableError, UsageError
 from openrua.runner import service, history, live_state
@@ -77,12 +77,9 @@ def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
 
 def authentication_choices(home: Path, names: list[str]) -> dict:
     """Describe plugin capabilities and saved choices, without reading keys."""
-    package = config.load_user_config(paths.package_config_path())
-    user = config.load_user_config(paths.config_path(home))
     result = {}
     for name in names:
-        selected = config.layer_agent({}, package, user, agent=name)
-        adapter = agents.get(name, home, version=selected.get('version'))
+        adapter, selected = agent_settings.resolve(home, name)
         if 'conversation' not in adapter.capabilities:
             raise UsageError(f'{adapter.name} does not support shared chat',
                              hint='use this plugin in its own terminal (openrua up, then openrua agent) or select a conversation-capable agent')
@@ -317,6 +314,11 @@ def _run(args) -> int:
     args.workspace = str(selected)
     interactive = sys.stdin.isatty() and sys.stdout.isatty()
     values, models = values_for(args)
+    if args.permissions is not None:
+        adapter, _ = agent_settings.resolve(args.home, values['agent'] or None)
+        if args.permissions not in adapter.permission_modes:
+            raise UsageError(f'{adapter.name} does not support permission mode {args.permissions!r}',
+                             hint='choose one of: ' + ', '.join(adapter.permission_modes))
     if not offer_update(args, values):
         return 0
     custom_environment = any(paths.is_path(values[key]) for key in startup.FIELDS if values[key])
@@ -345,6 +347,7 @@ def _run(args) -> int:
                                 authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']]))),
                                 resolve_agent=lambda name: authentication_choices(args.home, [name])[name],
                                 ready=lambda values: docker_setup.ensure(),
+                                save_connect=lambda values: connect.save_values(args.home, values),
                                 sign_in=lambda values: login.ensure(args.home, values['agent'] or None,
                                                                     values.get('auth_mode', 'native')),
                                 connect=lambda values: connect.launch(args.home, 'my-robot',

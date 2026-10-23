@@ -1,14 +1,14 @@
 import {Container, SelectList, Text, matchesKey} from '@earendil-works/pi-tui';
-import {muted, plain, selectTheme} from './view.mjs';
+import {dialogHeading, muted, plain, selectTheme} from './view.mjs';
 
 // Native question semantics are normalized by the agent plugin.
-export function answerQuestion(chat, question, accept) {
+export function answerQuestion(chat, question, accept, options = {}) {
   if (!question.choices?.length) {
-    chat.editText(question.text, '', text => accept([text])); return;
+    chat.editText(question.text, '', text => accept([text]), options); return;
   }
   if (!question.multiple && !question.allow_other) {
     chat.picker(question.text, question.choices.map(value => ({value, label: plain(value)})),
-      value => accept([value])); return;
+      value => accept([value]), options); return;
   }
   const selected = new Set();
   let other = '';
@@ -18,11 +18,11 @@ export function answerQuestion(chat, question, accept) {
   const menu = new SelectList(items, 8, selectTheme);
   const box = new Container();
   const notice = new Text('', 0, 0);
-  box.addChild(new Text(plain(question.text), 0, 1)); box.addChild(menu); box.addChild(notice);
+  box.addChild(new Text(dialogHeading(question.text, options.requestId), 0, 1)); box.addChild(menu); box.addChild(notice);
   box.addChild(new Text(muted(question.multiple
     ? '↑/↓ move · Space/Enter toggle · Continue to review · Esc cancel'
     : '↑/↓ select · Enter confirm · Esc cancel'), 0, 1));
-  const handle = chat.dialog(box);
+  const handle = chat.dialog(box, options);
   const refresh = () => {
     for (const item of items) {
       if (item.kind === 'choice') item.label = `${question.multiple ? selected.has(item.value) ? '[x] ' : '[ ] ' : ''}${plain(item.value)}`;
@@ -43,7 +43,7 @@ export function answerQuestion(chat, question, accept) {
         if (!question.multiple) { handle.hide(); accept([text]); return; }
         if (question.choices.includes(text)) selected.add(text); else other = text;
         refresh();
-      });
+      }, options);
     } else if (question.multiple) {
       if (selected.has(item.value)) selected.delete(item.value); else selected.add(item.value);
       refresh();

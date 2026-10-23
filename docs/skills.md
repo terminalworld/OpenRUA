@@ -179,6 +179,8 @@ Review results live under `.openrua/skill-reviews/REVIEW_ID/`:
 | `transcript.jsonl`, `stderr.log` | this review's native execution output |
 
 The report shows files that changed in the source project during review.
+Snapshots and candidates retain file permissions, including executable scripts;
+permission-only changes are included in the report and diff.
 Candidates are never applied automatically, even when no concurrent edit is
 detected. Inspect the diff and evidence, then edit an existing method through
 your normal Git workflow. To import a new candidate without overwriting files:

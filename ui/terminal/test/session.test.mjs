@@ -240,8 +240,7 @@ test('queued edits and question replies use the existing owner contracts', {time
   await call({op: 'frame', frame: {kind: 'input_required', turn_id: id, data: {
     request_id: 'q', questions: [{id: 'target', text: 'Which target?', choices: ['cup', 'bowl']}]}}});
   await until(client, s => !!s.requests.q);
-  await chat.refresh(); await chat.submit('/questions');
-  terminal.input('\r'); await new Promise(r => setTimeout(r, 10));
+  await chat.refresh();
   terminal.input('\x1b[B'); terminal.input('\r'); await new Promise(r => setTimeout(r, 10));
   // Answers are collected, then explicitly confirmed.
   assert.equal((await call({op: 'writes'})).writes.filter(w => w.reply).length, 0);
@@ -526,7 +525,6 @@ test('keyboard questions preserve multiple choices and optional text until confi
   await until(client, s => !!s.requests.multi); await chat.refresh();
   const key = async input => { terminal.input(input); await new Promise(r => setTimeout(r, 20)); };
   const replies = async () => (await call({op: 'writes'})).writes.filter(w => w.reply);
-  await chat.submit('/questions'); await key('\r');
   // Empty selection cannot continue; Space toggles without submitting.
   await key('\x1b[A'); await key('\r');
   assert.match(terminal.output, /Choose at least one answer/);
@@ -547,6 +545,122 @@ test('keyboard questions preserve multiple choices and optional text until confi
   await until(client, s => s.requests.multi?.status !== 'pending');
   assert.deepEqual(await replies(), [{reply: 'multi', answers: {locations: ['Near', 'Far', 'Shelf'], color: ['Green']}}]);
   assert.equal((await client.snapshot()).state.messages.length, 1);
+});
+
+test('pending questions open automatically, preserve drafts and never approve on a stray Enter', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20});
+  t.after(() => chat.stop());
+  void chat.run();
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  await chat.submit('Inspect');
+  chat.editor.setText('accept');
+  const id = (await client.snapshot()).state.active;
+  await call({op: 'frame', frame: {kind: 'input_required', turn_id: id, data: {
+    request_id: 'approval', questions: [{id: 'decision', text: 'Approve command: printf fixture?', choices: ['accept', 'decline']}]}}});
+  await until(client, state => !!state.requests.approval);
+  await chat.refresh();
+  assert.equal(chat.panel.requestId, 'approval');
+  assert.match(chat.panel.component.render(80).join('\n'), /Your response is needed/);
+  assert.match(chat.panel.component.render(80).join('\n'), /printf fixture/);
+  assert.match(chat.status.text, /Waiting for your response/);
+  chat.lastEvent = Date.now() - 120000;
+  await chat.refresh();
+  assert.doesNotMatch(chat.status.text, /Working|no output/);
+  const key = async input => { terminal.input(input); await new Promise(r => setTimeout(r, 20)); };
+  await key('\r'); // Select an answer, but do not send it.
+  assert.match(chat.panel.component.render(80).join('\n'), /Review your response/);
+  assert.equal((await call({op: 'writes'})).writes.filter(w => w.reply).length, 0);
+  await key('\r'); // Confirmation initially selects Cancel.
+  assert.equal(chat.panel, null);
+  assert.equal(chat.editor.getText(), 'accept');
+  await chat.refresh();
+  assert.equal(chat.panel, null);
+  assert.match(chat.status.text, /Waiting for your response/);
+  await chat.submit('accept');
+  assert.equal((await call({op: 'writes'})).writes.filter(w => w.reply).length, 0);
+  await client.command('respond', {request_id: 'approval', answers: {decision: ['decline']}});
+  await chat.refresh();
+  assert.doesNotMatch(chat.status.text, /Waiting for your response/);
+});
+
+test('a waiting question opens on reconnect and closes when another client answers', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const message = await client.command('enqueue', {client_id: 'other', request_id: 'start', text: 'Inspect'});
+  await until(client, state => state.active === message.id);
+  await call({op: 'frame', frame: {kind: 'input_required', turn_id: message.id, data: {
+    request_id: 'waiting', questions: [{id: 'answer', text: 'Ready to continue?', choices: ['yes', 'no']}]}}});
+  await until(client, state => !!state.requests.waiting);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20});
+  t.after(() => chat.stop());
+  void chat.run();
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  assert.equal(chat.panel.requestId, 'waiting');
+  terminal.input('\r'); await new Promise(r => setTimeout(r, 20));
+  assert.match(chat.panel.component.render(80).join('\n'), /Review your response/);
+  await client.command('respond', {request_id: 'waiting', answers: {answer: ['no']}});
+  await chat.refresh();
+  assert.equal(chat.panel, null);
+});
+
+test('new questions wait for an existing dialog and remain visible after dismissal', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20});
+  t.after(() => chat.stop());
+  void chat.run();
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  await chat.submit('Inspect');
+  chat.picker('Another dialog', [{value: 'back', label: 'Back'}], () => {});
+  const old = chat.panel;
+  const id = (await client.snapshot()).state.active;
+  await call({op: 'frame', frame: {kind: 'input_required', turn_id: id, data: {
+    request_id: 'later', questions: [{id: 'a', text: 'Answer this next.', choices: ['yes', 'no']}]}}});
+  await until(client, state => !!state.requests.later); await chat.refresh();
+  assert.equal(chat.panel, old);
+  assert.match(chat.status.text, /Waiting for your response/);
+  old.hide(); await chat.refresh();
+  assert.equal(chat.panel.requestId, 'later');
+});
+
+test('follow-up messages leave the pending area and keep their place when history is replayed', async () => {
+  const {PendingMessages} = await import('../src/view.mjs');
+  const view = new Transcript();
+  const pending = new PendingMessages();
+  const active = {id: 'active', text: 'Inspect', status: 'running'};
+  const text = 'left_wrist:\n  type: opencv\n  width: 960\nright_wrist:\n  type: opencv';
+  const message = {id: 'extra', text, status: 'steering', joined: 'active'};
+  view.snapshot({messages: [active, message]});
+  view.event({kind: 'agent_event', data: {kind: 'item', turn_id: 'active', data: {
+    item_id: 'before', kind: 'message', text: 'Before the new camera configuration.', phase: 'completed'}}});
+  pending.messages = [message];
+  assert.equal(pending.render(80).length, 1);
+  assert.match(pending.render(80).join(''), /Adding to current turn/);
+  assert.doesNotMatch(view.render(80).join('\n'), /left_wrist/);
+  const delivered = {...message, status: 'steered'};
+  view.snapshot({messages: [active, delivered]});
+  pending.messages = [delivered];
+  assert.deepEqual(pending.render(80), []);
+  view.event({kind: 'agent_event', data: {kind: 'item', turn_id: 'active', data: {
+    item_id: 'after', kind: 'message', text: 'After the new camera configuration.', phase: 'completed'}}});
+  view.event({kind: 'message_accepted', data: {message: {...message, status: 'queued'}}});
+  const rendered = view.render(80).join('\n');
+  assert.ok(rendered.indexOf('Before the new') < rendered.indexOf('left_wrist'));
+  assert.ok(rendered.indexOf('left_wrist') < rendered.indexOf('After the new'));
+  assert.match(rendered, /Received by agent/);
+  assert.equal(view.children.length, 1);
+
+  const restored = new Transcript();
+  restored.snapshot({messages: [active, delivered]});
+  restored.event({kind: 'message_accepted', data: {message: {...message, status: 'queued'}}});
+  restored.event({kind: 'agent_event', data: {kind: 'item', turn_id: 'active', data: {
+    item_id: 'before', kind: 'message', text: 'Before the new camera configuration.', phase: 'completed'}}});
+  restored.event({kind: 'agent_event', data: {kind: 'steer_delivered', turn_id: 'active', data: {message_id: 'extra'}}});
+  restored.event({kind: 'agent_event', data: {kind: 'item', turn_id: 'active', data: {
+    item_id: 'after', kind: 'message', text: 'After the new camera configuration.', phase: 'completed'}}});
+  assert.equal(restored.render(80).join('\n'), rendered);
 });
 
 test('temporary transport loss shows disconnected status and recovers without losing drafts or queue', {timeout: 15000}, async t => {
@@ -682,6 +796,15 @@ test('/permissions and /model change the agent; its own commands go to it', {tim
   await until(client, s => (s.agent_commands ?? []).length === 2);
   await chat.refresh();
   assert.deepEqual(chat.agentCommands().map(c => c.name), ['compact']);
+  await call({op: 'frame', frame: {kind: 'setting', data: {setting: 'permissions', value: 'auto-review',
+    choices: [{value: 'ask', label: 'Manual'}, {value: 'auto-review', label: 'Approve for me'}]}}});
+  await until(client, s => s.setting_choices?.permissions?.length === 2);
+  await chat.refresh();
+  assert.match(chat.status.text, /Approve for me/);
+  await chat.submit('/permissions');
+  assert.match(chat.panel.component.render(80).join('\n'), /Approve for me/);
+  assert.doesNotMatch(chat.panel.component.render(80).join('\n'), /Run commands without asking/);
+  chat.panel.hide();
   await chat.submit('/permissions ask');
   assert.equal((await client.snapshot()).state.settings.permissions, 'ask');
   assert.match(chat.status.text, /asks before commands/);

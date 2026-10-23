@@ -284,7 +284,8 @@ def test_initialize_reports_the_agents_commands_and_its_permissions():
         {"name": "compact", "description": "Clear history, keep a summary"}, {"bad": True}]}
     events = protocol.receive(response).events
     assert [e.kind for e in events] == ["ready", "setting", "commands"]
-    assert events[1].data == {"setting": "permissions", "value": "ask"}
+    assert events[1].data['setting'] == 'permissions' and events[1].data['value'] == 'ask'
+    assert any(choice['value'] == 'auto-review' for choice in events[1].data['choices'])
     assert events[2].data["commands"] == [{"name": "compact",
                                            "description": "Clear history, keep a summary"}]
 
@@ -292,6 +293,10 @@ def test_initialize_reports_the_agents_commands_and_its_permissions():
 @pytest.mark.parametrize("setting,value,subtype,field", [
     ("permissions", "ask", "set_permission_mode", ("mode", "default")),
     ("permissions", "auto", "set_permission_mode", ("mode", "bypassPermissions")),
+    ("permissions", "auto-review", "set_permission_mode", ("mode", "auto")),
+    ("permissions", "acceptEdits", "set_permission_mode", ("mode", "acceptEdits")),
+    ("permissions", "plan", "set_permission_mode", ("mode", "plan")),
+    ("permissions", "dontAsk", "set_permission_mode", ("mode", "dontAsk")),
     ("model", "claude-haiku-4-5", "set_model", ("model", "claude-haiku-4-5")),
 ])
 def test_settings_go_through_the_clis_own_controls(setting, value, subtype, field):
@@ -311,6 +316,15 @@ def test_a_refused_setting_is_reported_and_the_connection_stays_usable():
     assert protocol.can_submit
     with pytest.raises(ValueError):
         protocol.configure("permissions", "sometimes")
+
+
+def test_refused_native_auto_mode_keeps_the_last_acknowledged_permissions():
+    protocol = ready()
+    request = protocol.configure('permissions', 'auto-review').outbound[0]
+    assert protocol.permissions == 'auto'
+    event = protocol.receive(ack(request, success=False)).events[0]
+    assert event.kind == 'setting_rejected' and event.data['reason'] == 'rejected'
+    assert protocol.permissions == 'auto' and protocol.can_submit
 
 
 def test_the_model_each_request_runs_on_is_reported():
@@ -340,4 +354,4 @@ def test_a_session_that_asks_starts_in_the_default_mode_and_may_switch():
     assert "--allow-dangerously-skip-permissions" in asking
     assert "--dangerously-skip-permissions" not in asking
     running = plugin.conversation("box", "model", "").argv
-    assert "--dangerously-skip-permissions" in running and "--permission-mode" not in running
+    assert running[running.index('--permission-mode') + 1] == 'bypassPermissions'

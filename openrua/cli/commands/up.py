@@ -160,9 +160,9 @@ def add_options(p, *, default_name=DEFAULT_NAME) -> None:
 def add_permissions_option(p) -> None:
     """How a shared conversation's agent starts (openrua, serve); the native
     terminal (``openrua agent``) keeps the CLI's own prompting."""
-    p.add_argument("--permissions", choices=("ask", "auto"), default=None,
-                   help="ask: the agent asks before each command that changes something; "
-                   "auto: it runs them without asking (default); /permissions switches")
+    p.add_argument("--permissions", default=None, metavar='MODE',
+                   help="native permission mode: ask, auto-review, auto (legacy bypass default), "
+                   "or another mode supported by the selected agent; /permissions lists choices")
 
 
 def add_parser(sub) -> None:

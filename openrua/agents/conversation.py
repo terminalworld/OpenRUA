@@ -27,7 +27,8 @@ class Event:
     turn_started with a turn ID the owner never submitted and
     data.origin "agent". setting {setting, value} reports a setting now in
     effect (see ConversationProtocol.configure), setting_rejected one the
-    agent refused. commands {commands: [{name, description}]} lists the
+    agent refused. A setting can include choices [{value, label, description}]
+    for the modes the native connection offers. commands {commands: [{name, description}]} lists the
     agent's own commands, typed as a message starting with "/". A turn
     whose text is "/clear" starts a new native conversation: the plugin
     then reports session with the new session_id and cleared true.
@@ -93,9 +94,8 @@ class ConversationProtocol(ABC):
         again, naming ``message_id``."""
         raise NotImplementedError("this agent cannot take a message during a turn")
 
-    # What configure accepts: "permissions" is "ask" (ask the person before
-    # each command that changes something) or "auto" (run without asking);
-    # "model" is a model ID the agent knows.
+    # Plugins declare native permission values and publish their labels as
+    # setting choices. The default retains legacy ask and bypass modes.
     SETTINGS = {"permissions": ("ask", "auto"), "model": None}
 
     def configure(self, setting: str, value: str) -> Update:

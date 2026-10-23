@@ -149,3 +149,12 @@ def test_the_agent_cli_check_reports_the_version_it_found(monkeypatch):
     no_check = SimpleNamespace(name="other", version_probe=lambda: None,
                                sandbox_cli_check=lambda: None)
     assert live.check_agent_cli("box", no_check, backend, "panda") is None
+
+
+def test_missing_unpinned_codex_is_refused_before_starting_a_native_conversation(monkeypatch):
+    from openrua import agents
+    monkeypatch.setattr(live.subprocess, 'run', lambda *a, **k: SimpleNamespace(returncode=127, stdout='', stderr='codex: not found'))
+    backend = {'kind': 'real', 'sandbox_image': 'openrua-sandbox-humble', 'ros_distro': 'humble'}
+    with pytest.raises(UnavailableError, match='installed, working CLI') as caught:
+        live.check_agent_cli('box', agents.get('codex'), backend, 'robot.yaml')
+    assert caught.value.hint == 'openrua build sandbox --distro humble --agent codex'

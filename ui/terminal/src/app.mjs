@@ -1,8 +1,8 @@
 import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, SelectList, Spacer, Text,
   TuiMainScreen, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
-import {PERMISSIONS, agentCommands, commandsFor, notice, parseCommand, status, typedAnswer} from './session.mjs';
-import {Transcript, Welcome, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
+import {agentCommands, commandsFor, notice, parseCommand, permissionChoices, status, typedAnswer} from './session.mjs';
+import {PendingMessages, Transcript, Welcome, accent, bold, dialogHeading, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
 
@@ -40,6 +40,7 @@ export class Chat {
     this.controller = new Controller(client, this.transcript);
     this.status = new Text('Connecting…', 0, 0);
     this.notice = new Text('', 0, 0);
+    this.pendingMessages = new PendingMessages();
     this.editor = new Editor(this.ui, editorTheme);
     // Only slash commands: do not complete unrelated host files outside the
     // workspace. The agent's own commands join ours once it has said them.
@@ -54,11 +55,13 @@ export class Chat {
     this.done = false;
     this.busy = false;
     this.panels = [];
+    this.shownQuestions = new Set();
+    this.questionDrafts = new Map();
     this.welcome = new Welcome(name, facts, client.readOnly);
     this.ui.addChild(this.welcome);
     this.ui.addChild(this.transcript);
     this.ui.addChild(new Spacer(1)); this.ui.addChild(this.status);
-    this.ui.addChild(this.notice); this.ui.addChild(this.editor);
+    this.ui.addChild(this.pendingMessages); this.ui.addChild(this.notice); this.ui.addChild(this.editor);
     this.keys = new Text(muted(KEYS), 0, 0);
     this.ui.addChild(this.keys);
     this.started = null;
@@ -83,13 +86,13 @@ export class Chat {
   // menu that opens an editor gets its place back when the editor closes.
   get panel() { return this.panels.at(-1) ?? null; }
 
-  dialog(component) {
+  dialog(component, {requestId = null} = {}) {
     const slot = replacement => {
       const at = this.ui.children.indexOf(this.panel?.component ?? this.editor);
       if (at !== -1) this.ui.children.splice(at, 1, replacement);
     };
     slot(component);
-    const handle = {component, hide: () => {
+    const handle = {component, requestId, hide: () => {
       const index = this.panels.indexOf(handle);
       if (index === -1) return;
       const top = index === this.panels.length - 1;
@@ -109,14 +112,14 @@ export class Chat {
 
   rows() { return this.ui.terminal?.rows ?? 24; }
 
-  picker(title, items, select) {
+  picker(title, items, select, options = {}) {
     if (!items.length) { this.say('Nothing to show.'); return; }
     const menu = new SelectList(items, 8, selectTheme);
     const box = new Container();
-    box.addChild(new Text(plain(title), 0, 1)); box.addChild(menu);
+    box.addChild(new Text(dialogHeading(title, options.requestId), 0, 1)); box.addChild(menu);
     box.addChild(new Text(muted('↑/↓ select · Enter confirm · Esc back'), 0, 1));
     box.handleInput = data => menu.handleInput(data);
-    const handle = this.dialog(box);
+    const handle = this.dialog(box, options);
     menu.onCancel = () => handle.hide();
     menu.onSelect = item => {
       handle.hide();
@@ -124,21 +127,21 @@ export class Chat {
     };
   }
 
-  confirm(title, action) {
+  confirm(title, action, options = {}) {
     this.picker(title, [{value: 'cancel', label: 'Cancel'}, {value: 'confirm', label: 'Confirm'}],
-      async value => { if (value === 'confirm') { await action(); if (!this.done) await this.refresh(); } });
+      async value => { if (value === 'confirm') { await action(); if (!this.done) await this.refresh(); } }, options);
   }
 
-  editText(title, initial, apply) {
+  editText(title, initial, apply, options = {}) {
     const editor = new Editor(this.ui, editorTheme);
     editor.setText(initial);
-    const box = new Container(); box.addChild(new Text(plain(title), 0, 1)); box.addChild(editor);
+    const box = new Container(); box.addChild(new Text(dialogHeading(title, options.requestId), 0, 1)); box.addChild(editor);
     box.addChild(new Text(muted('Enter submit · Ctrl+J newline · Esc cancel'), 0, 1));
     Object.defineProperty(box, 'focused', {get: () => editor.focused, set: value => { editor.focused = value; }});
     box.handleInput = data => {
       if (matchesKey(data, 'escape')) handle.hide(); else editor.handleInput(data);
     };
-    const handle = this.dialog(box);
+    const handle = this.dialog(box, options);
     editor.onSubmit = text => {
       if (!text.trim()) return;
       handle.hide();
@@ -169,6 +172,9 @@ export class Chat {
   answerTyped(text) {
     const typed = typedAnswer(this.controller.state, text);
     if (!typed) return false;
+    if (this.questionDrafts.get(typed.request_id) === text.trim()) {
+      this.editor.setText(text); this.questions(); return true;
+    }
     if (typed.kind === 'choose') { this.questions(); return true; }
     void this.client.command('respond', {request_id: typed.request_id, answers: typed.answers})
       .then(() => this.refresh()).catch(error => this.say(error.message));
@@ -177,30 +183,58 @@ export class Chat {
 
   questions() {
     if (this.client.readOnly) throw new Error('This is read-only history.');
+    const visible = this.panels.find(panel => panel.requestId);
+    if (visible) { this.ui.setFocus(this.panel.component); this.ui.requestRender(); return; }
     const pending = Object.values(this.controller.state?.requests ?? {}).filter(r => r.status === 'pending');
     this.picker('Pending agent questions', pending.map(r => ({value: r.request_id,
       label: plain(r.questions.map(q => q.text).join(' / '))})), id => {
-      const request = pending.find(r => r.request_id === id);
-      if (request.questions.some(q => q.secret)) {
-        this.say('This request contains secret input. Answer it through the browser or existing CLI.'); return;
+      this.answerRequest(pending.find(r => r.request_id === id));
+    }, {requestId: pending.length === 1 ? pending[0].request_id : null});
+  }
+
+  answerRequest(request) {
+    const id = request.request_id;
+    if (!this.shownQuestions.has(id) && this.editor.getText().trim())
+      this.questionDrafts.set(id, this.editor.getText().trim());
+    this.shownQuestions.add(id);
+    if (request.questions.some(q => q.secret)) {
+      this.say('Waiting for secret input. Answer this request through the browser or existing CLI.'); return;
+    }
+    const options = {requestId: id};
+    const answers = {};
+    const next = index => {
+      if (this.controller.state?.requests?.[id]?.status !== 'pending') return;
+      if (index === request.questions.length) {
+        const summary = request.questions.map(q => `${q.text}\nYour answer: ${answers[q.id].join(', ')}`).join('\n\n');
+        this.confirm(`Review your response\n\n${summary}\n\nSend to the agent?`,
+          () => this.client.command('respond', {request_id: id, answers}), options);
+        return;
       }
-      const answers = {};
-      const next = index => {
-        if (index === request.questions.length) {
-          this.confirm('Send these answers to the agent?', () => this.client.command('respond', {request_id: id, answers}));
-          return;
-        }
-        const question = request.questions[index];
-        answerQuestion(this, question, values => { answers[question.id] = values; next(index + 1); });
-      };
-      next(0);
-    });
+      const question = request.questions[index];
+      answerQuestion(this, question, values => { answers[question.id] = values; next(index + 1); }, options);
+    };
+    next(0);
+  }
+
+  showPendingQuestion() {
+    const state = this.controller.state;
+    const pending = new Map(Object.values(state?.requests ?? {}).filter(r => r.status === 'pending')
+      .map(request => [request.request_id, request]));
+    for (const panel of [...this.panels].reverse())
+      if (panel.requestId && (!pending.has(panel.requestId) || state.closed)) panel.hide();
+    for (const id of this.shownQuestions) if (!pending.has(id)) {
+      this.shownQuestions.delete(id); this.questionDrafts.delete(id);
+    }
+    if (this.client.readOnly || state.closed || this.panel) return;
+    const request = [...pending.values()].find(request => !this.shownQuestions.has(request.request_id));
+    if (request) this.answerRequest(request);
   }
 
   async refresh() {
     await this.controller.refresh();
     if (this.done) return;
     const state = this.controller.state;
+    this.pendingMessages.messages = state.messages;
     if (this.welcome.seen === undefined) {
       // Coming back to a conversation that already has messages.
       this.welcome.seen = true; this.welcome.returning = state.messages.length > 0;
@@ -214,14 +248,15 @@ export class Chat {
     const extra = notes.map(note => note.kind === 'checks'
       ? note.checks.map(([step, check]) => `${step} ${marks[check.status] ?? ''}`).join(' ')
       : tone[note.tone](plain(note.text)));
-    if (state.active && this.lastEvent && Date.now() - this.lastEvent > QUIET_MS)
+    if (said.kind === 'working' && this.lastEvent && Date.now() - this.lastEvent > QUIET_MS)
       extra.splice(1, 0, yellow(`no output for ${elapsed(this.lastEvent)}`));
     if (this.controller.pending) extra.push(yellow('send unconfirmed: /retry'));
     const head = said.kind === 'working'
       ? accent(`${SPINNER[this.frame++ % SPINNER.length]} Working… ${elapsed(this.started)}`)
-      : tone[said.tone]({readonly: '◇ ', closed: '◇ ', paused: '‖ ', ready: '✓ '}[said.kind] + plain(said.text));
+      : tone[said.tone]({readonly: '◇ ', closed: '◇ ', paused: '‖ ', ready: '✓ ', waiting: '? '}[said.kind] + plain(said.text));
     this.status.setText([head, ...extra].join(muted(' · ')));
     this.keys.setText(muted(KEYS));
+    this.showPendingQuestion();
     this.ui.requestRender();
   }
 
@@ -293,7 +328,8 @@ export class Chat {
         writable();
         if (value) { await this.configure('permissions', value); return; }
         const now = state?.settings?.permissions;
-        this.picker('Permissions', PERMISSIONS.map(p => ({value: p.value, label: `${now === p.value ? '✓ ' : '  '}${p.label}`})),
+        this.picker('Native permission modes', permissionChoices(state).map(p => ({value: p.value,
+          label: `${now === p.value ? '✓ ' : '  '}${p.label}`, description: p.description})),
           choice => this.configure('permissions', choice).catch(error => this.say(error.message)));
       },
       model: async ([value]) => {
@@ -353,7 +389,7 @@ export class Chat {
   async run() {
     await this.refresh();
     if (this.done) return this.result;
-    this.ui.setFocus(this.editor);
+    this.ui.setFocus(this.panel?.component ?? this.editor);
     this.ui.start();
     await new Promise(resolve => { this.finished = resolve; void this.poll(); });
     return this.result;
