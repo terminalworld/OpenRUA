@@ -55,6 +55,13 @@ The suggestions do not require restructuring an existing repository. Use Git
 for maintained code and notes; choose which observations and generated files
 to track according to the project.
 
+Reusable methods are separate from session handoff notes. See [skills](skills.md)
+to save a method, find it in a later conversation, or choose whether the agent
+may accumulate methods automatically, suggest them, or wait for your request.
+The sandbox's working directory is `/workspace`; its HOME is separate so native
+agents can distinguish project skills from personal ones. Save maintained
+programs and notes in the project, rather than relying on `~` to name it.
+
 The current connection's machine description, documentation and starter tools
 are mounted read-only at `/robot`. Read `/robot/README.md` or run a tool by
 its full path, for example:

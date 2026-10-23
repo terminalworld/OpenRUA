@@ -108,6 +108,7 @@ start or reconnect (without a subcommand):
 | `demo` | render a recorded trial as a video (terminal + cameras) |
 | `probe` | draft a robot profile from a live ROS 2 graph |
 | `config` | your defaults (robot, simulator, benchmark, agent) |
+| `skills` | list reusable methods, import a skill, or set project accumulation |
 | `login` | sign your coding agent in on this computer |
 | `clean` | explicitly delete retained session files |
 | `doctor` | check the install: docker, images, simulator, login |
@@ -994,6 +995,77 @@ options:
                         API use is explicit
   --api-key-file API_KEY_FILE
                         file containing a raw key, used only with --auth api
+```
+
+## openrua skills
+
+```
+usage: openrua skills [-h] [-C WORKSPACE] [--trust-workspace] COMMAND ...
+
+positional arguments:
+  COMMAND
+
+options:
+  -h, --help            show this help message and exit
+  -C WORKSPACE, --cd WORKSPACE, --workspace WORKSPACE
+                        project directory (default: current directory)
+  --trust-workspace     explicitly trust the selected project before writing
+```
+
+| command | does |
+|---|---|
+| `list` | inspect saved file metadata; native availability may differ |
+| `show` | read one saved SKILL.md |
+| `add` | import or promote one skill without overwriting existing files |
+| `policy` | read or change accumulation instructions; existing skills remain usable |
+
+### openrua skills list
+
+```
+usage: openrua skills list [-h] [--json] [--personal]
+
+options:
+  -h, --help  show this help message and exit
+  --json
+  --personal  only personal OpenRUA skills
+```
+
+### openrua skills show
+
+```
+usage: openrua skills show [-h] [--personal] name
+
+positional arguments:
+  name
+
+options:
+  -h, --help  show this help message and exit
+  --personal
+```
+
+### openrua skills add
+
+```
+usage: openrua skills add [-h] [--personal] source
+
+positional arguments:
+  source      skill directory or SKILL.md
+
+options:
+  -h, --help  show this help message and exit
+  --personal  save in the user directory for use across projects
+```
+
+### openrua skills policy
+
+```
+usage: openrua skills policy [-h] [{auto,suggest,manual}]
+
+positional arguments:
+  {auto,suggest,manual}
+
+options:
+  -h, --help            show this help message and exit
 ```
 
 ## openrua login

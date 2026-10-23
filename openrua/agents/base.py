@@ -85,6 +85,13 @@ class PreparedProfile:
     read_secrets: Callable[[], list[str]] | None = field(default=None, repr=False)
 
 
+@dataclass(frozen=True)
+class SkillLocations:
+    """Native project directory and sandbox mount for personal skill files."""
+    project: str
+    personal: str
+
+
 def _copy_profile(source: Path, dest: Path, credentials: Credentials | None,
                   require_credentials: bool, login_hint: str) -> tuple[Path, Path | None]:
     """The legacy JSON layout, also used by the package compatibility helper."""
@@ -145,6 +152,7 @@ class Agent:
     whitelist: tuple[str, ...] = ()     # hostname regexes the CLI must reach through
                                         # the proxy (tinyproxy filter syntax)
     credentials: Credentials | None = None   # profile-directory login, or None
+    skills: SkillLocations | None = None
     token_env: str | None = None        # env var carrying a long-lived token, when
                                         # the CLI accepts one (passed by file)
     version_argv: tuple[str, ...] | None = None   # prints the CLI version (provenance)

@@ -215,10 +215,15 @@ def open_robot(request: RobotRequest) -> LiveRobot:
     if project_root is not None:
         materials = sandbox_dir / "robot-materials"
         project.prepare(cfg, project_root, materials)
+        from openrua.runner.skills import prepare as prepare_skills
+        skill_mounts = prepare_skills(project_root, request.home, adapter, materials)
         projects.save_selection(project_root, dict(robot=composed.robot, sim=composed.simulator or '',
                                                    bench=composed.benchmark or '', agent=cfg_agent['name'], model=model))
         workdir = project.run_directory(project_root, request.name)
         mounts = (*(m for m in mounts if not m.endswith(":/robot:ro")), f"{materials}:/robot:ro")
+        if skill_mounts:
+            destinations = {mount.split(':')[1] for mount in skill_mounts}
+            mounts = (*(mount for mount in mounts if mount.split(':')[1] not in destinations), *skill_mounts)
     if cfg["machine"]["backend"]["kind"] == "sim":
         print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
               flush=True)

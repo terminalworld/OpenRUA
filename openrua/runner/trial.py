@@ -338,7 +338,9 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         if project_root is not None:
             materials = paths.sandbox_dir(stem, home) / 'robot-materials'
             project.prepare(cfg, project_root, materials)
-            mounts = (*mounts, f'{materials}:/robot:ro')
+            from openrua.runner.skills import prepare as prepare_skills
+            mounts = (*mounts, *prepare_skills(project_root, paths.home(home), agent, materials),
+                      f'{materials}:/robot:ro')
         prompt_file = None
         if prompt_template is not None:
             prompt_file = trial_dir / 'prompt.txt'

@@ -55,6 +55,15 @@ descriptions.
 
 ## The hooks module
 
+Plugins can declare `skills = SkillLocations(project, personal)` from
+`openrua.agents.base`: the native project directory, relative to the project,
+and the absolute sandbox mount for personal skill files. `None`, the default,
+leaves an agent's native skill integration unsupported without affecting its
+launch hooks. The project runner bridges declared project directories and
+mounts the explicitly managed user skill directory. Native discovery and
+invocation remain the plugin's responsibility; the generic file catalog does
+not claim that a particular CLI has loaded a skill. See [skills](skills.md).
+
 A subclass of `openrua.agents.Agent` (`openrua/agents/base.py`). One
 method is required, `launch_argv`: the command that runs the agent
 headless on a task inside the sandbox (`openrua exec`, `openrua bench`),
