@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openrua"
-version = "0.21.2"
+version = "0.21.3"
 description = "Let your Claude Code or Codex control any robot, real or simulated, through the standard ROS 2 CLI and client library."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -105,6 +105,12 @@ testpaths = ["tests"]
 # ---------------------------------------------------------------------------
 [tool.importlinter]
 root_package = "openrua"
+
+[[tool.importlinter.contracts]]
+name = "review artifacts have no agent, session or runtime dependencies"
+type = "forbidden"
+source_modules = ["openrua.reviews"]
+forbidden_modules = ["openrua.agents", "openrua.runner", "openrua.sandbox", "openrua.robot", "openrua.sessions", "openrua.cli", "openrua.config"]
 
 [[tool.importlinter.contracts]]
 name = "skill files are independent of agents, sessions and robot runtimes"

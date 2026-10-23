@@ -87,6 +87,18 @@ def scrub_file(path: Path, secrets: list[str]) -> None:
         path.write_bytes(out)
 
 
+def scrub_value(value, secrets: list[str]):
+    """Redact known secrets before structured results reach a caller."""
+    if isinstance(value, str):
+        for secret in secrets:
+            value = value.replace(secret, '[REDACTED]')
+    elif isinstance(value, list):
+        value = [scrub_value(item, secrets) for item in value]
+    elif isinstance(value, dict):
+        value = {key: scrub_value(item, secrets) for key, item in value.items()}
+    return value
+
+
 def scrub_tree(root: Path, secrets: list[str]) -> None:
     """scrub_file over every file under ``root`` (the archived workspace:
     the agent can copy its own environment into a file there)."""

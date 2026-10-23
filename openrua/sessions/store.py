@@ -87,6 +87,47 @@ class SQLiteStore:
                                     (after, limit)).fetchall()
             return [{"seq": seq, "at": at, **json.loads(body)} for seq, at, body in rows]
 
+    def export(self, *, max_bytes: int, max_events: int) -> dict:
+        """Export one bounded, consistent state and recent event history.
+
+        A readonly caller can inspect closed records without opening their
+        execution endpoint. Truncation is explicit; event order stays ascending.
+        """
+        if min(max_bytes, max_events) <= 0:
+            raise ValueError('export limits must be positive')
+        with self._lock:
+            self._db.execute('BEGIN')
+            try:
+                size = self._db.execute('SELECT length(CAST(body AS BLOB)) FROM state WHERE id=1').fetchone()[0]
+                if size > max_bytes:
+                    raise ValueError('conversation state exceeds the per-record input limit')
+                state = json.loads(self._db.execute('SELECT body FROM state WHERE id=1').fetchone()[0])
+                cursor = self._db.execute('SELECT COALESCE(MAX(seq),0) FROM events').fetchone()[0]
+                events, truncated = [], False
+                used = len(json.dumps({'state': state, 'cursor': cursor, 'events': [], 'truncated': False},
+                                      ensure_ascii=False, separators=(',', ':')).encode())
+                if used > max_bytes:
+                    raise ValueError('conversation state exceeds the per-record input limit')
+                rows = self._db.execute('SELECT seq,at,length(CAST(body AS BLOB)) FROM events '
+                                        'WHERE seq<=? ORDER BY seq DESC LIMIT ?', (cursor, max_events + 1)).fetchall()
+                for seq, at, length in rows:
+                    if len(events) >= max_events or length > max_bytes - used:
+                        truncated = True
+                        break
+                    body = self._db.execute('SELECT body FROM events WHERE seq=?', (seq,)).fetchone()[0]
+                    event = {'seq': seq, 'at': at, **json.loads(body)}
+                    cost = len(json.dumps(event, ensure_ascii=False, separators=(',', ':')).encode()) + bool(events)
+                    if used + cost > max_bytes:
+                        truncated = True
+                        break
+                    events.append(event)
+                    used += cost
+                self._db.execute('COMMIT')
+                return {'state': state, 'cursor': cursor, 'events': events[::-1], 'truncated': truncated}
+            except BaseException:
+                self._db.execute('ROLLBACK')
+                raise
+
     def close(self) -> None:
         with self._lock:
             self._db.close()
