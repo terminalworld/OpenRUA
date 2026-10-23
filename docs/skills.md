@@ -120,6 +120,87 @@ verify it, and a format accepted by another agent does not install its tools.
 
 OpenRUA does not move a robot solely to validate a saved skill. Capture the
 checks performed during normal work and identify remaining checks explicitly.
-Background cross-session review and scheduling are separate capabilities;
-this release does not start either automatically. `bench` retains its isolated
-workspaces and does not mount your personal daily-use skills.
+`bench` retains its isolated workspaces and does not mount your personal
+daily-use skills.
+
+## Review completed project work
+
+To look back across finished conversations and exec tasks, run a separate
+review from the project directory:
+
+```sh
+openrua skills review
+openrua skills review --since 2026-10-01 --agent codex --wall-clock-min 5
+openrua skills reviews
+openrua skills reviews REVIEW_ID
+```
+
+This is an explicit model task using the selected agent's native login or
+configured API authentication. It defaults to the project's saved agent/model,
+then user settings. The review image must already contain that agent. Prepare
+the default image and model proxy once if needed:
+
+```sh
+openrua build sandbox --agent codex
+openrua build proxy
+```
+
+Use `--image openrua-sandbox-humble` for a prepared Humble image, or name your
+own compatible image. There is no robot configuration requirement. Both agents
+use their existing headless plugin, so native account limits still apply.
+
+The input includes only closed conversations and completed exec records whose
+recorded project path matches this directory exactly, plus selected project
+text and existing project skill files. Active conversations and other projects
+are excluded. `--records DIR` adds an exec record location while retaining the
+same ownership check. In a Git project, ordinary context follows Git's tracked
+and unignored files; other directories use a bounded text-file walk. Hidden
+project context is omitted except for skill files and their policy.
+
+The default limits select 20 recent records, 32 MiB of input, 2 MiB per file,
+2,000 files, and 10,000 recent events per conversation. The manifest lists
+captured hashes, omissions and truncation. Files are checked individually
+while read; this is not an atomic snapshot of a changing project.
+
+The worker sees a read-only input snapshot and a separate writable staging
+directory. It has no robot or host network, source-project mount, host devices or
+Docker socket. Model access travels over a Unix socket to the selected agent's
+fixed model proxy; web search and account connectors are disabled. The worker
+execution time is capped. `--max-turns` requests the native cap when supported;
+it is not an enforced Codex turn, token or monetary budget.
+
+Review results live under `.openrua/skill-reviews/REVIEW_ID/`:
+
+| File | Purpose |
+|---|---|
+| `report.md`, `report.json` | outcome, source record references, proposed changes and output problems |
+| `manifest.json` | captured input paths and hashes, limits and omissions |
+| `baseline/`, `proposed/`, `changes.diff` | existing skill snapshot, candidate files and their differences |
+| `transcript.jsonl`, `stderr.log` | this review's native execution output |
+
+The report shows files that changed in the source project during review.
+Candidates are never applied automatically, even when no concurrent edit is
+detected. Inspect the diff and evidence, then edit an existing method through
+your normal Git workflow. To import a new candidate without overwriting files:
+
+```sh
+openrua skills add .openrua/skill-reviews/REVIEW_ID/proposed/.agents/skills/camera-check
+```
+
+The selected record and project input copies remain private under
+`~/.openrua/skill-reviews/REVIEW_ID/input/`, outside the project repository.
+Read a relative evidence path with:
+
+```sh
+openrua skills reviews REVIEW_ID --input manifest.json
+openrua skills reviews REVIEW_ID --input records/sessions/SESSION_ID/conversation.json
+```
+
+Temporary authentication and working copies are removed after completion,
+failure or interruption. Partial candidates and reports remain inspectable;
+an owner that exits without finalizing appears as `unknown` and is not replayed.
+No eligible records means no credential preparation or model call. Identical
+inputs with a completed review skip another model call unless `--force` is
+given. Check for changed methods and current machine assumptions before using
+any candidate. Periodic scheduling remains a separate step and is not enabled
+by running a review or choosing an accumulation policy.

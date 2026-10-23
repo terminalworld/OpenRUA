@@ -1018,6 +1018,8 @@ options:
 | `show` | read one saved SKILL.md |
 | `add` | import or promote one skill without overwriting existing files |
 | `policy` | read or change accumulation instructions; existing skills remain usable |
+| `review` | review completed project records in isolation and save proposals |
+| `reviews` | list this project's review reports or read one |
 
 ### openrua skills list
 
@@ -1066,6 +1068,61 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
+```
+
+### openrua skills review
+
+```
+usage: openrua skills review [-h] [--agent AGENT] [--model MODEL]
+                             [--image IMAGE] [--since SINCE] [--records DIR]
+                             [--max-records MAX_RECORDS]
+                             [--max-input-mb MAX_INPUT_MB]
+                             [--max-file-mb MAX_FILE_MB]
+                             [--max-files MAX_FILES] [--max-events MAX_EVENTS]
+                             [--wall-clock-min WALL_CLOCK_MIN]
+                             [--max-turns MAX_TURNS] [--force] [--json]
+
+options:
+  -h, --help            show this help message and exit
+  --agent AGENT         agent name or manifest; default: project or user
+                        setting
+  --model MODEL         model; default: project or selected agent setting
+  --image IMAGE         existing agent image; default: standard Jazzy sandbox
+  --since SINCE         ISO date/time, UTC unless an offset is given
+  --records DIR         additional exec record root; ownership is still
+                        checked
+  --max-records MAX_RECORDS
+                        newest eligible completed records to inspect
+  --max-input-mb MAX_INPUT_MB
+                        total selected input size in MiB
+  --max-file-mb MAX_FILE_MB
+                        per-file or conversation export limit in MiB
+  --max-files MAX_FILES
+                        input and proposal file-count limit
+  --max-events MAX_EVENTS
+                        recent events per conversation; omitted events are
+                        reported
+  --wall-clock-min WALL_CLOCK_MIN
+                        worker execution time cap in minutes
+  --max-turns MAX_TURNS
+                        requested native turn cap; adapters may not enforce it
+  --force               review again even if identical inputs already have a
+                        completed review
+  --json
+```
+
+### openrua skills reviews
+
+```
+usage: openrua skills reviews [-h] [--json] [--input PATH] [id]
+
+positional arguments:
+  id            review ID from the list
+
+options:
+  -h, --help    show this help message and exit
+  --json
+  --input PATH  read a relative path from this review's private input snapshot
 ```
 
 ## openrua login

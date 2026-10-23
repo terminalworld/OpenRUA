@@ -12,13 +12,14 @@ OpenRUA gives a native coding agent a workspace and access to the robot's
 ROS 2 interfaces. The product manages resources and user interaction; the agent
 chooses the robot observations, programs, and actions.
 
-Three entry paths share these foundations:
+These entry paths share the same resource and agent contracts:
 
 | Path | Composition | Lifetime |
 |---|---|---|
 | Shared chat | default startup → background `serve` → `runner.managed` → live resources, native conversation, session execution; TUI, browser, and plain CLI use its HTTP API | The service owns execution; closing a client only detaches |
 | Native terminal | `up` then `agent` use `runner.live` and the selected agent's native terminal | `up` retains the resources until Ctrl-C or `down`; exiting the agent leaves them up |
 | Recorded run | `exec` (one project task) or `bench` (isolated trials) → `runner.main.run_set` → trial runner → project or fresh workspace, operator, preflight, scoring, records | `exec` reuses project files; `bench` keeps isolated inputs; both record and tear down resources |
+| Skill review | `skills review` → completed project records and bounded snapshots → isolated native file task → proposals and report | Temporary worker/profile are removed; source skills are never replaced |
 
 `openrua connect` is shared chat too: its `serve --connect` opens a connecting
 terminal (`runner.connect`) and moves the conversation to the robot's own
@@ -40,6 +41,7 @@ Its queue orders user instructions, not individual robot movements.
 | `openrua/sessions/` | shared user-message queue, durable events and native connection ownership through injected storage/transport contracts; independent of robot task planning. See [sessions.md](sessions.md). | `openrua`, `--gui`, `--cli`; `serve`, `chat`, `session` for explicit operation |
 | `openrua/web/` | bundled browser assets, supplied to the HTTP server by its caller. The browser consumes the session API. | `openrua session --name NAME web` |
 | `openrua/artifacts.py` | bounded, read-only workspace file access; the owner supplies the root and reader to the HTTP server. | file operations in the session API |
+| `openrua/reviews.py` | bounded snapshots, candidate validation and diffs through the artifact reader; no runtime dependencies. `runner.skill_review` selects completed records and coordinates a temporary worker; `proxy.relay` exposes only its fixed upstream model proxy through a private Unix socket. | `openrua skills review`, `openrua skills reviews` |
 | `openrua/terminal/` and `ui/terminal/` | Pi launcher and frontend. The launcher receives configuration/history operations as callbacks; chat consumes the same local session API. Private temporary files carry screen input/output. Prepared JS resources ship in the wheel; the runtime is included in the default pip installation. | `openrua` |
 | `openrua/cli/` | the command line: one module per verb under `commands/` including discovery, builds, native sessions, shared chat, trials, and cleanup. `output.py` formats output; `state.py` retains compatibility imports for resource state. | `openrua` |
 | `openrua/doctor/` | is this machine ready: `checks.py` (docker, images and their labels against the selected agents' manifests, simulator, a real robot's driver images and startup checks, login, the user directory), `report.py`. | `openrua doctor` |

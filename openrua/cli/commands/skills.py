@@ -76,3 +76,5 @@ def add_parser(sub) -> None:
     policy = actions.add_parser('policy', help='read or change accumulation instructions; existing skills remain usable')
     policy.add_argument('mode', nargs='?', choices=skills.MODES)
     p.set_defaults(fn=run)
+    from openrua.cli.commands.skill_review import add_parsers
+    add_parsers(actions)

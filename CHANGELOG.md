@@ -9,6 +9,19 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.21.3
+
+- `openrua skills review` reviews completed conversations and exec records
+  belonging to the current project, with bounded file snapshots and explicit
+  omissions. It runs a selected native coding agent in a separate file-only
+  container, with no robot network or source-project mount. A fixed model-proxy
+  transport provides model access while the container uses `--network none`.
+- Reviews save candidate skills, a baseline diff and a report without applying
+  changes to project skills. `openrua skills reviews [ID]` reads retained results;
+  selected input evidence stays in the user directory. Foreground edits are
+  reported, timeouts and native quota failures are retained, and identical
+  completed input sets skip model work unless forced. No schedule is enabled.
+
 ## 0.21.2
 
 - Connecting a new real robot now prepares a missing connecting-terminal
