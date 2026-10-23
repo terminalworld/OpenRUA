@@ -42,10 +42,7 @@ class Manifest:
         return tuple(self.fields["whitelist"])
 
 
-def split_pin(spec: str) -> tuple[str, str | None]:
-    """``name`` or ``name@version`` -> (name, version or None)."""
-    name, _, version = spec.partition("@")
-    return name, (version or None)
+split_pin = paths.split_pin
 
 
 def _read(path: Path, version: str | None = None) -> Manifest:

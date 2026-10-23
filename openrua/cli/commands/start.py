@@ -127,7 +127,8 @@ def validate_values(home: Path, values: dict[str, str]) -> dict:
         if values['bench']:
             _, benchmark = config.load_benchmark(values['bench'])
             fixed = benchmark.get('agent') or {}
-            if fixed.get('name') in (None, selected['name']) and fixed.get('auth') and fixed['auth'] != auth:
+            same_agent = fixed.get('name') is None or paths.agent_key(fixed['name']) == paths.agent_key(selected['name'])
+            if same_agent and fixed.get('auth') and fixed['auth'] != auth:
                 raise UsageError('the benchmark prescribes different authentication',
                                  hint='edit its agent.auth configuration before selecting another source')
         selected['auth'] = auth

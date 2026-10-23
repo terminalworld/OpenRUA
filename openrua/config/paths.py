@@ -35,6 +35,19 @@ from pathlib import Path
 
 from openrua.errors import NotFound, UsageError
 
+
+def split_pin(spec: str) -> tuple[str, str | None]:
+    """Split an agent name or manifest path from its optional CLI version."""
+    name, _, version = spec.partition('@')
+    return name, version or None
+
+
+def agent_key(spec: str) -> str:
+    """The canonical preference key for an agent, independent of its pin."""
+    name, _ = split_pin(spec)
+    return str(Path(name).expanduser().resolve()) if is_path(name) else name
+
+
 DEFAULT_HOME = "~/.openrua"
 CONFIG_FILENAME = "config.yaml"
 

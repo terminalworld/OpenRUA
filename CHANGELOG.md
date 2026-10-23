@@ -9,6 +9,14 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.21.7
+
+- Selecting an agent with `@VERSION` retains its configured authentication,
+  credentials directory, model and options. The explicit pin takes precedence
+  over a configured CLI version without duplicating the install selector.
+  Custom manifest paths share their canonical preference key, legacy pin-specific
+  settings remain readable, and pins cannot bypass fixed benchmark authentication.
+
 ## 0.21.6
 
 - Changing a project's agent uses the new agent's model defaults instead of

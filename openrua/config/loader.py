@@ -94,9 +94,14 @@ def layer_agent(bench_agent: dict, *defaults: UserConfig, agent: str | None = No
     if not name:
         raise ConfigError("no agent named", hint="openrua config set --agent <name>, or "
                           "agent.name in the benchmark file, or --agent")
-    layers = [d.agents[name].model_dump(exclude_unset=True, exclude_none=True)
-              for d in defaults if name in d.agents]
-    if bench_agent.get("name") in (None, name):
+    base, pin = paths.split_pin(name)
+    canonical = paths.agent_key(name)
+    keys = tuple(dict.fromkeys((base, canonical, name)))
+    layers = [d.agents[key].model_dump(exclude_unset=True, exclude_none=True)
+              for d in defaults for key in keys if key in d.agents]
+    bench_name = bench_agent.get('name')
+    bench_base = paths.agent_key(bench_name) if bench_name is not None else None
+    if bench_base in (None, canonical):
         layers.append({k: v for k, v in bench_agent.items() if k != "name"})
     out: dict = {"name": name}
     for layer in layers:
@@ -105,6 +110,9 @@ def layer_agent(bench_agent: dict, *defaults: UserConfig, agent: str | None = No
                 out["options"] = {**out.get("options", {}), **(v or {})}
             else:
                 out[k] = v
+    if pin:
+        # The explicit pin stays in name and outranks a configured version.
+        out.pop('version', None)
     return out
 
 

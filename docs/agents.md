@@ -22,6 +22,9 @@ the agent through `openrua.agents.get(name)`:
   `HOOKS`.
 
 Selecting, pinning and logging an agent in is in [install.md](install.md).
+An `@VERSION` selection keeps that agent's configured model, authentication,
+profile directory and options. It overrides the configured CLI version;
+it does not select a separate account or reset the agent's preferences.
 When opening a native terminal with `openrua agent`, OpenRUA reuses the
 plugin manifest and version `openrua up` recorded at robot startup.
 An explicit `agent --agent` selection uses the replacement plugin's own
