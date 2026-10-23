@@ -182,6 +182,9 @@ def run(project: Path, home: Path, adapter, settings: dict, *, image: str, model
     if not math.isfinite(seconds) or seconds <= 0 or min(max_records, max_bytes, max_file_bytes, max_files, max_events, max_turns) <= 0:
         raise UsageError('review limits must be positive')
     project, home = project.resolve(), home.resolve()
+    if home.is_relative_to(project) or (home / 'skill-reviews').resolve().is_relative_to(project):
+        raise UsageError('review state must be stored outside the robot project',
+                         hint='use openrua --home /path/outside/project skills review, or select another project with skills -C DIR')
     output_root = project / '.openrua' / 'skill-reviews'
     reviews.directory(output_root, project)
     identity = uuid4().hex
