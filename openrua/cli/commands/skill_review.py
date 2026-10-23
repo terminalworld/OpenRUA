@@ -16,7 +16,20 @@ from openrua.errors import UsageError
 from openrua.runner import skill_review
 
 
-def run(args) -> int:
+def selection(root, home, agent=None, model=None):
+    """Resolve the same project defaults for the CLI and review confirmation."""
+    saved = projects.selection(root)
+    requested = agent or saved.get('agent')
+    if agent is None and requested:
+        source, pin = paths.split_pin(requested)
+        if paths.is_path(source) and not Path(source).is_absolute():
+            requested = str((root / source).resolve()) + (f'@{pin}' if pin else '')
+    adapter, settings = agent_settings.resolve(home, requested)
+    chosen = model or agent_settings.project_model(saved, agent) or settings.get('model') or adapter.default_model
+    return requested or adapter.name, adapter, settings, chosen
+
+
+def run(args, *, on_result=None, cancelled=None) -> int:
     root = projects.resolve(args.workspace or Path.cwd())
     try:
         if args.action == 'reviews':
@@ -65,17 +78,19 @@ def run(args) -> int:
         root = choose(root, args.home, accept=args.trust_workspace)
         if root is None:
             return 0
-        saved = projects.selection(root)
-        requested = args.agent or saved.get('agent')
-        adapter, settings = agent_settings.resolve(args.home, requested)
-        model = args.model or agent_settings.project_model(saved, args.agent) or settings.get('model') or adapter.default_model
+        _, adapter, settings, model = selection(root, args.home, args.agent, args.model)
+        if getattr(args, 'effort', None):
+            settings = {**settings, 'options': {**settings.get('options', {}), 'effort': args.effort}}
         print(f'[skills] Reviewing completed work in {root} with {adapter.name}.', file=sys.stderr, flush=True)
         result = skill_review.run(root, args.home, adapter, settings,
                                   image=args.image or sandbox_image('jazzy'), model=model, since=since,
                                   max_records=args.max_records, max_bytes=int(args.max_input_mb * 1024 * 1024),
                                   max_file_bytes=int(args.max_file_mb * 1024 * 1024), max_files=args.max_files,
                                   max_events=args.max_events, seconds=args.wall_clock_min * 60,
-                                  max_turns=args.max_turns, extra_records=extra, force=args.force)
+                                  max_turns=args.max_turns, extra_records=extra, force=args.force,
+                                  **({'cancelled': cancelled} if cancelled is not None else {}))
+        if on_result is not None:
+            on_result(result)
         if args.json:
             print(json.dumps(result, indent=2))
         else:
@@ -88,10 +103,38 @@ def run(args) -> int:
         raise UsageError(str(exc), hint='openrua skills review --help') from exc
 
 
+def tasks(args) -> int:
+    from openrua.cli import skill_tasks
+    root = projects.resolve(args.workspace or Path.cwd())
+    try:
+        if args.cancel and not args.id:
+            raise ValueError('--cancel requires a task ID')
+        if args.id:
+            value = skill_tasks.cancel(args.home, root, args.id) if args.cancel else skill_tasks.read(args.home, root, args.id)
+        else:
+            value = skill_tasks.listing(args.home, root)
+        if args.json:
+            print(json.dumps(value, indent=2))
+        else:
+            for row in [value] if args.id else value:
+                print(f'{row["id"]}  {row["status"]}' + (f'  review {row["review_id"]}' if row.get('review_id') else ''))
+                if row.get('reason') or row.get('error'): print(row.get('reason') or row['error'])
+            if not value: print('No review tasks in this project.')
+        return 0
+    except (ValueError, OSError) as exc:
+        raise UsageError(str(exc), hint='openrua skills tasks --help') from exc
+
+
 def add_parsers(actions) -> None:
+    background = actions.add_parser('tasks', help='inspect or cancel review tasks without starting a robot')
+    background.add_argument('id', nargs='?', help='task ID from the project menu or task list')
+    background.add_argument('--cancel', action='store_true', help='request cooperative cancellation of this review')
+    background.add_argument('--json', action='store_true')
+    background.set_defaults(fn=tasks)
     review = actions.add_parser('review', help='review completed project records in isolation and save proposals')
     review.add_argument('--agent', default=None, help='agent name or manifest; default: project or user setting')
     review.add_argument('--model', default=None, help='model; default: project or selected agent setting')
+    review.add_argument('--effort', default=None, help='native effort option; default: selected agent settings')
     review.add_argument('--image', default=None, help='existing agent image; default: standard Jazzy sandbox')
     review.add_argument('--since', default=None, help='ISO date/time, UTC unless an offset is given')
     review.add_argument('--records', action='append', default=[], metavar='DIR', help='additional exec record root; ownership is still checked')

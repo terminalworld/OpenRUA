@@ -91,7 +91,8 @@ def _copy_skill_baseline(snapshot: reviews.Snapshot, selected: list[str], baseli
 
 
 def _worker(adapter, profile, workspace: Path, inputs: Path, runtime: Path, image: str,
-            model: str, options: dict, seconds: float, max_turns: int, output: Path, details: dict) -> str:
+            model: str, options: dict, seconds: float, max_turns: int, output: Path, details: dict,
+            cancelled=None) -> str:
     """No network interface, host workspace, robot connection or socket to Docker."""
     name = 'openrua-skill-review-' + output.name
     details.update(container=name, network='none', model_transport='unix socket to fixed model proxy')
@@ -123,6 +124,9 @@ def _worker(adapter, profile, workspace: Path, inputs: Path, runtime: Path, imag
             _docker(*command)
             deadline = time.monotonic() + min(seconds, 20)
             while True:
+                if cancelled is not None and cancelled():
+                    details['reason'] = 'Review canceled before model startup.'
+                    return 'interrupted'
                 ready = subprocess.run(['docker', 'exec', name, 'cat', '/tmp/model-proxy.json'], capture_output=True, text=True)
                 if ready.returncode == 0:
                     address = json.loads(ready.stdout)
@@ -139,11 +143,19 @@ def _worker(adapter, profile, workspace: Path, inputs: Path, runtime: Path, imag
             argv = adapter.launch_argv(name, PROMPT, model, max_turns, proxy, options=options, limits=LIMITS)
             with (output / 'transcript.jsonl').open('w') as stdout, (output / 'stderr.log').open('w') as stderr:
                 process = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=stdout, stderr=stderr, start_new_session=True)
-                try:
-                    process.wait(timeout=max(0, expires - time.monotonic()))
-                except subprocess.TimeoutExpired:
-                    details['reason'] = f'Worker exceeded its {seconds:g} second execution limit.'
-                    return 'timed_out'
+                while True:
+                    if cancelled is not None and cancelled():
+                        details['reason'] = 'Review canceled; its worker resources were stopped.'
+                        return 'interrupted'
+                    remaining = expires - time.monotonic()
+                    if remaining <= 0:
+                        details['reason'] = f'Worker exceeded its {seconds:g} second execution limit.'
+                        return 'timed_out'
+                    try:
+                        process.wait(timeout=min(.2, remaining) if cancelled is not None else remaining)
+                        break
+                    except subprocess.TimeoutExpired:
+                        continue
                 details['returncode'] = process.returncode
                 transcript = output / 'transcript.jsonl'
                 details['native_totals'] = adapter.read_final(transcript)
@@ -178,7 +190,7 @@ def _worker(adapter, profile, workspace: Path, inputs: Path, runtime: Path, imag
 def run(project: Path, home: Path, adapter, settings: dict, *, image: str, model: str,
         since: float | None, max_records: int, max_bytes: int, max_file_bytes: int,
         max_files: int, max_events: int, seconds: float, extra_records: tuple[Path, ...] = (),
-        max_turns: int = 100, force: bool = False) -> dict:
+        max_turns: int = 100, force: bool = False, cancelled=None) -> dict:
     if not math.isfinite(seconds) or seconds <= 0 or min(max_records, max_bytes, max_file_bytes, max_files, max_events, max_turns) <= 0:
         raise UsageError('review limits must be positive')
     project, home = project.resolve(), home.resolve()
@@ -195,6 +207,7 @@ def run(project: Path, home: Path, adapter, settings: dict, *, image: str, model
     inputs, workspace = runtime / 'input', runtime / 'workspace'
     workspace.mkdir()
     result = {'id': identity, 'project': str(project), 'agent': adapter.name, 'model': model,
+              'effort': settings.get('options', {}).get('effort', adapter.default_options.get('effort')),
               'image': image, 'started_at': datetime.now(timezone.utc).isoformat(),
               'status': 'running', 'proposal_only': True, 'output': str(output), 'sources': [],
               'input_directory': str(inputs),
@@ -270,8 +283,12 @@ def run(project: Path, home: Path, adapter, settings: dict, *, image: str, model
             manifest['bytes'] = sum(item['bytes'] for item in manifest['files'])
             reviews.write_json(inputs / 'manifest.json', manifest)
             reviews.write_json(output / 'manifest.json', manifest)
-            result['status'] = _worker(adapter, profile, workspace, inputs, runtime, image, model,
-                                       settings.get('options', {}), seconds, max_turns, output, result)
+            if cancelled is not None and cancelled():
+                result.update(status='interrupted', reason='Review canceled before model startup.')
+            else:
+                result['status'] = _worker(adapter, profile, workspace, inputs, runtime, image, model,
+                                           settings.get('options', {}), seconds, max_turns, output, result,
+                                           **({'cancelled': cancelled} if cancelled is not None else {}))
     except KeyboardInterrupt:
         result.update(status='interrupted', reason='Review interrupted; no project skills were applied.')
     except Exception as exc:
@@ -302,6 +319,7 @@ def run(project: Path, home: Path, adapter, settings: dict, *, image: str, model
             findings = ''.join(f'- {error}\n' for error in result['validation_errors'])
             changed = ''.join(f'- {row["path"]}\n' for row in result['changes'] if row['source_changed'])
             (output / 'report.md').write_text(f'# Skill review {identity}\n\nStatus: {result["status"]}\n\n'
+                                              f'Agent: {result["agent"]}; model: {result["model"]}; effort: {result.get("effort") or "agent default"}.\n\n'
                                               f'{len(result["sources"])} completed records; {len(result["changes"])} proposed file changes.\n\n'
                                               'Project skills were not modified. Inspect changes.diff and proposed/.\n\n'
                                               + (result.get('reason') or result.get('error') or '') + '\n\n'

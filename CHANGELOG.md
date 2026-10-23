@@ -9,6 +9,23 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.21.9
+
+- `/project` opens saved project and personal skills, review reports and diffs,
+  and accumulation guidance in the terminal. Native `/skills` keeps its original
+  meaning. Explicit imports add new methods without overwriting existing ones;
+  existing method changes prepare an editable merge request for the native agent.
+- Start a separate review from the project menu after confirming its agent,
+  model, image and worker limit. Durable task identities prevent duplicate starts;
+  tasks continue after the chat owner exits and support cooperative cancellation.
+  `skills tasks [ID]` inspects them without starting a robot.
+- The terminal keeps the configured model visible. `/model` opens native model
+  choices or a model-ID editor; changes apply to the next turn. Codex model choices
+  come from its app-server metadata, and a failed listing does not interrupt work.
+- Codex reasoning effort is visible and adjustable with `/model effort` or
+  `/model effort LEVEL`, using that model's native choices. It is retained on
+  resume. Separate reviews expose their own effort setting with `--effort`.
+
 ## 0.21.8
 
 - Camera snapshots create the requested output directory and check the image

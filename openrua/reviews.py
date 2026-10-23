@@ -229,6 +229,7 @@ def proposals(project: Path, baseline: Path, workspace: Path, output: Path, root
     current = WorkspaceFiles(project, max_file_bytes, max_files)
     for row in rows:
         expected = (source_digests or {}).get(row['path'], row['before_sha256'])
+        row['source_sha256'] = expected
         try:
             item = current.read(row['path'])
             data = base64.b64decode(item['data'])
@@ -238,5 +239,7 @@ def proposals(project: Path, baseline: Path, workspace: Path, output: Path, root
         except (OSError, ValueError):
             row['source_changed'] = True
     (output / 'changes.diff').write_text(diff)
+    changed = sum(any(Path(row['path']).is_relative_to(Path(entry.path).parent.relative_to(archive.root))
+                      for row in rows) for entry in entries)
     return {'changes': rows, 'validation_errors': errors, 'proposal_only': True,
-            'proposed_skills': len(entries)}
+            'proposed_skills': changed}

@@ -66,4 +66,7 @@ export class Client {
   workspaceRead(path) { return this.request(`/api/workspace/read?path=${encodeURIComponent(path)}`); }
   events(after = 0) { return this.request(`/api/events?after=${after}&limit=1000`); }
   async command(operation, params) { return (await this.request('/api/commands', {operation, params})).result; }
+  async projectSkills(operation, params = {}) {
+    return (await this.request('/api/actions/project-skills', {operation, ...params})).result;
+  }
 }

@@ -10,11 +10,12 @@ from dataclasses import replace
 
 from openrua.cli.commands import up
 from openrua.cli import workspace
+from openrua.cli.project_skills import ProjectSkills
 from openrua.web import assets
 from openrua.config import paths
 from openrua.agents.base import NotSignedIn
 from openrua.errors import AuthError, OpenRUAError, UnavailableError
-from openrua.runner import managed
+from openrua.runner import managed, live_state
 from openrua.robot.cameras import CameraView
 from openrua.runner.connect import ConnectFlow, ConnectRequest, open_connect
 from openrua.sessions.client import write_endpoint
@@ -45,9 +46,14 @@ async def serve(args) -> None:
         # The robot the session holds now: a robot just connected moves to
         # its own terminal, and the view follows.
         view = CameraView(lambda: owned.robot)
+        def project():
+            facts = live_state.load(args.name, args.home, require_running=False)
+            return facts.get('project') if facts.get('backend') != 'connect' else None
+        project_skills = ProjectSkills(args.home, project)
         server = LocalServer(owned.execution, owned.end, secrets.token_urlsafe(32), port=args.port,
                              assets=assets(), artifacts=owned.artifacts,
-                             actions={"check": flow.check} if flow else None, cameras=view)
+                             actions={"project-skills": project_skills.action,
+                                      **({"check": flow.check} if flow else {})}, cameras=view)
         server.start()
         write_endpoint(endpoint, server.url, server.token)
         published = True

@@ -5,6 +5,37 @@ from types import SimpleNamespace
 
 import pytest
 
+
+def test_reopened_conversation_retains_reasoning_effort_in_native_options(tmp_path, monkeypatch):
+    import sys
+    from openrua.agents.conversation import Conversation
+    from openrua.runner import managed, live_state
+    from openrua.sessions.core import initial_state
+    from openrua.sessions.store import SQLiteStore
+    from tests.sessions.test_execution import FakeProtocol, until
+    async def run():
+        home = tmp_path / 'home'
+        name = 'effort-resume'
+        live_state.save(name, home, agent='fixture', sandbox='fixture', model='model', proxy='',
+                        options={'effort': 'high', 'other': 'keep'})
+        state = initial_state()
+        state.update(closed=True, settings={'effort': 'medium'})
+        store = SQLiteStore(home / 'sandboxes' / name / 'conversation.sqlite', state)
+        seen = []
+        def conversation(*args, **kwargs):
+            seen.append(kwargs['options'])
+            program = 'import sys,json; [print(json.dumps({"kind":"ready","data":{"session_id":"native"}}),flush=True) for line in sys.stdin]'
+            return Conversation([sys.executable, '-u', '-c', program], FakeProtocol())
+        monkeypatch.setattr(managed.agents, 'get', lambda *a, **kw: SimpleNamespace(conversation=conversation))
+        execution = await managed._open_execution(name, home, store, resume=True, reopen=True)
+        try:
+            await until(lambda: store.snapshot()['state']['connected'])
+            assert seen == [{'effort': 'medium', 'other': 'keep'}]
+        finally:
+            await execution.close()
+            store.close()
+    asyncio.run(run())
+
 from openrua.errors import UnavailableError
 from openrua.runner.managed import ManagedSession
 from tests.sessions.test_execution import setup

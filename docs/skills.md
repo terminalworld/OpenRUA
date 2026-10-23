@@ -125,6 +125,40 @@ daily-use skills.
 
 ## Review completed project work
 
+In a live project conversation, use `/project` to browse saved project and
+personal skills, read review reports and diffs, or review completed work once.
+The agent's native `/skills` command remains available separately. The project
+view lists saved files; it does not claim a method has been loaded or verified.
+
+Before starting a review, check its agent, model, effort, prepared image and worker time
+limit. Confirm starts an independent model task using the configured native login
+or API. It excludes the active conversation, runs outside the robot network, and
+returns proposals. Your conversation remains usable. Task progress appears below
+the conversation; `/project` lets you refresh or cancel it. Leaving the terminal
+or ending the robot session does not cancel the review or replay it.
+
+After the robot session ends, inspect tasks from its project directory:
+
+```sh
+openrua skills tasks
+openrua skills tasks TASK_ID --json
+openrua skills tasks TASK_ID --cancel
+```
+
+These commands do not start a robot. Reports remain available through
+`openrua skills reviews`. Cancellation is cooperative: the worker checks the
+request and cleans up its own resources. A crashed owner is shown as unknown
+and is never automatically restarted.
+
+The report menu shows each proposed method and the full diff and evidence.
+For a new skill, read the proposal and confirm **Import new skill**. Its contents
+are checked against the preview, file permissions are preserved, and an existing
+project method is never overwritten. For changes to an existing skill, select
+**Prepare a merge request**. The request is placed in your composer, preserving
+an existing draft; review it before sending it to the native agent. Current edits
+and conflicts are resolved in the agent's ordinary editing and approval workflow.
+Preparing the request does not send it, edit skills or move the robot.
+
 To look back across finished conversations and exec tasks, run a separate
 review from the project directory:
 

@@ -5,6 +5,7 @@ import {agentCommands, commandsFor, notice, parseCommand, permissionChoices, sta
 import {DialogHeading, PendingMessages, Transcript, Welcome, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
+import {projectMenu, updateReview} from './project.mjs';
 
 const commands = commandsFor('terminal');
 
@@ -41,6 +42,7 @@ export class Chat {
     this.controller = new Controller(client, this.transcript);
     this.status = new Text('Connecting…', 0, 0);
     this.notice = new Text('', 0, 0);
+    this.projectStatus = new Text('', 0, 0);
     this.pendingMessages = new PendingMessages();
     this.editor = new Editor(this.ui, editorTheme);
     // Only slash commands: do not complete unrelated host files outside the
@@ -62,7 +64,7 @@ export class Chat {
     this.ui.addChild(this.welcome);
     this.ui.addChild(this.transcript);
     this.ui.addChild(new Spacer(1)); this.ui.addChild(this.status);
-    this.ui.addChild(this.pendingMessages); this.ui.addChild(this.notice); this.ui.addChild(this.editor);
+    this.ui.addChild(this.pendingMessages); this.ui.addChild(this.projectStatus); this.ui.addChild(this.notice); this.ui.addChild(this.editor);
     this.keys = new Text(muted(KEYS), 0, 0);
     this.ui.addChild(this.keys);
     this.started = null;
@@ -116,6 +118,8 @@ export class Chat {
   picker(title, items, select, options = {}) {
     if (!items.length) { this.say('Nothing to show.'); return; }
     const menu = new SelectList(items, options.requestId ? 6 : 8, selectTheme);
+    const initial = items.findIndex(item => item.value === options.selected);
+    if (initial >= 0) menu.setSelectedIndex(initial);
     const box = new Container();
     const heading = new DialogHeading(title, options.requestId, () => this.rows(), () => this.ui.requestRender());
     box.addChild(heading); box.addChild(menu);
@@ -147,7 +151,7 @@ export class Chat {
     };
     const handle = this.dialog(box, options);
     editor.onSubmit = text => {
-      if (!text.trim()) return;
+      if (!text.trim() && !options.allowEmpty) return;
       handle.hide();
       Promise.resolve().then(() => apply(text)).catch(error => this.say(error.message));
     };
@@ -238,6 +242,7 @@ export class Chat {
     await this.controller.refresh();
     if (this.done || this.ending) return;
     const state = this.controller.state;
+    this.welcome.facts = {...this.facts, model: state.settings?.model || this.facts.model};
     this.pendingMessages.messages = state.messages;
     if (this.welcome.seen === undefined) {
       // Coming back to a conversation that already has messages.
@@ -258,6 +263,9 @@ export class Chat {
     const head = said.kind === 'working'
       ? accent(`${SPINNER[this.frame++ % SPINNER.length]} Working… ${elapsed(this.started)}`)
       : tone[said.tone]({readonly: '◇ ', closed: '◇ ', paused: '‖ ', ready: '✓ ', waiting: '? '}[said.kind] + plain(said.text));
+    const model = state.settings?.model || this.facts.model;
+    if (model) extra.push(muted(`model setting: ${plain(model)}`));
+    if (state.settings?.effort !== undefined) extra.push(muted(`effort: ${plain(state.settings.effort)}`));
     this.status.setText([head, ...extra].join(muted(' · ')));
     this.keys.setText(muted(KEYS));
     this.showPendingQuestion();
@@ -265,7 +273,7 @@ export class Chat {
   }
 
   async poll() {
-    try { await this.refresh(); } catch (error) {
+    try { await this.refresh(); void updateReview(this); } catch (error) {
       if (!this.done && !this.ending) {
         this.status.setText(yellow(`⚠ Disconnected · retrying · ${plain(error.message)}`));
         this.keys.setText(yellow('The service is not answering; your draft and queued instructions are kept.'));
@@ -282,6 +290,24 @@ export class Chat {
   async configure(setting, value) {
     await this.client.command('configure', {setting, value});
     await this.refresh();
+  }
+
+  effort() {
+    const state = this.controller.state;
+    if (state?.settings?.effort === undefined) throw new Error('This agent has not reported a live effort setting.');
+    const now = state.settings.effort;
+    const choices = state.setting_choices?.effort ?? [];
+    const title = `Reasoning effort setting: ${plain(now)}\nApplies to the next turn. Choices come from the selected native model.`;
+    this.picker(title, [...choices.map(choice => ({value: choice.value,
+      label: `${now === choice.value ? '✓ ' : ''}${plain(choice.label || choice.value)}`, description: plain(choice.description || '')})),
+      ...(!choices.length ? [{value: null, label: 'Enter an effort level…'}] : [])], async value => {
+      const apply = async effort => {
+        await this.configure('effort', effort.trim());
+        this.say(`Reasoning effort setting: ${effort.trim()} from the next turn.`);
+      };
+      if (value === null) this.editText('Native reasoning effort level', now, apply);
+      else await apply(value);
+    }, {selected: now});
   }
 
   async submit(text) {
@@ -302,6 +328,8 @@ export class Chat {
         await this.refresh();
       } else if (command) {
         throw new Error('Unknown command. Use /help.');
+      } else if (this.projectDraft === text && Object.values(this.controller.state?.requests ?? {}).some(r => r.status === 'pending')) {
+        throw new Error('Answer the pending agent question before sending this skill merge request. The draft is kept.');
       } else if (this.answerTyped(text)) {
         this.editor.addToHistory(text);
         this.say('');
@@ -323,6 +351,7 @@ export class Chat {
     const state = this.controller.state;
     const writable = () => { if (this.client.readOnly) throw new Error('This is read-only history.'); };
     return {
+      project: async () => projectMenu(this),
       help: async () => {
         const agent = this.agentCommands();
         const theirs = agent.length ? ['', 'The agent\'s own:', ...agent.map(c => `/${c.name}: ${c.description}`)] : [];
@@ -336,13 +365,41 @@ export class Chat {
           label: `${now === p.value ? '✓ ' : '  '}${p.label}`, description: p.description})),
           choice => this.configure('permissions', choice).catch(error => this.say(error.message)));
       },
-      model: async ([value]) => {
+      model: async ([value, level]) => {
+        if (value === 'effort') {
+          writable();
+          if (level) { await this.configure('effort', level); this.say(`Reasoning effort setting: ${level} from the next turn.`); }
+          else this.effort();
+          return;
+        }
         if (value) {
           writable();
           await this.configure('model', value);
           this.say(`The model is ${value} from the next request.`); return;
         }
-        this.say(`The model: ${plain(state?.settings?.model ?? 'unknown')}. Change it with /model <name>.`);
+        const now = state?.settings?.model || this.facts.model || 'not reported';
+        const title = `Model setting: ${plain(now)}`
+          + (state?.settings?.effort !== undefined ? ` · effort: ${plain(state.settings.effort)}` : '')
+          + '\nChanges apply to the next turn. An active turn keeps its model.';
+        if (this.client.readOnly) { this.say(title); return; }
+        const choices = state?.setting_choices?.model ?? [];
+        this.picker(title, [
+          ...(!choices.some(choice => choice.value === now) && now !== 'not reported'
+            ? [{value: now, label: `✓ Current: ${plain(now)}`}] : []),
+          ...choices.map(choice => ({value: choice.value, label: `${now === choice.value ? '✓ ' : ''}${plain(choice.label || choice.value)}`,
+            description: plain(choice.description || choice.value)})),
+          {value: null, label: 'Enter a model ID…'},
+          ...(state?.settings?.effort !== undefined ? [{value: {effort: true}, label: `Reasoning effort: ${plain(state.settings.effort)}…`}] : []),
+        ], async value => {
+          if (value?.effort) { this.effort(); return; }
+          const apply = async model => {
+            await this.configure('model', model.trim());
+            this.say(`Model setting: ${model.trim()} from the next turn.`);
+            if (this.controller.state?.settings?.effort !== undefined) this.effort();
+          };
+          if (value === null) this.editText('Model ID · applies to the next turn', String(now === 'not reported' ? '' : now), apply);
+          else await apply(value);
+        }, {selected: now});
       },
       files: async () => { await browseWorkspace(this); },
       watch: async () => {

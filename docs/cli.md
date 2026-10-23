@@ -562,7 +562,7 @@ options:
 | `edit` | edit a queued message at its current revision |
 | `resolve_unknown` | record checking an uncertain execution, without replaying it |
 | `respond` | answer a pending agent question |
-| `configure` | change the agent's native permission mode or model |
+| `configure` | change a native permission mode, model or reasoning effort |
 | `end` | stop owned resources and retain messages and workspace |
 
 ### openrua session web
@@ -692,15 +692,15 @@ options:
 ### openrua session configure
 
 ```
-usage: openrua session configure [-h] {permissions,model} value
+usage: openrua session configure [-h] {permissions,model,effort} value
 
 positional arguments:
-  {permissions,model}
-  value                a native permission mode (ask, auto-review, auto, or
-                       agent-specific) or model ID
+  {permissions,model,effort}
+  value                 a native permission mode, model ID or supported effort
+                        level
 
 options:
-  -h, --help           show this help message and exit
+  -h, --help            show this help message and exit
 ```
 
 ### openrua session end
@@ -1020,6 +1020,7 @@ options:
 | `show` | read one saved SKILL.md |
 | `add` | import or promote one skill without overwriting existing files |
 | `policy` | read or change accumulation instructions; existing skills remain usable |
+| `tasks` | inspect or cancel review tasks without starting a robot |
 | `review` | review completed project records in isolation and save proposals |
 | `reviews` | list this project's review reports or read one |
 
@@ -1072,12 +1073,26 @@ options:
   -h, --help            show this help message and exit
 ```
 
+### openrua skills tasks
+
+```
+usage: openrua skills tasks [-h] [--cancel] [--json] [id]
+
+positional arguments:
+  id          task ID from the project menu or task list
+
+options:
+  -h, --help  show this help message and exit
+  --cancel    request cooperative cancellation of this review
+  --json
+```
+
 ### openrua skills review
 
 ```
 usage: openrua skills review [-h] [--agent AGENT] [--model MODEL]
-                             [--image IMAGE] [--since SINCE] [--records DIR]
-                             [--max-records MAX_RECORDS]
+                             [--effort EFFORT] [--image IMAGE] [--since SINCE]
+                             [--records DIR] [--max-records MAX_RECORDS]
                              [--max-input-mb MAX_INPUT_MB]
                              [--max-file-mb MAX_FILE_MB]
                              [--max-files MAX_FILES] [--max-events MAX_EVENTS]
@@ -1089,6 +1104,7 @@ options:
   --agent AGENT         agent name or manifest; default: project or user
                         setting
   --model MODEL         model; default: project or selected agent setting
+  --effort EFFORT       native effort option; default: selected agent settings
   --image IMAGE         existing agent image; default: standard Jazzy sandbox
   --since SINCE         ISO date/time, UTC unless an offset is given
   --records DIR         additional exec record root; ownership is still

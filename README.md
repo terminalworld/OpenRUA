@@ -106,6 +106,9 @@ session running; `openrua --resume` brings you back.
   in a later conversation. `openrua skills` lists saved methods and controls
   how they accumulate. `openrua skills review` looks back across completed
   project work and saves skill proposals for review ([skills guide](docs/skills.md)).
+  In a project conversation, `/project` opens saved skills, review reports and
+  explicit adoption. `/model` shows model choices; Codex `/model effort` adjusts
+  reasoning effort for the next turn.
 - **One task, on its own.** `openrua exec "<task>"` works in the same project
   and records the run, as `claude -p` or `codex exec` do ([first task](examples/first-task.md)).
 - **Benchmarks and demo videos.** Run a benchmark's tasks, scored by its own
