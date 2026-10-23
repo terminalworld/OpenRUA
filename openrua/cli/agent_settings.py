@@ -5,6 +5,16 @@ from openrua import agents, config
 from openrua.config import paths
 
 
+def project_model(saved: dict, requested: str | None) -> str | None:
+    """Keep a project's model only when it belongs to the chosen agent."""
+    if requested is None:
+        return saved.get('model')
+    def identity(spec):
+        name, _ = agents.split_pin(spec or '')
+        return str(Path(name).expanduser().resolve()) if paths.is_path(name) else name
+    return saved.get('model') if identity(requested) == identity(saved.get('agent')) else None
+
+
 def resolve(home: Path, spec: str | None):
     package = config.load_user_config(paths.package_config_path())
     user = config.load_user_config(paths.config_path(home))

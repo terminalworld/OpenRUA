@@ -1,6 +1,6 @@
 import {existsSync} from 'node:fs';
 import {join} from 'node:path';
-import {Container, Markdown, Spacer, Text, truncateToWidth, visibleWidth, wrapTextWithAnsi} from '@earendil-works/pi-tui';
+import {Container, Markdown, Spacer, Text, matchesKey, truncateToWidth, visibleWidth, wrapTextWithAnsi} from '@earendil-works/pi-tui';
 import {toolSummary} from './session.mjs';
 
 // Control bytes must not become terminal instructions, including OSC clipboard writes.
@@ -9,8 +9,30 @@ const style = (open, close) => text => `\x1b[${open}m${text}\x1b[${close}m`;
 // The 16-colour palette only, so the terminal's own theme decides how it looks.
 export const bold = style(1, 22), muted = style(90, 39), accent = style(36, 39);
 export const green = style(32, 39), yellow = style(33, 39), red = style(31, 39);
-export const dialogHeading = (title, requestId) => (requestId
-  ? yellow(bold('Your response is needed')) + '\n\n' : '') + plain(title);
+export class DialogHeading {
+  constructor(title, requestId, rows, redraw) {
+    this.body = new Text(plain(title), 0, requestId ? 0 : 1);
+    this.requestId = requestId; this.rows = rows; this.redraw = redraw;
+    this.offset = 0; this.lines = []; this.height = 4;
+  }
+  invalidate() { this.body.invalidate(); }
+  render(width) {
+    this.lines = this.body.render(width);
+    if (!this.requestId) return this.lines;
+    this.height = Math.max(2, Math.floor(this.rows() / 5));
+    this.offset = Math.max(0, Math.min(this.offset, this.lines.length - this.height));
+    const shown = this.lines.slice(this.offset, this.offset + this.height);
+    return ['', yellow(bold('Your response is needed')), '', ...shown,
+      ...(this.lines.length > shown.length ? [muted(`PgUp/PgDn read details · lines ${this.offset + 1}-${this.offset + shown.length} of ${this.lines.length}`)] : []), ''];
+  }
+  handleInput(data) {
+    if (!this.requestId || this.lines.length <= this.height) return false;
+    const delta = matchesKey(data, 'pageDown') ? this.height : matchesKey(data, 'pageUp') ? -this.height : 0;
+    if (!delta) return false;
+    this.offset = Math.max(0, Math.min(this.offset + delta, this.lines.length - this.height));
+    this.redraw(); return true;
+  }
+}
 export const selectTheme = {selectedPrefix: accent, selectedText: bold, description: muted,
   scrollInfo: muted, noMatch: muted};
 export const editorTheme = {borderColor: muted, selectList: selectTheme};

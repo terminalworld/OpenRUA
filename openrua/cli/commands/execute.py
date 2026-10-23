@@ -24,7 +24,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from openrua.cli import updates, workspace
+from openrua.cli import agent_settings, updates, workspace
 from openrua.cli.progress import Progress
 from openrua.config import compose, load_robot, paths, projects
 from openrua.errors import UsageError
@@ -99,7 +99,7 @@ def run(args) -> int:
     composed = compose(robot if robot is not None else saved.get('robot'),
                        sim, bench, home,
                        agent=args.agent if args.agent is not None else saved.get('agent'),
-                       model=args.model if args.model is not None else saved.get('model'))
+                       model=args.model if args.model is not None else agent_settings.project_model(saved, args.agent))
     real = composed.cfg["machine"]["backend"]["kind"] == "real"
     if real and not task:
         raise UsageError("a real robot's task is a sentence",

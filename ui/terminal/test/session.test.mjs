@@ -131,6 +131,34 @@ test('a failed earlier poll does not prevent the next refresh', async () => {
   assert.deepEqual(controller.state.messages, []);
 });
 
+test('events accepted after a snapshot wait for its next consistent state', async () => {
+  const view = new Transcript();
+  const active = {id: 'active', text: 'Inspect', status: 'running'};
+  const extra = {id: 'extra', text: 'New camera configuration', status: 'steering', joined: 'active'};
+  let delivered = false;
+  const before = {seq: 1, kind: 'agent_event', data: {kind: 'item', turn_id: 'active', data: {
+    item_id: 'before', kind: 'message', text: 'Before the update', phase: 'completed'}}};
+  const records = [before,
+    {seq: 2, kind: 'agent_event', data: {kind: 'steer_delivered', turn_id: 'active', data: {message_id: 'extra'}}},
+    {seq: 3, kind: 'agent_event', data: {kind: 'item', turn_id: 'active', data: {
+      item_id: 'after', kind: 'message', text: 'After the update', phase: 'completed'}}}];
+  const client = {
+    async snapshot() { return {cursor: delivered ? 3 : 1, state: {messages: [active,
+      {...extra, status: delivered ? 'steered' : 'steering'}]}}; },
+    async events(after) { return records.filter(record => record.seq > after); },
+  };
+  const controller = new Controller(client, view);
+  await controller.refresh();
+  assert.equal(controller.cursor, 1);
+  assert.doesNotMatch(view.render(80).join('\n'), /After the update/);
+  delivered = true;
+  await controller.refresh();
+  const rendered = view.render(80).join('\n');
+  assert.ok(rendered.indexOf('Before the update') < rendered.indexOf('New camera configuration'));
+  assert.ok(rendered.indexOf('New camera configuration') < rendered.indexOf('After the update'));
+  assert.equal(controller.cursor, 3);
+});
+
 test('lost send acknowledgement retries the same ID without duplicate execution', {timeout: 15000}, async t => {
   const {client, call} = await fixture(t);
   t.after(() => client.close());
@@ -571,6 +599,7 @@ test('pending questions open automatically, preserve drafts and never approve on
   const key = async input => { terminal.input(input); await new Promise(r => setTimeout(r, 20)); };
   await key('\r'); // Select an answer, but do not send it.
   assert.match(chat.panel.component.render(80).join('\n'), /Review your response/);
+  assert.match(chat.panel.component.render(80).join('\n'), /Your answer: accept/);
   assert.equal((await call({op: 'writes'})).writes.filter(w => w.reply).length, 0);
   await key('\r'); // Confirmation initially selects Cancel.
   assert.equal(chat.panel, null);
@@ -661,6 +690,32 @@ test('follow-up messages leave the pending area and keep their place when histor
   restored.event({kind: 'agent_event', data: {kind: 'item', turn_id: 'active', data: {
     item_id: 'after', kind: 'message', text: 'After the new camera configuration.', phase: 'completed'}}});
   assert.equal(restored.render(80).join('\n'), rendered);
+});
+
+test('long approval prompts stay visible and can be read without approving', async () => {
+  const writes = [];
+  const chat = new Chat({readOnly: false, command: async (...args) => writes.push(args)}, {terminal: new Terminal()});
+  const text = 'Run this command?\n' + Array.from({length: 40}, (_, i) => `command line ${i}`).join('\n');
+  chat.controller.state = {requests: {long: {request_id: 'long', status: 'pending',
+    questions: [{id: 'decision', text, choices: ['accept', 'decline', 'cancel']}]}}};
+  chat.showPendingQuestion();
+  let lines = chat.panel.component.render(80);
+  assert.ok(lines.length < chat.rows(), `Question uses ${lines.length} rows`);
+  assert.match(lines.join('\n'), /Your response is needed/);
+  for (let i = 0; i < 20; i++) {
+    chat.panel.component.handleInput('\x1b[6~');
+    lines = chat.panel.component.render(80);
+  }
+  assert.match(lines.join('\n'), /command line 39/);
+  assert.deepEqual(writes, []);
+  chat.panel.component.handleInput('\r');
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.match(chat.panel.component.render(80).join('\n'), /Review your response/);
+  assert.match(chat.panel.component.render(80).join('\n'), /Your answer: accept/);
+  assert.ok(chat.panel.component.render(80).length < chat.rows());
+  chat.panel.component.handleInput('\r');
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.deepEqual(writes, []);
 });
 
 test('temporary transport loss shows disconnected status and recovers without losing drafts or queue', {timeout: 15000}, async t => {

@@ -442,7 +442,7 @@ def test_build_sandbox_for_a_robot_adds_its_install(tmp_path, monkeypatch):
     tag, _ = build_cmd._sandbox(["codex@0.161.0"], None, "jazzy", None, None, tmp_path, str(lab))
     assert built["distro"] == "humble" and tag.startswith("openrua-sandbox-humble-")
     # built as a candidate, tagged for real only once its CLIs checked out
-    assert built["tag"] == f"{tag}-candidate" and ["docker", "tag", built["tag"], tag] in docker
+    assert built["tag"].startswith(f"{tag}-candidate-") and ["docker", "tag", built["tag"], tag] in docker
     assert built["preinstall"].endswith("&& apt-get install -y ros-humble-franka-msgs")
     assert "openrua.machine_install_sha256" in built["labels"]
     assert built["stamp"] == ""                       # pinned: the cache may serve

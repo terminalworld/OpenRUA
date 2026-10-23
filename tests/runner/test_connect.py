@@ -80,7 +80,8 @@ def test_robot_checks_prepare_an_existing_different_distro_image_missing_the_age
         return 0 if build_succeeds else 1
     monkeypatch.setattr(done, '_openrua', build)
     assert done._images(io.StringIO(), backend) == ([] if build_succeeds else ['openrua-sandbox-humble'])
-    assert commands == [('build', 'sandbox', '--distro', 'humble', '--tag', 'openrua-sandbox-humble', '--agent', 'codex')]
+    assert commands == [('build', 'sandbox', '--distro', 'humble', '--tag', 'openrua-sandbox-humble',
+                         '--base-image', 'openrua-sandbox-humble', '--agent', 'codex')]
 
 
 def test_a_check_runs_on_the_host_and_its_result_reaches_the_session(tmp_path, monkeypatch):

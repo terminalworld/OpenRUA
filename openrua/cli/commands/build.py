@@ -21,6 +21,7 @@ import hashlib
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
 from openrua import agents, config, proxy
 from openrua.errors import UnavailableError, UsageError
@@ -100,7 +101,8 @@ def run(args) -> int:
         built = [build_base(distro=args.distro, tag=args.tag)]
     elif unit == "sandbox":
         built = [_sandbox(args.agent, args.preinstall, args.distro, args.robot_uid,
-                          args.tag, args.home, getattr(args, "robot", None))]
+                          args.tag, args.home, getattr(args, "robot", None),
+                          **({'base_image': args.base_image} if args.base_image is not None else {}))]
     elif unit == "driver":
         built = _drivers(args.robot, args.image, args.home)
     else:
@@ -143,7 +145,7 @@ def _drivers(robot: str, image: str | None, home: Path | None) -> list[tuple[str
     return built
 
 
-def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None):
+def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None, *, base_image=None):
     chosen = manifests_for(agent, home)
     labels = agent_labels(chosen, "install")
     chain = preinstall if preinstall is not None else agents.preinstall(chosen)
@@ -160,9 +162,10 @@ def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None):
     # Built under a candidate tag and checked before it takes the real one:
     # a build whose CLI is too old must not replace a sandbox that works.
     tag = tag or config.schema.sandbox_image(distro)
-    candidate = f"{tag}-candidate"
+    candidate = f"{tag}-candidate-{uuid4().hex}"
     _, digest = build_sandbox(preinstall=chain, distro=distro, robot_uid=robot_uid,
-                              tag=candidate, labels=labels, stamp=stamp)
+                              tag=candidate, labels=labels, stamp=stamp,
+                              **({'base_image': base_image} if base_image is not None else {}))
     try:
         _report_versions(candidate, chosen)
         subprocess.run(["docker", "tag", candidate, tag], check=True)
@@ -185,7 +188,7 @@ def _report_versions(image: str, chosen: list[agents.Manifest]) -> None:
         check = agent.sandbox_cli_check()
         if check and subprocess.run(["docker", "run", "--rm", "--entrypoint", "", image,
                                      "bash", "-c", check[1]]).returncode:
-            want = agent.version or f"{agent.min_version} or newer"
+            want = agent.version or (f"{agent.min_version} or newer" if agent.min_version else 'a working CLI')
             raise UnavailableError(f"{image} carries {m.name} {found.stdout.strip()}, "
                                    f"not {want}",
                                    hint=f"pin a release with --agent {m.name}@<version>")
@@ -224,6 +227,7 @@ def add_parser(sub) -> None:
     s.add_argument("--robot-uid", type=int, default=None,
                    help="container uid (default: the current user)")
     s.add_argument("--tag", default=None, help="image tag (default: openrua-sandbox-<distro>)")
+    s.add_argument('--base-image', default=None, help='retain an existing terminal image and add the selected install layer')
     s.add_argument("--robot", default=None, metavar="NAME|PATH",
                    help="a real robot whose config declares backend.sandbox_install: "
                    "its distro, image name and install chain come from there")

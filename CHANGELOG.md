@@ -9,6 +9,22 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.21.6
+
+- Changing a project's agent uses the new agent's model defaults instead of
+  inheriting another agent's model. Explicit model overrides and version-only
+  changes keep their intended behavior across interactive, native and exec paths.
+- Terminal event replay stays within its snapshot cursor, preserving follow-up
+  delivery order when an agent responds between the state and event requests.
+- Long question and approval dialogs keep their heading and choices visible.
+  PgUp/PgDn scrolls the full details without submitting a response; the final
+  review shows the selected answer first.
+- Repairing an existing sandbox adds the CLI to its current image, preserving
+  custom tools, users and runtime settings. Builds use independent candidate
+  tags and promote only after CLI verification. `build sandbox --base-image`
+  exposes the same operation explicitly. Docker runtime failures do not trigger
+  rebuilds, and timed-out image checks clean up their own temporary container.
+
 ## 0.21.5
 
 - Connecting from setup now saves the selected agent, model and authentication

@@ -97,6 +97,31 @@ def test_project_selection_outlives_changes_to_global_defaults(tmp_path):
     assert 'private-key' not in contents and 'auth_mode' not in contents
 
 
+def test_changing_agent_does_not_reuse_the_previous_agents_project_model(tmp_path):
+    root, home = tmp_path / 'project', tmp_path / 'home'
+    root.mkdir(); home.mkdir()
+    projects.save_selection(root, dict(robot='panda', sim='robosuite', bench='', agent='codex', model='codex-only-model'))
+    (home / 'config.yaml').write_text('agents:\n  claude-code:\n    model: claude-project-default\n')
+    args = build_parser().parse_args(['--home', str(home), '--workspace', str(root), '--agent', 'claude-code'])
+    values, _ = start.values_for(args)
+    assert values['model'] == 'claude-project-default'
+
+
+@pytest.mark.parametrize('requested,model', [('codex@0.163.0', 'project-model'), ('claude-code', None)])
+def test_native_up_uses_model_defaults_for_the_chosen_agent(tmp_path, monkeypatch, requested, model):
+    from openrua.cli.commands import up
+    root, home = tmp_path / 'project', tmp_path / 'home'
+    root.mkdir()
+    projects.trust(root, home)
+    projects.save_selection(root, dict(robot='panda', sim='robosuite', bench='', agent='codex@0.134.0', model='project-model'))
+    async def check(args):
+        assert args.model == model
+        return 0
+    monkeypatch.setattr(up, '_run', check)
+    args = build_parser().parse_args(['--home', str(home), 'up', '--workspace', str(root), '--agent', requested])
+    assert up.run(args) == 0
+
+
 def test_a_bundled_agent_version_pin_is_not_saved_as_a_file_path(tmp_path):
     projects.save_selection(tmp_path, dict(robot='panda', sim='robosuite', bench='',
                                            agent='codex@0.134.0', model=''))

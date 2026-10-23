@@ -1,5 +1,5 @@
 import {Container, SelectList, Text, matchesKey} from '@earendil-works/pi-tui';
-import {dialogHeading, muted, plain, selectTheme} from './view.mjs';
+import {DialogHeading, muted, plain, selectTheme} from './view.mjs';
 
 // Native question semantics are normalized by the agent plugin.
 export function answerQuestion(chat, question, accept, options = {}) {
@@ -15,10 +15,11 @@ export function answerQuestion(chat, question, accept, options = {}) {
   const items = question.choices.map(value => ({value, label: plain(value), kind: 'choice'}));
   if (question.allow_other) items.push({value: 'other', label: 'Write another answer…', kind: 'other'});
   if (question.multiple) items.push({value: 'continue', label: 'Continue', kind: 'continue'});
-  const menu = new SelectList(items, 8, selectTheme);
+  const menu = new SelectList(items, options.requestId ? 6 : 8, selectTheme);
   const box = new Container();
   const notice = new Text('', 0, 0);
-  box.addChild(new Text(dialogHeading(question.text, options.requestId), 0, 1)); box.addChild(menu); box.addChild(notice);
+  const heading = new DialogHeading(question.text, options.requestId, () => chat.rows(), () => chat.ui.requestRender());
+  box.addChild(heading); box.addChild(menu); box.addChild(notice);
   box.addChild(new Text(muted(question.multiple
     ? '↑/↓ move · Space/Enter toggle · Continue to review · Esc cancel'
     : '↑/↓ select · Enter confirm · Esc cancel'), 0, 1));
@@ -50,6 +51,7 @@ export function answerQuestion(chat, question, accept, options = {}) {
     } else { handle.hide(); accept([item.value]); }
   };
   box.handleInput = data => {
+    if (heading.handleInput(data)) return;
     if (question.multiple && matchesKey(data, 'space')) {
       const item = menu.getSelectedItem();
       if (item && item.kind !== 'continue') menu.onSelect(item);
