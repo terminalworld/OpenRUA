@@ -302,6 +302,8 @@ test('a typed line answers the question the agent is waiting on', {timeout: 1500
   assert.deepEqual(writes.find(w => w.reply),
     {reply: 'q', answers: {0: ['use position control, then try the other joints']}});
   assert.equal((await client.snapshot()).state.messages.length, 1);   // not queued as a message
+  // Wait for the UI to close the answered question before sending a chat key.
+  await chat.refresh();
   terminal.input('\x04');
   await running;
 });
@@ -378,6 +380,41 @@ test('end requires confirmation and releases execution through the service', {ti
   await chat.submit('/end'); terminal.input('\x1b[B'); terminal.input('\r');
   assert.deepEqual(await running, {action: 'quit'});
   assert.equal(terminal.stopped, true);
+  assert.equal(chat.endConfirmed, true);
+});
+
+test('ending stays visible during owner disconnect and a failed end can be retried', async () => {
+  let rejectEnd;
+  let attempts = 0;
+  const state = {messages: [], requests: {}, connected: true, closed: false};
+  const client = {
+    async snapshot() { return {state}; }, async events() { return []; }, close() {},
+    async end() {
+      attempts++;
+      if (attempts === 1) await new Promise((resolve, reject) => { rejectEnd = reject; });
+    },
+  };
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal});
+  const running = chat.run();
+  while (!terminal.input) await new Promise(resolve => setTimeout(resolve, 1));
+  try {
+    await chat.submit('/end'); terminal.input('\x1b[B'); terminal.input('\r');
+    while (!rejectEnd) await new Promise(resolve => setTimeout(resolve, 1));
+    Object.assign(state, {connected: false, paused: true,
+      pause_reason: 'agent disconnected: native connection closing by its owner'});
+    await chat.refresh();
+    assert.match(chat.status.render(100).join('\n'), /Ending session/);
+    assert.doesNotMatch(chat.status.render(100).join('\n'), /Paused|continue/);
+    rejectEnd(new Error('driver did not stop'));
+    while (chat.ending) await new Promise(resolve => setTimeout(resolve, 1));
+    assert.equal(chat.endConfirmed, false);
+    assert.equal(chat.done, false);
+    await chat.submit('/end'); terminal.input('\x1b[B'); terminal.input('\r');
+    await running;
+    assert.equal(chat.endConfirmed, true);
+    assert.equal(attempts, 2);
+  } finally { chat.stop(); }
 });
 
 test('environment menus never offer untested pairs and selection repairs dependent fields', async () => {

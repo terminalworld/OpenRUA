@@ -110,6 +110,14 @@ OpenRUA's own greeting; the agent has not looked at anything yet.
 | `/end` | Confirm ending execution, retaining history and workspace |
 | Ctrl+D on empty input or `/quit` | Leave, then choose: Enter keeps the session (and its robot) running in the background, `e` ends it, keeping its files |
 
+Ending shows progress until the owner confirms resource shutdown. A successful
+`/end` does not ask you to end the session again. On ordinary exit the terminal
+checks the current session state before offering the background/end choice. If
+the service cannot be reached, it reports an unconfirmed status and gives a
+`session status` command instead of claiming the robot is still running or stopped.
+Stopping owned resources does not guarantee physical motor power is off; that
+depends on the real robot's driver. See [ending and reconnecting](sessions.md).
+
 Menus use arrows, Enter and Escape. Confirmation starts on Cancel. The terminal
 behaves the way a coding agent's own does: what you send while the agent works
 joins the running turn after its current tool calls (Claude Code and Codex
