@@ -9,6 +9,15 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.21.2
+
+- Connecting a new real robot now prepares a missing connecting-terminal
+  sandbox before starting its session, both from the TUI and `openrua connect`.
+  This also works when the selected coding agent is already signed in and no
+  robot configuration exists yet. Preparation uses the selected ROS distro
+  and agent version, streams build output, retains failure logs, and reuses
+  completed images on retry.
+
 ## 0.21.1
 
 - Claude Code loads project skill guidance through a native rules file even

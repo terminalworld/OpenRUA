@@ -7,8 +7,9 @@ from pathlib import Path
 import subprocess
 import sys
 
-from openrua import config, proxy
+from openrua import agents, config, proxy
 from openrua.config import paths
+from openrua.config.schema import sandbox_image
 from openrua.errors import UnavailableError
 
 
@@ -53,6 +54,25 @@ def prepare(home: Path, values: dict, progress=print, limits: dict | None = None
     ``limits`` are the session's (a proxy image only when it needs one)."""
     composed = config.compose(values['robot'], values['sim'], values['bench'], home,
                               agent=values['agent'] or None, model=values['model'] or None)
+    _prepare_images(home, image_commands(composed, values['bench'], limits), progress)
+
+
+def prepare_connect(home: Path, agent: str | None = None, distro: str = 'jazzy',
+                    progress=print) -> None:
+    """Prepare the connecting terminal before a robot configuration exists."""
+    package = config.load_user_config(paths.package_config_path())
+    user = config.load_user_config(paths.config_path(home))
+    selected = config.layer_agent({}, package, user, agent=agent)
+    adapter = agents.get(selected['name'], home, version=selected.get('version'))
+    image = sandbox_image(distro)
+    name, _ = agents.split_pin(selected['name'])
+    requested = name + ('@' + adapter.version if adapter.version else '')
+    _prepare_images(home, [(image, ['build', 'sandbox', '--distro', distro,
+                                  '--tag', image, '--agent', requested])], progress)
+
+
+def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress) -> None:
+    """Share image locks, build output and failure logs across startup paths."""
     try:
         check = subprocess.run(['docker', 'info', '--format', '{{.ServerVersion}}'],
                                capture_output=True, text=True, timeout=30)
@@ -63,7 +83,7 @@ def prepare(home: Path, values: dict, progress=print, limits: dict | None = None
                                hint='restore Docker access and retry startup')
     directory = paths.home(home) / 'preparation'
     directory.mkdir(parents=True, exist_ok=True)
-    for image, command in image_commands(composed, values['bench'], limits):
+    for image, command in commands:
         key = hashlib.sha256(image.encode()).hexdigest()[:16]
         with (directory / f'{key}.lock').open('a') as lock:
             # Another frontend may already be preparing the same image.
@@ -90,5 +110,5 @@ def prepare(home: Path, values: dict, progress=print, limits: dict | None = None
                     raise
             if code or not image_exists(image):
                 raise UnavailableError(f'Could not prepare {image}; build exit status {code}. Log: {log}',
-                                       hint='fix the build error shown above, then choose Prepare and start again; completed images are reused')
+                                       hint='fix the build error shown above, then retry startup; completed images are reused')
             progress(f'Prepared {image}')
