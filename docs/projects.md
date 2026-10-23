@@ -20,7 +20,7 @@ you trust it. Your coding agent can read, change and execute files there;
 OpenRUA also stores the project's environment selection and run records.
 Choose **Yes** to use it, choose another directory, create a directory, or
 quit. Trust is remembered for that exact directory, not its parent or children.
-Use `openrua --workspace /path/to/project` to select a different directory.
+Use `openrua -C /path/to/project` (also `--cd` or `--workspace`) to select a different directory.
 For a noninteractive launch, explicitly accept it with `--trust-workspace`.
 
 Then select a robot and start as usual. Your directory is mounted directly
@@ -114,4 +114,39 @@ session records after shutdown. It retains the external project directory.
 Without an explicit `--name`, `agent` looks for a robot running in the current
 project. Its native terminal has its own conversation history; the OpenRUA
 resume picker lists shared conversations. Recorded `exec` and benchmark trials
-continue to create fresh, independent workspaces under their run directories.
+have separate execution records, as described below.
+
+## Run a task without the interactive interface
+
+`exec` uses the same project files and saved environment selection as the
+interactive interfaces, for simulated and real robots:
+
+```sh
+cd cup-sorting
+openrua exec "Read the project notes and continue the sorting program"
+openrua exec -C /path/to/project "Inspect the saved program"
+```
+
+Each invocation starts a new agent session. It reads existing instructions,
+code and notes; it does not automatically continue an earlier conversation.
+The current robot materials remain under `/robot`, and the project is
+`/workspace`. Files written there remain after the robot and sandbox stop.
+Explicit `--robot`, `--sim`, `--bench`, `--agent` and `--model` arguments
+override the project's selection. The original `exec <robot> "<task>"`
+spelling also works.
+
+For unattended first use, pass `--trust-workspace` explicitly, or trust the
+directory interactively beforehand. Without either, a noninteractive launch
+fails with instructions before changing the project.
+
+Run records go to `.openrua/runs/<run id>/`, with a suffix if that name is
+already taken. `--runs-root DIR` puts records under `DIR/<label>/<run id>/`
+while keeping the same project workspace. See [recorded runs](running-experiments.md).
+
+`bench` creates fresh, independent workspaces under its run directories and
+keeps its original prompt and starter template. Use it for isolated evaluation,
+including a single task and seed. `exec --bench NAME` selects that benchmark's
+scene within your project; the project's files remain available to the agent.
+An explicit task sentence takes precedence over the scene's default task,
+while its success predicate stays the same. A new task keeps the project's
+saved scene; `--bench ""` selects the simulator's native scene instead.

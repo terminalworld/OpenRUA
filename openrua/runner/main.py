@@ -25,9 +25,9 @@ from openrua.runner.live import not_ready_hint, not_ready_message
 from openrua.runner import record
 from openrua.runner.operators import OPERATORS
 from openrua.runner.trial import run_trial
-from openrua.sandbox import workspace
+from openrua.sandbox import project, workspace
 
-# Run data lands under the caller's working directory by default
+# Benchmark data lands under the caller's working directory by default
 # (--runs-root overrides); the package never writes into itself.
 RUNS_ROOT = Path("runs")
 
@@ -221,17 +221,28 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
     # reads the resulting file.
     apply_suite_overrides(cfg, args.task_suite)
     normalize_arms(cfg)
-    runs_root = Path(args.runs_root).expanduser() if args.runs_root else RUNS_ROOT
-    run_dir = runs_root.resolve() / label / args.run_id
-    run_dir.mkdir(parents=True, exist_ok=True)
+    project_root = getattr(args, 'project', None)
+    if project_root is not None:
+        project_root = Path(project_root).resolve()
+        records = Path(args.runs_root).expanduser().resolve() / label if args.runs_root else None
+        run_dir = project.run_directory(project_root, args.run_id, records=records)
+        _say(f"[exec] recorded under {run_dir}")
+    else:
+        runs_root = Path(args.runs_root).expanduser() if args.runs_root else RUNS_ROOT
+        run_dir = runs_root.resolve() / label / args.run_id
+        run_dir.mkdir(parents=True, exist_ok=True)
+    prompt = project.PROMPT if project_root is not None else agents.PROMPT
     agent = agents.get(cfg.get("agent", {}).get("name"), home,
                        version=cfg.get("agent", {}).get("version"))
     prov = {**record.provenance(
         cfg_path, cfg, args, agent=agent,
         template_hash=workspace.template_hash(cfg),
-        prompt=agents.PROMPT, resume_prompt=agents.RESUME_PROMPT,
+        prompt=prompt, resume_prompt=agents.RESUME_PROMPT,
         code_root=paths.code_root(), proxy_image=proxy.IMAGE,
     ), "config": cfg}
+    if project_root is not None:
+        prov['project'] = str(project_root)
+        prov['robot_materials_template_sha256'] = prov.pop('workspace_template_sha256')
     record.write_run_config(run_dir, prov)
 
     op = OPERATORS[args.operator]
@@ -247,6 +258,8 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
                     record_cameras=record_cameras, record_every=args.record_every,
                     record_size=args.record_size, progress=getattr(args, "progress", None),
                     judge=getattr(args, "judge", None),
+                    **({'project_root': project_root, 'prompt_template': prompt}
+                       if project_root is not None else {}),
                 )
             except lock.TrialLocked as e:
                 # Not a failure of this trial: someone else is doing it.
@@ -261,6 +274,9 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
             if rec["termination"] == "stopped":
                 _say(f"[trial] stopped; the record is in {trial_dir}")
                 return STOPPED_EXIT
+            if project_root is not None and rec["termination"] == "anomaly":
+                _say(f"[exec] {rec['anomaly']}; inspect {trial_dir / 'result.json'}")
+                return 1
     return 0
 
 

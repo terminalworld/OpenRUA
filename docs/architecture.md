@@ -18,7 +18,7 @@ Three entry paths share these foundations:
 |---|---|---|
 | Shared chat | default startup → background `serve` → `runner.managed` → live resources, native conversation, session execution; TUI, browser, and plain CLI use its HTTP API | The service owns execution; closing a client only detaches |
 | Native terminal | `up` then `agent` use `runner.live` and the selected agent's native terminal | `up` retains the resources until Ctrl-C or `down`; exiting the agent leaves them up |
-| Recorded run | `exec` (one task) or `bench` (a benchmark's task set) → `runner.main.run_set` → trial runner → fresh workspace, operator, preflight, scoring, records | The trial protocol controls budgets and teardown |
+| Recorded run | `exec` (one project task) or `bench` (isolated trials) → `runner.main.run_set` → trial runner → project or fresh workspace, operator, preflight, scoring, records | `exec` reuses project files; `bench` keeps isolated inputs; both record and tear down resources |
 
 `openrua connect` is shared chat too: its `serve --connect` opens a connecting
 terminal (`runner.connect`) and moves the conversation to the robot's own

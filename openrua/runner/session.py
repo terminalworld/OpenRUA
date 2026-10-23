@@ -51,6 +51,7 @@ def launcher_command(ctx: dict, agent, model: str, options: dict,
         "--session-id", session_id,
         "--proxy", ctx["proxy"],
         "--limits", json.dumps(ctx["limits"]),
+        *(['--prompt-file', str(ctx['prompt_file'])] if ctx.get('prompt_file') else []),
         *(["--token-file", str(ctx["token_file"])] if ctx.get("token_file")
           else []),
     ]

@@ -35,6 +35,16 @@ Declare dependencies needed to rebuild your programs' environment; a package
 installed only inside a container disappears when that container stops.
 """
 
+PROMPT = """\
+Your task: {task}
+
+You are working in a persistent robot project. Read AGENTS.md and the existing
+project code and notes before working. The current robot's documentation and
+starter tools are at /robot; start with /robot/README.md. Inspect the current
+scene before relying on saved observations. Work until the task is done,
+verify the result, and record what a later session needs to continue.
+"""
+
 
 def prepare(cfg: dict, root: Path, materials: Path) -> None:
     """Preserve project contents; seed current robot materials outside them."""
@@ -61,9 +71,11 @@ def prepare(cfg: dict, root: Path, materials: Path) -> None:
         document.write_text(document.read_text().replace('python3 tools/', 'python3 /robot/tools/'))
 
 
-def run_directory(root: Path, name: str) -> Path:
+def run_directory(root: Path, name: str, *, records: Path | None = None) -> Path:
     """Allocate a new run directory without replacing previous run records."""
-    runs = root / ".openrua" / "runs"
+    if not name or Path(name).name != name or name in {'.', '..'}:
+        raise SandboxError(f"run name must be a single directory name: {name!r}")
+    runs = records if records is not None else root / ".openrua" / "runs"
     if runs.is_symlink() or (runs.exists() and not runs.is_dir()):
         raise SandboxError(f"project run records must be a plain directory: {runs}")
     runs.mkdir(parents=True, exist_ok=True)

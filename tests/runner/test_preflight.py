@@ -73,6 +73,19 @@ def test_every_promised_port_mints_its_check():
     assert "/compute_ik" in checks["moveit_ik_answers"]
 
 
+def test_tool_probe_imports_only_from_the_selected_materials(tmp_path):
+    import subprocess
+    root = tmp_path / "robot's current materials"
+    tool = root / 'tools/perception/check.py'
+    tool.parent.mkdir(parents=True)
+    tool.write_text('VALUE = 1\n')
+    checks = dict(build_checks(_ARM_CFG, _Agent(), materials_root=str(root)))
+    command = checks['workspace_tools_importable']
+    assert subprocess.run(['bash', '-c', command], capture_output=True).returncode == 0
+    tool.write_text('raise RuntimeError("dependency unavailable")\n')
+    assert subprocess.run(['bash', '-c', command], capture_output=True).returncode != 0
+
+
 def test_absent_gripper_mints_the_negative_check():
     cfg = {"machine": {**_ARM_CFG["machine"],
                        "ports": {k: v for k, v in

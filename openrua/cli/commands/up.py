@@ -146,7 +146,7 @@ def add_options(p, *, default_name=DEFAULT_NAME) -> None:
                    help=(f"session handle (default: {default_name})" if default_name else
                          "optional session name or ID; omitted for a new automatic ID"))
     p.add_argument("--agent", default=None, help="agent to open (default: the config's)")
-    p.add_argument("--workspace", default=None,
+    p.add_argument("-C", "--cd", "--workspace", dest="workspace", default=None,
                    help="persistent robot project directory (default: the current directory)")
     p.add_argument("--trust-workspace", action="store_true",
                    help="explicitly trust the workspace without an interactive question")

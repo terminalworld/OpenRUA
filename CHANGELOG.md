@@ -9,6 +9,22 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.20.0
+
+- `exec` now uses the current directory as a persistent robot project, for
+  simulation and real robots. It reads the project's environment selection
+  and existing code, retains files after shutdown, and records each new run
+  separately under `.openrua/runs/`. `-C DIR`, `--cd DIR` and `--workspace DIR`
+  select a project; unattended first use requires `--trust-workspace`.
+  `exec "<task>"` uses the saved robot, with `--robot` or the original
+  `exec <robot> "<task>"` spelling for an explicit choice. `--runs-root`
+  relocates records without changing the workspace. Benchmark scene selection
+  with `exec --bench` also uses project files; use `bench` for fresh, isolated
+  evaluation. Its prompt, starter template and per-trial workspace stay unchanged.
+  A project task keeps its saved scene; an explicit task sentence replaces
+  the scene's default instruction without changing its scoring predicate.
+  All interactive project entry points also accept `-C` and `--cd`.
+
 ## 0.19.0
 
 - Interactive robot work uses the current directory as a persistent project.

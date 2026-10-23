@@ -12,6 +12,7 @@ Leaf: no openrua imports; the agent and container name are explicit inputs.
 from __future__ import annotations
 
 import subprocess
+import shlex
 
 # Per-check ceiling for the ROS topic/action/flow probes. A ceiling, not
 # a settle time: `topic echo --once` returns the instant the first
@@ -33,7 +34,7 @@ def _arrives(topic: str) -> str:
             ">/dev/null 2>&1; do sleep 1; done'")
 
 
-def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
+def build_checks(cfg: dict, agent, *, materials_root: str = '/workspace') -> list[tuple[str, str]]:
     """(name, bash snippet exiting 0 on pass) pairs, from the resolved
     config after suite overrides, the same source machine.yaml is
     generated from. The agent is handed in by the runner."""
@@ -140,12 +141,12 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
     # (all carry __main__ guards, so an import checks dependencies and
     # syntax without side effects).
     if m.get("workspace_template"):
-        checks.append(("workspace_tools_importable",
-                       'timeout 60 python3 -c "import glob, importlib.util as u; '
-                       "fs = glob.glob('/workspace/tools/*/*.py'); "
-                       "assert fs, 'no tools in workspace'; "
-                       "[(s := u.spec_from_file_location('tool_smoke', f))"
-                       '.loader.exec_module(u.module_from_spec(s)) for f in fs]"'))
+        code = ('import glob, importlib.util as u; '
+                f'fs = glob.glob({(materials_root + "/tools/*/*.py")!r}); '
+                "assert fs, 'no tools in robot materials'; "
+                "[(s := u.spec_from_file_location('tool_smoke', f))"
+                '.loader.exec_module(u.module_from_spec(s)) for f in fs]')
+        checks.append(("workspace_tools_importable", f'timeout 60 python3 -c {shlex.quote(code)}'))
     if m.get("planning", {}).get("moveit"):
         ik = m["planning"].get("ik_service", "/compute_ik")
         # The service must answer, not merely be listed.
@@ -156,7 +157,7 @@ def build_checks(cfg: dict, agent) -> list[tuple[str, str]]:
 
 
 def run_preflight(cfg: dict, sandbox_name: str, agent,
-                 timeout_s: float | None = None) -> dict:
+                 timeout_s: float | None = None, *, materials_root: str = '/workspace') -> dict:
     """Execute all checks inside the sandbox; returns
     {ok, checks: [(name, passed)], failed: [names]}."""
     # The checks run sequentially in one bash script, so the wrapper
@@ -164,7 +165,7 @@ def run_preflight(cfg: dict, sandbox_name: str, agent,
     # budget would surface as a raw TimeoutExpired instead of a readable
     # list of red checks. Derived from the ceiling and the count, so
     # raising the ceiling cannot under-budget the wrapper.
-    checks = build_checks(cfg, agent)
+    checks = build_checks(cfg, agent, materials_root=materials_root)
     if timeout_s is None:
         timeout_s = len(checks) * _CHECK_TIMEOUT_S + 60.0
     lines = ["set -u", "fail=0"]
