@@ -29,7 +29,10 @@ directory = root / 'sandboxes' / 'owned'
 workspace = directory / 'workspace'
 workspace.mkdir(parents=True)
 (workspace / 'control.py').write_text('# keep this program')
-launch = shlex.join([sys.executable, '-c', 'import time; time.sleep(120)'])
+launch = shlex.join([sys.executable, '-c',
+    'import signal,sys,time; from pathlib import Path; '
+    'signal.signal(signal.SIGINT, lambda *_: sys.exit(0)); '
+    'Path(sys.argv[1]).write_text("ready"); time.sleep(120)', str(root / 'driver.ready')])
 handle = robot.up({'kind': 'real', 'launch': 'exec ' + launch}, name='owned-sim',
                   config_path='', task_suite='', task_id=0, log_path=directory / 'driver.log')
 (root / 'driver.json').write_text(json.dumps({'pid': handle.proc.pid}))
@@ -55,7 +58,7 @@ finally:
     try:
         endpoint = tmp_path / "sandboxes/owned/control.json"
         deadline = time.monotonic() + 10
-        while not endpoint.exists():
+        while not (endpoint.exists() and (tmp_path / 'driver.ready').exists()):
             assert owner.poll() is None, output.read_text()
             assert time.monotonic() < deadline, output.read_text()
             time.sleep(.02)

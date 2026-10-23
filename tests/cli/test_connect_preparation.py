@@ -70,6 +70,8 @@ def test_connect_rebuilds_an_existing_image_missing_the_selected_agent(tmp_path,
     monkeypatch.setattr(preparation.subprocess, 'run', docker)
     preparation.prepare_connect(tmp_path, 'codex')
     assert len(images[1]) == 1
+    command = images[1][0]
+    assert command[command.index('--base-image') + 1] == 'openrua-sandbox-jazzy'
     preparation.prepare_connect(tmp_path, 'codex')
     assert len(images[1]) == 1
 

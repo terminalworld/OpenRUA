@@ -40,6 +40,19 @@ image and rebuilds it when needed before either test start. A bare Humble image
 created for graph probing, for example, is not sufficient to run Codex. Lower
 level startup also refuses a missing CLI and prints the matching build command.
 
+When an existing image lacks the selected CLI, preparation adds the install
+layer to that image, preserving its custom tools, users and runtime settings.
+It checks a separate candidate before replacing the image tag. Failed builds
+leave the working image in place. The same operation is available explicitly:
+
+```sh
+openrua build sandbox --base-image my-robot-terminal --tag my-robot-terminal --agent codex
+```
+
+Docker failures starting a check container are reported as runtime errors;
+they do not trigger a rebuild. Timed-out checks remove only their own temporary
+container. Inspect Docker access and storage before retrying.
+
 If a build reports a missing `buildkit/.../cachemounts` directory, inspect the
 Docker data location and builder state on that computer:
 

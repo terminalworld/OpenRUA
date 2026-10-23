@@ -77,6 +77,14 @@ def test_a_real_robot_needs_its_task(tmp_path, ran):
     assert ran == []
 
 
+def test_explicit_agent_uses_its_own_model_in_an_existing_project(tmp_path, project_root, ran, monkeypatch):
+    monkeypatch.setattr(execute.updates, 'notice', lambda *a: None)
+    projects.save_selection(project_root, dict(robot='panda', sim='robosuite', bench='', agent='codex', model='codex-only-model'))
+    (tmp_path / 'home/config.yaml').write_text('agents:\n  claude-code:\n    model: claude-project-default\n')
+    execute.run(parse(tmp_path, 'inspect', '--agent', 'claude-code'))
+    assert ran[0][0]['agent']['model'] == 'claude-project-default'
+
+
 def test_a_sentence_names_the_simulators_own_scene_over_a_saved_benchmark(tmp_path, ran):
     (tmp_path / "home" / "config.yaml").write_text("benchmark: libero_pro\n")
     execute.run(parse(tmp_path, "panda", "lift the cube", "--sim", "robosuite"))

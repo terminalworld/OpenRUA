@@ -220,7 +220,7 @@ options:
 usage: openrua build sandbox [-h] [--agent NAME[@VERSION]]
                              [--preinstall PREINSTALL] [--distro DISTRO]
                              [--robot-uid ROBOT_UID] [--tag TAG]
-                             [--robot NAME|PATH]
+                             [--base-image BASE_IMAGE] [--robot NAME|PATH]
 
 options:
   -h, --help            show this help message and exit
@@ -235,6 +235,9 @@ options:
   --robot-uid ROBOT_UID
                         container uid (default: the current user)
   --tag TAG             image tag (default: openrua-sandbox-<distro>)
+  --base-image BASE_IMAGE
+                        retain an existing terminal image and add the selected
+                        install layer
   --robot NAME|PATH     a real robot whose config declares
                         backend.sandbox_install: its distro, image name and
                         install chain come from there

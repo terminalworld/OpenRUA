@@ -146,6 +146,11 @@ agent allows a custom answer, **Write another answer** opens a text editor.
 Escape cancels without sending; a final confirmation sends the collected
 answers. Replies answer the pending question rather than enqueueing a new task.
 
+Long questions and commands use a bounded text window. PgUp/PgDn reads all
+details while the response heading and choices stay visible; scrolling never
+sends an answer. The final response review shows the selected answer first and
+uses the same scrollable details.
+
 Follow-up messages use a compact pending area: **Queued** means waiting for a
 turn, **Sending to agent** means dispatch is in progress, and **Adding to current
 turn** means native delivery is awaiting confirmation. After the agent confirms

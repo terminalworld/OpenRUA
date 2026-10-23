@@ -142,6 +142,10 @@ Explicit `--robot`, `--sim`, `--bench`, `--agent` and `--model` arguments
 override the project's selection. The original `exec <robot> "<task>"`
 spelling also works.
 
+The saved model belongs to the project's agent. Selecting another agent uses
+that agent's configured model unless `--model` explicitly selects one. Changing
+only the version pin of the same agent keeps the saved project model.
+
 For unattended first use, pass `--trust-workspace` explicitly, or trust the
 directory interactively beforehand. Without either, a noninteractive launch
 fails with instructions before changing the project.

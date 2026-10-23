@@ -68,7 +68,7 @@ def run(args) -> int:
         saved = projects.selection(root)
         requested = args.agent or saved.get('agent')
         adapter, settings = agent_settings.resolve(args.home, requested)
-        model = args.model or (saved.get('model') if requested == saved.get('agent') else None) or settings.get('model') or adapter.default_model
+        model = args.model or agent_settings.project_model(saved, args.agent) or settings.get('model') or adapter.default_model
         print(f'[skills] Reviewing completed work in {root} with {adapter.name}.', file=sys.stderr, flush=True)
         result = skill_review.run(root, args.home, adapter, settings,
                                   image=args.image or sandbox_image('jazzy'), model=model, since=since,

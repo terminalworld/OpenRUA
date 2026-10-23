@@ -2,7 +2,7 @@ import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, Select
   TuiMainScreen, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
 import {agentCommands, commandsFor, notice, parseCommand, permissionChoices, status, typedAnswer} from './session.mjs';
-import {PendingMessages, Transcript, Welcome, accent, bold, dialogHeading, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
+import {DialogHeading, PendingMessages, Transcript, Welcome, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
 
@@ -114,11 +114,12 @@ export class Chat {
 
   picker(title, items, select, options = {}) {
     if (!items.length) { this.say('Nothing to show.'); return; }
-    const menu = new SelectList(items, 8, selectTheme);
+    const menu = new SelectList(items, options.requestId ? 6 : 8, selectTheme);
     const box = new Container();
-    box.addChild(new Text(dialogHeading(title, options.requestId), 0, 1)); box.addChild(menu);
+    const heading = new DialogHeading(title, options.requestId, () => this.rows(), () => this.ui.requestRender());
+    box.addChild(heading); box.addChild(menu);
     box.addChild(new Text(muted('↑/↓ select · Enter confirm · Esc back'), 0, 1));
-    box.handleInput = data => menu.handleInput(data);
+    box.handleInput = data => { if (!heading.handleInput(data)) menu.handleInput(data); };
     const handle = this.dialog(box, options);
     menu.onCancel = () => handle.hide();
     menu.onSelect = item => {
@@ -135,10 +136,12 @@ export class Chat {
   editText(title, initial, apply, options = {}) {
     const editor = new Editor(this.ui, editorTheme);
     editor.setText(initial);
-    const box = new Container(); box.addChild(new Text(dialogHeading(title, options.requestId), 0, 1)); box.addChild(editor);
+    const heading = new DialogHeading(title, options.requestId, () => this.rows(), () => this.ui.requestRender());
+    const box = new Container(); box.addChild(heading); box.addChild(editor);
     box.addChild(new Text(muted('Enter submit · Ctrl+J newline · Esc cancel'), 0, 1));
     Object.defineProperty(box, 'focused', {get: () => editor.focused, set: value => { editor.focused = value; }});
     box.handleInput = data => {
+      if (heading.handleInput(data)) return;
       if (matchesKey(data, 'escape')) handle.hide(); else editor.handleInput(data);
     };
     const handle = this.dialog(box, options);
@@ -205,7 +208,7 @@ export class Chat {
     const next = index => {
       if (this.controller.state?.requests?.[id]?.status !== 'pending') return;
       if (index === request.questions.length) {
-        const summary = request.questions.map(q => `${q.text}\nYour answer: ${answers[q.id].join(', ')}`).join('\n\n');
+        const summary = request.questions.map(q => `Your answer: ${answers[q.id].join(', ')}\n${q.text}`).join('\n\n');
         this.confirm(`Review your response\n\n${summary}\n\nSend to the agent?`,
           () => this.client.command('respond', {request_id: id, answers}), options);
         return;

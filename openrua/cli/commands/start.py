@@ -42,8 +42,9 @@ def add_options(parser) -> None:
 
 def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
     local = projects.selection(Path(args.workspace)) if getattr(args, 'workspace', None) else {}
-    robot, sim, bench, agent, model = (getattr(args, key) if getattr(args, key) is not None else local.get(key)
-                                     for key in ('robot', 'sim', 'bench', 'agent', 'model'))
+    robot, sim, bench, agent = (getattr(args, key) if getattr(args, key) is not None else local.get(key)
+                              for key in ('robot', 'sim', 'bench', 'agent'))
+    model = args.model if args.model is not None else agent_settings.project_model(local, args.agent)
     user = config.load_user_config(paths.config_path(args.home))
     package = config.load_user_config(paths.package_config_path())
     chosen = agent or user.agent or package.agent

@@ -114,6 +114,9 @@ def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress,
                 progress(f'Reusing {image}')
                 continue
             log = directory / f'{key}.log'
+            if probe is not None and image_exists(image):
+                command = [*command, '--base-image', image]
+                progress(f'Keeping the existing tools and runtime settings in {image}.')
             progress(f'Building {image}. First-time downloads may be large. Log: {log}')
             argv = [sys.executable, '-m', 'openrua', '--home', str(home), *command]
             with log.open('w') as stream:

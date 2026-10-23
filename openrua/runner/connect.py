@@ -337,9 +337,12 @@ class Checks:
         sandbox = backend["sandbox_image"]
         adapter = agents.get(self.agent, self.request.home)
         check = adapter.sandbox_cli_check()
-        if missing(sandbox) or (check and not cli_ready(sandbox, check[1])):
+        exists = not missing(sandbox)
+        if not exists or (check and not cli_ready(sandbox, check[1])):
             build = (["build", "sandbox", "--robot", file] if backend.get("sandbox_install") else
                      ["build", "sandbox", "--distro", backend["ros_distro"], "--tag", sandbox])
+            if exists:
+                build += ['--base-image', sandbox]
             if self._openrua(out, *build, "--agent", self.agent):
                 failed.append(sandbox)
             elif check and not cli_ready(sandbox, check[1]):
