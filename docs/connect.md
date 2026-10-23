@@ -21,6 +21,13 @@ The setup menu's entry connects a robot named `my-robot`, in
 not signed in yet, OpenRUA offers to set that up first
 ([install.md](install.md#docker)).
 
+Before opening the connecting terminal, OpenRUA builds its sandbox image if
+missing, using your selected agent and ROS distro (`--distro jazzy` by default,
+or `--distro humble`). Build output is shown as it runs; failure logs remain
+under `~/.openrua/preparation/`. Retry the same command or menu entry after
+fixing a build error; completed images are reused. No robot configuration is
+needed for this initial preparation.
+
 This opens a session whose terminal reaches what connecting a robot
 needs: this computer's docker, its network (the robot's controller and
 ROS 2 graph) and its devices (read-only, under `/host/dev`), working in

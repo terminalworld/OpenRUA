@@ -14,7 +14,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from openrua.cli import docker_setup, workspace
+from openrua.cli import docker_setup, preparation, workspace
 from openrua.cli.commands import login, start
 from openrua.config import paths
 from openrua.errors import UsageError
@@ -29,6 +29,7 @@ def launch(home: Path, robot: str, folder: Path | None = None, agent: str | None
     if paths.sandbox_dir(name, home).exists():
         raise UsageError(f"session name {name!r} already has retained or running work",
                          hint="choose a new --name")
+    preparation.prepare_connect(home, agent, distro)
     argv = [sys.executable, "-m", "openrua", "--home", str(home), "serve",
             "--connect", str(folder.resolve()), "--name", name, "--distro", distro,
             "--permissions", "ask"]
