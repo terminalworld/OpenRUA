@@ -19,6 +19,7 @@ from urllib.parse import urlparse
 from uuid import uuid4
 
 from openrua import agents, reviews, skills
+from openrua.agents.base import NotSignedIn
 from openrua.config import paths
 from openrua.errors import UsageError, UnavailableError
 from openrua.proxy import relay
@@ -164,6 +165,9 @@ def _worker(adapter, profile, workspace: Path, inputs: Path, runtime: Path, imag
                     details['quota'] = evidence['quota']
                     details['reason'] = 'Native account quota reached; inspect transcript.jsonl for the account response.'
                     return 'quota_limited'
+                if evidence.get('logged_out_launch'):
+                    details['error'] = evidence.get('final_text') or 'Native authentication is required; sign in before resuming.'
+                    return 'authentication_required'
                 if evidence.get('final_is_error'):
                     details['error'] = evidence.get('final_text', 'The agent reported an error; inspect its transcript.')
                     return 'failed'
@@ -291,6 +295,8 @@ def run(project: Path, home: Path, adapter, settings: dict, *, image: str, model
                                            **({'cancelled': cancelled} if cancelled is not None else {}))
     except KeyboardInterrupt:
         result.update(status='interrupted', reason='Review interrupted; no project skills were applied.')
+    except NotSignedIn as exc:
+        result.update(status='authentication_required', error=str(exc), reason=exc.hint)
     except Exception as exc:
         result.update(status='failed', error=str(exc))
     finally:

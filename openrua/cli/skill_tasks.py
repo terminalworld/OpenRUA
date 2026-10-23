@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import fcntl
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -15,6 +16,19 @@ import sys
 
 from openrua import reviews
 from openrua.artifacts import WorkspaceFiles
+
+
+def validate_options(options: dict) -> dict:
+    if not isinstance(options, dict) or set(options) not in ({'agent', 'model', 'image', 'wall_clock_min'}, {'agent', 'model', 'effort', 'image', 'wall_clock_min'}):
+        raise ValueError('provide agent, model, image and wall_clock_min')
+    if 'effort' in options and (not isinstance(options['effort'], str) or len(options['effort']) > 128):
+        raise ValueError('effort must be a native level or an empty default')
+    if not all(isinstance(options[key], str) and len(options[key]) <= 4096 for key in ('agent', 'model', 'image')) or not all(options[key].strip() for key in ('agent', 'image')):
+        raise ValueError('provide an agent, image and optional model')
+    minutes = options['wall_clock_min']
+    if type(minutes) not in (int, float) or not math.isfinite(minutes) or minutes <= 0:
+        raise ValueError('review time limit must be finite and positive')
+    return dict(options)
 
 
 def location(home: Path, identity: str) -> Path:
@@ -66,6 +80,7 @@ def listing(home: Path, project: Path) -> list[dict]:
 
 
 def start(home: Path, project: Path, identity: str, options: dict) -> dict:
+    options = validate_options(options)
     home, project = home.resolve(), project.resolve()
     if home.is_relative_to(project): raise ValueError('review state must be outside the project')
     root = location(home, identity)

@@ -271,6 +271,8 @@ def offer_update(args, values: dict) -> bool:
 
 
 def _run(args) -> int:
+    from openrua.cli.skill_scheduler import autostart
+    autostart(args.home)
     if args.all and args.resume is None:
         raise UsageError('--all is used with --resume', hint='openrua --resume --all')
     if not (args.gui or args.cli) or args.setup or args.resume == '':

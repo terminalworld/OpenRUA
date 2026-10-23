@@ -1,9 +1,10 @@
 import {randomUUID} from 'node:crypto';
 import {FilePreview} from './workspace.mjs';
 import {plain, muted} from './view.mjs';
+import {schedulesMenu} from './schedules.mjs';
 
 const terminalStates = new Set(['completed', 'skipped', 'failed', 'busy', 'unknown', 'interrupted',
-  'timed_out', 'quota_limited', 'turn_limit', 'invalid_output']);
+  'timed_out', 'quota_limited', 'authentication_required', 'turn_limit', 'invalid_output']);
 
 function textFile(path, text) {
   return {path, text, kind: 'text', size: Buffer.byteLength(text)};
@@ -48,19 +49,19 @@ async function startReview(chat, options) {
   });
 }
 
-function reviewOptions(chat, options, identity = null) {
+export function reviewOptions(chat, options, identity = null, flow = {}) {
   const rows = [
     {value: 'agent', label: `Agent: ${plain(options.agent)}`},
     {value: 'model', label: `Model: ${plain(options.model || '(agent default)')}`},
     {value: 'effort', label: `Effort: ${plain(options.effort || '(agent default)')}`},
     {value: 'image', label: `Image: ${plain(options.image)}`},
     {value: 'wall_clock_min', label: `Worker time limit: ${options.wall_clock_min} minutes`},
-    {value: 'start', label: 'Review completed work…'},
+    {value: 'start', label: flow.label || 'Review completed work…'},
     {value: 'back', label: 'Back'},
   ];
   chat.picker('Review settings', rows, async key => {
-    if (key === 'back') return projectMenu(chat);
-    if (key === 'start') return startReview(chat, options);
+    if (key === 'back') return (flow.back || projectMenu)(chat);
+    if (key === 'start') return flow.finish ? flow.finish(options) : startReview(chat, options);
     chat.editText(key === 'wall_clock_min' ? 'Worker time limit in minutes' : key,
       String(options[key]), async value => {
         if (key === 'wall_clock_min' && (!Number.isFinite(Number(value)) || Number(value) <= 0))
@@ -74,7 +75,7 @@ function reviewOptions(chat, options, identity = null) {
           }
           identity = resolved.agent_identity;
         }
-        reviewOptions(chat, options, identity);
+        reviewOptions(chat, options, identity, flow);
       }, {allowEmpty: ['model', 'effort'].includes(key)});
   });
 }
@@ -136,10 +137,12 @@ export async function projectMenu(chat) {
     {value: 'policy', label: `Accumulate methods: ${data.policy}`},
     ...(data.defaults ? [{value: 'start', label: 'Review completed work…'}] : []),
     ...(chat.pendingReview ? [{value: 'retry', label: 'Inspect/retry unconfirmed review start…'}] : []),
+    {value: 'schedules', label: 'Periodic review schedules…'},
     {value: 'refresh', label: 'Refresh'}];
   chat.picker(`Project skills and reviews\n${plain(data.project)}`
     + (data.review_error ? `\nReview unavailable: ${plain(data.review_error)}` : ''), rows, async key => {
     if (key === 'refresh') return projectMenu(chat);
+    if (key === 'schedules') return schedulesMenu(chat, data, reviewOptions, showReview);
     if (key === 'start') return reviewOptions(chat, {...data.defaults}, data.agent_identity);
     if (key === 'retry') return startReview(chat, chat.pendingReview.options);
     if (key === 'policy') return chat.picker('Accumulation guides future work; saved skills remain usable.',

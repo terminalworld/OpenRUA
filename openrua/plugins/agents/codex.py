@@ -274,7 +274,8 @@ class Codex(Agent):
                 low = text.lower()
                 if ev["quota"] is None and any(p in low for p in QUOTA_PHRASES):
                     ev["quota"] = {"evidence": f"{transcript.name}:{i}:error", "message": text[:160]}
-                ev["logged_out_launch"] = "not logged in" in low or "login" in low and "auth" in low
+                ev["logged_out_launch"] |= any(phrase in low for phrase in
+                    ('not logged in', 'authentication required', 'authentication failed', 'unauthorized', 'invalid api key', 'refresh token')) or "login" in low and "auth" in low
         return ev
 
     def quota_since(self, transcript: Path, line: int = 0) -> dict | None:

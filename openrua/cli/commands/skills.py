@@ -78,3 +78,5 @@ def add_parser(sub) -> None:
     p.set_defaults(fn=run)
     from openrua.cli.commands.skill_review import add_parsers
     add_parsers(actions)
+    from openrua.cli.commands.skill_schedule import add_parsers as add_schedules
+    add_schedules(actions)

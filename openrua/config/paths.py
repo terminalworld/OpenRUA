@@ -42,10 +42,19 @@ def split_pin(spec: str) -> tuple[str, str | None]:
     return name, version or None
 
 
+def agent_spec(spec: str, directory: Path | None = None) -> str:
+    """Resolve a manifest path before handing the selection to another process."""
+    name, pin = split_pin(spec)
+    if is_path(name):
+        path = Path(name).expanduser()
+        if directory is not None and not path.is_absolute(): path = directory / path
+        name = str(path.resolve())
+    return name + (f'@{pin}' if pin else '')
+
+
 def agent_key(spec: str) -> str:
     """The canonical preference key for an agent, independent of its pin."""
-    name, _ = split_pin(spec)
-    return str(Path(name).expanduser().resolve()) if is_path(name) else name
+    return split_pin(agent_spec(spec))[0]
 
 
 DEFAULT_HOME = "~/.openrua"

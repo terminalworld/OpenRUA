@@ -159,6 +159,74 @@ an existing draft; review it before sending it to the native agent. Current edit
 and conflicts are resolved in the agent's ordinary editing and approval workflow.
 Preparing the request does not send it, edit skills or move the robot.
 
+## Periodic reviews
+
+First run and inspect a manual review. When its scope and settings suit the
+project, open `/project` and select **Periodic review schedules**. Choose a name,
+time, days and timezone, check the agent/model/effort, image and worker limit,
+then confirm **Enable schedule**. No periodic plan exists until you create one.
+The background task uses your configured native login or API; its execution
+time limit is not a monetary cap.
+
+The scheduler belongs to OpenRUA and does not require systemd, cron or an
+administrator. Closing the chat terminal keeps it running independently of the
+robot conversation. After the computer shuts down, starting OpenRUA normally
+restores enabled plans. It does not install an operating system startup service
+or run while the computer is off. Several missed times combine into at most one
+review per plan; the next time is calculated in its selected IANA timezone.
+Daily and weekly calendars follow that timezone's daylight-saving rules.
+
+Each occurrence starts the same isolated, project-scoped review described above.
+No new eligible records, or the same completed inputs, are skipped without a
+model task. Ordinary failures are recorded and wait for the next time. Login or
+quota problems pause the plan. Uncertain execution also pauses it so you can
+inspect the existing task rather than replay it. Fix the issue, then resume.
+Reports and proposals use the existing explicit adoption workflow.
+
+The project menu lists its plans, next time, current task, latest result and
+report. Editing a plan preserves a running review's settings. Pausing or removing
+it affects future reviews; an active review continues. To cancel it, use the
+**Review tasks** menu or `skills tasks TASK_ID --cancel`.
+
+The same controls work from the project directory without starting a robot:
+
+```sh
+openrua skills schedule add --name "Review project methods" \
+  --time 21:30 --days mon,tue,wed,thu,fri --timezone Asia/Shanghai \
+  --agent codex --effort high --wall-clock-min 5 --enable
+openrua skills schedule list
+openrua skills schedule show SCHEDULE_ID
+openrua skills schedule edit SCHEDULE_ID --time 20:00
+openrua skills schedule pause SCHEDULE_ID
+openrua skills schedule resume SCHEDULE_ID
+openrua skills schedule remove SCHEDULE_ID
+```
+
+Omit `--enable` to save a paused plan. For unattended project writes, pass
+`--trust-workspace` explicitly. Creation accepts an optional stable `--id` for
+retrying an unconfirmed request. Resuming a paused plan starts from its next
+future time rather than replaying the period it was paused.
+
+Background status and controls apply to all enabled plans in the selected
+OpenRUA user directory:
+
+```sh
+openrua skills scheduler status
+openrua skills scheduler stop
+openrua skills scheduler start
+```
+
+Stopping the scheduler prevents new work and lets the current bounded review
+finish. An explicit stop is retained across ordinary startup until you start it
+again. A project menu cannot restart this deliberately stopped shared owner;
+its plan remains saved and the menu shows the stopped background status.
+Plans and private scheduler/task state live under the selected OpenRUA user
+directory. Reports remain with their project. Keep project paths available;
+moving or revoking trust pauses the affected plan rather than choosing a new
+folder. This feature does not schedule robot movements.
+
+## Manual review commands
+
 To look back across finished conversations and exec tasks, run a separate
 review from the project directory:
 
