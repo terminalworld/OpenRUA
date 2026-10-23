@@ -127,6 +127,86 @@ save('ended', home, status='stopped', workspace=str(workspace))
         os.close(master)
 
 
+def end_smoke(executable: Path, home: Path, environment: dict) -> None:
+    """End through the packaged TUI after the HTTP owner closes immediately."""
+    import pty
+    import fcntl
+    import struct
+    import termios
+    home.mkdir(parents=True)
+    endpoint = home / 'sandboxes' / 'exit-check' / 'endpoint.json'
+    program = '''
+import json, sys, threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from openrua.sessions.client import write_endpoint
+from openrua.sessions.core import initial_state
+home = Path(sys.argv[1])
+state = initial_state(); state['connected'] = True
+class Handler(BaseHTTPRequestHandler):
+    def reply(self, value):
+        raw = json.dumps(value).encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(raw)))
+        self.end_headers(); self.wfile.write(raw)
+    def do_GET(self):
+        self.reply([] if self.path.startswith('/api/events') else {'state': state, 'cursor': 0})
+    def do_POST(self):
+        assert self.path == '/api/end'
+        state['closed'] = True
+        with (home / 'end-calls').open('a') as stream: stream.write('end\\n')
+        self.reply({'result': {'state': state, 'cursor': 0}})
+        threading.Thread(target=self.server.shutdown).start()
+    def log_message(self, *args): pass
+server = ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+endpoint = home / 'sandboxes' / 'exit-check' / 'endpoint.json'
+write_endpoint(endpoint, f'http://127.0.0.1:{server.server_port}', 'exit-check')
+server.serve_forever(); server.server_close(); endpoint.unlink()
+'''
+    with (home / 'owner.log').open('w') as log:
+        owner = subprocess.Popen([str(executable.parent / 'python'), '-u', '-c', program, str(home)],
+                                 stdout=log, stderr=log, env=environment)
+    child = None
+    master, slave = pty.openpty()
+    try:
+        deadline = time.monotonic() + 10
+        while not endpoint.exists():
+            assert owner.poll() is None, (home / 'owner.log').read_text()
+            assert time.monotonic() < deadline, 'test owner did not start'
+            time.sleep(.02)
+        fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 120, 0, 0))
+        child = subprocess.Popen([str(executable), '--home', str(home), 'chat', '--name', 'exit-check', '--tui'],
+                                 stdin=slave, stdout=slave, stderr=slave, env=environment)
+        os.close(slave); slave = None
+        output, stage = bytearray(), 0
+        deadline = time.monotonic() + 25
+        while time.monotonic() < deadline and child.poll() is None:
+            if select.select([master], [], [], .1)[0]:
+                try: output.extend(os.read(master, 65536))
+                except OSError: break
+            if stage == 0 and b'Enter send' in output:
+                os.write(master, b'/end\r'); stage = 1
+            elif stage == 1 and b'End execution and release resources?' in output:
+                os.write(master, b'\x1b[B\r'); stage = 2
+        child.wait(timeout=5)
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
+        assert stage == 2 and child.returncode == 0, output.decode(errors='replace')
+        assert b'leave it in the background' not in output, output.decode(errors='replace')
+        assert b'Session exit-check ended' in output, output.decode(errors='replace')
+        assert (home / 'end-calls').read_text() == 'end\n'
+        assert owner.wait(timeout=5) == 0, (home / 'owner.log').read_text()
+    finally:
+        for process in (child, owner):
+            if process is not None:
+                if process.poll() is None: process.kill()
+                process.wait()
+        os.close(master)
+        if slave is not None: os.close(slave)
+
+
 def check(dist: Path, version: str) -> None:
     wheels = list(dist.resolve().glob("*.whl"))
     if len(wheels) != 1:
@@ -149,7 +229,7 @@ assert all(content for mime, content in assets().values())
 root = files('openrua')
 for path in ('sandbox/workspace/README.md', 'configs/agents/codex.yaml',
              'configs/agents/claude-code.yaml', 'terminal/assets/src/workspace.mjs',
-             'sandbox/extend.Dockerfile'):
+             'terminal/assets/src/exit.mjs', 'sandbox/extend.Dockerfile'):
     assert root.joinpath(path).read_bytes(), path
 """)
         run("-c", """
@@ -170,6 +250,8 @@ assert runtime()([str(entrypoint()), '--help'], env=env, return_completed_proces
                        dict(os.environ, PATH=str(environment / 'bin')), manifest)
         archive_smoke(environment / 'bin' / 'openrua', root / 'archive-home',
                       dict(os.environ, PATH=str(environment / 'bin')))
+        end_smoke(environment / 'bin' / 'openrua', root / 'exit-home',
+                  dict(os.environ, PATH=str(environment / 'bin')))
 
 
 def main() -> None:

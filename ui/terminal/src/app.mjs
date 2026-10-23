@@ -24,6 +24,7 @@ const elapsed = since => {
 export class Chat {
   constructor(client, {terminal = new ProcessTerminal(), pollMs = 350, history = false, name = '', facts = {}} = {}) {
     this.client = client;
+    this.ending = false; this.endConfirmed = false;
     this.history = history; this.result = {action: 'quit'};
     this.ui = new TuiMainScreen(terminal);
     this.facts = facts;
@@ -235,7 +236,7 @@ export class Chat {
 
   async refresh() {
     await this.controller.refresh();
-    if (this.done) return;
+    if (this.done || this.ending) return;
     const state = this.controller.state;
     this.pendingMessages.messages = state.messages;
     if (this.welcome.seen === undefined) {
@@ -265,7 +266,7 @@ export class Chat {
 
   async poll() {
     try { await this.refresh(); } catch (error) {
-      if (!this.done) {
+      if (!this.done && !this.ending) {
         this.status.setText(yellow(`⚠ Disconnected · retrying · ${plain(error.message)}`));
         this.keys.setText(yellow('The service is not answering; your draft and queued instructions are kept.'));
         this.ui.requestRender();
@@ -362,7 +363,18 @@ export class Chat {
       end: async () => {
         writable();
         this.confirm('End execution and release resources? The workspace and history will be retained.',
-          async () => { await this.client.end(); this.stop(); });
+          async () => {
+            this.ending = true;
+            this.status.setText(yellow('Ending session… stopping the agent and owned resources.'));
+            this.ui.requestRender();
+            try {
+              await this.client.end();
+              // Keep the acknowledged result even if the last poll still
+              // described an open session. The owner can now close its HTTP server.
+              this.endConfirmed = true;
+              this.stop();
+            } finally { this.ending = false; }
+          });
       },
       questions: async () => { this.questions(); },
       retry: async () => { await this.controller.retry(); await this.refresh(); },

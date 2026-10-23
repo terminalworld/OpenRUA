@@ -9,6 +9,15 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.21.8
+
+- Ending a terminal session shows shutdown progress and retains its acknowledged
+  result, preventing a second exit prompt against an already closed service.
+  Ordinary exit checks current status; unreachable services are reported as
+  unconfirmed with an inspection command. Exit wording describes owned resources
+  without assuming the real robot's motor power state. Session documentation
+  explains how to end and resume a project conversation to recreate its resources.
+
 ## 0.21.7
 
 - Selecting an agent with `@VERSION` retains its configured authentication,

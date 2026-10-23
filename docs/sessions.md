@@ -237,6 +237,17 @@ If the service exits while resource shutdown fails, it also retains that endpoin
 and the session files. An unreachable service does not confirm that its resources
 stopped, and `clean --all` does not override this guard.
 
+To recreate a confirmed ended project's resources while retaining its conversation,
+run `openrua --resume SESSION_ID` from the original project. Reconnecting a client
+to a session that is still open only attaches to its existing resources. There is
+currently no separate restart-connection button or API. A resource restart does
+not replay earlier instructions; send a new instruction after reconnecting.
+
+Ending stops the agent and the resources owned by OpenRUA. For a real robot,
+motor enable state and physical power depend on its driver and shutdown command.
+The interface cannot infer these states from a closed session. Likewise, software
+stop latches and controller activation need verification after restarting a driver.
+
 `up` and `agent` retain their original native-terminal mode. Opening a
 second raw agent inside a managed session is refused because it would bypass
 the shared queue. A native terminal attached to the *same managed conversation*

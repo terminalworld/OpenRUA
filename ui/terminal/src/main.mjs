@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import {parseArgs} from 'node:util';
 import {readFile, writeFile} from 'node:fs/promises';
-import {createInterface} from 'node:readline/promises';
 import {Client} from './client.mjs';
 import {Chat} from './app.mjs';
 import {ArchiveClient, History, Setup, Workspace} from './screens.mjs';
+import {leave} from './exit.mjs';
 
 // Pi tells terminals that draw pictures apart by variables an SSH connection
 // drops; these two travel: iTerm2 sends LC_TERMINAL, kitty sets TERM. Under
@@ -12,26 +12,6 @@ import {ArchiveClient, History, Setup, Workspace} from './screens.mjs';
 if (!process.env.PI_IMAGE_PROTOCOL && !process.env.TMUX && !/^(screen|tmux)/.test(process.env.TERM ?? '')) {
   if (process.env.LC_TERMINAL === 'iTerm2') process.env.PI_IMAGE_PROTOCOL = 'iterm2';
   else if (process.env.TERM === 'xterm-kitty') process.env.PI_IMAGE_PROTOCOL = 'kitty';
-}
-
-// Leaving a conversation that holds a robot: keep it running (Enter), or end
-// it now. Anything but "e" keeps it, Ctrl-C and a closed input included.
-async function leave(name, client, facts) {
-  const holding = facts.backend === 'real' ? 'the robot stays under control' : 'robot and agent included';
-  console.log(`Session ${name} is still running, ${holding}.`);
-  const input = createInterface({input: process.stdin, output: process.stdout});
-  input.on('SIGINT', () => input.close());
-  let answer = '';
-  try {
-    answer = await input.question('  Enter  keep it running in the background\n'
-      + '  e      end it now: the robot powers off, the files stay\n> ');
-  } catch { answer = ''; } finally { input.close(); }
-  if (answer.trim().toLowerCase().startsWith('e')) {
-    await client.end();
-    console.log(`Session ${name} ended; its files are kept (openrua --resume shows it).`);
-  } else {
-    console.log(`Still running. Come back: openrua --resume · end it: openrua session --name ${name} end`);
-  }
 }
 
 try {
@@ -61,11 +41,12 @@ try {
     try { result = await screen.run(); }
     finally { screen.stop(); process.removeListener('SIGINT', stop); process.removeListener('SIGTERM', stop); }
     if (values.output) await writeFile(values.output, JSON.stringify(result ?? {action: 'quit'}), {mode: 0o600, flag: 'wx'});
-    // Leaving the terminal leaves the session: on a real robot the arm stays
-    // under control, so ask whether to keep it running.
-    const left = screen instanceof Chat && !screen.client.readOnly && screen.controller?.state
-      && !screen.controller.state.closed && !result?.action?.startsWith?.('history');
-    if (left && spec.name) await leave(spec.name, screen.client, spec.facts ?? {});
+    const left = screen instanceof Chat && !screen.client.readOnly
+      && !result?.action?.startsWith?.('history');
+    if (left && spec.name) {
+      const ended = screen.endConfirmed || Boolean(screen.controller?.state?.closed);
+      if (!await leave(spec.name, screen.client, {ended})) process.exitCode = 1;
+    }
   }
 } catch (error) {
   console.error(error.message);
