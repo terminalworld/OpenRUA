@@ -21,6 +21,9 @@ def test_native_discovery_after_new_process_and_profile(tmp_path, agent_name):
         root, home, materials = tmp_path / 'project', tmp_path / 'home', tmp_path / 'materials'
         adapter = agents.get(agent_name)
         source = tmp_path / 'empty-login'; source.mkdir()
+        if agent_name == 'claude-code':
+            (source / 'settings.json').write_text(json.dumps({'hooks': {'InstructionsLoaded': [
+                {'hooks': [{'type': 'command', 'command': 'cat >> /workspace/loaded-instructions.jsonl'}]}]}}))
         project.prepare({}, root, materials)
         original = 'User-authored native project instructions.\n'
         (root / 'CLAUDE.md').write_text(original)
@@ -75,6 +78,16 @@ def test_native_discovery_after_new_process_and_profile(tmp_path, agent_name):
                     try: await asyncio.wait_for(proc.wait(), 5)
                     except asyncio.TimeoutError:
                         proc.kill(); await proc.wait()
+                if agent_name == 'claude-code':
+                    loaded = root / 'loaded-instructions.jsonl'
+                    loaded.unlink(missing_ok=True)
+                    result = subprocess.run(adapter.launch_argv(name, '/context', adapter.default_model, 1, '',
+                                                                limits={'account_connectors': False}),
+                                            capture_output=True, text=True, timeout=25)
+                    assert result.returncode == 0, result.stderr
+                    paths = loaded.read_text()
+                    assert '/workspace/CLAUDE.md' in paths
+                    assert '/workspace/.claude/rules/openrua-skills.md' in paths
             finally:
                 subprocess.run(['docker', 'rm', '-f', name], capture_output=True, timeout=30)
             if index == 1:
