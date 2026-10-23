@@ -49,10 +49,22 @@ same information as JSON Schema.
 """
 
 
+class ReferenceFormatter(argparse.HelpFormatter):
+    """Keep value-taking aliases identical across supported Python versions."""
+
+    def _format_action_invocation(self, action):
+        if not action.option_strings or action.nargs == 0:
+            return super()._format_action_invocation(action)
+        default = self._get_default_metavar_for_optional(action)
+        value = self._format_args(action, default)
+        return ', '.join(f'{option} {value}' for option in action.option_strings)
+
+
 def _parser_reference(parser: argparse.ArgumentParser) -> str:
     # argparse versions measure nested command columns differently. Render
     # their help separately, using the same Markdown table as the top level.
     printable = copy.deepcopy(parser)
+    printable.formatter_class = ReferenceFormatter
     groups = [a for a in printable._actions if isinstance(a, argparse._SubParsersAction)]
     tables = []
     for group in groups:
@@ -67,7 +79,7 @@ def _parser_reference(parser: argparse.ArgumentParser) -> str:
         # Python 3.13 permits wrapping inside exclusive groups, whereas older
         # argparse versions keep them together. Use one deterministic wrapping
         # rule for the reference; the interactive CLI keeps its native help.
-        formatter = argparse.HelpFormatter(printable.prog, width=10000)
+        formatter = ReferenceFormatter(printable.prog, width=10000)
         formatter.add_usage(None, printable._actions, printable._mutually_exclusive_groups)
         usage = formatter.format_help().strip()
         wrapped = textwrap.fill(usage, width=78,

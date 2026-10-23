@@ -51,7 +51,7 @@ start or reconnect (without a subcommand):
   --name NAME           optional session name or ID; omitted for a new
                         automatic ID
   --agent AGENT         agent to open (default: the config's)
-  -C, --cd, --workspace WORKSPACE
+  -C WORKSPACE, --cd WORKSPACE, --workspace WORKSPACE
                         persistent robot project directory (default: the
                         current directory)
   --trust-workspace     explicitly trust the workspace without an interactive
@@ -302,7 +302,7 @@ options:
   -h, --help            show this help message and exit
   --robot ROBOT         robot name or file (default: the project's, else your
                         default)
-  -C, --cd, --workspace WORKSPACE
+  -C WORKSPACE, --cd WORKSPACE, --workspace WORKSPACE
                         persistent project directory (default: the current
                         directory)
   --trust-workspace     explicitly trust the project without an interactive
@@ -386,7 +386,7 @@ options:
                         simulated robot's comes from the scene)
   --name NAME           session handle (default: openrua)
   --agent AGENT         agent to open (default: the config's)
-  -C, --cd, --workspace WORKSPACE
+  -C WORKSPACE, --cd WORKSPACE, --workspace WORKSPACE
                         persistent robot project directory (default: the
                         current directory)
   --trust-workspace     explicitly trust the workspace without an interactive
@@ -480,7 +480,7 @@ options:
                         simulated robot's comes from the scene)
   --name NAME           session handle (default: openrua)
   --agent AGENT         agent to open (default: the config's)
-  -C, --cd, --workspace WORKSPACE
+  -C WORKSPACE, --cd WORKSPACE, --workspace WORKSPACE
                         persistent robot project directory (default: the
                         current directory)
   --trust-workspace     explicitly trust the workspace without an interactive
@@ -718,20 +718,16 @@ usage: openrua agent [-h] [--name NAME] [--agent AGENT] [--model MODEL]
                      [--workspace WORKSPACE] [--trust-workspace]
                      [[agent] [message] ...]
 
-``openrua agent``: your coding agent's own terminal, on a robot.
-
-    openrua agent                           the configured agent
-    openrua agent <name>                    a named one (openrua agents), or a manifest's path
-    openrua agent <name> "open the drawer"  with an opening message
-
-With a robot already up (``openrua up``, or an earlier ``openrua agent``
-kept running) the agent opens on it: the newest, or the one ``--name``
-names. Otherwise OpenRUA starts one first, the way ``openrua`` does
-(Docker and the agent's sign-in set up with you, missing images built,
-the saved robot unless ``--robot``, ``--sim`` or ``--bench`` say
-otherwise), and when the agent exits asks whether to turn it off. This
-is the agent's own interface: its Esc stops the agent, not a motion it
-already sent.
+``openrua agent``: your coding agent's own terminal, on a robot. openrua agent
+the configured agent openrua agent <name> a named one (openrua agents), or a
+manifest's path openrua agent <name> "open the drawer" with an opening message
+With a robot already up (``openrua up``, or an earlier ``openrua agent`` kept
+running) the agent opens on it: the newest, or the one ``--name`` names.
+Otherwise OpenRUA starts one first, the way ``openrua`` does (Docker and the
+agent's sign-in set up with you, missing images built, the saved robot unless
+``--robot``, ``--sim`` or ``--bench`` say otherwise), and when the agent exits
+asks whether to turn it off. This is the agent's own interface: its Esc stops
+the agent, not a motion it already sent.
 
 positional arguments:
   [agent] [message]     the agent to open (openrua agents lists them; default:

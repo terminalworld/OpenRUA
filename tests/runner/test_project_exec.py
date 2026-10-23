@@ -73,9 +73,10 @@ def test_two_exec_tasks_share_project_and_keep_separate_records(
     monkeypatch.setattr(execute, 'run_set', run_set)
     profile = tmp_path / 'arm.yaml'
     profile.write_text(REAL)
-    robot = [str(profile)] if backend == 'real' else ['panda', '--sim', 'robosuite']
+    robot = str(profile) if backend == 'real' else 'panda'
+    scene = [] if backend == 'real' else ['--sim', 'robosuite']
     records = ['--runs-root', str(tmp_path / 'records')] if external_records else []
-    for words in ([*robot, 'inspect'], ['continue']):
+    for words in ([robot, 'inspect', *scene], ['continue']):
         # Two runs with the same requested name must not replace either record.
         args = build_parser().parse_args(['--home', str(home), 'exec', *words,
                                          '--run-id', 'same', '--no-record', *records])
