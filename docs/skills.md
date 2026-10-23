@@ -88,6 +88,10 @@ Skills belong in the project's Git repository alongside maintained code and
 notes. Track the links as well as their targets. Review changes with `git diff`
 and restore earlier content through the project's normal Git workflow.
 
+Claude Code also gets a small `.claude/rules/openrua-skills.md` entry so this
+guidance loads when an existing `CLAUDE.md` takes precedence over `AGENTS.md`.
+Your `CLAUDE.md` and existing rule text are preserved.
+
 Personal methods are separate, under `~/.openrua/skills/` (or the selected
 `--home`). They are mounted into each supported agent's native personal skills
 directory for project sessions, independent of its temporary authentication

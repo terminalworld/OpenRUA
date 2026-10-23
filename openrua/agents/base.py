@@ -90,6 +90,7 @@ class SkillLocations:
     """Native project directory and sandbox mount for personal skill files."""
     project: str
     personal: str
+    instructions: str | None = None
 
 
 def _copy_profile(source: Path, dest: Path, credentials: Credentials | None,

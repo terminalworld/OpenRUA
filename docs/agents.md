@@ -63,6 +63,9 @@ launch hooks. The project runner bridges declared project directories and
 mounts the explicitly managed user skill directory. Native discovery and
 invocation remain the plugin's responsibility; the generic file catalog does
 not claim that a particular CLI has loaded a skill. See [skills](skills.md).
+An optional `instructions` project-relative path names a native instructions
+file; the project runner appends the same skills guidance there, preserving
+existing text, for agents whose other instruction files can hide AGENTS.md.
 
 A subclass of `openrua.agents.Agent` (`openrua/agents/base.py`). One
 method is required, `launch_argv`: the command that runs the agent

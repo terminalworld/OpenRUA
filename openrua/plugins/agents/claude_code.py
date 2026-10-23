@@ -69,7 +69,8 @@ def _isolate(directory: Path) -> None:
 class ClaudeCode(Agent):
     """Hooks only; every fact comes from the manifest."""
 
-    skills = SkillLocations('.claude/skills', '/claude-config/skills')
+    skills = SkillLocations('.claude/skills', '/claude-config/skills',
+                           '.claude/rules/openrua-skills.md')
 
     def prepare_profile(self, source: Path, dest: Path, *,
                         require_credentials: bool = True,
