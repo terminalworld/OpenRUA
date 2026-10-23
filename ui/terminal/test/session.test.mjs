@@ -383,7 +383,7 @@ test('end requires confirmation and releases execution through the service', {ti
   assert.equal(chat.endConfirmed, true);
 });
 
-test('ending stays visible during owner disconnect and a failed end can be retried', async () => {
+test('ending stays visible during owner disconnect and a failed end can be retried', {timeout: 5000}, async () => {
   let rejectEnd;
   let attempts = 0;
   const state = {messages: [], requests: {}, connected: true, closed: false};

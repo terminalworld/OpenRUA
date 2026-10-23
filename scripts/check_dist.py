@@ -190,6 +190,9 @@ server.serve_forever(); server.server_close(); endpoint.unlink()
             elif stage == 1 and b'End execution and release resources?' in output:
                 os.write(master, b'\x1b[B\r'); stage = 2
         child.wait(timeout=5)
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
         assert stage == 2 and child.returncode == 0, output.decode(errors='replace')
         assert b'leave it in the background' not in output, output.decode(errors='replace')
         assert b'Session exit-check ended' in output, output.decode(errors='replace')
