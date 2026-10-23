@@ -36,6 +36,15 @@ def _prepare(root: Path, home: Path, adapter, materials: Path) -> tuple[str, ...
         if skills.GUIDANCE.strip() not in instructions.read_text():
             with instructions.open('a') as stream:
                 stream.write('\n' + skills.GUIDANCE)
+        if locations is not None and locations.instructions is not None:
+            native = root / locations.instructions
+            if not native.resolve().is_relative_to(root.resolve()) or native.is_symlink():
+                raise ValueError(f'native instructions must be an ordinary project file: {native}')
+            native.parent.mkdir(parents=True, exist_ok=True)
+            previous = native.read_text() if native.exists() else ''
+            if skills.GUIDANCE.strip() not in previous:
+                with native.open('a') as stream:
+                    stream.write(('\n' if previous else '') + skills.GUIDANCE)
     if locations is None:
         return ()
     personal = home / 'skills'

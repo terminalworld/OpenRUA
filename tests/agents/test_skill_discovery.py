@@ -22,12 +22,17 @@ def test_native_discovery_after_new_process_and_profile(tmp_path, agent_name):
         adapter = agents.get(agent_name)
         source = tmp_path / 'empty-login'; source.mkdir()
         project.prepare({}, root, materials)
+        original = 'User-authored native project instructions.\n'
+        (root / 'CLAUDE.md').write_text(original)
         write_skill(root / '.agents/skills', 'native-probe')
         write_skill(home / 'skills', 'personal-probe')
         for index in (1, 2):
             profile = adapter.prepare_profile(source, tmp_path / f'profile-{index}', require_credentials=False,
                                               limits={'account_connectors': False})
             mounts = (*profile.mounts, *prepare(root, home, adapter, materials))
+            if adapter.skills.instructions is not None:
+                assert '/robot/skills.md' in (root / adapter.skills.instructions).read_text()
+            assert (root / 'CLAUDE.md').read_text() == original
             name = 'openrua-skills-test-' + uuid4().hex[:10]
             argv = ['docker', 'run', '-d', '--name', name, '--network', 'none',
                     '-e', 'HOME=/home/robot', '-v', f'{root}:/workspace']

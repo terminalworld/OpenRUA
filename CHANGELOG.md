@@ -9,6 +9,13 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.21.1
+
+- Claude Code loads project skill guidance through a native rules file even
+  when the project already has a `CLAUDE.md` that takes precedence over
+  `AGENTS.md`. Existing instructions and rules are retained. Codex and
+  benchmark instruction paths are unchanged.
+
 ## 0.21.0
 
 - Robot projects can accumulate and reuse native skills across conversations
