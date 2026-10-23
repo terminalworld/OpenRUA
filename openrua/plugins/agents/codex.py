@@ -50,6 +50,7 @@ class Codex(Agent):
     """Hooks only; every fact comes from the manifest."""
 
     skills = SkillLocations('.agents/skills', '/codex-home/skills')
+    permission_modes = tuple(CodexConversation.APPROVAL)
 
     def prepare_api_profile(self, key_file: Path, dest: Path, *,
                             limits: dict | None = None) -> PreparedProfile:

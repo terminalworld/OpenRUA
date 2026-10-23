@@ -17,9 +17,9 @@ usage: openrua [-h] [--version] [--home HOME] [--robot ROBOT] [--sim SIM]
                AGENT] [-C WORKSPACE] [--trust-workspace] [--ros-domain
                ROS_DOMAIN] [--internet {open,model-only}] [--web-search |
                --no-web-search] [--account-connectors |
-               --no-account-connectors] [--permissions {ask,auto}] [--model
-               MODEL] [--gui | --tui UI | --cli] [--port PORT] [--setup]
-               [--resume [ID]] [--all] <verb> ...
+               --no-account-connectors] [--permissions MODE] [--model MODEL]
+               [--gui | --tui UI | --cli] [--port PORT] [--setup] [--resume
+               [ID]] [--all] <verb> ...
 
 Open a robot conversation, or use ``openrua <verb> ...``.
 
@@ -70,10 +70,9 @@ start or reconnect (without a subcommand):
                         what your account brings beyond the CLI: its
                         connectors or apps, synced skills and plugins
                         (default: not limited)
-  --permissions {ask,auto}
-                        ask: the agent asks before each command that changes
-                        something; auto: it runs them without asking
-                        (default); /permissions switches
+  --permissions MODE    native permission mode: ask, auto-review, auto (legacy
+                        bypass default), or another mode supported by the
+                        selected agent; /permissions lists choices
   --model MODEL         model for a new session (default: the agent's
                         configuration)
   --gui                 open the browser instead of terminal chat
@@ -454,7 +453,7 @@ usage: openrua serve [-h] [--sim SIM] [--bench BENCH]
                      [--ros-domain ROS_DOMAIN] [--internet {open,model-only}]
                      [--web-search | --no-web-search]
                      [--account-connectors | --no-account-connectors]
-                     [--permissions {ask,auto}] [--model MODEL] [--port PORT]
+                     [--permissions MODE] [--model MODEL] [--port PORT]
                      [--resume-conversation] [--connect FOLDER]
                      [--distro {jazzy,humble}]
                      [robot]
@@ -500,10 +499,9 @@ options:
                         what your account brings beyond the CLI: its
                         connectors or apps, synced skills and plugins
                         (default: not limited)
-  --permissions {ask,auto}
-                        ask: the agent asks before each command that changes
-                        something; auto: it runs them without asking
-                        (default); /permissions switches
+  --permissions MODE    native permission mode: ask, auto-review, auto (legacy
+                        bypass default), or another mode supported by the
+                        selected agent; /permissions lists choices
   --model MODEL         model (default: the configured agent's)
   --port PORT           local port (default: choose a free port)
   --resume-conversation
@@ -561,7 +559,7 @@ options:
 | `edit` | edit a queued message at its current revision |
 | `resolve_unknown` | record checking an uncertain execution, without replaying it |
 | `respond` | answer a pending agent question |
-| `configure` | change the agent's permissions (ask or auto) or model for what it does next |
+| `configure` | change the agent's native permission mode or model |
 | `end` | stop owned resources and retain messages and workspace |
 
 ### openrua session web
@@ -695,7 +693,8 @@ usage: openrua session configure [-h] {permissions,model} value
 
 positional arguments:
   {permissions,model}
-  value                permissions: ask | auto; model: a model ID
+  value                a native permission mode (ask, auto-review, auto, or
+                       agent-specific) or model ID
 
 options:
   -h, --help           show this help message and exit

@@ -172,6 +172,8 @@ class Session:
                     state["connected"] = True
             elif event.kind == "setting":
                 state.setdefault("settings", {})[event.data["setting"]] = event.data["value"]
+                if 'choices' in event.data:
+                    state.setdefault('setting_choices', {})[event.data['setting']] = event.data['choices']
             elif event.kind == "commands":
                 state["agent_commands"] = event.data["commands"]
             elif event.kind == "protocol_error":
@@ -338,7 +340,10 @@ class Session:
     def resume(self, pause_id: str) -> None:
         def change(state):
             _open(state)
-            if state["active"] or not state["connected"] or any(
+            if not state['connected']:
+                raise ValueError('agent connection is unavailable; /continue only releases a queue pause, '
+                                 'it cannot reconnect the agent. Inspect the session logs before restarting execution.')
+            if state["active"] or any(
                     m["status"] == "unknown" for m in state["messages"]):
                 raise ValueError("wait for the active turn and reconcile uncertain execution before resuming")
             if not state["paused"] and pause_id == state["pause_id"]:

@@ -63,6 +63,26 @@ def test_config_passes_only_without_a_todo_outside_comments(tmp_path):
     assert not ok and summary.startswith("1 TODO left") and "robot.yaml:" in summary
 
 
+@pytest.mark.parametrize('build_succeeds', [True, False])
+def test_robot_checks_prepare_an_existing_different_distro_image_missing_the_agent(tmp_path, monkeypatch, build_succeeds):
+    import io
+    done, _ = checks(tmp_path)
+    done.agent = 'codex'
+    backend = {'ros_distro': 'humble', 'sandbox_image': 'openrua-sandbox-humble'}
+    commands = []
+    monkeypatch.setattr(connect.subprocess, 'run', lambda *a, **k: SimpleNamespace(returncode=0))
+    def ready(image, command):
+        assert image == 'openrua-sandbox-humble' and 'codex' in command
+        return bool(commands) and build_succeeds
+    monkeypatch.setattr(connect, 'cli_ready', ready)
+    def build(out, *argv):
+        commands.append(argv)
+        return 0 if build_succeeds else 1
+    monkeypatch.setattr(done, '_openrua', build)
+    assert done._images(io.StringIO(), backend) == ([] if build_succeeds else ['openrua-sandbox-humble'])
+    assert commands == [('build', 'sandbox', '--distro', 'humble', '--tag', 'openrua-sandbox-humble', '--agent', 'codex')]
+
+
 def test_a_check_runs_on_the_host_and_its_result_reaches_the_session(tmp_path, monkeypatch):
     done, session = checks(tmp_path)
     monkeypatch.setattr(connect, "host_report", lambda: (True, "docker: usable"))

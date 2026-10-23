@@ -28,6 +28,34 @@ under `~/.openrua/preparation/`. Retry the same command or menu entry after
 fixing a build error; completed images are reused. No robot configuration is
 needed for this initial preparation.
 
+Before reusing an existing sandbox, preparation checks that its selected agent
+CLI is available and satisfies the configured version. An image built only for
+another agent is rebuilt through the same preparation flow. Connecting from the
+setup menu saves the selected agent, model and authentication without requiring
+a known robot or replacing your existing robot/simulator defaults.
+
+The robot's own terminal may use a different ROS distro from the connecting
+terminal. The `robot` check verifies the selected agent in that actual sandbox
+image and rebuilds it when needed before either test start. A bare Humble image
+created for graph probing, for example, is not sufficient to run Codex. Lower
+level startup also refuses a missing CLI and prints the matching build command.
+
+If a build reports a missing `buildkit/.../cachemounts` directory, inspect the
+Docker data location and builder state on that computer:
+
+```sh
+docker info --format 'Root={{.DockerRootDir}} Driver={{.Driver}}'
+docker buildx ls
+docker ps
+```
+
+Check that the data location is mounted and writable. If Docker is managed by
+systemd and no running containers need to be preserved, reinitialize the daemon
+with `sudo systemctl restart docker`, then retry
+`openrua build sandbox --distro jazzy --agent codex`. Use your selected distro
+and agent. OpenRUA reports this failure and retains its build log; it does not
+restart Docker or change its storage directories automatically.
+
 This opens a session whose terminal reaches what connecting a robot
 needs: this computer's docker, its network (the robot's controller and
 ROS 2 graph) and its devices (read-only, under `/host/dev`), working in

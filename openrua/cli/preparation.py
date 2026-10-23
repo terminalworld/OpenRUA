@@ -4,13 +4,16 @@ from __future__ import annotations
 import fcntl
 import hashlib
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 
 from openrua import agents, config, proxy
 from openrua.config import paths
 from openrua.config.schema import sandbox_image
+from openrua.cli.agent_settings import resolve
 from openrua.errors import UnavailableError
+from openrua.sandbox.check import cli_ready
 
 
 def image_exists(image: str) -> bool:
@@ -54,24 +57,41 @@ def prepare(home: Path, values: dict, progress=print, limits: dict | None = None
     ``limits`` are the session's (a proxy image only when it needs one)."""
     composed = config.compose(values['robot'], values['sim'], values['bench'], home,
                               agent=values['agent'] or None, model=values['model'] or None)
-    _prepare_images(home, image_commands(composed, values['bench'], limits), progress)
+    selected = composed.cfg['agent']
+    adapter = agents.get(selected['name'], home, version=selected.get('version'))
+    image = composed.cfg['machine']['backend']['sandbox_image']
+    _prepare_images(home, image_commands(composed, values['bench'], limits), progress,
+                    {image: _agent_probe(adapter)})
 
 
 def prepare_connect(home: Path, agent: str | None = None, distro: str = 'jazzy',
                     progress=print) -> None:
     """Prepare the connecting terminal before a robot configuration exists."""
-    package = config.load_user_config(paths.package_config_path())
-    user = config.load_user_config(paths.config_path(home))
-    selected = config.layer_agent({}, package, user, agent=agent)
-    adapter = agents.get(selected['name'], home, version=selected.get('version'))
+    adapter, selected = resolve(home, agent)
     image = sandbox_image(distro)
     name, _ = agents.split_pin(selected['name'])
     requested = name + ('@' + adapter.version if adapter.version else '')
     _prepare_images(home, [(image, ['build', 'sandbox', '--distro', distro,
-                                  '--tag', image, '--agent', requested])], progress)
+                                  '--tag', image, '--agent', requested])], progress,
+                    {image: _agent_probe(adapter)})
 
 
-def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress) -> None:
+def _agent_probe(adapter) -> str | None:
+    check = adapter.sandbox_cli_check()
+    return check[1] if check else adapter.version_probe() or (
+        'command -v ' + shlex.quote(adapter.binary) if adapter.binary else None)
+
+
+def _ready(image: str, probe: str | None) -> bool:
+    if not image_exists(image):
+        return False
+    if probe is None:
+        return True
+    return cli_ready(image, probe)
+
+
+def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress,
+                    probes: dict[str, str | None] | None = None) -> None:
     """Share image locks, build output and failure logs across startup paths."""
     try:
         check = subprocess.run(['docker', 'info', '--format', '{{.ServerVersion}}'],
@@ -89,7 +109,8 @@ def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress)
             # Another frontend may already be preparing the same image.
             progress(f'Checking {image}...')
             fcntl.flock(lock, fcntl.LOCK_EX)
-            if image_exists(image):
+            probe = (probes or {}).get(image)
+            if _ready(image, probe):
                 progress(f'Reusing {image}')
                 continue
             log = directory / f'{key}.log'
@@ -108,7 +129,17 @@ def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress)
                     process.terminate()
                     process.wait()
                     raise
-            if code or not image_exists(image):
+            if code or not _ready(image, probe):
+                hint = 'fix the build error shown above, then retry startup; completed images are reused'
+                with log.open('rb') as stream:
+                    stream.seek(0, 2)
+                    stream.seek(max(0, stream.tell() - 8192))
+                    tail = stream.read().decode(errors='replace')
+                if 'cachemounts' in tail and 'no such file or directory' in tail:
+                    hint = ('Docker reports a missing BuildKit working directory. Inspect docker info, '
+                            'docker buildx ls and the data-root mount. Check docker ps before restarting '
+                            'Docker to reinitialize the builder, then retry startup. '
+                            'https://github.com/terminalworld/OpenRUA/blob/main/docs/connect.md')
                 raise UnavailableError(f'Could not prepare {image}; build exit status {code}. Log: {log}',
-                                       hint='fix the build error shown above, then retry startup; completed images are reused')
+                                       hint=hint)
             progress(f'Prepared {image}')

@@ -14,11 +14,32 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from openrua.cli import docker_setup, preparation, workspace
+from openrua import agents
+from openrua.cli import agent_settings, docker_setup, preparation, workspace
 from openrua.cli.commands import login, start
-from openrua.config import paths
+from openrua.config import paths, settings
 from openrua.errors import UsageError
 from openrua.runner import history, service
+
+
+def save_values(home: Path, values: dict) -> None:
+    """Save only the connecting agent's choices; the robot is not known yet."""
+    adapter, selected = agent_settings.resolve(home, values['agent'] or None)
+    if 'conversation' not in adapter.capabilities:
+        raise UsageError(f'{adapter.name} does not support shared chat')
+    auth = selected.get('auth') or {'mode': 'native'}
+    if 'auth_mode' in values:
+        auth = {'mode': values['auth_mode']}
+        if values.get('api_key_file'):
+            auth['key_file'] = str(Path(values['api_key_file']).expanduser().resolve())
+    try:
+        agents.api_key_file(adapter, auth)
+    except ValueError as exc:
+        raise UsageError(str(exc), hint='choose native login, or a readable API key file') from exc
+    facts = {'model': values['model'] or None, 'auth': auth}
+    if selected.get('version'):
+        facts['version'] = selected['version']
+    settings.update(home, {'agent': selected['name']}, facts)
 
 
 def launch(home: Path, robot: str, folder: Path | None = None, agent: str | None = None,
@@ -51,7 +72,8 @@ def run(args) -> int:
         return 0
     if sys.stdin.isatty() and sys.stdout.isatty():
         docker_setup.ensure()
-        login.ensure(args.home, args.agent)
+        _, selected_agent = agent_settings.resolve(args.home, args.agent)
+        login.ensure(args.home, args.agent, (selected_agent.get('auth') or {}).get('mode', 'native'))
     client, name = launch(args.home, args.robot, Path(args.dir) if args.dir else None,
                           args.agent, args.model, args.distro, args.name, project=selected)
     return start.open_terminal(args.home, client, name)

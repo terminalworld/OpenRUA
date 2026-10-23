@@ -107,7 +107,7 @@ class WorkspaceFiles:
             mime = "image/gif"
         elif raw.startswith(b"RIFF") and raw[8:12] == b"WEBP":
             mime = "image/webp"
-        result = {"path": path, **self._metadata(after), "mime": mime,
+        result = {"path": path, **self._metadata(after), "mode": stat.S_IMODE(after.st_mode) & 0o777, "mime": mime,
                   "data": base64.b64encode(raw).decode("ascii"), "kind": "binary"}
         if mime.startswith("image/"):
             result["kind"] = "image"

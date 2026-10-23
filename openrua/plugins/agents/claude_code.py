@@ -71,6 +71,7 @@ class ClaudeCode(Agent):
 
     skills = SkillLocations('.claude/skills', '/claude-config/skills',
                            '.claude/rules/openrua-skills.md')
+    permission_modes = tuple(ClaudeConversation.MODES)
 
     def prepare_profile(self, source: Path, dest: Path, *,
                         require_credentials: bool = True,
@@ -174,6 +175,7 @@ class ClaudeCode(Agent):
                      permissions: str = "auto", **_: Any) -> Conversation:
         opts = self._opts(options)
         native_id = session_id or str(uuid4())
+        protocol = ClaudeConversation(native_id, permissions)
         argv = [*self.exec_argv(sandbox, self._env(proxy, opts, limits), stdin=True),
                 self.binary, "-p", "--model", model,
                 "--effort", str(opts["effort"]), "--autocompact", str(opts["autocompact"]),
@@ -183,10 +185,9 @@ class ClaudeCode(Agent):
                 # Either mode can be switched to later (/permissions): asking
                 # starts in the default mode with skipping allowed.
                 "--permission-prompt-tool", "stdio",
-                *(["--allow-dangerously-skip-permissions", "--permission-mode", "default"]
-                  if permissions == "ask" else ["--dangerously-skip-permissions"]),
+                '--allow-dangerously-skip-permissions', '--permission-mode', ClaudeConversation.MODES[permissions],
                 *self._web(limits)]
-        return Conversation(argv, ClaudeConversation(native_id, permissions))
+        return Conversation(argv, protocol)
 
     # ------------------------------------------------------------ auth
 

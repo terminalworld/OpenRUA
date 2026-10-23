@@ -105,7 +105,8 @@ def check_agent_cli(sandbox: str, adapter, backend: dict, robot: str) -> str | N
                        capture_output=True, text=True, timeout=60)
     if r.returncode == 0:
         return found
-    want = f"version {adapter.version}" if adapter.version else f"{adapter.min_version} or newer"
+    want = (f"version {adapter.version}" if adapter.version else
+            f"{adapter.min_version} or newer" if adapter.min_version else 'an installed, working CLI')
     pin = f"@{adapter.version}" if adapter.version else ""
     if backend.get("sandbox_install"):
         build = f"openrua build sandbox --robot {robot} --agent {adapter.name}{pin}"
@@ -171,6 +172,10 @@ def open_robot(request: RobotRequest) -> LiveRobot:
     cfg_agent = cfg["agent"]
     adapter = agents.get(cfg_agent["name"], request.home,
                          version=previous.get('agent_version') if previous else cfg_agent.get("version"))
+    permission_modes = getattr(adapter, 'permission_modes', agents.Agent.permission_modes)
+    if request.permissions not in permission_modes:
+        raise UsageError(f'{adapter.name} does not support permission mode {request.permissions!r}',
+                         hint='choose one of: ' + ', '.join(permission_modes))
     key_file = None
     if previous is None:
         try:

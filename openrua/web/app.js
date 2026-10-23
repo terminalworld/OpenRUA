@@ -1,7 +1,7 @@
 import { workspaceBrowser } from "/workspace.js";
 import { cameraView } from "/cameras.js";
 import {
-  PERMISSIONS,
+  permissionChoices,
   agentCommands,
   commandsFor,
   notice as eventNotice,
@@ -294,8 +294,15 @@ function render() {
   );
   // The agent: its permissions and model, and its own commands.
   const settings = state.settings || {};
-  if (document.activeElement !== $("permissions"))
+  if (document.activeElement !== $("permissions")) {
+    $("permissions").replaceChildren(...permissionChoices(state).map(choice => {
+      const option = make('option', choice.label);
+      option.value = choice.value;
+      option.title = choice.description || '';
+      return option;
+    }));
     $("permissions").value = settings.permissions || "";
+  }
   $("permissions").disabled = !online || state.closed;
   $("model").disabled = !online || state.closed;
   $("agent-model").textContent = settings.model || "";
@@ -495,7 +502,7 @@ export const handlers = {
     if (await configure("model", value)) notice(`The model is ${value} from the next request.`);
   },
 };
-for (const p of PERMISSIONS) {
+for (const p of permissionChoices(null)) {
   const option = make("option", p.label);
   option.value = p.value;
   $("permissions").append(option);

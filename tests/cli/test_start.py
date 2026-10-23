@@ -345,6 +345,37 @@ def test_custom_setup_explains_how_to_preserve_the_profile(tmp_path, monkeypatch
     assert not (tmp_path / 'config.yaml').exists()
 
 
+def test_connect_setup_passes_new_api_choice_to_its_service(tmp_path, monkeypatch):
+    from openrua.terminal import launcher
+    from openrua.cli.commands import connect
+    from openrua.runner.connect import ConnectRequest, _agent
+    key = tmp_path / 'provider.key'
+    key.write_text('synthetic-provider-key')
+    monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+    monkeypatch.setattr('sys.stdout.isatty', lambda: True)
+    monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
+    monkeypatch.setattr(connect.preparation, 'prepare_connect', lambda *a: None)
+    monkeypatch.setattr(start, 'open_interface', lambda *a: 0)
+    observed = []
+
+    def service(argv, *a):
+        _, selected, _, _ = _agent(ConnectRequest(tmp_path, 'test', tmp_path / 'robot', agent='codex'))
+        observed.append(selected['auth'])
+        return 'client'
+
+    monkeypatch.setattr(connect.service, 'start', service)
+
+    def setup(values, *a, **callbacks):
+        values.update(agent='codex', auth_mode='api', api_key_file=str(key))
+        if callbacks.get('save_connect'):
+            callbacks['save_connect'](values)
+        return callbacks['connect'](values)
+
+    monkeypatch.setattr(launcher, 'setup', setup)
+    assert start.run(args(tmp_path)) == 0
+    assert observed == [{'mode': 'api', 'key_file': str(key)}]
+
+
 @pytest.mark.parametrize('plugin', ['kimi', 'zcode'])
 def test_entered_external_plugin_can_explicitly_select_api_in_setup(tmp_path, plugin):
     from pathlib import Path

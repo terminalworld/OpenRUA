@@ -25,8 +25,9 @@ class Transport(Protocol):
 
 
 class StdioTransport:
-    def __init__(self, process: asyncio.subprocess.Process):
+    def __init__(self, process: asyncio.subprocess.Process, invalid_output: Path | None = None):
         self.process = process
+        self.invalid_output = invalid_output
 
     @classmethod
     async def start(cls, argv: list[str], stderr_path: Path,
@@ -37,16 +38,29 @@ class StdioTransport:
             process = await asyncio.create_subprocess_exec(
                 *argv, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
                 stderr=errors, start_new_session=True, limit=max_frame_bytes, cwd=cwd)
-        return cls(process)
+        return cls(process, stderr_path.with_suffix('.invalid-output.log'))
 
     async def read(self) -> dict | None:
-        line = await self.process.stdout.readline()
-        if not line:
-            return None
-        frame = json.loads(line)
-        if not isinstance(frame, dict):
-            raise ValueError("native output must be a JSON object; inspect the saved native diagnostics")
-        return frame
+        while True:
+            line = await self.process.stdout.readline()
+            if not line:
+                return None
+            if not line.strip():
+                continue
+            try:
+                frame = json.loads(line)
+                if isinstance(frame, dict):
+                    return frame
+            except (ValueError, UnicodeError):
+                pass
+            where = 'the native process output'
+            if self.invalid_output is not None:
+                fd = os.open(self.invalid_output, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+                with os.fdopen(fd, 'ab') as stream:
+                    stream.write(line)
+                where = str(self.invalid_output)
+            raise ValueError(f'Native stdout contained a non-JSON-object frame; inspect {where}. '
+                             'The agent connection is unavailable; /continue cannot reconnect it.')
 
     async def write(self, frame: dict) -> None:
         self.process.stdin.write((json.dumps(frame, ensure_ascii=False) + "\n").encode())

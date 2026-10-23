@@ -116,9 +116,8 @@ def add_parser(sub) -> None:
     respond = actions.add_parser("respond", help="answer a pending agent question")
     respond.add_argument("request_id")
     respond.add_argument("answers", help='JSON mapping question IDs to lists of answers')
-    configure = actions.add_parser("configure", help="change the agent's permissions (ask or "
-                                   "auto) or model for what it does next")
+    configure = actions.add_parser("configure", help="change the agent's native permission mode or model")
     configure.add_argument("setting", choices=("permissions", "model"))
-    configure.add_argument("value", help="permissions: ask | auto; model: a model ID")
+    configure.add_argument("value", help="a native permission mode (ask, auto-review, auto, or agent-specific) or model ID")
     actions.add_parser("end", help="stop owned resources and retain messages and workspace")
     p.set_defaults(fn=run)

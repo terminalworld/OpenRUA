@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 import sys
 
-from openrua import agents, config
+from openrua.cli import agent_settings
 from openrua.artifacts import WorkspaceFiles
 from openrua.cli.workspace import choose
 from openrua.config import paths, projects
@@ -66,10 +66,9 @@ def run(args) -> int:
         if root is None:
             return 0
         saved = projects.selection(root)
-        defaults = (config.load_user_config(paths.package_config_path()), config.load_user_config(paths.config_path(args.home)))
-        settings = config.layer_agent({}, *defaults, agent=args.agent or saved.get('agent'))
-        adapter = agents.get(settings['name'], args.home, version=settings.get('version'))
-        model = args.model or (saved.get('model') if settings['name'] == saved.get('agent') else None) or settings.get('model') or adapter.default_model
+        requested = args.agent or saved.get('agent')
+        adapter, settings = agent_settings.resolve(args.home, requested)
+        model = args.model or (saved.get('model') if requested == saved.get('agent') else None) or settings.get('model') or adapter.default_model
         print(f'[skills] Reviewing completed work in {root} with {adapter.name}.', file=sys.stderr, flush=True)
         result = skill_review.run(root, args.home, adapter, settings,
                                   image=args.image or sandbox_image('jazzy'), model=model, since=since,

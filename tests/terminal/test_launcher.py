@@ -231,8 +231,9 @@ def test_docker_and_the_sign_in_are_set_up_when_a_start_needs_them():
     launcher.setup(values, {}, 'config', lambda v: None, lambda v: pytest.fail('no check'),
         lambda v: pytest.fail('no launch'), {}, lambda: [], lambda n: None,
         lambda spec: next(results), connect=lambda v: calls.append('connect') or 'connected',
-        ready=lambda v: calls.append('docker'), sign_in=lambda v: calls.append('sign in'))
-    assert calls == ['docker', 'sign in', 'connect']
+        ready=lambda v: calls.append('docker'), sign_in=lambda v: calls.append('sign in'),
+        save_connect=lambda v: calls.append('save connecting choices'))
+    assert calls == ['save connecting choices', 'docker', 'sign in', 'connect']
 
 
 def test_a_declined_sign_in_stays_editable_with_the_command():

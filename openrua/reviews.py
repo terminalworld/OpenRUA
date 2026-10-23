@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import stat
 import tempfile
 
 from openrua.artifacts import WorkspaceFiles
@@ -82,7 +83,8 @@ class Snapshot:
     def omit(self, source: str, reason: str) -> None:
         self.skipped.append({'source': source, 'reason': reason})
 
-    def add(self, path: str, data: bytes, *, source: str, modified: str | None = None) -> bool:
+    def add(self, path: str, data: bytes, *, source: str, modified: str | None = None,
+            mode: int = 0o644) -> bool:
         if path in self._paths:
             return False
         if len(data) > self.max_file_bytes:
@@ -98,10 +100,11 @@ class Snapshot:
             raise ValueError('snapshot paths must not contain ..')
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(data)
+        target.chmod(mode & 0o777)
         self._paths.add(path)
         self.bytes += len(data)
         self.files.append({'path': path, 'source': source, 'bytes': len(data),
-                           'sha256': digest(data), 'modified': modified})
+                           'sha256': digest(data), 'modified': modified, 'mode': mode & 0o777})
         return True
 
     def capture(self, reader: WorkspaceFiles, path: str, destination: str, *, text_only: bool) -> bool:
@@ -111,7 +114,7 @@ class Snapshot:
                 self.omit(str(reader.root / path), 'non-text project context')
                 return False
             return self.add(destination, base64.b64decode(item['data']),
-                            source=str(reader.root / path), modified=item['modified'])
+                            source=str(reader.root / path), modified=item['modified'], mode=item['mode'])
         except (OSError, ValueError) as exc:
             self.omit(str(reader.root / path), str(exc))
             return False
@@ -168,14 +171,21 @@ def changes(before: Path, after: Path) -> tuple[list[dict], str]:
     """Compare archived regular files; neither tree contains live links."""
     first = {p.relative_to(before).as_posix(): p.read_bytes() for p in before.rglob('*') if p.is_file()}
     second = {p.relative_to(after).as_posix(): p.read_bytes() for p in after.rglob('*') if p.is_file()}
+    modes_before = {path: stat.S_IMODE((before / path).stat().st_mode) for path in first}
+    modes_after = {path: stat.S_IMODE((after / path).stat().st_mode) for path in second}
     rows, diff = [], []
     for path in sorted(first.keys() | second.keys()):
         old, new = first.get(path), second.get(path)
-        if old == new:
+        first_mode, second_mode = modes_before.get(path), modes_after.get(path)
+        if old == new and first_mode == second_mode:
             continue
         rows.append({'path': path, 'kind': 'add' if old is None else 'delete' if new is None else 'modify',
                      'before_sha256': digest(old) if old is not None else None,
-                     'after_sha256': digest(new) if new is not None else None})
+                     'after_sha256': digest(new) if new is not None else None,
+                     'before_mode': first_mode, 'after_mode': second_mode})
+        if first_mode != second_mode:
+            diff.append(f'Mode {path}: {oct(first_mode) if first_mode is not None else "absent"} -> '
+                        f'{oct(second_mode) if second_mode is not None else "absent"}\n')
         try:
             left, right = (old or b'').decode('utf-8'), (new or b'').decode('utf-8')
             diff.extend(difflib.unified_diff(left.splitlines(keepends=True), right.splitlines(keepends=True),
@@ -220,8 +230,9 @@ def proposals(project: Path, baseline: Path, workspace: Path, output: Path, root
     for row in rows:
         expected = (source_digests or {}).get(row['path'], row['before_sha256'])
         try:
-            data = base64.b64decode(current.read(row['path'])['data'])
-            row['source_changed'] = digest(data) != expected
+            item = current.read(row['path'])
+            data = base64.b64decode(item['data'])
+            row['source_changed'] = digest(data) != expected or item['mode'] != row['before_mode']
         except FileNotFoundError:
             row['source_changed'] = expected is not None
         except (OSError, ValueError):

@@ -59,6 +59,88 @@ def test_cli_connect_prepares_selected_image_without_robot_config(tmp_path, monk
     assert len(images[1]) == 1 and len(launches) == 2
 
 
+def test_connect_rebuilds_an_existing_image_missing_the_selected_agent(tmp_path, monkeypatch, images):
+    images[0].add('openrua-sandbox-jazzy')
+
+    def docker(argv, **kwargs):
+        if argv[:2] == ['docker', 'run']:
+            return SimpleNamespace(returncode=0 if images[1] else 127)
+        return SimpleNamespace(returncode=0, stderr='')
+
+    monkeypatch.setattr(preparation.subprocess, 'run', docker)
+    preparation.prepare_connect(tmp_path, 'codex')
+    assert len(images[1]) == 1
+    preparation.prepare_connect(tmp_path, 'codex')
+    assert len(images[1]) == 1
+
+
+def test_api_connect_never_requests_native_sign_in(tmp_path, monkeypatch, images):
+    key = tmp_path / 'provider.key'
+    key.write_text('synthetic-provider-key')
+    (tmp_path / 'config.yaml').write_text(
+        'agent: codex\nagents:\n  codex:\n    auth:\n      mode: api\n      key_file: ' + str(key) + '\n')
+    monkeypatch.setattr(connect.sys.stdin, 'isatty', lambda: True)
+    monkeypatch.setattr(connect.sys.stdout, 'isatty', lambda: True)
+    monkeypatch.setattr(connect.docker_setup, 'ensure', lambda: None)
+    modes = []
+    monkeypatch.setattr(connect.login, 'ensure', lambda home, agent, auth_mode='native': modes.append(auth_mode))
+    monkeypatch.setattr(connect.service, 'start', lambda *a: 'client')
+    monkeypatch.setattr(connect.start, 'open_terminal', lambda *a: 0)
+    args = build_parser().parse_args(['--home', str(tmp_path), 'connect', '--agent', 'codex@0.163.0',
+                                     '--workspace', str(tmp_path / 'project'), '--trust-workspace'])
+    assert connect.run(args) == 0
+    assert modes == ['api']
+    assert images[1][0][-1] == 'codex@0.163.0'
+
+
+def test_connect_saves_only_agent_choices_without_robot_configuration(tmp_path):
+    from openrua import config
+    from openrua.runner.connect import ConnectRequest, _agent
+    key = tmp_path / 'provider.key'
+    key.write_text('synthetic-provider-key')
+    (tmp_path / 'config.yaml').write_text('robot: panda\nsimulator: robosuite\nbenchmark: capbench\n')
+    connect.save_values(tmp_path, dict(agent='codex@0.163.0', model='chosen-model',
+                                      auth_mode='api', api_key_file=str(key)))
+    saved = config.load_user_config(tmp_path / 'config.yaml')
+    assert (saved.robot, saved.simulator, saved.benchmark) == ('panda', 'robosuite', 'capbench')
+    adapter, selected, model, _ = _agent(ConnectRequest(tmp_path, 'test', tmp_path / 'robot', agent='codex'))
+    assert selected['auth'] == {'mode': 'api', 'key_file': str(key)}
+    assert adapter.version == '0.163.0' and model == 'chosen-model'
+    assert 'synthetic-provider-key' not in (tmp_path / 'config.yaml').read_text()
+
+
+def test_invalid_connect_auth_does_not_modify_saved_choices(tmp_path):
+    path = tmp_path / 'config.yaml'
+    path.write_text('agent: claude-code\n')
+    with pytest.raises(UsageError):
+        connect.save_values(tmp_path, dict(agent='codex', model='', auth_mode='api',
+                                          api_key_file=str(tmp_path / 'missing')))
+    assert path.read_text() == 'agent: claude-code\n'
+
+
+def test_connect_relative_manifest_keeps_auth_after_reopening_defaults(tmp_path, monkeypatch):
+    from openrua.cli.agent_settings import resolve
+    monkeypatch.chdir(tmp_path)
+    manifest = tmp_path / 'custom.yaml'
+    manifest.write_text(connect.paths.find('agents', 'codex').read_text())
+    key = tmp_path / 'provider.key'
+    key.write_text('synthetic-provider-key')
+    connect.save_values(tmp_path, dict(agent='./custom.yaml', model='', auth_mode='api', api_key_file=str(key)))
+    adapter, selected = resolve(tmp_path, None)
+    assert selected['name'] == str(manifest)
+    assert selected['auth']['mode'] == 'api'
+
+
+def test_buildkit_missing_directory_has_storage_recovery_hint(tmp_path, monkeypatch, images):
+    monkeypatch.setattr(preparation.subprocess, 'Popen', lambda *a, **k:
+                        SimpleNamespace(stdout=io.StringIO('stat /docker/buildkit/containerd-overlayfs/cachemounts: '
+                                                          'no such file or directory\n'), wait=lambda: 1))
+    with pytest.raises(UnavailableError) as failure:
+        preparation.prepare_connect(tmp_path, 'codex')
+    assert 'docker buildx ls' in failure.value.hint
+    assert 'docker ps' in failure.value.hint
+
+
 def test_tui_connect_prepares_image_for_unsaved_selected_agent(tmp_path, monkeypatch, images):
     values = dict(robot='', sim='', bench='', agent='codex', model='', name='unused')
     monkeypatch.setattr(connect.service, 'start', lambda *a: 'client')

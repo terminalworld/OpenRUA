@@ -55,10 +55,17 @@ def test_preflight_includes_version_checks():
     names = [n for n, _ in build_checks(cfg, agents.get("claude-code@2.1.301"))]
     assert "sandbox_cli_version" in names
     assert "credentials_readable" in names
-    # a manifest with neither a pin nor a floor has nothing to check against
+    # Even without a version floor, the CLI must exist in this image.
     plain = agents.get("codex")
     assert plain.min_version is None
-    assert "sandbox_cli_version" not in [n for n, _ in build_checks(cfg, plain)]
+    assert "sandbox_cli_version" in [n for n, _ in build_checks(cfg, plain)]
+
+
+def test_unpinned_cli_check_rejects_a_missing_command():
+    import subprocess
+    _, command = agents.get('codex').sandbox_cli_check()
+    missing = 'codex() { return 127; }; export -f codex; '
+    assert subprocess.run(['bash', '-c', missing + command], capture_output=True).returncode != 0
 
 
 def test_version_check_takes_the_pin_and_the_floor():

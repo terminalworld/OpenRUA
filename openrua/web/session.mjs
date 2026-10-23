@@ -18,7 +18,7 @@ export const COMMANDS = [
   {name: 'end', description: 'End execution while retaining the workspace and history', clients: ['terminal', 'browser']},
   {name: 'interrupt', description: 'Stop the current turn; queued messages go on', clients: ['terminal', 'browser']},
   {name: 'continue', description: 'Confirm continuation of the paused queue', clients: ['terminal', 'browser']},
-  {name: 'permissions', description: 'Ask before each command that changes something, or run without asking', clients: ['terminal', 'browser']},
+  {name: 'permissions', description: "Choose the current agent's native permission mode", clients: ['terminal', 'browser']},
   {name: 'model', description: 'Show the model, or change it: /model <name>', clients: ['terminal', 'browser']},
   {name: 'retry', description: 'Retry an unconfirmed send with the same request ID', clients: ['terminal']},
   {name: 'quit', description: 'Leave; you choose whether the session keeps running', clients: ['terminal']},
@@ -30,6 +30,10 @@ export const PERMISSIONS = [
   {value: 'ask', label: 'Ask before each command that changes something'},
   {value: 'auto', label: 'Run commands without asking'},
 ];
+
+export function permissionChoices(state) {
+  return state?.setting_choices?.permissions ?? PERMISSIONS;
+}
 
 // The agent's own commands (its /compact, its skills...), as it reported
 // them; typed, they go to the agent as a message, as in its own terminal.
@@ -62,6 +66,10 @@ export function status(state, {readOnly = false} = {}) {
   if (checks.length) notes.push({tone: 'plain', kind: 'checks', checks,
     text: checks.map(([step, check]) => `${step} ${{passed: '✓', failed: '✗', running: '…'}[check.status] ?? ''}`).join(' ')});
   if (state.settings?.permissions === 'ask') notes.push({tone: 'muted', text: 'asks before commands'});
+  else if (state.settings?.permissions) {
+    const current = permissionChoices(state).find(choice => choice.value === state.settings.permissions);
+    notes.push({tone: 'muted', text: `Permissions: ${current?.label ?? state.settings.permissions}`});
+  }
   const queued = state.messages.filter(m => m.status === 'queued').length;
   if (queued) notes.push({tone: 'plain', text: `${queued} queued`});
   if (!(state.connected || state.closed || readOnly)) notes.push({tone: 'warn',
@@ -72,7 +80,9 @@ export function status(state, {readOnly = false} = {}) {
   if (readOnly) head = {kind: 'readonly', tone: 'muted', text: 'Read-only history'};
   else if (state.closed) head = {kind: 'closed', tone: 'muted', text: 'Closed'};
   else if (state.paused) head = {kind: 'paused', tone: 'warn',
-    text: `Paused${state.pause_reason ? ': ' + state.pause_reason : ''} · /queue to review, /continue to go on`};
+    text: `Paused${state.pause_reason ? ': ' + state.pause_reason : ''} · /queue to review` +
+      (state.connected ? ', /continue to go on' : ' · agent unavailable; inspect session logs before restarting')};
+  else if (asking) head = {kind: 'waiting', tone: 'warn', text: 'Waiting for your response'};
   else if (state.active) head = {kind: 'working', tone: 'busy', text: 'Working…'};
   else head = {kind: 'ready', tone: 'good', text: 'Ready'};
   return {head, notes};
@@ -93,6 +103,8 @@ export function notice(record) {
     const {setting, value, reason} = data.data ?? {};
     return `The agent did not take ${setting} ${value}${reason ? `: ${reason}` : ''}`;
   }
+  if (record?.kind === 'agent_event' && data.kind === 'setting' && data.data?.effective_from === 'next_turn')
+    return `${data.data.setting} ${data.data.value} applies from the next turn.`;
   return null;
 }
 

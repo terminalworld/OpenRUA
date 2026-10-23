@@ -19,7 +19,20 @@ from openrua.agents.conversation import ConversationProtocol, Event, Update
 
 
 class ClaudeConversation(ConversationProtocol):
+    MODES = {'ask': 'default', 'auto': 'bypassPermissions', 'auto-review': 'auto',
+             'acceptEdits': 'acceptEdits', 'plan': 'plan', 'dontAsk': 'dontAsk'}
+    PERMISSIONS = [
+        {'value': 'ask', 'label': 'Manual', 'description': 'Native default permission mode'},
+        {'value': 'auto-review', 'label': 'Auto', 'description': 'Native auto mode classifies actions before execution'},
+        {'value': 'acceptEdits', 'label': 'Accept edits', 'description': 'Native acceptEdits mode'},
+        {'value': 'plan', 'label': 'Plan', 'description': 'Native plan mode'},
+        {'value': 'dontAsk', 'label': "Don't ask", 'description': 'Native dontAsk mode denies actions that would prompt'},
+        {'value': 'auto', 'label': 'Bypass permissions', 'description': 'Native bypassPermissions mode'},
+    ]
+    SETTINGS = {"permissions": tuple(MODES), "model": None}
     def __init__(self, session_id: str, permissions: str = "auto"):
+        if permissions not in self.MODES:
+            raise ValueError('unsupported native permission mode')
         self.session_id = session_id
         self.permissions = permissions
         self.ready = False
@@ -95,9 +108,9 @@ class ClaudeConversation(ConversationProtocol):
         requests; in effect from the next tool call or request."""
         if setting == "permissions":
             if value not in self.SETTINGS["permissions"]:
-                raise ValueError("permissions is ask or auto")
+                raise ValueError('unsupported native permission mode')
             frame = self._control("set_permission_mode",
-                                  mode="default" if value == "ask" else "bypassPermissions")
+                                  mode=self.MODES[value])
         elif setting == "model":
             if not value:
                 raise ValueError("name a model")
@@ -147,8 +160,10 @@ class ClaudeConversation(ConversationProtocol):
             setting = self._settings.pop(response.get("request_id"), None)
             if setting is not None:
                 kind = "setting" if response.get("subtype") == "success" else "setting_rejected"
+                if kind == 'setting' and setting[0] == 'permissions':
+                    self.permissions = setting[1]
                 return Update(events=[Event(kind, data={"setting": setting[0], "value": setting[1],
-                                                        "error": response.get("error")})])
+                                                        "reason": response.get("error")})])
             if response.get("subtype") != "success":
                 self.ready = False
                 return Update(events=[Event("protocol_error", turn_id,
@@ -163,7 +178,8 @@ class ClaudeConversation(ConversationProtocol):
                 return Update(events=[
                     Event("ready", data={"session_id": self.session_id,
                                          "identity_confirmed": self._confirmed}),
-                    Event("setting", data={"setting": "permissions", "value": self.permissions}),
+                    Event("setting", data={"setting": "permissions", "value": self.permissions,
+                                           "choices": self.PERMISSIONS}),
                     Event("commands", data={"commands": commands})])
             self._cancel_pending = False
             return Update(events=[Event("interrupt_acknowledged", turn_id)])

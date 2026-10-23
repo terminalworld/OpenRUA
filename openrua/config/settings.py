@@ -28,7 +28,7 @@ def update(home: Path, names: dict, facts: dict | None = None) -> dict:
                      if isinstance(value, str) and paths.is_path(value) else value
                      for key, value in names.items()})
         if facts:
-            agent = names.get('agent') or data.get('agent') or load_user_config(paths.package_config_path()).agent
+            agent = data.get('agent') or load_user_config(paths.package_config_path()).agent
             data.setdefault('agents', {}).setdefault(agent, {}).update(facts)
         validate(UserConfig, data, path)
         fd, temporary = tempfile.mkstemp(prefix='.config-', dir=path.parent)

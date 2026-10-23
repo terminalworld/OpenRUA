@@ -119,7 +119,7 @@ def choose_history(list_sessions, open_session, screen=run_screen, *, environmen
 
 def setup(values, choices, location, save, check, launch, agent_models,
           list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None, authentication=None, resolve_agent=None,
-          connect=None, ready=None, sign_in=None, list_all=None, scope=None):
+          connect=None, ready=None, sign_in=None, list_all=None, scope=None, save_connect=None):
     notice = ''
     authentication = dict(authentication or {})
     drafts = {}
@@ -137,9 +137,14 @@ def setup(values, choices, location, save, check, launch, agent_models,
             continue
         incoming = result.get('values')
         if action == 'connect' and connect is not None and isinstance(incoming, dict):
+            if set(incoming) != set(values) or not all(isinstance(v, str) for v in incoming.values()):
+                raise RuntimeError('Invalid setup result; settings were not saved.')
+            values = incoming
             # Connecting a robot starts from the agent chosen here; the robot
             # is what the session finds out.
             try:
+                if save_connect is not None:
+                    save_connect(incoming)
                 # Between screens the terminal is plain, so what the computer
                 # still needs (Docker, the agent's sign-in) is set up here,
                 # before anything starts.

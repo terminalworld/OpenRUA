@@ -18,6 +18,7 @@ import os
 import platform
 import shlex
 import subprocess
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
@@ -77,14 +78,22 @@ def scrub_file(path: Path, secrets: list[str]) -> None:
     """Redact known secret strings before anything enters the record (the
     agent can print its own configuration). Byte-wise, so a binary file
     that carries none is left as it is."""
-    if not path.is_file() or not secrets:
+    if not path.is_file() or path.is_symlink() or not secrets:
         return
     data = path.read_bytes()
     out = data
     for s in secrets:
         out = out.replace(s.encode(), b"[REDACTED]")
     if out != data:
-        path.write_bytes(out)
+        mode = path.stat().st_mode & 0o777
+        fd, temporary = tempfile.mkstemp(prefix='.redact-', dir=path.parent)
+        try:
+            with os.fdopen(fd, 'wb') as stream:
+                stream.write(out)
+            os.chmod(temporary, mode)
+            os.replace(temporary, path)
+        finally:
+            Path(temporary).unlink(missing_ok=True)
 
 
 def scrub_value(value, secrets: list[str]):

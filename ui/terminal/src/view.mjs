@@ -9,6 +9,8 @@ const style = (open, close) => text => `\x1b[${open}m${text}\x1b[${close}m`;
 // The 16-colour palette only, so the terminal's own theme decides how it looks.
 export const bold = style(1, 22), muted = style(90, 39), accent = style(36, 39);
 export const green = style(32, 39), yellow = style(33, 39), red = style(31, 39);
+export const dialogHeading = (title, requestId) => (requestId
+  ? yellow(bold('Your response is needed')) + '\n\n' : '') + plain(title);
 export const selectTheme = {selectedPrefix: accent, selectedText: bold, description: muted,
   scrollInfo: muted, noMatch: muted};
 export const editorTheme = {borderColor: muted, selectList: selectTheme};
@@ -146,10 +148,26 @@ const RESULT = {
   reconciled: text => muted(`reconciled${text ? ': ' + text : ''}`),
 };
 
+const PENDING = new Set(['queued', 'dispatching', 'steering']);
+
+export class PendingMessages {
+  constructor() { this.messages = []; }
+  invalidate() {}
+  render(width) {
+    const messages = this.messages.filter(message => PENDING.has(message.status));
+    const labels = {queued: 'Queued', dispatching: 'Sending to agent', steering: 'Adding to current turn'};
+    const lines = messages.slice(-3).map(message => yellow(truncateToWidth(
+      `${labels[message.status]}: ${plain(message.text).replace(/\s+/g, ' ')}`, width, '…')));
+    if (messages.length > 3) lines.unshift(muted(`${messages.length} pending messages · /queue to inspect`));
+    return lines;
+  }
+}
+
 export class Transcript extends Container {
   constructor({workspace = null} = {}) {
     super(); this.turns = new Map(); this.tools = new Map();
     this.workspace = workspace; this.known = new Set();
+    this.messages = new Map();
   }
 
   turn(id) {
@@ -160,33 +178,54 @@ export class Transcript extends Container {
       const output = new Container();
       block.addChild(new Spacer(1)); block.addChild(user);
       block.addChild(output); block.addChild(result); this.addChild(block);
-      this.turns.set(id, {user, result, output, items: new Map()});
+      this.turns.set(id, {block, parent: this, user, result, output, items: new Map()});
     }
     return this.turns.get(id);
   }
 
   message(message) {
+    if (PENDING.has(message.status)) return;
     const turn = this.turn(message.id);
+    const parent = message.status === 'steered' && message.joined
+      ? this.turn(message.joined).output : this;
+    if (turn.parent !== parent) {
+      const index = turn.parent.children.indexOf(turn.block);
+      if (index !== -1) turn.parent.children.splice(index, 1);
+      parent.addChild(turn.block); turn.parent = parent;
+    }
     if (message.origin === 'agent') {
       // A turn the agent started by itself, a background task having finished.
       turn.user.setText(muted('⏺ the agent went on by itself'));
     } else {
-      const note = ['queued', 'dispatching'].includes(message.status) ? ' · queued'
-        : message.status === 'steering' ? ' · joining the running turn'
-        : message.status === 'steered' ? ' · joined the running turn' : '';
-      turn.user.setText(`${accent('❯')} ${bold(plain(message.text))}${note ? muted(note) : ''}`);
+      const note = message.status === 'steered' ? 'Received by agent · added to the current turn' : '';
+      turn.user.setText(`${note ? muted(note) + '\n' : ''}${accent('❯')} ${bold(plain(message.text))}`);
     }
     const result = RESULT[message.status];
     if (result) turn.result.setText(result(plain(message.uncertainty ?? message.resolution ?? '')));
     else if (message.status !== 'completed') turn.result.setText('');
   }
 
-  snapshot(state) { for (const message of state.messages) this.message(message); }
+  snapshot(state) {
+    this.messages = new Map(state.messages.map(message => [message.id, message]));
+    for (const message of state.messages) this.message(message);
+  }
 
   event(record) {
-    if (record.kind === 'message_accepted' || record.kind === 'message_edited') this.message(record.data.message);
+    if (record.kind === 'message_accepted' || record.kind === 'message_edited')
+      this.message(this.messages.get(record.data.message.id) ?? record.data.message);
     if (record.kind !== 'agent_event' || !record.data.turn_id) return;
     const event = record.data;
+    if (event.kind === 'steer_delivered') {
+      const message = this.messages.get(event.data.message_id);
+      if (message?.status === 'steered') {
+        this.message(message);
+        const delivered = this.turn(message.id);
+        const index = delivered.parent.children.indexOf(delivered.block);
+        if (index !== -1) delivered.parent.children.splice(index, 1);
+        delivered.parent.addChild(delivered.block);
+      }
+      return;
+    }
     const turn = this.turn(event.turn_id);
     const data = event.data;
     if (event.kind === 'turn_finished') {

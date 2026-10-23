@@ -199,6 +199,40 @@ def test_stdio_transport_starts_in_explicit_workspace(tmp_path):
     asyncio.run(run())
 
 
+def test_stdio_transport_ignores_blank_lines_without_losing_native_frames(tmp_path):
+    import sys
+    from openrua.sessions.execution import StdioTransport
+    async def run():
+        transport = await StdioTransport.start(
+            [sys.executable, '-c', "print('  \\n\\r\\n{\"ready\": true}')"], tmp_path / 'agent.stderr.log')
+        try:
+            assert await transport.read() == {'ready': True}
+            assert await transport.read() is None
+        finally:
+            await transport.close()
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize('line', ['startup banner', '[1, 2]', '{broken json'])
+def test_stdio_transport_retains_invalid_output_and_does_not_skip_it(tmp_path, line):
+    import sys
+    from openrua.sessions.execution import StdioTransport
+    async def run():
+        transport = await StdioTransport.start(
+            [sys.executable, '-c', 'import sys; print(sys.argv[1]); print(\'{"ready":true}\')', line],
+            tmp_path / 'agent.stderr.log')
+        try:
+            with pytest.raises(ValueError, match='cannot reconnect') as caught:
+                await transport.read()
+            saved = tmp_path / 'agent.stderr.invalid-output.log'
+            assert str(saved) in str(caught.value)
+            assert saved.read_text() == line + '\n'
+            assert saved.stat().st_mode & 0o777 == 0o600
+        finally:
+            await transport.close()
+    asyncio.run(run())
+
+
 def test_a_native_process_that_ends_says_why(tmp_path):
     # The agent CLI exited on an unknown flag; the session showed only
     # "agent disconnected", and the reason sat in agent.stderr.log.

@@ -18,17 +18,11 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from openrua import agents, config
+from openrua import agents
 from openrua.cli import docker_setup
+from openrua.cli.agent_settings import resolve as _settings
 from openrua.config import paths
 from openrua.errors import AuthError, UsageError
-
-
-def _settings(home: Path, name: str | None) -> tuple[agents.Agent, dict]:
-    package = config.load_user_config(paths.package_config_path())
-    user = config.load_user_config(paths.config_path(home))
-    settings = config.layer_agent({}, package, user, agent=name)
-    return agents.get(settings["name"], home, version=settings.get("version")), settings
 
 
 def directory(home: Path, adapter: agents.Agent, settings: dict) -> Path:

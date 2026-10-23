@@ -38,6 +38,7 @@ from openrua.runner.live import LiveRobot, RobotRequest, check_agent_cli, open_r
 from openrua.runner.preflight import run_preflight
 from openrua.sandbox.down import down as sandbox_down
 from openrua.sandbox.up import up as sandbox_up
+from openrua.sandbox.check import cli_ready
 
 STEPS = ("host", "drivers", "probe", "config", "robot")
 TEMPLATES = Path(__file__).resolve().parents[1] / "configs" / "connect"
@@ -334,10 +335,15 @@ class Checks:
                                                 "--image", image):
                 failed.append(image)
         sandbox = backend["sandbox_image"]
-        if missing(sandbox):
+        adapter = agents.get(self.agent, self.request.home)
+        check = adapter.sandbox_cli_check()
+        if missing(sandbox) or (check and not cli_ready(sandbox, check[1])):
             build = (["build", "sandbox", "--robot", file] if backend.get("sandbox_install") else
                      ["build", "sandbox", "--distro", backend["ros_distro"], "--tag", sandbox])
             if self._openrua(out, *build, "--agent", self.agent):
+                failed.append(sandbox)
+            elif check and not cli_ready(sandbox, check[1]):
+                out.write(f'{sandbox} still lacks a compatible {adapter.name} CLI after building.\n')
                 failed.append(sandbox)
         return failed
 
