@@ -6,14 +6,13 @@ import asyncio
 import base64
 import hashlib
 import json
-import math
 from pathlib import Path
 import re
 import tempfile
 
 from openrua import reviews, skills
 from openrua.artifacts import WorkspaceFiles
-from openrua.cli import skill_tasks
+from openrua.cli import skill_tasks, skill_schedules, skill_scheduler
 from openrua.cli.commands import skill_review as review_command
 from openrua.config import projects, paths
 from openrua.config.schema import sandbox_image
@@ -46,6 +45,7 @@ class ProjectSkills:
         return {hashlib.sha256(f'{entry.scope}:{entry.path}'.encode()).hexdigest(): entry for entry in entries}
 
     def defaults(self, root, agent=None):
+        if agent is not None: agent = paths.agent_spec(agent, root)
         selected, adapter, settings, model = review_command.selection(root, self.home, agent)
         effort = settings.get('options', {}).get('effort', adapter.default_options.get('effort', ''))
         return dict(defaults=dict(agent=selected, model=model or '', effort=effort or '',
@@ -129,10 +129,29 @@ class ProjectSkills:
         expected = {'overview': set(), 'skill': {'key'}, 'report': {'id'},
                     'start': {'request_id', 'options'}, 'task': {'id'},
                     'import': {'id', 'key', 'fingerprint'}, 'merge': {'id', 'key'},
-                    'policy': {'mode'}, 'candidate': {'id', 'key'}, 'cancel': {'id'}, 'defaults': {'agent'}}
+                    'policy': {'mode'}, 'candidate': {'id', 'key'}, 'cancel': {'id'}, 'defaults': {'agent'},
+                    'schedules': set(), 'schedule-create': {'request_id', 'definition'},
+                    'schedule-update': {'id', 'definition', 'revision'}, 'schedule-action': {'id', 'action'},
+                    'scheduler': {'action'}}
         if op not in expected or set(body) != expected[op] | {'operation'}:
             raise ValueError('incorrect project skills arguments')
         root = self.root()
+        if op == 'schedules':
+            return dict(schedules=skill_schedules.listing(self.home, root), scheduler=skill_scheduler.status(self.home))
+        if op == 'scheduler':
+            if body['action'] != 'status':
+                raise ValueError('manage the shared scheduler from openrua skills scheduler; this menu only changes the current project')
+            return skill_scheduler.status(self.home)
+        if op in {'schedule-create', 'schedule-update', 'schedule-action'}:
+            if not projects.trusted(root, self.home): raise ValueError('trust this project before changing review schedules')
+            if op == 'schedule-create':
+                value = skill_schedules.create(self.home, root, body['request_id'], body['definition'], enabled=True)
+            elif op == 'schedule-update':
+                value = skill_schedules.edit(self.home, root, body['id'], body['definition'], body['revision'])
+            else:
+                value = skill_schedules.action(self.home, root, body['id'], body['action'])
+            state = skill_scheduler.ensure(self.home) if value['enabled'] else skill_scheduler.status(self.home)
+            return {**value, 'scheduler': state}
         if op == 'defaults':
             if not isinstance(body['agent'], str) or not body['agent'].strip(): raise ValueError('provide an agent name')
             return self.defaults(root, body['agent'])
@@ -162,16 +181,7 @@ class ProjectSkills:
             skills.set_mode(root, body['mode'])
             return dict(policy=skills.mode(root))
         if op == 'start':
-            options = body['options']
-            if not isinstance(options, dict) or set(options) not in ({'agent', 'model', 'image', 'wall_clock_min'}, {'agent', 'model', 'effort', 'image', 'wall_clock_min'}):
-                raise ValueError('provide agent, model, image and wall_clock_min')
-            if 'effort' in options and (not isinstance(options['effort'], str) or len(options['effort']) > 128):
-                raise ValueError('effort must be a native level or an empty default')
-            if not all(isinstance(options[key], str) and len(options[key]) <= 4096 for key in ('agent', 'model', 'image')) or not all(options[key].strip() for key in ('agent', 'image')):
-                raise ValueError('provide an agent, image and optional model')
-            seconds = options['wall_clock_min']
-            if type(seconds) not in (int, float) or not math.isfinite(seconds) or seconds <= 0:
-                raise ValueError('review time limit must be finite and positive')
+            options = skill_tasks.validate_options(body['options'])
             return skill_tasks.start(self.home, root, body['request_id'], options)
         report, output = self.report(root, body['id'])
         candidates = self.candidates(root, report, output)

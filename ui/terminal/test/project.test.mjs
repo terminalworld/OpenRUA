@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {Chat} from '../src/app.mjs';
 import {projectMenu, showReview} from '../src/project.mjs';
+import {schedulesMenu} from '../src/schedules.mjs';
 import {parseCommand} from '../src/session.mjs';
 
 class Terminal {
@@ -191,4 +192,57 @@ test('changing review agents refreshes their model and effort without starting a
   assert.match(rendered, /Effort: medium/);
   assert.doesNotMatch(rendered, /gpt-6-astra/);
   assert.equal(calls.some(call => call.operation === 'start' || call.command), false);
+});
+
+async function fill(chat, value) {
+  chat.panel.component.children[1].setText(value);
+  chat.panel.component.handleInput('\r'); await tick();
+}
+
+test('periodic review creation is confirmed and retries the same identity after a lost acknowledgement', {timeout: 5000}, async t => {
+  const requests = [];
+  const {chat, calls} = await setup(t, (operation, params) => {
+    if (operation === 'schedules') return {schedules: [], scheduler: {state: 'stopped'}};
+    if (operation === 'schedule-create') {
+      requests.push(structuredClone(params));
+      if (requests.length === 1) throw new Error('reply lost');
+      return {name: params.definition.name, enabled: true, next_run: 'tomorrow'};
+    }
+    return overview;
+  });
+  const open = () => schedulesMenu(chat, overview, () => {}, () => {});
+  await open(); await choose(chat, 0);
+  await choose(chat, 0); await fill(chat, 'Camera methods');
+  await choose(chat, 1); await fill(chat, '21:30');
+  await choose(chat, 5);
+  assert.match(chat.panel.component.render(100).join('\n'), /Time limits are not a monetary cap/);
+  assert.equal(requests.length, 0);
+  await choose(chat, 0); // Cancel the first confirmation.
+  assert.equal(requests.length, 0);
+  await open(); await choose(chat, 0);
+  await choose(chat, 0); await fill(chat, 'Camera methods');
+  await choose(chat, 1); await fill(chat, '21:30');
+  await choose(chat, 5); await choose(chat, 1);
+  assert.match(chat.notice.render(100).join('\n'), /reply lost/);
+  await open(); await choose(chat, 1);
+  assert.equal(requests.length, 2);
+  assert.deepEqual(requests[0], requests[1]);
+  assert.equal(chat.pendingSchedule, null);
+  assert.equal(calls.some(call => call.command || call.operation === 'start'), false);
+});
+
+test('pausing a schedule is explicit and leaves the current review and robot conversation alone', {timeout: 5000}, async t => {
+  const plan = {id: identity, name: 'Camera methods', enabled: true, revision: 1, next_run: 'tomorrow',
+    calendar: {time: '21:30', days: 'mon', timezone: 'UTC'}, options: overview.defaults, active_task: 'active-review'};
+  const {chat, calls} = await setup(t, operation => operation === 'schedules'
+    ? {schedules: [plan], scheduler: {state: 'running'}} : plan);
+  const open = () => schedulesMenu(chat, overview, () => {}, () => {});
+  await open(); await choose(chat, 0); await choose(chat, 1);
+  assert.match(chat.panel.component.render(100).join('\n'), /current review continues/);
+  await choose(chat, 0);
+  assert.equal(calls.some(call => call.operation === 'schedule-action'), false);
+  await open(); await choose(chat, 0); await choose(chat, 1); await choose(chat, 1);
+  assert.deepEqual(calls.find(call => call.operation === 'schedule-action').params, {id: identity, action: 'pause'});
+  assert.equal(calls.some(call => call.command || call.operation === 'cancel'), false);
+  assert.equal(chat.done, false);
 });

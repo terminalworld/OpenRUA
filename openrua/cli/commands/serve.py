@@ -23,6 +23,8 @@ from openrua.sessions.http import LocalServer
 
 
 async def serve(args) -> None:
+    from openrua.cli.skill_scheduler import autostart
+    autostart(args.home)
     flow = None
     if getattr(args, "connect", None):
         request = ConnectRequest(home=args.home, name=args.name, folder=Path(args.connect),

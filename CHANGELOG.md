@@ -9,6 +9,20 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.21.10
+
+- Optional periodic skill reviews are managed from `/project` or
+  `skills schedule`. Choose the project, local time, weekdays, timezone and
+  review settings, then explicitly enable the plan. No plan is enabled by default.
+- OpenRUA owns the background scheduler, using APScheduler without an operating
+  system timer. Closing the TUI keeps it running; normal OpenRUA startup restores
+  enabled plans after shutdown. Missed occurrences combine into one review.
+- Each occurrence uses the existing isolated review worker and durable task ID.
+  Restart adopts existing work instead of replaying it. Ordinary failures wait
+  for the next scheduled time; authentication, quota and uncertain execution
+  pause the plan for inspection. Pausing or removing a plan keeps current work
+  and reports; cancel an active review separately.
+
 ## 0.21.9
 
 - `/project` opens saved project and personal skills, review reports and diffs,

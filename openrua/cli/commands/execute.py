@@ -82,6 +82,8 @@ def _task(args) -> tuple[str | None, str | None]:
 
 def run(args) -> int:
     home = paths.home(args.home)
+    from openrua.cli.skill_scheduler import autostart
+    autostart(home)
     robot, task = _task(args)
     root = workspace.choose(args.workspace or Path.cwd(), home, accept=args.trust_workspace)
     if root is None:

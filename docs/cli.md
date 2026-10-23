@@ -1023,6 +1023,8 @@ options:
 | `tasks` | inspect or cancel review tasks without starting a robot |
 | `review` | review completed project records in isolation and save proposals |
 | `reviews` | list this project's review reports or read one |
+| `scheduler` | inspect, start or stop the shared background review scheduler |
+| `schedule` | manage this project's optional periodic skill reviews |
 
 ### openrua skills list
 
@@ -1142,6 +1144,42 @@ options:
   --json
   --input PATH  read a relative path from this review's private input snapshot
 ```
+
+### openrua skills scheduler
+
+```
+usage: openrua skills scheduler [-h] [--json] [{status,start,stop}]
+
+positional arguments:
+  {status,start,stop}
+
+options:
+  -h, --help           show this help message and exit
+  --json
+```
+
+### openrua skills schedule
+
+```
+usage: openrua skills schedule [-h] [--json] COMMAND ...
+
+positional arguments:
+  COMMAND
+
+options:
+  -h, --help  show this help message and exit
+  --json
+```
+
+| command | does |
+|---|---|
+| `list` | list schedules in this project |
+| `add` | save a plan; --enable explicitly starts background scheduling |
+| `edit` | change a saved name, calendar or review settings |
+| `show` | inspect a plan and its last task |
+| `pause` | pause future reviews; the current review continues |
+| `resume` | resume future reviews after inspecting the project and account |
+| `remove` | remove the plan; keep reports and any current review |
 
 ## openrua login
 

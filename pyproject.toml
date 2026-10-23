@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openrua"
-version = "0.21.9"
+version = "0.21.10"
 description = "Let your Claude Code or Codex control any robot, real or simulated, through the standard ROS 2 CLI and client library."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,6 +25,7 @@ dependencies = [
     "numpy",
     "pyyaml",
     "pydantic>=2",
+    "apscheduler>=3.11.2,<4",
     "nodejs-wheel-binaries>=22.20,<23",
 ]
 

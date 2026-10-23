@@ -12,6 +12,7 @@ from openrua.runner import skill_review
 @pytest.mark.parametrize('frame,status', [
     ({'type': 'error', 'message': 'usage limit reached'}, 'quota_limited'),
     ({'type': 'turn.failed', 'error': {'message': 'request failed'}}, 'failed'),
+    ({'type': 'turn.failed', 'error': {'message': '401 Unauthorized'}}, 'authentication_required'),
     ({'type': 'turn.completed', 'usage': {'input_tokens': 2, 'output_tokens': 1}}, 'completed'),
 ])
 def test_native_result_classifies_zero_exit_and_always_cleans_up(tmp_path, monkeypatch, frame, status):
