@@ -229,7 +229,8 @@ assert all(content for mime, content in assets().values())
 root = files('openrua')
 for path in ('sandbox/workspace/README.md', 'configs/agents/codex.yaml',
              'configs/agents/claude-code.yaml', 'terminal/assets/src/workspace.mjs',
-             'terminal/assets/src/exit.mjs', 'sandbox/extend.Dockerfile'):
+             'terminal/assets/src/exit.mjs', 'terminal/assets/src/project.mjs',
+             'cli/project_skills.py', 'cli/skill_tasks.py', 'sandbox/extend.Dockerfile'):
     assert root.joinpath(path).read_bytes(), path
 """)
         run("-c", """

@@ -273,7 +273,8 @@ def test_codex_reports_settings_and_commands_when_ready():
     request = protocol.receive({"id": start["id"], "result": {}}).outbound[1]
     assert request["params"]["approvalPolicy"] == "untrusted"
     events = protocol.receive({"id": request["id"], "result": {"thread": {"id": "thread-1"}}}).events
-    assert [e.kind for e in events] == ["ready", "setting", "setting", "commands"]
+    assert [e.kind for e in events] == ["ready", "setting", "setting", "setting", "commands"]
+    assert events[3].data['setting'] == 'effort' and events[3].data['value'] == 'high'
     assert {c["name"] for c in events[-1].data["commands"]} == {"compact", "clear", "skills"}
 
 
@@ -327,6 +328,34 @@ def test_codex_settings_apply_from_the_next_turn():
     assert params["approvalPolicy"] == "untrusted" and params["model"] == "gpt-6-astra"
     with pytest.raises(ValueError):
         protocol.configure("permissions", "sometimes")
+
+
+def test_codex_model_choices_come_from_native_metadata_without_a_model_turn():
+    protocol = CodexConversation('requested-model')
+    initialize = protocol.begin().outbound[0]
+    thread = protocol.receive({'id': initialize['id'], 'result': {}}).outbound[1]
+    ready_update = protocol.receive({'id': thread['id'], 'result': {'thread': {'id': 'native'}, 'model': 'resolved-model'}})
+    request = ready_update.outbound[0]
+    assert request['method'] == 'model/list' and protocol.can_submit
+    update = protocol.receive({'id': request['id'], 'result': {'data': [
+        {'id': 'native-entry', 'model': 'gpt-6-astra', 'displayName': 'GPT-6 Astra', 'description': 'Native description',
+         'defaultReasoningEffort': 'low', 'supportedReasoningEfforts': [
+             {'reasoningEffort': 'low', 'description': 'Native low'}, {'reasoningEffort': 'high', 'description': 'Native high'}]}],
+        'nextCursor': 'page-two'}})
+    setting = update.events[0].data
+    assert setting['value'] == 'resolved-model'
+    assert setting['choices'][0]['value'] == 'gpt-6-astra'
+    assert update.outbound[0]['params']['cursor'] == 'page-two'
+    failed = protocol.receive({'id': update.outbound[0]['id'], 'error': {'message': 'metadata unavailable'}})
+    assert failed.events[0].kind == 'native' and protocol.can_submit
+    protocol.configure('model', 'gpt-6-astra')
+    assert protocol.effort == 'high'
+    with pytest.raises(ValueError, match='native effort'):
+        protocol.configure('effort', 'unsupported')
+    protocol.configure('effort', 'low')
+    turn = protocol.submit('work', 'Continue')
+    assert turn.outbound[0]['params']['model'] == 'gpt-6-astra'
+    assert turn.outbound[0]['params']['effort'] == 'low'
 
 
 def test_codex_compact_runs_as_the_servers_turn():

@@ -22,7 +22,7 @@ from openrua.agents.conversation import ConversationProtocol, Event, Update
 class CodexConversation(ConversationProtocol):
     # What the person sets with /permissions, as Codex's approval policy.
     APPROVAL = {"ask": "untrusted", "auto": "never", "auto-review": "on-request"}
-    SETTINGS = {'permissions': tuple(APPROVAL), 'model': None}
+    SETTINGS = {'permissions': tuple(APPROVAL), 'model': None, 'effort': None}
     PERMISSIONS = [
         {"value": "ask", "label": "Ask for approval", "description": "Native untrusted command policy in the robot terminal"},
         {"value": "auto-review", "label": "Approve for me", "description": "Native workspace sandbox and automatic review of escalation requests"},
@@ -51,6 +51,8 @@ class CodexConversation(ConversationProtocol):
         self._server_turn = False           # /compact: the server starts the turn
         self._skill_text: str | None = None
         self._reviewer_supported = False
+        self._models = {}
+        self._model_pages = 0
 
     @property
     def can_submit(self) -> bool:
@@ -122,10 +124,21 @@ class CodexConversation(ConversationProtocol):
             if not value:
                 raise ValueError("name a model")
             self.model = value
+            return Update(events=[Event('setting', data={'setting': 'model', 'value': value, 'effective_from': 'next_turn'}),
+                                  self._effort_setting()])
+        elif setting == 'effort':
+            supported = {row['value'] for row in self._models.get(self.model, {}).get('efforts', [])}
+            if not isinstance(value, str) or not value.strip() or (supported and value not in supported):
+                raise ValueError('choose a native effort level' + (': ' + ', '.join(sorted(supported)) if supported else ''))
+            self.effort = value
         else:
             raise ValueError(f"unknown setting: {setting}")
         return Update(events=[Event("setting", data={"setting": setting, "value": value,
                                                      "effective_from": "next_turn"})])
+
+    def _effort_setting(self):
+        return Event('setting', data={'setting': 'effort', 'value': self.effort, 'effective_from': 'next_turn',
+                                      'choices': self._models.get(self.model, {}).get('efforts', [])})
 
     @property
     def can_steer(self) -> bool:
@@ -238,6 +251,25 @@ class CodexConversation(ConversationProtocol):
         if pending is None:
             return Update(events=[Event("native", data=frame)])
         method, turn_id = pending
+        if method == 'model/list':
+            if 'error' in frame:
+                return Update(events=[Event('native', data={'method': method, 'error': frame['error']})])
+            result = frame.get('result', {})
+            for row in result.get('data', []):
+                value = row.get('model') or row.get('id')
+                if isinstance(value, str) and value:
+                    self._models[value] = dict(value=value, label=row.get('displayName') or value,
+                                              description=row.get('description') or '',
+                                              default_effort=row.get('defaultReasoningEffort'),
+                                              efforts=[dict(value=level['reasoningEffort'], label=level['reasoningEffort'],
+                                                            description=level.get('description', ''))
+                                                       for level in row.get('supportedReasoningEfforts') or []
+                                                       if isinstance(level.get('reasoningEffort'), str) and level['reasoningEffort']])
+            self._model_pages += 1
+            more = result.get('nextCursor')
+            outbound = [self._request('model/list', {'limit': 100, 'cursor': more})] if more and self._model_pages < 5 else []
+            return Update(outbound, [Event('setting', data={'setting': 'model', 'value': self.model,
+                                                           'choices': list(self._models.values())}), self._effort_setting()])
         if method == 'skills/list':
             text, self._skill_text = self._skill_text or '', None
             data = frame.get('result', {}).get('data', [])
@@ -305,13 +337,15 @@ class CodexConversation(ConversationProtocol):
             if self.thread_id and native_id != self.thread_id:
                 raise ValueError("resumed conversation identity differs from the requested thread")
             self.thread_id = native_id
+            self.model = result.get('model') or self.model
             self.ready = True
-            return Update(events=[
+            return Update([self._request('model/list', {'limit': 100})], events=[
                 Event("ready", data={"session_id": native_id}),
                 Event("setting", data={"setting": "permissions", "value": self.permissions,
                                        "choices": [choice for choice in self.PERMISSIONS
                                                    if choice['value'] != 'auto-review' or self._reviewer_supported]}),
                 Event("setting", data={"setting": "model", "value": self.model}),
+                self._effort_setting(),
                 Event("commands", data={"commands": [
                     {"name": "compact", "description": "summarize the conversation to free context"},
                     {"name": "clear", "description": "start a new conversation"},

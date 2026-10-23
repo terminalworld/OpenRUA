@@ -97,13 +97,14 @@ OpenRUA's own greeting; the agent has not looked at anything yet.
 | Enter / Ctrl+J | Send / insert newline |
 | `/tools` | Expand or collapse a tool call, with its details and output |
 | `/files` | Browse saved workspace files |
+| `/project` | Browse saved skills and review reports, start or cancel a review, and inspect candidates |
 | `/watch` | See the robot's cameras live: the session's browser address and key to open it with (a terminal shows no video) |
 | `/queue` | Inspect, edit or withdraw queued instructions |
 | `/questions` | Choose answers to agent questions (or type the answer) |
 | Escape or `/interrupt` | Stop the current turn and cancel the robot's motions; queued instructions go next |
 | `/continue` | Confirm continuing a paused queue |
 | `/permissions` | Choose the current agent's native permission mode; `--permissions MODE` selects a startup mode (`auto` is the legacy bypass default, `ask` under `openrua connect`) |
-| `/model` | Show the model, or change it: `/model <name>` |
+| `/model` | Open native model choices or enter a model ID; `/model <name>` changes the next-turn setting directly |
 | The agent's own commands | `/compact`, `/clear`, and what else the agent lists (Claude Code's skills and custom commands) go to the agent, as in its own terminal; `/help` lists them |
 | `/retry` | Retry an unconfirmed send with its original request ID |
 | `/resume` | Resume this project's conversations; `--all` searches all projects |
@@ -117,6 +118,25 @@ the service cannot be reached, it reports an unconfirmed status and gives a
 `session status` command instead of claiming the robot is still running or stopped.
 Stopping owned resources does not guarantee physical motor power is off; that
 depends on the real robot's driver. See [ending and reconnecting](sessions.md).
+
+The status line shows the configured model even when the conversation scrolls.
+`/model` uses the native agent's model choices when available and always offers
+an explicit model-ID editor. Selecting a model changes the next turn; a running
+turn keeps its model. Viewing the menu makes no model request.
+
+OpenRUA selects the model independently of a host coding agent's default. Its
+bundled Codex profile defaults to `gpt-5.6-sol`; an explicit model, project
+selection or agent configuration can override it. For example,
+`/model gpt-6-astra` sets that ID for the next turn. The model setting and native
+responses are the evidence to inspect, rather than asking the model to guess its
+identity. Native account availability is determined by the agent service.
+
+For Codex, `/model effort` opens the reasoning effort choices advertised for
+the selected model. `/model effort medium` sets a level directly. The setting
+is visible alongside the model and retained when the conversation is resumed;
+an active turn keeps its existing parameters. Model changes preserve the effort
+setting; use the following effort picker to select a supported level. Agents
+that have not reported live effort control do not expose this picker.
 
 Menus use arrows, Enter and Escape. Confirmation starts on Cancel. The terminal
 behaves the way a coding agent's own does: what you send while the agent works

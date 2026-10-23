@@ -110,18 +110,26 @@ class Skill:
         return asdict(self)
 
 
-def catalog(roots: list[tuple[str, Path]]) -> list[Skill]:
+def catalog(roots: list[tuple[str, Path]], *, boundary: Path | None = None,
+            max_bytes: int | None = None) -> list[Skill]:
     """Inspect file metadata, without claiming native availability or validation."""
     result = []
     seen = set()
     for scope, root in roots:
+        if boundary is not None and not root.resolve().is_relative_to(boundary.resolve()):
+            continue
         for path in sorted(root.glob('*/SKILL.md')):
+            if boundary is not None and not path.resolve().is_relative_to(boundary.resolve()):
+                continue
             if path.parent.name.startswith('.') or path.resolve() in seen:
                 continue
             seen.add(path.resolve())
             name, description, error = path.parent.name, '', None
             try:
-                text = path.read_text()
+                with path.open() as stream:
+                    text = stream.read(max_bytes + 1) if max_bytes is not None else stream.read()
+                if max_bytes is not None and len(text.encode()) > max_bytes:
+                    raise ValueError('SKILL.md exceeds the preview limit')
                 lines = text.splitlines()
                 if not lines or lines[0] != '---' or '---' not in lines[1:]:
                     raise ValueError('SKILL.md needs YAML front matter with name and description')
