@@ -50,6 +50,7 @@ def main() -> None:
              else camera_topic(args.camera, "depth" if args.depth else "color"))
     stem = args.camera.strip("/").split("/")[0] + ("_depth" if args.depth else "")
     out = args.out or f"{stem}.png"
+    Path(out).parent.mkdir(parents=True, exist_ok=True)
     rclpy.init()
     node = rclpy.create_node("cam_snap")
     got: list = []
@@ -67,12 +68,14 @@ def main() -> None:
         np.save(out.rsplit(".", 1)[0] + ".npy", depth)  # preserve the native values and units
         finite = depth[np.isfinite(depth)]
         lo, hi = (finite.min(), finite.max()) if finite.size else (0.0, 1.0)
-        cv2.imwrite(out, ((depth - lo) / max(hi - lo, 1e-6) * 255).clip(0, 255)
-                    .astype("uint8"))
+        if not cv2.imwrite(out, ((depth - lo) / max(hi - lo, 1e-6) * 255).clip(0, 255)
+                           .astype("uint8")):
+            raise OSError(f"could not save image to {out}")
         print(f"{out} (visualization; raw {msg.encoding} values in .npy, "
               f"frame {msg.header.frame_id})")
     else:
-        cv2.imwrite(out, CvBridge().imgmsg_to_cv2(msg, desired_encoding="bgr8"))
+        if not cv2.imwrite(out, CvBridge().imgmsg_to_cv2(msg, desired_encoding="bgr8")):
+            raise OSError(f"could not save image to {out}")
         print(f"{out} ({msg.width}x{msg.height}, frame {msg.header.frame_id})")
     node.destroy_node()
     rclpy.shutdown()

@@ -11,6 +11,9 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## 0.21.8
 
+- Camera snapshots create the requested output directory and check the image
+  write result. A failed color or depth visualization save exits with an error
+  instead of printing a success message for a missing file.
 - Ending a terminal session shows shutdown progress and retains its acknowledged
   result, preventing a second exit prompt against an already closed service.
   Ordinary exit checks current status; unreachable services are reported as
