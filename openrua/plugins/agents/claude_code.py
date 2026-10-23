@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from openrua.agents.base import Agent, PreparedProfile, _copy_profile, read_api_key
+from openrua.agents.base import Agent, PreparedProfile, SkillLocations, _copy_profile, read_api_key
 from openrua.agents.conversation import Conversation
 from openrua.plugins.agents.claude_conversation import ClaudeConversation
 
@@ -68,6 +68,8 @@ def _isolate(directory: Path) -> None:
 
 class ClaudeCode(Agent):
     """Hooks only; every fact comes from the manifest."""
+
+    skills = SkillLocations('.claude/skills', '/claude-config/skills')
 
     def prepare_profile(self, source: Path, dest: Path, *,
                         require_credentials: bool = True,

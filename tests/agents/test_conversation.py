@@ -235,7 +235,48 @@ def test_codex_reports_settings_and_commands_when_ready():
     assert request["params"]["approvalPolicy"] == "untrusted"
     events = protocol.receive({"id": request["id"], "result": {"thread": {"id": "thread-1"}}}).events
     assert [e.kind for e in events] == ["ready", "setting", "setting", "commands"]
-    assert {c["name"] for c in events[-1].data["commands"]} == {"compact", "clear"}
+    assert {c["name"] for c in events[-1].data["commands"]} == {"compact", "clear", "skills"}
+
+
+def test_codex_explicit_skill_uses_fresh_native_metadata_and_structured_input():
+    protocol = ready()
+    query = protocol.submit('skill', 'Use $camera-check to inspect.').outbound[0]
+    assert query['method'] == 'skills/list' and query['params']['forceReload']
+    update = protocol.receive({'id': query['id'], 'result': {'data': [{'skills': [
+        {'name': 'other-method', 'path': '/personal/SKILL.md', 'scope': 'user', 'enabled': True},
+        {'name': 'camera-check', 'path': '/project/SKILL.md', 'scope': 'repo', 'enabled': True}], 'errors': []}]}})
+    turn = update.outbound[0]
+    assert turn['method'] == 'turn/start'
+    assert turn['params']['input'] == [
+        {'type': 'text', 'text': 'Use $camera-check to inspect.'},
+        {'type': 'skill', 'name': 'camera-check', 'path': '/project/SKILL.md'}]
+
+
+def test_codex_same_name_skills_leave_name_resolution_to_the_native_agent():
+    protocol = ready()
+    query = protocol.submit('skill', 'Use $check.').outbound[0]
+    update = protocol.receive({'id': query['id'], 'result': {'data': [{'skills': [
+        {'name': 'check', 'path': '/personal/SKILL.md', 'scope': 'user'},
+        {'name': 'check', 'path': '/project/SKILL.md', 'scope': 'repo'}]}]}})
+    assert update.outbound[0]['params']['input'] == [{'type': 'text', 'text': 'Use $check.'}]
+
+
+def test_codex_native_skill_listing_costs_no_model_turn_and_keeps_connection_ready():
+    protocol = ready()
+    query = protocol.submit('list', '/skills').outbound[0]
+    update = protocol.receive({'id': query['id'], 'result': {'data': [{'skills': [
+        {'name': 'camera-check', 'path': '/project/SKILL.md', 'scope': 'repo', 'description': 'Check cameras'}], 'errors': []}]}})
+    assert not update.outbound and protocol.can_submit
+    assert '$camera-check [repo]' in update.events[0].data['text']
+    assert update.events[-1].data['status'] == 'completed'
+
+
+def test_codex_old_server_skill_discovery_failure_does_not_break_the_conversation():
+    protocol = ready()
+    query = protocol.submit('list', '/skills').outbound[0]
+    update = protocol.receive({'id': query['id'], 'error': {'code': -32601, 'message': 'Method not found'}})
+    assert protocol.can_submit and update.events[-1].data['status'] == 'failed'
+    assert protocol.submit('next', 'Continue normal work.').outbound[0]['method'] == 'turn/start'
 
 
 def test_codex_settings_apply_from_the_next_turn():

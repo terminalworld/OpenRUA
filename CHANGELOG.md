@@ -9,6 +9,28 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.21.0
+
+- Robot projects can accumulate and reuse native skills across conversations
+  and agents. Project methods use one maintained source in `.agents/skills/`,
+  with native directory links that preserve existing content and report
+  conflicts. Personal skills live separately under the OpenRUA user directory
+  and survive session profile cleanup. Import or promote individual methods
+  with `openrua skills add`; existing files are never overwritten.
+- `openrua skills` lists saved file metadata and supports `show`, `add`, and
+  `policy auto|suggest|manual`. Project instructions initially allow useful
+  in-task accumulation with brief feedback; settings can require suggestions
+  or explicit requests. These are agent instructions, not a write barrier.
+  No background review or periodic task starts automatically. Shared Codex
+  conversations support native `/skills` discovery and explicit `$name`
+  selection through structured skill input.
+- Project sandboxes now separate HOME (`/home/robot`) from their working
+  directory (`/workspace`). With the old identical paths, Claude Code omitted
+  project skills and Codex classified them as personal. Save maintained files
+  under the project. This applies to interactive and exec projects, for
+  simulation and real robots; benchmark workspaces, HOME and prompts retain
+  their existing isolation protocol.
+
 ## 0.20.0
 
 - `exec` now uses the current directory as a persistent robot project, for

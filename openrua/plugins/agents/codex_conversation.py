@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 from importlib.metadata import version
+import re
 
 from openrua.agents.conversation import ConversationProtocol, Event, Update
 
@@ -40,6 +41,7 @@ class CodexConversation(ConversationProtocol):
         self._requests: dict[str, tuple[Any, str, list[dict]]] = {}
         self._steers: dict[int, str] = {}   # request ID -> message ID it carried
         self._server_turn = False           # /compact: the server starts the turn
+        self._skill_text: str | None = None
 
     @property
     def can_submit(self) -> bool:
@@ -73,8 +75,14 @@ class CodexConversation(ConversationProtocol):
                                          turn_id)])
         if command == "/clear":
             return Update([self._request("thread/start", self._thread_params(), turn_id)])
+        if command == '/skills' or re.search(r'(?<![\w$])\$[a-zA-Z0-9][a-zA-Z0-9_-]*', text):
+            self._skill_text = text
+            return Update([self._request('skills/list', {'cwds': [self.workspace], 'forceReload': True}, turn_id)])
+        return self._start_turn(turn_id, text)
+
+    def _start_turn(self, turn_id: str, text: str, skills: tuple[dict, ...] | list[dict] = ()) -> Update:
         return Update([self._request("turn/start", {
-            "threadId": self.thread_id, "input": [{"type": "text", "text": text}],
+            "threadId": self.thread_id, "input": [{"type": "text", "text": text}, *skills],
             "effort": self.effort, "model": self.model,
             "approvalPolicy": self.APPROVAL[self.permissions]}, turn_id)])
 
@@ -200,6 +208,35 @@ class CodexConversation(ConversationProtocol):
         if pending is None:
             return Update(events=[Event("native", data=frame)])
         method, turn_id = pending
+        if method == 'skills/list':
+            text, self._skill_text = self._skill_text or '', None
+            data = frame.get('result', {}).get('data', [])
+            skills = [skill for item in data for skill in item.get('skills', [])]
+            errors = [error for item in data for error in item.get('errors', [])]
+            if 'error' in frame or text.strip() == '/skills':
+                lines = [f"${skill['name']} [{skill.get('scope', 'native')}]"
+                         f"{' (disabled)' if not skill.get('enabled', True) else ''}: "
+                         f"{skill.get('description', '')}\n  {skill['path']}" for skill in skills]
+                lines.extend(str(error) for error in errors)
+                if 'error' in frame:
+                    lines.append(f"Native skill discovery failed: {frame['error']}. Use the agent's native terminal to inspect its supported skills.")
+                self._active = None
+                return Update(events=[
+                    Event('item', turn_id, {'phase': 'completed', 'item_id': f'skills-{turn_id}', 'kind': 'message',
+                                           'text': '\n'.join(lines) or 'No native skills are available.', 'output': ''}),
+                    Event('turn_finished', turn_id, {'status': 'failed' if 'error' in frame else 'completed'})])
+            requested = set(re.findall(r'(?<![\w$])\$([a-zA-Z0-9][a-zA-Z0-9_-]*)', text))
+            selected = []
+            for name in sorted(requested):
+                matches = {skill['path']: skill for skill in skills
+                           if skill['name'] == name and skill.get('enabled', True)}
+                # Native selectors can expose multiple same-name skills. A
+                # bare name must not silently select an arbitrary definition.
+                # Without a structured item the native agent resolves the text.
+                if len(matches) == 1:
+                    skill = next(iter(matches.values()))
+                    selected.append({'type': 'skill', 'name': name, 'path': skill['path']})
+            return self._start_turn(turn_id, text, selected)
         if method == "turn/steer":
             # A turn that ended before the steer arrived refuses it; the
             # message then waits for a turn of its own.
@@ -239,7 +276,8 @@ class CodexConversation(ConversationProtocol):
                 Event("setting", data={"setting": "model", "value": self.model}),
                 Event("commands", data={"commands": [
                     {"name": "compact", "description": "summarize the conversation to free context"},
-                    {"name": "clear", "description": "start a new conversation"}]})])
+                    {"name": "clear", "description": "start a new conversation"},
+                    {"name": "skills", "description": "list native skills; use $name in your message to select one"}]})])
         if method == "thread/compact/start":
             # The turn it runs arrives as the server's own turn/started.
             return Update()

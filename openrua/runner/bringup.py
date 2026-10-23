@@ -311,6 +311,10 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     config_path = record.write_config(dest, cfg)
     backend = cfg.get("machine", {}).get("backend", {})
     reach = sandbox_reachability(backend, network, sim_name, internet)
+    if workspace is not None:
+        # Native agents distinguish personal and project skills through HOME.
+        # A project equal to HOME can hide native project skills entirely.
+        reach['env'] = (*reach['env'], 'HOME=/home/robot')
     for routed in reach["networks"]:
         ensure_network(routed, internal=False)
 

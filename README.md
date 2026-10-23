@@ -102,6 +102,9 @@ session running; `openrua --resume` brings you back.
 
 ### Next
 
+- **Keep useful methods.** Ask the agent to save a project skill and reuse it
+  in a later conversation. `openrua skills` lists saved methods and controls
+  how they accumulate ([skills guide](docs/skills.md)).
 - **One task, on its own.** `openrua exec "<task>"` works in the same project
   and records the run, as `claude -p` or `codex exec` do ([first task](examples/first-task.md)).
 - **Benchmarks and demo videos.** Run a benchmark's tasks, scored by its own

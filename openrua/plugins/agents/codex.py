@@ -36,7 +36,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from openrua.agents.base import Agent, PreparedProfile, _copy_profile, read_api_key
+from openrua.agents.base import Agent, PreparedProfile, SkillLocations, _copy_profile, read_api_key
 from openrua.agents.conversation import Conversation
 from openrua.plugins.agents.codex_conversation import CodexConversation
 
@@ -48,6 +48,8 @@ _WINDOWS = {300: "five_hour", 10080: "seven_day"}
 
 class Codex(Agent):
     """Hooks only; every fact comes from the manifest."""
+
+    skills = SkillLocations('.agents/skills', '/codex-home/skills')
 
     def prepare_api_profile(self, key_file: Path, dest: Path, *,
                             limits: dict | None = None) -> PreparedProfile:
