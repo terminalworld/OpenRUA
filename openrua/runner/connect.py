@@ -2,7 +2,7 @@
 
 ``openrua connect`` opens a session like any other, except for what its
 sandbox reaches: the host's docker, network and devices, with the
-robot's adaptation folder as its workspace. The agent writes the folder
+coding project as its workspace. The agent writes the adaptation folder
 (robot.yaml, driver/, cameras/) with the person at the robot; each step
 is checked here, on the host, when the agent asks (``check.py <step>``
 in the sandbox, through the session's local service). When every check
@@ -236,7 +236,7 @@ def opening_message(folder: Path, host: str, project: Path) -> str:
 
 class Checks:
     """Each step's check, on the host, one at a time; results go to the
-    session's state (``checks``) and to ``<folder>/.openrua-checks``."""
+    session's state and the project's ``.openrua/connect/<session>/``."""
 
     def __init__(self, request: ConnectRequest, session, agent: str):
         self.request, self.session, self.agent = request, session, agent

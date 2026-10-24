@@ -269,7 +269,7 @@ class Maintenance:
         backend = resolved.cfg['machine']['backend']
         commands = []
         if backend['kind'] == 'sim':
-            selector = ['--bench', resolved.benchmark] if resolved.benchmark else ['--sim', resolved.simulator]
+            selector = ['--bench', resolved.source] if resolved.benchmark else ['--sim', resolved.simulator]
             commands.append((backend['image'], ['-m', 'openrua', '--home', str(self.owned.home), 'build', *selector]))
         commands.extend((image, ['-m', 'openrua.robot.real.build', '--image', image, '--context', str(context)])
                         for image, context in (backend.get('build') or {}).items())

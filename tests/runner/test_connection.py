@@ -15,6 +15,41 @@ from openrua.runner.managed import ManagedSession
 from tests.sessions.test_execution import setup, until
 
 
+def test_maintenance_build_uses_the_edited_project_benchmark(tmp_path, monkeypatch):
+    from openrua import config
+    from openrua.cli import build_parser
+    from openrua.cli.commands import build
+    from openrua.config import projects
+    from openrua.runner import maintenance
+
+    root, caller, home = (tmp_path / name for name in ('project', 'caller', 'home'))
+    caller.mkdir()
+    projects.save_selection(root, dict(robot='', sim='', bench='libero_pro', agent='codex', model=''))
+    choices = projects.selection(root)
+    requirement = root / 'configs/benchmarks/libero_pro/requirements.txt'
+    requirement.write_text(requirement.read_text() + '\n# Maintained project dependency\n')
+    resolved = config.compose(choices['robot'], choices['sim'], choices['bench'], home)
+    request = RobotRequest(home=home, name='project-build', project=root,
+                           robot=choices['robot'], simulator=choices['sim'], benchmark=choices['bench'])
+    conn = Connection(request, resolved, root, root / 'config.yaml', 7, 'net', 'box')
+    owner = SimpleNamespace(name=request.name, home=home, robot=SimpleNamespace(connection=conn))
+    manager = Maintenance(owner)
+    manager.directory.mkdir(parents=True)
+    monkeypatch.chdir(caller)
+    built = []
+    monkeypatch.setattr(build, 'build_simulator',
+                        lambda install, name, code_root, *, tag: built.append((tag, install)) or (tag, 'digest'))
+
+    def invoke(argv, **kwargs):
+        args = build_parser().parse_args(argv[3:])
+        return SimpleNamespace(returncode=args.fn(args))
+
+    monkeypatch.setattr(maintenance.subprocess, 'run', invoke)
+    manager._build()
+    assert built[0][0] == resolved.cfg['machine']['backend']['image']
+    assert built[0][1]['requirements'] == str(requirement)
+
+
 @pytest.fixture
 def connection(tmp_path, monkeypatch):
     root = tmp_path / 'project'

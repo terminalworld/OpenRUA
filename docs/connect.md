@@ -33,8 +33,8 @@ needed for this initial preparation.
 Before reusing an existing sandbox, preparation checks that its selected agent
 CLI is available and satisfies the configured version. An image built only for
 another agent is rebuilt through the same preparation flow. Connecting from the
-setup menu saves the selected agent, model and authentication without requiring
-a known robot or replacing your existing robot/simulator defaults.
+setup menu uses the selected agent and model and saves its authentication
+without requiring a known robot or replacing this project's environment choices.
 
 After connecting, maintain the driver through the same conversation. Ask your
 agent to apply changes or use `/robot` for status, logs, builds and restart.

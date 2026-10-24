@@ -137,7 +137,7 @@ def add_parser(sub) -> None:
                    help='restart an ended project conversation without replaying actions')
     p.add_argument("--connect", default=None, metavar="FOLDER",
                    help="connect a real robot instead (see openrua connect): FOLDER is the "
-                   "robot's adaptation folder, the connecting terminal's workspace")
+                   "robot's adaptation folder inside the project workspace")
     p.add_argument("--distro", default="jazzy", choices=("jazzy", "humble"),
                    help="with --connect: the connecting terminal's ROS 2")
     p.set_defaults(fn=run)
