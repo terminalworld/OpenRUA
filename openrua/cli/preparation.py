@@ -34,7 +34,7 @@ def image_commands(composed, benchmark: str | None = None,
         agent += '@' + selected['version']
     commands = []
     if backend['kind'] == 'sim':
-        selector = ['--bench', benchmark or composed.benchmark] if composed.benchmark else ['--sim', composed.simulator]
+        selector = ['--bench', benchmark or composed.source] if composed.benchmark else ['--sim', composed.simulator]
         commands.append((backend['image'], ['build', *selector]))
     robot_file = None
     if backend['kind'] == 'real' and (backend.get('build') or backend.get('sandbox_install')):

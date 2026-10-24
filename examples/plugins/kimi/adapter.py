@@ -58,7 +58,7 @@ class Kimi(Agent):
         return ProfileLogin(True, 'native OAuth files found locally; subscription and refresh are not verified')
 
     def login_hint(self, creds_home):
-        return 'run kimi and /login for native subscription access; API use requires config set --auth api --api-key-file /absolute/path/to/key'
+        return 'run kimi and /login for native subscription access; API use requires config set --user --auth api --api-key-file /absolute/path/to/key'
 
     def prepare_profile(self, source, dest, *, require_credentials=True, limits=None):
         chosen, token_file = self._native(source)

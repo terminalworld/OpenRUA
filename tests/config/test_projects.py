@@ -1,0 +1,76 @@
+"""Owned configurations remain usable after copying and editing a project."""
+
+import json
+import shutil
+from pathlib import Path
+
+import pytest
+import yaml
+
+from openrua import config
+from openrua.config import paths, projects
+from openrua.config.inputs import driver_images
+
+
+@pytest.mark.parametrize('benchmark', [entry.name for entry in paths.available('benchmarks')])
+def test_all_bundled_benchmarks_become_movable_project_inputs(tmp_path, benchmark):
+    original, moved = tmp_path / 'original', tmp_path / 'moved'
+    projects.save_selection(original, dict(robot='', sim='', bench=benchmark, agent='codex', model=''))
+    shutil.copytree(original, moved)
+    shutil.rmtree(original)
+    choices = projects.selection(moved)
+    result = config.compose(choices['robot'], choices['sim'], choices['bench'], tmp_path / 'fresh-home')
+    assert result.benchmark == benchmark
+    assert result.source == choices['bench']
+    assert not str(original) in json.dumps(result.cfg)
+    for field in ('robot', 'sim', 'bench'):
+        if choices[field]:
+            assert Path(choices[field]).is_relative_to(moved)
+
+
+def test_project_changes_do_not_change_another_projects_sources_or_images(tmp_path):
+    a, b = tmp_path / 'a', tmp_path / 'b'
+    choices = dict(robot='panda', sim='robosuite', bench='', agent='codex', model='')
+    projects.save_selection(a, choices); projects.save_selection(b, choices)
+    before = config.image_owner(projects.selection(b)['sim'])
+    file = a / 'configs/simulators/robosuite/requirements.txt'
+    file.write_text(file.read_text() + '\n# Project A changes its build inputs\n')
+    assert config.image_owner(projects.selection(a)['sim']) != before
+    assert config.image_owner(projects.selection(b)['sim']) == before
+    own = a / 'configs/robots/panda.yaml'
+    own.write_text(own.read_text() + '\n# Maintained by this project\n')
+    projects.save_selection(a, choices)
+    assert own.read_text().endswith('# Maintained by this project\n')
+
+
+def test_cli_overrides_do_not_change_saved_selection_and_use_the_callers_base(tmp_path):
+    root, caller = tmp_path / 'project', tmp_path / 'caller'
+    caller.mkdir()
+    projects.save_selection(root, dict(robot='panda', sim='robosuite', bench='', agent='codex', model='saved'))
+    before = projects.settings_path(root).read_bytes()
+    file = caller / 'arm.yaml'
+    file.write_text('machine: {backend: {kind: real, discovery: {network: host}}, robot: {model: Test}, cameras: {list: []}}\n')
+    choices = projects.options(root, dict(robot='./arm.yaml', agent='claude-code'), relative_to=caller)
+    assert choices['robot'] == str(file) and choices['sim'] == choices['bench'] == ''
+    assert choices['model'] is None
+    assert projects.settings_path(root).read_bytes() == before
+
+
+def test_driver_image_slots_follow_project_build_inputs(tmp_path):
+    context = tmp_path / 'driver'; context.mkdir()
+    file = context / 'Dockerfile'; file.write_text('FROM scratch\n')
+    source = dict(build={'driver': str(context)}, image='driver', launch='python3 driver/up.py --image {images[driver]}')
+    first = dict(source); driver_images(first)
+    assert first['image'] in first['launch'] and first['image'] in first['build']
+    file.write_text('FROM scratch\nLABEL project=changed\n')
+    second = dict(source); driver_images(second)
+    assert first['image'] != second['image']
+
+
+def test_project_path_symlinks_cannot_redirect_template_writes(tmp_path):
+    outside = tmp_path / 'outside'; outside.mkdir()
+    root = tmp_path / 'project'; root.mkdir()
+    (root / 'configs').symlink_to(outside, target_is_directory=True)
+    with pytest.raises(ValueError, match='leaves'):
+        projects.save_selection(root, dict(robot='panda', sim='robosuite', bench='', agent='codex', model=''))
+    assert list(outside.iterdir()) == []

@@ -14,7 +14,7 @@ from openrua.config.loader import load_user_config, load_yaml, validate
 from openrua.config.schema import UserConfig
 
 
-def update(home: Path, names: dict, facts: dict | None = None) -> dict:
+def update(home: Path, names: dict, facts: dict | None = None, *, agent: str | None = None) -> dict:
     """Merge selected names and agent facts into the validated defaults file."""
     path = paths.config_path(home)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -28,8 +28,8 @@ def update(home: Path, names: dict, facts: dict | None = None) -> dict:
                      if isinstance(value, str) and paths.is_path(value) else value
                      for key, value in names.items()})
         if facts:
-            agent = data.get('agent') or load_user_config(paths.package_config_path()).agent
-            data.setdefault('agents', {}).setdefault(agent, {}).update(facts)
+            selected = paths.agent_key(agent or data.get('agent') or load_user_config(paths.package_config_path()).agent)
+            data.setdefault('agents', {}).setdefault(selected, {}).update(facts)
         validate(UserConfig, data, path)
         fd, temporary = tempfile.mkstemp(prefix='.config-', dir=path.parent)
         try:

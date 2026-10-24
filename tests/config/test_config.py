@@ -257,7 +257,7 @@ def test_user_config_layers_under_the_benchmark(tmp_path):
         "agents:\n  claude-code:\n    model: my-model\n"
         "    options: {effort: low, autocompact: 1M}\n    credentials_dir: /creds\n"
         "  codex: {model: gpt-x, credentials_dir: /codex}\n"
-        "robot: panda\n")
+        "agent: claude-code\n")
     cfg = load_config("libero_pro", home=tmp_path)
     assert cfg["agent"]["model"] == "claude-opus-5"           # benchmark wins
     assert cfg["agent"]["options"] == {"effort": "high", "autocompact": "1M"}
@@ -270,7 +270,7 @@ def test_user_config_layers_under_the_benchmark(tmp_path):
     b = tmp_path / "noname.yaml"
     b.write_text("entry_point: libero\ntask: {benchmark: libero_pro, suites: [libero_goal_task]}\n"
                  "simulator: robosuite\n")
-    assert load_config(b, home=tmp_path)["machine"]["robot"]["model"] == "Franka Emika Panda"
+    assert load_config(b, robot="panda", home=tmp_path)["machine"]["robot"]["model"] == "Franka Emika Panda"
 
 
 def test_sandbox_run_args_come_from_the_defaults_file_only(tmp_path):
@@ -352,12 +352,13 @@ def test_simulation_still_requires_a_task(tmp_path):
 
 
 def test_empty_selection_does_not_reenable_saved_benchmark(tmp_path):
-    (tmp_path / 'config.yaml').write_text('benchmark: robocasa365\nsimulator: robosuite\nrobot: panda-omron\n')
+    (tmp_path / 'config.yaml').write_text('agent: codex\n')
     native = compose('panda', 'robosuite', '', tmp_path)
     assert native.benchmark is None and native.suite == 'Lift'
     with pytest.raises(UsageError, match='name the simulator'):
         compose('panda-omron', '', '', tmp_path)
-    assert compose(None, None, None, tmp_path).benchmark == 'robocasa365'
+    with pytest.raises(UsageError, match='name a robot'):
+        compose(None, None, None, tmp_path)
 
 
 def test_benchmark_cannot_be_loaded_by_an_unrelated_simulator(tmp_path):
@@ -393,12 +394,12 @@ def test_old_gripper_keys_are_refused_with_the_rewrite():
     assert "open_threshold_m was removed" in str(e.value)
 
 
-def test_every_bundled_gripper_resolves_with_its_behaviour():
+def test_every_bundled_gripper_resolves_with_its_behaviour(tmp_path):
     # Each embodiment that drives a gripper says what it does with a goal.
     for name, sim in (("panda", "robosuite"), ("panda", "maniskill"), ("widowx", "maniskill"),
                       ("panda", "calvin"), ("panda", "vlabench")):
         try:
-            cfg = config.compose(name, sim).cfg
+            cfg = config.compose(name, sim, home=tmp_path).cfg
         except UsageError:          # simulators without a native scene need a benchmark
             continue
         g = cfg["machine"]["gripper"]
@@ -456,7 +457,7 @@ def test_a_real_robot_ignores_the_saved_simulation_defaults(tmp_path):
     lab = tmp_path / "lab.yaml"
     lab.write_text("machine:\n  backend: {kind: real, discovery: {network: host}}\n"
                    "  robot: {model: Lab arm}\n  cameras: {list: []}\n")
-    (tmp_path / "config.yaml").write_text("simulator: robosuite\nbenchmark: libero_pro\n")
+    (tmp_path / "config.yaml").write_text("agent: codex\n")
     c = compose(str(lab), home=tmp_path)
     assert (c.simulator, c.benchmark) == (None, None) and "task" not in c.cfg
     named = compose(str(lab), None, "libero_pro", tmp_path)    # named: still honoured

@@ -8,6 +8,14 @@ read_when:
 
 # Simulators
 
+For a maintained project, start with `openrua config set --robot panda --sim
+robosuite`, then `openrua build`. Project copies of the selected declarations
+and their build inputs live in `configs/`. Edit those files for your own
+scene and environment; their paths are saved in project settings. A local
+simulator image name includes its build-input identity, so different project
+recipes do not replace one another. Identical inputs can reuse the same image.
+
+
 Three kinds of file describe a simulated robot, and they depend in one
 direction only: a benchmark names a simulator, a simulator embodies
 robots, a robot knows neither.

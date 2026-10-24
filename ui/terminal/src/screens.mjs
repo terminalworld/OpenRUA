@@ -30,7 +30,7 @@ export class Setup extends Screen {
     super(terminal);
     this.values = {...spec.values}; this.spec = spec;
     this.authentication = {...spec.authentication};
-    this.ui.addChild(new Text(`Configure a new robot conversation\n${plain(spec.location)}\nTested combinations only; dependent fields update together.\nPrepare and start installs missing images automatically.\nCustom profiles remain available through the CLI.`, 0, 1));
+    this.ui.addChild(new Text(`Configure this robot project\n${plain(spec.location)}\nChoose a starting environment or keep this project's configuration.\nPrepare and start installs missing images automatically.\nProject files remain editable in your workspace.`, 0, 1));
     this.body = new Container(); this.ui.addChild(this.body);
     this.notice = new Text(plain(spec.notice), 0, 1); this.ui.addChild(this.notice);
     this.ui.addChild(new Text('↑/↓ select · Enter edit or activate · Esc back · Ctrl+D quit', 0, 1));
@@ -46,7 +46,7 @@ export class Setup extends Screen {
     }
     const items = Object.entries(labels).map(([key, label]) => ({value: key,
       label: `${label}: ${key === 'auth_mode' ? this.authLabel(this.values[key]) : plain(this.values[key]) || '(none)'}`}));
-    items.push({value: 'start', label: 'Prepare and start'}, {value: 'check', label: 'Save and check preparation'},
+    items.push({value: 'start', label: 'Save project and start'}, {value: 'check', label: 'Save project and check preparation'},
       {value: 'connect', label: 'Connect a real robot: your agent sets it up with you'},
       {value: 'history', label: '/resume: find an existing conversation'}, {value: 'quit', label: 'Quit'});
     const menu = new SelectList(items, 10, selectTheme);
@@ -55,7 +55,7 @@ export class Setup extends Screen {
       if (Object.hasOwn(labels, item.value)) this.edit(item.value, labels[item.value]);
       else if (['start', 'check'].includes(item.value) && this.spec.environments != null &&
           !this.spec.environments.some(row => ['robot', 'sim', 'bench'].every(key => row.selection[key] === this.values[key]))) {
-        this.notice.setText('Choose a tested robot, simulator and benchmark combination first. Custom profiles remain available through the CLI.');
+        this.notice.setText('Choose a tested robot, simulator and benchmark combination first. Project files remain editable in your workspace.');
         this.ui.requestRender();
       } else this.finish({action: item.value, values: this.values});
     };

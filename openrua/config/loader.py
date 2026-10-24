@@ -23,6 +23,7 @@ import yaml
 from pydantic import BaseModel, ValidationError
 
 from openrua.config import paths
+from openrua.config.inputs import driver_images, install_digest
 from openrua.config.schema import (SIM_CAMERA, Benchmark, CameraType, Machine,
                                    ResolvedConfig, RobotInstance, RobotInstanceOverType,
                                    RobotType, SimulatorProfile, UserConfig, sim_image)
@@ -177,6 +178,9 @@ def load_benchmark(bench: str) -> tuple[Path, dict]:
     b['agent'] = parsed.agent.model_dump(exclude_unset=True, exclude_none=True)
     if b.get("install"):
         _absolutize_install(b["install"], p)
+    for key in ('robot', 'simulator'):
+        if b.get(key) and paths.is_path(b[key]):
+            b[key] = str((p.resolve().parent / Path(b[key]).expanduser()).resolve())
     return p, b
 
 
@@ -222,11 +226,14 @@ def image_owner(sim: str, bench: str | None = None) -> str:
     """Whose image a composition runs in: the benchmark's when its
     install writes anything of its own, else the simulator's. The name
     is the declaration's (a bundled name, or a file's stem)."""
+    source = paths.find('simulators', sim).resolve()
     if bench:
         p, b = load_benchmark(bench)
         if _written(b.get("install")):
-            return p.stem
-    return paths.find("simulators", sim).stem
+            source = p.resolve()
+    if source.is_relative_to(paths.package_config_path().parent.resolve()):
+        return source.stem
+    return source.stem + '-' + install_digest(install_for(sim, bench))[:16]
 
 
 def join_notes(*layers: dict | None) -> dict:
@@ -307,7 +314,10 @@ def _instance_machine(inst: dict, home: Path | None) -> dict:
     source = inst.get("source", "robot instance")
     if not inst.get("type"):
         return dump(validate(Machine, inst["machine"], source))
-    kind, facts = load_robot(inst["type"], home)
+    spec = inst['type']
+    if paths.is_path(spec):
+        spec = str((Path(inst['source']).resolve().parent / Path(spec).expanduser()).resolve())
+    kind, facts = load_robot(spec, home)
     if kind != "type":
         raise ConfigError(f"robot instance names type {inst['type']!r}, which is itself "
                           "an instance (has a machine: section)")
@@ -318,14 +328,6 @@ def _instance_machine(inst: dict, home: Path | None) -> dict:
     if notes:
         m["notes"] = notes
     return dump(validate(Machine, m, f"{source} (over robot type {inst['type']})"))
-
-
-def _is_instance(robot: str, home: Path | None) -> bool:
-    """Whether ``robot`` names a robot instance (a file with machine:)."""
-    try:
-        return "machine" in (load_yaml(paths.find("robots", robot)) or {})
-    except NotFound:
-        return False
 
 
 def _who_embodies(robot: str, home: Path | None) -> list[str]:
@@ -351,6 +353,7 @@ class Composed:
     simulator: str | None      # None for a real-robot instance
     benchmark: str | None      # None for native scenes or free use of a real robot
     install: dict | None = None  # the simulator's install with the benchmark's over it
+    source: str | None = None
 
 
 def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
@@ -359,8 +362,8 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
     """robot (type or instance) + simulator + optional benchmark -> one
     resolved config (ResolvedConfig, validated) and the scene to load.
 
-    A benchmark supplies robot and simulator when the arguments do not;
-    the user's config.yaml supplies a default robot. A robot type needs
+    A benchmark supplies robot and simulator when the arguments do not.
+    A robot type needs
     a simulator that embodies it (its ``robots:``) or a benchmark whose
     ``scenes.robots`` does; a robot instance (a real robot) brings its
     own machine and takes no simulator. Without a benchmark the
@@ -369,23 +372,20 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
     defaults = load_user_config(paths.package_config_path())
     user = load_user_config(paths.config_path(home))
     explicit_sim = sim
-    # None inherits defaults; an explicit empty value selects no benchmark.
-    # A real robot named by the caller runs freely unless a benchmark is
-    # named too: a saved default benchmark is a simulation preference.
-    if bench is None and robot is not None and _is_instance(robot, home):
-        bench = ""
-    bench = (user.benchmark or defaults.benchmark) if bench is None else bench
     b = bench_path = None
     if bench:
         bench_path, b = load_benchmark(bench)
-        if sim and b.get("simulator") and paths.find("simulators", sim).resolve() != paths.find("simulators", b["simulator"]).resolve():
-            raise ConfigError(f"benchmark {bench} requires simulator {b['simulator']}, not {sim}",
-                              hint=f"use --bench {bench} without overriding --sim")
-        robot = robot or b.get("robot") or user.robot
+        if sim and b.get('simulator'):
+            expected = paths.find('simulators', b['simulator']).resolve()
+            actual = paths.find('simulators', sim).resolve()
+            if actual != expected:
+                same_engine = paths.entry_point('simulators', load_simulator(sim)['entry_point'], actual) == paths.entry_point(
+                    'simulators', load_simulator(b['simulator'])['entry_point'], expected)
+                if paths.is_path(b['simulator']) or not same_engine:
+                    raise ConfigError(f"benchmark {bench} requires simulator {b['simulator']}, not {sim}",
+                                      hint=f'use --bench {bench} without overriding --sim')
+        robot = robot or b.get("robot")
         sim = b.get("simulator") if sim is None else sim
-    else:
-        robot = (user.robot or defaults.robot) if robot is None else robot
-    sim = (user.simulator or defaults.simulator) if sim is None else sim
     composed_install = None
     if b is not None and b.get("machine") and not robot:
         machine, simulator, robot = b["machine"], None, "(inline machine:)"
@@ -410,6 +410,7 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
             build = machine["backend"].get("build") or {}
             machine["backend"]["build"] = {image: str((here / context).resolve())
                                            for image, context in build.items()}
+            driver_images(machine['backend'])
         else:
             if not sim:
                 raise UsageError(f"{robot} is a robot type: name the simulator that "
@@ -417,8 +418,9 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                                  hint="openrua simulators / openrua benchmarks list them; "
                                       "openrua config set --sim <name> makes one the default")
             s = load_simulator(sim, home)
-            embodiments = [e for e in (s["robots"].get(robot),
-                                       (b or {}).get("scenes", {}).get("robots", {}).get(robot))
+            robot_name = paths.find('robots', robot).stem
+            embodiments = [e for e in (s["robots"].get(robot_name),
+                                       (b or {}).get("scenes", {}).get("robots", {}).get(robot_name))
                            if e]
             if not embodiments:
                 brings = _who_embodies(robot, home)
@@ -438,7 +440,7 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
                                f"{robot} on {sim}" + (f" for {bench}" if bench else ""),
                                engine=paths.entry_point("simulators", s["entry_point"],
                                                         paths.find("simulators", sim)),
-                               image=sim_image(image_owner(sim, bench)),
+                               image=sim_image(paths.find('simulators', sim).stem),
                                sim_notes=s.get("notes"),
                                scene_notes=(b or {}).get("scenes", {}).get("notes"))
             resolve_cameras(machine, None, f"{robot} on {sim}")
@@ -469,13 +471,15 @@ def compose(robot: str | None, sim: str | None = None, bench: str | None = None,
         cfg["agent"]["model"] = model
     cfg["sandbox"] = layer_sandbox(defaults, user)
     cfg = dump(validate(ResolvedConfig, cfg, source))
+    if simulator:
+        cfg['machine']['backend']['image'] = sim_image(image_owner(simulator, bench))
     suites = cfg.get("task", {}).get("suites", [])
     suite = (b or {}).get("scenes", {}).get("default_suite") or (suites[0] if suites else None)
     if suite is not None and suite not in suites:
         raise ConfigError(f"{source}: scenes.default_suite {suite!r} is not in task.suites")
     return Composed(cfg, suite, 0 if suite is not None else None, robot, simulator,
                     (b or {}).get("task", {}).get("benchmark") if b else None,
-                    composed_install)
+                    composed_install, str(bench_path) if b else str(robot) if simulator is None else str(paths.find('simulators', simulator)))
 
 
 def load_config(path: Path | str, robot: str | None = None,

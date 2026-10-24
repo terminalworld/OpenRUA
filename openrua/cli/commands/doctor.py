@@ -3,18 +3,26 @@ to bring a robot up?"""
 
 from __future__ import annotations
 
+import argparse
+from pathlib import Path
+
 from openrua import doctor
 from openrua.cli.output import add_json
+from openrua.config import projects
 
 
 def run(args) -> int:
-    report = doctor.run(robot=args.robot, agent_names=args.agent, home=args.home,
-                        sim=args.sim, bench=args.bench)
+    chosen = projects.options(projects.resolve(args.workspace or Path.cwd()),
+                              dict(robot=args.robot, sim=args.sim, bench=args.bench), relative_to=Path.cwd())
+    report = doctor.run(robot=chosen['robot'], agent_names=args.agent or ([chosen['agent']] if chosen['agent'] else None),
+                        home=args.home, sim=chosen['sim'], bench=chosen['bench'])
     return doctor.print_report(report, as_json=True if args.json else None)
 
 
 def add_parser(sub) -> None:
     p = sub.add_parser("doctor", help="check the install: docker, images, simulator, login")
+    p.add_argument('-C', '--cd', '--workspace', dest='workspace', default=argparse.SUPPRESS,
+                   help='project directory (default: the current directory)')
     p.add_argument("robot", nargs="?", default=None,
                    help="also check this robot's images and simulator (with --sim, or "
                    "--bench, as for openrua exec); default: your saved robot, simulator "

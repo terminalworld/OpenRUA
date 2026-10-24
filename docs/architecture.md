@@ -80,12 +80,15 @@ openrua/plugins/agents/, openrua/robot/sim/bridge/{environments,engines}/   the 
 openrua-sim-<name>, openrua-sandbox-<distro>, openrua-proxy   the images (openrua build): a simulator's whole environment, the agent's terminal, the proxy
 openrua-proxy-<hash>, openrua-internal, openrua-internet  standing proxies (one per whitelist), the sandboxes' internal network, the routed network a simulated robot's sandbox joins for an open internet
 ~/.openrua/                                             the user directory ($OPENRUA_HOME, --home); written by the tool, not by hand
-  config.yaml                                            your defaults (openrua config set)
+  config.yaml                                            personal preferences (openrua config set --user)
   credentials/<agent>/                                   login profiles
-  robots/<name>/                                         a robot openrua connect connected on this computer: robot.yaml, driver/, cameras/
   sandboxes/<name>/                                      session workspace, profile copy and state; retained until explicitly deleted with openrua clean
   launches/<name>/                                       a session's startup log
-./runs/                                                 trial data (--runs-root)
+<project>/robot.yaml, driver/, cameras/                 maintained real-robot adaptation
+<project>/configs/                                      maintained simulation declarations and build inputs
+<project>/.openrua/settings.json                         project selection, using project-relative paths
+<project>/.openrua/runs/                                 resolved inputs and robot logs
+./runs/                                                 isolated benchmark trial data (--runs-root)
 ```
 
 A file of your own (a robot, a simulator, a benchmark, an agent

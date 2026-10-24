@@ -88,7 +88,7 @@ Precedence is explicit `credentials_dir`, the agent's native environment
 variable (`CLAUDE_CONFIG_DIR` or `CODEX_HOME`), an existing OpenRUA profile,
 then the native default directory. Existing directories and symlinks are never
 overwritten or silently switched to another account. To clear an obsolete
-explicit path, use `openrua config set --agent claude-code --credentials-dir null`
+explicit path, use `openrua config set --user --agent claude-code --credentials-dir null`
 (or `--agent codex`). Already-running sandboxes retain their selected login;
 start a new session to use a changed source. If native re-login replaces the
 credential file, also start a new sandbox so its file mount uses the new file.
@@ -215,13 +215,13 @@ your Anthropic or OpenAI API key, then select it explicitly:
 ```bash
 # Claude Code
 chmod 600 /path/to/anthropic.key
-openrua config set --agent claude-code --auth api --api-key-file /path/to/anthropic.key
+openrua config set --user --agent claude-code --auth api --api-key-file /path/to/anthropic.key
 openrua doctor --agent claude-code
 openrua
 
 # Or Codex
 chmod 600 /path/to/openai.key
-openrua config set --agent codex --auth api --api-key-file /path/to/openai.key
+openrua config set --user --agent codex --auth api --api-key-file /path/to/openai.key
 openrua doctor --agent codex
 openrua
 ```
@@ -232,8 +232,8 @@ It does not change an already running session or your normal native CLI login. T
 a key file never enables API use. To return to that login:
 
 ```bash
-openrua config set --agent claude-code --auth native
-# Or: openrua config set --agent codex --auth native
+openrua config set --user --agent claude-code --auth native
+# Or: openrua config set --user --agent codex --auth native
 ```
 
 The equivalent configuration is `agents.claude-code.auth: {mode: api, key_file:
@@ -271,39 +271,41 @@ agent; repeat its login command when it reports an expired or invalid login.
 A Docker CLI on PATH is insufficient if its daemon is stopped or inaccessible.
 `doctor` retains the daemon error and reports the repair step.
 
-## Your defaults
+## Project settings and personal preferences
 
-Use `openrua --setup` to edit defaults through the TUI, `openrua config set`
-to update selected fields from a shell, or edit `~/.openrua/config.yaml`
-directly. These are three interfaces to one file. For example:
+Use `openrua --setup` or `openrua config set` in your project to save its
+robot, simulator, benchmark, agent and model selection. The setup screen
+and CLI write `.openrua/settings.json` in that project. For example:
 
 ```sh
 openrua config set --robot panda --sim robosuite --agent codex
 openrua config show
 ```
 
-`config set --bench null` clears a saved benchmark selection. Changing defaults
-affects subsequent starts; it does not reconfigure a running conversation.
+Selected simulation declarations and build files are copied into project
+`configs/`. Project references are relative to its root. A normal launch's
+flags apply only to that run. `config set --bench null` explicitly saves a
+choice of the simulator's native scene. See [projects](projects.md).
 
-`~/.openrua/config.yaml` holds what is true on this machine and nowhere
-else: the robot, simulator, benchmark and agent a command uses when it
-names none; under `agents.<name>`, what this machine knows about each
-agent (the model it runs, a CLI version pin, its login directory, its
-default options); and under rootless Podman the sandbox's
-`--userns=keep-id`. `openrua config set` writes it (`--model`,
-`--version` and `--credentials-dir` land under the agent named with
-`--agent`, else the default one). Every key is optional; a benchmark
-config overrides the file, and command-line flags override both. A
-model belongs to an agent, so a benchmark's `agent.model` applies only
-when that agent runs; `--agent` switching to another agent takes that
-agent's facts and default model. The keys are listed in
-[config.md](config.md#userconfig).
+`openrua config set --user` edits personal agent preferences and authentication
+in `~/.openrua/config.yaml`. The user file also accepts sandbox options such as
+rootless Podman's `--userns=keep-id`. Robot, simulator and benchmark defaults
+belong to the project and are not accepted in this file.
+
+```sh
+openrua config set --user --agent codex --model MODEL
+openrua config show --user
+```
+
+Personal model, CLI version and login-directory facts live under
+`agents.<name>`. A benchmark's authored agent facts override personal defaults
+for that agent; explicit project model and command-line choices are applied
+by the project entry point. See [config.md](config.md#userconfig).
 
 ## The user directory
 
 `~/.openrua` (`$OPENRUA_HOME`, `--home`) holds your defaults in
-`config.yaml`, logins in `credentials/`, the robots `openrua connect`
-connected on this computer in `robots/<name>/`, and session files in
+`config.yaml`, logins in `credentials/`, and session files in
 `sandboxes/<name>/` and `launches/<name>/`. Interrupting `up`, or calling `down`,
 stops the session's resources but retains its workspace, native agent
 profile (including any conversation records written by the agent), logs
@@ -381,7 +383,7 @@ CLI. Inside the sandbox the CLIs' own updaters are off.
 pip install -U openrua                   # then rebuild: a simulator image carries the package too
 openrua build --all                      # rebuild every simulator image (cached layers make it quick)
 pip uninstall openrua
-rm -r ~/.openrua                         # defaults, logins, connected robots' folders, sandboxes
+rm -r ~/.openrua                         # personal preferences, logins and retained session state
 docker image rm $(docker image ls -q 'openrua-*')
 ```
 

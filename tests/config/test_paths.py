@@ -7,7 +7,8 @@ from openrua.config import paths
 from openrua.errors import NotFound
 
 
-def test_home_defaults_and_overrides(tmp_path):
+def test_home_defaults_and_overrides(tmp_path, monkeypatch):
+    monkeypatch.setattr(paths, "DEFAULT_HOME", "~/.openrua")
     assert paths.home() == Path("~/.openrua").expanduser()
     assert paths.home(tmp_path) == tmp_path
     assert paths.credentials_dir(tmp_path) == tmp_path / "credentials"

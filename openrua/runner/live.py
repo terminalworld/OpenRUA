@@ -224,8 +224,6 @@ def open_robot(request: RobotRequest, *, interactive: bool = False, resolved=Non
         project.prepare(cfg, project_root, materials)
         from openrua.runner.skills import prepare as prepare_skills
         skill_mounts = prepare_skills(project_root, request.home, adapter, materials)
-        projects.save_selection(project_root, dict(robot=composed.robot, sim=composed.simulator or '',
-                                                   bench=composed.benchmark or '', agent=cfg_agent['name'], model=model))
         workdir = project.run_directory(project_root, request.name)
         mounts = (*(m for m in mounts if not m.endswith(":/robot:ro")), f"{materials}:/robot:ro")
         if skill_mounts:
@@ -258,7 +256,8 @@ def open_robot(request: RobotRequest, *, interactive: bool = False, resolved=Non
             chosen = cfg_agent['name'] + ('@' + adapter.version if adapter.version else '')
             connection = Connection(replace(request, agent=chosen, model=model, project=project_root,
                                             robot=None if composed.robot.startswith('(') else composed.robot,
-                                            simulator=composed.simulator or '', benchmark=composed.benchmark or ''),
+                                            simulator=composed.simulator or '',
+                                            benchmark=composed.source if composed.benchmark else ''),
                                     composed, workdir, config_path, domain, network, sandbox_name)
             guide(materials if project_root is not None else workdir / 'workspace')
             machine = connection
@@ -317,7 +316,7 @@ def open_robot(request: RobotRequest, *, interactive: bool = False, resolved=Non
                    # What the terminal shows in its header; the resolved config is
                    # the source and these are its names, not a second copy of facts.
                    robot=composed.robot, robot_model=robot.get("model"),
-                   simulator=composed.simulator, benchmark=composed.benchmark,
+                   simulator=composed.simulator, benchmark=composed.source if composed.benchmark else '',
                    suite=suite, task_id=task_id, init_state=request.init_state)
     except BaseException:
         stop_resources(sandbox_name, machine.shutdown)

@@ -12,8 +12,8 @@ GUIDANCE = """\
 ## OpenRUA robot project
 
 This directory is a persistent robot coding project, shared by its sessions.
-The current robot's documentation, starter tools and machine.yaml are under
-/robot. Start with /robot/README.md. These files describe this connection;
+When connected, the robot's documentation, starter tools and machine.yaml are
+under /robot. Start with /robot/README.md. These files describe this connection;
 files from earlier sessions describe earlier observations and machines.
 
 Before starting work, read this project's existing instructions, code and
@@ -48,6 +48,14 @@ verify the result, and record what a later session needs to continue.
 
 def prepare(cfg: dict, root: Path, materials: Path) -> None:
     """Preserve project contents; seed current robot materials outside them."""
+    initialize(root)
+    seed(cfg, materials)
+    for document in materials.rglob('*.md'):
+        document.write_text(document.read_text().replace('python3 tools/', 'python3 /robot/tools/'))
+
+
+def initialize(root: Path) -> None:
+    """Add project guidance once, retaining existing files and instructions."""
     root.mkdir(parents=True, exist_ok=True)
     metadata = root / ".openrua"
     if metadata.is_symlink() or (metadata.exists() and not metadata.is_dir()):
@@ -66,9 +74,14 @@ def prepare(cfg: dict, root: Path, materials: Path) -> None:
             with instructions.open("a") as stream:
                 stream.write(("\n\n" if instructions.stat().st_size else "") + GUIDANCE)
             marker.write_text("OpenRUA robot project\n")
-    seed(cfg, materials)
-    for document in materials.rglob('*.md'):
-        document.write_text(document.read_text().replace('python3 tools/', 'python3 /robot/tools/'))
+        ignore = root / '.gitignore'
+        if ignore.is_symlink():
+            raise SandboxError(f'project ignore file must not be a symlink: {ignore}')
+        lines = ignore.read_text().splitlines() if ignore.exists() else []
+        missing = [pattern for pattern in ('.openrua/runs/', '.openrua/connect/', '.openrua/*.lock')
+                   if pattern not in lines]
+        if missing:
+            ignore.write_text('\n'.join([*lines, *missing]) + '\n')
 
 
 def run_directory(root: Path, name: str, *, records: Path | None = None) -> Path:

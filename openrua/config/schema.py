@@ -299,6 +299,8 @@ class RealBackend(Strict):
         "built from a directory here: image name -> directory holding its Dockerfile, "
         "relative to this file (as docker compose's build:). A missing one is built "
         "before a session starts; openrua build driver --robot <this file> rebuilds them")
+    images: dict[str, str] = Field(default_factory=dict, description='resolved build name to content-addressed image; '
+                                   'generated from backend.build. Pass an image explicitly in launch with {images[name]}')
     startup_checks: list[StartupCheck] = Field(
         default_factory=list, description="what has to be true before the robot starts "
         "(its controller answers, its devices are plugged in), checked before every "
@@ -881,20 +883,12 @@ class ResolvedConfig(Strict):
 
 
 class UserConfig(Strict):
-    """A defaults file: the package's configs/config.yaml or ~/.openrua/config.yaml.
-    Four default names (robot, simulator, benchmark, agent) and, per agent
-    name, this machine's facts about it."""
+    """Personal agent preferences and sandbox settings on this computer."""
     agent: str | None = Field(default=None, description="agent when a command names none "
                               "(openrua agents lists them)")
     agents: dict[str, AgentFacts] = Field(default_factory=dict, description="agent name -> "
                                           "this machine's facts about it (model, version, "
                                           "credentials_dir, options)")
-    robot: str | None = Field(default=None, description="robot when a command names none")
-    simulator: str | None = Field(default=None, description="simulator when a command "
-                                  "names none (and the robot is a type)")
-    benchmark: str | None = Field(default=None, description="benchmark whose world "
-                                  "a session loads when --bench is not given; null = "
-                                  "the simulator's native scene")
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig, description="how this "
                                    "machine starts the sandbox")
 

@@ -227,10 +227,9 @@ def test_doctor_without_robot_honors_selected_default_and_custom_manifest(tmp_pa
 
 def test_doctor_without_robot_checks_the_saved_robot_as_openrua_would_start_it(tmp_path):
     import yaml
-    (tmp_path / "config.yaml").write_text(yaml.safe_dump({"robot": "panda",
-                                                          "simulator": "robosuite"}))
+    (tmp_path / "config.yaml").write_text("{}\n")
     seen = []
-    report = doctor.run(home=tmp_path, checks=(lambda ctx: seen.append(
+    report = doctor.run(robot="panda", sim="robosuite", home=tmp_path, checks=(lambda ctx: seen.append(
         (ctx.robot, ctx.sim, ctx.cfg["machine"]["backend"]["kind"])) or [],))
     assert report.ok, report.render()
     assert seen == [("panda", "robosuite", "sim")]

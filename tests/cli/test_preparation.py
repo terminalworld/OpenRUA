@@ -17,7 +17,7 @@ def values():
 def test_build_plan_uses_benchmark_image_and_its_ros_distro(tmp_path):
     cfg = compose(None, None, 'robocasa365', tmp_path, agent='codex')
     plan = preparation.image_commands(cfg)
-    assert plan[0] == ('openrua-sim-robocasa365', ['build', '--bench', 'robocasa365'])
+    assert plan[0] == ('openrua-sim-robocasa365', ['build', '--bench', cfg.source])
     assert plan[1][0] == 'openrua-sandbox-humble'
     assert plan[1][1][-2:] == ['--agent', 'codex']
     assert 'humble' in plan[1][1]

@@ -22,11 +22,11 @@ openrua
 The runtime is included. No separate Node/npm install or frontend flag is needed
 (`--tui pi` remains an explicit alias for this terminal).
 Use arrows and Enter to choose robot, simulator, benchmark, agent and model;
-Escape returns to the previous menu. Only environment combinations with recorded
-startup checks are offered, with dependent fields updated together. Custom
-profiles remain available through explicit CLI options and config files.
-**Connect a real robot** opens `openrua connect` for the robot folder
-`~/.openrua/robots/my-robot/` ([connect.md](connect.md)).
+Escape returns to the previous menu. The selector offers bundled starting combinations and the current project
+configuration. Dependent fields update together; maintained files remain
+editable in the project.
+**Connect a real robot** opens `openrua connect` inside
+the current coding project ([connect.md](connect.md)).
 
 Before a session starts, `openrua` offers a newer agent CLI at most once a
 day: update now (rebuilds the sandbox image), skip, or skip until the next
@@ -38,8 +38,7 @@ real robot takes no saved simulator or benchmark default, only one named on the
 command line. A custom environment
 selected by a file path, including a saved default, is validated and prepared
 before opening chat directly; it is not replaced by a guided-menu selection.
-Use the file or `openrua config set` to edit custom defaults. `--setup` remains
-the selector for tested bundled environments. Custom benchmark paths are kept
+Use the file or `openrua config set` to edit custom defaults. `--setup` edits the current project or selects another starting environment. Custom benchmark paths are kept
 as paths throughout startup, so their settings are not replaced by an internal
 benchmark name.
 
@@ -60,17 +59,17 @@ their own guides and are not added to the default agent list.
 See [API configuration](install.md#explicit-api-authentication) for CLI commands
 and file permissions. Local checks do not call a model or verify account quota.
 
-**Prepare and start** saves a valid selection, sets up Docker when it is
+**Save project and start** saves a valid selection, sets up Docker when it is
 missing or not usable (the commands are shown and run only on a yes; see
 [Docker](install.md#docker)), builds missing images with logs, offers the
 agent's sign-in when it is not signed in, checks readiness and opens chat.
 **Connect a real robot** sets up the same two first. Existing images are
-reused. **Save and check preparation** only checks preparation. Logs remain in
+reused. **Save project and check preparation** only checks preparation. Logs remain in
 `~/.openrua/preparation/` for retry. See [setup validation](setup-validation.md)
 and [your agent's login](install.md#your-agents-login).
 
-Use `openrua --setup`, `openrua config set`, or `config.yaml` to change the same
-shared defaults. Each ordinary launch creates a new ID in the current project
+Use `openrua --setup`, `openrua config set`, or `.openrua/settings.json`
+to change project settings. Each ordinary launch creates a new ID in the current project
 directory; the first use asks whether you trust it. `--workspace DIR` selects
 another project. `/resume` in chat, the setup menu's resume entry, or
 `openrua --resume` searches this project's history, sessions still running

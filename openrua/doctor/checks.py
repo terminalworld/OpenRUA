@@ -320,9 +320,6 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
         report.checks.append(CheckResult("configuration", "invalid configuration", "error",
                                          detail=str(exc), hint="openrua config schema lists supported keys"))
         return report
-    if not (robot or bench) and user.robot:
-        # Nothing named: check what `openrua` would start, the saved defaults.
-        robot, sim, bench = user.robot, sim or user.simulator, user.benchmark
     if robot or bench:
         try:
             composed = compose(robot, sim, bench, home)

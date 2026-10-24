@@ -88,11 +88,11 @@ def test_project_selection_outlives_changes_to_global_defaults(tmp_path):
     root.mkdir(); home.mkdir()
     projects.save_selection(root, dict(robot='panda', sim='robosuite', bench='', agent='codex', model='project-model',
                                        auth_mode='api', api_key_file='private-key', name='ignored'))
-    (home / 'config.yaml').write_text('robot: panda\nsimulator: maniskill\nbenchmark: maniskill\nagent: claude-code\n')
+    (home / 'config.yaml').write_text('agent: claude-code\n')
     args = build_parser().parse_args(['--home', str(home), '--workspace', str(root)])
     values, _ = start.values_for(args)
     assert (values['robot'], values['sim'], values['bench'], values['agent'], values['model']) == (
-        'panda', 'robosuite', '', 'codex', 'project-model')
+        str(root / 'configs/robots/panda.yaml'), str(root / 'configs/simulators/robosuite.yaml'), '', 'codex', 'project-model')
     contents = (root / '.openrua/settings.json').read_text()
     assert 'private-key' not in contents and 'auth_mode' not in contents
 

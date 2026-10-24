@@ -7,19 +7,21 @@ read_when:
 
 # Connect a real robot
 
-Start in your robot project directory, or select one with `--workspace DIR`.
-The first use asks whether you trust that directory. Driver setup still has
-its own robot folder; once connecting succeeds, the conversation moves to the
-project you selected and saves that robot as its project default.
+Start in your robot project directory, or select one with `-C DIR`.
+The first use asks whether you trust that directory. The agent works in this
+project throughout connection and later operation.
 
 ```bash
-openrua connect my-arm            # or: openrua, then "Connect a real robot"
+mkdir my-robot-project
+cd my-robot-project
+openrua connect
 ```
 
-The setup menu's entry connects a robot named `my-robot`, in
-`~/.openrua/robots/my-robot/`. When Docker is not ready or your agent is
-not signed in yet, OpenRUA offers to set that up first
-([install.md](install.md#docker)).
+OpenRUA creates missing `robot.yaml`, `driver/`, `cameras/` and `CONNECT.md`
+in the project root. Existing files are retained. `--dir robot` places the
+adaptation in a project subdirectory while keeping the whole project as the
+agent's workspace. The setup screen's **Connect a real robot** uses the same
+path. Docker setup and native sign-in are offered when needed.
 
 Before opening the connecting terminal, OpenRUA builds its sandbox image if
 missing, using your selected agent and ROS distro (`--distro jazzy` by default,
@@ -79,8 +81,8 @@ restart Docker or change its storage directories automatically.
 This opens a session whose terminal reaches what connecting a robot
 needs: this computer's docker, its network (the robot's controller and
 ROS 2 graph) and its devices (read-only, under `/host/dev`), working in
-the robot's folder, `~/.openrua/robots/my-arm/` (`--dir` names another;
-an existing folder goes on from what is in it). Your coding agent finds
+the coding project. The initial message names the adaptation directory. An
+existing project continues from its maintained files. Your coding agent finds
 out what the robot is, builds and starts its ROS 2 drivers and writes
 the robot's config, as an engineer would with you beside the robot. It
 asks you for what only a person can do (power, brakes, the vendor's web
@@ -97,7 +99,7 @@ command that changes something: the session starts with
 | `cameras/` | one camera type per camera model |
 | `CONNECT.md` | the steps, written for the agent |
 
-`.openrua-checks/` holds each check's output and is ignored by git. The
+`.openrua/connect/<session>/` in the project holds each check's output. The
 folder is self-contained: another lab with the same robot uses it as it
 is (`openrua --robot <folder>/robot.yaml`).
 

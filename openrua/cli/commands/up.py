@@ -13,7 +13,7 @@ import signal
 from pathlib import Path
 
 from openrua import config
-from openrua.cli import agent_settings, updates
+from openrua.cli import updates
 from openrua.cli import workspace
 from openrua.config import paths, projects
 from openrua.runner.control import serve_control
@@ -120,12 +120,10 @@ def run(args) -> int:
     if selected is None:
         return 0
     args.workspace = str(selected)
-    saved = projects.selection(selected)
-    requested_agent = args.agent
-    saved['model'] = agent_settings.project_model(saved, requested_agent)
-    for key, value in saved.items():
-        if getattr(args, key, None) is None:
-            setattr(args, key, value)
+    chosen = projects.options(selected, {key: getattr(args, key, None) for key in projects.FIELDS},
+                              relative_to=Path.cwd())
+    for key, value in chosen.items():
+        setattr(args, key, value)
     return asyncio.run(_run(args))
 
 

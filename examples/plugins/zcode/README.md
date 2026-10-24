@@ -26,7 +26,7 @@ selection's `modelId`, then:
 
 ```bash
 plugin="$(pwd)/examples/plugins/zcode/agent.yaml"
-openrua config set --agent "$plugin" --auth native
+openrua config set --user --agent "$plugin" --auth native
 openrua doctor --agent "$plugin"
 ```
 
@@ -95,7 +95,7 @@ From the root of the OpenRUA checkout, after completing the ordinary
 ```bash
 plugin="$(pwd)/examples/plugins/zcode/agent.yaml"
 chmod 600 /absolute/path/to/bigmodel.key
-openrua config set --agent "$plugin" --auth api --api-key-file /absolute/path/to/bigmodel.key
+openrua config set --user --agent "$plugin" --auth api --api-key-file /absolute/path/to/bigmodel.key
 openrua doctor --agent "$plugin"
 ```
 

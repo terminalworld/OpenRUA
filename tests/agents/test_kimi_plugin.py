@@ -23,7 +23,7 @@ def test_external_manifest_uses_the_existing_contract_without_becoming_a_default
 
 def test_api_configuration_and_private_profile_do_not_load_native_credentials(tmp_path):
     key = tmp_path / 'key'; key.write_text('synthetic-kimi-key')
-    args = build_parser().parse_args(['--home', str(tmp_path), 'config', 'set',
+    args = build_parser().parse_args(['--home', str(tmp_path), 'config', 'set', '--user',
         '--agent', str(MANIFEST), '--auth', 'api', '--api-key-file', str(key)])
     configure.run(args)
     assert config.compose('panda', 'robosuite', None, tmp_path).cfg['agent']['auth']['mode'] == 'api'

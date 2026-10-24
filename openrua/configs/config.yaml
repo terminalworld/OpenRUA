@@ -1,6 +1,3 @@
-# Package defaults. The user's ~/.openrua/config.yaml overrides these key
-# by key; a benchmark config overrides both; command-line flags win last.
-# Four default names (robot, simulator, benchmark, agent); an agent's
-# machine facts (model, version, credentials_dir, options) go under
-# agents.<name> in the user's file.
+# Personal defaults. Project environments live in .openrua/settings.json.
+# Agent preferences, authentication and sandbox settings belong to the user.
 agent: claude-code
