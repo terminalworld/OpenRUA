@@ -195,11 +195,13 @@ model list without changing either setting. Confirmation applies the model
 and level together. `/model effort` changes only the current model's level;
 `/model <id>` remains available for custom models.
 
-Changes apply to the next turn. Messages sent while Codex works can join
+Codex changes apply to the next turn. Messages sent while Codex works can join
 the existing turn and keep its model. The terminal shows the dispatched
 turn's settings separately from the next-turn selection. The snapshot records
 the settings used when OpenRUA dispatched that turn.
 Older turns without a snapshot show that the running model was not reported.
+For an agent that does not declare next-turn application, the snapshot is
+labeled **turn started with**, alongside its latest model setting.
 
 ## Maintain the robot in the same conversation
 

@@ -279,6 +279,7 @@ class CodexConversation(ConversationProtocol):
             more = result.get('nextCursor')
             outbound = [self._request('model/list', {'limit': 100, 'cursor': more})] if more and self._model_pages < 5 else []
             return Update(outbound, [Event('setting', data={'setting': 'model', 'value': self.model,
+                                                           'effective_from': 'next_turn',
                                                            'choices': list(self._models.values())}), self._effort_setting()])
         if method == 'skills/list':
             text, self._skill_text = self._skill_text or '', None

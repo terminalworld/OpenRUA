@@ -194,6 +194,7 @@ class Session:
                     state["connected"] = True
             elif event.kind == "setting":
                 state.setdefault("settings", {})[event.data["setting"]] = event.data["value"]
+                state.setdefault('setting_effective_from', {})[event.data['setting']] = event.data.get('effective_from')
                 if 'choices' in event.data:
                     state.setdefault('setting_choices', {})[event.data['setting']] = event.data['choices']
             elif event.kind == "commands":

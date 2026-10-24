@@ -925,7 +925,8 @@ test('/model stages model and native effort, Escape goes back, one confirmation 
     {value: 'next-model', label: 'Next model', default_effort: 'medium', efforts: [
       {value: 'low', description: 'Native low'}, {value: 'medium', description: 'Native medium'}]},
   ];
-  await call({op: 'frame', frame: {kind: 'setting', data: {setting: 'model', value: 'first-model', choices: models}}});
+  await call({op: 'frame', frame: {kind: 'setting', data: {setting: 'model', value: 'first-model', choices: models,
+    effective_from: 'next_turn'}}});
   await call({op: 'frame', frame: {kind: 'setting', data: {setting: 'effort', value: 'high'}}});
   await until(client, s => s.settings?.effort === 'high'); await chat.refresh();
   await chat.submit('Inspect');
@@ -954,6 +955,12 @@ test('/model stages model and native effort, Escape goes back, one confirmation 
   const writes = (await call({op: 'writes'})).writes;
   assert.deepEqual(writes.filter(w => w.select_model), [{select_model: 'next-model', effort: 'medium'}]);
   assert.equal(writes.filter(w => w.configure || w.interrupt).length, 0);
+  // An agent without deferred-setting metadata only promises a starting
+  // snapshot, so the terminal must not describe it as the current model.
+  await call({op: 'frame', frame: {kind: 'setting', data: {setting: 'model', value: 'next-model'}}});
+  await until(client, s => s.setting_effective_from?.model === null); await chat.refresh();
+  assert.match(chat.status.text, /turn started with: first-model/);
+  assert.doesNotMatch(chat.status.text, /next turn:/);
 });
 
 test('the terminal offers every command the shared list gives it', async () => {

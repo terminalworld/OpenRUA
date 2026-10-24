@@ -308,6 +308,9 @@ alive independently of client connections.
   values before changing either, then report both settings. The execution
   owner applies this selection under one command lock, before dispatching
   another turn. Plugins without effort selection retain `configure`.
+  A `setting` event can declare `effective_from: next_turn`; clients then
+  distinguish the running turn from the next-turn selection. Without that
+  declaration, the dispatch snapshot is labeled as the turn's starting settings.
 - `commands` lists the agent's own commands (`name`, `description`); a
   client sends them as a message starting with `/`. A turn whose text is
   `/clear` starts a new native conversation: the plugin then reports

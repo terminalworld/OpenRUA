@@ -38,8 +38,8 @@ class FakeProtocol(ConversationProtocol):
                       [Event("setting", data={"setting": setting, "value": value})])
     def select_model(self, model, effort):
         return Update([{'select_model': model, 'effort': effort}],
-                      [Event('setting', data={'setting': 'model', 'value': model}),
-                       Event('setting', data={'setting': 'effort', 'value': effort})])
+                      [Event('setting', data={'setting': 'model', 'value': model, 'effective_from': 'next_turn'}),
+                       Event('setting', data={'setting': 'effort', 'value': effort, 'effective_from': 'next_turn'})])
 
 
 class FakeTransport:

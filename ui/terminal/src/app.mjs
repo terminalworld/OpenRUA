@@ -274,12 +274,13 @@ export class Chat {
       : tone[said.tone]({readonly: '◇ ', closed: '◇ ', paused: '‖ ', ready: '✓ ', waiting: '? '}[said.kind] + plain(said.text));
     const model = state.settings?.model || this.facts.model;
     const effort = state.settings?.effort;
+    const nextTurn = state.setting_effective_from?.model === 'next_turn';
     if (state.active) {
       const running = state.messages.find(message => message.id === state.active)?.turn_settings;
-      extra.push(muted(`running: ${plain(running?.model || 'model not reported')}`
+      extra.push(muted(`${nextTurn ? 'running' : 'turn started with'}: ${plain(running?.model || 'model not reported')}`
         + (running?.effort === undefined ? '' : ` · effort: ${plain(running.effort)}`)));
     }
-    if (model) extra.push(muted(`${state.active ? 'next turn' : 'model'}: ${plain(model)}`
+    if (model) extra.push(muted(`${state.active && nextTurn ? 'next turn' : 'model'}: ${plain(model)}`
       + (effort === undefined ? '' : ` · effort: ${plain(effort)}`)));
     this.status.setText([head, ...extra].join(muted(' · ')));
     this.keys.setText(muted(KEYS));
@@ -396,7 +397,8 @@ export class Chat {
         const now = state?.settings?.model || this.facts.model || 'not reported';
         const title = `Model setting: ${plain(now)}`
           + (state?.settings?.effort !== undefined ? ` · effort: ${plain(state.settings.effort)}` : '')
-          + '\nChanges apply to the next turn. An active turn keeps its model.';
+          + (state?.setting_effective_from?.model === 'next_turn'
+            ? '\nChanges apply to the next turn. An active turn keeps its model.' : '');
         if (this.client.readOnly) { this.say(title); return; }
         modelPicker(this);
       },

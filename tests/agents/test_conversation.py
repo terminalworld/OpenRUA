@@ -345,6 +345,8 @@ def test_codex_model_choices_come_from_native_metadata_without_a_model_turn():
     setting = update.events[0].data
     assert setting['value'] == 'resolved-model'
     assert setting['choices'][0]['value'] == 'gpt-6-astra'
+    assert setting['effective_from'] == 'next_turn'
+    assert setting['choices'][0]['default_effort'] == 'low'
     assert update.outbound[0]['params']['cursor'] == 'page-two'
     failed = protocol.receive({'id': update.outbound[0]['id'], 'error': {'message': 'metadata unavailable'}})
     assert failed.events[0].kind == 'native' and protocol.can_submit
