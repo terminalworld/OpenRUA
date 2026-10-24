@@ -43,6 +43,19 @@ is available at `/adapter/`. Driver updates retain the agent environment when
 possible; necessary tool changes hand over the conversation internally.
 See [connection maintenance](sessions.md#maintain-the-robot-in-the-same-conversation).
 
+To add a peripheral later, keep its Dockerfile and launch code in this same
+project. Add its image directory to `machine.backend.build` in `robot.yaml`
+and update `machine.backend.launch` (or its project script) to start it.
+Use the explicit `{images[image-name]}` slot to pass a declared image to the
+launch script, including the device arguments its native driver needs.
+Update the declared camera topics and any project startup checks as needed.
+Then restart through `/robot` or the agent's maintenance command. Restart
+reads the edited project configuration and builds missing declared images
+before replacing the running connection. A failed build leaves the running
+driver in place. Explicit **Build** also rebuilds declared images when needed.
+The launch script owns its child processes and releases their resources
+when stopped. See [launch ownership](your-own-robot.md#bringing-it-up) for the lifecycle.
+
 The robot's own terminal may use a different ROS distro from the connecting
 terminal. The `robot` check verifies the selected agent in that actual sandbox
 image and rebuilds it when needed before either test start. A bare Humble image

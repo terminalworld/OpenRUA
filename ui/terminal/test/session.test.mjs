@@ -913,6 +913,49 @@ test('/permissions and /model change the agent; its own commands go to it', {tim
   assert.match(chat.notice.text, /Unknown command/);
 });
 
+test('/model stages model and native effort, Escape goes back, one confirmation applies both', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 20});
+  t.after(() => chat.stop());
+  void chat.run();
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(r => setTimeout(r, 10));
+  const models = [
+    {value: 'first-model', label: 'First model', efforts: [{value: 'high'}]},
+    {value: 'next-model', label: 'Next model', default_effort: 'medium', efforts: [
+      {value: 'low', description: 'Native low'}, {value: 'medium', description: 'Native medium'}]},
+  ];
+  await call({op: 'frame', frame: {kind: 'setting', data: {setting: 'model', value: 'first-model', choices: models}}});
+  await call({op: 'frame', frame: {kind: 'setting', data: {setting: 'effort', value: 'high'}}});
+  await until(client, s => s.settings?.effort === 'high'); await chat.refresh();
+  await chat.submit('Inspect');
+  const active = (await client.snapshot()).state.active;
+  await call({op: 'frame', frame: {kind: 'turn_started', turn_id: active, data: {}}});
+  await chat.refresh();
+  chat.editor.setText('Keep my draft');
+  const key = async input => { terminal.input(input); await new Promise(r => setTimeout(r, 30)); };
+  await chat.submit('/model');
+  await key('\x1b[B'); await key('\r');
+  assert.match(chat.panel.component.render(80).join('\n'), /Select Reasoning Level for Next model/);
+  assert.match(chat.panel.component.render(80).join('\n'), /medium \(default\)/);
+  assert.equal((await client.snapshot()).state.settings.model, 'first-model');
+  await key('\x1b');
+  assert.match(chat.panel.component.render(80).join('\n'), /Select Model/);
+  assert.equal((await client.snapshot()).state.settings.model, 'first-model');
+  // Back keeps the proposed model highlighted; its own default, not the old
+  // model's unsupported high effort, is highlighted in the next step.
+  await key('\r'); await key('\r');
+  await until(client, s => s.settings?.model === 'next-model' && s.settings?.effort === 'medium');
+  await chat.refresh();
+  assert.equal(chat.panel, null);
+  assert.match(chat.status.text, /running: first-model.*high/);
+  assert.match(chat.status.text, /next turn: next-model.*medium/);
+  assert.equal(chat.editor.getText(), 'Keep my draft');
+  const writes = (await call({op: 'writes'})).writes;
+  assert.deepEqual(writes.filter(w => w.select_model), [{select_model: 'next-model', effort: 'medium'}]);
+  assert.equal(writes.filter(w => w.configure || w.interrupt).length, 0);
+});
+
 test('the terminal offers every command the shared list gives it', async () => {
   // One list of commands for every client (openrua/web/session.mjs); a
   // command added there without a handler here fails this.

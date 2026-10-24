@@ -302,6 +302,12 @@ alive independently of client connections.
   command that changes something) or `auto`; `model` is a model ID. The
   plugin reports `setting` once in effect (and the starting values when
   ready), or `setting_rejected`. The default raises `NotImplementedError`.
+  Model choices can include `efforts` (the same value, label and description
+  fields) and `default_effort`, supplied by the native agent. A plugin that
+  supplies these implements `select_model(model, effort)`: validate both
+  values before changing either, then report both settings. The execution
+  owner applies this selection under one command lock, before dispatching
+  another turn. Plugins without effort selection retain `configure`.
 - `commands` lists the agent's own commands (`name`, `description`); a
   client sends them as a message starting with `/`. A turn whose text is
   `/clear` starts a new native conversation: the plugin then reports

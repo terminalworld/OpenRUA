@@ -36,6 +36,10 @@ class FakeProtocol(ConversationProtocol):
     def configure(self, setting, value):
         return Update([{"configure": setting, "value": value}],
                       [Event("setting", data={"setting": setting, "value": value})])
+    def select_model(self, model, effort):
+        return Update([{'select_model': model, 'effort': effort}],
+                      [Event('setting', data={'setting': 'model', 'value': model}),
+                       Event('setting', data={'setting': 'effort', 'value': effort})])
 
 
 class FakeTransport:
@@ -264,6 +268,24 @@ def test_configure_reaches_the_agent_at_once(tmp_path):
         assert {"configure": "permissions", "value": "ask"} in transport.writes
         assert store.snapshot()["state"]["settings"] == {"permissions": "ask"}
         await execution.close()
+    asyncio.run(run())
+
+
+def test_model_and_effort_selection_is_complete_before_the_next_dispatch(tmp_path):
+    async def run():
+        store, session, transport, execution = await setup(tmp_path)
+        try:
+            await execution.command('select_model', model='selected-model', effort='medium')
+            message = await execution.command('enqueue', client_id='person', request_id='next', text='Inspect')
+            snapshot = store.snapshot()['state']
+            assert snapshot['settings'] == {'model': 'selected-model', 'effort': 'medium'}
+            assert snapshot['messages'][0]['turn_settings'] == snapshot['settings']
+            selection, dispatched = [i for i, frame in enumerate(transport.writes)
+                                     if 'select_model' in frame or frame.get('submit') == message['id']]
+            assert selection < dispatched
+        finally:
+            await execution.close()
+            store.close()
     asyncio.run(run())
 
 

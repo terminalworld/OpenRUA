@@ -129,15 +129,15 @@ test('slow review status does not block the normal conversation poll', {timeout:
 
 test('model setting is visible and the native model menu changes the next-turn configuration', {timeout: 5000}, async t => {
   const {chat, calls} = await setup(t);
-  assert.match(chat.status.render(140).join('\n'), /model setting: gpt-5.6-sol/);
+  assert.match(chat.status.render(140).join('\n'), /model: gpt-5.6-sol/);
   await chat.submit('/model');
-  assert.match(chat.panel.component.render(100).join('\n'), /Model setting: gpt-5.6-sol/);
+  assert.match(chat.panel.component.render(100).join('\n'), /Select Model/);
   assert.match(chat.panel.component.render(100).join('\n'), /GPT-6 Astra/);
   assert.equal(chat.panel.component.children[1].getSelectedItem().value, 'gpt-5.6-sol');
   assert.equal(calls.some(call => call.command), false);
   await choose(chat, 1);
   assert.equal(calls.find(call => call.command)?.params.value, 'gpt-6-astra');
-  assert.match(chat.status.render(140).join('\n'), /model setting: gpt-6-astra/);
+  assert.match(chat.status.render(140).join('\n'), /model: gpt-6-astra/);
 });
 
 test('a running review can be canceled explicitly without ending the robot conversation', {timeout: 5000}, async t => {

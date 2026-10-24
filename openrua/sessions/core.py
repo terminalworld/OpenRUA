@@ -121,6 +121,7 @@ class Session:
                         if notes:
                             message['context_note'] = '\n'.join(notes)
                     message["status"] = "dispatching"
+                    message['turn_settings'] = dict(state.get('settings', {}))
                     state["active"] = message["id"]
                     return message, [_event("dispatch_started", message_id=message["id"])]
             return None, []

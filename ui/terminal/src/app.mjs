@@ -7,6 +7,7 @@ import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
 import {projectMenu, updateReview} from './project.mjs';
 import {robotMenu} from './robot.mjs';
+import {modelPicker} from './model.mjs';
 
 const commands = commandsFor('terminal');
 
@@ -127,7 +128,7 @@ export class Chat {
     box.addChild(new Text(muted('↑/↓ select · Enter confirm · Esc back'), 0, 1));
     box.handleInput = data => { if (!heading.handleInput(data)) menu.handleInput(data); };
     const handle = this.dialog(box, options);
-    menu.onCancel = () => handle.hide();
+    menu.onCancel = () => { handle.hide(); options.onCancel?.(); };
     menu.onSelect = item => {
       handle.hide();
       Promise.resolve().then(() => select(item.value)).catch(error => this.say(error.message));
@@ -148,7 +149,8 @@ export class Chat {
     Object.defineProperty(box, 'focused', {get: () => editor.focused, set: value => { editor.focused = value; }});
     box.handleInput = data => {
       if (heading.handleInput(data)) return;
-      if (matchesKey(data, 'escape')) handle.hide(); else editor.handleInput(data);
+      if (matchesKey(data, 'escape')) { handle.hide(); options.onCancel?.(); }
+      else editor.handleInput(data);
     };
     const handle = this.dialog(box, options);
     editor.onSubmit = text => {
@@ -271,8 +273,14 @@ export class Chat {
       ? accent(`${SPINNER[this.frame++ % SPINNER.length]} Working… ${elapsed(this.started)}`)
       : tone[said.tone]({readonly: '◇ ', closed: '◇ ', paused: '‖ ', ready: '✓ ', waiting: '? '}[said.kind] + plain(said.text));
     const model = state.settings?.model || this.facts.model;
-    if (model) extra.push(muted(`model setting: ${plain(model)}`));
-    if (state.settings?.effort !== undefined) extra.push(muted(`effort: ${plain(state.settings.effort)}`));
+    const effort = state.settings?.effort;
+    if (state.active) {
+      const running = state.messages.find(message => message.id === state.active)?.turn_settings;
+      extra.push(muted(`running: ${plain(running?.model || 'model not reported')}`
+        + (running?.effort === undefined ? '' : ` · effort: ${plain(running.effort)}`)));
+    }
+    if (model) extra.push(muted(`${state.active ? 'next turn' : 'model'}: ${plain(model)}`
+      + (effort === undefined ? '' : ` · effort: ${plain(effort)}`)));
     this.status.setText([head, ...extra].join(muted(' · ')));
     this.keys.setText(muted(KEYS));
     this.showPendingQuestion();
@@ -390,24 +398,7 @@ export class Chat {
           + (state?.settings?.effort !== undefined ? ` · effort: ${plain(state.settings.effort)}` : '')
           + '\nChanges apply to the next turn. An active turn keeps its model.';
         if (this.client.readOnly) { this.say(title); return; }
-        const choices = state?.setting_choices?.model ?? [];
-        this.picker(title, [
-          ...(!choices.some(choice => choice.value === now) && now !== 'not reported'
-            ? [{value: now, label: `✓ Current: ${plain(now)}`}] : []),
-          ...choices.map(choice => ({value: choice.value, label: `${now === choice.value ? '✓ ' : ''}${plain(choice.label || choice.value)}`,
-            description: plain(choice.description || choice.value)})),
-          {value: null, label: 'Enter a model ID…'},
-          ...(state?.settings?.effort !== undefined ? [{value: {effort: true}, label: `Reasoning effort: ${plain(state.settings.effort)}…`}] : []),
-        ], async value => {
-          if (value?.effort) { this.effort(); return; }
-          const apply = async model => {
-            await this.configure('model', model.trim());
-            this.say(`Model setting: ${model.trim()} from the next turn.`);
-            if (this.controller.state?.settings?.effort !== undefined) this.effort();
-          };
-          if (value === null) this.editText('Model ID · applies to the next turn', String(now === 'not reported' ? '' : now), apply);
-          else await apply(value);
-        }, {selected: now});
+        modelPicker(this);
       },
       files: async () => { await browseWorkspace(this); },
       watch: async () => {

@@ -358,6 +358,21 @@ def test_codex_model_choices_come_from_native_metadata_without_a_model_turn():
     assert turn.outbound[0]['params']['effort'] == 'low'
 
 
+def test_codex_model_and_effort_selection_rejects_without_changing_either_setting():
+    protocol = ready()
+    protocol._models = {'new-model': {'efforts': [{'value': 'low'}, {'value': 'medium'}]}}
+    original = protocol.model, protocol.effort
+    with pytest.raises(ValueError, match='native effort'):
+        protocol.select_model('new-model', 'high')
+    assert (protocol.model, protocol.effort) == original
+    update = protocol.select_model('new-model', 'medium')
+    assert [(event.data['setting'], event.data['value']) for event in update.events] == [
+        ('model', 'new-model'), ('effort', 'medium')]
+    turn = protocol.submit('next', 'Continue')
+    assert turn.outbound[0]['params']['model'] == 'new-model'
+    assert turn.outbound[0]['params']['effort'] == 'medium'
+
+
 def test_codex_compact_runs_as_the_servers_turn():
     protocol = ready()
     request = protocol.submit("message-1", "/compact").outbound[0]

@@ -184,6 +184,23 @@ again. A preview reflects the bytes read at that time, not subsequent changes.
 File browsing is available while the service is running; after ending, retained
 files remain accessible on disk.
 
+## Select a model and reasoning level
+
+In the terminal, `/model` opens the native agent's model list with the
+current model selected. Choose a model, then its reasoning level when it
+offers several. The current model keeps its current level highlighted;
+another model starts at its native default. A model with one supported
+level applies directly. Escape from the reasoning picker returns to the
+model list without changing either setting. Confirmation applies the model
+and level together. `/model effort` changes only the current model's level;
+`/model <id>` remains available for custom models.
+
+Changes apply to the next turn. Messages sent while Codex works can join
+the existing turn and keep its model. The terminal shows the dispatched
+turn's settings separately from the next-turn selection. The snapshot records
+the settings used when OpenRUA dispatched that turn.
+Older turns without a snapshot show that the running model was not reported.
+
 ## Maintain the robot in the same conversation
 
 The project conversation, native agent connection, and robot runtime have

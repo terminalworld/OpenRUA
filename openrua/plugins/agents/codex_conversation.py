@@ -140,6 +140,16 @@ class CodexConversation(ConversationProtocol):
         return Event('setting', data={'setting': 'effort', 'value': self.effort, 'effective_from': 'next_turn',
                                       'choices': self._models.get(self.model, {}).get('efforts', [])})
 
+    def select_model(self, model: str, effort: str) -> Update:
+        if not isinstance(model, str) or not model.strip():
+            raise ValueError('name a model')
+        supported = {row['value'] for row in self._models.get(model, {}).get('efforts', [])}
+        if not isinstance(effort, str) or not effort.strip() or (supported and effort not in supported):
+            raise ValueError('choose a native effort level' + (': ' + ', '.join(sorted(supported)) if supported else ''))
+        self.model, self.effort = model, effort
+        return Update(events=[Event('setting', data={'setting': 'model', 'value': model,
+                                                    'effective_from': 'next_turn'}), self._effort_setting()])
+
     @property
     def can_steer(self) -> bool:
         return self.ready and self._active is not None and self._native_turn is not None
