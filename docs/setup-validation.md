@@ -59,7 +59,7 @@ claiming guided support.
 ## Preparation on the user's machine
 
 Recorded evidence does not mean that images or credentials are already present
-on another machine. **Prepare and start** validates the selected combination,
+on another machine. **Save project and start** validates the selected combination,
 sets up Docker when it is missing or not usable, builds missing images through
 the existing `openrua build` commands, offers the agent's sign-in when it is
 not signed in, then runs the preparation checks and starts the session. The simulator's ROS distribution
@@ -74,7 +74,7 @@ the sign-in is the agent's own, so OpenRUA never handles the account's password.
 
 Build output is streamed and retained in `~/.openrua/preparation/`. A failed
 build never launches the session. Retry reuses completed images and Docker's
-build cache. **Save and check preparation** does not download, build or start
+build cache. **Save project and check preparation** does not download, build or start
 a robot. Existing
 images are reused; declaration-change warnings still require an explicit rebuild.
 A proxy's whitelist is given when it starts and its name carries the hash of

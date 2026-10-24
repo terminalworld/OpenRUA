@@ -107,9 +107,9 @@ OpenRUA runs up to three containers: the robot (when simulated), the
 sandbox (the agent's terminal: `ros2`, `rclpy`, the docs, the agent's
 CLI) and, when a run limits the agent to its model service, the proxy
 (then the sandbox's route out, and for a simulated robot its only one; see
-[what the agent can reach](#what-the-agent-can-reach)). **Prepare and start** in the product TUI automatically builds missing
+[what the agent can reach](#what-the-agent-can-reach)). **Save project and start** in the product TUI automatically builds missing
 images for the selected environment and agent. Root `--cli` and `--gui` launches
-prepare them too. Browsing options or choosing **Save and check preparation**
+prepare them too. Browsing options or choosing **Save project and check preparation**
 never builds.
 First-time simulation builds can download large datasets. Progress is displayed,
 and logs are retained under `~/.openrua/preparation/` for retry.
@@ -163,7 +163,7 @@ config (`backend.sandbox_install`) and gets a sandbox image of its own:
 `openrua build sandbox --robot ./my-robot.yaml`. A real robot whose
 launch command runs its driver in images of its own names them with the
 directories they are built from (`backend.build`); `openrua build driver
---robot ./my-robot.yaml` builds them. **Prepare and start** builds both
+--robot ./my-robot.yaml` builds them. **Save project and start** builds both
 when they are missing. See [your-own-robot.md](your-own-robot.md).
 
 In the sandbox, `$HOME` is `/workspace`, so whatever the agent writes

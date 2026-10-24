@@ -84,13 +84,15 @@ and notes stay here across sessions. Opening the same directory again starts
 a new conversation; `--resume` finds this project's earlier ones, and
 `--resume --all` searches every project ([robot projects](docs/projects.md)).
 
-**A simulated robot.** In the setup menu, pick a robot and a scene, then
-**Prepare and start**. The first start builds the images, which takes a few
-minutes. Then tell the agent what you want, for example:
+**A simulated robot.** Choose **Simulation**, then **Native scene** or
+**Benchmark environment** and an environment. Review the selection, adjust
+**Agent settings** if needed, then choose **Save project and start**. The first
+start builds the images, which takes a few minutes. Then tell the agent what you want, for example:
 
 > Look through the cameras and describe the scene, without moving the robot.
 
-**A real robot.** Choose **Connect a real robot** (or run `openrua connect`).
+**A real robot.** Choose **Real robot → Connect a new robot**, then
+**Connect robot** (or run `openrua connect`).
 Your agent sets the robot up with you, step by step, and OpenRUA checks each
 step, up to a first small motion with the emergency stop at hand
 ([Connect a real robot](docs/connect.md)).

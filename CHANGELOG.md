@@ -9,6 +9,11 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.24.1
+
+- Align the README, setup, installation and session guides with the fullscreen
+  environment hierarchy, current preparation labels and exit-menu controls.
+
 ## 0.24.0
 
 - Open a persistent fullscreen terminal with a project header, scrollable
