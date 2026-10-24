@@ -44,6 +44,30 @@ def test_user_agent_preferences_are_explicit_and_isolated(tmp_path, monkeypatch)
         run(home, 'config', 'set', '--auth', 'native')
 
 
+@pytest.mark.parametrize('model', ['gpt-5.4', 'provider/model-1.2', 'claude-opus-4-6'])
+def test_model_ids_remain_unchanged_after_saving_copying_and_overriding(tmp_path, monkeypatch, model):
+    import shutil
+    from openrua.cli.commands import start
+
+    root, moved, caller = (tmp_path / name for name in ('project', 'moved', 'caller'))
+    root.mkdir(); caller.mkdir()
+    monkeypatch.chdir(caller)
+    home = tmp_path / 'home'
+    run(home, 'config', 'set', '-C', str(root), '--trust-workspace',
+        '--robot', 'panda', '--sim', 'robosuite', '--agent', 'codex', '--model', model)
+    assert json.loads(projects.settings_path(root).read_text())['model'] == model
+    shutil.copytree(root, moved)
+    shutil.rmtree(root)
+    parser = build_parser()
+    args = parser.parse_args(['--home', str(home), '-C', str(moved)])
+    values, _ = start.values_for(args)
+    assert values['model'] == model
+    args.model = 'other/provider-2.3'
+    values, _ = start.values_for(args)
+    assert values['model'] == args.model
+    assert projects.selection(moved)['model'] == model
+
+
 def test_external_source_must_be_brought_into_the_project_before_saving(tmp_path):
     project = tmp_path / 'project'; project.mkdir()
     file = tmp_path / 'robot.yaml'

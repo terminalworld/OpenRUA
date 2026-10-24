@@ -7,7 +7,7 @@ read_when:
 
 # Use your own robot
 
-A robot is a YAML file under `robots/`. The bundled ones (`openrua
+A robot is a YAML file in your project. The bundled ones (`openrua
 robots`) are robot *types*: the facts true of a Franka Panda wherever it
 runs, with no simulator in them; a simulator file says how it embodies
 them. Your real robot is an *instance*: the same kind of file with a

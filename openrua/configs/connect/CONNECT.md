@@ -39,7 +39,7 @@ into the same format: a starting point for `robot.yaml`'s machine facts.
 
 Each step is done when its check passes: `python3 /openrua-connect/check.py <step>`.
 OpenRUA runs the check on the host and prints the result; the full output
-is in `.openrua-checks/<step>.log`.
+is in the project's `.openrua/connect/<session>/<step>.log`.
 
 1. **This computer** (`host`): docker, disk space, the real-time limit,
    the devices present. What fails comes with the command that fixes it.
@@ -52,6 +52,12 @@ is in `.openrua-checks/<step>.log`.
    an image from `driver/` and named under `backend.build`. Each part,
    started on its own and only reading, shows its data (joint states,
    images, the gripper's state) before parts are combined.
+   Build names resolve to content-addressed tags. Pass the resolved image
+   into a host launch script explicitly, for example
+   `launch: python3 driver/up.py --image {images[driver]}` with
+   `build: {driver: driver}`; let the script accept `--image` rather than
+   hard-code the build name. If `backend.image` names a build, OpenRUA
+   resolves it to the same tag.
 4. **Together** (`probe`, then `config`): one command (`backend.launch`)
    starts every driver and stops them all on SIGINT, releasing the arm
    first if its driver needs that; names that collide between drivers are

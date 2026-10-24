@@ -130,12 +130,12 @@ def add_parser(sub) -> None:
                    help="the task, as a sentence: a real robot's, or a simulator's own "
                    "scene's (default: the scene's task)")
     p.add_argument('--robot', default=argparse.SUPPRESS,
-                   help="robot name or file (default: the project's, else your default)")
+                   help="robot name or file (default: the project's, else the benchmark's)")
     p.add_argument('-C', '--cd', '--workspace', dest='workspace', default=argparse.SUPPRESS,
                    help='persistent project directory (default: the current directory)')
     p.add_argument('--trust-workspace', action='store_true', default=argparse.SUPPRESS,
                    help='explicitly trust the project without an interactive question')
-    p.add_argument("--sim", default=None, help="simulator for a robot type (default: the project's or configured one)")
+    p.add_argument("--sim", default=None, help="simulator for a robot type (default: the project's, else the benchmark's)")
     p.add_argument("--bench", default=None, help="benchmark whose scene to load "
                    "(openrua benchmarks); default: the project's; an empty value selects the native scene")
     p.add_argument("--task-suite", default=None, help="scene suite (default: the scene's)")

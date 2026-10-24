@@ -174,7 +174,7 @@ def add_parser(sub) -> None:
                        "for `openrua agent`, the coding agent's own terminal on it.")
     p.add_argument("robot", nargs="?", default=None,
                    help="robot: a type or your robot's file (openrua robots), by name "
-                   "or path; default: --bench's robot, else the user config's default")
+                   "or path; default: this project's selection, else --bench's robot")
     add_options(p)
     p.add_argument('--model', default=None, help="model (default: the project's or configured agent's)")
     p.set_defaults(fn=run)

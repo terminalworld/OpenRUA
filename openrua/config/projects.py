@@ -67,6 +67,8 @@ def selection(directory: Path) -> dict[str, str]:
 
 
 def _absolute(value: str, directory: Path, key: str) -> str:
+    if key == 'model':
+        return value
     spec, pin = paths.split_pin(value) if key == 'agent' else (value, None)
     if spec and paths.is_path(spec):
         file = Path(spec).expanduser()

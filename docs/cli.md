@@ -304,15 +304,15 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
-  --robot ROBOT         robot name or file (default: the project's, else your
-                        default)
+  --robot ROBOT         robot name or file (default: the project's, else the
+                        benchmark's)
   -C WORKSPACE, --cd WORKSPACE, --workspace WORKSPACE
                         persistent project directory (default: the current
                         directory)
   --trust-workspace     explicitly trust the project without an interactive
                         question
-  --sim SIM             simulator for a robot type (default: the project's or
-                        configured one)
+  --sim SIM             simulator for a robot type (default: the project's,
+                        else the benchmark's)
   --bench BENCH         benchmark whose scene to load (openrua benchmarks);
                         default: the project's; an empty value selects the
                         native scene
@@ -370,8 +370,8 @@ it.
 
 positional arguments:
   robot                 robot: a type or your robot's file (openrua robots),
-                        by name or path; default: --bench's robot, else the
-                        user config's default
+                        by name or path; default: this project's selection,
+                        else --bench's robot
 
 options:
   -h, --help            show this help message and exit
@@ -507,8 +507,8 @@ options:
                         restart an ended project conversation without
                         replaying actions
   --connect FOLDER      connect a real robot instead (see openrua connect):
-                        FOLDER is the robot's adaptation folder, the
-                        connecting terminal's workspace
+                        FOLDER is the robot's adaptation folder inside the
+                        project workspace
   --distro {jazzy,humble}
                         with --connect: the connecting terminal's ROS 2
 ```

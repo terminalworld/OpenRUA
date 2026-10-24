@@ -12,7 +12,7 @@ STEP is one of:
   done     every check passed: the session moves to the robot's own terminal
 
 It waits for the result and prints it; the full output is in
-.openrua-checks/<step>.log in this folder. Exit status 0 means passed.
+.openrua/connect/<session>/<step>.log in the project. Exit status 0 means passed.
 """
 import json
 import sys
@@ -45,7 +45,7 @@ def main():
     if step == "done":
         print(started["summary"])
         return 0 if started["status"] == "passed" else 1
-    print(f"[check] {step}: running; output in .openrua-checks/{step}.log", flush=True)
+    print(f"[check] {step}: running; output under .openrua/connect/<session>/{step}.log in the project", flush=True)
     while True:
         state = call(endpoint, "/api/session")["state"]
         result = state.get("checks", {}).get(step, {})
