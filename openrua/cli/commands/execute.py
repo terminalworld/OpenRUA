@@ -24,9 +24,9 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-from openrua.cli import agent_settings, updates, workspace
+from openrua.cli import updates, workspace
 from openrua.cli.progress import Progress
-from openrua.config import compose, load_robot, paths, projects
+from openrua.config import compose, paths, projects
 from openrua.errors import UsageError
 from openrua.runner.limits import LIMITS, add_limit_options
 from openrua.runner.main import run_set
@@ -36,7 +36,7 @@ def _source(composed) -> Path:
     """The file the run's config was assembled from, for its record: the
     benchmark's, else the real robot's, else the simulator's."""
     if composed.benchmark:
-        return paths.find("benchmarks", composed.benchmark).resolve()
+        return Path(composed.source).resolve()
     if composed.cfg["machine"]["backend"]["kind"] == "real":
         return paths.find("robots", composed.robot).resolve()
     return paths.find("simulators", composed.simulator).resolve()
@@ -88,20 +88,10 @@ def run(args) -> int:
     root = workspace.choose(args.workspace or Path.cwd(), home, accept=args.trust_workspace)
     if root is None:
         return 0
-    saved = projects.selection(root)
-    sim = args.sim if args.sim is not None else saved.get('sim')
-    instance = robot is not None and load_robot(robot, home)[0] == 'instance'
-    if instance and args.sim is None:
-        sim = None
-    # A project keeps its scene when given a new task. Without a project
-    # selection, a sentence selects the simulator's own scene.
-    bench = args.bench if args.bench is not None else saved.get('bench', "" if task else None)
-    if instance and args.bench is None:
-        bench = ''
-    composed = compose(robot if robot is not None else saved.get('robot'),
-                       sim, bench, home,
-                       agent=args.agent if args.agent is not None else saved.get('agent'),
-                       model=args.model if args.model is not None else agent_settings.project_model(saved, args.agent))
+    chosen = projects.options(root, dict(robot=robot, sim=args.sim, bench=args.bench,
+                                        agent=args.agent, model=args.model), relative_to=Path.cwd())
+    composed = compose(chosen['robot'], chosen['sim'], chosen['bench'], home,
+                       agent=chosen['agent'], model=chosen['model'])
     real = composed.cfg["machine"]["backend"]["kind"] == "real"
     if real and not task:
         raise UsageError("a real robot's task is a sentence",
@@ -109,12 +99,8 @@ def run(args) -> int:
     suite = args.task_suite or composed.suite or "task"
     task_id = args.task_id if args.task_id is not None else (composed.task_id or 0)
     label = composed.benchmark or "-".join(
-        part for part in (Path(composed.robot).stem, composed.simulator) if part)
+        Path(part).stem for part in (composed.robot, composed.simulator) if part)
     run_id = args.run_id or datetime.now(timezone.utc).strftime("exec-%Y%m%d-%H%M%S")
-    projects.save_selection(root, dict(robot=composed.robot, sim=composed.simulator or '',
-                                      bench=composed.benchmark or '',
-                                      agent=args.agent if args.agent is not None else saved.get('agent') or composed.cfg['agent']['name'],
-                                      model=composed.cfg['agent'].get('model', '')))
     trials = argparse.Namespace(
         task=task, task_suite=suite, task_ids=[task_id], seeds=[args.seed], project=root,
         operator="agent", record=recording(args, real),

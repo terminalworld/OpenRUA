@@ -8,6 +8,9 @@ import os
 from pathlib import Path
 import tempfile
 
+from openrua.config import paths
+from openrua import __version__
+
 
 def resolve(directory: str | Path) -> Path:
     """Resolve this directory, without searching for a parent repository."""
@@ -60,7 +63,41 @@ def selection(directory: Path) -> dict[str, str]:
     value = json.loads(path.read_text())
     if not isinstance(value, dict) or set(value) - set(FIELDS) or not all(isinstance(v, str) for v in value.values()):
         raise ValueError(f'invalid project settings: {path}')
-    return value
+    return {key: _absolute(item, directory, key) for key, item in value.items()}
+
+
+def _absolute(value: str, directory: Path, key: str) -> str:
+    spec, pin = paths.split_pin(value) if key == 'agent' else (value, None)
+    if spec and paths.is_path(spec):
+        file = Path(spec).expanduser()
+        spec = str((directory / file).resolve())
+    return spec + (f'@{pin}' if pin else '')
+
+
+def options(directory: Path, overrides: dict, *, relative_to: Path) -> dict:
+    """Resolve explicit CLI choices over this project's saved choices."""
+    saved = selection(directory)
+    chosen = {key: (_absolute(overrides[key], relative_to, key)
+                    if overrides.get(key) is not None else saved.get(key)) for key in FIELDS}
+    if overrides.get('bench'):
+        from openrua.config.loader import load_benchmark
+        _, declaration = load_benchmark(chosen['bench'])
+        for key, field in (('robot', 'robot'), ('sim', 'simulator')):
+            if overrides.get(key) is None and declaration.get(field):
+                chosen[key] = declaration[field]
+    if overrides.get('agent') is not None and paths.agent_key(overrides['agent']) != paths.agent_key(saved.get('agent', '')):
+        chosen['model'] = overrides.get('model')
+    if overrides.get('robot') and paths.is_path(chosen['robot']) and any(saved.get(key) for key in ('sim', 'bench')):
+        from openrua.config.loader import load_robot
+        if load_robot(chosen['robot'])[0] == 'instance':
+            for key in ('sim', 'bench'):
+                if overrides.get(key) is None:
+                    chosen[key] = ''
+    return chosen
+
+
+def settings_path(directory: Path) -> Path:
+    return directory / '.openrua' / 'settings.json'
 
 
 def save_selection(directory: Path, values: dict[str, str]) -> None:
@@ -72,16 +109,31 @@ def save_selection(directory: Path, values: dict[str, str]) -> None:
     target = metadata / 'settings.json'
     if target.is_symlink():
         raise ValueError(f'project settings must not be a symlink: {target}')
+    dependencies = metadata / 'requirements.txt'
+    if dependencies.is_symlink():
+        raise ValueError(f'project dependency file must not be a symlink: {dependencies}')
+    from openrua.config.templates import instantiate
+    values = instantiate(directory, values)
     chosen = {key: values[key] for key in FIELDS}
     for key in ('robot', 'sim', 'bench', 'agent'):
         value = chosen[key]
         if value and ('/' in value or (Path(value).suffix and not (key == 'agent' and '@' in value))):
-            chosen[key] = str(Path(value).expanduser().resolve())
+            spec, pin = paths.split_pin(value) if key == 'agent' else (value, None)
+            file = Path(spec).expanduser().resolve()
+            try:
+                spec = './' + str(file.relative_to(directory.resolve()))
+            except ValueError:
+                if key != 'agent':
+                    raise ValueError(f'project configuration must be inside {directory}: {file}; copy its maintained files into the project first') from None
+                spec = str(file)
+            chosen[key] = spec + (f'@{pin}' if pin else '')
     fd, temporary = tempfile.mkstemp(prefix='.settings-', dir=metadata)
     try:
         with os.fdopen(fd, 'w') as stream:
             json.dump(chosen, stream, indent=2)
             stream.write('\n')
         os.replace(temporary, target)
+        if not dependencies.exists():
+            dependencies.write_text(f'openrua=={__version__}\n')
     finally:
         Path(temporary).unlink(missing_ok=True)

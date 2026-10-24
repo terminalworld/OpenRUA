@@ -39,10 +39,10 @@ from openrua.runner.preflight import run_preflight
 from openrua.sandbox.down import down as sandbox_down
 from openrua.sandbox.up import up as sandbox_up
 from openrua.sandbox.check import cli_ready
+from openrua.sandbox import project as project_files
 
 STEPS = ("host", "drivers", "probe", "config", "robot")
 TEMPLATES = Path(__file__).resolve().parents[1] / "configs" / "connect"
-CHECKS_DIR = ".openrua-checks"
 DISK_MIN_GB = 30
 
 
@@ -51,10 +51,10 @@ class ConnectRequest:
     home: Path
     name: str
     folder: Path
+    project: Path
     agent: str | None = None
     model: str | None = None
     distro: str = "jazzy"   # the connecting terminal's ROS 2 (the robot's comes later)
-    project: Path | None = None
 
 
 def robot_file(folder: Path) -> Path:
@@ -64,16 +64,22 @@ def robot_file(folder: Path) -> Path:
 def scaffold(folder: Path) -> None:
     """The folder's starting files; what is there already stays."""
     folder.mkdir(parents=True, exist_ok=True)
-    for sub in ("driver", "cameras", CHECKS_DIR):
+    for name in ('robot.yaml', 'CONNECT.md', 'driver', 'cameras'):
+        if (folder / name).is_symlink():
+            raise UsageError(f'robot adaptation files must be owned by this project: {folder / name}')
+    for sub in ("driver", "cameras"):
         (folder / sub).mkdir(exist_ok=True)
     if not robot_file(folder).exists():
         shutil.copyfile(TEMPLATES / "robot.yaml", robot_file(folder))
-    ignore = folder / ".gitignore"
-    lines = ignore.read_text().splitlines() if ignore.exists() else []
-    if f"{CHECKS_DIR}/" not in lines:
-        ignore.write_text("\n".join(lines + [f"{CHECKS_DIR}/"]) + "\n")
-    (folder / "CONNECT.md").write_text(
-        (TEMPLATES / "CONNECT.md").read_text().replace("{folder}", str(folder)))
+    instructions = folder / 'CONNECT.md'
+    if not instructions.exists():
+        instructions.write_text((TEMPLATES / 'CONNECT.md').read_text())
+
+
+def check_directory(request: ConnectRequest) -> Path:
+    directory = request.project / '.openrua' / 'connect' / request.name
+    directory.mkdir(parents=True, exist_ok=True)
+    return directory
 
 
 def _run(argv: list[str]) -> subprocess.CompletedProcess:
@@ -144,7 +150,12 @@ def open_connect(request: ConnectRequest, continuing: bool = False) -> LiveRobot
     session that already has its handle and profile (a move to the
     robot's own terminal that did not work out)."""
     folder = request.folder.expanduser().resolve()
+    root = request.project.expanduser().resolve()
+    if not folder.is_relative_to(root):
+        raise UsageError('robot adaptation files must be inside the project')
+    project_files.initialize(root)
     scaffold(folder)
+    check_directory(request)
     adapter, selected, model, user = _agent(request)
     try:
         key_file = agents.api_key_file(adapter, selected.get("auth"))
@@ -177,12 +188,12 @@ def open_connect(request: ConnectRequest, continuing: bool = False) -> LiveRobot
     _service_files(service)
     _, sandbox_name = state.container_names(request.name)
     dds_profile, dds_env = host_network_dds(request.distro, [])
-    print(f"[connect] terminal {sandbox_name}, working in {folder}", flush=True)
-    sandbox_up({"machine": {"workspace_template": None}}, folder,
+    print(f"[connect] terminal {sandbox_name}, working in project {root}", flush=True)
+    sandbox_up({"machine": {"workspace_template": None}}, root,
                image=sandbox_image(request.distro), network="host", internet="open",
                name=sandbox_name, seed_workspace=False, ros_domain=0,
                peers_xml=dds_profile, env=dds_env,
-               mounts=(*profile_mounts, f"{folder}:{folder}",
+               mounts=(*profile_mounts, f"{root}:{root}",
                        f"{socket}:{socket}", f"{Path(docker_cli).resolve()}:/usr/local/bin/docker:ro",
                        "/dev:/host/dev:ro", f"{service}:/openrua-connect:ro"),
                run_args=("--group-add", str(socket.stat().st_gid),
@@ -199,12 +210,9 @@ def open_connect(request: ConnectRequest, continuing: bool = False) -> LiveRobot
                agent_spec=adapter.name, agent_version=selected.get("version"), model=model,
                auth_mode="api" if key_file is not None else "native",
                options={**adapter.default_options, **(selected.get("options") or {})},
-               workspace=str(folder), task="", limits=limits, permissions="ask",
+               workspace=str(root), project=str(root), task="", limits=limits, permissions="ask",
                mounts=list(profile_mounts), robot=str(robot_file(folder)),
                robot_model="being connected", connect={"folder": str(folder)})
-    if request.project is not None:
-        facts = state.load(request.name, request.home)
-        state.save(request.name, request.home, **{**facts, 'project': str(request.project.resolve())})
 
     def power_off() -> None:
         sandbox_down(sandbox_name)
@@ -216,10 +224,12 @@ def open_connect(request: ConnectRequest, continuing: bool = False) -> LiveRobot
                      task="", agent=adapter.name, model=model, power_off=power_off)
 
 
-def opening_message(folder: Path, host: str) -> str:
+def opening_message(folder: Path, host: str, project: Path) -> str:
     """The first message the agent gets: where it is and what it is for."""
-    return (f"We are connecting a new robot to OpenRUA. Its folder is /workspace here "
-            f"({folder} on the host). CONNECT.md in it describes the steps, the files to "
+    relative = folder.relative_to(project)
+    return (f"We are connecting a robot in this coding project, mounted at /workspace "
+            f"({project} on the host). Maintain its adaptation files in /workspace/{relative}. "
+            f"Read /workspace/{relative}/CONNECT.md for the steps and files to "
             "write and how each step is checked. This computer, as OpenRUA found it:\n" + host +
             "\nStart with what the robot is: ask me what you cannot find out yourself.")
 
@@ -234,7 +244,7 @@ class Checks:
         self._busy = threading.Lock()
 
     def log(self, step: str) -> Path:
-        return self.folder / CHECKS_DIR / f"{step}.log"
+        return check_directory(self.request) / f'{step}.log'
 
     def passed(self) -> list[str]:
         checks = self.session.store.snapshot()["state"].get("checks", {})
@@ -295,8 +305,8 @@ class Checks:
         return True, text
 
     def _drivers(self, out) -> tuple[bool, str]:
-        data = yaml.safe_load(robot_file(self.folder).read_text()) or {}
-        images = (data.get("machine", {}).get("backend", {}) or {}).get("build") or {}
+        data = compose(str(robot_file(self.folder)), '', '', self.request.home).cfg
+        images = data['machine']['backend'].get('build') or {}
         if not images:
             return False, "robot.yaml builds no image yet (backend.build: image: directory)"
         failed = [image for image in images
@@ -395,7 +405,7 @@ def _append(out, log: Path) -> None:
 
 FIRST_MOTION = (
     "The robot is up in its own terminal now, started from robot.yaml, which is "
-    "the default robot from here on (openrua starts it). This terminal has no "
+    "this project's saved robot configuration. This terminal has no "
     "docker; read the workspace instructions for the current robot's machine "
     "manifest, docs and tools. Last step: "
     "with the person's word that the emergency stop is at hand, open and close the "
@@ -434,12 +444,12 @@ class ConnectFlow:
         endpoint.write_text(json.dumps({"url": server.url, "token": server.token}))
         endpoint.chmod(0o600)
         ok, text = host_report()
-        (self.folder / CHECKS_DIR / "host.log").write_text(text + "\n")
+        (check_directory(self.request) / 'host.log').write_text(text + '\n')
         self.owned.execution.session.checked("host", "passed" if ok else "failed", text,
                                               uuid.uuid4().hex)
         await self.owned.execution.command("enqueue", client_id="openrua",
                                            request_id=uuid.uuid4().hex,
-                                           text=opening_message(self.folder, text))
+                                           text=opening_message(self.folder, text, self.request.project.resolve()))
         self._task = asyncio.create_task(self._watch())
 
     async def close(self) -> None:
@@ -486,9 +496,6 @@ class ConnectFlow:
                 await self._say('The working terminal is available, but the robot connection failed. '
                                 'Inspect python3 /openrua-runtime/robot.py logs and continue fixing it here.')
                 return
-        subprocess.call([sys.executable, "-m", "openrua", "--home", str(self.request.home),
-                         "config", "set", "--robot", file], stdout=subprocess.DEVNULL)
-        if self.request.project is not None:
-            projects.save_selection(self.request.project, dict(robot=file, sim='', bench='', agent=self.agent,
-                                                               model=settings.get('model') or ''))
+        projects.save_selection(self.request.project, dict(robot=file, sim='', bench='', agent=self.agent,
+                                                           model=settings.get('model') or ''))
         await self._say(FIRST_MOTION)

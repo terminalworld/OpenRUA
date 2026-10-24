@@ -101,7 +101,7 @@ def render_cli() -> str:
     out = [CLI_HEAD, _parser_reference(ap), "\n"]
     out.append("Without a subcommand, an unnamed launch opens setup with a new session ID. An explicit name reconnects "
                "to the named shared session. `--gui` selects the browser, `--cli` plain chat, "
-               "`--resume [ID]` selects history, and `--setup` edits the shared defaults. With no interface selected, "
+               "`--resume [ID]` selects history, and `--setup` edits the project settings. With no interface selected, "
                "non-interactive invocations print help.\n")
     for name, sub in verbs.choices.items():
         out.append(f"\n## openrua {name}\n\n" + _parser_reference(sub))
@@ -163,7 +163,7 @@ def render_config() -> str:
 
     roots = [
         (schema.RobotType, "robots/<type>.yaml (bundled, or a file of your own by its path): a robot type"),
-        (schema.RobotInstance, "a particular robot, type: + machine: (openrua connect writes ~/.openrua/robots/<name>/robot.yaml)"),
+        (schema.RobotInstance, "a particular robot, type: + machine: (openrua connect writes robot.yaml in the project)"),
         (schema.SimulatorProfile, "simulators/<engine>.yaml (bundled, or a file of your own by its path)"),
         (schema.Benchmark, "benchmarks/<name>.yaml (bundled, or a file of your own by its path)"),
         (schema.UserConfig, "~/.openrua/config.yaml and the package's configs/config.yaml"),

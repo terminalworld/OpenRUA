@@ -17,7 +17,7 @@ from openrua.runner import live, live_state
 
 
 def configure(home, *flags):
-    args = build_parser().parse_args(["--home", str(home), "config", "set", *flags])
+    args = build_parser().parse_args(["--home", str(home), "config", "set", "--user", *flags])
     return config_command.run(args)
 
 

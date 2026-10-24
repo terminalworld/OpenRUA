@@ -33,22 +33,23 @@ FAKE_ROBOT = """machine:
 def test_the_folder_starts_with_what_connecting_needs_and_keeps_what_is_there(tmp_path):
     folder = tmp_path / "arm"
     connect.scaffold(folder)
-    for name in ("robot.yaml", "CONNECT.md", "driver", "cameras", connect.CHECKS_DIR):
+    for name in ("robot.yaml", "CONNECT.md", "driver", "cameras"):
         assert (folder / name).exists()
-    assert str(folder) in (folder / "CONNECT.md").read_text()
+    (folder / "CONNECT.md").write_text("User connection notes\n")
     assert "TODO" in (folder / "robot.yaml").read_text()
     (folder / "robot.yaml").write_text(FAKE_ROBOT)
     connect.scaffold(folder)
     assert (folder / "robot.yaml").read_text() == FAKE_ROBOT
-    assert (folder / ".gitignore").read_text().splitlines().count(f"{connect.CHECKS_DIR}/") == 1
+    assert (folder / "CONNECT.md").read_text() == "User connection notes\n"
 
 
 def checks(tmp_path, robot=FAKE_ROBOT):
     folder = tmp_path / "arm"
     connect.scaffold(folder)
     (folder / "robot.yaml").write_text(robot)
+    (folder / "driver/Dockerfile").write_text("FROM scratch\n")
     session = Session(SQLiteStore(tmp_path / "s.sqlite", initial_state()))
-    request = connect.ConnectRequest(home=tmp_path / "home", name="c", folder=folder)
+    request = connect.ConnectRequest(home=tmp_path / "home", name="c", folder=folder, project=folder)
     return connect.Checks(request, session, "claude-code"), session
 
 
@@ -95,7 +96,7 @@ def test_a_check_runs_on_the_host_and_its_result_reaches_the_session(tmp_path, m
             break
         asyncio.run(asyncio.sleep(0.01))
     assert result == {"status": "passed", "summary": "docker: usable", "run": started["run"]}
-    assert (tmp_path / "arm" / connect.CHECKS_DIR / "host.log").read_text() == "docker: usable\n"
+    assert (tmp_path / "arm/.openrua/connect/c/host.log").read_text() == "docker: usable\n"
     with pytest.raises(ValueError, match="unknown step"):
         done.start("everything")
 
@@ -163,8 +164,11 @@ def test_connecting_hands_the_robot_to_the_selected_project(tmp_path, monkeypatc
     from types import SimpleNamespace
     from openrua.config import projects
     async def run():
-        root, folder = tmp_path / 'project', tmp_path / 'robot'
-        root.mkdir(); folder.mkdir()
+        root = tmp_path / 'project'
+        folder = root / 'robot'
+        connect.scaffold(folder)
+        (folder / 'robot.yaml').write_text(FAKE_ROBOT)
+        (folder / 'driver/Dockerfile').write_text('FROM scratch\n')
         flow = connect.ConnectFlow.__new__(connect.ConnectFlow)
         flow.request = connect.ConnectRequest(home=tmp_path / 'home', name='connecting', folder=folder, project=root)
         flow.folder, flow.agent = folder, 'codex@0.134.0'
@@ -183,3 +187,42 @@ def test_connecting_hands_the_robot_to_the_selected_project(tmp_path, monkeypatc
         assert projects.selection(root)['robot'] == str(folder / 'robot.yaml')
         assert projects.selection(root)['agent'] == 'codex@0.134.0'
     asyncio.run(run())
+
+
+def test_connect_keeps_the_project_workspace_from_the_first_turn(tmp_path, monkeypatch):
+    from pathlib import Path
+    from openrua.runner import live_state
+    root, home = tmp_path / 'project', tmp_path / 'home'
+    root.mkdir()
+    (root / 'program.py').write_text('print("existing project")\n')
+    request = connect.ConnectRequest(home=home, name='onboarding', folder=root / 'robot', project=root)
+    class DockerSocket:
+        def exists(self): return True
+        def stat(self): return SimpleNamespace(st_gid=100)
+        def __str__(self): return '/var/run/docker.sock'
+    socket = DockerSocket()
+    def path(value):
+        return socket if str(value) == '/var/run/docker.sock' else Path(value)
+    path.home = Path.home
+    monkeypatch.setattr(connect, 'Path', path)
+    monkeypatch.setattr(connect.shutil, 'which', lambda binary: '/usr/bin/docker')
+    adapter = SimpleNamespace(name='fixture', title='Fixture', default_options={},
+                              prepare_profile=lambda *a, **kw: SimpleNamespace(mounts=()))
+    monkeypatch.setattr(connect, '_agent', lambda r: (adapter, {}, 'fixture-model',
+                                                     SimpleNamespace(sandbox=SimpleNamespace(run_args=[]))))
+    monkeypatch.setattr(connect.agents, 'resolve_profile', lambda *a, **kw: tmp_path / 'credentials')
+    monkeypatch.setattr(connect, 'check_agent_cli', lambda *a: None)
+    launched = []
+    monkeypatch.setattr(connect, 'sandbox_up', lambda cfg, directory, **kw: launched.append((directory, kw)))
+    monkeypatch.setattr(connect, 'sandbox_down', lambda *a: None)
+    resource = connect.open_connect(request)
+    try:
+        facts = live_state.load(request.name, home)
+        assert launched[0][0] == root
+        assert facts['workspace'] == facts['project'] == str(root)
+        assert facts['robot'] == str(root / 'robot/robot.yaml')
+        assert '/workspace/robot/CONNECT.md' in connect.opening_message(root / 'robot', 'fixture', root)
+        assert (root / 'program.py').read_text() == 'print("existing project")\n'
+        assert not (home / 'robots').exists()
+    finally:
+        resource.power_off()

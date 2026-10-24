@@ -29,9 +29,8 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --version             show program's version number and exit
-  --home HOME           the user directory: your robots/, benchmarks/,
-                        agents/, credentials/, sandboxes/ (default:
-                        $OPENRUA_HOME or ~/.openrua)
+  --home HOME           personal preferences, logins and session state
+                        (default: $OPENRUA_HOME or ~/.openrua)
 
 start or reconnect (without a subcommand):
   --robot ROBOT         robot name or profile path for a new session
@@ -80,7 +79,7 @@ start or reconnect (without a subcommand):
   --cli                 use plain text chat instead of the TUI
   --port PORT           local service port for a new session (default: a free
                         port)
-  --setup               edit shared defaults in the keyboard setup menu
+  --setup               edit this project in the keyboard setup menu
   --resume [ID]         resume a conversation in this workspace, optionally by
                         ID/name
   --all                 with --resume, show conversations from all project
@@ -89,7 +88,7 @@ start or reconnect (without a subcommand):
 
 | command | does |
 |---|---|
-| `robots` | list the bundled robots and the ones connected here |
+| `robots` | list the bundled robots |
 | `simulators` | list the bundled simulators |
 | `benchmarks` | list the bundled benchmarks (or one benchmark's suites and tasks) |
 | `agents` | list the bundled agents |
@@ -106,21 +105,20 @@ start or reconnect (without a subcommand):
 | `ps` | list the attempts running under a runs root (--all: stale claims too) |
 | `demo` | render a recorded trial as a video (terminal + cameras) |
 | `probe` | draft a robot profile from a live ROS 2 graph |
-| `config` | your defaults (robot, simulator, benchmark, agent) |
+| `config` | view or save project settings; --user for personal preferences |
 | `skills` | list reusable methods, import a skill, or set project accumulation |
 | `login` | sign your coding agent in on this computer |
 | `clean` | explicitly delete retained session files |
 | `doctor` | check the install: docker, images, simulator, login |
 
-Without a subcommand, an unnamed launch opens setup with a new session ID. An explicit name reconnects to the named shared session. `--gui` selects the browser, `--cli` plain chat, `--resume [ID]` selects history, and `--setup` edits the shared defaults. With no interface selected, non-interactive invocations print help.
+Without a subcommand, an unnamed launch opens setup with a new session ID. An explicit name reconnects to the named shared session. `--gui` selects the browser, `--cli` plain chat, `--resume [ID]` selects history, and `--setup` edits the project settings. With no interface selected, non-interactive invocations print help.
 
 ## openrua robots
 
 ```
 usage: openrua robots [-h] [--json]
 
-Every robot shipped in the package, then the robots openrua connect connected
-on this computer, each with its path. A file of your own elsewhere is not
+Every robot shipped in the package. A file of your own elsewhere is not
 listed; pass it as a path where a name is expected.
 
 options:
@@ -175,7 +173,8 @@ options:
 ## openrua build
 
 ```
-usage: openrua build [-h] [--bench NAME] [--sim NAME] [--all] [<unit>] ...
+usage: openrua build [-h] [--bench NAME] [--sim NAME] [--all] [-C WORKSPACE]
+                     [<unit>] ...
 
 Build simulator images from their declarations (--bench / --sim, repeatable;
 --all: every bundled benchmark), or one of the agent-side images (sandbox,
@@ -188,12 +187,14 @@ positional arguments:
   [<unit>]
 
 options:
-  -h, --help    show this help message and exit
-  --bench NAME  benchmark whose simulator image to build (openrua benchmarks);
-                repeatable
-  --sim NAME    simulator whose image to build, for its native scene (openrua
-                simulators); repeatable
-  --all         every bundled benchmark's image
+  -h, --help            show this help message and exit
+  --bench NAME          benchmark whose simulator image to build (openrua
+                        benchmarks); repeatable
+  --sim NAME            simulator whose image to build, for its native scene
+                        (openrua simulators); repeatable
+  --all                 every bundled benchmark's image
+  -C WORKSPACE, --cd WORKSPACE, --workspace WORKSPACE
+                        project directory (default: the current directory)
 ```
 
 | command | does |
@@ -246,11 +247,11 @@ options:
 ### openrua build driver
 
 ```
-usage: openrua build driver [-h] --robot NAME|PATH [--image IMAGE]
+usage: openrua build driver [-h] [--robot NAME|PATH] [--image IMAGE]
 
 options:
   -h, --help         show this help message and exit
-  --robot NAME|PATH  the real robot
+  --robot NAME|PATH  the real robot (default: this project's)
   --image IMAGE      only this one of them
 ```
 
@@ -415,9 +416,8 @@ options:
 
 ```
 usage: openrua connect [-h] [--dir DIR] [--agent AGENT] [--model MODEL]
-                       [--distro {jazzy,humble}] [--name NAME]
-                       [--workspace WORKSPACE] [--trust-workspace]
-                       [robot]
+                       [--distro {jazzy,humble}] [--name NAME] [-C WORKSPACE]
+                       [--trust-workspace]
 
 ``openrua connect``: connect a real robot, with your coding agent doing the
 work. A session opens whose terminal reaches this computer's docker, network
@@ -427,22 +427,18 @@ asking you for what only a person can do and before each command that changes
 something; OpenRUA checks each step. When every check has passed, the session
 moves to the robot's own terminal and the conversation goes on there.
 
-positional arguments:
-  robot                 the robot's name (default: my-robot)
-
 options:
   -h, --help            show this help message and exit
-  --dir DIR             the robot's folder (default: <home>/robots/<robot>);
-                        an existing one goes on from what is in it
+  --dir DIR             adaptation subdirectory inside the project (default:
+                        the project root)
   --agent AGENT         coding agent (default: the configured one)
   --model MODEL         model (default: the agent's)
   --distro {jazzy,humble}
                         the connecting terminal's ROS 2; the robot's own comes
                         from its drivers
   --name NAME           session ID (default: a new one)
-  --workspace WORKSPACE
-                        robot project after connection (default: the current
-                        directory)
+  -C WORKSPACE, --cd WORKSPACE, --workspace WORKSPACE
+                        project directory (default: the current directory)
   --trust-workspace     explicitly trust the project without a question
 ```
 
@@ -996,30 +992,34 @@ options:
 ## openrua config
 
 ```
-usage: openrua config [-h] [--robot ROBOT] [--sim SIM] [--bench BENCH]
+usage: openrua config [-h] [--user] [-C WORKSPACE] [--trust-workspace]
+                      [--robot ROBOT] [--sim SIM] [--bench BENCH]
                       [--agent AGENT] [--model MODEL] [--version VERSION]
                       [--credentials-dir CREDENTIALS_DIR]
                       [--auth {native,api}] [--api-key-file API_KEY_FILE]
                       {show,set,schema}
 
-Your defaults file, ~/.openrua/config.yaml: `config set` writes the flags it
-is given into it (the same flags a session takes), `config show` prints it,
-`config schema` prints the resolved config's JSON schema, every key with its
-meaning.
+Save this project in .openrua/settings.json. Bundled environment choices
+create maintained configuration files in configs/. --user selects personal
+agent preferences and authentication in ~/.openrua/config.yaml.
 
 positional arguments:
   {show,set,schema}     what to do
 
 options:
   -h, --help            show this help message and exit
+  --user                read or change personal agent preferences
+  -C WORKSPACE, --cd WORKSPACE, --workspace WORKSPACE
+                        project directory (default: the current directory)
+  --trust-workspace     explicitly trust this project before saving
   --robot ROBOT         robot a command uses when it names none
   --sim SIM             simulator, likewise
   --bench BENCH         benchmark whose world a session loads by default (null
                         = the simulator's native scene)
   --agent AGENT         agent a command uses when it names none (openrua
                         agents)
-  --model MODEL         model the agent runs on this machine (written under
-                        agents.<agent>)
+  --model MODEL         project model; with --user, the personal model under
+                        agents.<agent>
   --version VERSION     pin the agent's CLI version (agents.<agent>.version)
   --credentials-dir CREDENTIALS_DIR
                         the agent's login profile directory
@@ -1256,7 +1256,7 @@ options:
 ## openrua doctor
 
 ```
-usage: openrua doctor [-h] [--sim SIM] [--bench BENCH]
+usage: openrua doctor [-h] [-C WORKSPACE] [--sim SIM] [--bench BENCH]
                       [--agent NAME[@VERSION]] [--json]
                       [robot]
 
@@ -1268,6 +1268,8 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
+  -C WORKSPACE, --cd WORKSPACE, --workspace WORKSPACE
+                        project directory (default: the current directory)
   --sim SIM             simulator that embodies the robot
   --bench BENCH         benchmark to check the install of
   --agent NAME[@VERSION]

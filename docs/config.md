@@ -17,7 +17,7 @@ same information as JSON Schema.
 | file | schema |
 |---|---|
 | `robots/<type>.yaml (bundled, or a file of your own by its path): a robot type` | [RobotType](#robottype) |
-| `a particular robot, type: + machine: (openrua connect writes ~/.openrua/robots/<name>/robot.yaml)` | [RobotInstance](#robotinstance) |
+| `a particular robot, type: + machine: (openrua connect writes robot.yaml in the project)` | [RobotInstance](#robotinstance) |
 | `simulators/<engine>.yaml (bundled, or a file of your own by its path)` | [SimulatorProfile](#simulatorprofile) |
 | `benchmarks/<name>.yaml (bundled, or a file of your own by its path)` | [Benchmark](#benchmark) |
 | `~/.openrua/config.yaml and the package's configs/config.yaml` | [UserConfig](#userconfig) |
@@ -202,6 +202,7 @@ A real robot: its ROS 2 graph is already there or a launch command starts it.
 | `image` | str \| null | None | docker image the launch command runs in, on the host network (a vendor driver pinned to its own ROS release); null = run it on the host |
 | `discovery` | [Discovery](#discovery) | **required** | how the sandbox reaches the graph |
 | `build` | dict[str, str] | {} | images the launch command uses that are built from a directory here: image name -> directory holding its Dockerfile, relative to this file (as docker compose's build:). A missing one is built before a session starts; openrua build driver --robot <this file> rebuilds them |
+| `images` | dict[str, str] | {} | resolved build name to content-addressed image; generated from backend.build. Pass an image explicitly in launch with {images[name]} |
 | `startup_checks` | list[[StartupCheck](#startupcheck)] | [] | what has to be true before the robot starts (its controller answers, its devices are plugged in), checked before every session; one that fails stops the start and says its fix |
 | `cwd` | str \| null | None | directory the launch command runs in on the host; default: the directory of the file declaring it, so the command may name its files relative to it |
 | `stop_timeout_s` | float | 30.0 | seconds shutdown waits after SIGINT, and again after SIGTERM, before SIGKILL: time for a driver to release the robot |
@@ -513,15 +514,12 @@ What a benchmark brings into the simulator's world.
 
 ## UserConfig
 
-A defaults file: the package's configs/config.yaml or ~/.openrua/config.yaml. Four default names (robot, simulator, benchmark, agent) and, per agent name, this machine's facts about it.
+Personal agent preferences and sandbox settings on this computer.
 
 | key | type | default | meaning |
 |---|---|---|---|
 | `agent` | str \| null | None | agent when a command names none (openrua agents lists them) |
 | `agents` | dict[str, [AgentFacts](#agentfacts)] | {} | agent name -> this machine's facts about it (model, version, credentials_dir, options) |
-| `robot` | str \| null | None | robot when a command names none |
-| `simulator` | str \| null | None | simulator when a command names none (and the robot is a type) |
-| `benchmark` | str \| null | None | benchmark whose world a session loads when --bench is not given; null = the simulator's native scene |
 | `sandbox` | [SandboxConfig](#sandboxconfig) |  | how this machine starts the sandbox |
 
 ## AgentFacts

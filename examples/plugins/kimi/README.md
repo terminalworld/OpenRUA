@@ -25,7 +25,7 @@ than recording one model and running another. Then select native auth:
 
 ```bash
 plugin="$(pwd)/examples/plugins/kimi/agent.yaml"
-openrua config set --agent "$plugin" --auth native
+openrua config set --user --agent "$plugin" --auth native
 openrua doctor --agent "$plugin"
 ```
 
@@ -54,7 +54,7 @@ From the OpenRUA checkout root, after ordinary
 ```bash
 plugin="$(pwd)/examples/plugins/kimi/agent.yaml"
 chmod 600 /absolute/path/to/moonshot.key
-openrua config set --agent "$plugin" --auth api --api-key-file /absolute/path/to/moonshot.key
+openrua config set --user --agent "$plugin" --auth api --api-key-file /absolute/path/to/moonshot.key
 openrua doctor --agent "$plugin"
 ```
 

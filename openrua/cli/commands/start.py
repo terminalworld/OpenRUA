@@ -32,7 +32,7 @@ def add_options(parser) -> None:
                            help='keyboard terminal frontend (default: pi, included)')
     interface.add_argument('--cli', action='store_true', help='use plain text chat instead of the TUI')
     group.add_argument('--port', type=int, default=None, help='local service port for a new session (default: a free port)')
-    group.add_argument('--setup', action='store_true', help='edit shared defaults in the keyboard setup menu')
+    group.add_argument('--setup', action='store_true', help='edit this project in the keyboard setup menu')
     group.add_argument('--resume', nargs='?', const='', default=None, metavar='ID',
                        help='resume a conversation in this workspace, optionally by ID/name')
     group.add_argument('--all', action='store_true',
@@ -41,19 +41,20 @@ def add_options(parser) -> None:
 
 
 def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
-    local = projects.selection(Path(args.workspace)) if getattr(args, 'workspace', None) else {}
-    robot, sim, bench, agent = (getattr(args, key) if getattr(args, key) is not None else local.get(key)
-                              for key in ('robot', 'sim', 'bench', 'agent'))
-    model = args.model if args.model is not None else agent_settings.project_model(local, args.agent)
+    local = projects.options(Path(args.workspace or Path.cwd()),
+                             {key: getattr(args, key, None) for key in projects.FIELDS},
+                             relative_to=Path.cwd())
+    robot, sim, bench, agent = (local.get(key) for key in ('robot', 'sim', 'bench', 'agent'))
+    model = local.get('model')
     user = config.load_user_config(paths.config_path(args.home))
     package = config.load_user_config(paths.package_config_path())
     chosen = agent or user.agent or package.agent
     models = {name: facts.model or '' for name, facts in user.agents.items()}
     selected = config.layer_agent({}, package, user, agent=chosen)
     values = {
-        'robot': robot or user.robot or package.robot or '',
-        'sim': sim or user.simulator or package.simulator or '',
-        'bench': (user.benchmark or package.benchmark or '') if bench is None else bench,
+        'robot': robot or '',
+        'sim': sim or '',
+        'bench': bench or '',
         'agent': chosen or '',
         'model': model or models.get(chosen, ''),
         'name': args.name or history.new_id(),
@@ -91,25 +92,12 @@ def authentication_choices(home: Path, names: list[str]) -> dict:
     return result
 
 
-def save_values(home: Path, values: dict[str, str]) -> None:
-    paths.sandbox_dir(values['name'], home)
-    cfg = validate_values(home, values)
-    facts = {'model': values['model'] or None}
-    if 'auth_mode' in values:
-        facts['auth'] = cfg['agent']['auth']
-    settings.update(home, {key: values[field] or None for field, key in
-                         [('robot', 'robot'), ('sim', 'simulator'), ('bench', 'benchmark'), ('agent', 'agent')]},
-                    facts)
-
-
-def save_guided_values(home: Path, values: dict, environments: list[dict], project: Path | None = None) -> None:
-    if not any(all(row['selection'][key] == values[key] for key in startup.FIELDS)
-               for row in environments):
-        raise UsageError('select a tested robot, simulator and benchmark combination',
-                         hint='choose the robot first; custom profiles can use explicit CLI options')
-    save_values(home, values)
-    if project is not None:
-        projects.save_selection(project, values)
+def save_guided_values(home: Path, values: dict, project: Path) -> None:
+    validate_values(home, values)
+    projects.save_selection(project, values)
+    if 'auth_mode' in values and values['agent']:
+        cfg = validate_values(home, values)
+        settings.update(home, {}, {'auth': cfg['agent']['auth']}, agent=values['agent'])
 
 
 def validate_values(home: Path, values: dict[str, str]) -> dict:
@@ -156,8 +144,6 @@ def launch(args, values: dict[str, str]):
     if directory.exists():
         raise UsageError(f'session name {name!r} already has retained or running work',
                          hint='reconnect with --name only, or choose a new name; files are never overwritten')
-    if args.workspace:
-        projects.save_selection(Path(args.workspace), values)
     argv = [sys.executable, '-m', 'openrua', '--home', str(args.home), 'serve']
     if values['robot']:
         argv.append(values['robot'])
@@ -325,25 +311,23 @@ def _run(args) -> int:
                              hint='choose one of: ' + ', '.join(adapter.permission_modes))
     if not offer_update(args, values):
         return 0
-    custom_environment = any(paths.is_path(values[key]) for key in startup.FIELDS if values[key])
-    if args.setup and custom_environment:
-        raise UsageError('guided setup offers tested bundled environments, not custom profile editing',
-                         hint='start without --setup to use your profile; edit it or use openrua config set to change defaults')
-    if not custom_environment and (args.setup or not (values['robot'] or values['bench']) or (not args.gui and not args.cli)):
+    if args.setup or not (values['robot'] or values['bench']):
         if not sys.stdin.isatty() or not sys.stdout.isatty():
             raise UsageError('terminal setup needs an interactive terminal',
                              hint='use openrua config set or edit config.yaml, then use --gui or --cli')
         environments = startup.verified_environments()
+        if any(paths.is_path(values[key]) for key in startup.FIELDS if values[key]):
+            environments = [dict(selection={key: values[key] for key in startup.FIELDS}), *environments]
         if values['robot'] in startup.options(environments, {}, 'robot'):
             values = startup.select(environments, values, 'robot', values['robot'])
         choices = {'agent': [entry.name for entry in paths.available('agents')
                              if 'conversation' in agents.get(entry.name, args.home).capabilities]}
         choices.update({field: startup.options(environments, values, field) for field in startup.FIELDS})
         from openrua.terminal.launcher import setup as terminal_setup
-        result = terminal_setup(values, choices, str(paths.config_path(args.home)),
-                                lambda values: save_guided_values(args.home, values, environments, selected),
+        result = terminal_setup(values, choices, str(projects.settings_path(selected)),
+                                lambda values: save_guided_values(args.home, values, selected),
                                 lambda values: check_values(args.home, values),
-                                lambda values: launch(args, values), models,
+                                lambda values: launch(args, {**values, **projects.selection(selected)}), models,
                                 lambda: history.entries(args.home, selected),
                                 lambda name: open_history(args.home, name),
                                 list_all=lambda: history.entries(args.home), scope=str(selected),
@@ -354,7 +338,7 @@ def _run(args) -> int:
                                 save_connect=lambda values: connect.save_values(args.home, values),
                                 sign_in=lambda values: login.ensure(args.home, values['agent'] or None,
                                                                     values.get('auth_mode', 'native')),
-                                connect=lambda values: connect.launch(args.home, 'my-robot',
+                                connect=lambda values: connect.launch(args.home,
                                                                       agent=values['agent'] or None,
                                                                       model=values['model'] or None, project=selected))
         if result is None:

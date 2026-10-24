@@ -9,6 +9,25 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.23.0
+
+- Robot work is owned by the coding project for real and simulated robots.
+  `connect` writes adaptation files in the project and keeps that workspace
+  throughout setup and operation. `--dir` selects a project subdirectory.
+- `config set` saves project choices and copies selected simulation templates
+  and their build inputs into `configs/`. Settings use project-relative paths;
+  ordinary launches and `exec` overrides do not change saved choices.
+- `config set --user` manages personal agent preferences and authentication.
+  User-level robot, simulator and benchmark defaults, the connected-robot
+  registry and the positional robot name on `connect` have been removed.
+- Local simulator images and driver build images follow their declared input
+  contents. Driver launches receive built images with `{images[name]}` slots.
+  Project copies can evolve independently without replacing each other's tags.
+- Existing project programs and connection notes are retained. Build, doctor,
+  interactive, native-terminal and unattended entry points use project choices.
+  Runtime dependency pins and run records stay with the project; credentials
+  and private conversation state remain in the user directory.
+
 ## 0.22.0
 
 - Shared chat starts its agent environment before connecting the robot. Driver

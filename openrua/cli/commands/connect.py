@@ -11,13 +11,14 @@ conversation goes on there.
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 
 from openrua import agents
 from openrua.cli import agent_settings, docker_setup, preparation, workspace
 from openrua.cli.commands import login, start
-from openrua.config import paths, settings
+from openrua.config import paths, projects, settings
 from openrua.errors import UsageError
 from openrua.runner import history, service
 
@@ -36,16 +37,18 @@ def save_values(home: Path, values: dict) -> None:
         agents.api_key_file(adapter, auth)
     except ValueError as exc:
         raise UsageError(str(exc), hint='choose native login, or a readable API key file') from exc
-    facts = {'model': values['model'] or None, 'auth': auth}
-    if selected.get('version'):
-        facts['version'] = selected['version']
-    settings.update(home, {'agent': selected['name']}, facts)
+    settings.update(home, {}, {'auth': auth}, agent=selected['name'])
 
 
-def launch(home: Path, robot: str, folder: Path | None = None, agent: str | None = None,
+def launch(home: Path, folder: Path | None = None, agent: str | None = None,
            model: str | None = None, distro: str = "jazzy", name: str | None = None, project: Path | None = None):
     """Start the connecting session's service; returns (client, session name)."""
-    folder = (folder or paths.home(home) / "robots" / robot).expanduser()
+    if project is None:
+        raise UsageError('connecting a robot requires a project directory')
+    folder = (project / (folder or Path('.')).expanduser()).resolve()
+    if not folder.is_relative_to(project.resolve()):
+        raise UsageError('the robot adaptation directory must be inside the project',
+                         hint='choose a project subdirectory with --dir')
     name = name or history.new_id()
     if paths.sandbox_dir(name, home).exists():
         raise UsageError(f"session name {name!r} already has retained or running work",
@@ -59,7 +62,7 @@ def launch(home: Path, robot: str, folder: Path | None = None, agent: str | None
     for key, value in (("agent", agent), ("model", model)):
         if value:
             argv += [f"--{key}", value]
-    print(f"[connect] {robot}: folder {folder}; starting the connecting terminal", flush=True)
+    print(f"[connect] project {project}; adaptation {folder}; starting the connecting terminal", flush=True)
     client = service.start(argv, paths.sandbox_dir(name, home) / "endpoint.json",
                            paths.launch_dir(name, home) / "service.log",
                            paths.launch_dir(name, home) / "start.lock")
@@ -70,28 +73,28 @@ def run(args) -> int:
     selected = workspace.choose(args.workspace or Path.cwd(), args.home, accept=args.trust_workspace)
     if selected is None:
         return 0
+    chosen = projects.options(selected, dict(agent=args.agent, model=args.model), relative_to=Path.cwd())
     if sys.stdin.isatty() and sys.stdout.isatty():
         docker_setup.ensure()
-        _, selected_agent = agent_settings.resolve(args.home, args.agent)
-        login.ensure(args.home, args.agent, (selected_agent.get('auth') or {}).get('mode', 'native'))
-    client, name = launch(args.home, args.robot, Path(args.dir) if args.dir else None,
-                          args.agent, args.model, args.distro, args.name, project=selected)
+        _, selected_agent = agent_settings.resolve(args.home, chosen['agent'])
+        login.ensure(args.home, chosen['agent'], (selected_agent.get('auth') or {}).get('mode', 'native'))
+    client, name = launch(args.home, Path(args.dir) if args.dir else None,
+                          chosen['agent'], chosen['model'], args.distro, args.name, project=selected)
     return start.open_terminal(args.home, client, name)
 
 
 def add_parser(sub) -> None:
     p = sub.add_parser("connect", help="connect a real robot, your coding agent doing the work",
                        description=__doc__)
-    p.add_argument("robot", nargs="?", default="my-robot",
-                   help="the robot's name (default: my-robot)")
     p.add_argument("--dir", default=None,
-                   help="the robot's folder (default: <home>/robots/<robot>); an existing "
-                   "one goes on from what is in it")
+                   help='adaptation subdirectory inside the project (default: the project root)')
     p.add_argument("--agent", default=None, help="coding agent (default: the configured one)")
     p.add_argument("--model", default=None, help="model (default: the agent's)")
     p.add_argument("--distro", default="jazzy", choices=("jazzy", "humble"),
                    help="the connecting terminal's ROS 2; the robot's own comes from its drivers")
     p.add_argument("--name", default=None, help="session ID (default: a new one)")
-    p.add_argument('--workspace', default=None, help='robot project after connection (default: the current directory)')
-    p.add_argument('--trust-workspace', action='store_true', help='explicitly trust the project without a question')
+    p.add_argument('-C', '--cd', '--workspace', dest='workspace', default=argparse.SUPPRESS,
+                   help='project directory (default: the current directory)')
+    p.add_argument('--trust-workspace', action='store_true', default=argparse.SUPPRESS,
+                   help='explicitly trust the project without a question')
     p.set_defaults(fn=run)

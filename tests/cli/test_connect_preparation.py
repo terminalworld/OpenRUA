@@ -100,12 +100,12 @@ def test_connect_saves_only_agent_choices_without_robot_configuration(tmp_path):
     from openrua.runner.connect import ConnectRequest, _agent
     key = tmp_path / 'provider.key'
     key.write_text('synthetic-provider-key')
-    (tmp_path / 'config.yaml').write_text('robot: panda\nsimulator: robosuite\nbenchmark: capbench\n')
+    (tmp_path / 'config.yaml').write_text('agent: claude-code\n')
     connect.save_values(tmp_path, dict(agent='codex@0.163.0', model='chosen-model',
                                       auth_mode='api', api_key_file=str(key)))
     saved = config.load_user_config(tmp_path / 'config.yaml')
-    assert (saved.robot, saved.simulator, saved.benchmark) == ('panda', 'robosuite', 'capbench')
-    adapter, selected, model, _ = _agent(ConnectRequest(tmp_path, 'test', tmp_path / 'robot', agent='codex'))
+    assert saved.agent == 'claude-code' and saved.agents['codex'].model is None
+    adapter, selected, model, _ = _agent(ConnectRequest(tmp_path, 'test', tmp_path / 'project', tmp_path / 'project', agent='codex@0.163.0', model='chosen-model'))
     assert selected['auth'] == {'mode': 'api', 'key_file': str(key)}
     assert adapter.version == '0.163.0' and model == 'chosen-model'
     assert 'synthetic-provider-key' not in (tmp_path / 'config.yaml').read_text()
@@ -128,7 +128,7 @@ def test_connect_relative_manifest_keeps_auth_after_reopening_defaults(tmp_path,
     key = tmp_path / 'provider.key'
     key.write_text('synthetic-provider-key')
     connect.save_values(tmp_path, dict(agent='./custom.yaml', model='', auth_mode='api', api_key_file=str(key)))
-    adapter, selected = resolve(tmp_path, None)
+    adapter, selected = resolve(tmp_path, str(manifest))
     assert selected['name'] == str(manifest)
     assert selected['auth']['mode'] == 'api'
 
@@ -150,7 +150,7 @@ def test_tui_connect_prepares_image_for_unsaved_selected_agent(tmp_path, monkeyp
                             None, None, {}, None, None,
                             lambda spec: {'action': 'connect', 'values': values},
                             sign_in=lambda v: None,
-                            connect=lambda v: connect.launch(tmp_path, 'my-robot', agent=v['agent']))
+                            connect=lambda v: connect.launch(tmp_path, project=tmp_path / 'project', agent=v['agent']))
     assert result[0] == 'client'
     assert images[1][0][-2:] == ['--agent', 'codex']
 
@@ -173,7 +173,7 @@ def test_failed_connect_build_keeps_log_and_never_starts_session(tmp_path, monke
                         SimpleNamespace(stdout=io.StringIO('download failed\n'), wait=lambda: 7))
     monkeypatch.setattr(connect.service, 'start', lambda *a: pytest.fail('must not launch'))
     with pytest.raises(UnavailableError, match='build exit status 7') as failure:
-        connect.launch(tmp_path, 'my-robot', agent='codex')
+        connect.launch(tmp_path, project=tmp_path / 'project', agent='codex')
     assert 'retry startup' in failure.value.hint
     assert next((tmp_path / 'preparation').glob('*.log')).read_text() == 'download failed\n'
     assert not (tmp_path / 'launches').exists()
@@ -183,4 +183,21 @@ def test_retained_session_is_rejected_before_preparation(tmp_path, monkeypatch):
     monkeypatch.setattr(connect.paths, 'sandbox_dir', lambda *a: tmp_path)
     monkeypatch.setattr(preparation, 'prepare_connect', lambda *a: pytest.fail('no preparation'))
     with pytest.raises(UsageError, match='retained or running work'):
-        connect.launch(tmp_path, 'my-robot', name='retained')
+        connect.launch(tmp_path, project=tmp_path / 'project', name='retained')
+
+
+def test_connect_signs_in_the_projects_agent_before_launching(tmp_path, monkeypatch, images):
+    from openrua.config import projects
+    root = tmp_path / 'project'; root.mkdir()
+    projects.save_selection(root, dict(robot='', sim='', bench='', agent='codex', model=''))
+    (tmp_path / 'config.yaml').write_text('agent: claude-code\n')
+    monkeypatch.setattr(connect.sys.stdin, 'isatty', lambda: True)
+    monkeypatch.setattr(connect.sys.stdout, 'isatty', lambda: True)
+    monkeypatch.setattr(connect.docker_setup, 'ensure', lambda: None)
+    signed_in = []
+    monkeypatch.setattr(connect.login, 'ensure', lambda home, agent, mode: signed_in.append(agent))
+    monkeypatch.setattr(connect.service, 'start', lambda *a: 'client')
+    monkeypatch.setattr(connect.start, 'open_terminal', lambda *a: 0)
+    args = build_parser().parse_args(['--home', str(tmp_path), 'connect', '-C', str(root), '--trust-workspace'])
+    assert connect.run(args) == 0
+    assert signed_in == ['codex']

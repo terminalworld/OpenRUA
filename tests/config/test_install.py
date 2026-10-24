@@ -60,7 +60,9 @@ def test_relative_files_resolve_next_to_the_yaml_that_names_them(tmp_path):
     assert inst["requirements"] == str(tmp_path / "lock.txt")
     assert inst["here"] == str(tmp_path / "mine") and "{here}" in inst["shell"]
     assert inst["checkouts"][0]["patch"].endswith("capx-pyproject.patch")   # the simulator's, absolute
-    assert config.image_owner("robosuite", str(y)) == "mine"
+    (tmp_path / "mine").mkdir()
+    (tmp_path / "mine/lock.txt").write_text("numpy\n")
+    assert config.image_owner("robosuite", str(y)).startswith("mine-")
 
 
 def test_render_is_a_dockerfile_over_the_base_with_its_files_in_context(tmp_path):

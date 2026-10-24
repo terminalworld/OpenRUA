@@ -39,7 +39,7 @@ def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Pa
                 os.write(master, b'\r')
                 output.clear(); trusted = True
                 continue
-            if stage == -3 and b'Configure a new robot conversation' in output:
+            if stage == -3 and b'Configure this robot project' in output:
                 os.write(master, b'\x1b[B' * 3 + b'\r')
                 output.clear(); stage = -2
             elif stage == -2 and b'Enter a name or profile path' in output:
@@ -48,7 +48,7 @@ def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Pa
             elif stage == -1 and b'> ' in output:
                 os.write(master, b'\x01\x0b' + str(manifest).encode() + b'\r')
                 output.clear(); stage = 0
-            elif (stage == 0 and b'Configure a new robot conversation' in output
+            elif (stage == 0 and b'Configure this robot project' in output
                   and (manifest is None or b'Coding agent: ' + str(manifest).encode() in output)):
                 # PTY reads may split a render between its title and agent row.
                 os.write(master, b'\x1b[B' * 6 + b'\r')

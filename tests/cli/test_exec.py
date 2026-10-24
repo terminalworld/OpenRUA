@@ -85,8 +85,8 @@ def test_explicit_agent_uses_its_own_model_in_an_existing_project(tmp_path, proj
     assert ran[0][0]['agent']['model'] == 'claude-project-default'
 
 
-def test_a_sentence_names_the_simulators_own_scene_over_a_saved_benchmark(tmp_path, ran):
-    (tmp_path / "home" / "config.yaml").write_text("benchmark: libero_pro\n")
+def test_a_sentence_names_the_simulators_own_scene(tmp_path, ran):
+    (tmp_path / "home" / "config.yaml").write_text("agent: claude-code\n")
     execute.run(parse(tmp_path, "panda", "lift the cube", "--sim", "robosuite"))
     assert ran[-1][3] == "panda-robosuite" and ran[-1][2].task == "lift the cube"
 
@@ -94,7 +94,7 @@ def test_a_sentence_names_the_simulators_own_scene_over_a_saved_benchmark(tmp_pa
 def test_task_alone_reuses_project_settings_over_global_defaults(tmp_path, project_root, ran):
     projects.save_selection(project_root, dict(robot='panda', sim='robosuite', bench='',
                                                agent='codex@0.134.0', model='project-model'))
-    (tmp_path / 'home/config.yaml').write_text('robot: panda\nsimulator: maniskill\nagent: claude-code\n')
+    (tmp_path / 'home/config.yaml').write_text('agent: claude-code\n')
     execute.run(parse(tmp_path, 'run scripts/grasp.py'))
     cfg, _, trials, _ = ran[-1]
     assert trials.task == 'run scripts/grasp.py'
@@ -102,11 +102,11 @@ def test_task_alone_reuses_project_settings_over_global_defaults(tmp_path, proje
     assert cfg['agent']['name'] == 'codex@0.134.0'
     assert cfg['agent']['model'] == 'project-model'
     assert projects.selection(project_root)['agent'] == 'codex@0.134.0'
-    assert projects.selection(project_root)['sim'] == 'robosuite'
+    assert projects.selection(project_root)['sim'] == str(project_root / 'configs/simulators/robosuite.yaml')
 
 
 def test_project_real_robot_can_run_a_task_without_repeating_its_profile(tmp_path, project_root, ran):
-    profile = tmp_path / 'arm.yaml'
+    profile = project_root / 'arm.yaml'
     profile.write_text(REAL)
     projects.save_selection(project_root, dict(robot=str(profile), sim='', bench='',
                                                agent='codex', model=''))
@@ -140,11 +140,11 @@ def test_untrusted_unattended_workspace_fails_without_writing(tmp_path, monkeypa
 def test_explicit_real_robot_drops_the_projects_saved_simulator(tmp_path, project_root, ran):
     projects.save_selection(project_root, dict(robot='panda', sim='robosuite', bench='libero_pro',
                                                agent='codex', model=''))
-    profile = tmp_path / 'arm.yaml'
+    profile = project_root / 'arm.yaml'
     profile.write_text(REAL)
     execute.run(parse(tmp_path, str(profile), 'inspect'))
     assert ran[-1][0]['machine']['backend']['kind'] == 'real'
-    assert projects.selection(project_root)['sim'] == ''
+    assert projects.selection(project_root)['sim'] == str(project_root / 'configs/simulators/robosuite.yaml')
 
 
 def test_a_new_project_task_keeps_the_saved_scene_and_is_not_a_robot_path(tmp_path, project_root, ran):
@@ -153,4 +153,4 @@ def test_a_new_project_task_keeps_the_saved_scene_and_is_not_a_robot_path(tmp_pa
     execute.run(parse(tmp_path, 'read notes/machine.yaml'))
     assert ran[-1][3] == 'libero_pro'
     assert ran[-1][2].task == 'read notes/machine.yaml'
-    assert projects.selection(project_root)['bench'] == 'libero_pro'
+    assert projects.selection(project_root)['bench'] == str(project_root / 'configs/benchmarks/libero_pro.yaml')

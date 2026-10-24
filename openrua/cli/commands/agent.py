@@ -108,7 +108,6 @@ def _start_robot(args, agent: str | None) -> tuple[str, subprocess.Popen] | None
     start.prepare(args.home, values, lambda line: None if line.startswith(("Checking", "Reusing"))
                   else print(line, flush=True))
     login.ensure(args.home, values["agent"] or None, values.get("auth_mode", "native"))
-    projects.save_selection(selected, values)
     argv = [sys.executable, "-m", "openrua", "--home", str(args.home), "up"]
     argv += [values["robot"]] if values["robot"] else []
     argv += ["--sim", values["sim"], "--bench", values["bench"], "--name", name]

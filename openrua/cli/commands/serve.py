@@ -12,7 +12,7 @@ from openrua.cli.commands import up
 from openrua.cli import workspace
 from openrua.cli.project_skills import ProjectSkills
 from openrua.web import assets
-from openrua.config import paths
+from openrua.config import paths, projects
 from openrua.agents.base import NotSignedIn
 from openrua.errors import AuthError, OpenRUAError, UnavailableError
 from openrua.runner import managed, live_state
@@ -29,7 +29,7 @@ async def serve(args) -> None:
     if getattr(args, "connect", None):
         request = ConnectRequest(home=args.home, name=args.name, folder=Path(args.connect),
                                  agent=args.agent, model=args.model, distro=args.distro,
-                                 project=Path(args.workspace) if args.workspace else None)
+                                 project=Path(args.workspace))
         owned = await managed.start(request, open_resources=open_connect)
         flow = ConnectFlow(owned, request)
     else:
@@ -50,7 +50,7 @@ async def serve(args) -> None:
         view = CameraView(lambda: owned.robot)
         def project():
             facts = live_state.load(args.name, args.home, require_running=False)
-            return facts.get('project') if facts.get('backend') != 'connect' else None
+            return facts.get('project')
         project_skills = ProjectSkills(args.home, project)
         server = LocalServer(owned.execution, owned.end, secrets.token_urlsafe(32), port=args.port,
                              assets=assets(), artifacts=owned.artifacts,
@@ -105,11 +105,15 @@ async def serve(args) -> None:
 
 
 def run(args) -> int:
-    if args.workspace:
-        selected = workspace.choose(args.workspace, args.home, accept=args.trust_workspace)
-        if selected is None:
-            return 0
-        args.workspace = str(selected)
+    selected = workspace.choose(args.workspace or Path.cwd(), args.home, accept=args.trust_workspace)
+    if selected is None:
+        return 0
+    args.workspace = str(selected)
+    if not args.connect:
+        choices = projects.options(selected, {key: getattr(args, key, None) for key in projects.FIELDS},
+                                   relative_to=Path.cwd())
+        for key, value in choices.items():
+            setattr(args, key, value)
     try:
         asyncio.run(serve(args))
     except OpenRUAError:

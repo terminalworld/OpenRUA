@@ -24,7 +24,7 @@ def test_external_plugin_loads_and_does_not_appear_as_a_bundled_option():
 def test_explicit_api_profile_roundtrip_and_no_login_fallback(tmp_path):
     key = tmp_path / 'key'
     key.write_text('synthetic-zcode-key')
-    args = build_parser().parse_args(['--home', str(tmp_path), 'config', 'set',
+    args = build_parser().parse_args(['--home', str(tmp_path), 'config', 'set', '--user',
         '--agent', str(MANIFEST), '--auth', 'api', '--api-key-file', str(key)])
     configure.run(args)
     cfg = config.compose('panda', 'robosuite', None, tmp_path).cfg

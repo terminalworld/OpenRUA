@@ -1,5 +1,5 @@
 """``openrua robots | simulators | benchmarks | agents``: what ships in the
-package, and the robots connected on this computer."""
+package as project starting points."""
 
 from __future__ import annotations
 
@@ -48,22 +48,8 @@ def _list_kind(kind: str, args) -> int:
 
 
 def run_robots(args) -> int:
-    """The bundled robots, then the ones ``openrua connect`` connected on
-    this computer, each with the path that names it."""
-    rows = [{"name": e.name, "path": str(e.path), "description": _describe("robots", e.path)}
-            for e in paths.available("robots")]
-    connected = [{"name": e.name, "path": str(e.path), "connected": True,
-                  "description": _describe("robots", e.path)}
-                 for e in paths.connected_robots(args.home)]
-    if args.json:
-        print_listing(rows + connected, True)
-        return 0
-    print_listing(rows, False)
-    if connected:
-        print("\nconnected on this computer (pass the path where a robot is named):")
-        for r in connected:
-            print(f"{r['name']:<20} {r['description']}\n{'':<20} {r['path']}")
-    return 0
+    """Robot types available as project starting points."""
+    return _list_kind('robots', args)
 
 
 def run_simulators(args) -> int:
@@ -160,11 +146,8 @@ def add_parser(sub) -> None:
     for kind, fn in (("robots", run_robots), ("simulators", run_simulators),
                      ("benchmarks", run_benchmarks), ("agents", run_agents)):
         p = sub.add_parser(kind, help=f"list the bundled {kind}"
-                           + (" (or one benchmark's suites and tasks)" if kind == "benchmarks" else "")
-                           + (" and the ones connected here" if kind == "robots" else ""),
+                           + (" (or one benchmark's suites and tasks)" if kind == "benchmarks" else ""),
                            description=f"Every {kind[:-1]} shipped in the package"
-                           + (", then the robots openrua connect connected on this computer, "
-                              "each with its path" if kind == "robots" else "")
                            + ". A file of your own elsewhere is not listed; pass it as a "
                            "path where a name is expected."
                            + (" With a name: that benchmark's suites, each suite's task ids "

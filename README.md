@@ -188,7 +188,7 @@ see [Architecture](docs/architecture.md).
   arguments override them. [Configuration](docs/config.md) documents the fields.
 - **Available extensions.** `openrua robots`, `openrua simulators`,
   `openrua benchmarks`, and `openrua agents` list the bundled choices;
-  `openrua robots` also lists the robots connected on this computer.
+  `openrua robots` lists available robot types as project starting points.
   `openrua benchmarks libero_pro` lists its suites and tasks.
 
 ## Supported robots
@@ -205,7 +205,7 @@ it, come from the other two kinds of file.
 | `aloha-agilex` | AgileX Cobot Magic with two ARX X5 arms | `robotwin` |
 | *your robot* | any ROS&nbsp;2 arm or mobile manipulator, real | its own file; see [docs/your-own-robot.md](docs/your-own-robot.md) |
 
-`openrua robots` prints this list, and the robots connected on this computer.
+`openrua robots` prints this list. Real-robot adaptation files live in your project.
 
 ## Supported simulators
 
@@ -297,7 +297,7 @@ See the paper for baselines, evaluation protocols and detailed analysis.
 
 ## Use your own robot
 
-The quickest way is `openrua connect my-arm`: your coding agent finds out
+The quickest way is `openrua connect`: your coding agent finds out
 what the robot is, builds and starts its ROS&nbsp;2 drivers and writes
 `robot.yaml` with you, and OpenRUA checks each step. When every check has
 passed, the same conversation goes on in the robot's own terminal. See

@@ -8,7 +8,7 @@ approve each command that changes something here.
 
 ## What this terminal reaches
 
-- This folder, as `/workspace` and also at its host path, `{folder}`.
+- The coding project at `/workspace`, also mounted at its host path for driver builds.
   `docker run -v` takes host paths, so a mount names that one.
 - The host's docker: images built and containers run here are the
   host's. Drivers run in containers, on the host network, so the robot's

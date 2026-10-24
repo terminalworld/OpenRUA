@@ -17,6 +17,7 @@ gets its agent's hosts when it starts.
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import subprocess
 from datetime import datetime, timezone
@@ -25,7 +26,7 @@ from uuid import uuid4
 
 from openrua import agents, config, proxy
 from openrua.errors import UnavailableError, UsageError
-from openrua.config import paths
+from openrua.config import paths, projects
 from openrua.config.schema import sim_image
 from openrua.proxy.build import build as build_proxy
 from openrua.robot.real.build import DriverBuildError, build as build_driver
@@ -63,32 +64,42 @@ def simulator_targets(benches: list[str], sims: list[str], every: bool,
     two benchmarks that add nothing to their simulator share its image."""
     if every:
         benches = [e.name for e in paths.available("benchmarks")]
-    if not benches and not sims:
-        user = config.load_user_config(paths.config_path(home))
-        defaults = config.load_user_config(paths.package_config_path())
-        bench = user.benchmark or defaults.benchmark
-        if not bench:
-            return []
-        benches = [bench]
     seen: dict[str, tuple[str, dict, str]] = {}
     for b in benches:
         _, decl = config.load_benchmark(b)
         owner = config.image_owner(decl["simulator"], b)
-        seen.setdefault(owner, (owner, config.install_for(decl["simulator"], b), sim_image(owner)))
+        seen.setdefault(owner, (config.image_source(decl['simulator'], b).stem,
+                                config.install_for(decl['simulator'], b), sim_image(owner)))
     for s in sims:
         owner = config.image_owner(s)
-        seen.setdefault(owner, (owner, config.install_for(s), sim_image(owner)))
+        seen.setdefault(owner, (config.image_source(s).stem, config.install_for(s), sim_image(owner)))
     return list(seen.values())
 
 
 def run(args) -> int:
     unit = getattr(args, "unit", None)
+    selected = projects.selection(projects.resolve(args.workspace or Path.cwd()))
+    bare = unit is None and not (args.bench or args.sim or args.all)
+    if unit is None and not (args.bench or args.sim or args.all):
+        args.bench = [selected['bench']] if selected.get('bench') else None
+        args.sim = [selected['sim']] if selected.get('sim') and not args.bench else None
+    if unit in {'driver', 'sandbox'} and not args.robot:
+        args.robot = selected.get('robot')
     if unit is None:
         built = []
-        if not (args.bench or args.sim or args.all):
-            # bare `openrua build`: the agent images too
-            built += [_sandbox(None, None, "jazzy", None, None, args.home),
+        if bare:
+            robot = selected.get('robot')
+            real = robot and config.load_robot(robot, args.home)[0] == 'instance'
+            chosen_agents = [selected['agent']] if selected.get('agent') else None
+            distro = robot_install(robot, args.home)['ros_distro'] if real else (
+                config.compose(robot, selected.get('sim'), selected.get('bench'), args.home).cfg['machine']['backend']['ros_distro']
+                if robot or selected.get('bench') else 'jazzy')
+            built += [_sandbox(chosen_agents, None, distro, None, None, args.home, robot if real else None),
                       build_proxy(proxy.IMAGE, proxy.PORT)]
+            if real:
+                backend = robot_install(robot, args.home)
+                if backend.get('build'):
+                    built += _drivers(robot, None, args.home)
         targets = simulator_targets(args.bench or [], args.sim or [], args.all, args.home)
         if not targets:
             print("[build] no default benchmark, so no simulator image: openrua build "
@@ -127,7 +138,9 @@ def robot_install(robot: str, home: Path | None) -> dict:
 def _drivers(robot: str, image: str | None, home: Path | None) -> list[tuple[str, str]]:
     """Build the images a real robot's config builds itself (``backend.build``),
     or the one named."""
-    images = robot_install(robot, home).get("build") or {}
+    backend = robot_install(robot, home)
+    images = backend.get('build') or {}
+    image = backend.get('images', {}).get(image, image)
     if image is not None and image not in images:
         raise UsageError(f"{robot} builds no image {image!r}",
                          hint=f"its backend.build names: {', '.join(images) or 'none'}")
@@ -210,6 +223,8 @@ def add_parser(sub) -> None:
                    help="simulator whose image to build, for its native scene "
                         "(openrua simulators); repeatable")
     p.add_argument("--all", action="store_true", help="every bundled benchmark's image")
+    p.add_argument('-C', '--cd', '--workspace', dest='workspace', default=argparse.SUPPRESS,
+                   help='project directory (default: the current directory)')
     units = p.add_subparsers(dest="unit", metavar="[<unit>]", required=False)
 
     b = units.add_parser("base", help="the ROS base image simulator images build on")
@@ -234,7 +249,7 @@ def add_parser(sub) -> None:
 
     d = units.add_parser("driver", help="the images a real robot's launch command uses, "
                          "from the directories its config names (backend.build)")
-    d.add_argument("--robot", required=True, metavar="NAME|PATH", help="the real robot")
+    d.add_argument("--robot", default=None, metavar="NAME|PATH", help="the real robot (default: this project's)")
     d.add_argument("--image", default=None, help="only this one of them")
 
     x = units.add_parser("proxy", help="the whitelist proxy image (runs that limit the "

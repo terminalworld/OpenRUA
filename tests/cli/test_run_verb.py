@@ -8,6 +8,7 @@ from openrua.cli import build_parser
 from openrua.cli.commands import build as build_cmd
 from openrua.cli.commands import up as up_cmd
 from openrua.runner import live, live_state
+from openrua.config import projects
 
 
 def test_bare_build_builds_the_agent_images_and_the_default_benchmarks(monkeypatch, tmp_path, capsys):
@@ -22,12 +23,14 @@ def test_bare_build_builds_the_agent_images_and_the_default_benchmarks(monkeypat
     assert args.fn(args) == 0
     assert built == [("sandbox", "jazzy"), ("proxy",)]          # no default benchmark: a hint
     assert "openrua build --bench" in capsys.readouterr().out
-    (tmp_path / "config.yaml").write_text("benchmark: libero_pro\n")
+    root = tmp_path / 'project'
+    projects.save_selection(root, dict(robot='', sim='', bench='libero_pro', agent='codex', model=''))
     built.clear()
-    args = build_parser().parse_args(["--home", str(tmp_path), "build"])
+    args = build_parser().parse_args(["--home", str(tmp_path), '-C', str(root), "build"])
     assert args.fn(args) == 0
-    assert built == [("sandbox", "jazzy"), ("proxy",), ("sim", "libero_pro", "openrua-sim-libero_pro")]
-    assert capsys.readouterr().out.splitlines()[-3:] == ["s d2", "p d3", "openrua-sim-libero_pro d1"]
+    assert built[:2] == [('sandbox', 'jazzy'), ('proxy',)]
+    assert built[-1][0] == 'sim' and built[-1][1] == 'libero_pro'
+    assert built[-1][2].startswith('openrua-sim-libero_pro-')
 
 
 def test_build_names_benchmarks_and_deduplicates_shared_images(monkeypatch, tmp_path):

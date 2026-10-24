@@ -1,24 +1,15 @@
-"""``openrua config show | set --robot R --sim S ... | schema``: your
-defaults file and the schema.
-
-The defaults file is ``~/.openrua/config.yaml``: the robot, simulator,
-benchmark and agent a command uses when it names none; under
-``agents.<name>`` what this machine knows about each agent (model,
-version pin, login directory, options); the sandbox's docker flags.
-``set`` writes the flags it is given into it (the same flags a session
-takes; the agent facts under the agent named or defaulted), ``show``
-prints it, ``schema`` prints every key of the resolved config with its
-meaning.
-"""
+"""View or save project settings, or personal preferences with --user."""
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
 
 from openrua import agents, config
-from openrua.config import paths, settings
+from openrua.config import paths, projects, settings
+from openrua.cli import workspace
 from openrua.errors import UsageError
 
 # flag -> key path in the defaults file; an agent's facts go under
@@ -28,6 +19,11 @@ FACTS = {"model": "model", "credentials_dir": "credentials_dir", "version": "ver
 
 
 def run(args) -> int:
+    if not args.user and args.what != 'schema':
+        return project_config(args)
+    if args.user and any(getattr(args, key) is not None for key in ('robot', 'sim', 'bench')):
+        raise UsageError('robot, simulator and benchmark choices belong to a project',
+                         hint='run openrua config set in that project without --user')
     path = paths.config_path(args.home)
     if args.what == "schema":
         print(json.dumps(config.ResolvedConfig.model_json_schema(), indent=2))
@@ -68,21 +64,50 @@ def run(args) -> int:
     return 0
 
 
+def project_config(args) -> int:
+    root = projects.resolve(args.workspace or Path.cwd())
+    path = projects.settings_path(root)
+    if args.what == 'show':
+        print(f'# {path}')
+        print(path.read_text() if path.exists() else '{}')
+        return 0
+    if any(getattr(args, key) is not None for key in ('credentials_dir', 'version', 'auth', 'api_key_file')):
+        raise UsageError('login and personal agent settings belong to the user',
+                         hint='openrua config set --user --agent <name> --auth native')
+    overrides = {key: getattr(args, key) for key in projects.FIELDS}
+    if all(value is None for value in overrides.values()):
+        raise UsageError('config set needs at least one project setting')
+    root = workspace.choose(root, args.home, accept=args.trust_workspace)
+    if root is None:
+        return 0
+    chosen = projects.options(root, {key: '' if value == 'null' else value
+                                    for key, value in overrides.items()}, relative_to=Path.cwd())
+    if chosen.get('robot') or chosen.get('bench'):
+        config.compose(chosen['robot'], chosen['sim'], chosen['bench'], args.home,
+                       agent=chosen['agent'], model=chosen['model'])
+    projects.save_selection(root, {key: value or '' for key, value in chosen.items()})
+    print(f'Saved project settings: {path}')
+    return 0
+
+
 def add_parser(sub) -> None:
-    p = sub.add_parser("config", help="your defaults (robot, simulator, benchmark, agent)",
-                       description="Your defaults file, ~/.openrua/config.yaml: `config set` "
-                       "writes the flags it is given into it (the same flags a session takes), "
-                       "`config show` prints it, `config schema` prints the resolved "
-                       "config's JSON schema, every key with its meaning.")
+    p = sub.add_parser('config', help='view or save project settings; --user for personal preferences',
+                       description='Save this project in .openrua/settings.json. Bundled environment choices '
+                       'create maintained configuration files in configs/. --user selects personal agent '
+                       'preferences and authentication in ~/.openrua/config.yaml.')
     p.add_argument("what", choices=("show", "set", "schema"), help="what to do")
+    p.add_argument('--user', action='store_true', help='read or change personal agent preferences')
+    p.add_argument('-C', '--cd', '--workspace', dest='workspace', default=argparse.SUPPRESS,
+                   help='project directory (default: the current directory)')
+    p.add_argument('--trust-workspace', action='store_true', default=argparse.SUPPRESS,
+                   help='explicitly trust this project before saving')
     p.add_argument("--robot", default=None, help="robot a command uses when it names none")
     p.add_argument("--sim", default=None, help="simulator, likewise")
     p.add_argument("--bench", default=None, help="benchmark whose world a session loads by "
                    "default (null = the simulator's native scene)")
     p.add_argument("--agent", default=None, help="agent a command uses when it names none "
                    "(openrua agents)")
-    p.add_argument("--model", default=None, help="model the agent runs on this machine "
-                   "(written under agents.<agent>)")
+    p.add_argument("--model", default=None, help="project model; with --user, the personal model under agents.<agent>")
     p.add_argument("--version", default=None, metavar="VERSION",
                    help="pin the agent's CLI version (agents.<agent>.version)")
     p.add_argument("--credentials-dir", default=None, help="the agent's login profile "

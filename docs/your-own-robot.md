@@ -138,13 +138,17 @@ its Dockerfile, relative to the robot's file, as docker compose's
 
 ```yaml
   backend:
-    launch: python3 driver/up.py      # starts the driver's containers
+    launch: python3 driver/up.py --image {images[driver]}
     build:
-      my-robot-driver: driver         # image name: directory with its Dockerfile
+      driver: driver                  # build name: directory with its Dockerfile
 ```
 
 `openrua build driver --robot ./ur5e.yaml` builds them (`--image NAME`
-for one), and `doctor` reports any that is missing.
+for one), and `doctor` reports any that is missing. Build names resolve to
+content-addressed image tags. Pass them to a host launch program through
+`{images[name]}` arguments; when `backend.image` names a declared build, it
+resolves to the same tag. Driver programs receive the image as an explicit
+parameter. Each run records the resolved names and input directories.
 
 A camera type is a file of its own, next to the robot's, saying what one
 camera with one driver publishes; `{name}` stands for the camera's name

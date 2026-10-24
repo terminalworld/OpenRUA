@@ -50,3 +50,10 @@ def agent_cli_ok(monkeypatch):
     ask; this stands in for one that passes."""
     from openrua.runner import live
     monkeypatch.setattr(live, "check_agent_cli", lambda *a, **k: None)
+
+
+@pytest.fixture(autouse=True)
+def isolated_default_user_directory(tmp_path, monkeypatch):
+    """Tests never load the developer's personal configuration or credentials."""
+    from openrua.config import paths
+    monkeypatch.setattr(paths, 'DEFAULT_HOME', str(tmp_path / 'default-user'))

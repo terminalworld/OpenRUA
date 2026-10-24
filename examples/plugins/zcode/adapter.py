@@ -72,7 +72,7 @@ class ZCode(Agent):
         return PreparedProfile(directory, self.sandbox_mounts(directory), lambda: [key])
 
     def login_hint(self, creds_home):
-        return 'configure a native ZCode Coding Plan key profile; OAuth reuse is not supported; API use requires config set --auth api --api-key-file /absolute/path/to/key'
+        return 'configure a native ZCode Coding Plan key profile; OAuth reuse is not supported; API use requires config set --user --auth api --api-key-file /absolute/path/to/key'
 
     def prepare_api_profile(self, key_file: Path, dest: Path, *,
                             limits: dict | None = None) -> PreparedProfile:

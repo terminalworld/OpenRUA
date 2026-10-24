@@ -28,6 +28,41 @@ at `/workspace` in the agent's terminal. OpenRUA preserves its permissions
 and existing files. It adds project guidance to `AGENTS.md` once, retaining
 any existing instructions, and keeps generated files under `.openrua/`.
 
+## Save a project environment
+
+Use the setup screen or save explicitly:
+
+```sh
+openrua config set --robot panda --sim robosuite --agent codex
+openrua build
+openrua
+```
+
+This copies the selected bundled robot and simulator declarations, including
+required build files, into `configs/` in your project. Edit these maintained
+files to change your scene or control configuration. Selecting a benchmark
+also copies its declaration and dependencies. Existing files are retained.
+Project settings store paths relative to this directory; YAML references
+resolve relative to the file that declares them. Commit the maintained files
+and `.openrua/settings.json` together. `.openrua/requirements.txt` records the
+OpenRUA version used when the project was first saved; install it with
+`python -m pip install -r .openrua/requirements.txt`. Update that dependency
+explicitly when you choose to upgrade the project.
+
+Command-line overrides on ordinary launches and `exec` apply to that run only.
+Use `config set` or the setup screen to save choices. `config show` displays
+this project's settings. Personal agent preferences and authentication use
+`openrua config set --user`; they never select another project's robot.
+
+For a real robot, run `openrua connect` here. Its `robot.yaml`, `driver/` and
+`cameras/` are maintained in this project, from the first connecting turn
+through later robot work. `--dir robot` selects a subdirectory inside the
+project. See [connect](connect.md).
+
+Copying the project preserves maintained inputs. A new machine still needs
+the declared software dependencies, authentication and its own workspace
+trust. Session history remains local to OpenRUA's user directory.
+
 ## Continue your work
 
 End the session, return to the same directory later, and run `openrua` again.
