@@ -39,6 +39,12 @@ def test_project_files_and_instructions_survive_new_connections(tmp_path):
     assert (first / 'machine.yaml').read_text() == 'old connection'
     assert (second / 'machine.yaml').read_text() != 'old connection'
     assert 'python3 /robot/tools/' in (second / 'README.md').read_text()
+    for name in ('10-machine.md', '20-perception.md', '30-action.md'):
+        document = (second / 'docs' / name).read_text()
+        assert 'open("/robot/machine.yaml")' in document
+        assert 'open("machine.yaml")' not in document
+    assert 'in the read-only robot materials. Read it first.' in (second / 'docs/10-machine.md').read_text()
+    assert '`machine-discrepancies.yaml` at the workspace root' in (second / 'docs/10-machine.md').read_text()
 
 
 def test_two_resource_sessions_mount_the_exact_same_project(resources, tmp_path, monkeypatch, proxy_address, agent_cli_ok):
