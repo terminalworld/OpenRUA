@@ -284,3 +284,38 @@ def test_an_agent_without_settings_says_so(tmp_path):
             await execution.command("configure", setting="model", value="m")
         await execution.close()
     asyncio.run(run())
+
+
+def test_planned_handover_still_accepts_new_dialogue_without_sending_to_closed_native(tmp_path):
+    async def run():
+        store, session, transport, execution = await setup(tmp_path)
+        try:
+            await execution.close(handover='tool environment update')
+            message = await execution.command('enqueue', client_id='person', request_id='during', text='inspect this connection')
+            state = store.snapshot()['state']
+            assert state['messages'][0]['id'] == message['id']
+            assert state['messages'][0]['status'] == 'queued' and not state['closed']
+            assert not [f for f in transport.writes if 'submit' in f]
+            session.close()
+            with pytest.raises(ValueError, match='closed'):
+                await execution.command('enqueue', client_id='person', request_id='late', text='too late')
+        finally:
+            store.close()
+    asyncio.run(run())
+
+
+def test_late_active_turn_refuses_planned_handover_without_closing_agent(tmp_path):
+    async def run():
+        store, session, transport, execution = await setup(tmp_path)
+        try:
+            first = await execution.command('enqueue', client_id='person', request_id='first', text='inspect')
+            with pytest.raises(ValueError, match='turn is running'):
+                await execution.close(handover='update')
+            assert store.snapshot()['state']['connected']
+            assert not execution._closing
+            assert not execution._handover
+            await execution.command('interrupt', message_id=first['id'])
+        finally:
+            await execution.close()
+            store.close()
+    asyncio.run(run())

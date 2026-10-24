@@ -65,7 +65,8 @@ def test_the_view_reads_only_the_camera_watched(monkeypatch):
             self.running = False
 
     monkeypatch.setattr(cameras, "CameraTap", Tap)
-    robot = SimpleNamespace(sandbox="box", cameras=({"wrist": "/w", "scene": "/s"}, None))
+    robot = SimpleNamespace(sandbox="box", cameras=({"wrist": "/w", "scene": "/s"}, None),
+                            connection=SimpleNamespace(generation=0))
     view = cameras.CameraView(lambda: robot)
     try:
         assert view.names() == ["scene", "wrist"]
@@ -73,6 +74,9 @@ def test_the_view_reads_only_the_camera_watched(monkeypatch):
         view.frame("wrist")
         view.frame("scene")
         assert started == [["wrist"], ["scene"]]   # one at a time, switched on request
+        robot.connection.generation += 1
+        view.frame('scene')
+        assert started == [['wrist'], ['scene'], ['scene']]
         with pytest.raises(ValueError, match="no camera named 'door'"):
             view.frame("door")
     finally:

@@ -115,7 +115,7 @@ def test_start_keeps_custom_plugin_spec_and_native_configuration(tmp_path, monke
                         workspace=str(workspace), agent_version="1.2", sandbox="box", model="model", proxy="proxy", options={"effort": "high"},
                         limits={"internet": "model-only", "web_search": False, "account_connectors": False},
                         permissions="ask")
-        monkeypatch.setattr(managed, "open_robot", lambda request: SimpleNamespace(power_off=lambda: calls.append("stopped")))
+        monkeypatch.setattr(managed, "open_robot", lambda request, **kw: SimpleNamespace(power_off=lambda: calls.append("stopped")))
         def conversation(*args, **kwargs):
             assert args == ("box", "model", "proxy")
             assert kwargs == {"options": {"effort": "high"},

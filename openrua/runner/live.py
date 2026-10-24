@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import os
 import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Callable
 
@@ -25,7 +25,7 @@ from openrua.runner import live_state as state
 from openrua.runner.motion import cancel_motion, motion_actions
 from openrua.runner.record import session_provenance
 from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
-                                    internet_access, start_episode)
+                                    internet_access, start_episode, prepare_sandbox)
 from openrua.sandbox.down import down as sandbox_down
 from openrua.sandbox import project
 
@@ -84,6 +84,8 @@ class LiveRobot:
     # Cancel every goal on the robot's motion actions: what an interrupt
     # does to the robot. Returns each action's outcome.
     stop_motion: Callable[[], dict[str, bool]] = lambda: {}
+    # Interactive owners maintain this connection independently of the sandbox.
+    connection: object | None = None
 
 
 def check_agent_cli(sandbox: str, adapter, backend: dict, robot: str) -> str | None:
@@ -154,16 +156,16 @@ def stop_resources(sandbox: str, shutdown_machine: Callable[[], None]) -> None:
             hint="retry resource shutdown before deleting session files") from failures[0][1]
 
 
-def open_robot(request: RobotRequest) -> LiveRobot:
+def open_robot(request: RobotRequest, *, interactive: bool = False, resolved=None) -> LiveRobot:
     """Bring up resources under a new handle and retain files after shutdown."""
-    composed = compose(request.robot, request.simulator, request.benchmark, request.home, agent=request.agent)
+    composed = resolved or compose(request.robot, request.simulator, request.benchmark, request.home, agent=request.agent)
     cfg = composed.cfg
     suite = request.task_suite or composed.suite
     task_id = request.task_id if request.task_id is not None else composed.task_id
     if suite is not None:
         apply_suite_overrides(cfg, suite)
     normalize_arms(cfg)
-    unready = not_ready(cfg["machine"]["backend"])
+    unready = [] if interactive else not_ready(cfg["machine"]["backend"])
     if unready:
         raise UnavailableError(not_ready_message(unready),
                                hint=not_ready_hint(unready, cfg["machine"]["backend"]))
@@ -229,20 +231,48 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         if skill_mounts:
             destinations = {mount.split(':')[1] for mount in skill_mounts}
             mounts = (*(mount for mount in mounts if mount.split(':')[1] not in destinations), *skill_mounts)
+    if interactive:
+        from openrua.runner.robot_client import prepare_client, guide
+        service = sandbox_dir / 'maintenance'
+        prepare_client(service)
+        mounts = (*(m for m in mounts if m.split(':')[1] not in {'/openrua-runtime', '/adapter'}),
+                  f'{service}:/openrua-runtime:ro')
+        source = _robot_file(composed.robot)
+        if source is not None and not source.is_relative_to(paths.bundled('robots')):
+            mounts = (*mounts, f'{source.parent}:/adapter')
+            with (service / 'README.md').open('a') as stream:
+                stream.write(f'\nMaintained robot configuration: /adapter/{source.name}\n')
     if cfg["machine"]["backend"]["kind"] == "sim":
         print(f"[up] sandbox {sandbox_name}; robot {sim_name} (booting; MoveIt takes a minute)",
               flush=True)
     else:
         print(f"[up] sandbox {sandbox_name}; waiting for the robot's ROS 2 graph", flush=True)
+    connection = None
     try:
-        _, machine, _ = bring_up(
-            cfg, workdir, sim_name, sandbox_name, suite, task_id, network,
-            internet_access(proxy_url), mounts, request.ros_domain,
-            robot_log=workdir / "robot.log", home=request.home,
-            **({"workspace": project_root, "seed_workspace": False} if project_root is not None else {}))
-    except Exception as e:  # noqa: BLE001
-        # The sandbox directory stays for the read below; openrua clean sweeps it.
-        raise UnavailableError(f"[up] robot failed to come up: {e}",
+        if interactive:
+            from openrua.runner.connection import Connection
+            config_path, domain = prepare_sandbox(
+                cfg, workdir, sim_name, sandbox_name, network, internet_access(proxy_url),
+                mounts, request.ros_domain,
+                **({"workspace": project_root, "seed_workspace": False} if project_root is not None else {}))
+            chosen = cfg_agent['name'] + ('@' + adapter.version if adapter.version else '')
+            connection = Connection(replace(request, agent=chosen, model=model, project=project_root,
+                                            robot=None if composed.robot.startswith('(') else composed.robot,
+                                            simulator=composed.simulator or '', benchmark=composed.benchmark or ''),
+                                    composed, workdir, config_path, domain, network, sandbox_name)
+            guide(materials if project_root is not None else workdir / 'workspace')
+            machine = connection
+        else:
+            _, machine, _ = bring_up(
+                cfg, workdir, sim_name, sandbox_name, suite, task_id, network,
+                internet_access(proxy_url), mounts, request.ros_domain,
+                robot_log=workdir / "robot.log", home=request.home,
+                **({"workspace": project_root, "seed_workspace": False} if project_root is not None else {}))
+    except Exception as e:
+        if interactive:
+            sandbox_down(sandbox_name)
+        component = 'environment' if interactive else 'robot'
+        raise UnavailableError(f"[up] {component} failed to come up: {e}",
                                hint=f"read {workdir / 'robot.log'}") from e
 
     try:
@@ -265,12 +295,12 @@ def open_robot(request: RobotRequest) -> LiveRobot:
 
     robot = cfg["machine"].get("robot", {})
     try:
-        if cfg["machine"]["backend"]["kind"] == "sim":
+        if not interactive and cfg["machine"]["backend"]["kind"] == "sim":
             task = start_episode(machine, request.init_state).get("language", "")
         else:
             task = request.task or ""
         state.save(request.name, request.home, status="running", sim=sim_name, sandbox=sandbox_name,
-                   backend=cfg["machine"]["backend"]["kind"],
+                   backend=cfg["machine"]["backend"]["kind"], interactive=interactive,
                    network=network,
                    proxy=agent_proxy_url(cfg["machine"]["backend"], proxy_url),
                    limits=limits, permissions=request.permissions, mounts=list(mounts),
@@ -281,6 +311,8 @@ def open_robot(request: RobotRequest) -> LiveRobot:
                    options={**adapter.default_options,
                             **cfg.get("agent", {}).get("options", {})},
                    workspace=str(project_root or workdir / "workspace"), task=task,
+                   **({'configuration': '/adapter/' + source.name} if interactive and source is not None
+                       and not source.is_relative_to(paths.bundled('robots')) else {}),
                    **({"project": str(project_root), "run_directory": str(workdir)} if project_root is not None else {}),
                    # What the terminal shows in its header; the resolved config is
                    # the source and these are its names, not a second copy of facts.
@@ -301,4 +333,6 @@ def open_robot(request: RobotRequest) -> LiveRobot:
         agent=adapter.name, model=model, power_off=power_off,
         stopped=getattr(machine, "stopped", lambda: None), robot_log=workdir / "robot.log",
         cameras=camera_topics(cfg),
-        stop_motion=lambda actions=motion_actions(cfg["machine"]): cancel_motion(sandbox_name, actions))
+        stop_motion=(connection.stop_motion if connection else
+                     lambda actions=motion_actions(cfg["machine"]): cancel_motion(sandbox_name, actions)),
+        connection=connection)

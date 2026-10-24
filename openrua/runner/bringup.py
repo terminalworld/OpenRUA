@@ -308,6 +308,23 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     (WxH; default the profile's camera resolution); None records nothing.
     """
     resolve_robot_files(cfg, dest, home)
+    config_path, domain = prepare_sandbox(cfg, dest, sim_name, sandbox_name, network,
+                                          internet, mounts, ros_domain, workspace, seed_workspace)
+    try:
+        machine = start_robot(cfg, config_path, sim_name, sandbox_name, task_suite, task_id,
+                              network, domain, robot_log, record_cameras, record_every, record_size)
+    except BaseException:
+        sandbox_down(sandbox_name)
+        raise
+    return config_path, machine, domain
+
+
+def prepare_sandbox(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
+                    network: str, internet: str, mounts: tuple[str, ...],
+                    ros_domain: int | None,
+                    workspace: Path | None = None, seed_workspace: bool = True
+                    ) -> tuple[Path, int]:
+    """Prepare the agent environment without starting or waiting for a robot."""
     config_path = record.write_config(dest, cfg)
     backend = cfg.get("machine", {}).get("backend", {})
     reach = sandbox_reachability(backend, network, sim_name, internet)
@@ -336,6 +353,18 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
     if backend.get("kind") != "sim":
         ros_domain = 0 if ros_domain is None else ros_domain
     ros_domain = claim_domain(network, ros_domain, start_sandbox, sandbox_down)
+    return config_path, ros_domain
+
+
+def start_robot(cfg: dict, config_path: Path, sim_name: str, sandbox_name: str,
+                task_suite: str | None, task_id: int | None, network: str,
+                ros_domain: int, robot_log: Path,
+                record_cameras: tuple[str, ...] | None = None,
+                record_every: int = 1, record_size: str | None = None,
+                wait_ready: bool = True) -> robot.Handle:
+    """Start a robot against an existing sandbox; leave that sandbox on failure."""
+    backend = cfg.get("machine", {}).get("backend", {})
+    dest = config_path.parent
     # Addresses instead of names where Fast DDS complains about names: the
     # robot's profile gets the sandbox's (up already), the sandbox's is
     # rewritten with the robot's once its container exists, before
@@ -365,15 +394,13 @@ def bring_up(cfg: dict, dest: Path, sim_name: str, sandbox_name: str,
         )
         if by_address:
             sandbox_peers(sandbox_name, peers_profile([address_on(sim_name, network)]))
-        machine.wait_ready()
+        if wait_ready:
+            machine.wait_ready()
     except BaseException:
-        try:
-            if machine is not None:
-                machine.shutdown()
-        finally:
-            sandbox_down(sandbox_name)
+        if machine is not None:
+            machine.shutdown()
         raise
-    return config_path, machine, ros_domain
+    return machine
 
 
 def resolve_robot_files(cfg: dict, dest: Path, home: Path | None = None) -> None:

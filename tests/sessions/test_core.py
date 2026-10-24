@@ -275,15 +275,24 @@ def test_a_pause_says_why(session):
         session.resume(state(session)['pause_id'])
 
 
-def test_a_stopped_robot_holds_the_queue_with_its_reason(session):
-    add(session)
+def test_stopped_robot_holds_old_work_but_allows_new_repair_dialogue(session):
+    old = add(session, 'move to the bowl')
     session.robot_stopped("the launch command exited with 134")
     s = state(session)
     assert s["robot"] == {"status": "stopped", "reason": "the launch command exited with 134"}
-    assert s["paused"] and s["pause_reason"].startswith("robot stopped:")
-    assert session.take() is None                     # nothing goes to an agent without a robot
-    session.robot_stopped("again")                    # recorded once
-    assert state(session)["robot"]["reason"].endswith("134")
+    assert not s["paused"] and s['connected']
+    assert s['messages'][0]['held_reason'].endswith('134')
+    assert session.take() is None
+    new = add(session, 'read the driver log', request='repair')
+    delivered = session.take()
+    assert delivered['id'] == new and 'Robot connection: stopped' in delivered['context_note']
+    finish(session, new)
+    session.robot_status('ready', 'new connection')
+    assert session.take() is None
+    with pytest.raises(ValueError, match='refresh'):
+        session.release(old, 0)
+    session.release(old, state(session)['messages'][0]['revision'])
+    assert session.take()['id'] == old
 
 
 def test_settings_and_the_agents_commands_are_kept_in_the_state(session):

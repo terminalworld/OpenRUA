@@ -34,6 +34,13 @@ another agent is rebuilt through the same preparation flow. Connecting from the
 setup menu saves the selected agent, model and authentication without requiring
 a known robot or replacing your existing robot/simulator defaults.
 
+After connecting, maintain the driver through the same conversation. Ask your
+agent to apply changes or use `/robot` for status, logs, builds and restart.
+The agent can call `python3 /openrua-runtime/robot.py --help`; its source folder
+is available at `/adapter/`. Driver updates retain the agent environment when
+possible; necessary tool changes hand over the conversation internally.
+See [connection maintenance](sessions.md#maintain-the-robot-in-the-same-conversation).
+
 The robot's own terminal may use a different ROS distro from the connecting
 terminal. The `robot` check verifies the selected agent in that actual sandbox
 image and rebuilds it when needed before either test start. A bare Humble image

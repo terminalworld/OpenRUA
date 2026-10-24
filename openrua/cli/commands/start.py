@@ -146,7 +146,7 @@ def check_values(home: Path, values: dict[str, str]) -> tuple[bool, str]:
     validate_values(home, values)
     report = doctor.run(robot=values['robot'], sim=values['sim'],
                         bench=values['bench'], agent_names=[values['agent']] if values['agent'] else None,
-                        home=home)
+                        home=home, environment_only=True)
     return report.ok, report.render()
 
 
@@ -347,7 +347,7 @@ def _run(args) -> int:
                                 lambda: history.entries(args.home, selected),
                                 lambda name: open_history(args.home, name),
                                 list_all=lambda: history.entries(args.home), scope=str(selected),
-                                environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress, limit_overrides(args)),
+                                environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress, limit_overrides(args), environment_only=True),
                                 authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']]))),
                                 resolve_agent=lambda name: authentication_choices(args.home, [name])[name],
                                 ready=lambda values: docker_setup.ensure(),
@@ -364,7 +364,7 @@ def _run(args) -> int:
         validate_values(args.home, values)
         if interactive:
             docker_setup.ensure()
-        prepare(args.home, values, limits=limit_overrides(args))
+        prepare(args.home, values, limits=limit_overrides(args), environment_only=True)
         if interactive:
             login.ensure(args.home, values['agent'] or None, values.get('auth_mode', 'native'))
         ok, report = check_values(args.home, values)

@@ -1,4 +1,4 @@
-"""Combine interactive robot resources with a native conversation owner."""
+"""Own a persistent conversation and its independently maintained resources."""
 
 from __future__ import annotations
 
@@ -39,20 +39,26 @@ class ManagedSession:
         self._robot_stopped = False
         self._watch: asyncio.Task | None = None
         self.resource_lock = None
+        self.maintenance = None
+        self.on_execution = None
 
     def watch_robot(self, interval_s: float = 2.0) -> None:
         """Notice when the robot's resources end under the session (a
         driver that crashed after an emergency stop, say): say so in the
-        service log, record it in the session and hold the queue."""
+        service log, hold earlier work and leave repair dialogue usable."""
         async def watch():
             while True:
                 await asyncio.sleep(interval_s)
-                reason = self.robot.stopped()
+                if self.maintenance and self.maintenance.task and not self.maintenance.task.done():
+                    continue
+                reason = await asyncio.to_thread(self.robot.stopped)
                 if reason:
                     where = f"; read {self.robot.robot_log}" if self.robot.robot_log else ""
-                    print(f"[robot] {reason}{where}", flush=True)
-                    self.execution.session.robot_stopped(reason)
-                    return
+                    current = self.store.snapshot()['state'].get('robot') or {}
+                    if current.get('status') != 'stopped' or current.get('reason') != reason:
+                        print(f"[robot] {reason}{where}", flush=True)
+                        self.robot.cameras = ({}, None)
+                        await self.execution.robot_status('stopped', reason, hold=True, interrupt=True)
         self._watch = asyncio.create_task(watch())
 
     async def cancel_motion(self) -> None:
@@ -81,10 +87,14 @@ class ManagedSession:
             self.artifacts = WorkspaceFiles(Path(facts["workspace"]))
             self.execution = await _open_execution(self.name, self.home, self.store, resume=True)
             self.execution.on_interrupt = self.cancel_motion
+            if self.on_execution:
+                self.on_execution(self.execution)
             self.watch_robot()
 
     async def end(self) -> None:
         """Stop owned execution resources and retain all conversation materials."""
+        if self.maintenance is not None:
+            await self.maintenance.close()
         async with self._end_lock:
             if self._ended:
                 return
@@ -149,9 +159,9 @@ async def _open_execution(name: str, home: Path, store: SQLiteStore,
 async def start(request: RobotRequest, open_resources: Callable | None = None) -> ManagedSession:
     """Start through the existing robot/agent plugin path, with one owner.
 
-    Robot startup is synchronous just as in `up`. Once ready, the native
-    reader and clients run on the event loop. No model task is submitted
-    until a user sends a message. ``open_resources`` takes the request and
+    The agent environment and native reader become available before the
+    robot connects in the background. No model task is submitted until a
+    user sends a message. ``open_resources`` takes the request and
     returns the resources' handle (a robot by default; the connecting
     terminal for ``openrua connect``).
     """
@@ -180,7 +190,7 @@ async def start(request: RobotRequest, open_resources: Callable | None = None) -
             resource_lock.close()
             raise
     try:
-        robot = (open_resources or open_robot)(request)
+        robot = open_resources(request) if open_resources else open_robot(request, interactive=True)
     except BaseException:
         resource_lock.close()
         raise
@@ -197,6 +207,13 @@ async def start(request: RobotRequest, open_resources: Callable | None = None) -
         execution.on_interrupt = managed.cancel_motion
         managed.resource_lock = resource_lock
         managed.watch_robot()
+        from openrua.runner.maintenance import Maintenance
+        managed.maintenance = Maintenance(managed)
+        try:
+            await managed.maintenance.begin()
+        except BaseException:
+            await managed.maintenance.close()
+            raise
         return managed
     except BaseException:
         try:

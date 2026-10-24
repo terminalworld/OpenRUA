@@ -158,3 +158,25 @@ def test_missing_unpinned_codex_is_refused_before_starting_a_native_conversation
     with pytest.raises(UnavailableError, match='installed, working CLI') as caught:
         live.check_agent_cli('box', agents.get('codex'), backend, 'robot.yaml')
     assert caught.value.hint == 'openrua build sandbox --distro humble --agent codex'
+
+
+def test_interactive_environment_is_available_before_robot_startup_checks(resources, monkeypatch, agent_cli_ok):
+    request, calls, _ = resources
+    adapter = live.agents.get('fake')
+    adapter.version = None
+    monkeypatch.setattr(live, 'prepare_sandbox', lambda *a, **kw: (request.home / 'config.yaml', 7))
+    def forbidden(_):
+        pytest.fail('robot readiness must not prevent the interactive agent environment')
+    monkeypatch.setattr(live, 'not_ready', forbidden)
+    robot = live.open_robot(request, interactive=True)
+    try:
+        assert robot.connection is not None and robot.connection.machine is None
+        assert robot.connection.request.robot == 'test'
+        assert robot.connection.request.simulator == robot.connection.request.benchmark == ''
+        assert not [call for call in calls if call == 'robot stopped']
+        facts = live_state.load(request.name, request.home)
+        assert facts['interactive'] and facts['status'] == 'running'
+        assert any('/openrua-runtime' in mount for mount in facts['mounts'])
+    finally:
+        robot.power_off()
+    assert _stops(calls) == ['sandbox stopped']

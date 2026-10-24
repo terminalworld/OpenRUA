@@ -25,6 +25,7 @@ _ARGUMENTS = {
     "enqueue": {"client_id": str, "request_id": str, "text": str},
     "edit": {"message_id": str, "text": str, "revision": int},
     "withdraw": {"message_id": str},
+    "release": {"message_id": str, "revision": int},
     "interrupt": {"message_id": str},
     "resume": {"pause_id": str},
     "resolve_unknown": {"message_id": str, "note": str},

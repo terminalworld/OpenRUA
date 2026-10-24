@@ -94,15 +94,32 @@ class Session:
             return None, [_event("message_withdrawn", message_id=message_id)]
         self.store.update(change)
 
+    def release(self, message_id: str, revision: int) -> dict:
+        """Explicitly reconsider one instruction held across a resource change."""
+        def change(state):
+            _open(state)
+            message = _message(state, message_id)
+            if message['status'] != 'queued' or message['revision'] != revision:
+                raise ValueError('message changed or was dispatched; refresh before releasing it')
+            if not message.get('held_reason'):
+                raise ValueError('this instruction is not held')
+            message.pop('held_reason')
+            message['revision'] += 1
+            return message, [_event('message_released', message=message)]
+        return self.store.update(change)
+
     def take(self) -> dict | None:
         """Persist delivery intent before the owner submits to the native process."""
         def change(state):
-            if state["closed"] or state["paused"] or state["active"] or not state["connected"]:
+            if (state["closed"] or state["paused"] or state["active"] or not state["connected"]
+                    or state.get('handover_pending')):
                 return None, []
             for message in state["messages"]:
-                if message["status"] == "queued":
-                    if state.get('context_note') and not message['text'].lstrip().startswith('/'):
-                        message['context_note'] = state.pop('context_note')
+                if message["status"] == "queued" and not message.get('held_reason'):
+                    if not message['text'].lstrip().startswith('/'):
+                        notes = [state.pop(key) for key in ('context_note', 'robot_note') if state.get(key)]
+                        if notes:
+                            message['context_note'] = '\n'.join(notes)
                     message["status"] = "dispatching"
                     state["active"] = message["id"]
                     return message, [_event("dispatch_started", message_id=message["id"])]
@@ -128,13 +145,17 @@ class Session:
         """The next queued message, marked to join the running turn, when
         there is a running turn to join. Persisted before the owner sends."""
         def change(state):
-            if state["closed"] or state["paused"] or not state["active"] or not state["connected"]:
+            if (state["closed"] or state["paused"] or not state["active"] or not state["connected"]
+                    or state.get('handover_pending')):
                 return None, []
             active = _message(state, state["active"])
             if active["status"] != "running" or active["cancel_requested"]:
                 return None, []
             for message in state["messages"]:
-                if message["status"] == "queued":
+                if message["status"] == "queued" and not message.get('held_reason'):
+                    notes = [state.pop(key) for key in ('context_note', 'robot_note') if state.get(key)]
+                    if notes:
+                        message['context_note'] = '\n'.join(notes)
                     message["status"] = "steering"
                     message["joined"] = state["active"]
                     return message, [_event("steer_started", message_id=message["id"],
@@ -303,15 +324,35 @@ class Session:
         self.store.update(change)
 
     def robot_stopped(self, reason: str) -> None:
-        """The robot's resources ended under the session (a driver that
-        exited, say): recorded, and the queue held, so no instruction is
-        sent to an agent whose robot is gone."""
+        """Hold old instructions and interrupt the turn, keeping new dialogue usable."""
+        self.robot_status('stopped', reason, hold=True, interrupt=True)
+
+    def robot_status(self, status: str, reason: str = '', *, hold: bool = False,
+                     interrupt: bool = False) -> None:
+        """Resource availability is independent of the native conversation."""
+        if status not in {'starting', 'ready', 'stopped', 'failed', 'updating', 'waiting'}:
+            raise ValueError('unsupported robot connection status')
         def change(state):
-            if state["closed"] or (state.get("robot") or {}).get("status") == "stopped":
+            current = {'status': status, 'reason': reason}
+            if state['closed'] or state.get('robot') == current:
                 return None, []
-            state["robot"] = {"status": "stopped", "reason": reason}
-            _pause(state, f"robot stopped: {reason}")
-            return None, [_event("robot_stopped", reason=reason)]
+            held = []
+            if hold:
+                for message in state['messages']:
+                    if message['status'] == 'queued' and not message.get('held_reason'):
+                        message['held_reason'] = reason or f'robot {status}'
+                        message['revision'] += 1
+                        held.append(message['id'])
+            if interrupt and state['active']:
+                _message(state, state['active'])['cancel_requested'] = True
+            state['robot'] = current
+            note = (f'Robot connection: {status}. {reason} '
+                    'Use current observations before robot work. Instructions held across '
+                    'the change remain held; do not replay prior actions or assume a restart '
+                    'is a physical stop. To inspect or maintain this connection, run '
+                    'python3 /openrua-runtime/robot.py --help.')
+            state['robot_note'] = note
+            return None, [_event('robot_status', **current, held=held)]
         self.store.update(change)
 
     def recover(self) -> None:

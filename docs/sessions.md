@@ -30,11 +30,14 @@ See [robot projects](projects.md) for file organization and continuing work.
 starts or reconnects to a named session;
 `openrua --gui` selects the browser and `openrua --cli` selects plain chat.
 Choose **Prepare and start** in keyboard setup to set up Docker and the agent's
-sign-in when they are missing, build missing images and check readiness;
+sign-in when they are missing, prepare the agent environment and check it;
 **Save and check preparation** only inspects preparation. Explicit API
 configuration remains a choice of your own; OpenRUA never changes billing mode
 for you. The service runs in the background,
 with startup output in `~/.openrua/launches/<name>/service.log`.
+The conversation becomes available before the robot is ready. Missing robot
+images are prepared in the background; driver or build failure leaves the
+agent available to inspect logs and work on the project.
 
 To come back, `openrua --resume` lists this project's conversations, running ones first;
 `openrua --resume --all` includes other projects and older unassigned sessions.
@@ -181,6 +184,66 @@ again. A preview reflects the bytes read at that time, not subsequent changes.
 File browsing is available while the service is running; after ending, retained
 files remain accessible on disk.
 
+## Maintain the robot in the same conversation
+
+The project conversation, native agent connection, and robot runtime have
+separate lifetimes. The robot status is shown alongside chat readiness.
+Startup or driver failure does not require leaving chat or restarting OpenRUA.
+
+Ask the agent to inspect or apply your driver changes, or use `/robot` in the
+terminal. The menu provides status, driver/build logs, build, start, stop and
+restart. The browser and plain chat accept `/robot status`, `/robot logs`,
+`/robot build`, `/robot start`, `/robot stop` and `/robot restart`.
+The equivalent command-line operations use the same owner:
+
+```sh
+openrua session --name shared robot status
+openrua session --name shared robot logs
+openrua session --name shared robot restart --request-id MY_UNIQUE_REQUEST
+```
+
+The agent's terminal has a session-scoped command:
+
+```sh
+python3 /openrua-runtime/robot.py --help
+python3 /openrua-runtime/robot.py restart --wait
+```
+
+This command reaches only the current session's declared resources through a
+private Unix socket. Ordinary robot sessions receive no general Docker socket.
+For an external robot configuration, `/adapter/` exposes its maintained source
+folder; `robot.py status` names its configuration. `/robot/machine.yaml` remains
+connection material generated from configuration, not a live observation.
+
+Build leaves the current connection running. Restart rereads maintained files,
+checks prerequisites and referenced files before stopping a working driver, and
+creates a new driver instance from current configuration and image tags. A
+failed stop retains ownership and prevents a competing start. Startup failure
+retains logs and the agent environment for further repair. Restarting a simulated
+robot recreates its scene from the configured initial state.
+
+Driver-only updates retain the agent process. A change to the ROS tool image,
+distro or network needs an internal environment handover: tools are prepared
+first, the active turn finishes, and the native conversation resumes in the
+replacement environment through the same frontend and service. An agent request
+returns acceptance immediately; `--wait` returns on a pending handover so the
+agent can finish its own turn. Failed replacement attempts to restore the prior
+maintenance environment without starting a robot. If Docker itself cannot run
+either environment, the service still exposes status, logs and retry operations.
+
+Resource operations have durable request IDs. A lost acknowledgement can be
+retried with the same ID and operation; it returns the retained result rather
+than executing again. Work interrupted by a lost owner is reported as unknown
+and is not replayed. Inspect operation status before choosing a new request.
+
+Instructions already queued at a connection fault or update remain **held for
+review** after reconnection. `/queue` lets you inspect, edit, withdraw, or
+explicitly send one held instruction; the browser offers the same action.
+New repair messages can be processed without releasing those earlier tasks.
+Native disconnection and uncertain execution retain their separate pause and
+reconciliation rules. A restart is not proof of a physical stop or controller
+state; reacquire current observations before robot work.
+
 ## Pause, input and end
 
 `status` includes message IDs, queued message revisions, `pause_id`, and pending
@@ -239,9 +302,8 @@ stopped, and `clean --all` does not override this guard.
 
 To recreate a confirmed ended project's resources while retaining its conversation,
 run `openrua --resume SESSION_ID` from the original project. Reconnecting a client
-to a session that is still open only attaches to its existing resources. There is
-currently no separate restart-connection button or API. A resource restart does
-not replay earlier instructions; send a new instruction after reconnecting.
+to a session that is still open only attaches to its existing resources. Use `/robot` within the current terminal to inspect or maintain its connection.
+Ending and resuming is not required for ordinary driver updates.
 
 Ending stops the agent and the resources owned by OpenRUA. For a real robot,
 motor enable state and physical power depend on its driver and shutdown command.
@@ -329,8 +391,9 @@ One turn is outstanding at a time. Normal completion releases the next message.
 While a turn runs, a queued message joins it when the agent can take one
 (`steer_started`, then `steer_delivered`; a refused steer returns it to the
 queue). An interrupt stops the turn and the queue goes on. Agent failure,
-uncertain delivery, an unanswerable request or a stopped robot pauses the
-queue, with the reason in `pause_reason`. Cancellation waits for the native
+uncertain delivery or an unanswerable request pauses the queue, with the reason
+in `pause_reason`. A stopped robot instead holds instructions already queued
+and interrupts the active turn; newly submitted repair dialogue remains usable. Cancellation waits for the native
 turn identity, and its acknowledgement alone does not complete a turn. A turn
 the agent starts by itself is recorded as a message with `origin: agent`.
 

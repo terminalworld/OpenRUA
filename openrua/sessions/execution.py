@@ -99,6 +99,7 @@ class Execution:
         self._reader: asyncio.Task | None = None
         self._gate = asyncio.Lock()
         self._closing = False
+        self._handover = None
         self._usable = False
         # What the native process last said on its own (its stderr), added
         # to the reason when it ends: the cause is usually there.
@@ -137,7 +138,12 @@ class Execution:
 
     async def command(self, operation: str, **params):
         async with self._gate:
+            coordination = {"enqueue": self.session.enqueue, "edit": self.session.edit,
+                            "withdraw": self.session.withdraw, "release": self.session.release,
+                            "resolve_unknown": self.session.resolve_unknown}
             if self._closing or self._owner is None:
+                if self._handover and operation in coordination:
+                    return coordination[operation](**params)
                 raise RuntimeError("execution owner is not accepting commands")
             if operation == "respond":
                 if not self._usable:
@@ -163,9 +169,8 @@ class Execution:
                                                                         params["value"]))
                 result = None
             else:
-                operations = {"enqueue": self.session.enqueue, "edit": self.session.edit,
-                              "withdraw": self.session.withdraw, "interrupt": self.session.interrupt,
-                              "resume": self.session.resume, "resolve_unknown": self.session.resolve_unknown}
+                operations = {**coordination, "interrupt": self.session.interrupt,
+                              "resume": self.session.resume}
                 if operation not in operations:
                     raise ValueError(f"unknown session operation: {operation}")
                 result = operations[operation](**params)
@@ -199,7 +204,31 @@ class Execution:
             message = self.session.take_steer()
             if not message:
                 break
-            await self._update(protocol.steer(message["joined"], message["id"], message["text"]))
+            text = message['text']
+            if message.get('context_note'):
+                text = '[Runtime update]\n' + message['context_note'] + '\n\n[User message]\n' + text
+            await self._update(protocol.steer(message["joined"], message["id"], text))
+
+    async def robot_status(self, status: str, reason: str = '', *, hold: bool = False,
+                           interrupt: bool = False) -> None:
+        """Notify the conversation and send any requested interrupt under its gate."""
+        async with self._gate:
+            if self._closing:
+                return
+            self.session.robot_status(status, reason, hold=hold, interrupt=interrupt)
+            try:
+                await self._pump()
+            except Exception as exc:
+                self._lost(str(exc))
+
+    async def wake(self) -> None:
+        """Reconsider delivery after a resource owner's internal handover."""
+        async with self._gate:
+            if not self._closing:
+                try:
+                    await self._pump()
+                except Exception as exc:
+                    self._lost(str(exc))
 
     async def _update(self, update: Update) -> None:
         for event in update.events:
@@ -245,15 +274,18 @@ class Execution:
         """
         async with self._gate:
             first_close = not self._closing
+            if first_close and self._owner and handover:
+                # Validate a planned boundary before closing anything. A late
+                # native turn must not be killed as a supposedly idle handover.
+                self.session.handed_over(handover)
+                self._handover = handover
             self._closing = True
             self._usable = False
             try:
                 # Record uncertainty even if stopping the native process fails.
                 # Later clients must not see a still-running, connected session.
                 if first_close and self._owner:
-                    if handover:
-                        self.session.handed_over(handover)
-                    else:
+                    if not handover:
                         self.session.disconnected("native connection closing by its owner")
             finally:
                 try:

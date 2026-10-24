@@ -381,3 +381,50 @@ def test_the_page_shows_a_camera_live_once_watched(tmp_path):
         await page.wait_for_timeout(1000)
         assert len(asked) <= stopped + 1
     asyncio.run(browser_case(tmp_path, check, cameras=View()))
+
+
+def test_browser_robot_fault_holds_old_work_and_allows_repair_without_leaving(tmp_path):
+    async def check(page, store, native, server):
+        old = server.execution.session.enqueue('cli', 'old', 'move to the bowl')
+        await server.execution.robot_status('stopped', 'driver exited', hold=True)
+        await playwright.expect(page.locator('#state')).to_have_text('Ready to chat')
+        await playwright.expect(page.locator('#queue')).to_contain_text('Held for review')
+        await send(page, 'read the driver log')
+        await until(lambda: store.snapshot()['state']['active'] is not None)
+        repair = store.snapshot()['state']['active']
+        assert repair != old['id']
+        assert all(frame.get('submit') != old['id'] for frame in native.writes)
+        await emit(native, 'turn_finished', repair, status='completed')
+        await until(lambda: store.snapshot()['state']['active'] is None)
+        page.on('dialog', lambda dialog: dialog.accept())
+        await page.get_by_role('button', name='Send held instruction').click()
+        await until(lambda: store.snapshot()['state']['active'] == old['id'])
+        assert page.url == server.url + '/'
+    asyncio.run(browser_case(tmp_path, check))
+
+
+def test_browser_robot_request_survives_lost_ack_and_reload_with_same_identity(tmp_path):
+    async def check(page, store, native, server):
+        calls, jobs = [], {}
+        async def action(body):
+            calls.append(dict(body))
+            return jobs.setdefault(body['request_id'], {**body, 'status': 'completed', 'summary': 'restarted'})
+        server.actions['robot'] = action
+        page.on('dialog', lambda dialog: dialog.accept())
+        async def lose(route):
+            await route.fetch()
+            await route.abort()
+        await page.route('**/api/actions/robot', lose)
+        await send(page, '/robot restart')
+        await playwright.expect(page.locator('#notice')).to_contain_text('unconfirmed')
+        assert len(calls) == len(jobs) == 1
+        await page.unroute('**/api/actions/robot')
+        await page.reload()
+        await page.locator('#token').fill(server.token)
+        await page.get_by_role('button', name='Connect', exact=True).click()
+        await playwright.expect(page.locator('#state')).to_have_text('Ready')
+        await send(page, '/robot retry')
+        await playwright.expect(page.locator('#notice')).to_contain_text('completed')
+        assert calls[0] == calls[1] and len(jobs) == 1
+        assert not [frame for frame in native.writes if 'submit' in frame]
+    asyncio.run(browser_case(tmp_path, check))

@@ -12,6 +12,7 @@ export const COMMANDS = [
   {name: 'tools', description: 'Expand or collapse a tool result', clients: ['terminal']},
   {name: 'files', description: 'Browse saved workspace files and images', clients: ['terminal', 'browser']},
   {name: 'project', description: 'Project skills, reviews and accumulation settings', clients: ['terminal']},
+  {name: 'robot', description: 'Robot connection status, logs, build and restart', clients: ['terminal', 'browser']},
   {name: 'watch', description: "See the robot's cameras live, in a browser", clients: ['terminal', 'browser']},
   {name: 'queue', description: 'Inspect, edit or withdraw queued messages', clients: ['terminal', 'browser']},
   {name: 'questions', description: 'Answer pending agent questions', clients: ['terminal', 'browser']},
@@ -62,7 +63,11 @@ export function parseCommand(text, state) {
 export function status(state, {readOnly = false} = {}) {
   if (!state) return {head: {kind: 'connecting', tone: 'muted', text: 'Connecting…'}, notes: []};
   const notes = [];
-  if (state.robot?.status === 'stopped') notes.push({tone: 'bad', text: `robot stopped: ${state.robot.reason}`});
+  if (state.robot) notes.push({tone: state.robot.status === 'ready' ? 'good' : 'warn',
+    text: `robot ${state.robot.status}${state.robot.reason ? ': ' + state.robot.reason : ''} · /robot`});
+  const maintenance = Object.values(state.maintenance ?? {}).at(-1);
+  if (maintenance) notes.push({tone: maintenance.status === 'failed' || maintenance.status === 'unknown' ? 'warn' : 'plain',
+    text: `${maintenance.operation}: ${maintenance.status} · ${String(maintenance.summary || '').split('\n')[0].slice(0, 160)}`});
   const checks = Object.entries(state.checks ?? {});
   if (checks.length) notes.push({tone: 'plain', kind: 'checks', checks,
     text: checks.map(([step, check]) => `${step} ${{passed: '✓', failed: '✗', running: '…'}[check.status] ?? ''}`).join(' ')});
@@ -71,7 +76,9 @@ export function status(state, {readOnly = false} = {}) {
     const current = permissionChoices(state).find(choice => choice.value === state.settings.permissions);
     notes.push({tone: 'muted', text: `Permissions: ${current?.label ?? state.settings.permissions}`});
   }
-  const queued = state.messages.filter(m => m.status === 'queued').length;
+  const held = state.messages.filter(m => m.status === 'queued' && m.held_reason).length;
+  if (held) notes.push({tone: 'warn', text: `${held} held for review · /queue`});
+  const queued = state.messages.filter(m => m.status === 'queued' && !m.held_reason).length;
   if (queued) notes.push({tone: 'plain', text: `${queued} queued`});
   if (!(state.connected || state.closed || readOnly)) notes.push({tone: 'warn',
     text: state.pause_reason?.startsWith('agent disconnected') ? state.pause_reason : 'agent disconnected'});
@@ -85,7 +92,7 @@ export function status(state, {readOnly = false} = {}) {
       (state.connected ? ', /continue to go on' : ' · agent unavailable; inspect session logs before restarting')};
   else if (asking) head = {kind: 'waiting', tone: 'warn', text: 'Waiting for your response'};
   else if (state.active) head = {kind: 'working', tone: 'busy', text: 'Working…'};
-  else head = {kind: 'ready', tone: 'good', text: 'Ready'};
+  else head = {kind: 'ready', tone: 'good', text: state.robot && state.robot.status !== 'ready' ? 'Ready to chat' : 'Ready'};
   return {head, notes};
 }
 
@@ -99,7 +106,7 @@ export function notice(record) {
       failed.length ? `No answer from ${failed.join(', ')}: use the emergency stop if it still moves` : '']
       .filter(Boolean).join('\n') || null;
   }
-  if (record?.kind === 'handed_over') return 'The robot is connected; the conversation moves to its own terminal.';
+  if (record?.kind === 'handed_over') return `Updating the execution environment: ${data.reason || 'internal handover'}. This conversation stays open.`;
   if (record?.kind === 'agent_event' && data.kind === 'setting_rejected') {
     const {setting, value, reason} = data.data ?? {};
     return `The agent did not take ${setting} ${value}${reason ? `: ${reason}` : ''}`;
