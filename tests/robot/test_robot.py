@@ -109,6 +109,28 @@ def test_real_readiness_does_not_accept_a_probe_that_finishes_after_deadline():
         handle.wait_ready(timeout_s=.2)
 
 
+def test_real_readiness_rejects_a_driver_that_exits_during_a_successful_probe(tmp_path):
+    import subprocess
+    import sys
+    from openrua.robot.real.up import RealHandle
+    marker = tmp_path / 'probe-started'
+    driver = ('import time; from pathlib import Path; '
+              f'p = Path({str(marker)!r}); '
+              '\nwhile not p.exists(): time.sleep(.01)\n'
+              'raise SystemExit(125)')
+    probe = (f'from pathlib import Path; Path({str(marker)!r}).touch(); '
+             'import time; time.sleep(.2)')
+    with subprocess.Popen([sys.executable, '-c', driver]) as process:
+        try:
+            handle = RealHandle('failed-driver', process, [sys.executable, '-c', probe])
+            with pytest.raises(TimeoutError, match='launch command exited with 125'):
+                handle.wait_ready(timeout_s=3)
+        finally:
+            if process.poll() is None:
+                process.kill()
+            process.wait(timeout=3)
+
+
 def test_real_readiness_failure_does_not_sleep_past_deadline():
     import sys
     import time

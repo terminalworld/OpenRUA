@@ -168,6 +168,11 @@ class Execution:
                 await self._update(self.conversation.protocol.configure(params["setting"],
                                                                         params["value"]))
                 result = None
+            elif operation == 'select_model':
+                if not self._usable:
+                    raise ValueError('native connection is unavailable; nothing was changed')
+                await self._update(self.conversation.protocol.select_model(params['model'], params['effort']))
+                result = None
             else:
                 operations = {**coordination, "interrupt": self.session.interrupt,
                               "resume": self.session.resume}

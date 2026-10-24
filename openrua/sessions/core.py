@@ -121,6 +121,7 @@ class Session:
                         if notes:
                             message['context_note'] = '\n'.join(notes)
                     message["status"] = "dispatching"
+                    message['turn_settings'] = dict(state.get('settings', {}))
                     state["active"] = message["id"]
                     return message, [_event("dispatch_started", message_id=message["id"])]
             return None, []
@@ -193,6 +194,7 @@ class Session:
                     state["connected"] = True
             elif event.kind == "setting":
                 state.setdefault("settings", {})[event.data["setting"]] = event.data["value"]
+                state.setdefault('setting_effective_from', {})[event.data['setting']] = event.data.get('effective_from')
                 if 'choices' in event.data:
                     state.setdefault('setting_choices', {})[event.data['setting']] = event.data['choices']
             elif event.kind == "commands":

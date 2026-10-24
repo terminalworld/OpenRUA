@@ -55,6 +55,11 @@ class RealHandle(Handle):
                         raise TimeoutError(f"graph not visible after {timeout_s:g}s: "
                                            f"{output.strip()[-300:]}") from exc
                     raise
+                # A pre-existing graph can answer while this launch fails.
+                # Its response cannot establish that our driver started.
+                if self.proc is not None and self.proc.poll() is not None:
+                    raise TimeoutError(f"launch command exited with {self.proc.returncode} "
+                                       "before the graph came up")
                 if probe.returncode == 0:
                     return
                 diagnostic = (stderr or stdout).strip()[-300:]

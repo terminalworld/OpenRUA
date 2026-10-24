@@ -31,6 +31,7 @@ _ARGUMENTS = {
     "resolve_unknown": {"message_id": str, "note": str},
     "respond": {"request_id": str, "answers": dict},
     "configure": {"setting": str, "value": str},
+    "select_model": {"model": str, "effort": str},
 }
 
 

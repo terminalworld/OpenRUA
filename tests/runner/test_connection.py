@@ -131,6 +131,69 @@ def test_failed_start_keeps_agent_and_accepts_repair_then_retries_in_place(conne
     asyncio.run(run())
 
 
+def test_project_can_add_a_peripheral_build_and_launch_in_the_same_session(connection, tmp_path, monkeypatch):
+    import dataclasses
+    import yaml
+    from openrua import config
+    from openrua.runner import maintenance
+
+    conn, calls, _, _ = connection
+    root = conn.request.project
+    profile = root / 'robot.yaml'
+    arm = root / 'driver/arm'
+    camera = root / 'driver/camera'
+    for directory in (arm, camera):
+        directory.mkdir(parents=True)
+        (directory / 'Dockerfile').write_text('FROM scratch\n')
+    description = {'machine': {'backend': {'kind': 'real', 'discovery': {'network': 'host'},
+                   'build': {'arm-driver': 'driver/arm'},
+                   'launch': 'bash driver/start.sh {images[arm-driver]}'},
+                   'robot': {'model': 'Fixture'}, 'cameras': {'list': []}}}
+    profile.write_text(yaml.safe_dump(description))
+    conn.request = dataclasses.replace(conn.request, robot=str(profile))
+    monkeypatch.setattr(module, 'compose', config.compose)
+    conn.resolved = conn.read_config()
+    conn.environment = module.environment(conn.resolved.cfg)
+    builds = []
+
+    def invoke(argv, **kwargs):
+        if argv[:3] == ['docker', 'image', 'inspect']:
+            return SimpleNamespace(returncode=1)
+        assert argv[1:3] == ['-m', 'openrua.robot.real.build']
+        builds.append((argv[argv.index('--image') + 1], argv[argv.index('--context') + 1]))
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(maintenance.subprocess, 'run', invoke)
+
+    async def run():
+        owner, _ = await owner_for(tmp_path, conn)
+        original = owner.execution
+        try:
+            await owner.maintenance.action({'operation': 'start', 'request_id': 'original'})
+            await owner.maintenance.task
+            assert owner.store.snapshot()['state']['robot']['status'] == 'ready'
+            backend = description['machine']['backend']
+            backend['build']['camera-driver'] = 'driver/camera'
+            backend['launch'] += ' {images[camera-driver]}'
+            profile.write_text(yaml.safe_dump(description))
+            await owner.maintenance.action({'operation': 'restart', 'request_id': 'add-camera'})
+            await owner.maintenance.task
+            state = owner.store.snapshot()['state']
+            assert state['maintenance']['add-camera']['status'] == 'completed'
+            assert state['robot']['status'] == 'ready'
+            assert owner.execution is original
+            assert calls == ['start', 'stop', 'start']
+            assert any(image.startswith('camera-driver:') and context == str(camera) for image, context in builds)
+            applied = conn.resolved.cfg['machine']['backend']
+            assert applied['images']['camera-driver'] in applied['launch']
+            assert applied['cwd'] == str(root)
+            assert '{images[' not in applied['launch']
+        finally:
+            await owner.end()
+            owner.store.close()
+    asyncio.run(run())
+
+
 def test_restart_keeps_native_owner_and_never_starts_after_unconfirmed_stop(connection, tmp_path):
     conn, calls, fail, _ = connection
     async def run():

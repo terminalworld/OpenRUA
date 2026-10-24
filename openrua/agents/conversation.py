@@ -104,6 +104,14 @@ class ConversationProtocol(ABC):
         emits setting once it is in effect. Default: unsupported."""
         raise NotImplementedError("this agent's settings cannot be changed from here")
 
+    def select_model(self, model: str, effort: str) -> Update:
+        """Validate and apply a model and its reasoning level together.
+
+        Plugins that report per-model effort choices implement this operation.
+        No setting may change if either value is rejected.
+        """
+        raise NotImplementedError("this agent cannot select a model and effort together")
+
 
 @dataclass(frozen=True)
 class Conversation:

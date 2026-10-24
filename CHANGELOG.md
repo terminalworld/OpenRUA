@@ -9,6 +9,18 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.23.3
+
+- Reject real-driver startup when its launch process exits during a successful
+  graph probe, even when an existing ROS graph still responds.
+- Follow the native model-selection flow in the terminal: select a model and
+  its supported reasoning level, go back with Escape, and apply both only on
+  final confirmation. Use the native model's default level for a new model.
+- Show a running turn's dispatched model and effort separately from the
+  next-turn selection, and retain that snapshot in conversation history.
+- Document adding peripherals through project build inputs and launch code,
+  then applying them through the existing in-session restart operation.
+
 ## 0.23.2
 
 - Point project-mode machine documentation and Python examples to the current

@@ -345,6 +345,8 @@ def test_codex_model_choices_come_from_native_metadata_without_a_model_turn():
     setting = update.events[0].data
     assert setting['value'] == 'resolved-model'
     assert setting['choices'][0]['value'] == 'gpt-6-astra'
+    assert setting['effective_from'] == 'next_turn'
+    assert setting['choices'][0]['default_effort'] == 'low'
     assert update.outbound[0]['params']['cursor'] == 'page-two'
     failed = protocol.receive({'id': update.outbound[0]['id'], 'error': {'message': 'metadata unavailable'}})
     assert failed.events[0].kind == 'native' and protocol.can_submit
@@ -356,6 +358,21 @@ def test_codex_model_choices_come_from_native_metadata_without_a_model_turn():
     turn = protocol.submit('work', 'Continue')
     assert turn.outbound[0]['params']['model'] == 'gpt-6-astra'
     assert turn.outbound[0]['params']['effort'] == 'low'
+
+
+def test_codex_model_and_effort_selection_rejects_without_changing_either_setting():
+    protocol = ready()
+    protocol._models = {'new-model': {'efforts': [{'value': 'low'}, {'value': 'medium'}]}}
+    original = protocol.model, protocol.effort
+    with pytest.raises(ValueError, match='native effort'):
+        protocol.select_model('new-model', 'high')
+    assert (protocol.model, protocol.effort) == original
+    update = protocol.select_model('new-model', 'medium')
+    assert [(event.data['setting'], event.data['value']) for event in update.events] == [
+        ('model', 'new-model'), ('effort', 'medium')]
+    turn = protocol.submit('next', 'Continue')
+    assert turn.outbound[0]['params']['model'] == 'new-model'
+    assert turn.outbound[0]['params']['effort'] == 'medium'
 
 
 def test_codex_compact_runs_as_the_servers_turn():

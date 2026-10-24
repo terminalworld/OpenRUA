@@ -30,6 +30,22 @@ def finish(session, message_id, status="completed"):
     session.native(Event("turn_finished", message_id, {"status": status}))
 
 
+def test_running_turn_keeps_its_dispatched_settings_when_next_turn_changes(session):
+    session.native(Event('setting', data={'setting': 'model', 'value': 'first-model'}))
+    session.native(Event('setting', data={'setting': 'effort', 'value': 'high'}))
+    first = add(session)
+    session.take()
+    session.native(Event('turn_started', first))
+    session.native(Event('setting', data={'setting': 'model', 'value': 'next-model'}))
+    session.native(Event('setting', data={'setting': 'effort', 'value': 'low'}))
+    snapshot = state(session)
+    assert snapshot['messages'][0]['turn_settings'] == {'model': 'first-model', 'effort': 'high'}
+    assert snapshot['settings']['model'] == 'next-model'
+    finish(session, first)
+    add(session, request='second')
+    assert session.take()['turn_settings'] == {'model': 'next-model', 'effort': 'low'}
+
+
 def test_multiple_clients_submit_and_one_turn_is_delivered_at_a_time(session):
     first = add(session)
     second = add(session, "grasp", client="cli")
