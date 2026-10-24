@@ -65,6 +65,12 @@ def run(args) -> int:
         if operation == "end":
             client.end()
             result = {"closed": True, "files_retained": True}
+        elif operation == 'robot':
+            body = {'operation': args.robot_operation}
+            if args.robot_operation not in {'status', 'logs'} or args.request_id:
+                body['request_id'] = args.request_id or uuid4().hex
+                print(json.dumps({'request_id': body['request_id']}), flush=True)
+            result = client.request('/api/actions/robot', body)['result']
         elif operation == "send":
             request_id = args.request_id or str(uuid4())
             # Expose retry identity before making the request, including on a
@@ -75,7 +81,8 @@ def run(args) -> int:
             result = client.command(operation, request_id=args.request_id, answers=json.loads(args.answers))
         else:
             parameters = {"interrupt": ("message_id",), "resume": ("pause_id",),
-                          "withdraw": ("message_id",), "edit": ("message_id", "text", "revision"),
+                          "withdraw": ("message_id",), "release": ("message_id", "revision"),
+                          "edit": ("message_id", "text", "revision"),
                           "resolve_unknown": ("message_id", "note"),
                           "configure": ("setting", "value")}
             result = client.command(operation, **{key: getattr(args, key) for key in parameters[operation]})
@@ -92,6 +99,9 @@ def add_parser(sub) -> None:
     browser = actions.add_parser("web", help="open the browser client and explicitly show its access token")
     browser.add_argument("--no-open", action="store_true", help="print connection instructions without opening a browser")
     actions.add_parser("status", help="snapshot, pending questions and message IDs")
+    robot = actions.add_parser('robot', help='maintain the robot while keeping this conversation open')
+    robot.add_argument('robot_operation', choices=('status', 'logs', 'start', 'stop', 'restart', 'build'))
+    robot.add_argument('--request-id', help='reuse after a lost acknowledgement; never retries an unknown execution')
     events = actions.add_parser("events", help="read retained events after a cursor")
     events.add_argument("--after", type=int, default=0)
     events.add_argument("--limit", type=int, default=1000)
@@ -110,6 +120,9 @@ def add_parser(sub) -> None:
     edit.add_argument("message_id")
     edit.add_argument("text")
     edit.add_argument("--revision", type=int, required=True)
+    release = actions.add_parser('release', help='explicitly send one instruction held across a connection change')
+    release.add_argument('message_id')
+    release.add_argument('--revision', type=int, required=True)
     reconcile = actions.add_parser("resolve_unknown", help="record checking an uncertain execution, without replaying it")
     reconcile.add_argument("message_id")
     reconcile.add_argument("note")

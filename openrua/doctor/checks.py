@@ -64,6 +64,7 @@ class Context:
     owner: str | None = None     # the declaration the robot image is rendered from
     login_directories: dict[agents.Agent, Path] = field(default_factory=dict)
     authentication: dict[agents.Agent, dict] = field(default_factory=dict)
+    environment_only: bool = False
 
 
 def engine_version() -> str:
@@ -189,7 +190,7 @@ def check_proxy_image(ctx: Context) -> list[CheckResult]:
 def check_robot_ready(ctx: Context) -> list[CheckResult]:
     """A real robot's own startup checks (``backend.startup_checks``), run
     now, so a start that would stop on one says so first, with its fix."""
-    if ctx.cfg is None:
+    if ctx.cfg is None or ctx.environment_only:
         return []
     backend = ctx.cfg["machine"].get("backend", {})
     checks = backend.get("startup_checks") or []
@@ -212,7 +213,7 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
         return []
     backend = ctx.cfg["machine"].get("backend", {})
     out: list[CheckResult] = []
-    if backend.get("kind") == "sim":
+    if backend.get("kind") == "sim" and not ctx.environment_only:
         sim = backend["image"]
         if docker_inspect("image", sim, "{{.Id}}") is None:
             out.append(CheckResult("robot-image", f"robot image {sim} missing", "error",
@@ -230,7 +231,7 @@ def check_robot_images(ctx: Context) -> list[CheckResult]:
             else:
                 out.append(CheckResult("robot-image", f"robot image {sim} present",
                                        detail=f"openrua {artifact_label(sim, sim_build.LABEL_VERSION) or '?'}"))
-    for driver in backend.get("build") or {}:
+    for driver in (() if ctx.environment_only else backend.get("build") or {}):
         if docker_inspect("image", driver, "{{.Id}}") is None:
             out.append(CheckResult(f"driver-image-{driver}", f"driver image {driver} missing",
                                    "error", detail="a session builds it before it starts",
@@ -308,7 +309,7 @@ CHECKS: tuple[Callable[[Context], list[CheckResult]], ...] = (
 
 def run(robot: str | None = None, agent_names: list[str] | None = None,
         home: Path | None = None, checks=CHECKS, sim: str | None = None,
-        bench: str | None = None) -> Report:
+        bench: str | None = None, environment_only: bool = False) -> Report:
     home = paths.home(home)
     cfg = install = owner = None
     report = Report()
@@ -353,7 +354,7 @@ def run(robot: str | None = None, agent_names: list[str] | None = None,
                                              hint="openrua agents lists the agents"))
     ctx = Context(home=home, agents=chosen, cfg=cfg, robot=robot, install=install,
                   sim=sim, bench=bench, owner=owner, login_directories=login_directories,
-                  authentication=authentication)
+                  authentication=authentication, environment_only=environment_only)
     for check in checks:
         try:
             report.checks.extend(check(ctx))

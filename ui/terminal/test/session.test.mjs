@@ -929,7 +929,7 @@ test('what the session means is read the same way by every client', async () => 
     checks: {host: {status: 'passed'}}, agent_commands: [{name: 'compact'}, {name: 'help'}]};
   const {head, notes} = status(state);
   assert.equal(head.kind, 'paused');
-  assert.deepEqual(notes.map(n => n.text), ['robot stopped: driver exited', 'host ✓', 'asks before commands',
+  assert.deepEqual(notes.map(n => n.text), ['robot stopped: driver exited · /robot', 'host ✓', 'asks before commands',
     '1 queued', 'agent disconnected: exit 1', '1 question(s): type the answer, or /questions to choose']);
   assert.equal(status(state, {readOnly: true}).head.kind, 'readonly');
   assert.deepEqual(parseCommand('/model m2', state), {kind: 'ours', name: 'model', args: ['m2']});

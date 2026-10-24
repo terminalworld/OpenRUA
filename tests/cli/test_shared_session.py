@@ -73,7 +73,7 @@ def test_serve_chat_and_down_share_one_resource_owner(tmp_path, monkeypatch, cap
         directory = tmp_path / "sandboxes/shared"
         store, core, native, execution = await setup(directory)
         stopped = []
-        owned = ManagedSession(SimpleNamespace(power_off=lambda: stopped.append(True)), execution, store)
+        owned = ManagedSession(SimpleNamespace(power_off=lambda: stopped.append(True)), execution, store, name="shared", home=tmp_path)
         async def start(request):
             assert request.name == "shared"
             return owned
@@ -126,7 +126,7 @@ def test_aborted_service_with_failed_shutdown_keeps_deletion_guard(tmp_path, mon
         def fail_shutdown():
             raise RuntimeError("driver shutdown unconfirmed")
 
-        owned = ManagedSession(SimpleNamespace(power_off=fail_shutdown), execution, store)
+        owned = ManagedSession(SimpleNamespace(power_off=fail_shutdown), execution, store, name="shared", home=tmp_path)
 
         async def start(request):
             return owned

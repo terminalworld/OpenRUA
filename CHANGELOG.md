@@ -9,6 +9,19 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.22.0
+
+- Shared chat starts its agent environment before connecting the robot. Driver
+  failures leave repair dialogue available and hold earlier queued instructions
+  for explicit review instead of blocking every new message.
+- `/robot`, session CLI operations and a private terminal command share managed
+  connection status, logs, builds and restart. Driver updates retain the agent;
+  required tool changes hand over the native conversation inside the same UI.
+  Durable request IDs prevent repeat execution after lost acknowledgements.
+- Robot configuration sources are available at `/adapter/` in their working
+  terminal. Per-connection logs/configuration are retained with the project;
+  single-run and benchmark startup/cleanup contracts remain unchanged.
+
 ## 0.21.10
 
 - Optional periodic skill reviews are managed from `/project` or

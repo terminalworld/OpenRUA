@@ -6,6 +6,7 @@ import {DialogHeading, PendingMessages, Transcript, Welcome, accent, bold, edito
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
 import {projectMenu, updateReview} from './project.mjs';
+import {robotMenu} from './robot.mjs';
 
 const commands = commandsFor('terminal');
 
@@ -159,11 +160,17 @@ export class Chat {
 
   queue() {
     const messages = this.controller.state?.messages.filter(m => m.status === 'queued') ?? [];
-    this.picker('Queued instructions', messages.map(m => ({value: m.id, label: plain(m.text)})), id => {
+    this.picker('Queued instructions', messages.map(m => ({value: m.id, label: plain(m.text),
+      description: m.held_reason ? `Held: ${plain(m.held_reason)}` : 'Queued'})), id => {
       const message = messages.find(m => m.id === id);
       if (this.client.readOnly) { this.say(message.text); return; }
       this.picker(plain(message.text), [{value: 'back', label: 'Back'}, {value: 'edit', label: 'Edit'},
+        ...(message.held_reason ? [{value: 'release', label: 'Send this held instruction…'}] : []),
         {value: 'withdraw', label: 'Withdraw this queued message'}], async action => {
+        if (action === 'release') this.confirm('Send this instruction now? Inspect the current robot and any uncertain execution first.', async () => {
+          await this.client.command('release', {message_id: id, revision: message.revision});
+          await this.refresh();
+        });
         if (action === 'edit') this.editText('Edit queued instruction', message.text, async text => {
           await this.client.command('edit', {message_id: id, revision: message.revision, text}); await this.refresh();
         });
@@ -352,6 +359,7 @@ export class Chat {
     const writable = () => { if (this.client.readOnly) throw new Error('This is read-only history.'); };
     return {
       project: async () => projectMenu(this),
+      robot: async args => robotMenu(this, args),
       help: async () => {
         const agent = this.agentCommands();
         const theirs = agent.length ? ['', 'The agent\'s own:', ...agent.map(c => `/${c.name}: ${c.description}`)] : [];

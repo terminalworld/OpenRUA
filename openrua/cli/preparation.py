@@ -52,7 +52,8 @@ def image_commands(composed, benchmark: str | None = None,
     return commands
 
 
-def prepare(home: Path, values: dict, progress=print, limits: dict | None = None) -> None:
+def prepare(home: Path, values: dict, progress=print, limits: dict | None = None,
+            *, environment_only: bool = False) -> None:
     """Build only missing images, with streamed output and retained failure logs.
     ``limits`` are the session's (a proxy image only when it needs one)."""
     composed = config.compose(values['robot'], values['sim'], values['bench'], home,
@@ -60,7 +61,10 @@ def prepare(home: Path, values: dict, progress=print, limits: dict | None = None
     selected = composed.cfg['agent']
     adapter = agents.get(selected['name'], home, version=selected.get('version'))
     image = composed.cfg['machine']['backend']['sandbox_image']
-    _prepare_images(home, image_commands(composed, values['bench'], limits), progress,
+    commands = image_commands(composed, values['bench'], limits)
+    if environment_only:
+        commands = [(name, argv) for name, argv in commands if name in {image, proxy.IMAGE}]
+    _prepare_images(home, commands, progress,
                     {image: _agent_probe(adapter)})
 
 

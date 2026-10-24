@@ -55,7 +55,9 @@ async def serve(args) -> None:
         server = LocalServer(owned.execution, owned.end, secrets.token_urlsafe(32), port=args.port,
                              assets=assets(), artifacts=owned.artifacts,
                              actions={"project-skills": project_skills.action,
+                                      **({"robot": owned.maintenance.action} if owned.maintenance else {}),
                                       **({"check": flow.check} if flow else {})}, cameras=view)
+        owned.on_execution = lambda execution: setattr(server, 'execution', execution)
         server.start()
         write_endpoint(endpoint, server.url, server.token)
         published = True

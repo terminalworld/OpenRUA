@@ -246,3 +246,39 @@ test('pausing a schedule is explicit and leaves the current review and robot con
   assert.equal(calls.some(call => call.command || call.operation === 'cancel'), false);
   assert.equal(chat.done, false);
 });
+
+test('robot restart confirms once and retries the same unconfirmed operation', {timeout: 5000}, async t => {
+  const {chat, client, calls} = await setup(t);
+  let attempts = 0;
+  client.request = async (path, body) => {
+    calls.push({path, body: {...body}});
+    if (++attempts === 1) throw new Error('lost acknowledgement');
+    return {result: {...body, status: 'accepted', summary: 'accepted'}};
+  };
+  await chat.submit('/robot restart');
+  assert.equal(attempts, 0);
+  await choose(chat, 1);
+  assert.equal(attempts, 1);
+  assert.ok(chat.pendingRobot);
+  await chat.submit('/robot retry');
+  assert.equal(attempts, 2);
+  assert.equal(chat.pendingRobot, null);
+  assert.deepEqual(calls[0].body, calls[1].body);
+  assert.equal(calls[0].path, '/api/actions/robot');
+});
+
+test('connection failure keeps chat ready and held work distinct from new queued messages', async () => {
+  const {status} = await import('../src/session.mjs');
+  const {PendingMessages} = await import('../src/view.mjs');
+  const state = {connected: true, closed: false, paused: false, active: null, requests: {},
+    robot: {status: 'failed', reason: 'driver failed'}, messages: [
+      {status: 'queued', text: 'move to bowl', held_reason: 'driver exited'},
+      {status: 'queued', text: 'inspect logs'},
+    ]};
+  const {head, notes} = status(state);
+  assert.equal(head.text, 'Ready to chat');
+  assert.ok(notes.some(note => /1 held for review/.test(note.text)));
+  assert.ok(notes.some(note => note.text === '1 queued'));
+  const pending = new PendingMessages(); pending.messages = state.messages;
+  assert.match(pending.render(100).join('\n'), /Held for review \(\/queue\): move to bowl/);
+});

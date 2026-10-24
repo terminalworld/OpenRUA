@@ -25,6 +25,15 @@ These entry paths share the same resource and agent contracts:
 terminal (`runner.connect`) and moves the conversation to the robot's own
 terminal once every check has passed.
 
+In shared chat, the agent environment starts independently of robot readiness.
+`runner.connection.Connection` owns the robot handle and may stop or replace it
+without replacing the sandbox. `runner.maintenance.Maintenance` serializes
+session-scoped lifecycle requests, records their outcomes, and exposes the same
+operations to HTTP clients and the agent through a private Unix socket. Tool
+environment changes use internal native-conversation handover; the service and
+frontend remain in place. Faults hold prior work while allowing fresh repair
+dialogue. Trial `bring_up` still composes both stages with all-or-nothing cleanup.
+
 Shared chat does not replace the native agent loop or the benchmark protocol.
 Its queue orders user instructions, not individual robot movements.
 

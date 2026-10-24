@@ -465,8 +465,9 @@ class ConnectFlow:
                                agent=self.agent, model=settings.get("model"), continuing=True,
                                permissions=settings.get("permissions", "ask"), project=self.request.project)
         print("[connect] every check passed: moving to the robot's own terminal", flush=True)
+        self.owned.execution.session.robot_status('updating', 'moving from connection setup to robot work', hold=True)
         try:
-            await self.owned.move_to(lambda: open_robot(request),
+            await self.owned.move_to(lambda: open_robot(request, interactive=True),
                                      "the robot is connected: moving to its own terminal")
         except Exception as exc:  # noqa: BLE001; go back to connecting and say why
             print(f"[connect] moving failed: {exc}", flush=True)
@@ -478,6 +479,13 @@ class ConnectFlow:
                             f"in the service log ({paths.launch_dir(self.request.name, self.request.home)}).")
             return
         self.server.execution = self.owned.execution
+        if self.owned.maintenance is not None:
+            await self.owned.maintenance.action({'operation': 'start', 'request_id': uuid.uuid4().hex})
+            await self.owned.maintenance.task
+            if self.owned.store.snapshot()['state'].get('robot', {}).get('status') != 'ready':
+                await self._say('The working terminal is available, but the robot connection failed. '
+                                'Inspect python3 /openrua-runtime/robot.py logs and continue fixing it here.')
+                return
         subprocess.call([sys.executable, "-m", "openrua", "--home", str(self.request.home),
                          "config", "set", "--robot", file], stdout=subprocess.DEVNULL)
         if self.request.project is not None:

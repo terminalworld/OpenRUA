@@ -135,6 +135,7 @@ class CameraView:
         self._tap: CameraTap | None = None
         self._listed: tuple[str, dict[str, str]] | None = None   # (sandbox, cameras)
         self._asked = 0.0
+        self._generation = None
         self._lock = threading.Lock()
         self._stop = threading.Event()
         threading.Thread(target=self._idle, daemon=True).start()
@@ -142,6 +143,14 @@ class CameraView:
     def _all(self) -> tuple[str, dict[str, str]]:
         """(sandbox, camera name -> topic) for the robot held now."""
         robot = self.robot()
+        generation = (robot.sandbox, getattr(getattr(robot, 'connection', None), 'generation', 0))
+        with self._lock:
+            if generation != self._generation:
+                if self._tap is not None:
+                    self._tap.stop()
+                    self._tap = None
+                self._listed = None
+                self._generation = generation
         named, pattern = getattr(robot, "cameras", ({}, None))
         if named or not pattern:
             return robot.sandbox, dict(named)

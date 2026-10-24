@@ -169,13 +169,13 @@ def test_connecting_hands_the_robot_to_the_selected_project(tmp_path, monkeypatc
         flow.request = connect.ConnectRequest(home=tmp_path / 'home', name='connecting', folder=folder, project=root)
         flow.folder, flow.agent = folder, 'codex@0.134.0'
         requests = []
-        monkeypatch.setattr(connect, 'open_robot', lambda request: requests.append(request))
+        monkeypatch.setattr(connect, 'open_robot', lambda request, **kw: requests.append(request))
         monkeypatch.setattr(connect.subprocess, 'call', lambda *a, **k: 0)
         async def move(factory, reason):
             factory()
         async def say(text):
             pass
-        flow.owned = SimpleNamespace(move_to=move, execution=object(),
+        flow.owned = SimpleNamespace(move_to=move, execution=SimpleNamespace(session=SimpleNamespace(robot_status=lambda *a, **kw: None)), maintenance=None,
                                      store=SimpleNamespace(snapshot=lambda: {'state': {'settings': {'model': 'chosen', 'permissions': 'ask'}}}))
         flow.server, flow._say = SimpleNamespace(), say
         await flow._move_to_robot()

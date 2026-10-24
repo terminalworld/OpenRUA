@@ -55,7 +55,7 @@ for line in sys.stdin:
             stops.append(True)
             live_state.stopped(name, tmp_path)
 
-        monkeypatch.setattr(managed, "open_robot", lambda request:
+        monkeypatch.setattr(managed, "open_robot", lambda request, **kw:
                             SimpleNamespace(power_off=stop_robot))
         monkeypatch.setattr(managed.agents, "get", lambda *a, **kw: SimpleNamespace(
             conversation=lambda *a, **kw: Conversation(

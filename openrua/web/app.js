@@ -25,7 +25,8 @@ try {
   saved = null;
 }
 let clientId = saved?.clientId || crypto.randomUUID(),
-  pending = saved?.pending || null;
+  pending = saved?.pending || null,
+  pendingRobot = saved?.pendingRobot || null;
 let token = "",
   state = null,
   cursor = 0,
@@ -41,7 +42,7 @@ let turns = new Map(),
   questionVersion = "",
   editTarget = null;
 function saveDraft() {
-  sessionStorage.setItem(key, JSON.stringify({ clientId, pending }));
+  sessionStorage.setItem(key, JSON.stringify({ clientId, pending, pendingRobot }));
 }
 function notice(text) {
   $("notice").textContent = text;
@@ -63,8 +64,11 @@ async function api(path, body) {
     signal: AbortSignal.timeout(130000),
   });
   const value = await response.json();
-  if (!response.ok)
-    throw new Error(value.error || `Request failed (${response.status})`);
+  if (!response.ok) {
+    const error = new Error(value.error || `Request failed (${response.status})`);
+    error.status = response.status;
+    throw error;
+  }
   return value;
 }
 const files = workspaceBrowser(api);
@@ -266,15 +270,15 @@ function render() {
       : state.active
         ? "Working"
         : state.connected
-          ? "Ready"
+          ? (state.robot && state.robot.status !== 'ready' ? 'Ready to chat' : 'Ready')
           : "Starting";
   $("state").textContent = label;
   $("summary").textContent =
     `${state.messages.length} messages · ${queued.length} queued · ${label.toLowerCase()}`;
   $("execution-description").textContent = state.closed
     ? "Resources stopped. Conversation and workspace retained."
-    : state.robot && state.robot.status === "stopped"
-      ? `The robot stopped: ${state.robot.reason}. Queued instructions are retained.`
+    : state.robot && state.robot.status !== 'ready'
+      ? `Robot ${state.robot.status}: ${state.robot.reason}. You can keep chatting to inspect and repair it. Earlier instructions remain held for review.`
       : state.paused
       ? `Paused${state.pause_reason ? `: ${state.pause_reason}` : ""}. Queued instructions are retained. Review them before continuing.`
       : state.active
@@ -336,6 +340,13 @@ function render() {
     const row = make("div", undefined, "queue-item"),
       actions = make("div", undefined, "queue-actions");
     row.append(make("p", m.text));
+    if (m.held_reason) {
+      row.append(make('p', `Held for review: ${m.held_reason}`, 'hint'));
+      actions.append(button('Send held instruction', () => {
+        if (confirm('Send this instruction now? Inspect current robot state and uncertain execution first.'))
+          return act('release', {message_id: m.id, revision: m.revision});
+      }, !online || state.closed));
+    }
     actions.append(
       button("Edit", () => edit(m, "edit"), !online || state.closed),
       button(
@@ -451,6 +462,29 @@ async function configure(setting, value) {
 // One handler for each command the page offers (commandsFor("browser"));
 // the agent's own commands go to it as a message, as in its terminal.
 export const handlers = {
+  robot: async ([operation = 'status']) => {
+    if (!['status', 'logs', 'start', 'stop', 'restart', 'build', 'retry'].includes(operation))
+      throw new Error('Use /robot status, logs, start, stop, restart, build or retry.');
+    if (operation === 'retry' && !pendingRobot) throw new Error('No unconfirmed robot request.');
+    let body = operation === 'retry' ? pendingRobot : {operation};
+    if (!['status', 'logs', 'retry'].includes(operation)) {
+      if (pendingRobot) throw new Error('A robot request is unconfirmed. Inspect /robot status or use /robot retry.');
+      if (!confirm(`${operation} the configured robot resources? This does not end the conversation or replay held tasks.`)) return;
+      body.request_id = crypto.randomUUID();
+      pendingRobot = body;
+      saveDraft();
+    }
+    try {
+      const value = await api('/api/actions/robot', body);
+      if (body.request_id) { pendingRobot = null; saveDraft(); }
+      notice(JSON.stringify(value.result, null, 2));
+    } catch (error) {
+      if (body.request_id && error.status >= 400 && error.status < 500) {
+        pendingRobot = null; saveDraft();
+      }
+      throw new Error(error.message + (pendingRobot ? ` · request ${pendingRobot.request_id} unconfirmed; /robot retry uses the same ID` : ''));
+    }
+  },
   help: () => {
     const theirs = agentCommands(state);
     notice(

@@ -58,7 +58,8 @@ export class Welcome {
     const a = /^[aeiou]/i.test(model) ? 'an' : 'a';
     const real = f.backend === 'real';
     let hello;
-    if (f.backend === 'connect') hello = `Hi! Let's connect your robot. ${agent} does the work with you, and OpenRUA checks each step.`;
+    if (f.interactive) hello = `${agent} is ready to work on your ${model} project. The connection status appears below; you can keep chatting while the robot connects or is being repaired.`;
+    else if (f.backend === 'connect') hello = `Hi! Let's connect your robot. ${agent} does the work with you, and OpenRUA checks each step.`;
     else if (!f.robot) hello = `Hi! ${agent} is ready.`;
     else if (this.returning) hello = `The ${model} is still up, with ${agent} at the controls.`;
     else if (real) hello = `Hi! You're connected to your ${model}, with ${agent} at the controls.`;
@@ -179,7 +180,7 @@ export class PendingMessages {
     const messages = this.messages.filter(message => PENDING.has(message.status));
     const labels = {queued: 'Queued', dispatching: 'Sending to agent', steering: 'Adding to current turn'};
     const lines = messages.slice(-3).map(message => yellow(truncateToWidth(
-      `${labels[message.status]}: ${plain(message.text).replace(/\s+/g, ' ')}`, width, '…')));
+      `${message.held_reason ? 'Held for review (/queue)' : labels[message.status]}: ${plain(message.text).replace(/\s+/g, ' ')}`, width, '…')));
     if (messages.length > 3) lines.unshift(muted(`${messages.length} pending messages · /queue to inspect`));
     return lines;
   }

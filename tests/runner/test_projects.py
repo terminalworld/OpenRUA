@@ -137,7 +137,7 @@ for line in sys.stdin:
     emit('turn_finished', turn, status='completed')
 ''')
         identities = []
-        def resources(request):
+        def resources(request, **kwargs):
             live_state.save(request.name, home, status='running', project=str(root), workspace=str(root),
                             agent='fixture', sandbox=request.name, model='fixture', proxy='', options={})
             return SimpleNamespace(power_off=lambda: live_state.stopped(request.name, home), stopped=lambda: None)

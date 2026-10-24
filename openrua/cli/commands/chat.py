@@ -16,6 +16,10 @@ class Display:
         self.streamed = set()
 
     def event(self, record: dict) -> None:
+        if record['kind'] in {'robot_status', 'maintenance'}:
+            data = record['data']
+            print(f"\n[{record['kind']}] {data.get('status')}: {data.get('summary') or data.get('reason', '')}", flush=True)
+            return
         if record["kind"] != "agent_event":
             return
         event = record["data"]
@@ -55,6 +59,9 @@ def watch(client, after: int, message_id: str | None = None) -> None:
             message = next(m for m in state["messages"] if m["id"] == message_id)
             if message["status"] in {"completed", "failed", "interrupted", "unknown", "withdrawn", "reconciled"}:
                 print(f"[chat] {message['status']}; event cursor {cursor}", flush=True)
+                return
+            if message.get('held_reason'):
+                print(f"[chat] instruction held for review: {message['held_reason']}", flush=True)
                 return
             if state["paused"] and state["active"] != message_id:
                 print(f"[chat] message retained while queue is paused; event cursor {cursor}", flush=True)
@@ -111,6 +118,19 @@ def run(args) -> int:
                 prompt = None
                 continue
             if prompt.strip():
+                if interactive and prompt.strip().split()[0] == '/robot':
+                    words = prompt.strip().split()
+                    operation = words[1] if len(words) == 2 else 'status' if len(words) == 1 else ''
+                    if operation not in {'status', 'logs', 'start', 'stop', 'restart', 'build'}:
+                        print('Use /robot status, logs, start, stop, restart or build.')
+                    else:
+                        body = {'operation': operation}
+                        if operation not in {'status', 'logs'}:
+                            body['request_id'] = uuid4().hex
+                            print(json.dumps({'request_id': body['request_id']}), flush=True)
+                        print(json.dumps(client.request('/api/actions/robot', body)['result'], indent=2))
+                    prompt = None
+                    continue
                 cursor = client.snapshot()["cursor"]
                 request_id = str(uuid4())
                 print(f"[chat] client {client_id}; request {request_id}", flush=True)

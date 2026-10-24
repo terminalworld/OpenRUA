@@ -318,3 +318,18 @@ def test_a_proxied_sandbox_joins_no_routed_network(tmp_path, monkeypatch):
                      'proxy:http://openrua-proxy-ab12cd34:8888', (), None, tmp_path / 'robot.log')
     assert created == []
     assert joined == [("proxy:http://openrua-proxy-ab12cd34:8888", ())]
+
+
+def test_agent_environment_does_not_require_robot_controller_files(tmp_path, monkeypatch):
+    from openrua.runner import bringup
+    cfg = {'machine': {'backend': {'kind': 'real', 'sandbox_image': 'tools', 'ros_distro': 'jazzy'},
+                       'controller_config': str(tmp_path / 'missing-controller.yaml')}}
+    created = []
+    monkeypatch.setattr(bringup, 'sandbox_up', lambda *a, **kw: created.append(kw['name']))
+    def claim(network, domain, start, stop):
+        start(7)
+        return 7
+    monkeypatch.setattr(bringup, 'claim_domain', claim)
+    config, domain = bringup.prepare_sandbox(cfg, tmp_path, 'robot', 'agent', 'net', 'open', (), 7)
+    assert created == ['agent'] and config.is_file() and domain == 7
+    assert not (tmp_path / 'missing-controller.yaml').exists()

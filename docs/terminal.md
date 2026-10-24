@@ -99,7 +99,8 @@ OpenRUA's own greeting; the agent has not looked at anything yet.
 | `/files` | Browse saved workspace files |
 | `/project` | Browse skills and reports, start or cancel a review, manage periodic plans, and inspect candidates |
 | `/watch` | See the robot's cameras live: the session's browser address and key to open it with (a terminal shows no video) |
-| `/queue` | Inspect, edit or withdraw queued instructions |
+| `/robot` | Inspect connection status/logs, build images, or update the connection in this conversation |
+| `/queue` | Inspect, edit, withdraw or explicitly send held instructions |
 | `/questions` | Choose answers to agent questions (or type the answer) |
 | Escape or `/interrupt` | Stop the current turn and cancel the robot's motions; queued instructions go next |
 | `/continue` | Confirm continuing a paused queue |

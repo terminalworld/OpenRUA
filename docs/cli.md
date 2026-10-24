@@ -554,12 +554,14 @@ options:
 |---|---|
 | `web` | open the browser client and explicitly show its access token |
 | `status` | snapshot, pending questions and message IDs |
+| `robot` | maintain the robot while keeping this conversation open |
 | `events` | read retained events after a cursor |
 | `send` | enqueue a message without waiting for its result |
 | `interrupt` | stop the running message; queued ones go next |
 | `withdraw` | withdraw a queued message |
 | `resume` | release the currently confirmed pause |
 | `edit` | edit a queued message at its current revision |
+| `release` | explicitly send one instruction held across a connection change |
 | `resolve_unknown` | record checking an uncertain execution, without replaying it |
 | `respond` | answer a pending agent question |
 | `configure` | change a native permission mode, model or reasoning effort |
@@ -582,6 +584,22 @@ usage: openrua session status [-h]
 
 options:
   -h, --help  show this help message and exit
+```
+
+### openrua session robot
+
+```
+usage: openrua session robot [-h] [--request-id REQUEST_ID]
+                             {status,logs,start,stop,restart,build}
+
+positional arguments:
+  {status,logs,start,stop,restart,build}
+
+options:
+  -h, --help            show this help message and exit
+  --request-id REQUEST_ID
+                        reuse after a lost acknowledgement; never retries an
+                        unknown execution
 ```
 
 ### openrua session events
@@ -657,6 +675,19 @@ usage: openrua session edit [-h] --revision REVISION message_id text
 positional arguments:
   message_id
   text
+
+options:
+  -h, --help           show this help message and exit
+  --revision REVISION
+```
+
+### openrua session release
+
+```
+usage: openrua session release [-h] --revision REVISION message_id
+
+positional arguments:
+  message_id
 
 options:
   -h, --help           show this help message and exit
