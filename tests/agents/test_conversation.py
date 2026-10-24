@@ -351,7 +351,7 @@ def test_codex_model_choices_come_from_native_metadata_without_a_model_turn():
     failed = protocol.receive({'id': update.outbound[0]['id'], 'error': {'message': 'metadata unavailable'}})
     assert failed.events[0].kind == 'native' and protocol.can_submit
     protocol.configure('model', 'gpt-6-astra')
-    assert protocol.effort == 'high'
+    assert protocol.effort == 'low'
     with pytest.raises(ValueError, match='native effort'):
         protocol.configure('effort', 'unsupported')
     protocol.configure('effort', 'low')
@@ -372,6 +372,20 @@ def test_codex_model_and_effort_selection_rejects_without_changing_either_settin
         ('model', 'new-model'), ('effort', 'medium')]
     turn = protocol.submit('next', 'Continue')
     assert turn.outbound[0]['params']['model'] == 'new-model'
+    assert turn.outbound[0]['params']['effort'] == 'medium'
+
+
+def test_codex_direct_model_change_uses_native_default_and_repairs_invalid_effort():
+    protocol = ready()
+    protocol.effort = 'high'
+    protocol._models = {'new-model': {'default_effort': 'medium',
+                                      'efforts': [{'value': 'low'}, {'value': 'medium'}]}}
+    protocol.configure('model', 'new-model')
+    assert (protocol.model, protocol.effort) == ('new-model', 'medium')
+    protocol.effort = 'removed-level'
+    protocol.configure('model', 'new-model')
+    assert protocol.effort == 'medium'
+    turn = protocol.submit('next', 'Continue')
     assert turn.outbound[0]['params']['effort'] == 'medium'
 
 

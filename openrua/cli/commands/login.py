@@ -71,7 +71,7 @@ def _yes(answer: str, default: bool) -> bool:
 
 
 def ensure(home: Path, name: str | None, auth_mode: str = "native",
-           ask: Callable[[str], str] = input) -> None:
+           ask: Callable[[str], str] = input, interact=None) -> None:
     """Before a session starts at a terminal: when its agent signs in
     natively and is not signed in, offer to sign it in now. Declining is a
     AuthError with the command for later."""
@@ -85,6 +85,8 @@ def ensure(home: Path, name: str | None, auth_mode: str = "native",
     login = adapter.inspect_login(where)
     if login is None or login.available:
         return
+    if interact is not None:
+        return interact(lambda: ensure(home, name, auth_mode, ask))
     title = adapter.title or adapter.name
     print(f"\n{title} is not signed in on this computer yet. OpenRUA works through your "
           f"{title} account.", flush=True)

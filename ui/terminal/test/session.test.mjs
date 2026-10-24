@@ -215,6 +215,34 @@ class Terminal {
   setProgress() {}
 }
 
+test('settings distinguish pending requests, native rejection and later confirmation', async () => {
+  const state = {messages: [], requests: {}, connected: true, closed: false, settings: {model: 'old'}};
+  const records = [];
+  const publish = (kind, data) => records.push({seq: records.length + 1, kind: 'agent_event', data: {kind, data}});
+  let reject = false;
+  const client = {
+    async snapshot() { return {state, cursor: records.length}; },
+    async events(after) { return records.filter(event => event.seq > after); }, close() {},
+    async command(operation, {setting, value}) {
+      if (reject) publish('setting_rejected', {setting, value, reason: 'native model unavailable'});
+    },
+  };
+  const chat = new Chat(client, {terminal: new Terminal()});
+  try {
+    assert.equal(await chat.configure('model', 'new'), false);
+    assert.equal(state.settings.model, 'old');
+    assert.match(chat.notice.render(100).join(''), /Waiting for the agent to confirm/);
+    reject = true;
+    await assert.rejects(chat.configure('model', 'new'), /native model unavailable/);
+    assert.doesNotMatch(chat.notice.render(100).join(''), /Selected new/);
+    state.settings.model = 'new';
+    publish('setting', {setting: 'model', value: 'new'});
+    await chat.refresh();
+    assert.match(chat.notice.render(100).join(''), /model: new/);
+    assert.doesNotMatch(chat.notice.render(100).join(''), /Waiting|Selected/);
+  } finally { chat.stop(); }
+});
+
 test('Pi keyboard editor submits, queues, interrupts on Escape and detaches', {timeout: 15000}, async t => {
   const {client, call} = await fixture(t);
   const terminal = new Terminal();
@@ -315,27 +343,26 @@ test('archive mode cannot enqueue or end a session', async () => {
   await assert.rejects(client.end(), /Read-only/);
 });
 
-test('keyboard configuration and filtered history use Pi selectors', async () => {
+test('hierarchical setup separates the environment from agent settings and preserves history search', async () => {
   const {Setup, History} = await import('../src/screens.mjs');
   const terminal = new Terminal();
   const spec = {values: {robot: 'panda', sim: 'robosuite', bench: '', agent: 'one', model: 'm1', name: 'id'},
     choices: {robot: ['panda', 'ur5'], agent: ['one', 'two']}, models: {two: 'm2'}, location: 'config.yaml', notice: ''};
   const setup = new Setup(spec, terminal);
   const running = setup.run();
+  setup.environment();
+  let page = setup.body.render(100).join('\n');
+  assert.match(page, /Real robot/); assert.match(page, /Simulation/);
+  assert.doesNotMatch(page, /Coding agent:|Benchmark \/ scene:/);
+  setup.agentSettings();
   terminal.input('\r'); terminal.input('\x1b[B'); terminal.input('\r');
-  assert.equal(setup.values.robot, 'ur5');
-  // Robot, simulator, benchmark, then agent.
-  for (let i = 0; i < 3; i++) terminal.input('\x1b[B');
-  terminal.input('\r'); terminal.input('\x1b[B'); terminal.input('\r');
-  assert.deepEqual(await running, {action: 'agent', agent: 'two', values: {...spec.values, robot: 'ur5'}});
-  // Backend resolves the agent, then the user reviews the new selection.
+  assert.deepEqual(await running, {action: 'agent', agent: 'two', values: spec.values, view: 'agent', intent: 'start'});
   const nextTerminal = new Terminal();
-  const nextValues = {...spec.values, robot: 'ur5', agent: 'two', model: 'm2'};
+  const nextValues = {...spec.values, agent: 'two', model: 'm2'};
   const next = new Setup({...spec, values: nextValues}, nextTerminal);
-  const checking = next.run();
-  for (let i = 0; i < 7; i++) nextTerminal.input('\x1b[B');
-  nextTerminal.input('\r');
-  assert.deepEqual(await checking, {action: 'check', values: nextValues});
+  const checking = next.run(); next.advanced();
+  nextTerminal.input('\x1b[B'); nextTerminal.input('\r');
+  assert.deepEqual(await checking, {action: 'check', values: nextValues, intent: 'start', view: 'review'});
   const historyTerminal = new Terminal();
   const history = new History({rows: [{id: 'a', title: 'Cup', status: 'Ended', time: ''},
     {id: 'b', title: 'Bowl', status: 'Service recorded', time: ''}]}, historyTerminal);
@@ -365,6 +392,24 @@ test('authentication uses explicit keyboard selection and clears the path on nat
   assert.equal(setup.values.auth_mode, 'native');
   assert.equal(setup.values.api_key_file, '');
   terminal.input('\x04'); await running;
+});
+
+test('new robot connection remains a connection when setup is retried', async () => {
+  const {Setup} = await import('../src/screens.mjs');
+  const spec = {values: {robot: '', sim: '', bench: '', agent: 'codex', model: '', name: 'id'},
+    choices: {}, location: 'project settings'};
+  const terminal = new Terminal();
+  const setup = new Setup(spec, terminal);
+  const running = setup.run();
+  terminal.input('1'); terminal.input('2'); terminal.input('1');
+  const result = await running;
+  assert.equal(result.action, 'connect'); assert.equal(result.intent, 'connect');
+  const retryTerminal = new Terminal();
+  const retry = new Setup({...spec, ...result, notice: 'Sign-in failed; retry'}, retryTerminal);
+  const retried = retry.run();
+  assert.match(retry.body.render(80).join('\n'), /Connect robot/);
+  retryTerminal.input('1');
+  assert.equal((await retried).action, 'connect');
 });
 
 test('end requires confirmation and releases execution through the service', {timeout: 15000}, async t => {
@@ -429,7 +474,7 @@ test('environment menus never offer untested pairs and selection repairs depende
     environments, choices: {}, models: {}, location: 'config.yaml', notice: ''};
   const setup = new Setup(spec, terminal);
   const running = setup.run();
-  terminal.input('\r'); terminal.input('\x1b[B'); terminal.input('\r');
+  setup.simulation(); terminal.input('\x1b[B'); terminal.input('\r'); terminal.input('\r');
   assert.equal(setup.values.robot, 'panda-omron');
   assert.equal(setup.values.sim, 'robosuite');
   assert.equal(setup.values.bench, 'robocasa365');
@@ -569,7 +614,7 @@ test('entering a plugin path requests backend resolution before changing authent
   terminal.input('./external/agent.yaml'); terminal.input('\r');
   await running;
   assert.equal(setup.done, true);
-  assert.deepEqual(setup.result, {action: 'agent', agent: './external/agent.yaml', values});
+  assert.deepEqual(setup.result, {action: 'agent', agent: './external/agent.yaml', values, view: 'agent', intent: 'start'});
   assert.equal(setup.values.agent, 'one');
 });
 
@@ -855,7 +900,7 @@ test('dialogs open below the transcript in the editor slot and Escape closes the
   assert.equal(chat.ui.hasOverlay(), false);
   const screen = terminal.output.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
   assert.match(screen, /Workspace \//);
-  assert.doesNotMatch(screen, /[│┌└]/);
+  assert.equal(chat.ui.mode, 'fullscreen');
   assert.ok(screen.indexOf('TRANSCRIPT') < screen.indexOf('Workspace /'));
   // Refresh, blocked, camera, notes: open the long text and page through it.
   terminal.input('\x1b[B'); terminal.input('\x1b[B'); terminal.input('\x1b[B'); terminal.input('\r');

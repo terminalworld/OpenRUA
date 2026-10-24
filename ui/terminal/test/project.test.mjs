@@ -176,7 +176,7 @@ test('reasoning effort uses native choices and changes only on user selection', 
   assert.equal(calls.some(call => call.command), false);
   await choose(chat, 0);
   assert.deepEqual(calls.find(call => call.command)?.params, {setting: 'effort', value: 'medium'});
-  assert.match(chat.status.render(140).join('\n'), /effort: medium/);
+  assert.match(chat.status.render(140).join('\n'), /\/medium/);
   await chat.submit('/model effort high');
   assert.equal(calls.filter(call => call.command).at(-1).params.value, 'high');
 });

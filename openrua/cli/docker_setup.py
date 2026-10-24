@@ -62,12 +62,14 @@ def _steps(what: str, user: str) -> list[list[str]]:
 
 
 def ensure(ask: Callable[[str], str] = input, run=subprocess.run,
-           engine_error: Callable[[], str] | None = None, restart=None) -> None:
+           engine_error: Callable[[], str] | None = None, restart=None, interact=None) -> None:
     """Return when Docker is ready; otherwise offer the fix. Raises
     UnavailableError when it is declined or does not take."""
     what, detail = state(engine_error)
     if what == "ready":
         return
+    if interact is not None:
+        return interact(lambda: ensure(ask, run, engine_error, restart))
     if what == "other":
         raise UnavailableError(f"Docker is not answering: {detail}",
                                hint="openrua doctor says more; then run openrua again")

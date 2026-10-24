@@ -76,6 +76,7 @@ export class Welcome {
 
   render(width) {
     const f = this.facts;
+    if (f.interactive && !this.readOnly) return [muted([f.robot_model || f.robot, f.simulator].filter(Boolean).map(plain).join(' · ')), ''];
     const scene = [f.benchmark, f.suite && (f.task_id != null ? `${f.suite} #${f.task_id}` : f.suite)]
       .filter(Boolean).map(plain).join(' / ');
     const below = muted('  ' + [this.name && `session ${plain(this.name)}`, f.model && plain(f.model), scene]

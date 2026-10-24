@@ -162,7 +162,7 @@ def launch(args, values: dict[str, str]):
     return service.start(argv, directory / 'endpoint.json', logs / 'service.log', logs / 'start.lock')
 
 
-def open_history(home: Path, name: str):
+def open_history(home: Path, name: str, *, screen=None):
     """Connect to a live owner, or restart a confirmed ended project conversation."""
     client, name = history.open_session(home, name)
     if not getattr(client, 'read_only', False):
@@ -179,7 +179,7 @@ def open_history(home: Path, name: str):
         return client, name
     settings = snapshot.get('settings') or {}
     facts['model'] = settings.get('model') or facts.get('model')
-    selected = workspace.choose(project, home)
+    selected = workspace.choose(project, home, **({'screen': screen} if screen else {}))
     if selected is None:
         raise UsageError('workspace was not trusted; conversation was not restarted')
     if selected != Path(project).resolve():
@@ -204,26 +204,36 @@ def open_history(home: Path, name: str):
     return service.start(argv, directory / 'endpoint.json', logs / 'service.log', logs / 'start.lock'), name
 
 
-def open_terminal(home, client, name: str, frontend: str = 'pi') -> int:
+def reconnect(home, name, application=None):
+    if application:
+        return application.perform('Reconnecting session',
+                                   lambda: open_history(home, name, screen=application.screen))
+    return open_history(home, name)
+
+
+def open_terminal(home, client, name: str, frontend: str = 'pi', application=None) -> int:
     from openrua.terminal.launcher import chat as terminal_chat
     current = {'project': history.project_directory(home, name) or str(Path.cwd().resolve())}
     def select(name):
-        result = open_history(home, name)
+        result = reconnect(home, name, application)
         current['project'] = history.project_directory(home, name) or current['project']
         return result
     return terminal_chat(client, name, lambda: history.entries(home, Path(current['project'])), select,
                          facts=lambda name: history.robot_facts(home, name),
-                         list_all=lambda: history.entries(home), scope=current['project'])
+                         list_all=lambda: history.entries(home), scope=current['project'],
+                         **({'screen': application.screen} if application else {}))
 
 
-def choose_history(home, frontend: str = 'pi', *, project: Path | None = None, all_projects=False):
+def choose_history(home, frontend: str = 'pi', *, project: Path | None = None, all_projects=False, application=None):
     from openrua.terminal.launcher import choose_history as terminal_history
-    return terminal_history(lambda: history.entries(home, project), lambda name: open_history(home, name),
+    return terminal_history(lambda: history.entries(home, project), lambda name: reconnect(home, name, application),
                             list_all=lambda: history.entries(home), scope=str(project) if project else None,
-                            all_projects=all_projects)
+                            all_projects=all_projects, **({'screen': application.screen} if application else {}))
 
 
-def open_interface(args, client, name: str) -> int:
+def open_interface(args, client, name: str, application=None) -> int:
+    if application and (args.gui or args.cli):
+        return application.perform('Opening interface', lambda: open_interface(args, client, name), native=True)
     if args.gui or args.cli:
         if getattr(client, 'read_only', False):
             raise UsageError('this conversation is available as read-only history',
@@ -232,17 +242,22 @@ def open_interface(args, client, name: str) -> int:
             return session.run(argparse.Namespace(home=args.home, name=name, action='web', no_open=False))
         return chat.run(argparse.Namespace(home=args.home, name=name, tui=False,
                                            message=None, follow=False, after=0))
-    return open_terminal(args.home, client, name, args.tui)
+    return open_terminal(args.home, client, name, args.tui, **({'application': application} if application else {}))
 
 
 def run(args) -> int:
     try:
-        return _run(args)
+        if (args.gui or args.cli) and not args.setup and args.resume != '':
+            return _run(args)
+        from openrua.terminal.application import Application
+        from openrua.terminal.launcher import runtime, entrypoint
+        with Application(runtime, entrypoint) as application:
+            return _run(args, application)
     except (RuntimeError, OSError, ValueError) as exc:
         raise UnavailableError(str(exc), hint='the session may still be running; inspect it with --resume') from exc
 
 
-def offer_update(args, values: dict) -> bool:
+def offer_update(args, values: dict, interact=None) -> bool:
     """Offer a newer OpenRUA and a newer agent CLI before the session
     starts (see updates); False when the person chose to quit or to run
     the new OpenRUA. Only at an interactive terminal."""
@@ -253,10 +268,14 @@ def offer_update(args, values: dict) -> bool:
                                   agent=values['agent'] or None, model=values['model'] or None)
     except Exception:  # noqa: BLE001; an incomplete selection is the setup screen's job
         composed = None
-    return all(updates.ask(offer, args.home) for offer in updates.offers(composed, args.home))
+    for offer in updates.offers(composed, args.home):
+        operation = lambda: updates.ask(offer, args.home)
+        if not (interact(operation) if interact else operation()):
+            return False
+    return True
 
 
-def _run(args) -> int:
+def _run(args, application=None) -> int:
     from openrua.cli.skill_scheduler import autostart
     autostart(args.home)
     if args.all and args.resume is None:
@@ -276,15 +295,15 @@ def _run(args) -> int:
                 if recorded and not args.all and recorded != str(projects.resolve(args.workspace or Path.cwd())):
                     raise UsageError('conversation belongs to a different project',
                                      hint='change to its directory, or use --resume ID --all explicitly')
-                selected = open_history(args.home, args.resume)
+                selected = reconnect(args.home, args.resume, application)
             except (OSError, RuntimeError, ValueError) as exc:
                 raise UnavailableError(str(exc), hint='use openrua --resume to find retained conversations') from exc
         else:
             if not sys.stdin.isatty() or not sys.stdout.isatty():
                 raise UsageError('history selection needs an interactive terminal', hint='use openrua --resume ID to select a conversation explicitly')
             selected = choose_history(args.home, args.tui,
-                                      project=projects.resolve(args.workspace or Path.cwd()), all_projects=args.all)
-        return open_interface(args, *selected) if selected else 0
+                                      project=projects.resolve(args.workspace or Path.cwd()), all_projects=args.all, application=application)
+        return open_interface(args, *selected, application=application) if selected else 0
     if args.name is None:
         args.name = history.new_id()
     endpoint = paths.sandbox_dir(args.name, args.home) / 'endpoint.json'
@@ -297,8 +316,9 @@ def _run(args) -> int:
             client = service.connect(endpoint)
         except (OSError, ValueError, KeyError, RuntimeError) as exc:
             raise UnavailableError(str(exc), hint='inspect the retained service log and session status before restarting') from exc
-        return open_interface(args, client, args.name)
-    selected = workspace.choose(args.workspace or Path.cwd(), args.home, accept=args.trust_workspace)
+        return open_interface(args, client, args.name, application=application)
+    selected = workspace.choose(args.workspace or Path.cwd(), args.home, accept=args.trust_workspace,
+                                **({'screen': application.screen} if application else {}))
     if selected is None:
         return 0
     args.workspace = str(selected)
@@ -309,7 +329,10 @@ def _run(args) -> int:
         if args.permissions not in adapter.permission_modes:
             raise UsageError(f'{adapter.name} does not support permission mode {args.permissions!r}',
                              hint='choose one of: ' + ', '.join(adapter.permission_modes))
-    if not offer_update(args, values):
+    def interact(title):
+        return (lambda operation: application.perform(title, operation, native=True)) if application else None
+    updated = application.perform('Checking updates', lambda: offer_update(args, values, interact('Software update'))) if application else offer_update(args, values)
+    if not updated:
         return 0
     if args.setup or not (values['robot'] or values['bench']):
         if not sys.stdin.isatty() or not sys.stdout.isatty():
@@ -329,15 +352,18 @@ def _run(args) -> int:
                                 lambda values: check_values(args.home, values),
                                 lambda values: launch(args, {**values, **projects.selection(selected)}), models,
                                 lambda: history.entries(args.home, selected),
-                                lambda name: open_history(args.home, name),
+                                lambda name: reconnect(args.home, name, application),
                                 list_all=lambda: history.entries(args.home), scope=str(selected),
+                                **({'screen': application.screen, 'application': application} if application else {}),
                                 environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress, limit_overrides(args), environment_only=True),
                                 authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']]))),
                                 resolve_agent=lambda name: authentication_choices(args.home, [name])[name],
-                                ready=lambda values: docker_setup.ensure(),
+                                ready=lambda values: docker_setup.ensure(**({'interact': interact('Docker setup')} if application else {})),
                                 save_connect=lambda values: connect.save_values(args.home, values),
                                 sign_in=lambda values: login.ensure(args.home, values['agent'] or None,
-                                                                    values.get('auth_mode', 'native')),
+                                                                    values.get('auth_mode', 'native'), **({'interact': interact('Agent sign-in')} if application else {})),
+                                resolve_values=lambda incoming: {**incoming, **projects.options(selected,
+                                    {key: incoming[key] for key in projects.FIELDS}, relative_to=selected)},
                                 connect=lambda values: connect.launch(args.home,
                                                                       agent=values['agent'] or None,
                                                                       model=values['model'] or None, project=selected))
@@ -346,13 +372,17 @@ def _run(args) -> int:
         client, name = result
     else:
         validate_values(args.home, values)
+        def perform(title, operation, native=False):
+            return application.perform(title, operation, native=native) if application else operation()
         if interactive:
-            docker_setup.ensure()
-        prepare(args.home, values, limits=limit_overrides(args), environment_only=True)
+            perform('Docker setup', lambda: docker_setup.ensure(**({'interact': interact('Docker setup')} if application else {})))
+        perform('Preparing environment', lambda: prepare(args.home, values,
+                progress=application.progress if application else print, limits=limit_overrides(args), environment_only=True))
         if interactive:
-            login.ensure(args.home, values['agent'] or None, values.get('auth_mode', 'native'))
-        ok, report = check_values(args.home, values)
+            perform('Agent sign-in', lambda: login.ensure(args.home, values['agent'] or None, values.get('auth_mode', 'native'),
+                    **({'interact': interact('Agent sign-in')} if application else {})))
+        ok, report = perform('Checking preparation', lambda: check_values(args.home, values))
         if not ok:
             raise UnavailableError(report, hint='complete the preparation steps, then start again')
-        client, name = launch(args, values), args.name
-    return open_interface(args, client, name)
+        client, name = perform('Starting session', lambda: launch(args, values)), args.name
+    return open_interface(args, client, name, application=application)

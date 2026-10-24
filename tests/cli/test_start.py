@@ -11,6 +11,19 @@ from openrua.errors import UsageError
 
 
 @pytest.fixture(autouse=True)
+def terminal_presentation(monkeypatch):
+    from openrua.terminal import application
+    class Presentation:
+        def __init__(self, *args): pass
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+        def perform(self, title, operation, **kwargs): return operation()
+        def progress(self, line): pass
+        def screen(self, spec): pytest.fail('unexpected terminal input in command test')
+    monkeypatch.setattr(application, 'Application', Presentation)
+
+
+@pytest.fixture(autouse=True)
 def trusted_project(tmp_path, monkeypatch):
     from openrua.config import projects
     root = tmp_path / 'project'
@@ -122,7 +135,7 @@ def test_existing_session_reconnects_without_reading_changed_defaults(tmp_path, 
     client = object()
     monkeypatch.setattr(start.service, 'connect', lambda path: client)
     opened = []
-    monkeypatch.setattr(start, 'open_interface', lambda args, c, name: opened.append((c, name)) or 0)
+    monkeypatch.setattr(start, 'open_interface', lambda args, c, name, **kw: opened.append((c, name)) or 0)
     assert start.run(args(tmp_path, '--cli', '--name', 'openrua')) == 0
     assert opened == [(client, 'openrua')]
     with pytest.raises(UsageError, match='startup options'):
@@ -169,7 +182,7 @@ def test_unnamed_starts_create_distinct_ids_without_reconnecting_old_default(tmp
     monkeypatch.setattr(start, 'prepare', lambda *a, **k: None)
     launched = []
     monkeypatch.setattr(start, 'launch', lambda a, v: launched.append(v['name']) or object())
-    monkeypatch.setattr(start, 'open_interface', lambda *a: 0)
+    monkeypatch.setattr(start, 'open_interface', lambda *a, **kw: 0)
     for _ in range(2):
         start.run(args(tmp_path, '--cli', '--robot', 'panda', '--sim', 'robosuite'))
     assert len(set(launched)) == 2 and all(len(name) == 32 for name in launched)
@@ -180,7 +193,7 @@ def test_resume_does_not_load_config_or_launch_resources(tmp_path, monkeypatch):
     selected = object()
     monkeypatch.setattr(start.history, 'open_session', lambda home, name: (selected, name))
     opened = []
-    monkeypatch.setattr(start, 'open_interface', lambda a, c, n: opened.append((c, n)) or 0)
+    monkeypatch.setattr(start, 'open_interface', lambda a, c, n, **kw: opened.append((c, n)) or 0)
     assert start.run(args(tmp_path, '--cli', '--resume', 'old')) == 0
     assert opened == [(selected, 'old')]
     with pytest.raises(UsageError):
@@ -203,7 +216,7 @@ def test_pi_uses_same_launcher_after_keyboard_setup(tmp_path, monkeypatch):
         assert check(values)[0]
         return launch(values), values['name']
     monkeypatch.setattr(launcher, 'setup', setup)
-    monkeypatch.setattr(start, 'open_interface', lambda a, c, name: phases.append('chat') or 0)
+    monkeypatch.setattr(start, 'open_interface', lambda a, c, name, **kw: phases.append('chat') or 0)
     assert start.run(args(tmp_path, '--setup', '--bench', 'robocasa365')) == 0
     assert phases == ['save', 'check', 'launch', 'chat']
 
@@ -257,7 +270,7 @@ def test_non_tui_resume_needs_no_terminal_runtime(tmp_path, monkeypatch, flag):
     from openrua.terminal import launcher
     monkeypatch.setattr(launcher, 'check_terminal', lambda: pytest.fail('must not open terminal'))
     monkeypatch.setattr(start.history, 'open_session', lambda home, name: ('client', name))
-    monkeypatch.setattr(start, 'open_interface', lambda *args: 0)
+    monkeypatch.setattr(start, 'open_interface', lambda *args, **kw: 0)
     assert start.run(args(tmp_path, flag, '--resume', 'running')) == 0
 
 
@@ -309,7 +322,7 @@ def test_custom_environment_opens_tui_without_guided_replacement(tmp_path, monke
     monkeypatch.setattr(start, 'prepare', lambda h, v, **k: phases.append(('prepare', v[kind])))
     monkeypatch.setattr(start, 'check_values', lambda h, v: (phases.append(('check', v[kind])) or True, 'Ready'))
     monkeypatch.setattr(start, 'launch', lambda a, v: phases.append(('launch', v[kind])) or 'client')
-    monkeypatch.setattr(start, 'open_interface', lambda a, c, n: phases.append(('chat', c)) or 0)
+    monkeypatch.setattr(start, 'open_interface', lambda a, c, n, **kw: phases.append(('chat', c)) or 0)
     assert start.run(args(tmp_path, *([] if saved else ['--' + kind, str(profile)]))) == 0
     assert phases == [('prepare', str(profile)), ('check', str(profile)), ('launch', str(profile)), ('chat', 'client')]
     assert (projects.settings_path(tmp_path / 'project').read_bytes() if projects.settings_path(tmp_path / 'project').exists() else None) == original
@@ -360,7 +373,7 @@ def test_connect_setup_passes_new_api_choice_to_its_service(tmp_path, monkeypatc
     monkeypatch.setattr('sys.stdout.isatty', lambda: True)
     monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
     monkeypatch.setattr(connect.preparation, 'prepare_connect', lambda *a: None)
-    monkeypatch.setattr(start, 'open_interface', lambda *a: 0)
+    monkeypatch.setattr(start, 'open_interface', lambda *a, **kw: 0)
     observed = []
 
     def service(argv, *a):

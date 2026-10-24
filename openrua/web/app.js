@@ -18,6 +18,7 @@ const make = (tag, text, className) => {
   return e;
 };
 const key = "openrua-draft";
+const settingResults = new Map();
 let saved;
 try {
   saved = JSON.parse(sessionStorage.getItem(key));
@@ -111,6 +112,10 @@ function turn(message) {
   return entry;
 }
 function event(record) {
+  if (record.kind === 'agent_event' && ['setting', 'setting_rejected'].includes(record.data?.kind)) {
+    const data = record.data.data;
+    settingResults.set(data.setting, {kind: record.data.kind, ...data});
+  }
   // What an event says to the person, as every client says it.
   const said = eventNotice(record);
   if (said) notice(said);
@@ -457,7 +462,16 @@ $("disconnect").onclick = () => {
   $("disconnect").hidden = true;
 };
 async function configure(setting, value) {
-  return act("configure", { setting, value });
+  settingResults.delete(setting);
+  const accepted = await act("configure", { setting, value });
+  const result = settingResults.get(setting);
+  if (result?.kind === 'setting_rejected' && result.value === value) return false;
+  if (accepted && state?.settings?.[setting] === value) {
+    notice(`${setting}: ${value}${state.setting_effective_from?.[setting] === 'next_turn' ? ' from the next turn' : ''}.`);
+  } else if (accepted) {
+    notice(`Requested ${setting}: ${value}. Waiting for the agent to confirm.`);
+  }
+  return accepted;
 }
 // One handler for each command the page offers (commandsFor("browser"));
 // the agent's own commands go to it as a message, as in its terminal.
@@ -533,7 +547,7 @@ export const handlers = {
       notice(`The model: ${state?.settings?.model ?? "unknown"}. Change it with /model <name>.`);
       return;
     }
-    if (await configure("model", value)) notice(`The model is ${value} from the next request.`);
+    await configure("model", value);
   },
 };
 for (const p of permissionChoices(null)) {
