@@ -11,6 +11,10 @@ import stat
 from typing import Protocol
 
 
+class FileChangedError(ValueError):
+    """A bounded file read overlapped a change; the caller may refresh it."""
+
+
 class ArtifactReader(Protocol):
     """List a relative directory or read a relative file as JSON-compatible data."""
 
@@ -97,7 +101,7 @@ class WorkspaceFiles:
             if len(raw) > self.max_bytes:
                 raise ValueError("file grew beyond the preview/download limit; inspect it in the terminal")
             if (before.st_size, before.st_mtime_ns, before.st_ctime_ns) != (after.st_size, after.st_mtime_ns, after.st_ctime_ns):
-                raise ValueError("file changed while being read; refresh to try again")
+                raise FileChangedError("file changed while being read; refresh to try again")
         mime = "application/octet-stream"
         if raw.startswith(b"\x89PNG\r\n\x1a\n"):
             mime = "image/png"

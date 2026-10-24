@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 from apscheduler.triggers.cron import CronTrigger
 
 from openrua import reviews
-from openrua.artifacts import WorkspaceFiles
+from openrua.artifacts import FileChangedError, WorkspaceFiles
 from openrua.cli import skill_tasks
 from openrua.config import projects, paths
 
@@ -35,7 +35,14 @@ def directory(home, identity):
 
 
 def load(home, identity):
-    value = json.loads(WorkspaceFiles(directory(home, identity), 1024 * 1024).read('schedule.json')['text'])
+    source = WorkspaceFiles(directory(home, identity), 1024 * 1024)
+    for attempt in range(3):
+        try:
+            value = json.loads(source.read('schedule.json')['text'])
+            break
+        except FileChangedError:
+            if attempt == 2:
+                raise
     if value['home'] != str(home.resolve()) or value['id'] != identity:
         raise ValueError('schedule belongs to another user directory')
     return value

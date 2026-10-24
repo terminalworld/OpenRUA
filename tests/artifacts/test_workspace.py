@@ -5,7 +5,7 @@ import os
 
 import pytest
 
-from openrua.artifacts import WorkspaceFiles
+from openrua.artifacts import FileChangedError, WorkspaceFiles
 
 
 def test_images_text_and_binary_have_explicit_preview_types(tmp_path):
@@ -90,5 +90,5 @@ def test_limits_and_file_modified_during_read(tmp_path, monkeypatch):
             file.write_bytes(b"4567")
         return original(fd)
     monkeypatch.setattr(os, "fstat", changed)
-    with pytest.raises(ValueError, match="changed"):
+    with pytest.raises(FileChangedError, match="changed"):
         reader.read("data")

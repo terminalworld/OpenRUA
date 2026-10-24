@@ -1,6 +1,7 @@
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import os
 import time
 
 import pytest
@@ -40,6 +41,32 @@ def test_calendar_uses_local_zone_and_weekdays(setup):
     for calendar in ({**spec['calendar'], 'timezone': 'missing-zone'},
                      {**spec['calendar'], 'time': '24:01'}, {**spec['calendar'], 'days': '0'}):
         with pytest.raises(ValueError): plans.trigger(calendar)
+
+
+def test_read_refreshes_a_schedule_replaced_during_the_read(setup, monkeypatch):
+    root, home, _ = setup
+    row = create(setup, False)
+    original = os.fstat
+    calls = []
+    def replacing(fd):
+        calls.append(fd)
+        if len(calls) == 2:
+            # Put the atomic replacement in a later filesystem timestamp tick.
+            time.sleep(.02)
+            plans.write(home, {**row, 'name': 'Updated schedule'})
+        return original(fd)
+    monkeypatch.setattr(os, 'fstat', replacing)
+    assert plans.read(home, root, row['id'])['name'] == 'Updated schedule'
+    assert len(calls) == 4
+
+
+def test_schedule_read_does_not_retry_other_validation_failures(setup, monkeypatch):
+    _, home, _ = setup
+    row = create(setup, False)
+    def invalid(self, path): raise ValueError('invalid workspace path')
+    monkeypatch.setattr(plans.WorkspaceFiles, 'read', invalid)
+    with pytest.raises(ValueError, match='invalid workspace path'):
+        plans.load(home, row['id'])
 
 
 def test_background_plan_resolves_relative_manifest_in_project_and_preserves_pin(setup):
