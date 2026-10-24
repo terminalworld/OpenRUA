@@ -222,15 +222,19 @@ def _written(overrides: dict | None) -> dict:
     return {k: v for k, v in (overrides or {}).items() if v is not None}
 
 
-def image_owner(sim: str, bench: str | None = None) -> str:
-    """Whose image a composition runs in: the benchmark's when its
-    install writes anything of its own, else the simulator's. The name
-    is the declaration's (a bundled name, or a file's stem)."""
+def image_source(sim: str, bench: str | None = None) -> Path:
+    """The declaration that owns the effective installation recipe."""
     source = paths.find('simulators', sim).resolve()
     if bench:
         p, b = load_benchmark(bench)
         if _written(b.get("install")):
             source = p.resolve()
+    return source
+
+
+def image_owner(sim: str, bench: str | None = None) -> str:
+    """The image key for a bundled or project-owned installation recipe."""
+    source = image_source(sim, bench)
     if source.is_relative_to(paths.package_config_path().parent.resolve()):
         return source.stem
     return source.stem + '-' + install_digest(install_for(sim, bench))[:16]

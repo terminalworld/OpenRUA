@@ -29,7 +29,7 @@ def test_bare_build_builds_the_agent_images_and_the_default_benchmarks(monkeypat
     args = build_parser().parse_args(["--home", str(tmp_path), '-C', str(root), "build"])
     assert args.fn(args) == 0
     assert built[:2] == [('sandbox', 'jazzy'), ('proxy',)]
-    assert built[-1][0] == 'sim' and built[-1][1].startswith('libero_pro-')
+    assert built[-1][0] == 'sim' and built[-1][1] == 'libero_pro'
     assert built[-1][2].startswith('openrua-sim-libero_pro-')
 
 

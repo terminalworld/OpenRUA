@@ -73,11 +73,11 @@ def run(args) -> int:
     selected = workspace.choose(args.workspace or Path.cwd(), args.home, accept=args.trust_workspace)
     if selected is None:
         return 0
+    chosen = projects.options(selected, dict(agent=args.agent, model=args.model), relative_to=Path.cwd())
     if sys.stdin.isatty() and sys.stdout.isatty():
         docker_setup.ensure()
-        _, selected_agent = agent_settings.resolve(args.home, args.agent)
-        login.ensure(args.home, args.agent, (selected_agent.get('auth') or {}).get('mode', 'native'))
-    chosen = projects.options(selected, dict(agent=args.agent, model=args.model), relative_to=Path.cwd())
+        _, selected_agent = agent_settings.resolve(args.home, chosen['agent'])
+        login.ensure(args.home, chosen['agent'], (selected_agent.get('auth') or {}).get('mode', 'native'))
     client, name = launch(args.home, Path(args.dir) if args.dir else None,
                           chosen['agent'], chosen['model'], args.distro, args.name, project=selected)
     return start.open_terminal(args.home, client, name)

@@ -184,3 +184,20 @@ def test_retained_session_is_rejected_before_preparation(tmp_path, monkeypatch):
     monkeypatch.setattr(preparation, 'prepare_connect', lambda *a: pytest.fail('no preparation'))
     with pytest.raises(UsageError, match='retained or running work'):
         connect.launch(tmp_path, project=tmp_path / 'project', name='retained')
+
+
+def test_connect_signs_in_the_projects_agent_before_launching(tmp_path, monkeypatch, images):
+    from openrua.config import projects
+    root = tmp_path / 'project'; root.mkdir()
+    projects.save_selection(root, dict(robot='', sim='', bench='', agent='codex', model=''))
+    (tmp_path / 'config.yaml').write_text('agent: claude-code\n')
+    monkeypatch.setattr(connect.sys.stdin, 'isatty', lambda: True)
+    monkeypatch.setattr(connect.sys.stdout, 'isatty', lambda: True)
+    monkeypatch.setattr(connect.docker_setup, 'ensure', lambda: None)
+    signed_in = []
+    monkeypatch.setattr(connect.login, 'ensure', lambda home, agent, mode: signed_in.append(agent))
+    monkeypatch.setattr(connect.service, 'start', lambda *a: 'client')
+    monkeypatch.setattr(connect.start, 'open_terminal', lambda *a: 0)
+    args = build_parser().parse_args(['--home', str(tmp_path), 'connect', '-C', str(root), '--trust-workspace'])
+    assert connect.run(args) == 0
+    assert signed_in == ['codex']

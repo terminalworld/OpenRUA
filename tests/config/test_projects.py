@@ -74,3 +74,16 @@ def test_project_path_symlinks_cannot_redirect_template_writes(tmp_path):
     with pytest.raises(ValueError, match='leaves'):
         projects.save_selection(root, dict(robot='panda', sim='robosuite', bench='', agent='codex', model=''))
     assert list(outside.iterdir()) == []
+
+
+def test_image_identity_does_not_change_the_cached_recipe_commands(tmp_path):
+    from openrua.cli.commands.build import simulator_targets
+    from openrua.robot.sim import install
+    root = tmp_path / 'project'
+    projects.save_selection(root, dict(robot='panda', sim='robosuite', bench='', agent='codex', model=''))
+    simulator = projects.selection(root)['sim']
+    name, recipe, tag = simulator_targets([], [simulator], False, tmp_path / 'home')[0]
+    assert name == 'robosuite' and tag.startswith('openrua-sim-robosuite-')
+    local, _ = install.render(recipe, name, tmp_path / 'no-checkout')
+    bundled, _ = install.render(config.install_for('robosuite'), 'robosuite', tmp_path / 'no-checkout')
+    assert local == bundled

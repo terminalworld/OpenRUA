@@ -68,10 +68,11 @@ def simulator_targets(benches: list[str], sims: list[str], every: bool,
     for b in benches:
         _, decl = config.load_benchmark(b)
         owner = config.image_owner(decl["simulator"], b)
-        seen.setdefault(owner, (owner, config.install_for(decl["simulator"], b), sim_image(owner)))
+        seen.setdefault(owner, (config.image_source(decl['simulator'], b).stem,
+                                config.install_for(decl['simulator'], b), sim_image(owner)))
     for s in sims:
         owner = config.image_owner(s)
-        seen.setdefault(owner, (owner, config.install_for(s), sim_image(owner)))
+        seen.setdefault(owner, (config.image_source(s).stem, config.install_for(s), sim_image(owner)))
     return list(seen.values())
 
 
