@@ -15,6 +15,8 @@ Unreleased until a release is cut, and the release decides its number.
   overrides, including names containing periods or provider prefixes.
 - Rebuild a maintained benchmark from its project declaration during in-session
   maintenance, so local dependency edits produce the image the connection uses.
+- Build a simulation project's sandbox with its selected agent and ROS distro;
+  keep the robot type separate from real-robot driver installation.
 - Complete connecting-agent guidance for resolved driver image arguments and
   project-local check logs; correct remaining project selection help text.
 

@@ -126,3 +126,28 @@ def test_doctor_and_build_receive_the_same_project_selection(tmp_path, monkeypat
     monkeypatch.setattr(build, 'build_simulator', lambda install, name, code_root, tag: seen.append(tag) or (tag, 'digest'))
     run(home, 'build', '-C', str(root))
     assert seen[-1].startswith('openrua-sim-robosuite-')
+
+
+def test_sandbox_build_uses_the_simulation_projects_tools(tmp_path, monkeypatch):
+    import yaml
+    from types import SimpleNamespace
+    from openrua.cli.commands import build
+
+    root, home = tmp_path / 'project', tmp_path / 'home'
+    home.mkdir()
+    (home / 'config.yaml').write_text('agent: claude-code\n')
+    projects.save_selection(root, dict(robot='panda', sim='robosuite', bench='', agent='codex@0.163.0', model=''))
+    simulator = Path(projects.selection(root)['sim'])
+    declaration = yaml.safe_load(simulator.read_text())
+    declaration['install']['ros_distro'] = 'humble'
+    simulator.write_text(yaml.safe_dump(declaration))
+    built = []
+    monkeypatch.setattr(build, 'build_sandbox', lambda **kw: built.append(kw) or (kw['tag'], 'digest'))
+    monkeypatch.setattr(build, '_report_versions', lambda *a: None)
+    monkeypatch.setattr(build.subprocess, 'run', lambda *a, **kw: SimpleNamespace(returncode=0))
+    run(home, 'build', '-C', str(root), 'sandbox')
+    assert built[-1]['distro'] == 'humble'
+    assert '@openai/codex@0.163.0' in built[-1]['preinstall']
+    run(home, 'build', '-C', str(root), 'sandbox', '--agent', 'claude-code', '--distro', 'jazzy')
+    assert built[-1]['distro'] == 'jazzy'
+    assert '@anthropic-ai/claude-code' in built[-1]['preinstall']

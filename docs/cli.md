@@ -231,8 +231,8 @@ options:
                         configured default)
   --preinstall PREINSTALL
                         install line to bake instead of the agents' manifests
-  --distro DISTRO       ROS 2 distro: jazzy | humble (the robot's;
-                        declarations name it as ros_distro)
+  --distro DISTRO       ROS 2 distro: jazzy | humble (default: this project's
+                        ros_distro, else jazzy)
   --robot-uid ROBOT_UID
                         container uid (default: the current user)
   --tag TAG             image tag (default: openrua-sandbox-<distro>)

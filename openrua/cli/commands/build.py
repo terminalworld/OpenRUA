@@ -83,7 +83,7 @@ def run(args) -> int:
     if unit is None and not (args.bench or args.sim or args.all):
         args.bench = [selected['bench']] if selected.get('bench') else None
         args.sim = [selected['sim']] if selected.get('sim') and not args.bench else None
-    if unit in {'driver', 'sandbox'} and not args.robot:
+    if unit == 'driver' and not args.robot:
         args.robot = selected.get('robot')
     if unit is None:
         built = []
@@ -111,8 +111,16 @@ def run(args) -> int:
     elif unit == "base":
         built = [build_base(distro=args.distro, tag=args.tag)]
     elif unit == "sandbox":
-        built = [_sandbox(args.agent, args.preinstall, args.distro, args.robot_uid,
-                          args.tag, args.home, getattr(args, "robot", None),
+        chosen_agents = args.agent or ([selected['agent']] if selected.get('agent') else None)
+        robot, distro = args.robot, args.distro
+        if robot is None and (selected.get('robot') or selected.get('bench')):
+            backend = config.compose(selected.get('robot'), selected.get('sim'),
+                                     selected.get('bench'), args.home).cfg['machine']['backend']
+            distro = distro or backend['ros_distro']
+            if backend['kind'] == 'real':
+                robot = selected['robot']
+        built = [_sandbox(chosen_agents, args.preinstall, distro or 'jazzy', args.robot_uid,
+                          args.tag, args.home, robot,
                           **({'base_image': args.base_image} if args.base_image is not None else {}))]
     elif unit == "driver":
         built = _drivers(args.robot, args.image, args.home)
@@ -237,8 +245,8 @@ def add_parser(sub) -> None:
                    "otherwise the current release (default: the configured default)")
     s.add_argument("--preinstall", default=None,
                    help="install line to bake instead of the agents' manifests")
-    s.add_argument("--distro", default="jazzy", help="ROS 2 distro: jazzy | humble "
-                   "(the robot's; declarations name it as ros_distro)")
+    s.add_argument("--distro", default=None, help="ROS 2 distro: jazzy | humble "
+                   "(default: this project's ros_distro, else jazzy)")
     s.add_argument("--robot-uid", type=int, default=None,
                    help="container uid (default: the current user)")
     s.add_argument("--tag", default=None, help="image tag (default: openrua-sandbox-<distro>)")
