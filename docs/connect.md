@@ -20,8 +20,9 @@ openrua connect
 OpenRUA creates missing `robot.yaml`, `driver/`, `cameras/` and `CONNECT.md`
 in the project root. Existing files are retained. `--dir robot` places the
 adaptation in a project subdirectory while keeping the whole project as the
-agent's workspace. The setup screen's **Connect a real robot** uses the same
-path. Docker setup and native sign-in are offered when needed.
+agent's workspace. The setup path **Real robot → Connect a new robot →
+Connect robot** uses the same project directory. Docker setup and native sign-in
+are offered when needed.
 
 Before opening the connecting terminal, OpenRUA builds its sandbox image if
 missing, using your selected agent and ROS distro (`--distro jazzy` by default,
