@@ -9,6 +9,25 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.24.0
+
+- Open a persistent fullscreen terminal with a project header, scrollable
+  conversation, fixed input area and contextual keyboard hints. Restore the
+  previous terminal screen on exit without replaying the transcript.
+- Separate real robots and simulation in setup, then distinguish native scenes
+  from benchmark environments. Review environment and agent settings separately;
+  keep authentication and advanced options in their respective menus.
+- Keep preparation progress and retryable errors inside the same interface.
+  Temporarily hand the terminal to native sign-in and sudo when needed.
+- Align compatible menus with numbered choices, current selections, Escape to
+  return, and explicit confirmations. Keep file-preview paging in its dialog.
+- Use native supported reasoning defaults for direct Codex model changes. Show
+  pending settings until the native agent confirms them and retain rejections.
+- Keep the model status compact and distinguish a running turn from a different
+  next-turn selection.
+- Refresh Skills plan and task status reads when they overlap a background atomic
+  update, preserving file-change detection and validation failures.
+
 ## 0.23.3
 
 - Reject real-driver startup when its launch process exits during a successful

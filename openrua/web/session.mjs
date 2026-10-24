@@ -113,6 +113,8 @@ export function notice(record) {
   }
   if (record?.kind === 'agent_event' && data.kind === 'setting' && data.data?.effective_from === 'next_turn')
     return `${data.data.setting} ${data.data.value} applies from the next turn.`;
+  if (record?.kind === 'agent_event' && data.kind === 'setting')
+    return `${data.data.setting}: ${data.data.value}.`;
   return null;
 }
 

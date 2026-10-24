@@ -1,138 +1,27 @@
-import {Container, Input, ProcessTerminal, SelectList, Text, TuiMainScreen, matchesKey} from '@earendil-works/pi-tui';
+import {Container, Input, SelectList, Text, matchesKey} from '@earendil-works/pi-tui';
 import {plain, selectTheme} from './view.mjs';
 import {Client} from './client.mjs';
+import {selection} from './selection.mjs';
+import {Screen} from './surface.mjs';
 
-export class Screen {
-  constructor(terminal = new ProcessTerminal()) {
-    this.ui = new TuiMainScreen(terminal);
-    this.result = {action: 'quit'};
-    this.done = false;
-    this.ui.addChild(new Text('\x1b[1mOpenRUA\x1b[22m', 0, 1));
-    this.ui.addInputListener(data => {
-      if (matchesKey(data, 'ctrl+c') || matchesKey(data, 'ctrl+d')) {
-        this.finish(); return {consume: true};
-      }
-    });
-  }
-  finish(result = {action: 'quit'}) {
-    if (this.done) return;
-    this.done = true; this.result = result; this.ui.stop(); this.resolve?.(result);
-  }
-  stop() { this.finish(); }
-  async run() {
-    if (this.done) return this.result;
-    return new Promise(resolve => { this.resolve = resolve; this.ui.start(); });
-  }
-}
-
-export class Setup extends Screen {
-  constructor(spec, terminal) {
-    super(terminal);
-    this.values = {...spec.values}; this.spec = spec;
-    this.authentication = {...spec.authentication};
-    this.ui.addChild(new Text(`Configure this robot project\n${plain(spec.location)}\nChoose a starting environment or keep this project's configuration.\nPrepare and start installs missing images automatically.\nProject files remain editable in your workspace.`, 0, 1));
-    this.body = new Container(); this.ui.addChild(this.body);
-    this.notice = new Text(plain(spec.notice), 0, 1); this.ui.addChild(this.notice);
-    this.ui.addChild(new Text('↑/↓ select · Enter edit or activate · Esc back · Ctrl+D quit', 0, 1));
-    this.menu();
-  }
-  menu() {
-    this.body.clear();
-    const labels = {robot: 'Robot', sim: 'Simulator', bench: 'Benchmark / scene',
-      agent: 'Coding agent', model: 'Model (blank for default)', name: 'Session ID / optional name'};
-    if (Object.hasOwn(this.values, 'auth_mode')) {
-      labels.auth_mode = 'Authentication';
-      if (this.values.auth_mode === 'api') labels.api_key_file = 'API key file path';
-    }
-    const items = Object.entries(labels).map(([key, label]) => ({value: key,
-      label: `${label}: ${key === 'auth_mode' ? this.authLabel(this.values[key]) : plain(this.values[key]) || '(none)'}`}));
-    items.push({value: 'start', label: 'Save project and start'}, {value: 'check', label: 'Save project and check preparation'},
-      {value: 'connect', label: 'Connect a real robot: your agent sets it up with you'},
-      {value: 'history', label: '/resume: find an existing conversation'}, {value: 'quit', label: 'Quit'});
-    const menu = new SelectList(items, 10, selectTheme);
-    menu.onCancel = () => this.finish();
-    menu.onSelect = item => {
-      if (Object.hasOwn(labels, item.value)) this.edit(item.value, labels[item.value]);
-      else if (['start', 'check'].includes(item.value) && this.spec.environments != null &&
-          !this.spec.environments.some(row => ['robot', 'sim', 'bench'].every(key => row.selection[key] === this.values[key]))) {
-        this.notice.setText('Choose a tested robot, simulator and benchmark combination first. Project files remain editable in your workspace.');
-        this.ui.requestRender();
-      } else this.finish({action: item.value, values: this.values});
-    };
-    this.body.addChild(menu); this.ui.setFocus(menu); this.ui.requestRender();
-  }
-  update(key, value) {
-    if (key === 'agent' && value.trim() !== this.values.agent) {
-      this.finish({action: 'agent', agent: value.trim(), values: {...this.values}});
-      return;
-    }
-    this.values[key] = value.trim();
-    if (key === 'auth_mode' && value === 'native') this.values.api_key_file = '';
-    const fields = ['robot', 'sim', 'bench'];
-    if (this.spec.environments != null && fields.includes(key)) {
-      for (const child of fields.slice(fields.indexOf(key) + 1)) {
-        const available = this.options(child);
-        if (!available.includes(this.values[child])) this.values[child] = available.length === 1 ? available[0] : '';
-      }
-    }
-    this.menu();
-  }
-  options(key) {
-    if (key === 'auth_mode') return this.authentication[this.values.agent]?.api ? ['native', 'api'] : ['native'];
-    const fields = ['robot', 'sim', 'bench'];
-    if (this.spec.environments == null || !fields.includes(key)) return this.spec.choices[key] ?? [];
-    const before = fields.slice(0, fields.indexOf(key));
-    return [...new Set(this.spec.environments.filter(row => before.every(k => !this.values[k] || this.values[k] === row.selection[k]))
-      .map(row => row.selection[key]))].sort();
-  }
-  authLabel(mode) {
-    return mode === 'api' ? 'API key file (explicit API billing)' : 'Native CLI login (default)';
-  }
-  edit(key, label, custom = false) {
-    this.body.clear();
-    const choices = this.options(key);
-    const guided = this.spec.environments != null && ['robot', 'sim', 'bench'].includes(key);
-    this.body.addChild(new Text(label, 0, 1));
-    if (key === 'auth_mode') this.body.addChild(new Text('Native login uses your existing coding-agent account.\nAPI billing is used only when you select it; there is no automatic fallback.\nAPI mode is offered only for plugins that support it.', 0, 1));
-    if (key === 'api_key_file') this.body.addChild(new Text('Enter the path to a file containing the raw API key. Do not paste the key here.', 0, 1));
-    if (guided && !choices.length) {
-      this.notice.setText('No tested combination for this selection. Change the robot first; use explicit CLI options for custom profiles.');
-      this.menu(); return;
-    }
-    if (choices.length && !custom) {
-      const menu = new SelectList([
-        ...choices.map(value => ({value, label: key === 'auth_mode' ? this.authLabel(value) : plain(value) || '(native scene)'})),
-        ...(!guided && key !== 'auth_mode' ? [{value: '\0custom', label: 'Enter a name or profile path'},
-        {value: '', label: '(none / configured default)'}] : []),
-      ], 10, selectTheme);
-      menu.setSelectedIndex(Math.max(0, choices.indexOf(this.values[key])));
-      menu.onCancel = () => this.menu();
-      menu.onSelect = item => item.value === '\0custom' ? this.edit(key, label, true) : this.update(key, item.value);
-      this.body.addChild(menu); this.ui.setFocus(menu);
-    } else {
-      const input = new Input({prompt: '> '}); input.setValue(custom ? '' : this.values[key]);
-      input.onEscape = () => this.menu();
-      input.onSubmit = value => this.update(key, value);
-      this.body.addChild(input); this.ui.setFocus(input);
-    }
-    this.ui.requestRender();
-  }
-
-}
+export {Screen} from './surface.mjs';
+export {Setup} from './setup.mjs';
 
 export class Workspace extends Screen {
-  constructor(spec, terminal) {
-    super(terminal);
+  constructor(spec, terminal, host) {
+    super(terminal, host);
     this.path = spec.path;
+    this.ui.setHeading('OpenRUA · Trust project', spec.path);
     this.ui.addChild(new Text(`Use and trust this robot workspace?\n${plain(spec.path)}\n\nYour coding agent can read, change and run files here.\nOpenRUA will keep project files and run records in this directory.`, 0, 1));
     this.body = new Container(); this.ui.addChild(this.body);
     this.ui.addChild(new Text(plain(spec.notice), 0, 1));
-    const menu = new SelectList([
+    const menu = selection([
       {value: 'trust', label: 'Yes, use and trust this directory'},
       {value: 'choose', label: 'No, choose another directory'},
       {value: 'create', label: 'Create a project directory'},
       {value: 'quit', label: 'Quit'},
-    ], 6, selectTheme);
+    ], 6, {explicit: true});
+    this.ui.setFooter(new Text('↑/↓ Select · Enter Confirm · Esc Close', 0, 0));
     menu.onCancel = () => this.finish();
     menu.onSelect = item => {
       if (item.value === 'trust') this.finish({action: 'trust', path: spec.path});
@@ -151,8 +40,9 @@ export class Workspace extends Screen {
 }
 
 export class History extends Screen {
-  constructor(spec, terminal) {
-    super(terminal);
+  constructor(spec, terminal, host) {
+    super(terminal, host);
+    this.ui.setHeading('OpenRUA · Resume', spec.scope ?? 'All projects');
     this.ui.addChild(new Text(`Resume a conversation\n${plain(spec.scope ?? 'All projects')}\n`
       + 'Ended project conversations can reconnect; older records open read-only.'
       + (spec.can_all ? '\nTab: switch between this project and all projects' : ''), 0, 1));
@@ -165,7 +55,7 @@ export class History extends Screen {
     this.ui.addChild(this.input); this.ui.addChild(this.listContainer);
     this.filter();
     this.ui.addChild(new Text(plain(spec.notice), 0, 1));
-    this.ui.addChild(new Text('Type to filter · ↑/↓ select · Enter open · Esc cancel', 0, 1));
+    this.ui.setFooter(new Text('Type to filter · ↑/↓ Select · Enter Open · Esc Back', 0, 0));
     const input = this.input;
     this.ui.setFocus({get focused() { return input.focused; }, set focused(value) { input.focused = value; }, handleInput: data => {
       if (['up', 'down', 'enter', 'escape'].some(key => matchesKey(data, key))) this.list.handleInput(data);
@@ -177,7 +67,7 @@ export class History extends Screen {
     const query = this.input.getValue().toLocaleLowerCase();
     const rows = this.rows.filter(row => `${row.title} ${row.id}`.toLocaleLowerCase().includes(query));
     this.list = new SelectList(rows.map(row => ({value: row.id,
-      label: `${plain(row.title)} · ${plain(row.id)}`, description: `${plain(row.status)} · ${plain(row.time)}${row.project ? ' · ' + plain(row.project) : ''}`})), 10, selectTheme);
+      label: `${plain(row.title)} · ${plain(row.id)}`, description: `${plain(row.status)} · ${plain(row.time)}${row.project ? ' · ' + plain(row.project) : ''}`})), Math.max(2, Math.min(10, this.ui.terminal.rows - 12)), selectTheme);
     this.list.onSelect = item => this.finish({action: 'select', id: item.value});
     this.list.onCancel = () => this.finish();
     this.listContainer.clear();

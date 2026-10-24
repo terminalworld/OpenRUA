@@ -8,7 +8,7 @@ export function modelPicker(chat, selected) {
   const choices = state?.setting_choices?.model ?? [];
   const nextTurn = state?.setting_effective_from?.model === 'next_turn';
   const apply = async (model, effort) => {
-    if (effort === undefined) await chat.configure('model', model);
+    if (effort === undefined) { await chat.configure('model', model); return; }
     else {
       await chat.client.command('select_model', {model, effort});
       await chat.refresh();

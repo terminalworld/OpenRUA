@@ -7,8 +7,10 @@ read_when:
 
 # Terminal chat
 
-OpenRUA uses Pi's main-screen renderer, editor, Markdown and keyboard
-selectors. There are no mouse-driven forms or buttons. The terminal consumes
+OpenRUA uses Pi's fullscreen renderer, editor, Markdown and keyboard
+selectors. A project header, scrollable conversation and fixed input area share
+one interface from setup through preparation and chat. Leaving restores the
+previous terminal screen. The terminal consumes
 the same session API as the browser and plain CLI; the existing service owns
 the native coding agent, robot, message queue and history.
 
@@ -21,11 +23,17 @@ openrua
 
 The runtime is included. No separate Node/npm install or frontend flag is needed
 (`--tui pi` remains an explicit alias for this terminal).
-Use arrows and Enter to choose robot, simulator, benchmark, agent and model;
-Escape returns to the previous menu. The selector offers bundled starting combinations and the current project
-configuration. Dependent fields update together; maintained files remain
-editable in the project.
-**Connect a real robot** opens `openrua connect` inside
+First choose **Real robot** or **Simulation**. Real robots can use a project
+configuration or **Connect a new robot**. Simulation offers **Native scene**
+and **Benchmark environment**, followed by a supported starting environment
+or a custom configuration path. Selecting a benchmark here opens an interactive
+task, not batch evaluation. Review the environment and agent separately before
+starting; **Agent settings** holds model and authentication, and **Advanced
+options** holds the session name and preparation check.
+Arrows and Enter select, number keys choose compatible menu entries, and Escape
+returns to the parent without applying a selection. Confirmations require Enter.
+Maintained files remain editable in the project.
+**Connect a new robot** opens `openrua connect` inside
 the current coding project ([connect.md](connect.md)).
 
 Before a session starts, `openrua` offers a newer agent CLI at most once a
@@ -49,7 +57,7 @@ the key into the menu. API mode is offered only when the selected plugin support
 it. Each agent keeps its own saved choice; switching agents never borrows another
 agent's key path. Switching back to native login clears the selected path without
 deleting the key file. These defaults apply to new sessions, not running ones.
-For an external plugin, choose **Coding agent → Enter a name or profile path**.
+For an external plugin, choose **Agent settings → Coding agent → Enter a name or profile path**.
 OpenRUA loads the manifest's shared-chat and authentication capabilities before
 showing its options. An invalid path returns to setup with an error; selecting
 an agent alone does not save defaults, start resources, or call a model. Unsaved
@@ -63,10 +71,13 @@ and file permissions. Local checks do not call a model or verify account quota.
 missing or not usable (the commands are shown and run only on a yes; see
 [Docker](install.md#docker)), builds missing images with logs, offers the
 agent's sign-in when it is not signed in, checks readiness and opens chat.
-**Connect a real robot** sets up the same two first. Existing images are
+**Connect robot** sets up the same two first. Existing images are
 reused. **Save project and check preparation** only checks preparation. Logs remain in
 `~/.openrua/preparation/` for retry. See [setup validation](setup-validation.md)
 and [your agent's login](install.md#your-agents-login).
+Preparation logs appear within the same interface; failures return to setup for
+editing and retry. Native sign-in and sudo prompts temporarily use the ordinary
+terminal, then return to OpenRUA.
 
 Use `openrua --setup`, `openrua config set`, or `.openrua/settings.json`
 to change project settings. Each ordinary launch creates a new ID in the current project
@@ -109,7 +120,7 @@ OpenRUA's own greeting; the agent has not looked at anything yet.
 | `/retry` | Retry an unconfirmed send with its original request ID |
 | `/resume` | Resume this project's conversations; `--all` searches all projects |
 | `/end` | Confirm ending execution, retaining history and workspace |
-| Ctrl+D on empty input or `/quit` | Leave, then choose: Enter keeps the session (and its robot) running in the background, `e` ends it, keeping its files |
+| Ctrl+D on empty input or `/quit` | Choose Keep session running or End session, then confirm with Enter; Escape keeps it running |
 
 Ending shows progress until the owner confirms resource shutdown. A successful
 `/end` does not ask you to end the session again. On ordinary exit the terminal
@@ -121,8 +132,12 @@ depends on the real robot's driver. See [ending and reconnecting](sessions.md).
 
 The status line shows the configured model even when the conversation scrolls.
 `/model` uses the native agent's model choices when available and always offers
-an explicit model-ID editor. Selecting a model changes the next turn; a running
-turn keeps its model. Viewing the menu makes no model request.
+an explicit model-ID editor. For Codex, select a model and its supported
+reasoning level, then confirm to apply both. Escape returns to model selection
+without changing either setting. A new model starts with its native default
+level. Codex changes apply to the next turn; other agents report their own
+setting behavior. An accepted request remains pending until the native agent
+confirms it; rejections retain the native reason. Viewing the menu calls no model.
 
 OpenRUA selects the model independently of a host coding agent's default. Its
 bundled Codex profile defaults to `gpt-5.6-sol`; an explicit model, project
@@ -134,8 +149,8 @@ identity. Native account availability is determined by the agent service.
 For Codex, `/model effort` opens the reasoning effort choices advertised for
 the selected model. `/model effort medium` sets a level directly. The setting
 is visible alongside the model and retained when the conversation is resumed;
-an active turn keeps its existing parameters. Model changes preserve the effort
-setting; use the following effort picker to select a supported level. Agents
+an active turn keeps its existing parameters. A direct model change also chooses
+a supported native default level rather than retaining an incompatible one. Agents
 that have not reported live effort control do not expose this picker.
 
 Menus use arrows, Enter and Escape. Confirmation starts on Cancel. The terminal

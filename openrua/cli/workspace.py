@@ -7,7 +7,7 @@ from openrua.config import projects
 from openrua.errors import UsageError
 
 
-def choose(directory: str | Path, home: Path, *, accept: bool = False) -> Path | None:
+def choose(directory: str | Path, home: Path, *, accept: bool = False, screen=None) -> Path | None:
     root = projects.resolve(directory)
     if projects.trusted(root, home):
         return root
@@ -20,7 +20,7 @@ def choose(directory: str | Path, home: Path, *, accept: bool = False) -> Path |
                          hint="open openrua interactively to choose and trust a workspace, "
                               "or pass --workspace <directory> --trust-workspace explicitly")
     from openrua.terminal.launcher import workspace
-    selected = workspace(str(root))
+    selected = workspace(str(root), **({'screen': screen} if screen else {}))
     if selected is None:
         return None
     root = projects.resolve(selected)

@@ -119,23 +119,39 @@ def choose_history(list_sessions, open_session, screen=run_screen, *, environmen
 
 def setup(values, choices, location, save, check, launch, agent_models,
           list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None, authentication=None, resolve_agent=None,
-          connect=None, ready=None, sign_in=None, list_all=None, scope=None, save_connect=None):
+          connect=None, ready=None, sign_in=None, list_all=None, scope=None, save_connect=None, application=None, resolve_values=None):
     notice = ''
     authentication = dict(authentication or {})
     drafts = {}
+    view, intent = None, 'start'
+    def perform(title, operation, native=False):
+        return application.perform(title, operation, native=native) if application else operation()
     while True:
         result = screen({'mode': 'setup', 'values': values, 'choices': choices,
                          'location': location, 'models': agent_models, 'notice': notice,
-                         'environments': environments, 'authentication': authentication})
+                         'environments': environments, 'authentication': authentication,
+                         'project': scope, 'view': view, 'intent': intent})
         action = result['action']
+        view = result.get('view') or 'review'
+        intent = result.get('intent') or intent
         if action == 'quit':
             return None
         if action == 'history':
+            draft = result.get('values')
+            if isinstance(draft, dict) and set(draft) == set(values) and all(isinstance(v, str) for v in draft.values()):
+                values = draft
             selected = choose_history(list_sessions, open_session, screen, list_all=list_all, scope=scope)
             if selected:
                 return selected
             continue
         incoming = result.get('values')
+        if (action in {'start', 'check', 'connect'} and resolve_values and isinstance(incoming, dict)
+                and set(incoming) == set(values) and all(isinstance(v, str) for v in incoming.values())):
+            try:
+                incoming = resolve_values(incoming)
+            except Exception as exc:
+                values, notice = incoming, str(exc) + '\n' + getattr(exc, 'hint', '')
+                continue
         if action == 'connect' and connect is not None and isinstance(incoming, dict):
             if set(incoming) != set(values) or not all(isinstance(v, str) for v in incoming.values()):
                 raise RuntimeError('Invalid setup result; settings were not saved.')
@@ -144,16 +160,14 @@ def setup(values, choices, location, save, check, launch, agent_models,
             # is what the session finds out.
             try:
                 if save_connect is not None:
-                    save_connect(incoming)
-                # Between screens the terminal is plain, so what the computer
-                # still needs (Docker, the agent's sign-in) is set up here,
-                # before anything starts.
+                    perform('Saving agent settings', lambda: save_connect(incoming))
+                # Native prompts borrow the terminal only when preparation
+                # actually needs Docker setup or an agent sign-in.
                 if ready is not None:
-                    ready(incoming)
+                    perform('Docker setup', lambda: ready(incoming))
                 if sign_in is not None:
-                    sign_in(incoming)
-                print('Starting the connecting terminal; this can take a minute...', flush=True)
-                return connect(incoming)
+                    perform('Agent sign-in', lambda: sign_in(incoming))
+                return perform('Connecting robot', lambda: connect(incoming))
             except Exception as exc:
                 notice = str(exc) + '\n' + getattr(exc, 'hint', '')
                 continue
@@ -178,18 +192,16 @@ def setup(values, choices, location, save, check, launch, agent_models,
             notice = ''
             continue
         try:
-            save(values)
+            perform('Saving project', lambda: save(values))
             if action == 'start' and ready is not None:
-                ready(values)
+                perform('Docker setup', lambda: ready(values))
             if action == 'start' and prepare:
-                prepare(values, lambda line: print(line, flush=True))
+                perform('Preparing environment', lambda: prepare(values, application.progress if application else lambda line: print(line, flush=True)))
             if action == 'start' and sign_in is not None:
-                sign_in(values)
-            print('Checking preparation...', flush=True)
-            ok, notice = check(values)
+                perform('Agent sign-in', lambda: sign_in(values))
+            ok, notice = perform('Checking preparation', lambda: check(values))
             if ok and action == 'start':
-                print('Starting the session; this can take a few minutes...', flush=True)
-                return launch(values), values['name']
+                return perform('Starting session', lambda: launch(values)), values['name']
         except Exception as exc:
             notice = str(exc) + '\n' + getattr(exc, 'hint', '')
 

@@ -2,7 +2,7 @@
 
 A keyboard-first OpenRUA client built with
 [`@earendil-works/pi-tui`](https://github.com/earendil-works/pi/tree/main/packages/tui).
-It reuses Pi's main-screen renderer, multiline editor, slash-command completion,
+It reuses Pi's fullscreen renderer, multiline editor, slash-command completion,
 Markdown, and keyboard selectors. The existing OpenRUA service owns execution,
 the native coding agent, robot resources, queue, and durable history. No Pi
 agent runtime or model provider is imported.
@@ -21,15 +21,17 @@ runtime, so users need neither a separate Node/npm install nor a second
 terminal. This distribution path has been tested on Linux x86_64. Other runtime
 platforms and terminal IMEs need further trials.
 
-The setup screen offers the robot, simulator, benchmark, agent and model
-combinations with recorded startup evidence
-([setup validation](../../docs/setup-validation.md)), and three actions:
-**Save and check preparation** reports what is missing and builds nothing;
-**Prepare and start** sets up Docker and the agent's sign-in when they are
-missing, builds missing images with progress and retained logs, then starts the
-background service once the checks pass; **Connect a real robot** opens
-`openrua connect`. CLI configuration and direct edits to `config.yaml` remain
-supported.
+Setup first separates **Real robot** from **Simulation**. Real robots use a
+project configuration or start a new connection; simulation separates native
+scenes and benchmark environments. Review keeps environment and agent settings
+in separate groups. Authentication belongs under Agent settings; session naming
+and preparation checks belong under Advanced options. The bundled starting
+combinations have [startup evidence](../../docs/setup-validation.md).
+
+**Save project and start** saves the selection, prepares missing images, checks
+readiness and starts the existing background service. Preparation and failures
+stay in the same interface. Native login and sudo borrow the terminal only when
+needed. Project configuration lives in `.openrua/settings.json`.
 
 ```sh
 openrua --setup
@@ -151,3 +153,9 @@ and interactive UI informed the component composition. Pi and its dependencies
 are MIT-licensed; their license files are included in the prepared resources.
 The Node runtime is supplied by
 [nodejs-wheel-binaries](https://github.com/njzjz/nodejs-wheel), under its own notices.
+
+The Python application owns preparation and lifecycle operations. One Node host
+renders the successive pages over a private inherited control socket. Screen
+specifications use private temporary files; credentials never appear in command
+arguments. The host restores the prior screen without replaying the transcript,
+then prints a brief session-status message.

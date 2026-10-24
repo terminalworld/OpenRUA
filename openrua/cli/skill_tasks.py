@@ -6,7 +6,6 @@ import argparse
 from datetime import datetime, timezone
 import fcntl
 import hashlib
-import json
 import math
 import os
 from pathlib import Path
@@ -43,12 +42,12 @@ def location(home: Path, identity: str) -> Path:
 def read(home: Path, project: Path, identity: str) -> dict:
     root = location(home, identity)
     reader = WorkspaceFiles(root, max_bytes=1024 * 1024)
-    request = json.loads(reader.read('request.json')['text'])
+    request = reader.read_json('request.json')
     if request.get('project') != str(project.resolve()) or request.get('home') != str(home.resolve()):
         raise ValueError('this task belongs to another project or user directory')
     result = {key: request[key] for key in ('id', 'project', 'started_at', 'options')}
     try:
-        result.update(json.loads(reader.read('status.json')['text']))
+        result.update(reader.read_json('status.json'))
     except FileNotFoundError:
         result['status'] = 'starting'
     if result['status'] in {'running', 'starting'}:

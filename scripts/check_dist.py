@@ -24,54 +24,50 @@ def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Pa
     child = subprocess.Popen([str(executable), '--home', str(home), '--workspace', str(home / 'project')],
                              stdin=slave, stdout=slave, stderr=slave, env=environment)
     os.close(slave)
-    output = bytearray()
-    stage = -3 if manifest else 0
-    trusted = False
-    try:
+    output, frame = bytearray(), bytearray()
+    def wait(text):
         deadline = time.monotonic() + 30
-        while time.monotonic() < deadline and child.poll() is None:
-            if select.select([master], [], [], 0.1)[0]:
-                try:
-                    output.extend(os.read(master, 65536))
-                except OSError:
-                    break
-            if not trusted and b'Use and trust this robot workspace?' in output:
-                os.write(master, b'\r')
-                output.clear(); trusted = True
-                continue
-            if stage == -3 and b'Configure this robot project' in output:
-                os.write(master, b'\x1b[B' * 3 + b'\r')
-                output.clear(); stage = -2
-            elif stage == -2 and b'Enter a name or profile path' in output:
-                os.write(master, b'\x1b[B' * 2 + b'\r')
-                output.clear(); stage = -1
-            elif stage == -1 and b'> ' in output:
-                os.write(master, b'\x01\x0b' + str(manifest).encode() + b'\r')
-                output.clear(); stage = 0
-            elif (stage == 0 and b'Configure this robot project' in output
-                  and (manifest is None or b'Coding agent: ' + str(manifest).encode() in output)):
-                # PTY reads may split a render between its title and agent row.
-                os.write(master, b'\x1b[B' * 6 + b'\r')
-                stage = 1
-            elif stage == 1 and b'no automatic fallback' in output:
-                os.write(master, b'\x1b[B\r')
-                stage = 2
-            elif stage == 2 and b'API key file path' in output:
-                os.write(master, b'\x1b[B' * 7 + b'\r')
-                stage = 3
-            elif stage == 3 and b'Do not paste the key here' in output:
-                os.write(master, b'\x04')
-                stage = 4
-        if child.poll() is None and stage != 4:
-            raise AssertionError(f'Terminal check stopped at stage {stage}:\n' + output.decode(errors='replace'))
-        if child.poll() is None:
-            child.wait(timeout=5)
-        assert stage == 4 and child.returncode == 0, output.decode(errors='replace')
+        while text not in frame:
+            if select.select([master], [], [], .05)[0]:
+                try: data = os.read(master, 65536)
+                except OSError: break
+                output.extend(data); frame.extend(data)
+            assert child.poll() is None, output.decode(errors='replace')
+            assert time.monotonic() < deadline, output.decode(errors='replace')
+        assert text in frame, output.decode(errors='replace')
+    def key(data):
+        time.sleep(.2)
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
+        frame.clear(); os.write(master, data)
+    try:
+        wait(b'Use and trust this robot workspace?'); key(b'\r')
+        wait(b'Choose your environment'); key(b'2')
+        wait(b'Choose a simulation'); key(b'1')
+        wait(b'Choose an environment'); key(b'1')
+        wait(b'Review your project'); key(b'3')
+        wait(b'Agent settings'); key(b'1')
+        wait(b'Enter a name or profile path')
+        if manifest:
+            key(b'3')
+            wait(b'Enter Confirm'); key(str(manifest).encode() + b'\r')
+        else:
+            key(b'2')
+        wait(b'Agent settings'); key(b'3')
+        wait(b'API key file (API billing)'); key(b'2')
+        wait(b'Agent settings'); key(b'4')
+        wait(b'Do not paste the key here'); key(b'\x04')
+        child.wait(timeout=5)
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
+        assert child.returncode == 0, output.decode(errors='replace')
+        assert output.count(b'\x1b[?1049h') == output.count(b'\x1b[?1049l') == 1
         assert not (home / 'sandboxes').exists(), 'Setup cancellation started resources'
         assert not (home / 'config.yaml').exists(), 'Setup cancellation saved an API choice'
     finally:
-        if child.poll() is None:
-            child.kill()
+        if child.poll() is None: child.kill()
         child.wait()
         os.close(master)
 
@@ -185,7 +181,7 @@ server.serve_forever(); server.server_close(); endpoint.unlink()
             if select.select([master], [], [], .1)[0]:
                 try: output.extend(os.read(master, 65536))
                 except OSError: break
-            if stage == 0 and b'Enter send' in output:
+            if stage == 0 and b'Enter Send' in output:
                 os.write(master, b'/end\r'); stage = 1
             elif stage == 1 and b'End execution and release resources?' in output:
                 os.write(master, b'\x1b[B\r'); stage = 2

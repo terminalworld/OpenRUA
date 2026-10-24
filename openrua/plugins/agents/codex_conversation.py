@@ -123,9 +123,13 @@ class CodexConversation(ConversationProtocol):
         elif setting == "model":
             if not value:
                 raise ValueError("name a model")
-            self.model = value
-            return Update(events=[Event('setting', data={'setting': 'model', 'value': value, 'effective_from': 'next_turn'}),
-                                  self._effort_setting()])
+            preset = self._models.get(value, {})
+            supported = [row['value'] for row in preset.get('efforts', [])]
+            effort = self.effort
+            if value != self.model or (supported and effort not in supported):
+                default = preset.get('default_effort')
+                effort = default if default and (not supported or default in supported) else (supported[0] if supported else effort)
+            return self.select_model(value, effort)
         elif setting == 'effort':
             supported = {row['value'] for row in self._models.get(self.model, {}).get('efforts', [])}
             if not isinstance(value, str) or not value.strip() or (supported and value not in supported):
