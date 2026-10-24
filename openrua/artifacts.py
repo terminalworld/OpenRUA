@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 from contextlib import contextmanager
 from datetime import datetime, timezone
+import json
 import os
 from pathlib import Path
 import stat
@@ -124,3 +125,12 @@ class WorkspaceFiles:
                 if "\0" not in text:
                     result.update(kind="text", mime="text/plain", text=text)
         return result
+
+    def read_json(self, path: str):
+        """Read a bounded JSON snapshot, refreshing concurrent file changes."""
+        for attempt in range(3):
+            try:
+                return json.loads(self.read(path)['text'])
+            except FileChangedError:
+                if attempt == 2:
+                    raise

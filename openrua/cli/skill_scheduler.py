@@ -3,7 +3,6 @@
 import argparse
 from datetime import datetime, timezone
 import fcntl
-import json
 import os
 from pathlib import Path
 import signal
@@ -39,7 +38,7 @@ def status(home):
             try: fcntl.flock(stream, fcntl.LOCK_EX | fcntl.LOCK_NB)
             except BlockingIOError: running = True
             instance = stream.read().strip()
-    try: value = json.loads(WorkspaceFiles(root, 65536).read('status.json')['text'])
+    try: value = WorkspaceFiles(root, 65536).read_json('status.json')
     except FileNotFoundError: value = {}
     if instance != value.get('instance'): value = {}
     return {**value, 'running': running, 'state': 'stopping' if running and ((root / 'stop').exists() or value.get('state') == 'stopping')

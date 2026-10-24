@@ -25,7 +25,7 @@ Unreleased until a release is cut, and the release decides its number.
   pending settings until the native agent confirms them and retain rejections.
 - Keep the model status compact and distinguish a running turn from a different
   next-turn selection.
-- Refresh a periodic Skills plan read when it overlaps a background atomic
+- Refresh Skills plan and task status reads when they overlap a background atomic
   update, preserving file-change detection and validation failures.
 
 ## 0.23.3
