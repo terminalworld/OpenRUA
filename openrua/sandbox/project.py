@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import fcntl
 from pathlib import Path
+import re
 
 from openrua.sandbox import SandboxError
 from openrua.sandbox.workspace import seed
@@ -51,7 +52,11 @@ def prepare(cfg: dict, root: Path, materials: Path) -> None:
     initialize(root)
     seed(cfg, materials)
     for document in materials.rglob('*.md'):
-        document.write_text(document.read_text().replace('python3 tools/', 'python3 /robot/tools/'))
+        text = document.read_text().replace('python3 tools/', 'python3 /robot/tools/')
+        text = re.sub(r'(?<![\w/.-])machine\.yaml\b', '/robot/machine.yaml', text)
+        text = text.replace('at the workspace root. Read it first.',
+                            'in the read-only robot materials. Read it first.')
+        document.write_text(text)
 
 
 def initialize(root: Path) -> None:

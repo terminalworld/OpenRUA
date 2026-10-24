@@ -9,6 +9,12 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.23.2
+
+- Point project-mode machine documentation and Python examples to the current
+  read-only `/robot/machine.yaml`, retaining project discrepancy notes and the
+  original isolated benchmark workspace template.
+
 ## 0.23.1
 
 - Keep model identifiers unchanged when resolving project settings and CLI
