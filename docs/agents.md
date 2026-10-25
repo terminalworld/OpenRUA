@@ -284,7 +284,7 @@ carry several agents and doctor still says which manifest changed.
 ## Structured conversations
 
 A plugin may implement `conversation(sandbox, model, proxy, options=None,
-session_id=None, limits=None, permissions="auto")` in addition to batch execution and the native terminal.
+session_id=None, limits=None, permissions=None)` in addition to batch execution and the native terminal.
 The default returns `None`; existing plugins need no migration. The hook
 returns a `Conversation` containing a piped native-process command and a
 `ConversationProtocol`. Construction starts no process. This capability is
@@ -327,8 +327,8 @@ alive independently of client connections.
   Unknown requests emit `unsupported_request` and
   never receive a fabricated approval.
 - `configure(setting, value)` changes what the agent does next, as its own
-  `/permissions` and `/model` do: `permissions` is `ask` (ask before each
-  command that changes something) or `auto`; `model` is a model ID. The
+  `/permissions` and `/model` do: `permissions` is a mode supplied by this
+  plugin; `model` is one of its native model IDs. The
   plugin reports `setting` once in effect (and the starting values when
   ready), or `setting_rejected`. The default raises `NotImplementedError`.
   Model choices can include `efforts` (the same value, label and description
@@ -411,3 +411,19 @@ New external agents can still use a project manifest and the same setup path.
 The manifest's `title`, pinned version, default model and capabilities supply the
 chooser and authentication options. A plugin that cannot provide shared chat
 is rejected before starting a shared session.
+
+### Native settings metadata
+
+`permission_modes` and `default_permissions` belong to the plugin. Use native
+identifiers and defaults; do not assign another provider's meaning to `auto`.
+A ready event can include `settings`, the names of settings this connection
+supports. Clients use that declaration and native `setting` choices rather than
+providing universal permission or model presets. Setting errors can include an
+`error` string, which clients retain until a later successful setting report.
+
+`model_catalog(sandbox, model, proxy, **kwargs)` optionally returns a Conversation
+for metadata discovery. Its initialization must return model choices without
+submitting a user/model turn. Codex queries models without creating a thread;
+Claude uses its initialization metadata. `model_selection=False` declares a
+preview that uses its configured model. Discovery runs with the selected profile
+in a temporary terminal, with no robot or project mounts.

@@ -57,7 +57,7 @@ Use the file or `openrua config set` to edit custom defaults. `--setup` edits th
 as paths throughout startup, so their settings are not replaced by an internal
 benchmark name.
 
-**Authentication** defaults to **Native CLI profile**, using the account already
+**Authentication** defaults to the selected agent's **account**, using the account already
 selected in your coding agent. To use API billing explicitly, choose **API key
 file** and enter the path to a private file containing the raw key. Do not paste
 the key into the menu. API mode is offered only when the selected plugin supports
@@ -121,7 +121,7 @@ OpenRUA's own greeting; the agent has not looked at anything yet.
 | `/questions` | Choose answers to agent questions (or type the answer) |
 | Escape or `/interrupt` | Stop the current turn and cancel the robot's motions; queued instructions go next |
 | `/continue` | Confirm continuing a paused queue |
-| `/permissions` | Choose the current agent's native permission mode; `--permissions MODE` selects a startup mode (`auto` is the legacy bypass default, `ask` under `openrua connect`) |
+| `/permissions` | Choose the current agent's native permission mode; `--permissions MODE` selects a startup mode (the selected plugin supplies its default) |
 | `/model` | Open native model choices or enter a model ID; `/model <name>` changes the next-turn setting directly |
 | The agent's own commands | `/compact`, `/clear`, and what else the agent lists (Claude Code's skills and custom commands) go to the agent, as in its own terminal; `/help` lists them |
 | `/retry` | Retry an unconfirmed send with its original request ID |
@@ -209,34 +209,32 @@ the turn it joined. Receipt does not mean the requested work has completed.
 
 ## Native permission modes
 
-`/permissions` shows the modes supplied by the active agent connection. Claude
-Code offers Manual, Auto, Accept edits, Plan, Don't ask and Bypass permissions.
-Codex offers Ask for approval, Approve for me and Full access when its app-server
-supports automatic review. Older connections retain their supported choices.
+`/permissions` lists only the modes supplied by the selected native agent.
+Claude Code uses its own identifiers: `default`, `auto`, `acceptEdits`, `plan`,
+`dontAsk` and `bypassPermissions`. Its default is `auto`, which uses the native
+action classifier. `bypassPermissions` explicitly skips permission checks.
+
+Codex offers Ask for approval (`untrusted`), Approve for me (`auto_review`) and
+Full access (`never`). It defaults to Approve for me, with `on-request` approvals,
+the native automatic reviewer and a workspace-write sandbox. Full access uses
+`never` approvals and danger-full-access. These are Codex policies; Claude's Plan
+and Accept edits modes are not applied to Codex.
 
 ```sh
-openrua --permissions auto-review
-# Or, in a shared conversation:
-/permissions auto-review
+openrua --agent claude-code --permissions auto
+openrua --agent codex --permissions auto_review
 ```
 
-`auto-review` selects Claude Code's native `auto` mode or Codex's native automatic
-reviewer. OpenRUA does not approve requests on their behalf. Codex uses
-`on-request` approvals with a native workspace-write sandbox; networking remains
-available for the robot interfaces, subject to the container's own limits.
-Native review activity and its decision appear in the conversation. A native
-rejection is shown rather than silently enabling unrestricted access.
+Kimi/ZCode previews use native approval questions and do not currently expose
+switchable permission modes. Their menus do not invent another agent's choices.
+An unsupported explicit mode is refused. Existing saved conversations retain
+the meaning of their recorded modes, including older bypass identifiers.
 
-The legacy value `auto` continues to mean bypassing command approvals; it does
-not mean automatic review. Select Auto or Approve for me in the menu, or use
-`auto-review`, for native review. Claude Code also accepts `acceptEdits`, `plan`
-and `dontAsk`. Unsupported modes are refused by the selected plugin.
-
-Codex permission changes apply from the next turn. A question already awaiting
-a response still needs an answer. Claude Code mode changes are confirmed through
-its native control protocol. Native account, model and managed-policy
-requirements still apply. These modes govern the agent's tools inside its robot
-terminal; the robot's driver checks and connection procedure remain separate.
+Claude mode changes require a native acknowledgement. Codex changes apply to
+the next turn; native automatic review must be confirmed by its app-server.
+Native errors remain visible. No rejected mode is silently replaced by full
+access. OpenRUA supplies the shared selection, confirmation and feedback UI;
+the selected plugin owns the options and native behavior.
 
 ## Current scope
 
@@ -266,3 +264,23 @@ keyboard tests over the real HTTP service, asset preparation and distribution
 checks. The launcher receives configuration and history operations as callbacks;
 it does not import execution internals. Tests use a controlled agent transport,
 not paid models or physical robots.
+
+## Native model selection
+
+Setup's Model page loads the selected CLI's own model catalog using its chosen
+account or explicit API profile. Claude Code supplies models from initialization;
+Codex supplies its paginated model list and reasoning levels. A temporary
+metadata terminal submits no prompt and connects to no robot. If agent tools are
+missing, their preparation stays in the compact fullscreen progress view.
+
+Shared chat uses the native metadata on the running connection. Discovery errors
+are shown with the current model, reload/custom entry remain explicit, and the
+configured default is never presented as the complete native catalog. Model IDs
+and choices remain scoped to the selected agent. The Kimi/ZCode previews keep the
+model configured in their manifest and explain that limitation.
+
+Setup preparation shows stages and elapsed time. Press L to inspect live details;
+full build logs remain available at the reported path. Every project conversation
+has a short welcome, environment context and help hint. Saved projects reuse their
+selection on ordinary startup; use `openrua --setup` to review it or `--resume`
+to resume a retained conversation.

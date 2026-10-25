@@ -137,7 +137,7 @@ async def _open_execution(name: str, home: Path, store: SQLiteStore,
     conversation = adapter.conversation(
         facts["sandbox"], settings.get("model") or facts["model"], facts["proxy"],
         options={**facts['options'], **({'effort': settings['effort']} if settings.get('effort') else {})}, limits=facts.get("limits"),
-        permissions=settings.get("permissions") or facts.get("permissions", "auto"),
+        permissions=agents.saved_permissions(adapter, facts, current),
         **({"session_id": native_session} if native_session else {}))
     if conversation is None:
         raise UnavailableError(

@@ -172,6 +172,7 @@ def test_connecting_hands_the_robot_to_the_selected_project(tmp_path, monkeypatc
         flow = connect.ConnectFlow.__new__(connect.ConnectFlow)
         flow.request = connect.ConnectRequest(home=tmp_path / 'home', name='connecting', folder=folder, project=root)
         flow.folder, flow.agent = folder, 'codex@0.134.0'
+        connect.state.save('connecting', flow.request.home, agent='codex', agent_version='0.134.0', permissions='ask')
         requests = []
         monkeypatch.setattr(connect, 'open_robot', lambda request, **kw: requests.append(request))
         monkeypatch.setattr(connect.subprocess, 'call', lambda *a, **k: 0)
@@ -206,7 +207,7 @@ def test_connect_keeps_the_project_workspace_from_the_first_turn(tmp_path, monke
     path.home = Path.home
     monkeypatch.setattr(connect, 'Path', path)
     monkeypatch.setattr(connect.shutil, 'which', lambda binary: '/usr/bin/docker')
-    adapter = SimpleNamespace(name='fixture', title='Fixture', default_options={},
+    adapter = SimpleNamespace(name='fixture', title='Fixture', default_options={}, default_permissions='ask', permission_modes=('ask',),
                               prepare_profile=lambda *a, **kw: SimpleNamespace(mounts=()))
     monkeypatch.setattr(connect, '_agent', lambda r: (adapter, {}, 'fixture-model',
                                                      SimpleNamespace(sandbox=SimpleNamespace(run_args=[]))))

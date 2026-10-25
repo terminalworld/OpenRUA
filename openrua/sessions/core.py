@@ -192,8 +192,11 @@ class Session:
                 state["native_session"] = identity
                 if event.kind == "ready":
                     state["connected"] = True
+                    if 'settings' in event.data:
+                        state['setting_controls'] = event.data['settings']
             elif event.kind == "setting":
                 state.setdefault("settings", {})[event.data["setting"]] = event.data["value"]
+                state.setdefault('setting_errors', {})[event.data['setting']] = event.data.get('error')
                 state.setdefault('setting_effective_from', {})[event.data['setting']] = event.data.get('effective_from')
                 if 'choices' in event.data:
                     state.setdefault('setting_choices', {})[event.data['setting']] = event.data['choices']

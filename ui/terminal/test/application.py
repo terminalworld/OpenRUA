@@ -36,6 +36,7 @@ async def main():
         def prepare(values, progress):
             builds.append(values.copy())
             progress('Preparing project fixture')
+            progress('INSTALLATION_DETAIL_FOR_LOGS')
             time.sleep(.15)
             if len(builds) == 1:
                 raise RuntimeError('Fixture build failed; review and retry')
@@ -48,6 +49,7 @@ async def main():
                     lambda v: saves.append(v.copy()), lambda v: (True, 'Ready'), lambda v: client,
                     {}, lambda: [], lambda n: None, screen=application.screen,
                     environments=[{'selection': {'robot': 'panda', 'sim': 'robosuite', 'bench': 'libero_pro'}}],
+                    resolve_models=lambda values, intent: [dict(row, label='Native ' + row['value']) for row in catalog],
                     application=application, prepare=prepare, scope=str(workspace))
                 assert result == (client, 'fixture'), result
                 await asyncio.to_thread(chat, client, 'fixture', lambda: [], lambda n: None,

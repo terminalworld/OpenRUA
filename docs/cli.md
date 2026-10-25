@@ -69,9 +69,9 @@ start or reconnect (without a subcommand):
                         what your account brings beyond the CLI: its
                         connectors or apps, synced skills and plugins
                         (default: not limited)
-  --permissions MODE    native permission mode: ask, auto-review, auto (legacy
-                        bypass default), or another mode supported by the
-                        selected agent; /permissions lists choices
+  --permissions MODE    selected agent's native permission mode; the plugin
+                        supplies its default; /permissions lists supported
+                        choices
   --model MODEL         model for a new session (default: the agent's
                         configuration)
   --gui                 open the browser instead of terminal chat
@@ -511,9 +511,9 @@ options:
                         what your account brings beyond the CLI: its
                         connectors or apps, synced skills and plugins
                         (default: not limited)
-  --permissions MODE    native permission mode: ask, auto-review, auto (legacy
-                        bypass default), or another mode supported by the
-                        selected agent; /permissions lists choices
+  --permissions MODE    selected agent's native permission mode; the plugin
+                        supplies its default; /permissions lists supported
+                        choices
   --model MODEL         model (default: the configured agent's)
   --port PORT           local port (default: choose a free port)
   --resume-conversation

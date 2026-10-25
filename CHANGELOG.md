@@ -9,6 +9,18 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.27.0
+
+- Use each agent's native permission identifiers and supported modes. Claude
+  Code defaults to `auto`; Codex defaults to its native automatic reviewer.
+  Keep old saved modes meaningful instead of reinterpreting a recorded bypass.
+- Read model choices from native CLI metadata in setup and shared chat, including
+  Codex reasoning levels. Surface discovery failures and plugin limitations.
+- Let plugins declare selectable settings. Remove client-side permission presets
+  that could invent unsupported behavior for another agent.
+- Name existing agent sign-ins as accounts and identify API billing separately.
+  Keep setup preparation compact, retain detailed logs and restore a short welcome.
+
 ## 0.26.0
 
 - Separate agent runtime preparation from CLI installation in plugin manifests.

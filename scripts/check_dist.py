@@ -89,7 +89,7 @@ def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Pa
         else:
             key({'claude-code': b'1', 'codex': b'2', 'kimi': b'3', 'zcode': b'4'}[agent])
         wait(b'Agent settings'); key(b'4')
-        wait(b'API key file (API billing)'); key(b'2')
+        wait(b'API key (billed separately)'); key(b'2')
         wait(b'Agent settings'); key(b'5')
         wait(b'Do not paste the key here'); key(b'\x04')
         child.wait(timeout=5)

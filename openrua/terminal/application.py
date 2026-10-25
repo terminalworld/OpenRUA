@@ -109,10 +109,12 @@ class Application:
             path.unlink(missing_ok=True)
 
     def progress(self, line='', **details):
+        if str(line).startswith('[prepare] '):
+            details.setdefault('summary', str(line).removeprefix('[prepare] '))
         self._send({'kind': 'progress', 'line': str(line), **details})
 
     def perform(self, title, operation, *, native=False):
-        self._send({'kind': 'progress', 'title': title, 'line': ''})
+        self._send({'kind': 'progress', 'title': title, 'line': '', 'compact': True, 'summary': title})
         if native:
             self._request('suspend')
             try:

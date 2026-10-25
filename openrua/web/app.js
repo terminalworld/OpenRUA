@@ -312,7 +312,7 @@ function render() {
     }));
     $("permissions").value = settings.permissions || "";
   }
-  $("permissions").disabled = !online || state.closed;
+    $("permissions").disabled = !online || state.closed || !permissionChoices(state).length;
   $("model").disabled = !online || state.closed;
   $("agent-model").textContent = settings.model || "";
   const theirs = agentCommands(state);

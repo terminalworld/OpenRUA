@@ -29,6 +29,7 @@ async def serve(args) -> None:
     if getattr(args, "connect", None):
         request = ConnectRequest(home=args.home, name=args.name, folder=Path(args.connect),
                                  agent=args.agent, model=args.model, distro=args.distro,
+                                 permissions=args.permissions,
                                  project=Path(args.workspace))
         owned = await managed.start(request, open_resources=open_connect)
         flow = ConnectFlow(owned, request)

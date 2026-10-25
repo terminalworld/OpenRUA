@@ -11,7 +11,7 @@ Review its model and authentication, choose **Continue to review**, then start.
 The selected agent belongs to this project. Selecting it does not start a model
 or change the billing mode.
 
-**Native CLI profile** uses an existing Kimi profile. **API key file (API billing)**
+**Kimi Code account** uses an existing Kimi profile. **API key (billed separately)**
 is an explicit, separate choice. An absent native login never selects API billing.
 
 ```sh
@@ -33,7 +33,7 @@ The pinned adapter can reuse a selected official Kimi Code OAuth file profile
 under `~/.kimi-code` or `KIMI_CODE_HOME`. It currently supports the mainland
 `api.kimi.com/coding/v1` service, file storage, OAuth key `oauth/kimi-code`, and a
 selected model whose ID matches `kimi-k2.6`. Configure that native profile in
-Kimi first with `/login`, then select Native CLI profile in OpenRUA.
+Kimi first with `/login`, then select Kimi Code account in OpenRUA.
 
 Each OpenRUA session gets a private config containing only that managed model.
 The native `credentials/` and `oauth/` directories are shared mounts so token

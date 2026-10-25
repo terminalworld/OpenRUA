@@ -10,7 +10,7 @@ Run `openrua --setup`, choose an environment, then choose **ZCode (preview)**.
 Review the model and authentication, choose **Continue to review**, then start.
 Choosing an agent does not start a model or change the billing mode.
 
-**API key file (API billing)** selects an explicit BigModel prepaid API key:
+**API key (billed separately)** selects an explicit BigModel prepaid API key:
 
 ```sh
 openrua config set --user --agent zcode --auth api --api-key-file /absolute/path/to/bigmodel.key
@@ -24,7 +24,7 @@ missing sandbox through the ordinary image-installation path.
 
 ## Native profile scope
 
-**Native CLI profile** imports an already selected Coding Plan key provider from
+**ZCode account** imports an already selected Coding Plan key provider from
 ZCode's `provider_config.json`. Supported profiles contain a self-contained,
 enabled `zhipu-coding-plan-api-key` rule, model `glm-4.5-air`, and the official
 BigModel or Z.ai Anthropic endpoint. The adapter discovers `~/.zcode` or

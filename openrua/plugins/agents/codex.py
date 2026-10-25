@@ -51,6 +51,8 @@ class Codex(Agent):
 
     skills = SkillLocations('.agents/skills', '/codex-home/skills')
     permission_modes = tuple(CodexConversation.APPROVAL)
+    default_permissions = CodexConversation.DEFAULT_PERMISSIONS
+    legacy_permission_modes = {'ask': 'untrusted', 'auto-review': 'auto_review', 'auto': 'never'}
 
     def prepare_api_profile(self, key_file: Path, dest: Path, *,
                             limits: dict | None = None) -> PreparedProfile:
@@ -113,7 +115,7 @@ class Codex(Agent):
         return [
             *self.exec_argv(sandbox, self._env(proxy), interactive=True),
             # --skip-git-repo-check is exec's flag; the interactive CLI refuses it.
-            "codex", "--dangerously-bypass-approvals-and-sandbox",
+            "codex",
             "-C", "/workspace", "--model", model, *self._config_flags(opts, limits),
             *([prompt] if prompt else []),
         ]
@@ -121,18 +123,19 @@ class Codex(Agent):
     def conversation(self, sandbox: str, model: str, proxy: str,
                      options: dict[str, Any] | None = None,
                      session_id: str | None = None, limits: dict | None = None,
-                     permissions: str = "auto", **_: Any) -> Conversation:
+                     permissions: str | None = None, **_: Any) -> Conversation:
         opts = self._opts(options)
         argv = [*self.exec_argv(sandbox, self._env(proxy), stdin=True),
                 self.binary, "app-server", "--listen", "stdio://",
-                *self._config_flags(opts, limits),
-                # The thread already runs with full access; said for the
-                # process too, so it does not look for a bubblewrap the
-                # container cannot use.
-                "-c", 'sandbox_mode="danger-full-access"']
+                *self._config_flags(opts, limits)]
         return Conversation(argv, CodexConversation(model, session_id=session_id,
                                                     effort=opts["effort"],
-                                                    permissions=permissions))
+                                                    permissions=self.default_permissions if permissions is None else permissions))
+
+    def model_catalog(self, sandbox: str, model: str, proxy: str, **kwargs):
+        connection = self.conversation(sandbox, model, proxy, **kwargs)
+        connection.protocol.catalog_only = True
+        return connection
 
     def token_hint(self, token_file: Path | str) -> str:
         return (f"write an API key as umask 077 && printf '{self.token_env}=%s\\n' "

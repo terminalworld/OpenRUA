@@ -20,19 +20,20 @@ from openrua.agents.conversation import ConversationProtocol, Event, Update
 
 
 class CodexConversation(ConversationProtocol):
+    DEFAULT_PERMISSIONS = 'auto_review'
     # What the person sets with /permissions, as Codex's approval policy.
-    APPROVAL = {"ask": "untrusted", "auto": "never", "auto-review": "on-request"}
+    APPROVAL = {"untrusted": "untrusted", "never": "never", "auto_review": "on-request"}
     SETTINGS = {'permissions': tuple(APPROVAL), 'model': None, 'effort': None}
     PERMISSIONS = [
-        {"value": "ask", "label": "Ask for approval", "description": "Native untrusted command policy in the robot terminal"},
-        {"value": "auto-review", "label": "Approve for me", "description": "Native workspace sandbox and automatic review of escalation requests"},
-        {"value": "auto", "label": "Full access", "description": "Run without command approvals inside the robot terminal"},
+        {"value": "untrusted", "label": "Ask for approval", "description": "Native untrusted command policy in the robot terminal"},
+        {"value": "auto_review", "label": "Approve for me", "description": "Native workspace sandbox and automatic review of escalation requests"},
+        {"value": "never", "label": "Full access", "description": "Run without command approvals inside the robot terminal"},
     ]
 
     def __init__(self, model: str, session_id: str | None = None, effort: str = "high",
-                 workspace: str = "/workspace", permissions: str = "auto"):
+                 workspace: str = "/workspace", permissions: str = DEFAULT_PERMISSIONS):
         if permissions not in self.APPROVAL:
-            raise ValueError('permissions is ask, auto-review or auto')
+            raise ValueError('permissions is untrusted, auto_review or never')
         self.model = model
         self.permissions = permissions
         self.workspace = workspace
@@ -53,6 +54,7 @@ class CodexConversation(ConversationProtocol):
         self._reviewer_supported = False
         self._models = {}
         self._model_pages = 0
+        self.catalog_only = False
 
     @property
     def can_submit(self) -> bool:
@@ -99,25 +101,25 @@ class CodexConversation(ConversationProtocol):
             **self._approval_params(), 'sandboxPolicy': self._sandbox_policy()}, turn_id)])
 
     def _sandbox_policy(self) -> dict:
-        if self.permissions == 'auto-review':
+        if self.permissions == 'auto_review':
             return {'type': 'workspaceWrite', 'writableRoots': [self.workspace], 'networkAccess': True}
         return {'type': 'dangerFullAccess'}
 
     def _approval_params(self) -> dict:
         return {"approvalPolicy": self.APPROVAL[self.permissions],
-                'approvalsReviewer': 'auto_review' if self.permissions == 'auto-review' else 'user'}
+                'approvalsReviewer': 'auto_review' if self.permissions == 'auto_review' else 'user'}
 
     def _thread_params(self) -> dict:
         return {"model": self.model, "cwd": self.workspace,
-                **self._approval_params(), "sandbox": 'workspace-write' if self.permissions == 'auto-review' else 'danger-full-access'}
+                **self._approval_params(), "sandbox": 'workspace-write' if self.permissions == 'auto_review' else 'danger-full-access'}
 
     def configure(self, setting: str, value: str) -> Update:
         """Kept here and sent with every turn, as Codex's own terminal does:
         in effect from the next turn."""
         if setting == "permissions":
             if value not in self.APPROVAL:
-                raise ValueError("permissions is ask, auto-review or auto")
-            if value == 'auto-review' and not self._reviewer_supported:
+                raise ValueError("permissions is untrusted, auto_review or never")
+            if value == 'auto_review' and not self._reviewer_supported:
                 raise ValueError('This native app-server did not advertise approval reviewer support; update the agent CLI.')
             self.permissions = value
         elif setting == "model":
@@ -267,7 +269,8 @@ class CodexConversation(ConversationProtocol):
         method, turn_id = pending
         if method == 'model/list':
             if 'error' in frame:
-                return Update(events=[Event('native', data={'method': method, 'error': frame['error']})])
+                return Update(events=[Event('setting', data={'setting': 'model', 'value': self.model,
+                    'choices': list(self._models.values()), 'error': frame['error'].get('message', str(frame['error']))})])
             result = frame.get('result', {})
             for row in result.get('data', []):
                 value = row.get('model') or row.get('id')
@@ -328,6 +331,8 @@ class CodexConversation(ConversationProtocol):
                                         {"operation": method, "error": frame["error"]})])
         result = frame.get("result", {})
         if method == "initialize":
+            if self.catalog_only:
+                return Update([{'method': 'initialized', 'params': {}}, self._request('model/list', {'limit': 100})])
             params = self._thread_params()
             verb = "thread/start"
             if self.thread_id:
@@ -343,7 +348,7 @@ class CodexConversation(ConversationProtocol):
                 Event("turn_finished", turn_id, {"status": "completed"})])
         if method in {"thread/start", "thread/resume"}:
             self._reviewer_supported = 'approvalsReviewer' in result
-            if self.permissions == 'auto-review' and (
+            if self.permissions == 'auto_review' and (
                     result.get('approvalsReviewer') != 'auto_review'
                     or result.get('approvalPolicy') != 'on-request'
                     or result.get('sandbox', {}).get('type') != 'workspaceWrite'):
@@ -355,10 +360,10 @@ class CodexConversation(ConversationProtocol):
             self.model = result.get('model') or self.model
             self.ready = True
             return Update([self._request('model/list', {'limit': 100})], events=[
-                Event("ready", data={"session_id": native_id}),
+                Event("ready", data={"session_id": native_id, 'settings': list(self.SETTINGS)}),
                 Event("setting", data={"setting": "permissions", "value": self.permissions,
                                        "choices": [choice for choice in self.PERMISSIONS
-                                                   if choice['value'] != 'auto-review' or self._reviewer_supported]}),
+                                                   if choice['value'] != 'auto_review' or self._reviewer_supported]}),
                 Event("setting", data={"setting": "model", "value": self.model}),
                 self._effort_setting(),
                 Event("commands", data={"commands": [

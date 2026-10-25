@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import fcntl
 import hashlib
+import os
 from pathlib import Path
 import shlex
 import subprocess
@@ -111,6 +112,7 @@ def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress,
         key = hashlib.sha256(image.encode()).hexdigest()[:16]
         with (directory / f'{key}.lock').open('a') as lock:
             # Another frontend may already be preparing the same image.
+            progress('[prepare] Checking the environment')
             progress(f'Checking {image}...')
             fcntl.flock(lock, fcntl.LOCK_EX)
             probe = (probes or {}).get(image)
@@ -122,8 +124,10 @@ def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress,
                 command = [*command, '--base-image', image]
                 progress(f'Keeping the existing tools and runtime settings in {image}.')
             progress(f'Building {image}. First-time downloads may be large. Log: {log}')
+            progress('[prepare] Preparing agent tools' if image in (probes or {})
+                     else '[prepare] Preparing the robot environment')
             argv = [sys.executable, '-m', 'openrua', '--home', str(home), *command]
-            with log.open('w') as stream:
+            with open(log, 'w', opener=lambda p, f: os.open(p, f, 0o600)) as stream:
                 process = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                            text=True, bufsize=1)
                 try:
@@ -137,7 +141,7 @@ def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress,
                     process.wait()
                     raise
             if code or not _ready(image, probe):
-                hint = 'fix the build error shown above, then retry startup; completed images are reused'
+                hint = f'inspect {log}, then retry startup; completed images are reused'
                 with log.open('rb') as stream:
                     stream.seek(0, 2)
                     stream.seek(max(0, stream.tell() - 8192))
@@ -150,3 +154,4 @@ def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress,
                 raise UnavailableError(f'Could not prepare {image}; build exit status {code}. Log: {log}',
                                        hint=hint)
             progress(f'Prepared {image}')
+            progress('[prepare] Environment ready')

@@ -435,12 +435,18 @@ export class Chat {
       permissions: async ([value]) => {
         writable();
         if (value) { await this.configure('permissions', value); return; }
+        if (!permissionChoices(state).length) {
+          this.say('This agent has not provided selectable permission modes. Native approval requests appear in the conversation.'); return;
+        }
         const now = state?.settings?.permissions;
         this.picker('Native permission modes', permissionChoices(state).map(p => ({value: p.value,
           label: `${now === p.value ? '✓ ' : '  '}${p.label}`, description: p.description})),
           choice => this.configure('permissions', choice), {selected: now});
       },
       model: async ([value, level]) => {
+        if (state?.setting_controls && !state.setting_controls.includes('model')) {
+          this.say('This agent has not provided model controls. Its configured model remains in use.'); return;
+        }
         if (value === 'effort') {
           writable();
           if (level) await this.configure('effort', level);
