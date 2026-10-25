@@ -94,7 +94,7 @@ def project_config(args) -> int:
 def add_parser(sub) -> None:
     p = sub.add_parser('config', help='view or save project settings; --user for personal preferences',
                        description='Save this project in .openrua/settings.json. Bundled environment choices '
-                       'create maintained configuration files in configs/. --user selects personal agent '
+                       'create maintained configuration files in .openrua/configs/. --user selects personal agent '
                        'preferences and authentication in ~/.openrua/config.yaml.')
     p.add_argument("what", choices=("show", "set", "schema"), help="what to do")
     p.add_argument('--user', action='store_true', help='read or change personal agent preferences')

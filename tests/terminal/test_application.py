@@ -129,16 +129,21 @@ def test_setup_retry_chat_and_leave_share_one_fullscreen(tmp_path, columns, rows
         wait('Fixture build failed'); key(b'1')
         wait('Ready')
         assert b'Welcome to OpenRUA' in frame
+        key(b'\x1b')
         key(b'Inspect\r')
         wait('Working'); key(b'/model\r')
         wait('Select Model'); key(b'2')
         wait('Select Reasoning Level'); key(b'\x1b')
         wait('Select Model'); key(b'\r')
         wait('Select Reasoning Level'); key(b'\r')
-        wait('Selected demo-b'); key(b'/files\r')
-        wait('measurement.txt'); key(b'2')
+        wait('Model changed to demo-b'); key(b'/files\r')
+        wait('measurement.txt'); key(b'3')
         wait('Recorded measurement'); key(b'\x1b')
-        wait('Workspace /'); key(b'\x1b')
+        wait('Workspace /'); key(b'\x1b[A'); key(b'\x1b[C')
+        wait('Workspace /programs'); key(b'\x1b[B'); key(b'\x1b[B'); key(b'\x1b[C')
+        wait('Workspace /programs/nested'); key(b'\x1b[D')
+        wait('Workspace /programs'); key(b'\x1b[C')
+        wait('Workspace /programs/nested'); key(b'\x1b')
         time.sleep(.1); key(b'\x04')
         wait('Keep session running'); key(b'\r')
         deadline = time.monotonic() + 10
@@ -156,7 +161,10 @@ def test_setup_retry_chat_and_leave_share_one_fullscreen(tmp_path, columns, rows
         assert facts['settings']['effort'] == 'medium'
         assert facts['active_settings']['model'] == 'demo-a'
         assert not facts['closed']
+        assert not facts['interrupted']
         assert b'INSTALLATION_DETAIL_FOR_LOGS' not in output
+        assert b'No active turn.' not in output
+        assert b'applies from the next turn.' not in output
         assert output.count(b'\x1b[?1049h') == output.count(b'\x1b[?1049l') == 1
         assert output.rfind(b'Recorded measurement') < output.rfind(b'\x1b[?1049l')
     finally:

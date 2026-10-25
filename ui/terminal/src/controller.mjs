@@ -8,6 +8,7 @@ export class Controller {
     this.clientId = clientId;
     this.cursor = 0;
     this.state = null;
+    this.replayThrough = undefined;
     this.pending = null;
   }
 
@@ -27,6 +28,7 @@ export class Controller {
 
   async read() {
     const {state, cursor: through} = await this.client.snapshot();
+    if (this.replayThrough === undefined) this.replayThrough = through ?? 0;
     this.state = state;
     this.view.snapshot(state);
     if (this.pending && state.messages.some(m => m.client_id === this.clientId && m.request_id === this.pending.request_id)) {
@@ -40,7 +42,7 @@ export class Controller {
         // An event newer than this state is read with the next snapshot.
         // Advancing past it would lose its delivery position on that poll.
         if (typeof through === 'number' && event.seq > through) return;
-        this.view.event(event);
+        this.view.event(event, {replay: event.seq <= this.replayThrough});
         this.cursor = event.seq;
       }
       if (events.length < 1000) break;

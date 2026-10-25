@@ -15,7 +15,7 @@ KINDS = {'robot': 'robots', 'sim': 'simulators', 'bench': 'benchmarks'}
 def instantiate(project: Path, choices: dict) -> dict:
     """Create missing template files and return their explicit project paths."""
     source_root = paths.package_config_path().parent.resolve()
-    target_root = project.resolve() / 'configs'
+    target_root = project.resolve() / '.openrua' / 'configs'
     visited = set()
 
     def copy_file(source):

@@ -33,11 +33,11 @@ def test_project_changes_do_not_change_another_projects_sources_or_images(tmp_pa
     choices = dict(robot='panda', sim='robosuite', bench='', agent='codex', model='')
     projects.save_selection(a, choices); projects.save_selection(b, choices)
     before = config.image_owner(projects.selection(b)['sim'])
-    file = a / 'configs/simulators/robosuite/requirements.txt'
+    file = a / '.openrua/configs/simulators/robosuite/requirements.txt'
     file.write_text(file.read_text() + '\n# Project A changes its build inputs\n')
     assert config.image_owner(projects.selection(a)['sim']) != before
     assert config.image_owner(projects.selection(b)['sim']) == before
-    own = a / 'configs/robots/panda.yaml'
+    own = a / '.openrua/configs/robots/panda.yaml'
     own.write_text(own.read_text() + '\n# Maintained by this project\n')
     projects.save_selection(a, choices)
     assert own.read_text().endswith('# Maintained by this project\n')
@@ -70,7 +70,8 @@ def test_driver_image_slots_follow_project_build_inputs(tmp_path):
 def test_project_path_symlinks_cannot_redirect_template_writes(tmp_path):
     outside = tmp_path / 'outside'; outside.mkdir()
     root = tmp_path / 'project'; root.mkdir()
-    (root / 'configs').symlink_to(outside, target_is_directory=True)
+    (root / '.openrua').mkdir()
+    (root / '.openrua/configs').symlink_to(outside, target_is_directory=True)
     with pytest.raises(ValueError, match='leaves'):
         projects.save_selection(root, dict(robot='panda', sim='robosuite', bench='', agent='codex', model=''))
     assert list(outside.iterdir()) == []
@@ -87,3 +88,32 @@ def test_image_identity_does_not_change_the_cached_recipe_commands(tmp_path):
     local, _ = install.render(recipe, name, tmp_path / 'no-checkout')
     bundled, _ = install.render(config.install_for('robosuite'), 'robosuite', tmp_path / 'no-checkout')
     assert local == bundled
+
+
+def test_generated_inputs_leave_the_users_config_directory_alone(tmp_path):
+    root = tmp_path / 'project'
+    own = root / 'configs' / 'task.yaml'
+    own.parent.mkdir(parents=True)
+    own.write_text('task: user-owned\n')
+    projects.save_selection(root, dict(robot='panda', sim='robosuite', bench='', agent='codex', model=''))
+    assert list(own.parent.iterdir()) == [own]
+    assert own.read_text() == 'task: user-owned\n'
+    assert (root / '.openrua/configs/robots/panda.yaml').is_file()
+    assert '.openrua/configs' in projects.selection(root)['robot']
+
+
+def test_explicit_saved_inputs_keep_their_location_when_project_settings_change(tmp_path):
+    root = tmp_path / 'project'
+    projects.save_selection(root, dict(robot='panda', sim='robosuite', bench='', agent='codex', model=''))
+    original = projects.selection(root)
+    custom = root / 'configs'
+    shutil.move(str(root / '.openrua/configs'), custom)
+    choices = {**original, 'robot': str(custom / 'robots/panda.yaml'),
+               'sim': str(custom / 'simulators/robosuite.yaml'), 'model': 'another-model'}
+    projects.save_selection(root, choices)
+    assert projects.selection(root)['robot'] == choices['robot']
+    assert projects.selection(root)['sim'] == choices['sim']
+    assert not (root / '.openrua/configs').exists()
+    result = config.compose(choices['robot'], choices['sim'], '', tmp_path / 'home')
+    assert result.robot == choices['robot']
+    assert result.cfg['machine']['robot']['model'] == 'Franka Emika Panda'

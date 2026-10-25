@@ -32,7 +32,7 @@ Codex, Kimi Code and ZCode, plus **Other agent or manifest…**. Select an agent
 review its model and authentication, then choose **Continue to review**.
 **Advanced options** holds the session name and preparation check.
 Arrows and Enter select, number keys choose compatible menu entries, and Escape
-returns to the parent without applying a selection. Confirmations require Enter.
+cancels the current view without applying a selection. Confirmations require Enter.
 Maintained files remain editable in the project.
 **Connect a new robot** opens `openrua connect` inside
 the current coding project ([connect.md](connect.md)).
@@ -135,6 +135,18 @@ the robot.
 | `/resume` | Resume this project's conversations; `--all` searches all projects |
 | `/end` | Confirm ending execution, retaining history and workspace |
 | Ctrl+D on empty input or `/quit` | Choose Keep session running or End session, then confirm with Enter; Escape keeps it running |
+
+In `/files`, Up/Down selects an entry, Left returns to the parent directory,
+and Right or Enter opens the selected directory or file. Returning to a parent
+selects the directory you just left. Escape closes the directory browser;
+in a file preview it returns to the same directory and selection. Reads keep
+the browser focused while loading, and closing a view discards its late result.
+
+Initial model, effort and permission synchronization updates the status without
+a change notification. Your own setting changes receive one confirmation after
+the agent accepts them. While a turn runs, the status distinguishes its settings
+from a changed next-turn setting when the agent supports that distinction.
+Escape in an idle conversation leaves the draft and feedback in place.
 
 Ending shows progress until the owner confirms resource shutdown. A successful
 `/end` does not ask you to end the session again. On ordinary exit the terminal

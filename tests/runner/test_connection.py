@@ -26,7 +26,7 @@ def test_maintenance_build_uses_the_edited_project_benchmark(tmp_path, monkeypat
     caller.mkdir()
     projects.save_selection(root, dict(robot='', sim='', bench='libero_pro', agent='codex', model=''))
     choices = projects.selection(root)
-    requirement = root / 'configs/benchmarks/libero_pro/requirements.txt'
+    requirement = root / '.openrua/configs/benchmarks/libero_pro/requirements.txt'
     requirement.write_text(requirement.read_text() + '\n# Maintained project dependency\n')
     resolved = config.compose(choices['robot'], choices['sim'], choices['bench'], home)
     request = RobotRequest(home=home, name='project-build', project=root,

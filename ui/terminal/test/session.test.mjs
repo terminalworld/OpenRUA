@@ -231,15 +231,15 @@ test('settings distinguish pending requests, native rejection and later confirma
   try {
     assert.equal(await chat.configure('model', 'new'), false);
     assert.equal(state.settings.model, 'old');
-    assert.match(chat.notice.render(100).join(''), /Waiting for the agent to confirm/);
-    reject = true;
-    await assert.rejects(chat.configure('model', 'new'), /native model unavailable/);
-    assert.doesNotMatch(chat.notice.render(100).join(''), /Selected new/);
+    assert.match(chat.notice.render(100).join(''), /Updating model/);
     state.settings.model = 'new';
     publish('setting', {setting: 'model', value: 'new'});
     await chat.refresh();
-    assert.match(chat.notice.render(100).join(''), /model: new/);
+    assert.match(chat.notice.render(100).join(''), /Model changed to new/);
     assert.doesNotMatch(chat.notice.render(100).join(''), /Waiting|Selected/);
+    reject = true;
+    await assert.rejects(chat.configure('model', 'unavailable'), /native model unavailable/);
+    assert.doesNotMatch(chat.notice.render(100).join(''), /Model changed to unavailable/);
   } finally { chat.stop(); }
 });
 
@@ -951,7 +951,7 @@ test('dialogs open below the transcript in the editor slot and Escape closes the
   // Refresh, blocked, camera, notes: open the long text and page through it.
   terminal.input('\x1b[B'); terminal.input('\x1b[B'); terminal.input('\x1b[B'); terminal.input('\r');
   await new Promise(r => setTimeout(r, 80));
-  const preview = chat.panel.component;
+  const preview = chat.panel.component.preview;
   assert.equal(preview.offset, 0);
   assert.match(preview.render(80).join('\n'), /lines 1-12 of 82/);
   terminal.input('\x1b[6~');
@@ -1156,7 +1156,7 @@ test('a failed startup is compact once while an independent build failure stays 
   assert.ok(status(state).notes.some(note => note.text === 'build: failed · /robot'));
 });
 
-test('initial native settings stay in status and later changes remain visible', () => {
+test('native setting synchronization does not create action confirmations', () => {
   const chat = new Chat({readOnly: false}, {terminal: new Terminal()});
   const notices = []; chat.say = text => notices.push(text);
   const frame = value => ({kind: 'agent_event', data: {kind: 'setting',
@@ -1164,7 +1164,7 @@ test('initial native settings stay in status and later changes remain visible', 
   chat.transcript.event(frame('auto'));
   assert.deepEqual(notices, []);
   chat.transcript.event(frame('ask'));
-  assert.deepEqual(notices, ['permissions: ask.']);
+  assert.deepEqual(notices, []);
 });
 
 test('fixed-model agent settings never render a foreign native model catalog', async () => {

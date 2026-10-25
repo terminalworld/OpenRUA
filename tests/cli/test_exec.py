@@ -102,7 +102,7 @@ def test_task_alone_reuses_project_settings_over_global_defaults(tmp_path, proje
     assert cfg['agent']['name'] == 'codex@0.134.0'
     assert cfg['agent']['model'] == 'project-model'
     assert projects.selection(project_root)['agent'] == 'codex@0.134.0'
-    assert projects.selection(project_root)['sim'] == str(project_root / 'configs/simulators/robosuite.yaml')
+    assert projects.selection(project_root)['sim'] == str(project_root / '.openrua/configs/simulators/robosuite.yaml')
 
 
 def test_project_real_robot_can_run_a_task_without_repeating_its_profile(tmp_path, project_root, ran):
@@ -144,7 +144,7 @@ def test_explicit_real_robot_drops_the_projects_saved_simulator(tmp_path, projec
     profile.write_text(REAL)
     execute.run(parse(tmp_path, str(profile), 'inspect'))
     assert ran[-1][0]['machine']['backend']['kind'] == 'real'
-    assert projects.selection(project_root)['sim'] == str(project_root / 'configs/simulators/robosuite.yaml')
+    assert projects.selection(project_root)['sim'] == str(project_root / '.openrua/configs/simulators/robosuite.yaml')
 
 
 def test_a_new_project_task_keeps_the_saved_scene_and_is_not_a_robot_path(tmp_path, project_root, ran):
@@ -153,4 +153,4 @@ def test_a_new_project_task_keeps_the_saved_scene_and_is_not_a_robot_path(tmp_pa
     execute.run(parse(tmp_path, 'read notes/machine.yaml'))
     assert ran[-1][3] == 'libero_pro'
     assert ran[-1][2].task == 'read notes/machine.yaml'
-    assert projects.selection(project_root)['bench'] == str(project_root / 'configs/benchmarks/libero_pro.yaml')
+    assert projects.selection(project_root)['bench'] == str(project_root / '.openrua/configs/benchmarks/libero_pro.yaml')

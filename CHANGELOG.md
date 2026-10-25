@@ -9,6 +9,18 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.28.0
+
+- Keep generated project declarations and build inputs in `.openrua/configs/`.
+  Retain explicitly saved configuration paths and the user's directory layout.
+- Make file browsing use Left for the parent directory and Right or Enter to
+  open an entry. Escape closes the current browser or preview; returning keeps
+  the selection. Retain focus during reads and discard results after closing.
+- Keep initial and repeated setting synchronization quiet. Confirm a user's
+  model and effort selection once, retaining native rejection and pending states.
+- Treat idle Escape as a normal key, show interrupt progress from execution
+  state, and keep empty menus dismissible with a useful explanation.
+
 ## 0.27.3
 
 - Use "Turn your robot into a coding project." in the welcome card.
