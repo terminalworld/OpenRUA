@@ -1,4 +1,4 @@
-"""The external example uses the ordinary plugin and explicit-auth contracts."""
+"""The bundled agent uses the ordinary plugin and explicit-auth contracts."""
 import json
 from pathlib import Path
 
@@ -9,13 +9,13 @@ from openrua.cli import build_parser
 from openrua.cli.commands import config as configure
 from openrua.testing import check_manifest
 
-MANIFEST = Path(__file__).resolve().parents[2] / 'examples/plugins/zcode/agent.yaml'
+MANIFEST = Path(__file__).resolve().parents[2] / 'openrua/configs/agents/zcode.yaml'
 
 
-def test_external_plugin_loads_and_does_not_appear_as_a_bundled_option():
+def test_external_plugin_loads_and_appears_as_a_bundled_option():
     agent = check_manifest(MANIFEST)
     assert agent.name == 'zcode'
-    assert all(m.name != 'zcode' for m in agents.manifests())
+    assert any(m.name == 'zcode' for m in agents.manifests())
     assert not agent.inspect_login(Path('/missing')).available
     with pytest.raises(ValueError, match='native'):
         agent.prepare_profile(Path('/missing'), Path('/unused'))

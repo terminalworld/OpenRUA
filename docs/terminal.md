@@ -27,9 +27,10 @@ First choose **Real robot** or **Simulation**. Real robots can use a project
 configuration or **Connect a new robot**. Simulation offers **Native scene**
 and **Benchmark environment**, followed by a supported starting environment
 or a custom configuration path. Selecting a benchmark here opens an interactive
-task, not batch evaluation. Review the environment and agent separately before
-starting; **Agent settings** holds model and authentication, and **Advanced
-options** holds the session name and preparation check.
+task, not batch evaluation. Next, **Choose your coding agent** lists Claude Code,
+Codex, Kimi Code and ZCode, plus **Other agent or manifest…**. Select an agent,
+review its model and authentication, then choose **Continue to review**.
+**Advanced options** holds the session name and preparation check.
 Arrows and Enter select, number keys choose compatible menu entries, and Escape
 returns to the parent without applying a selection. Confirmations require Enter.
 Maintained files remain editable in the project.
@@ -50,14 +51,14 @@ Use the file or `openrua config set` to edit custom defaults. `--setup` edits th
 as paths throughout startup, so their settings are not replaced by an internal
 benchmark name.
 
-**Authentication** defaults to **Native CLI login**, using the account already
+**Authentication** defaults to **Native CLI profile**, using the account already
 selected in your coding agent. To use API billing explicitly, choose **API key
 file** and enter the path to a private file containing the raw key. Do not paste
 the key into the menu. API mode is offered only when the selected plugin supports
 it. Each agent keeps its own saved choice; switching agents never borrows another
 agent's key path. Switching back to native login clears the selected path without
 deleting the key file. These defaults apply to new sessions, not running ones.
-For an external plugin, choose **Agent settings → Coding agent → Enter a name or profile path**.
+For an external plugin, choose **Other agent or manifest…** in the agent list.
 OpenRUA loads the manifest's shared-chat and authentication capabilities before
 showing its options. An invalid path returns to setup with an error; selecting
 an agent alone does not save defaults, start resources, or call a model. Unsaved

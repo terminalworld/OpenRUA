@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openrua"
-version = "0.24.2"
+version = "0.25.0"
 description = "Let your Claude Code or Codex control any robot, real or simulated, through the standard ROS 2 CLI and client library."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,6 +25,7 @@ dependencies = [
     "numpy",
     "pyyaml",
     "pydantic>=2",
+    "tomli>=2; python_version < '3.11'",
     "apscheduler>=3.11.2,<4",
     "nodejs-wheel-binaries>=22.20,<23",
 ]
@@ -34,7 +35,7 @@ pi = []  # Compatibility extra; Pi is now the default terminal.
 tui = []  # Compatibility extra; the terminal interface is installed by default.
 browser-test = ["pytest", "playwright>=1.50,<2"]
 demo = ["pillow", "numpy", "imageio", "imageio-ffmpeg"]
-dev = ["tomli>=2; python_version < '3.11'", "pytest", "import-linter", "pillow", "numpy", "imageio", "imageio-ffmpeg"]
+dev = ["pytest", "import-linter", "pillow", "numpy", "imageio", "imageio-ffmpeg"]
 
 [project.urls]
 Homepage = "https://github.com/terminalworld/OpenRUA"

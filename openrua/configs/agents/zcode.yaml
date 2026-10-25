@@ -1,5 +1,5 @@
-# Experimental external plugin: native Coding Plan key profiles or explicit API. See README.md.
 name: zcode
+title: ZCode (preview)
 default_model: glm-4.5-air
 binary: zcode
 version: 0.16.9
@@ -29,4 +29,4 @@ version_argv:
 - --version
 default_options:
   api_base_url: https://open.bigmodel.cn/api/paas/v4
-entry_point: ./adapter.py
+entry_point: zcode

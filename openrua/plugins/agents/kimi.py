@@ -1,4 +1,4 @@
-"""Experimental Kimi Code plugin with native OAuth or explicit Moonshot API auth."""
+"""Preview Kimi Code plugin with native OAuth or explicit Moonshot API auth."""
 from __future__ import annotations
 
 import json
@@ -35,7 +35,7 @@ class Kimi(Agent):
                     provider.get('base_url', '').rstrip('/') != 'https://api.kimi.com/coding/v1' or
                     oauth.get('storage') != 'file' or oauth.get('key') != 'oauth/kimi-code' or
                     oauth.get('oauth_host', 'https://auth.kimi.com').rstrip('/') != 'https://auth.kimi.com'):
-                raise ValueError('native Kimi requires the selected official OAuth model; set default_model in the external manifest to its model ID')
+                raise ValueError('native Kimi requires the selected official OAuth model; set default_model in a project agent manifest to its model ID')
             token_file = source / 'credentials/kimi-code.json'
             token = json.loads(token_file.read_text())
             if not isinstance(token, dict) or not all(isinstance(token.get(k), str) and token[k].strip()
@@ -101,9 +101,9 @@ class Kimi(Agent):
 
     def _validate(self, model, options, token_file=None):
         if model != self.default_model:
-            raise ValueError('set default_model in the manifest before preparing the API profile')
+            raise ValueError('set default_model in a project agent manifest before preparing the API profile')
         if options and any(self.default_options.get(k) != v for k, v in options.items()):
-            raise ValueError('configure options in the external manifest before preparing the profile')
+            raise ValueError('configure options in a project agent manifest before preparing the profile')
         if token_file:
             raise ValueError('use explicit API profile authentication for Kimi')
 
@@ -132,7 +132,7 @@ class Kimi(Agent):
         self._validate(model, options)
         # The standalone stdlib bridge runs next to Kimi inside the sandbox.
         # Pass its source explicitly; the image needs no second OpenRUA install.
-        source = Path(__file__).with_name('bridge.py').read_text()
+        source = Path(__file__).with_name('kimi_server.py').read_text()
         command = [*self.exec_argv(sandbox, self._env(proxy), stdin=True), 'python3', '-c', source,
                    '--home', '/kimi-home', '--cwd', '/workspace', '--', self.binary]
         return Conversation(command, KimiConversation('/workspace', 'openrua', session_id))

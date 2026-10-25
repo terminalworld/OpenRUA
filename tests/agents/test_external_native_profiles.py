@@ -7,7 +7,6 @@ import pytest
 from openrua import agents
 from openrua.agents.credentials import resolve_profile
 
-ROOT = Path(__file__).resolve().parents[2] / 'examples/plugins'
 
 
 def kimi_profile(home):
@@ -59,7 +58,7 @@ def zcode_profile(home):
 @pytest.mark.parametrize('name,fixture', [('kimi', kimi_profile), ('zcode', zcode_profile)])
 def test_native_discovery_private_sessions_and_no_api_fallback(tmp_path, name, fixture):
     source = fixture(tmp_path)
-    agent = agents.get(str(ROOT / name / 'agent.yaml'))
+    agent = agents.get(name)
     alias = tmp_path / 'openrua/credentials' / name
     selected = resolve_profile(agent, None, alias, user_home=tmp_path, environment={}, link=True)
     assert selected == alias and alias.resolve() == source
@@ -85,7 +84,7 @@ def test_native_discovery_private_sessions_and_no_api_fallback(tmp_path, name, f
 
 def test_kimi_refresh_directory_is_shared_and_redaction_reads_rotated_tokens(tmp_path):
     source = kimi_profile(tmp_path)
-    agent = agents.get(str(ROOT / 'kimi/agent.yaml'))
+    agent = agents.get('kimi')
     prepared = agent.prepare_profile(source, tmp_path / 'profile')
     assert prepared.mounts[-2:] == (f'{source}/credentials:/kimi-home/credentials',
                                     f'{source}/oauth:/kimi-home/oauth')
@@ -106,7 +105,7 @@ def test_kimi_unsupported_native_selection_fails_before_staging(tmp_path, mutati
                'model': content.replace('model = "kimi-k2.6"', 'model = "other"'),
                'malformed': '[invalid' }[mutation]
     path.write_text(content)
-    agent = agents.get(str(ROOT / 'kimi/agent.yaml'))
+    agent = agents.get('kimi')
     assert not agent.inspect_login(source).available
     with pytest.raises(ValueError):
         agent.prepare_profile(source, tmp_path / 'unused')
@@ -120,7 +119,7 @@ def test_zcode_rejects_prepaid_and_encrypted_oauth_paths(tmp_path, access_type):
     data = json.loads(path.read_text())
     data['config']['providerConfigRules']['providerRules'][0]['config']['access']['type'] = access_type
     path.write_text(json.dumps(data))
-    agent = agents.get(str(ROOT / 'zcode/agent.yaml'))
+    agent = agents.get('zcode')
     assert not agent.inspect_login(source).available
     with pytest.raises(ValueError, match='Coding Plan'):
         agent.prepare_profile(source, tmp_path / 'unused')
@@ -129,7 +128,7 @@ def test_zcode_rejects_prepaid_and_encrypted_oauth_paths(tmp_path, access_type):
 
 def test_zcode_native_base_override_uses_native_layout(tmp_path):
     source = zcode_profile(tmp_path)
-    agent = agents.get(str(ROOT / 'zcode/agent.yaml'))
+    agent = agents.get('zcode')
     selected = resolve_profile(agent, None, tmp_path / 'alias', user_home=tmp_path / 'other',
                                environment={'ZCODE_DATA_BASE_DIR': str(tmp_path)})
     assert selected == tmp_path

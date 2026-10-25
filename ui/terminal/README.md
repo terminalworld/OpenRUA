@@ -23,8 +23,8 @@ platforms and terminal IMEs need further trials.
 
 Setup first separates **Real robot** from **Simulation**. Real robots use a
 project configuration or start a new connection; simulation separates native
-scenes and benchmark environments. Review keeps environment and agent settings
-in separate groups. Authentication belongs under Agent settings; session naming
+scenes and benchmark environments. The next step explicitly chooses Claude Code,
+Codex, Kimi Code, ZCode or another manifest before the final review. Authentication belongs under Agent settings; session naming
 and preparation checks belong under Advanced options. The bundled starting
 combinations have [startup evidence](../../docs/setup-validation.md).
 
