@@ -386,7 +386,7 @@ export class Chat {
     try { await this.refresh(); void updateReview(this); } catch (error) {
       if (!this.done && !this.ending) {
         this.status.setText(yellow('⚠ Connection lost. Reconnecting…'));
-        this.keys.setText(yellow('Your draft is still here. Sent messages may still be running.'));
+        this.keys.setText(yellow('Your draft is still here. The agent may still be working.'));
         this.ui.requestRender();
       }
     }
@@ -413,7 +413,7 @@ export class Chat {
 
   effort() {
     const state = this.controller.state;
-    if (state?.settings?.effort === undefined) throw new Error('This agent does not support changing its reasoning effort here.');
+    if (state?.settings?.effort === undefined) throw new Error('The reasoning effort setting is not available in this session.');
     const now = state.settings.effort;
     const choices = state.setting_choices?.effort ?? [];
     const title = `Reasoning effort: ${plain(now)}`;

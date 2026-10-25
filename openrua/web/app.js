@@ -89,7 +89,7 @@ async function act(operation, params) {
     await sync();
     return true;
   } catch (e) {
-    notice(`${e.message}. Check the session status before trying again.`);
+    notice(`${e.message}\nCheck the session status before trying again.`);
     return false;
   }
 }
@@ -614,7 +614,7 @@ $("compose").onsubmit = async (e) => {
     $("message").value = "";
     notice("");
   } catch (e) {
-    notice(`${e.message}. The original request is kept for a safe retry.`);
+    notice(`${e.message}\nThe original request is kept for a safe retry.`);
   }
   sending = false;
   await sync();
@@ -647,7 +647,7 @@ $("end").onclick = async () => {
     connection("Session ended", true);
     notice("This session has stopped. Your files and chat history are saved.");
   } catch (e) {
-    notice(`${e.message}. Check the session status to confirm it has stopped.`);
+    notice(`${e.message}\nCheck the session status to confirm it has stopped.`);
   } finally {
     ending = false;
     render();
