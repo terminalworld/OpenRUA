@@ -36,7 +36,7 @@ export class Progress extends Screen {
     this.draw();
   }
   draw() {
-    this.output.setText(this.compact ? `${this.summary}\n\nElapsed ${Math.floor((Date.now() - this.started) / 1000)}s`
+    this.output.setText(this.compact ? `${this.summary} ${muted(`· ${Math.floor((Date.now() - this.started) / 1000)}s`)}`
       + (this.details ? '\n\n' + this.lines.join('\n') : '') : this.lines.join('\n'));
     this.ui.setFooter(new Text(muted(this.compact ? `L ${this.details ? 'Hide' : 'Show'} logs · Ctrl+C Interrupt`
       : 'Preparing the project · Ctrl+C Interrupt'), 0, 1));
