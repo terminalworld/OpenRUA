@@ -22,7 +22,7 @@ export async function leave(name, client, {ended = false, ask = askChoice, write
     return false;
   }
   if (state.closed) { finished(); return true; }
-  const answer = (await ask('Keep execution resources running?\n'
+  const answer = (await ask('Keep this session running?\n'
     + '  Enter / no  stop owned resources; keep files and history\n'
     + '  yes         keep execution running in the background\n> ')).trim().toLowerCase();
   if (answer === 'cancel') return false;
