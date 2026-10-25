@@ -71,11 +71,11 @@ export class Welcome {
     let project = path;
     while (visibleWidth(project) > inside && parts.length > 1) { parts.shift(); project = '…/' + parts.join('/'); }
     const greeting = this.returning ? 'Welcome back to OpenRUA' : 'Welcome to OpenRUA';
-    const commands = f.canSetup ? '/setup New session · /help Commands' : '/help Commands · Esc Interrupt';
+    const commands = '/help Commands · Esc Interrupt';
     const rows = [];
     if (inside >= 56) {
       const mark = ['   ╭─╮  ', ' ╭─┴─┴─╮', ' │ • • │', ' ╰─────╯'];
-      const text = [bold(greeting), muted('Your robot, your code.'), agent, muted(environment)];
+      const text = [bold(greeting), muted('Turn your robot into a coding project.'), agent, muted(environment)];
       for (let i = 0; i < mark.length; i++) rows.push(accent(mark[i]) + '   ' + truncateToWidth(text[i], inside - 11));
     } else {
       rows.push(accent('[• •] ') + bold(greeting),

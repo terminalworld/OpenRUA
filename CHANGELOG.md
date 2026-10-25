@@ -9,6 +9,13 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.27.3
+
+- Use "Turn your robot into a coding project." in the welcome card.
+- Keep the welcome footer focused on help and interrupt controls.
+- Show preparation time beside the current stage, removing the separate
+  elapsed-time label.
+
 ## 0.27.2
 
 - Add `/setup` to configure and open a new conversation inside the current

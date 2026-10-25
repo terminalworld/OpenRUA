@@ -79,7 +79,7 @@ export class Chat {
     this.panels = [];
     this.shownQuestions = new Set();
     this.questionDrafts = new Map();
-    this.welcome = new Welcome(name, {...facts, version, canSetup}, client.readOnly);
+    this.welcome = new Welcome(name, {...facts, version}, client.readOnly);
     const conversation = new Container();
     if (client.readOnly) conversation.addChild(this.welcome);
     conversation.addChild(this.transcript);
@@ -311,7 +311,7 @@ export class Chat {
     await this.controller.refresh();
     if (this.done || this.ending) return;
     const state = this.controller.state;
-    this.welcome.facts = {...this.facts, version: this.version, canSetup: this.canSetup,
+    this.welcome.facts = {...this.facts, version: this.version,
       model: state.settings?.model || this.facts.model};
     this.pendingMessages.messages = state.messages;
     if (this.welcome.seen === undefined) {

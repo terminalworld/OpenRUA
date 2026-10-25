@@ -589,7 +589,7 @@ test('the branded welcome identifies the project without claiming a connection',
   const plainText = lines => lines.join('\n').replace(/\x1b\[[0-9;]*m/g, '');
   const welcome = new Welcome('s1', {robot: 'panda', robot_model: 'Franka Panda', simulator: 'robosuite',
     backend: 'sim', agent: 'claude-code', agent_title: 'Claude Code', model: 'native-model',
-    project: '/work/my-project', version: '1.2.3', canSetup: true});
+    project: '/work/my-project', version: '1.2.3'});
   for (const width of [80, 40]) {
     const lines = welcome.render(width), shown = plainText(lines);
     assert.match(shown, /╭ OpenRUA v1.2.3/);
@@ -597,7 +597,7 @@ test('the branded welcome identifies the project without claiming a connection',
     assert.match(shown, /Claude Code[\s\S]*native-model/);
     assert.match(shown, /Simulation[\s\S]*Franka Panda[\s\S]*robosuite/);
     assert.match(shown, /my-project/);
-    assert.match(shown, /\/setup New session/);
+    assert.match(shown, /\/help Commands/);
     assert.doesNotMatch(shown, /connected|still up/);
     assert.ok(lines.every(line => line.replace(/\x1b\[[0-9;]*m/g, '').length <= width));
   }
