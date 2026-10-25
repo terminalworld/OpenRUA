@@ -44,8 +44,8 @@ def inspect_records(args):
     except (sqlite3.Error, OSError, ValueError, KeyError, TypeError) as exc:
         raise UnavailableError(f'{reason}; cannot read retained records: {exc}',
                                hint='check the retained session name and directory') from exc
-    print(f'[session] Reading retained records ({reason}); recorded execution status may be stale. '
-          'No resources were restarted or stopped.', file=sys.stderr)
+    print(f'[session] Showing saved session information. It may be out of date.\n'
+          f'Reason: {reason}\nNo resources were started or stopped.', file=sys.stderr)
     return result
 
 

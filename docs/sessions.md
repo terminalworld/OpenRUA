@@ -53,6 +53,10 @@ or history selection before confirming departure leaves the current session
 unchanged. Model and permission menus still adjust the current conversation's
 supported next-turn settings.
 
+Stopping an agent can take time while it finishes cleanup. If stopping is slow,
+check `~/.openrua/launches/<name>/service.log`. It shows separate times for
+pending robot work, agent shutdown and resource cleanup.
+
 The leave page includes Back, and Escape also returns without stopping anything.
 Ctrl+C or Ctrl+D requires a second press before opening that page; `/quit`
 opens it directly. While the agent is working, Ctrl+C interrupts its response

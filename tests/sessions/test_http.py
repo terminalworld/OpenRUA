@@ -172,7 +172,7 @@ def test_http_timeout_does_not_cancel_accepted_command(tmp_path):
         execution.command = delayed
         try:
             client = Client(server.url, server.token)
-            with pytest.raises(RuntimeError, match="not yet known"):
+            with pytest.raises(RuntimeError, match="could not confirm"):
                 await asyncio.to_thread(client.command, "enqueue", client_id="web", request_id="one", text="inspect")
             await until(lambda: bool(store.snapshot()["state"]["messages"]))
             assert len([f for f in native.writes if "submit" in f]) == 1

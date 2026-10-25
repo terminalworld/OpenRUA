@@ -12,7 +12,7 @@ export class Workspace extends Screen {
     super(terminal, host);
     this.path = spec.path;
     this.ui.setHeading('OpenRUA · Trust project', spec.path);
-    this.ui.addChild(new Text(`Use and trust this robot workspace?\n${plain(spec.path)}\n\nYour coding agent can read, change and run files here.\nOpenRUA will keep project files and run records in this directory.`, 0, 1));
+    this.ui.addChild(new Text(`Trust this project directory?\n${plain(spec.path)}\n\nYour agent can read, edit and run files here.\nYour project files and run history will be saved here.`, 0, 1));
     this.body = new Container(); this.ui.addChild(this.body);
     this.ui.addChild(new Text(plain(spec.notice), 0, 1));
     const menu = selection([
@@ -43,9 +43,8 @@ export class History extends Screen {
   constructor(spec, terminal, host) {
     super(terminal, host);
     this.ui.setHeading('OpenRUA · Resume', spec.scope ?? 'All projects');
-    this.ui.addChild(new Text(`Resume a conversation\n${plain(spec.scope ?? 'All projects')}\n`
-      + 'Ended project conversations can reconnect; older records open read-only.'
-      + (spec.can_all ? '\nTab: switch between this project and all projects' : ''), 0, 1));
+    this.ui.addChild(new Text('Choose a conversation to open.'
+      + (spec.can_all ? spec.scope === 'All projects' ? '\nTab: Show this project' : '\nTab: Show all projects' : ''), 0, 1));
     if (spec.can_all) this.ui.addInputListener(data => {
       if (matchesKey(data, 'tab')) { this.finish({action: 'scope'}); return {consume: true}; }
     });
@@ -67,11 +66,14 @@ export class History extends Screen {
     const query = this.input.getValue().toLocaleLowerCase();
     const rows = this.rows.filter(row => `${row.title} ${row.id}`.toLocaleLowerCase().includes(query));
     this.list = new SelectList(rows.map(row => ({value: row.id,
-      label: `${plain(row.title)} · ${plain(row.id)}`, description: `${plain(row.status)} · ${plain(row.time)}${row.project ? ' · ' + plain(row.project) : ''}`})), Math.max(2, Math.min(10, this.ui.terminal.rows - 12)), selectTheme);
+      label: `${plain(row.title)} · ${plain(row.id)}`,
+      description: `${plain({'Ended': 'Stopped', 'Not answering': 'Cannot connect',
+        'Execution status unknown': 'Cannot confirm if it is running'}[row.status] || row.status)} · ${plain(row.time)}${row.project ? ' · ' + plain(row.project) : ''}`})), Math.max(2, Math.min(10, this.ui.terminal.rows - 12)), selectTheme);
     this.list.onSelect = item => this.finish({action: 'select', id: item.value});
     this.list.onCancel = () => this.finish();
     this.listContainer.clear();
-    if (!rows.length) this.listContainer.addChild(new Text('No conversations match this project or search.', 0, 1));
+    if (!rows.length) this.listContainer.addChild(new Text(this.input.getValue()
+      ? 'No conversations match your search.' : 'No saved conversations here yet.', 0, 1));
     this.listContainer.addChild(this.list);
   }
 
@@ -88,7 +90,7 @@ export class ArchiveClient {
   }
   async snapshot() { return this.data.snapshot; }
   async events(after = 0) { return this.data.events.filter(event => event.seq > after).slice(0, 1000); }
-  async command() { throw new Error('Read-only history; no execution has been restarted.'); }
+  async command() { throw new Error('You can view this conversation, but you cannot send messages here.'); }
   async end() { return this.command(); }
   close() { this.files?.close(); }
 }

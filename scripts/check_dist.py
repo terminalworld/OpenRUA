@@ -76,16 +76,16 @@ def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Pa
             except OSError: break
         frame.clear(); os.write(master, data)
     try:
-        wait(b'Use and trust this robot workspace?'); key(b'\r')
+        wait(b'Trust this project directory?'); key(b'\r')
         wait(b'Choose your environment'); key(b'2')
         wait(b'Choose a simulation'); key(b'1')
         wait(b'Choose an environment'); key(b'1')
         wait(b'Choose your coding agent')
-        for title in (b'Claude Code', b'Codex', b'Kimi Code (preview)', b'ZCode (preview)', b'Other agent or manifest'):
+        for title in (b'Claude Code', b'Codex', b'Kimi Code (preview)', b'ZCode (preview)', b'Other agent'):
             assert title in frame, output.decode(errors='replace')
         if manifest:
             key(b'5')
-            wait(b'Coding agent name or manifest path'); key(str(manifest).encode() + b'\r')
+            wait(b'Agent name or configuration file'); key(str(manifest).encode() + b'\r')
         else:
             key({'claude-code': b'1', 'codex': b'2', 'kimi': b'3', 'zcode': b'4'}[agent])
         wait(b'Agent settings'); key(b'4')
@@ -139,7 +139,7 @@ save('ended', home, status='stopped', workspace=str(workspace))
                     output.extend(os.read(master, 65536))
                 except OSError:
                     break
-            if stage == 0 and b'Read-only history' in output:
+            if stage == 0 and b'Viewing saved conversation' in output:
                 os.write(master, b'/files\r'); stage = 1
             elif stage == 1 and b'notes.txt' in output:
                 os.write(master, b'\x1b[B\r'); stage = 2
@@ -280,10 +280,10 @@ raise SystemExit(main(['--home',str(home),'--workspace',str(home/'project'),'--t
         frame.clear(); os.write(master, value)
     try:
         wait(b'Update now'); key(b'1')
-        wait(b'Update verified')
+        wait(b'Update installed')
         assert b'PACKAGED INSTALLER LOG' not in output
         key(b'2'); wait(b'PACKAGED INSTALLER LOG')
-        key(b'\x1b'); wait(b'Update verified')
+        key(b'\x1b'); wait(b'Update installed')
         key(b'1'); wait(b'Choose your environment'); key(b'\x04')
         child.wait(timeout=5)
         while select.select([master], [], [], 0)[0]:

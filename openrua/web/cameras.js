@@ -48,7 +48,7 @@ export function cameraView(api) {
     get("camera-watch").textContent = "Stop";
     try {
       if (!get("camera-name").options.length && !(await names()).length) {
-        status("This robot declares no cameras.");
+        status("No cameras are configured for this robot.");
         stop();
         return;
       }

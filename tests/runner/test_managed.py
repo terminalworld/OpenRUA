@@ -205,7 +205,7 @@ for line in sys.stdin:
             assert [m["status"] for m in snapshot["state"]["messages"]] == ["unknown", "queued"]
             assert transport.process.returncode is None
             assert not server.ended.is_set()
-            with pytest.raises(RuntimeError, match="not accepting commands"):
+            with pytest.raises(RuntimeError, match="cannot accept commands"):
                 await asyncio.to_thread(client.command, "enqueue", client_id="web", request_id="2", text="place")
             failed[0] = False
             result = await asyncio.to_thread(client.request, "/api/end", {})

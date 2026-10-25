@@ -2,6 +2,7 @@ import {randomUUID} from 'node:crypto';
 import {FilePreview} from './workspace.mjs';
 import {plain} from './view.mjs';
 import {ResponseError} from './client.mjs';
+import {robotPrompt, displayStatus} from './session.mjs';
 
 const operations = new Set(['start', 'stop', 'restart', 'build']);
 
@@ -14,11 +15,12 @@ function show(chat, text) {
 
 async function send(chat) {
   const body = chat.pendingRobot;
-  if (!body) throw new Error('No unconfirmed connection request.');
+  if (!body) throw new Error('There is no robot request waiting to be retried.');
   try {
     const {result} = await chat.client.request('/api/actions/robot', body);
     chat.pendingRobot = null;
-    chat.say(`${result.operation}: ${result.status}. ${result.summary}\n/robot shows progress. You can keep chatting.`);
+    const action = {start: 'Robot startup', stop: 'Robot shutdown', restart: 'Robot restart', build: 'Software build'}[result.operation];
+    chat.say(`${action}: ${displayStatus(result.status).toLowerCase()}.\nOpen /robot to check progress. You can keep chatting.`);
     await chat.refresh();
   } catch (error) {
     if (error instanceof ResponseError && error.status >= 400 && error.status < 500) chat.pendingRobot = null;
@@ -27,13 +29,13 @@ async function send(chat) {
 }
 
 export async function robotMenu(chat, [operation] = []) {
-  if (chat.client.readOnly) throw new Error('This is read-only history.');
+  if (chat.client.readOnly) throw new Error('You can view this conversation, but you cannot control the robot here.');
   if (operation === 'retry') return send(chat);
   if (operation && !operations.has(operation) && !['status', 'logs'].includes(operation))
     throw new Error('Use /robot status, logs, start, stop, restart, build or retry.');
   if (operations.has(operation)) {
-    if (chat.pendingRobot) throw new Error('A connection request is unconfirmed. Inspect /robot or use /robot retry.');
-    chat.confirm(`${operation} the configured robot resources?\n\nThe conversation stays open. Held instructions remain held. A stop follows the driver contract and is not a physical emergency stop.`, async () => {
+    if (chat.pendingRobot) throw new Error('We have not confirmed the last robot request. Check /robot or use /robot retry.');
+    chat.confirm(robotPrompt(operation), async () => {
       chat.pendingRobot = {operation, request_id: randomUUID()};
       await send(chat);
     });
@@ -43,13 +45,13 @@ export async function robotMenu(chat, [operation] = []) {
   if (operation) { show(chat, JSON.stringify(result, null, 2)); return; }
   const robot = result.robot;
   chat.picker(`Robot ${plain(robot?.status || 'not connected')}${robot?.reason ? '\n' + plain(robot.reason) : ''}`, [
-    {value: 'status', label: 'Connection status and operation results'},
+    {value: 'status', label: 'Check the connection'},
     {value: 'logs', label: 'Read driver and build logs'},
     {value: 'start', label: 'Connect robot…'},
-    {value: 'restart', label: 'Apply configuration and restart connection…'},
-    {value: 'stop', label: 'Stop owned robot resources…'},
-    {value: 'build', label: 'Build declared robot images…', description: 'Does not restart a running driver'},
-    ...(chat.pendingRobot ? [{value: 'retry', label: 'Retry unconfirmed request', description: chat.pendingRobot.request_id}] : []),
+    {value: 'restart', label: 'Apply settings and reconnect…'},
+    {value: 'stop', label: 'Stop the simulator or drivers…'},
+    {value: 'build', label: 'Prepare robot software…', description: 'Running drivers keep running'},
+    ...(chat.pendingRobot ? [{value: 'retry', label: 'Retry the last robot request'}] : []),
     {value: 'back', label: 'Back to conversation'},
   ], async key => { if (key !== 'back') await robotMenu(chat, [key]); });
 }

@@ -137,14 +137,14 @@ def test_ended_workspace_uses_recorded_external_root_without_execution(tmp_path)
             with pytest.raises(RuntimeError):
                 client.workspace_read(path)
         for mutate in (lambda: client.command('enqueue', client_id='x', request_id='1', text='move'), client.end):
-            with pytest.raises(RuntimeError, match='read-only'):
+            with pytest.raises(RuntimeError, match='for viewing only'):
                 mutate()
         assert client.snapshot() == before
         return {'action': 'quit'}
     assert launcher.chat(archive, name, None, None, screen) == 0
     assert {p: p.read_bytes() for p in original} == original
     assert not (directory / 'endpoint.json').exists()
-    with pytest.raises(RuntimeError, match='unavailable'):
+    with pytest.raises(RuntimeError, match='Cannot connect'):
         clients[0].workspace_list()
 
 
@@ -155,7 +155,7 @@ def test_missing_workspace_keeps_transcript_and_closes_server_on_screen_error(tm
 
     directory, store = retained(tmp_path, 'ended', closed=True)
     store.close()
-    for root, message in [(None, 'No workspace path'), (tmp_path / 'missing', 'workspace is missing')]:
+    for root, message in [(None, 'file location'), (tmp_path / 'missing', 'project directory is missing')]:
         archive = ArchiveClient(directory / 'conversation.sqlite', 'Ended', root)
         clients = []
         def screen(spec):
@@ -168,7 +168,7 @@ def test_missing_workspace_keeps_transcript_and_closes_server_on_screen_error(tm
             raise RuntimeError('screen failed')
         with pytest.raises(RuntimeError, match='screen failed'):
             launcher.chat(archive, 'ended', None, None, screen)
-        with pytest.raises(RuntimeError, match='unavailable'):
+        with pytest.raises(RuntimeError, match='Cannot connect'):
             clients[0].workspace_list()
 
 

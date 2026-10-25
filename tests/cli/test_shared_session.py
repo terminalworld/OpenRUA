@@ -202,7 +202,7 @@ def test_inspection_falls_back_to_retained_records_when_owner_is_unavailable(tmp
     assert session.run(selected) == 0
     captured = capsys.readouterr()
     assert json.loads(captured.out) == (before if operation == 'status' else events)
-    assert 'retained' in captured.err and 'stale' in captured.err
+    assert 'saved session information' in captured.err and 'out of date' in captured.err
     assert path.read_bytes() == original
     store = SQLiteStore.open_readonly(path.parent / 'conversation.sqlite')
     try:
@@ -258,7 +258,7 @@ def test_offline_inspection_uses_real_transport_and_preserves_event_cursor(tmp_p
         assert session.run(args) == 0
     captured = capsys.readouterr()
     assert json.loads(captured.out) == expected
-    assert expected and 'stale' in captured.err
+    assert expected and 'out of date' in captured.err
 
 
 def test_missing_retained_records_fail_without_creating_a_database(tmp_path):

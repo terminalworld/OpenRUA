@@ -21,7 +21,7 @@
         <p class="eyebrow">YOUR ROBOT, ONE CONVERSATION</p>
         <h1>Connect to your workspace.</h1>
         <p>
-          Chat, inspect progress and guide the agent. Your session keeps running
+          Chat with the agent, check its progress and give it instructions. Your session keeps running
           when you leave.
         </p>
         <form id="connect-form">
@@ -44,9 +44,9 @@
           <div>
             <p class="eyebrow">SHARED SESSION</p>
             <h1>Robot workspace</h1>
-            <p id="summary">Waiting for session state</p>
+            <p id="summary">Loading your conversation…</p>
           </div>
-          <button id="end" class="danger">End session</button>
+          <button id="end" class="danger">Stop session</button>
         </div>
         <div id="notice" role="status" aria-live="polite" hidden></div>
         <div class="layout">
@@ -58,7 +58,7 @@
             <div id="thread" aria-label="Conversation history">
               <div class="empty">
                 Give the agent a task.<br /><small
-                  >Messages from every connected client appear here.</small
+                  >Everyone connected to this session sees these messages.</small
                 >
               </div>
             </div>
@@ -71,7 +71,7 @@
                 required
               ></textarea>
               <div class="compose-footer">
-                <span id="send-hint">New messages join the running turn when the agent can take one.</span
+                <span id="send-hint">While the agent works, new messages join its current response when supported. Otherwise, they wait.</span
                 ><button id="send" class="primary">Send message ↑</button>
               </div>
             </form>
@@ -107,19 +107,18 @@
             </section>
             <section class="card controls">
               <div class="section-heading">
-                <h2>Execution</h2>
+                <h2>Session</h2>
                 <span id="state" class="badge">Starting</span>
               </div>
               <p id="execution-description"></p>
               <p id="notes" class="notes" aria-live="polite"></p>
-              <button id="interrupt" disabled>Interrupt current turn</button
+              <button id="interrupt" disabled>Stop current response</button
               ><button id="resume" class="primary" disabled>
                 Continue queued messages
               </button>
               <p class="hint">
-                Interrupt stops the agent's turn and asks the robot's
-                motions to cancel; queued messages go next. It is not a
-                robot emergency stop.
+                This stops the current response and asks the robot to cancel its actions.
+                Waiting messages run next. This is not the robot emergency stop.
               </p>
             </section>
             <section class="card agent">
@@ -145,16 +144,16 @@
             </section>
             <section class="card">
               <div class="section-heading">
-                <h2>Queue</h2>
+                <h2>Waiting messages</h2>
                 <span id="queue-count" class="badge">0</span>
               </div>
               <div id="queue"></div>
             </section>
             <section id="unknown-panel" class="card" hidden>
-              <h2>Check uncertain execution</h2>
+              <h2>Check an unconfirmed result</h2>
               <p class="hint">
-                Inspect the robot and workspace before confirming what happened.
-                Confirmation does not replay the task.
+                Check the robot and project files, then record what happened.
+                Recording the result does not run the task again.
               </p>
               <div id="unknown"></div>
             </section>

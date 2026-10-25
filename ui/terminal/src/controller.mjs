@@ -50,13 +50,13 @@ export class Controller {
   }
 
   async send(text) {
-    if (this.pending) throw new Error('The previous send is unconfirmed. Use /retry or wait for its acceptance.');
+    if (this.pending) throw new Error('We have not confirmed that your last message arrived. Wait or use /retry.');
     this.pending = {client_id: this.clientId, request_id: randomUUID(), text};
     return this.retry();
   }
 
   async retry() {
-    if (!this.pending) throw new Error('No unconfirmed send to retry.');
+    if (!this.pending) throw new Error('There is no message waiting to be retried.');
     try {
       const message = await this.client.command('enqueue', this.pending);
       this.pending = null;

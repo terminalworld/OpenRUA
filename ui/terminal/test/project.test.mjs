@@ -112,7 +112,7 @@ test('existing skill edits prepare a draft without overwriting or sending it as 
   state.requests.q = {status: 'pending', request_id: 'q', questions: [{id: 'q', text: 'Approve?', allow_other: true}]};
   await chat.submit(chat.editor.getText());
   assert.equal(calls.some(call => call.command), false);
-  assert.match(chat.notice.render(100).join('\n'), /Answer the pending agent question/);
+  assert.match(chat.notice.render(100).join('\n'), /Answer the agent question first/);
 });
 
 test('slow review status does not block the normal conversation poll', {timeout: 5000}, async t => {
@@ -215,7 +215,7 @@ test('periodic review creation is confirmed and retries the same identity after 
   await choose(chat, 0); await fill(chat, 'Camera methods');
   await choose(chat, 1); await fill(chat, '21:30');
   await choose(chat, 5);
-  assert.match(chat.panel.component.render(100).join('\n'), /Time limits are not a monetary cap/);
+  assert.match(chat.panel.component.render(100).join('\n'), /time limit does not limit API\s+costs/);
   assert.equal(requests.length, 0);
   await choose(chat, 0); // Cancel the first confirmation.
   assert.equal(requests.length, 0);
@@ -238,7 +238,7 @@ test('pausing a schedule is explicit and leaves the current review and robot con
     ? {schedules: [plan], scheduler: {state: 'running'}} : plan);
   const open = () => schedulesMenu(chat, overview, () => {}, () => {});
   await open(); await choose(chat, 0); await choose(chat, 1);
-  assert.match(chat.panel.component.render(100).join('\n'), /current review continues/);
+  assert.match(chat.panel.component.render(100).join('\n'), /review already running will continue/);
   await choose(chat, 0);
   assert.equal(calls.some(call => call.operation === 'schedule-action'), false);
   await open(); await choose(chat, 0); await choose(chat, 1); await choose(chat, 1);
@@ -277,8 +277,8 @@ test('connection failure keeps chat ready and held work distinct from new queued
     ]};
   const {head, notes} = status(state);
   assert.equal(head.text, 'Ready to chat');
-  assert.ok(notes.some(note => /1 held for review/.test(note.text)));
-  assert.ok(notes.some(note => note.text === '1 queued'));
+  assert.ok(notes.some(note => /1 instruction needs review/.test(note.text)));
+  assert.ok(notes.some(note => note.text === '1 waiting'));
   const pending = new PendingMessages(); pending.messages = state.messages;
-  assert.match(pending.render(100).join('\n'), /Held for review \(\/queue\): move to bowl/);
+  assert.match(pending.render(100).join('\n'), /Needs your review \(\/queue\): move to bowl/);
 });

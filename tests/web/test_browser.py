@@ -67,7 +67,7 @@ def test_browser_and_cli_queue_interrupt_edit_and_end(tmp_path):
         await page.locator("#edit-form").get_by_role("button", name="Save").click()
         await playwright.expect(page.locator("#queue")).to_contain_text("Inspect the bowl first")
         await send(page, "Discard this instruction")
-        await page.locator("#queue .queue-item").filter(has_text="Discard this instruction").get_by_role("button", name="Withdraw").click()
+        await page.locator("#queue .queue-item").filter(has_text="Discard this instruction").get_by_role("button", name="Remove").click()
         await playwright.expect(page.locator("#queue-count")).to_have_text("1")
         await page.locator("#interrupt").click()
         await until(lambda: any("interrupt" in frame for frame in native.writes))
@@ -206,7 +206,7 @@ def test_browser_previews_saved_files_without_submitting_tasks(tmp_path):
         await page.unroute("**/api/workspace/list?path=")
         await page.get_by_role("button", name="Refresh", exact=True).click()
         await page.locator("#files-list").get_by_role("button", name="camera.png", exact=True).click()
-        await playwright.expect(page.locator("#file-note")).to_contain_text("not a live camera feed")
+        await playwright.expect(page.locator("#file-note")).to_contain_text("This is a saved image. Use Cameras to watch live video.")
         await page.wait_for_function("document.querySelector('#file-content img')?.naturalWidth === 1")
         async with page.expect_download() as download:
             await page.locator("#file-download").click()
@@ -332,7 +332,7 @@ def test_a_typed_line_answers_the_question_the_agent_waits_on(tmp_path):
         first = store.snapshot()["state"]["active"]
         await emit(native, "input_required", first, request_id="how", questions=[
             {"id": "mode", "text": "Position or velocity?", "secret": False}])
-        await playwright.expect(page.locator("#notes")).to_contain_text("type the answer")
+        await playwright.expect(page.locator("#notes")).to_contain_text("Type a reply")
         await send(page, "position, then try the other joints")
         await until(lambda: any("reply" in f for f in native.writes))
         assert native.writes[-1] == {"reply": "how", "answers": {"mode": ["position, then try the other joints"]}}
@@ -391,7 +391,7 @@ def test_browser_robot_fault_holds_old_work_and_allows_repair_without_leaving(tm
         old = server.execution.session.enqueue('cli', 'old', 'move to the bowl')
         await server.execution.robot_status('stopped', 'driver exited', hold=True)
         await playwright.expect(page.locator('#state')).to_have_text('Ready to chat')
-        await playwright.expect(page.locator('#queue')).to_contain_text('Held for review')
+        await playwright.expect(page.locator('#queue')).to_contain_text('Not sent yet')
         await send(page, 'read the driver log')
         await until(lambda: store.snapshot()['state']['active'] is not None)
         repair = store.snapshot()['state']['active']
@@ -400,7 +400,7 @@ def test_browser_robot_fault_holds_old_work_and_allows_repair_without_leaving(tm
         await emit(native, 'turn_finished', repair, status='completed')
         await until(lambda: store.snapshot()['state']['active'] is None)
         page.on('dialog', lambda dialog: dialog.accept())
-        await page.get_by_role('button', name='Send held instruction').click()
+        await page.get_by_role('button', name='Send this instruction now').click()
         await until(lambda: store.snapshot()['state']['active'] == old['id'])
         assert page.url == server.url + '/'
     asyncio.run(browser_case(tmp_path, check))
@@ -419,7 +419,7 @@ def test_browser_robot_request_survives_lost_ack_and_reload_with_same_identity(t
             await route.abort()
         await page.route('**/api/actions/robot', lose)
         await send(page, '/robot restart')
-        await playwright.expect(page.locator('#notice')).to_contain_text('unconfirmed')
+        await playwright.expect(page.locator('#notice')).to_contain_text('not confirmed')
         assert len(calls) == len(jobs) == 1
         await page.unroute('**/api/actions/robot')
         await page.reload()

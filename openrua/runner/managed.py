@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import fcntl
+import time
 from pathlib import Path
 from typing import Callable
 
@@ -94,7 +95,9 @@ class ManagedSession:
     async def end(self) -> None:
         """Stop owned execution resources and retain all conversation materials."""
         if self.maintenance is not None:
+            started = time.monotonic()
             await self.maintenance.close()
+            print(f'[stop] Pending robot work took {time.monotonic() - started:.2f}s to finish.', flush=True)
         async with self._end_lock:
             if self._ended:
                 return
@@ -102,19 +105,25 @@ class ManagedSession:
                 self._watch.cancel()
             errors = []
             if not self._native_stopped:
+                started = time.monotonic()
                 try:
                     await self.execution.close()
                 except Exception as exc:
                     errors.append(f"native process: {exc}")
                 else:
                     self._native_stopped = True
+                finally:
+                    print(f'[stop] Agent shutdown took {time.monotonic() - started:.2f}s.', flush=True)
             if not self._robot_stopped:
+                started = time.monotonic()
                 try:
                     await asyncio.to_thread(self.robot.power_off)
                 except Exception as exc:
                     errors.append(f"robot resources: {exc}")
                 else:
                     self._robot_stopped = True
+                finally:
+                    print(f'[stop] Resource cleanup took {time.monotonic() - started:.2f}s.', flush=True)
             if errors:
                 raise UnavailableError("; ".join(errors), hint="inspect the service log and retry ending the session")
             self.execution.session.close()

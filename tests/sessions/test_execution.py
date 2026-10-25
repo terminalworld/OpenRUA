@@ -145,7 +145,7 @@ def test_second_owner_is_rejected_before_starting_native_process(tmp_path):
             pytest.fail("second owner must not start a native process")
         second = Execution(session, Conversation(["fake"], FakeProtocol()), forbidden, tmp_path / "owner.lock")
         try:
-            with pytest.raises(RuntimeError, match="already has an execution owner"):
+            with pytest.raises(RuntimeError, match="Another agent process already controls this session"):
                 await second.start()
         finally:
             await execution.close()
@@ -172,9 +172,9 @@ def test_failed_transport_cleanup_keeps_owner_lock_until_retry(tmp_path):
             state = store.snapshot()["state"]
             assert state["paused"] and not state["connected"]
             assert state["messages"][0]["status"] == "unknown"
-            with pytest.raises(RuntimeError, match="already has an execution owner"):
+            with pytest.raises(RuntimeError, match="Another agent process already controls this session"):
                 await next_owner.start()
-            with pytest.raises(RuntimeError, match="not accepting"):
+            with pytest.raises(RuntimeError, match="cannot accept"):
                 await execution.command("enqueue", client_id="web", request_id="b", text="grasp")
             failed[0] = False
             await execution.close()
@@ -319,7 +319,7 @@ def test_planned_handover_still_accepts_new_dialogue_without_sending_to_closed_n
             assert state['messages'][0]['status'] == 'queued' and not state['closed']
             assert not [f for f in transport.writes if 'submit' in f]
             session.close()
-            with pytest.raises(ValueError, match='closed'):
+            with pytest.raises(ValueError, match='stopped'):
                 await execution.command('enqueue', client_id='person', request_id='late', text='too late')
         finally:
             store.close()

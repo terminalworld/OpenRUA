@@ -183,7 +183,7 @@ class LocalServer:
                 if not self.authorized():
                     return
                 if owner.read_only:
-                    self.reply(409, {"error": "retained conversation is read-only; no execution has been restarted"})
+                    self.reply(409, {"error": "This conversation is for viewing only. No session has been restarted."})
                     return
                 try:
                     if self.headers.get("Transfer-Encoding") or len(self.headers.get_all("Content-Length", [])) != 1:
@@ -221,7 +221,7 @@ class LocalServer:
                 except concurrent.futures.TimeoutError:
                     # A timed-out HTTP request is not a canceled command. Its
                     # accepted intent remains visible through snapshot/events.
-                    self.reply(504, {"error": "result not yet known; inspect session state before retrying"})
+                    self.reply(504, {"error": "We could not confirm the result in time. Check the session status before trying again."})
                 except (ValueError, TypeError, KeyError) as exc:
                     self.reply(400, {"error": str(exc)})
                 except RuntimeError as exc:

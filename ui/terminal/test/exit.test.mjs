@@ -34,7 +34,7 @@ test('an unavailable owner has unknown status and is never described as running'
   const client = {snapshot: async () => { throw new Error('connection refused'); },
     end: () => assert.fail('do not mutate an unknown session')};
   assert.equal(await leave('robot', client, options), false);
-  assert.match(lines.join('\n'), /status unconfirmed/);
+  assert.match(lines.join('\n'), /could not check its status/);
   assert.match(lines.join('\n'), /openrua session --name robot status/);
   assert.doesNotMatch(lines.join('\n'), /still running|stays under control|Session robot ended/);
 });
@@ -62,7 +62,7 @@ test('a lost end reply stays unconfirmed without an automatic retry or success c
   }};
   assert.equal(await leave('robot', client, options), false);
   assert.equal(ends, 1);
-  assert.match(lines.join('\n'), /shutdown unconfirmed/);
+  assert.match(lines.join('\n'), /could not confirm that it stopped/);
   assert.match(lines.join('\n'), /openrua session --name robot status/);
   assert.doesNotMatch(lines.join('\n'), /Session robot ended/);
 });

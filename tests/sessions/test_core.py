@@ -63,7 +63,7 @@ def test_parallel_acceptance_is_ordered_and_retries_do_not_duplicate(session):
     assert len(state(session)["messages"]) == 1
     accepted = [e for e in session.store.events() if e["kind"] == "message_accepted"]
     assert len(accepted) == 1
-    with pytest.raises(ValueError, match="different content"):
+    with pytest.raises(ValueError, match="different message"):
         add(session, "different")
 
 
@@ -72,7 +72,7 @@ def test_edit_survives_original_send_retry_and_rejects_stale_revision(session):
     session.edit(message, "new instruction", 0)
     assert add(session) == message
     assert state(session)["messages"][0]["text"] == "new instruction"
-    with pytest.raises(ValueError, match="refresh"):
+    with pytest.raises(ValueError, match="Refresh"):
         session.edit(message, "stale edit", 0)
     assert session.take()["text"] == "new instruction"
     with pytest.raises(ValueError):
@@ -167,7 +167,7 @@ def test_stale_resume_cannot_release_a_later_pause(session):
     second = add(session, "next", request="2")
     session.take()
     finish(session, second, "failed")
-    with pytest.raises(ValueError, match="pause state changed"):
+    with pytest.raises(ValueError, match="paused messages have changed"):
         session.resume(old_pause)
     assert state(session)["paused"]
 
@@ -198,7 +198,7 @@ def test_crash_after_delivery_intent_is_unknown_not_replayed(tmp_path):
     restored.recover()
     assert state(restored)["messages"][0]["status"] == "unknown"
     restored.native(Event("ready", data={"session_id": "native-1"}))
-    with pytest.raises(ValueError, match="reconcile"):
+    with pytest.raises(ValueError, match="check any unconfirmed results"):
         restored.resume(state(restored)["pause_id"])
     restored.resolve_unknown(first, "User checked the robot and will not repeat the grasp")
     restored.resume(state(restored)["pause_id"])
@@ -246,7 +246,7 @@ def test_close_retains_unfinished_records_and_stops_further_acceptance(session):
     assert state(session)["messages"][0]["status"] == "unknown"
     assert state(session)["closed"] and session.take() is None
     assert add(session) == message  # original send retry remains idempotent
-    with pytest.raises(ValueError, match="closed"):
+    with pytest.raises(ValueError, match="stopped"):
         add(session, "new", request="2")
 
 
@@ -305,7 +305,7 @@ def test_stopped_robot_holds_old_work_but_allows_new_repair_dialogue(session):
     finish(session, new)
     session.robot_status('ready', 'new connection')
     assert session.take() is None
-    with pytest.raises(ValueError, match='refresh'):
+    with pytest.raises(ValueError, match='Refresh'):
         session.release(old, 0)
     session.release(old, state(session)['messages'][0]['revision'])
     assert session.take()['id'] == old

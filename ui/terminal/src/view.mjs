@@ -54,7 +54,7 @@ export class Welcome {
 
   render(width) {
     const f = this.facts;
-    if (this.readOnly) return [`${bold('OpenRUA')}${muted(` · ${plain(this.name)} · a past conversation, read-only`)}`];
+    if (this.readOnly) return [`${bold('OpenRUA')}${muted(` · ${plain(this.name)}`)}`, muted('Viewing saved messages.')];
     if (width < 16) return [truncateToWidth(bold('OpenRUA'), width)];
     const inside = Math.max(1, Math.min(width, 88) - 4);
     const title = ` OpenRUA${f.version ? ' v' + plain(f.version) : ''} `;
@@ -162,9 +162,9 @@ export class ToolView {
 const RESULT = {
   failed: text => red(`✗ failed${text ? ': ' + text : ''}`),
   interrupted: () => yellow('‖ interrupted'),
-  unknown: text => yellow(`? unknown outcome${text ? ': ' + text : ''} · inspect the robot, then resolve it with the session CLI`),
+  unknown: text => yellow(`? Result not confirmed${text ? ': ' + text : '.'} Check the robot before retrying. Run openrua session --help to record what happened.`),
   withdrawn: () => muted('withdrawn'),
-  reconciled: text => muted(`reconciled${text ? ': ' + text : ''}`),
+  reconciled: text => muted(`Checked${text ? ': ' + text : ''}`),
 };
 
 const PENDING = new Set(['queued', 'dispatching', 'steering']);
@@ -174,9 +174,9 @@ export class PendingMessages {
   invalidate() {}
   render(width) {
     const messages = this.messages.filter(message => PENDING.has(message.status));
-    const labels = {queued: 'Queued', dispatching: 'Sending to agent', steering: 'Adding to current turn'};
+    const labels = {queued: 'Waiting', dispatching: 'Sending to the agent', steering: 'Adding to the current response'};
     const lines = messages.slice(-3).map(message => yellow(truncateToWidth(
-      `${message.held_reason ? 'Held for review (/queue)' : labels[message.status]}: ${plain(message.text).replace(/\s+/g, ' ')}`, width, '…')));
+      `${message.held_reason ? 'Needs your review (/queue)' : labels[message.status]}: ${plain(message.text).replace(/\s+/g, ' ')}`, width, '…')));
     if (messages.length > 3) lines.unshift(muted(`${messages.length} pending messages · /queue to inspect`));
     return lines;
   }
@@ -214,9 +214,9 @@ export class Transcript extends Container {
     }
     if (message.origin === 'agent') {
       // A turn the agent started by itself, a background task having finished.
-      turn.user.setText(muted('⏺ the agent went on by itself'));
+      turn.user.setText(muted('⏺ The agent continued working.'));
     } else {
-      const note = message.status === 'steered' ? 'Received by agent · added to the current turn' : '';
+      const note = message.status === 'steered' ? 'The agent received this message during its current response.' : '';
       turn.user.setText(`${note ? muted(note) + '\n' : ''}${accent('❯')} ${bold(plain(message.text))}`);
     }
     const result = RESULT[message.status];

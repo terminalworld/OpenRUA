@@ -172,7 +172,7 @@ test('lost send acknowledgement retries the same ID without duplicate execution'
   const controller = new Controller(client, new Transcript(), 'ack-client');
   await assert.rejects(controller.send('Inspect once'), /Lost acknowledgement/);
   const requestId = controller.pending.request_id;
-  await assert.rejects(controller.send('Do not duplicate'), /unconfirmed/);
+  await assert.rejects(controller.send('Do not duplicate'), /last message arrived/);
   const result = await controller.retry();
   assert.equal(result.request_id, requestId);
   const {state} = await client.snapshot();
@@ -358,8 +358,8 @@ test('a typed line answers the question the agent is waiting on', {timeout: 1500
 test('archive mode cannot enqueue or end a session', async () => {
   const {ArchiveClient} = await import('../src/screens.mjs');
   const client = new ArchiveClient({snapshot: {state: {messages: [], requests: {}, closed: true}}, events: [], reason: 'Ended'});
-  await assert.rejects(client.command('enqueue', {text: 'Move'}), /Read-only/);
-  await assert.rejects(client.end(), /Read-only/);
+  await assert.rejects(client.command('enqueue', {text: 'Move'}), /cannot send messages/);
+  await assert.rejects(client.end(), /cannot send messages/);
 });
 
 test('hierarchical setup separates the environment from agent settings and preserves history search', async () => {
@@ -510,7 +510,7 @@ test('ending stays visible during owner disconnect and a failed end can be retri
     Object.assign(state, {connected: false, paused: true,
       pause_reason: 'agent disconnected: native connection closing by its owner'});
     await chat.refresh();
-    assert.match(chat.status.render(100).join('\n'), /Ending session/);
+    assert.match(chat.status.render(100).join('\n'), /Stopping the agent/);
     assert.doesNotMatch(chat.status.render(100).join('\n'), /Paused|continue/);
     rejectEnd(new Error('driver did not stop'));
     while (chat.ending) await new Promise(resolve => setTimeout(resolve, 1));
@@ -587,7 +587,7 @@ test('saved image preview uses Pi image rendering and a terminal fallback', asyn
   const preview = new FilePreview({path: 'camera.png', size: 1, kind: 'image', mime: 'image/png',
     data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWZkAAAAASUVORK5CYII='}, () => {}, () => {}, () => {});
   assert.match(preview.render(60).join('\n'), /camera.png/);
-  assert.match(preview.render(60).join('\n'), /not a live camera feed/);
+  assert.match(preview.render(60).join('\n'), /saved image/);
 });
 
 
@@ -600,7 +600,7 @@ test('a file preview names the file on this computer and how to open it', async 
     () => {}, () => {}, () => {}, () => 24, '/home/me/.openrua/sandboxes/s/workspace/workspace/snaps/front.png');
   const shown = preview.render(100).join('\n');
   assert.match(shown, /On this computer:.*\/home\/me\/\.openrua\/sandboxes\/s\/workspace\/workspace\/snaps\/front\.png/);
-  assert.match(shown, /Ctrl\+click in Cursor or VS Code/);
+  assert.match(shown, /Ctrl\+click it in Cursor or VS Code/);
 });
 
 test('the branded welcome identifies the project without claiming a connection', async () => {
@@ -625,7 +625,7 @@ test('the branded welcome identifies the project without claiming a connection',
   const real = plainText(new Welcome('s2', {robot: './arm.yaml', robot_model: 'Franka Panda',
     backend: 'real', agent: 'codex', agent_title: 'Codex'}).render(80));
   assert.match(real, /Real robot[\s\S]*Franka Panda/);
-  assert.match(plainText(new Welcome('old', {}, true).render(80)), /past conversation, read-only/);
+  assert.match(plainText(new Welcome('old', {}, true).render(80)), /Viewing saved messages/);
 });
 
 test('a workspace file the agent names shows with its path on this computer', async () => {
@@ -662,8 +662,8 @@ test('archived conversations browse files without gaining execution commands', {
   assert.equal((await archive.workspaceRead('notes #1.txt')).kind, 'text');
   assert.equal((await archive.workspaceRead('camera.png')).kind, 'image');
   assert.ok((await archive.workspaceList()).entries.length > 0);
-  await assert.rejects(archive.command('enqueue', {}), /Read-only/);
-  await assert.rejects(archive.end(), /Read-only/);
+  await assert.rejects(archive.command('enqueue', {}), /cannot send messages/);
+  await assert.rejects(archive.end(), /cannot send messages/);
   assert.deepEqual(await call({op: 'writes'}), before);
 });
 
@@ -813,7 +813,7 @@ test('follow-up messages leave the pending area and keep their place when histor
     item_id: 'before', kind: 'message', text: 'Before the new camera configuration.', phase: 'completed'}}});
   pending.messages = [message];
   assert.equal(pending.render(80).length, 1);
-  assert.match(pending.render(80).join(''), /Adding to current turn/);
+  assert.match(pending.render(80).join(''), /Adding to the current response/);
   assert.doesNotMatch(view.render(80).join('\n'), /left_wrist/);
   const delivered = {...message, status: 'steered'};
   view.snapshot({messages: [active, delivered]});
@@ -825,7 +825,7 @@ test('follow-up messages leave the pending area and keep their place when histor
   const rendered = view.render(80).join('\n');
   assert.ok(rendered.indexOf('Before the new') < rendered.indexOf('left_wrist'));
   assert.ok(rendered.indexOf('left_wrist') < rendered.indexOf('After the new'));
-  assert.match(rendered, /Received by agent/);
+  assert.match(rendered, /The agent received this message/);
   assert.equal(view.children.length, 1);
 
   const restored = new Transcript();
@@ -900,16 +900,16 @@ test('temporary transport loss shows disconnected status and recovers without lo
   chat.editor.setText('My unsent follow-up');
   chat.say('Use /files to inspect saved observations.');
   offline = true;
-  await waitFor(() => /Disconnected.*retrying/.test(chat.status.render(120).join('\n')));
+  await waitFor(() => /Connection lost.*Reconnecting/.test(chat.status.render(120).join('\n')));
   assert.doesNotMatch(chat.status.render(120).join('\n'), /Working/);
   await owner.command('enqueue', {client_id: 'other-ui', request_id: 'queued', text: 'Then wait'});
   await call({op: 'frame', frame: {kind: 'item', turn_id: first, data: {
     item_id: 'during-disconnect', kind: 'tool', phase: 'completed', text: 'Read', output: 'camera saved'}}});
   offline = false;
-  await waitFor(() => /Working.*1 queued/.test(chat.status.render(120).join('\n')) && chat.transcript.tools.size === 1);
+  await waitFor(() => /Working.*1 waiting/.test(chat.status.render(120).join('\n')) && chat.transcript.tools.size === 1);
   assert.equal(chat.editor.getText(), 'My unsent follow-up');
   assert.match(chat.notice.render(120).join('\n'), /Use \/files/);
-  assert.doesNotMatch(chat.status.render(120).join('\n'), /Disconnected/);
+  assert.doesNotMatch(chat.status.render(120).join('\n'), /Connection lost/);
   assert.equal(chat.controller.state.messages.length, 2);
   assert.equal((await call({op: 'writes'})).writes.filter(frame => frame.submit).length, 1);
   chat.stop(); await running;
@@ -1090,7 +1090,7 @@ test('what the session means is read the same way by every client', async () => 
   const {head, notes} = status(state);
   assert.equal(head.kind, 'paused');
   assert.deepEqual(notes.map(n => n.text), ['robot stopped · /robot', 'host ✓', 'Permissions: ask',
-    '1 queued', 'agent disconnected: exit 1', '1 question(s): type the answer, or /questions to choose']);
+    '1 waiting', 'agent disconnected: exit 1', '1 question to answer. Type a reply or open /questions.']);
   assert.equal(status(state, {readOnly: true}).head.kind, 'readonly');
   assert.deepEqual(parseCommand('/model m2', state), {kind: 'ours', name: 'model', args: ['m2']});
   assert.equal(parseCommand('/compact', state).kind, 'agent');
@@ -1098,7 +1098,7 @@ test('what the session means is read the same way by every client', async () => 
   assert.equal(parseCommand('lift the cube', state), null);
   assert.equal(notice({kind: 'motion_canceled', data: {canceled: ['/fjt'], failed: []}}), 'Motion canceled: /fjt');
   assert.match(notice({kind: 'agent_event', data: {kind: 'setting_rejected',
-    data: {setting: 'model', value: 'x', reason: 'unknown model'}}}), /did not take model x: unknown model/);
+    data: {setting: 'model', value: 'x', reason: 'unknown model'}}}), /could not change model to x: unknown model/);
   assert.equal(notice({kind: 'agent_event', data: {kind: 'item'}}), null);
 });
 
@@ -1194,8 +1194,8 @@ test('fixed-model agent settings never render a foreign native model catalog', a
     model_choices: [{value: 'foreign-native-model', label: 'Foreign native model'}]}, terminal);
   const shown = setup.body.render(100).join('\n');
   assert.match(shown, /configured-model/);
-  assert.match(shown, /preview plugin uses the model configured in its agent manifest/);
-  assert.doesNotMatch(shown, /Foreign native model|foreign-native-model|Enter a model ID|Reload native models/);
+  assert.match(shown, /Set the model in the agent configuration file/);
+  assert.doesNotMatch(shown, /Foreign native model|foreign-native-model|Enter a model ID|Refresh model list/);
 });
 
 test('/setup opens local setup without sending a message or ending the owner', {timeout: 15000}, async t => {

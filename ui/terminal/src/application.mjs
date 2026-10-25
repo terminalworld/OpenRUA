@@ -58,7 +58,7 @@ export class Leave extends Screen {
     const menu = selection([
       {value: 'no', label: 'No', description: 'Stop the agent and free up memory'},
       {value: 'yes', label: 'Yes', description: 'Keep running in the background'},
-      {value: 'cancel', label: 'Back', description: 'Cancel leaving'},
+      {value: 'cancel', label: 'Back', description: 'Return to this conversation'},
     ], 4, {explicit: true});
     menu.onCancel = () => this.finish({action: 'answer', value: 'cancel'});
     menu.onSelect = item => this.finish({action: 'answer', value: item.value});

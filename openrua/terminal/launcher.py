@@ -188,7 +188,7 @@ def setup(values, choices, location, save, check, launch, agent_models,
             try:
                 if resolve_models is None:
                     raise RuntimeError('Native model discovery is not available in this entry point.')
-                model_choices = perform('Reading native models', lambda: resolve_models(values, intent))
+                model_choices = perform('Loading models', lambda: resolve_models(values, intent))
                 notice = ''
             except Exception as exc:
                 notice = str(exc) + '\n' + getattr(exc, 'hint', '')
@@ -196,7 +196,7 @@ def setup(values, choices, location, save, check, launch, agent_models,
         if action == 'agent':
             name = result.get('agent')
             if not isinstance(name, str) or not name.strip() or resolve_agent is None:
-                notice = 'Choose a coding agent name or manifest path.'
+                notice = 'Enter an agent name or the path to its configuration file.'
                 continue
             try:
                 facts = resolve_agent(name)
@@ -242,7 +242,7 @@ def leave(client, name, screen=run_screen, *, application=None, after_end=None):
         raise RuntimeError('Invalid resource choice; the current session was not ended.')
     if answer['value'] == 'no':
         if application:
-            application.perform('Stopping execution resources', client.end)
+            application.perform('Stopping this session', client.end)
         else:
             client.end()
         if after_end:
@@ -302,7 +302,7 @@ def chat(client, name, list_sessions, open_session, screen=run_screen, *, facts=
                     return 0
                 notice = ''
             except Exception as exc:
-                notice = f'Could not confirm resource shutdown: {exc}\nInspect: openrua session --name {name} status'
+                notice = f'Could not confirm that this session stopped. {exc}\nCheck its status: openrua session --name {name} status'
             continue
         if result['action'] == 'setup' and setup_session is not None:
             try:

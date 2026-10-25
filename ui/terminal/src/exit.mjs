@@ -11,13 +11,13 @@ async function askChoice(prompt) {
 // Only an acknowledged end or a current snapshot can establish session status.
 // Leaving the client never starts, resumes or stops resources on its own.
 export async function leave(name, client, {ended = false, ask = askChoice, write = console.log} = {}) {
-  const inspection = `Inspect: openrua session --name ${name} status`;
-  const finished = () => write(`Session ${name} ended; its files are kept (openrua --resume shows it).`);
+  const inspection = `Check status: openrua session --name ${name} status`;
+  const finished = () => write(`Session ${name} ended; your files and chat history are saved. Use openrua --resume to find it.`);
   if (ended) { finished(); return true; }
   let state;
   try { ({state} = await client.snapshot()); }
   catch (error) {
-    write(`Session ${name}: status unconfirmed. Resources may still be running. ${error.message}`);
+    write(`Session ${name}: we could not check its status. ${error.message}`);
     write(inspection);
     return false;
   }
@@ -27,10 +27,10 @@ export async function leave(name, client, {ended = false, ask = askChoice, write
     + '  yes         keep this session running in the background\n> ')).trim().toLowerCase();
   if (answer === 'cancel') return false;
   if (answer === '' || answer === 'no') {
-    write('Ending session…');
+    write('Stopping the agent and releasing resources…');
     try { await client.end(); }
     catch (error) {
-      write(`Session ${name}: shutdown unconfirmed. ${error.message}`);
+      write(`Session ${name}: we could not confirm that it stopped. ${error.message}`);
       write(inspection);
       return false;
     }

@@ -76,7 +76,10 @@ export class Chat {
     this.questionDrafts = new Map();
     this.welcome = new Welcome(name, {...facts, version}, client.readOnly);
     const conversation = new Container();
-    if (client.readOnly) conversation.addChild(this.welcome);
+    if (client.readOnly) {
+      conversation.addChild(this.welcome);
+      if (client.reason) conversation.addChild(new Text(plain(client.reason), 0, 1));
+    }
     conversation.addChild(this.transcript);
     this.ui.setBody(conversation);
     this.updateHeading();
@@ -206,7 +209,7 @@ export class Chat {
     if (initial >= 0) menu.setSelectedIndex(initial);
     const box = new Container();
     const heading = new DialogHeading(title, options.requestId, () => this.rows(), () => this.ui.requestRender());
-    box.addChild(heading); box.addChild(items.length ? menu : new Text(options.empty || 'No items.', 0, 1));
+    box.addChild(heading); box.addChild(items.length ? menu : new Text(options.empty || 'Nothing to show yet.', 0, 1));
     box.addChild(new Text(muted(`↑/↓ Select · Enter Confirm · Esc ${options.onCancel ? 'Back' : 'Close'}`), 0, 1));
     box.handleInput = data => { if (!heading.handleInput(data)) menu.handleInput(data); };
     let handle = this.dialog(box, options);
@@ -252,21 +255,21 @@ export class Chat {
 
   queue() {
     const messages = this.controller.state?.messages.filter(m => m.status === 'queued') ?? [];
-    this.picker('Queued instructions', messages.map(m => ({value: m.id, label: plain(m.text),
-      description: m.held_reason ? `Held: ${plain(m.held_reason)}` : 'Queued'})), id => {
+    this.picker('Waiting messages', messages.map(m => ({value: m.id, label: plain(m.text),
+      description: m.held_reason ? `Not sent yet: ${plain(m.held_reason)}` : 'Waiting to be sent'})), id => {
       const message = messages.find(m => m.id === id);
       if (this.client.readOnly) { this.say(message.text); return; }
       this.picker(plain(message.text), [{value: 'back', label: 'Back'}, {value: 'edit', label: 'Edit'},
-        ...(message.held_reason ? [{value: 'release', label: 'Send this held instruction…'}] : []),
-        {value: 'withdraw', label: 'Withdraw this queued message'}], async action => {
-        if (action === 'release') this.confirm('Send this instruction now? Inspect the current robot and any uncertain execution first.', async () => {
+        ...(message.held_reason ? [{value: 'release', label: 'Send this instruction now…'}] : []),
+        {value: 'withdraw', label: 'Remove this waiting message'}], async action => {
+        if (action === 'release') this.confirm('Send this instruction now? Check the robot and the result of earlier actions first.', async () => {
           await this.client.command('release', {message_id: id, revision: message.revision});
           await this.refresh();
         });
-        if (action === 'edit') this.editText('Edit queued instruction', message.text, async text => {
+        if (action === 'edit') this.editText('Edit waiting message', message.text, async text => {
           await this.client.command('edit', {message_id: id, revision: message.revision, text}); await this.refresh();
         });
-        if (action === 'withdraw') this.confirm('Withdraw this queued instruction?', async () => {
+        if (action === 'withdraw') this.confirm('Remove this message before it is sent?', async () => {
           await this.client.command('withdraw', {message_id: id});
         });
       });
@@ -289,11 +292,11 @@ export class Chat {
   }
 
   questions() {
-    if (this.client.readOnly) throw new Error('This is read-only history.');
+    if (this.client.readOnly) throw new Error('You can view this conversation, but you cannot send messages here.');
     const visible = this.panels.find(panel => panel.requestId);
     if (visible) { this.ui.setFocus(this.panel.component); this.ui.requestRender(); return; }
     const pending = Object.values(this.controller.state?.requests ?? {}).filter(r => r.status === 'pending');
-    this.picker('Pending agent questions', pending.map(r => ({value: r.request_id,
+    this.picker('Questions from the agent', pending.map(r => ({value: r.request_id,
       label: plain(r.questions.map(q => q.text).join(' / '))})), id => {
       this.answerRequest(pending.find(r => r.request_id === id));
     }, {requestId: pending.length === 1 ? pending[0].request_id : null});
@@ -305,7 +308,7 @@ export class Chat {
       this.questionDrafts.set(id, this.editor.getText().trim());
     this.shownQuestions.add(id);
     if (request.questions.some(q => q.secret)) {
-      this.say('Waiting for secret input. Answer this request through the browser or existing CLI.'); return;
+      this.say('This answer needs a private input field. Open the session in the browser to reply.'); return;
     }
     const options = {requestId: id};
     const answers = {};
@@ -358,8 +361,8 @@ export class Chat {
       ? note.checks.map(([step, check]) => `${step} ${marks[check.status] ?? ''}`).join(' ')
       : tone[note.tone](plain(note.text)));
     if (said.kind === 'working' && this.lastEvent && Date.now() - this.lastEvent > QUIET_MS)
-      extra.splice(1, 0, yellow(`no output for ${elapsed(this.lastEvent)}`));
-    if (this.controller.pending) extra.push(yellow('send unconfirmed: /retry'));
+      extra.splice(1, 0, yellow(`No new output for ${elapsed(this.lastEvent)}`));
+    if (this.controller.pending) extra.push(yellow('Message delivery not confirmed. Use /retry.'));
     const head = said.kind === 'working'
       ? accent(`${SPINNER[this.frame++ % SPINNER.length]} Working… ${elapsed(this.started)}`)
       : tone[said.tone](({readonly: '◇ ', closed: '◇ ', paused: '‖ ', ready: '✓ ', waiting: '? ', interrupting: '… '}[said.kind] || '') + plain(said.text));
@@ -382,8 +385,8 @@ export class Chat {
   async poll() {
     try { await this.refresh(); void updateReview(this); } catch (error) {
       if (!this.done && !this.ending) {
-        this.status.setText(yellow(`⚠ Disconnected · retrying · ${plain(error.message)}`));
-        this.keys.setText(yellow('The service is not answering; your draft and queued instructions are kept.'));
+        this.status.setText(yellow('⚠ Connection lost. Reconnecting…'));
+        this.keys.setText(yellow('Your draft is still here. Sent messages may still be running.'));
         this.ui.requestRender();
       }
     }
@@ -410,7 +413,7 @@ export class Chat {
 
   effort() {
     const state = this.controller.state;
-    if (state?.settings?.effort === undefined) throw new Error('This agent has not reported a live effort setting.');
+    if (state?.settings?.effort === undefined) throw new Error('This agent does not support changing its reasoning effort here.');
     const now = state.settings.effort;
     const choices = state.setting_choices?.effort ?? [];
     const title = `Reasoning effort: ${plain(now)}`;
@@ -420,7 +423,7 @@ export class Chat {
       const apply = async effort => {
         await this.configure('effort', effort.trim());
       };
-      if (value === null) this.editText('Native reasoning effort level', now, apply);
+      if (value === null) this.editText('Reasoning effort', now, apply);
       else await apply(value);
     }, {selected: now});
   }
@@ -429,7 +432,7 @@ export class Chat {
     if (!text.trim() || this.done) return;
     if (this.busy) {
       this.editor.setText(text);
-      this.say('A request is still pending; this draft has not been sent.');
+      this.say('Please wait for the previous request. Your draft has not been sent.');
       return;
     }
     this.busy = true;
@@ -445,7 +448,7 @@ export class Chat {
       } else if (command) {
         throw new Error('Unknown command. Use /help.');
       } else if (this.projectDraft === text && Object.values(this.controller.state?.requests ?? {}).some(r => r.status === 'pending')) {
-        throw new Error('Answer the pending agent question before sending this skill merge request. The draft is kept.');
+        throw new Error('Answer the agent question first. This request stays in your draft.');
       } else if (this.answerTyped(text)) {
         this.showWelcome = false; this.updateHeading();
         this.editor.addToHistory(text);
@@ -466,7 +469,7 @@ export class Chat {
 
   async interrupt() {
     const id = this.controller.state?.active;
-    if (!id) { this.say('No agent response to interrupt.'); return; }
+    if (!id) { this.say('The agent is not working on a message right now.'); return; }
     await this.client.command('interrupt', {message_id: id});
     await this.refresh();
   }
@@ -474,7 +477,7 @@ export class Chat {
   // One handler for each command the terminal offers (commandsFor('terminal')).
   handlers() {
     const state = this.controller.state;
-    const writable = () => { if (this.client.readOnly) throw new Error('This is read-only history.'); };
+    const writable = () => { if (this.client.readOnly) throw new Error('You can view this conversation, but you cannot send messages here.'); };
     return {
       project: async () => projectMenu(this),
       robot: async args => robotMenu(this, args),
@@ -487,16 +490,16 @@ export class Chat {
         writable();
         if (value) { await this.configure('permissions', value); return; }
         if (!permissionChoices(state).length) {
-          this.say('This agent has not provided selectable permission modes. Native approval requests appear in the conversation.'); return;
+          this.say('This agent does not offer permission settings here. Its approval requests appear in the conversation.'); return;
         }
         const now = state?.settings?.permissions;
-        this.picker('Native permission modes', permissionChoices(state).map(p => ({value: p.value,
+        this.picker('Permissions', permissionChoices(state).map(p => ({value: p.value,
           label: `${now === p.value ? '✓ ' : '  '}${p.label}`, description: p.description})),
           choice => this.configure('permissions', choice), {selected: now});
       },
       model: async ([value, level]) => {
         if (state?.setting_controls && !state.setting_controls.includes('model')) {
-          this.say('This agent has not provided model controls. Its configured model remains in use.'); return;
+          this.say('This agent does not let OpenRUA change its model. Set the model in the agent configuration file.'); return;
         }
         if (value === 'effort') {
           writable();
@@ -528,21 +531,21 @@ export class Chat {
       setup: async args => {
         if (!this.canSetup) throw new Error('Open this project with openrua --setup to configure a new session.');
         if (args.length) throw new Error('Use /setup to configure a new session.');
-        if (this.controller.pending) throw new Error('Resolve the unconfirmed send before opening setup.');
+        if (this.controller.pending) throw new Error('We have not confirmed that your last message arrived. Use /retry before opening setup.');
         this.result = {action: 'setup'}; this.stop();
       },
       resume: async (args) => {
-        if (!this.history) throw new Error('Use openrua --resume to select history.');
-        if (this.controller.pending) throw new Error('Resolve the unconfirmed send before changing conversations.');
+        if (!this.history) throw new Error('Run openrua --resume to open a saved conversation.');
+        if (this.controller.pending) throw new Error('We have not confirmed that your last message arrived. Use /retry before switching conversations.');
         if (args.some(arg => arg !== '--all')) throw new Error('Use /resume or /resume --all.');
         this.result = {action: args.includes('--all') ? 'history_all' : 'history'}; this.stop();
       },
       end: async () => {
         writable();
-        this.confirm('End execution and release resources? The workspace and history will be retained.',
+        this.confirm('Stop this session and free its resources? Your files and chat history are saved.',
           async () => {
             this.ending = true;
-            this.status.setText(yellow('Ending session… stopping the agent and owned resources.'));
+            this.status.setText(yellow('Stopping the agent and releasing resources…'));
             this.ui.requestRender();
             try {
               await this.client.end();
@@ -568,7 +571,7 @@ export class Chat {
       continue: async () => {
         const id = state?.pause_id;
         if (!id) { this.say('Nothing to continue.'); return; }
-        this.confirm('Review /queue first. Continue this paused queue?', () => this.client.command('resume', {pause_id: id}));
+        this.confirm('Send the waiting messages? Check /queue first.', () => this.client.command('resume', {pause_id: id}));
       },
     };
   }
