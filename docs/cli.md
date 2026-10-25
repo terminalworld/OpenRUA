@@ -93,6 +93,7 @@ start or reconnect (without a subcommand):
 | `benchmarks` | list the bundled benchmarks (or one benchmark's suites and tasks) |
 | `agents` | list the bundled agents |
 | `build` | build the images: simulators, sandbox, proxy |
+| `update` | update one coding agent in an existing tool image |
 | `exec` | the agent does one task on its own; the run is recorded |
 | `up` | bring a robot up with a sandbox terminal on it |
 | `connect` | connect a real robot, your coding agent doing the work |
@@ -264,6 +265,18 @@ options:
   -h, --help   show this help message and exit
   --tag TAG
   --port PORT  listen port, baked in and labelled
+```
+
+## openrua update
+
+```
+usage: openrua update [-h] --agent AGENT --image IMAGE
+
+options:
+  -h, --help     show this help message and exit
+  --agent AGENT  agent manifest or name with an explicit @version
+  --image IMAGE  existing tool image; running containers retain their original
+                 image
 ```
 
 ## openrua exec

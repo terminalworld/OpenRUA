@@ -35,12 +35,12 @@ def world(monkeypatch, tmp_path):
     return state, tmp_path
 
 
-def test_a_newer_release_is_offered_with_the_rebuild(world):
+def test_a_newer_release_is_offered_as_a_pinned_component_update(world):
     state, home = world
     offer = updates.offer_for(selection(), home, NOW)
     assert offer.latest == "2.1.320" and not offer.required and not offer.restart
-    at = offer.update.index("build")
-    assert offer.update[at:at + 2] == ["build", "sandbox"]
+    at = offer.update.index("update")
+    assert offer.update[at:] == ["update", "--agent", "claude-code@2.1.320", "--image", "box"]
     assert "2.1.320 is available" in updates.describe(offer)
 
 
@@ -141,3 +141,66 @@ def test_a_source_checkout_is_never_offered_an_upgrade(monkeypatch):
     monkeypatch.setattr(updates.metadata, "distribution", lambda name: Wheel())
     monkeypatch.setattr(updates.sys, "prefix", "/home/u/.local/share/uv/tools/openrua")
     assert updates.upgrade_command() == ["uv", "tool", "upgrade", "openrua"]
+
+
+def test_required_update_uses_the_minimum_when_the_registry_is_unavailable(world):
+    state, home = world
+    state['installed'], state['latest'] = '2.1.200', None
+    offer = updates.offer_for(selection(), home, NOW)
+    assert offer.required and offer.target == '2.1.251'
+    assert 'claude-code@2.1.251' in offer.update
+
+
+def test_local_official_wheels_can_update_via_the_installer(monkeypatch):
+    class Dist:
+        def read_text(self, name):
+            return '{"url":"file:///tmp/openrua.whl"}'
+    monkeypatch.setattr(updates.metadata, 'distribution', lambda name: Dist())
+    assert updates.upgrade_command()[-3:] == ['install', '-U', 'openrua']
+
+
+def test_fullscreen_update_does_not_run_after_continue_and_retains_skip_policy(world):
+    state, home = world
+    offer = updates.offer_for(selection(), home, NOW)
+    class App:
+        def screen(self, spec):
+            assert spec['mode'] == 'update' and spec['phase'] == 'offer'
+            return {'action': 'skip'}
+    assert updates.present(offer, home, App()) is True
+    assert updates._read(home)['claude-code']['skipped'] == offer.latest
+
+
+def test_failed_fullscreen_update_requires_an_explicit_retry_and_keeps_the_log(world, monkeypatch):
+    state, home = world
+    offer = updates.offer_for(selection(), home, NOW)
+    log = home / 'output.log'; log.write_text('installer failure\n')
+    actions = iter(['update', 'logs', 'back', 'retry', 'continue'])
+    commands = []
+    class App:
+        def screen(self, spec):
+            action = next(actions)
+            if action == 'back':
+                assert spec['phase'] == 'logs' and spec['text'] == log.read_text()
+            return {'action': action}
+        def progress(self, *a, **k): pass
+    def run(offer, home, progress):
+        commands.append(offer.update)
+        return (1 if len(commands) == 1 else 0), log
+    monkeypatch.setattr(updates, 'run_logged', run)
+    assert updates.present(offer, home, App()) is True
+    assert len(commands) == 2 and commands[0] == commands[1]
+
+
+def test_logged_installer_output_is_private_and_streamed_without_a_terminal(world):
+    import sys
+    from dataclasses import replace
+    state, home = world
+    offer = replace(updates.offer_for(selection(), home, NOW),
+                    update=[sys.executable, '-c', 'print("[update] Installing selected version"); print("raw build detail")'])
+    messages = []
+    code, log = updates.run_logged(offer, home, lambda line, **details: messages.append((line, details)))
+    assert code == 0 and 'raw build detail' in log.read_text()
+    assert log.stat().st_mode & 0o777 == 0o600
+    assert log.parent.stat().st_mode & 0o777 == 0o700
+    assert messages[0][1]['compact'] is True
+    assert any(details.get('summary') == 'Installing selected version' for _, details in messages)

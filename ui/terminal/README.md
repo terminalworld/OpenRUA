@@ -159,3 +159,8 @@ renders the successive pages over a private inherited control socket. Screen
 specifications use private temporary files; credentials never appear in command
 arguments. The host restores the prior screen without replaying the transcript,
 then prints a brief session-status message.
+
+Startup software updates use the same host as setup and chat. Runtime dependency
+checks and target CLI installation stay in plugins; the update page consumes
+plain offer/result data. Compact progress retains raw output privately, with L
+toggling live details and result-page log inspection. Retry is an explicit action.

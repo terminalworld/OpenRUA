@@ -553,7 +553,9 @@ configs/agents/<name>.yaml: the facts about one coding agent, no code. The modul
 | `title` | str \| null | None | the agent's name as people write it, for what a person reads (default: name) |
 | `binary` | str \| null | None | executable name inside the sandbox |
 | `version` | str \| null | None | a CLI version this manifest pins; usually null: pins come from name@version at build time or agent.version in a config |
-| `install` | str | '' | shell that installs the agent in the sandbox image |
+| `prepare` | str | '' | shell that prepares the agent's runtime dependencies |
+| `prepare_check` | str | '' | shell that exits zero when those dependencies are compatible |
+| `install` | str | '' | shell that installs only the agent CLI; {version} selects its release |
 | `whitelist` | list[str] | [] | regexes of the hosts the proxy lets the agent reach |
 | `credentials` | [Credentials](#credentials) \| null | None | profile-directory login; null = token only |
 | `token_env` | str \| null | None | environment variable carrying an auth token |

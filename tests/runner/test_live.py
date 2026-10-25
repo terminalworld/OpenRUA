@@ -118,6 +118,7 @@ def test_provenance_names_the_agent_cli_and_the_limits(resources, monkeypatch, p
     prov = json.loads((request.home / "sandboxes/robot/provenance.json").read_text())
     assert prov["agent_cli"] == {"name": "fake", "version": "2.1.306 (Claude Code)"}
     assert prov["limits"]["internet"] == "open"
+    assert live_state.load(request.name, request.home, require_running=False)["agent_version"] == "2.1.306"
 
 
 def test_shutdown_reports_both_errors(monkeypatch):

@@ -57,3 +57,8 @@ def isolated_default_user_directory(tmp_path, monkeypatch):
     """Tests never load the developer's personal configuration or credentials."""
     from openrua.config import paths
     monkeypatch.setattr(paths, 'DEFAULT_HOME', str(tmp_path / 'default-user'))
+
+
+def pytest_addoption(parser):
+    parser.addoption('--native-agent-image', default='openrua-sandbox-jazzy',
+                     help='image carrying native CLIs for offline discovery checks')

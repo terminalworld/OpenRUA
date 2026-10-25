@@ -916,8 +916,9 @@ class AgentManifest(Strict):
     version: str | None = Field(default=None, description="a CLI version this manifest "
                                 "pins; usually null: pins come from name@version at build "
                                 "time or agent.version in a config")
-    install: str = Field(default="", description="shell that installs the agent in the "
-                         "sandbox image")
+    prepare: str = Field(default="", description="shell that prepares the agent's runtime dependencies")
+    prepare_check: str = Field(default="", description="shell that exits zero when those dependencies are compatible")
+    install: str = Field(default="", description="shell that installs only the agent CLI; {version} selects its release")
     whitelist: list[str] = Field(default_factory=list, description="regexes of the hosts "
                                  "the proxy lets the agent reach")
     credentials: Credentials | None = Field(default=None, description="profile-directory "
@@ -940,3 +941,9 @@ class AgentManifest(Strict):
                                     "manifest, exposing HOOKS (an Agent subclass): a "
                                     "bundled name under plugins/agents/ or a path to a "
                                     "module of your own, relative to this file")
+
+    @model_validator(mode='after')
+    def checked_preparation(self):
+        if bool(self.prepare) != bool(self.prepare_check):
+            raise ValueError('prepare and prepare_check must be declared together')
+        return self

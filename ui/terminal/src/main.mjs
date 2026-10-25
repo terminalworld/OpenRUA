@@ -5,6 +5,7 @@ import {selectTheme} from './view.mjs';
 import {readFile, writeFile} from 'node:fs/promises';
 import {Client} from './client.mjs';
 import {Chat} from './app.mjs';
+import {Update} from './update.mjs';
 import {ArchiveClient, History, Setup, Workspace} from './screens.mjs';
 import {leave} from './exit.mjs';
 import {serve, Leave, Progress} from './application.mjs';
@@ -19,6 +20,7 @@ if (!process.env.PI_IMAGE_PROTOCOL && !process.env.TMUX && !/^(screen|tmux)/.tes
 }
 
 async function createScreen(spec, host) {
+  if (spec.mode === 'update') return new Update(spec, undefined, host);
   if (spec.mode === 'setup') return new Setup(spec, undefined, host);
   if (spec.mode === 'workspace') return new Workspace(spec, undefined, host);
   if (spec.mode === 'history') return new History(spec, undefined, host);

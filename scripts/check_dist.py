@@ -237,6 +237,67 @@ server.serve_forever(); server.server_close(); endpoint.unlink()
         if slave is not None: os.close(slave)
 
 
+def update_smoke(executable: Path, home: Path, environment: dict) -> None:
+    """Exercise the packaged update page and retained logs with a local installer."""
+    import pty
+    home.mkdir(parents=True)
+    program = home / 'entry.py'
+    program.write_text('''
+import sys, time
+from pathlib import Path
+if '--installer' in sys.argv:
+    print('[update] Installing selected fixture version', flush=True)
+    print('PACKAGED INSTALLER LOG', flush=True)
+    time.sleep(.2)
+    raise SystemExit(0)
+from openrua.cli import main, updates
+from openrua.cli.updates import Offer
+home=Path(sys.argv[1])
+updates.offers=lambda *a: [Offer('fixture', '1.0', '2.0', False,
+    [sys.executable,__file__,'--installer'],False,'Fixture Agent','2.0')]
+raise SystemExit(main(['--home',str(home),'--workspace',str(home/'project'),'--trust-workspace']))
+''')
+    master, slave = pty.openpty()
+    child = subprocess.Popen([str(executable.parent / 'python'), str(program), str(home)],
+                             stdin=slave, stdout=slave, stderr=slave, env=environment)
+    os.close(slave)
+    output, frame = bytearray(), bytearray()
+    def wait(marker):
+        deadline = time.monotonic() + 25
+        while marker not in frame:
+            if select.select([master], [], [], .05)[0]:
+                try: data = os.read(master, 65536)
+                except OSError: break
+                output.extend(data); frame.extend(data)
+            assert child.poll() is None, output.decode(errors='replace')
+            assert time.monotonic() < deadline, output.decode(errors='replace')
+        assert marker in frame, output.decode(errors='replace')
+    def key(value):
+        time.sleep(.2)
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
+        frame.clear(); os.write(master, value)
+    try:
+        wait(b'Update now'); key(b'1')
+        wait(b'Update verified')
+        assert b'PACKAGED INSTALLER LOG' not in output
+        key(b'2'); wait(b'PACKAGED INSTALLER LOG')
+        key(b'\x1b'); wait(b'Update verified')
+        key(b'1'); wait(b'Choose your environment'); key(b'\x04')
+        child.wait(timeout=5)
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
+        assert child.returncode == 0, output.decode(errors='replace')
+        assert output.count(b'\x1b[?1049h') == output.count(b'\x1b[?1049l') == 1
+        assert len(list((home / 'updates').glob('*/output.log'))) == 1
+        assert not (home / 'sandboxes').exists()
+    finally:
+        if child.poll() is None: child.kill()
+        child.wait(); os.close(master)
+
+
 def check(dist: Path, version: str) -> None:
     wheels = list(dist.resolve().glob("*.whl"))
     if len(wheels) != 1:
@@ -250,7 +311,7 @@ def check(dist: Path, version: str) -> None:
             subprocess.run([python, *args], cwd=root, check=True)
         run("-m", "pip", "install", str(wheels[0]))
         run("-c", "from openrua import __version__; import sys; assert __version__ == sys.argv[1]", version)
-        for args in (("--version",), ("chat", "--help"), ("session", "--help")):
+        for args in (("--version",), ("chat", "--help"), ("session", "--help"), ("update", "--help")):
             subprocess.run([str(environment / "bin" / "openrua"), *args], cwd=root, check=True)
         run("-c", """
 from importlib.resources import files
@@ -264,7 +325,7 @@ assert f'--no-deps --refresh-package openrua openrua=={__version__}' in dockerfi
 root = files('openrua')
 for path in ('sandbox/workspace/README.md', 'configs/agents/codex.yaml',
              'configs/agents/kimi.yaml', 'configs/agents/zcode.yaml',
-             'plugins/agents/kimi_server.py',
+             'plugins/agents/kimi_server.py', 'terminal/assets/src/update.mjs',
              'configs/agents/claude-code.yaml', 'terminal/assets/src/workspace.mjs',
              'terminal/assets/src/exit.mjs', 'terminal/assets/src/project.mjs',
              'terminal/assets/src/schedules.mjs', 'cli/project_skills.py', 'cli/skill_tasks.py',
@@ -292,6 +353,8 @@ assert runtime()([str(entrypoint()), '--help'], env=env, return_completed_proces
             "Path(sys.argv[1]).write_bytes(files('openrua').joinpath('configs/agents/codex.yaml').read_bytes())", str(manifest))
         terminal_smoke(environment / 'bin' / 'openrua', root / 'plugin-home',
                        dict(os.environ, PATH=str(environment / 'bin')), manifest)
+        update_smoke(environment / 'bin' / 'openrua', root / 'update-home',
+                     dict(os.environ, PATH=str(environment / 'bin')))
         archive_smoke(environment / 'bin' / 'openrua', root / 'archive-home',
                       dict(os.environ, PATH=str(environment / 'bin')))
         end_smoke(environment / 'bin' / 'openrua', root / 'exit-home',

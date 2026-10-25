@@ -18,7 +18,6 @@ version (``agent.version``) is never offered one either.
 from __future__ import annotations
 
 import json
-import re
 import subprocess
 import sys
 import urllib.request
@@ -28,7 +27,6 @@ from importlib import metadata
 from pathlib import Path
 
 from openrua import agents
-from openrua.cli.preparation import image_commands
 from openrua.config import paths
 
 CHECK_EVERY = timedelta(days=1)
@@ -44,11 +42,13 @@ class Offer:
     required: bool          # older than min_version: no session without it
     update: list[str]       # the command that updates it
     restart: bool           # the update takes effect in the next run of openrua
+    title: str = ''
+    target: str | None = None
 
 
 def _numbers(text: str | None) -> tuple[int, ...] | None:
-    found = re.search(r"\d+(?:\.\d+)+", text or "")
-    return tuple(int(x) for x in found.group().split(".")) if found else None
+    found = agents.version_from_output(text)
+    return tuple(int(x) for x in found.split('.')) if found else None
 
 
 def installed_version(agent, image: str) -> str | None:
@@ -126,7 +126,8 @@ def _offer(name: str, have: str | None, latest: str | None, minimum: str | None,
     newer = _numbers(latest) is not None and _numbers(latest) > have_n
     if not required and (not newer or _read(home).get(name, {}).get("skipped") == latest):
         return None
-    return Offer(name, have, latest if newer else None, required, update, restart)
+    return Offer(name, have, latest if newer else None, required, update, restart,
+                 'OpenRUA' if restart else name, latest if newer else minimum)
 
 
 def upgrade_command() -> list[str] | None:
@@ -140,7 +141,7 @@ def upgrade_command() -> list[str] | None:
         origin = json.loads(dist.read_text("direct_url.json") or "{}")
     except ValueError:
         origin = {}
-    if origin.get("dir_info", {}).get("editable") or origin.get("url", "").startswith("file:"):
+    if origin.get("dir_info") is not None:
         return None
     prefix = Path(sys.prefix).as_posix()
     if "/uv/tools/" in prefix:
@@ -161,20 +162,24 @@ def openrua_offer(home: Path | None, now: datetime | None = None) -> Offer | Non
 
 
 def offer_for(composed, home: Path | None, now: datetime | None = None) -> Offer | None:
-    """What to offer for this selection's agent CLI, if anything."""
+    """Offer an explicit CLI release while retaining its existing tool environment."""
     selected = composed.cfg["agent"]
     agent = agents.get(selected["name"], home, version=selected.get("version"))
     if agent.version:
         return None
     image = composed.cfg["machine"]["backend"]["sandbox_image"]
-    rebuild = next((command for name, command in image_commands(composed)
-                    if name == image), None)
-    if rebuild is None:
+    latest = latest_version(agent, home, now)
+    target = latest if _numbers(latest) and (not _numbers(agent.min_version) or _numbers(latest) >= _numbers(agent.min_version)) else agent.min_version
+    if not target:
         return None
     command = [sys.executable, "-m", "openrua", *(["--home", str(home)] if home else []),
-               *rebuild]
-    return _offer(agent.name, installed_version(agent, image), latest_version(agent, home, now),
-                  agent.min_version, home, command, False)
+               'update', '--agent', selected['name'] + '@' + target, '--image', image]
+    offer = _offer(agent.name, installed_version(agent, image), latest,
+                   agent.min_version, home, command, False)
+    if offer is not None:
+        from dataclasses import replace
+        return replace(offer, title=agent.title or agent.name, target=target)
+    return None
 
 
 def describe(offer: Offer) -> str:
@@ -182,9 +187,9 @@ def describe(offer: Offer) -> str:
         return f"OpenRUA {offer.latest} is available (you have {offer.installed})."
     if offer.required:
         return (f"{offer.name} in the sandbox is {offer.installed}, older than this "
-                f"OpenRUA can run; updating rebuilds the sandbox image.")
+                f"OpenRUA can run; update this agent before starting.")
     return (f"{offer.name} {offer.latest} is available (the sandbox has "
-            f"{offer.installed}); updating rebuilds the sandbox image.")
+            f"{offer.installed}); compatible runtime dependencies are retained.")
 
 
 def _shown(command: list[str]) -> str:
@@ -226,7 +231,7 @@ def update(offer: Offer, show=print) -> bool:
              f"OpenRUA ({offer.installed}) still works")
         return code != 0
     if code:
-        show(f"[update] the rebuild failed (exit {code}); the previous image is unchanged")
+        show(f"[update] the agent update failed (exit {code}); the previous image is unchanged")
     return code == 0 or not offer.required
 
 
@@ -249,3 +254,77 @@ def notice(composed, home: Path | None, show=print) -> None:
     """One line per offer, for commands that never ask."""
     for offer in offers(composed, home):
         show(f"[update] {describe(offer)} {_shown(offer.update)}")
+
+
+def run_logged(offer: Offer, home: Path | None, progress) -> tuple[int, Path]:
+    """Retain installer output privately and report progress without a terminal handoff."""
+    import os
+    import signal
+    import tempfile
+    directory = paths.home(home) / 'updates'
+    directory.mkdir(parents=True, exist_ok=True)
+    folder = Path(tempfile.mkdtemp(prefix='update-', dir=directory))
+    log = folder / 'output.log'
+    with open(log, 'x', encoding='utf-8', opener=lambda p, f: os.open(p, f, 0o600)) as output:
+        progress('', title=f'Updating {offer.title or offer.name}', compact=True,
+                 detail=f'{offer.installed} → {offer.target or offer.latest or "supported version"}',
+                 summary='Starting update')
+        try:
+            child = subprocess.Popen(offer.update, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                     text=True, errors='replace', start_new_session=True)
+        except OSError as exc:
+            output.write(str(exc) + '\n')
+            return 127, log
+        try:
+            for line in child.stdout:
+                output.write(line); output.flush()
+                summary = line.removeprefix('[update] ').strip() if line.startswith('[update] ') else None
+                if line.startswith('[build] '):
+                    summary = 'Verifying the installed CLI'
+                progress(line.rstrip(), **({'summary': summary} if summary else {}))
+            return child.wait(), log
+        except BaseException:
+            try: os.killpg(child.pid, signal.SIGINT)
+            except ProcessLookupError: pass
+            try: child.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                os.killpg(child.pid, signal.SIGKILL); child.wait()
+            raise
+        finally:
+            child.stdout.close()
+
+
+def present(offer: Offer, home: Path | None, application) -> bool:
+    """Offer, update, inspect logs and explicitly retry inside one fullscreen host."""
+    spec = {'mode': 'update', 'name': offer.title or offer.name, 'installed': offer.installed,
+            'target': offer.target or offer.latest or 'supported version', 'required': offer.required,
+            'restart': offer.restart}
+    phase, code, log = 'offer', None, None
+    while True:
+        response = application.screen({**spec, 'phase': phase,
+            'success': code == 0 if code is not None else None,
+            'log_path': str(log) if log else ''})
+        action = response.get('action')
+        if action in {'quit', 'close'}:
+            return False
+        if phase == 'offer' and action in {'continue', 'skip'}:
+            if offer.required:
+                return False
+            if action == 'skip' and offer.latest:
+                skip_version(home, offer.name, offer.latest)
+            return True
+        if phase == 'result' and action == 'continue':
+            return not (code == 0 and offer.restart) and (code == 0 or not offer.required)
+        if action == 'logs' and log is not None:
+            with log.open('rb') as source:
+                source.seek(max(0, log.stat().st_size - 64000))
+                text = source.read().decode(errors='replace')
+            viewed = application.screen({**spec, 'phase': 'logs', 'text': text, 'log_path': str(log)})
+            if viewed.get('action') == 'quit':
+                return False
+            continue
+        if (phase == 'offer' and action == 'update') or (phase == 'result' and action == 'retry' and code != 0):
+            code, log = run_logged(offer, home, application.progress)
+            phase = 'result'
+            continue
+        raise RuntimeError('Invalid software update selection; no additional update was run')

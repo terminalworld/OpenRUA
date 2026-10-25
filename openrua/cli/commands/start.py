@@ -270,7 +270,7 @@ def run(args) -> int:
         raise UnavailableError(str(exc)) from exc
 
 
-def offer_update(args, values: dict, interact=None) -> bool:
+def offer_update(args, values: dict, application=None) -> bool:
     """Offer a newer OpenRUA and a newer agent CLI before the session
     starts (see updates); False when the person chose to quit or to run
     the new OpenRUA. Only at an interactive terminal."""
@@ -282,8 +282,7 @@ def offer_update(args, values: dict, interact=None) -> bool:
     except Exception:  # noqa: BLE001; an incomplete selection is the setup screen's job
         composed = None
     for offer in updates.offers(composed, args.home):
-        operation = lambda: updates.ask(offer, args.home)
-        if not (interact(operation) if interact else operation()):
+        if not (updates.present(offer, args.home, application) if application else updates.ask(offer, args.home)):
             return False
     return True
 
@@ -344,7 +343,7 @@ def _run(args, application=None) -> int:
                              hint='choose one of: ' + ', '.join(adapter.permission_modes))
     def interact(title):
         return (lambda operation: application.perform(title, operation, native=True)) if application else None
-    updated = application.perform('Checking updates', lambda: offer_update(args, values, interact('Software update'))) if application else offer_update(args, values)
+    updated = application.perform('Checking updates', lambda: offer_update(args, values, application)) if application else offer_update(args, values)
     if not updated:
         return 0
     if args.setup or not (values['robot'] or values['bench']):

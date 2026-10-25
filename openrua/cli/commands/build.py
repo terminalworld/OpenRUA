@@ -166,15 +166,29 @@ def _drivers(robot: str, image: str | None, home: Path | None) -> list[tuple[str
     return built
 
 
-def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None, *, base_image=None):
+def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None, *, base_image=None, expected_base=None):
     chosen = manifests_for(agent, home)
+    if base_image is not None and preinstall is None:
+        retained = []
+        for manifest in chosen:
+            adapter = agents.compose(manifest)
+            if not adapter.version and adapter.version_probe():
+                found = subprocess.run(['docker', 'run', '--rm', '--entrypoint', '', base_image,
+                                        'bash', '-c', adapter.version_probe()], capture_output=True, text=True, timeout=60)
+                version = agents.version_from_output(getattr(found, 'stdout', ''))
+                if getattr(found, 'returncode', 1) == 0 and version:
+                    manifest = agents.manifest(str(manifest.path), version=version)
+            retained.append(manifest)
+        chosen = retained
     labels = agent_labels(chosen, "install")
     chain = preinstall if preinstall is not None else agents.preinstall(chosen)
+    prepare = agents.preparation(chosen) if preinstall is None else ''
+    labels.update({f'openrua.agent.{m.name}.version': m.fields['version'] for m in chosen if m.fields.get('version')})
     if robot:
         backend = robot_install(robot, home)
         distro, tag = backend["ros_distro"], tag or backend["sandbox_image"]
         machine = backend.get("sandbox_install") or ""
-        chain = " && ".join(c for c in (chain, machine) if c)
+        prepare = " && ".join(c for c in (machine, prepare) if c)
         labels["openrua.machine_install_sha256"] = hashlib.sha256(machine.encode()).hexdigest()
     # An unpinned agent installs whatever is current: a fresh stamp keeps
     # docker from reusing an older build's layer for it.
@@ -184,11 +198,17 @@ def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None, *, bas
     # a build whose CLI is too old must not replace a sandbox that works.
     tag = tag or config.schema.sandbox_image(distro)
     candidate = f"{tag}-candidate-{uuid4().hex}"
-    _, digest = build_sandbox(preinstall=chain, distro=distro, robot_uid=robot_uid,
-                              tag=candidate, labels=labels, stamp=stamp,
-                              **({'base_image': base_image} if base_image is not None else {}))
     try:
+        _, digest = build_sandbox(preinstall=chain, distro=distro, robot_uid=robot_uid,
+                                  tag=candidate, labels=labels, stamp=stamp, prepare=prepare,
+                                  **({'base_image': base_image} if base_image is not None else {}))
         _report_versions(candidate, chosen)
+        if expected_base is not None:
+            current = subprocess.run(['docker', 'image', 'inspect', tag, '--format', '{{.Id}}'],
+                                     capture_output=True, text=True, timeout=30)
+            if current.returncode or current.stdout.strip() != expected_base:
+                raise UnavailableError('the tool image changed while updating; the concurrent image was retained',
+                                       hint='inspect the current version before requesting another update')
         subprocess.run(["docker", "tag", candidate, tag], check=True)
     finally:
         subprocess.run(["docker", "rmi", candidate], capture_output=True)
@@ -200,15 +220,15 @@ def _report_versions(image: str, chosen: list[agents.Manifest]) -> None:
     older than its adapter's flags need: better at build time than as a
     disconnected agent at the first session."""
     for m in chosen:
-        agent = agents.get(m.name, version=m.fields.get("version"))
+        agent = agents.compose(m)
         if not agent.version_argv:
             continue
         found = subprocess.run(["docker", "run", "--rm", "--entrypoint", "", image,
                                 *agent.version_argv], capture_output=True, text=True)
         print(f"[build] {m.name}: {found.stdout.strip() or found.stderr.strip()}", flush=True)
-        check = agent.sandbox_cli_check()
-        if check and subprocess.run(["docker", "run", "--rm", "--entrypoint", "", image,
-                                     "bash", "-c", check[1]]).returncode:
+        check = agent.installation_check()
+        if found.returncode or (check and subprocess.run(["docker", "run", "--rm", "--entrypoint", "", image,
+                                     "bash", "-c", check[1]]).returncode):
             want = agent.version or (f"{agent.min_version} or newer" if agent.min_version else 'a working CLI')
             raise UnavailableError(f"{image} carries {m.name} {found.stdout.strip()}, "
                                    f"not {want}",

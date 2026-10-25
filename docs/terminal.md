@@ -37,9 +37,15 @@ Maintained files remain editable in the project.
 **Connect a new robot** opens `openrua connect` inside
 the current coding project ([connect.md](connect.md)).
 
-Before a session starts, `openrua` offers a newer agent CLI at most once a
-day: update now (rebuilds the sandbox image), skip, or skip until the next
-version. A CLI older than OpenRUA can run must be updated to start
+Before a session starts, `openrua` offers available software updates in the same
+fullscreen interface. Optional updates default to **Continue with current
+version**; **Skip this version** remembers that release. A CLI below the plugin's
+supported minimum requires an update or exit. During an update, the target,
+stage and elapsed time stay visible; **L** shows or hides live installer logs.
+The result offers a retained log, continuation or explicit retry. Updating an
+agent retains compatible runtime dependencies and other image contents, then
+verifies the selected CLI before new sessions use it. Updating OpenRUA itself
+uses its installer and asks you to restart the command after success
 ([update or remove](install.md#update-or-remove)).
 
 For example, `openrua --robot ./my-robot.yaml` uses a real robot profile; a

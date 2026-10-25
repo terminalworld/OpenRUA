@@ -13,7 +13,9 @@ from __future__ import annotations
 import hashlib
 import importlib
 import importlib.util
+import json
 import logging
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -21,7 +23,7 @@ from pathlib import Path
 from openrua import config
 from openrua.agents.base import Agent, Credentials
 from openrua.config import paths
-from openrua.errors import NotFound
+from openrua.errors import NotFound, UsageError
 
 _log = logging.getLogger(__name__)
 
@@ -32,6 +34,7 @@ class Manifest:
     name: str
     path: Path
     fields: dict                       # the validated manifest as a dict
+    install_template: str = ""
 
     @property
     def install(self) -> str:
@@ -52,13 +55,15 @@ def _read(path: Path, version: str | None = None) -> Manifest:
     m = config.validate(config.AgentManifest, config.load_yaml(path), path)
     fields = config.dump(m)
     version = version or m.version
+    if version and re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._+-]*', version) is None:
+        raise UsageError('invalid CLI version; use a release identifier without shell syntax')
     fields["version"] = version
     install = fields["install"]
     fields["install"] = (install.replace("{version}", version) if version
                          else install.replace("@{version}", "").replace("{version}", ""))
     if fields.get("entry_point"):
         fields["entry_point"] = paths.entry_point("agents", fields["entry_point"], path)
-    return Manifest(m.name, path, fields)
+    return Manifest(m.name, path, fields, install)
 
 
 def manifests() -> list[Manifest]:
@@ -125,6 +130,7 @@ def compose(m: Manifest) -> Agent:
     contract class is used; it has no launch command, which check_agent
     reports."""
     fields = dict(m.fields)
+    fields['install_template'] = m.install_template or m.install
     entry = fields.pop("entry_point", None)
     cls = _load_hooks(entry) if entry else Agent
     if fields.get("credentials") is not None:
@@ -172,7 +178,12 @@ def fact_sha256(agent, kind: str) -> str:
     """The hash of one agent's baked-in fact: its install line
     (``install``) or its whitelist (``whitelist``). Takes an Agent or a
     Manifest."""
-    text = agent.install if kind == "install" else "\n".join(agent.whitelist)
+    if kind == 'install':
+        fields = agent.fields if isinstance(agent, Manifest) else vars(agent)
+        text = json.dumps([fields.get('prepare', ''), fields.get('prepare_check', ''),
+                           agent.install_template or agent.install], sort_keys=True)
+    else:
+        text = "\n".join(agent.whitelist)
     return hashlib.sha256(text.encode()).hexdigest()
 
 
@@ -181,6 +192,17 @@ def preinstall(agents) -> str:
     PREINSTALL slot). Takes Agents or Manifests; nothing to install
     contributes nothing."""
     return " && ".join(a.install for a in agents if a.install)
+
+
+def preparation(agents) -> str:
+    """Prepare only dependencies whose native compatibility check fails."""
+    stages = []
+    for agent in agents:
+        fields = agent.fields if isinstance(agent, Manifest) else vars(agent)
+        command, check = fields.get('prepare'), fields.get('prepare_check')
+        if command:
+            stages.append(f'if ! ({check}); then ({command}); fi && ({check})')
+    return ' && '.join(stages)
 
 
 def whitelist(agents) -> tuple[str, ...]:

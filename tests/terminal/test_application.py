@@ -212,3 +212,88 @@ def test_real_startup_reports_invalid_preferences_then_opens_after_explicit_repa
     ])
     assert code == 0
     assert config.read_bytes() == cleaned
+
+
+@pytest.mark.parametrize('columns,rows', [(100, 30), (40, 18)])
+def test_startup_update_retry_log_and_continue_share_one_fullscreen(tmp_path, columns, rows):
+    home, project = tmp_path / 'home', tmp_path / 'project'
+    home.mkdir(); project.mkdir()
+    master, slave = pty.openpty()
+    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', rows, columns, 0, 0))
+    child = subprocess.Popen([sys.executable, '-m', 'ui.terminal.test.updates',
+        '--home', str(home), '--workspace', str(project), '--trust-workspace'],
+        cwd=Path(__file__).resolve().parents[2], stdin=slave, stdout=slave, stderr=slave,
+        env={**os.environ, 'TERM': 'xterm-256color'})
+    os.close(slave)
+    output, frame = bytearray(), bytearray()
+    def wait(text):
+        deadline = time.monotonic() + 15
+        while text.encode() not in frame:
+            if select.select([master], [], [], .05)[0]:
+                try: data = os.read(master, 65536)
+                except OSError: break
+                output.extend(data); frame.extend(data)
+            assert child.poll() is None, output.decode(errors='replace')
+            assert time.monotonic() < deadline, output.decode(errors='replace')
+        assert text.encode() in frame, output.decode(errors='replace')
+    def key(value):
+        time.sleep(.2)
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
+        frame.clear(); os.write(master, value)
+    try:
+        wait('Update now'); key(b'1')
+        wait('Update failed')
+        assert b'RAW INSTALLER OUTPUT' not in output
+        key(b'3'); wait('RAW INSTALLER OUTPUT')
+        key(b'\x1b'); wait('Update failed')
+        key(b'2'); wait('Update verified')
+        key(b'1'); wait('Choose your environment'); key(b'\x04')
+        child.wait(timeout=5)
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
+        assert child.returncode == 0, output.decode(errors='replace')
+        assert (home / 'attempts').read_text() == '2'
+        logs = list((home / 'updates').glob('*/output.log'))
+        assert len(logs) == 2 and all(p.stat().st_mode & 0o777 == 0o600 for p in logs)
+        assert not (home / 'sandboxes').exists()
+        assert output.count(b'\x1b[?1049h') == output.count(b'\x1b[?1049l') == 1
+    finally:
+        if child.poll() is None: child.kill()
+        child.wait(); os.close(master)
+
+
+def test_interrupting_an_update_stops_its_installer_and_restores_the_terminal(tmp_path):
+    home, project = tmp_path / 'home', tmp_path / 'project'
+    home.mkdir(); project.mkdir()
+    master, slave = pty.openpty()
+    child = subprocess.Popen([sys.executable, '-m', 'ui.terminal.test.updates', '--slow-fixture',
+        '--home', str(home), '--workspace', str(project), '--trust-workspace'],
+        cwd=Path(__file__).resolve().parents[2], stdin=slave, stdout=slave, stderr=slave,
+        env={**os.environ, 'TERM': 'xterm-256color'})
+    os.close(slave)
+    output = bytearray(); selected = False; interrupted = False
+    try:
+        deadline = time.monotonic() + 15
+        while child.poll() is None and time.monotonic() < deadline:
+            if select.select([master], [], [], .05)[0]:
+                try: output.extend(os.read(master, 65536))
+                except OSError: break
+            if not selected and b'Update now' in output:
+                os.write(master, b'1'); selected = True
+            if selected and not interrupted and (home / 'installer-pid').exists():
+                os.write(master, b'\x03'); interrupted = True
+        assert child.wait(timeout=5) == 130, output.decode(errors='replace')
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
+        assert interrupted
+        with pytest.raises(ProcessLookupError):
+            os.kill(int((home / 'installer-pid').read_text()), 0)
+        assert output.count(b'\x1b[?1049h') == output.count(b'\x1b[?1049l') == 1
+        assert b'Traceback' not in output
+    finally:
+        if child.poll() is None: child.kill()
+        child.wait(); os.close(master)

@@ -9,6 +9,22 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.26.0
+
+- Separate agent runtime preparation from CLI installation in plugin manifests.
+  `prepare` and `prepare_check` describe dependencies; `install` changes only the
+  CLI. Keep stable preparation layers outside CLI cache invalidation.
+- Update an explicit `agent@version` in an existing image with `openrua update`.
+  Retain compatible runtimes, machine tools and other agents; verify a candidate
+  before promoting it. Existing sessions keep their original environment.
+- Retain an installed agent version when extending its environment. Record the
+  installation recipe independently from the selected release.
+- Keep startup updates inside the fullscreen terminal, with compact stages,
+  elapsed time, live log toggling, private retained logs and explicit retry.
+  Keep existing optional/required update policies and native sign-in handoffs.
+- Allow installed local wheels to use their package installer's update route.
+  Stop interrupted update subprocesses and return the standard interrupt code.
+
 ## 0.25.1
 
 - Refresh OpenRUA's package metadata when installing a release into a simulator

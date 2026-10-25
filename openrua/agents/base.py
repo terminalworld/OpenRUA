@@ -25,10 +25,18 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import shutil
+import shlex
+import re
 from typing import Any, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from openrua.agents.conversation import Conversation
+
+
+def version_from_output(text: str | None) -> str | None:
+    """Read a release number from a native CLI version response."""
+    found = re.search(r'[0-9]+(?:[.][0-9]+)+', text or '')
+    return found.group() if found else None
 
 
 @dataclass(frozen=True)
@@ -148,6 +156,9 @@ class Agent:
     title: str = ""                     # the agent's name as people write it ("" = name)
     binary: str = ""                    # the CLI executable inside the sandbox
     version: str | None = None          # the CLI version the install line pins
+    prepare: str = ""
+    prepare_check: str = ""
+    install_template: str = ""          # the declared recipe before selecting a release
     install: str = ""                   # one-line root shell chain that installs the
                                         # CLI into the sandbox image ("" = nothing)
     whitelist: tuple[str, ...] = ()     # hostname regexes the CLI must reach through
@@ -311,7 +322,7 @@ class Agent:
         the workspace is the session's record."""
         if not self.version_argv:
             return None
-        return "HOME=/tmp " + " ".join(self.version_argv)
+        return "HOME=/tmp " + shlex.join(self.version_argv)
 
     def sandbox_cli_check(self) -> tuple[str, str] | None:
         """(name, bash) check run inside the sandbox before the agent
@@ -329,6 +340,12 @@ class Agent:
         if self.min_version:
             parts.append(f'printf "%s\\n%s\\n" {self.min_version} "$v" | sort -V -C')
         return ("sandbox_cli_version", "bash -c '" + " && ".join(parts) + "'")
+
+    def installation_check(self) -> tuple[str, str] | None:
+        """Verify the declared release as well as any plugin-specific checks."""
+        checks = list(dict.fromkeys(check for check in
+            (Agent.sandbox_cli_check(self), self.sandbox_cli_check()) if check))
+        return ('agent_installation', ' && '.join(f'({command})' for _, command in checks)) if checks else None
 
     def login_hint(self, creds_home: Path) -> str:
         """One line telling the operator how to log this CLI in with
