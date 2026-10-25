@@ -37,7 +37,10 @@ async function createScreen(spec, host) {
 
 async function finishScreen(screen, spec, result, host, showProgress) {
   if (spec.manage_leave && screen instanceof Chat) {
-    if (screen.endConfirmed || screen.controller?.state?.closed) result.ended = true;
+    if (screen.endConfirmed || screen.controller?.state?.closed) {
+      result.ended = true;
+      return [`Session ${spec.name} ended; its files are kept (openrua --resume shows it).`];
+    }
     return;
   }
   if (!(screen instanceof Chat) || screen.client.readOnly || result?.action === 'setup'
