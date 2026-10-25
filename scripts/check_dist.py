@@ -217,7 +217,7 @@ server.serve_forever(); server.server_close(); endpoint.unlink()
                 except OSError: break
             if stage == 0 and b'Enter Send' in output:
                 os.write(master, b'/end\r'); stage = 1
-            elif stage == 1 and b'End execution and release resources?' in output:
+            elif stage == 1 and b'Stop this session and free its resources?' in output:
                 os.write(master, b'\x1b[B\r'); stage = 2
         child.wait(timeout=5)
         while select.select([master], [], [], 0)[0]:
