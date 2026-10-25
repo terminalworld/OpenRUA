@@ -165,7 +165,10 @@ def test_real_startup_reports_invalid_preferences_then_opens_after_explicit_repa
                 deadline = time.monotonic() + 15
                 while marker.encode() not in frame:
                     if select.select([master], [], [], .05)[0]:
-                        data = os.read(master, 65536); output.extend(data); frame.extend(data)
+                        try: data = os.read(master, 65536)
+                        except OSError as exc:
+                            raise AssertionError(output.decode(errors='replace')) from exc
+                        output.extend(data); frame.extend(data)
                     assert child.poll() is None, output.decode(errors='replace')
                     assert time.monotonic() < deadline, output.decode(errors='replace')
                 time.sleep(.2)
