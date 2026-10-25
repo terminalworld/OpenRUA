@@ -23,11 +23,11 @@ export async function leave(name, client, {ended = false, ask = askChoice, write
   }
   if (state.closed) { finished(); return true; }
   const answer = (await ask('Keep this session running?\n'
-    + '  Enter / no  stop owned resources; keep files and history\n'
-    + '  yes         keep execution running in the background\n> ')).trim().toLowerCase();
+    + '  Enter / no  stop this session; keep files and chat history\n'
+    + '  yes         keep this session running in the background\n> ')).trim().toLowerCase();
   if (answer === 'cancel') return false;
   if (answer === '' || answer === 'no') {
-    write('Ending session… stopping the agent and owned resources.');
+    write('Ending session…');
     try { await client.end(); }
     catch (error) {
       write(`Session ${name}: shutdown unconfirmed. ${error.message}`);
