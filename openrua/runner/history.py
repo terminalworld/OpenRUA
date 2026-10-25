@@ -35,8 +35,7 @@ def _answers(endpoint: Path) -> bool:
     """Whether the session's owner answers with its conversation open."""
     try:
         client = Client.from_file(endpoint)
-        client.timeout = 1
-        return not client.snapshot()['state']['closed']
+        return not client.snapshot(timeout=1)['state']['closed']
     except (OSError, RuntimeError, ValueError, KeyError, TypeError):
         return False
 
@@ -174,8 +173,7 @@ def open_session(home: Path, name: str):
     if endpoint.exists():
         try:
             client = Client.from_file(endpoint)
-            client.timeout = 3
-            if not client.snapshot()['state']['closed']:
+            if not client.snapshot(timeout=3)['state']['closed']:
                 return client, name
         except (OSError, RuntimeError, ValueError, KeyError):
             reason = 'Service unavailable; execution status unknown'

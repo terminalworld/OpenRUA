@@ -68,6 +68,37 @@ def test_resume_live_owner_keeps_queue_and_native_conversation(tmp_path):
     asyncio.run(run())
 
 
+@pytest.mark.parametrize('entry', ['startup', 'history'])
+def test_liveness_probe_does_not_shorten_resource_shutdown(tmp_path, entry):
+    from openrua.runner import service
+
+    async def run():
+        store, session, native, execution, server = await running_server(tmp_path)
+        directory = tmp_path / 'sandboxes' / 'slow'
+        directory.mkdir(parents=True)
+        SQLiteStore(directory / 'conversation.sqlite', initial_state()).close()
+        endpoint = directory / 'endpoint.json'
+        write_endpoint(endpoint, server.url, server.token)
+        finish = server.end
+
+        async def slow_shutdown():
+            await asyncio.sleep(3.2)
+            await finish()
+
+        server.end = slow_shutdown
+        try:
+            if entry == 'startup':
+                client = await asyncio.to_thread(service.connect, endpoint)
+            else:
+                client, _ = await asyncio.to_thread(history.open_session, tmp_path, 'slow')
+            result = await asyncio.to_thread(client.end)
+            assert result['state']['closed']
+        finally:
+            await stop(store, execution, server)
+
+    asyncio.run(run())
+
+
 def test_sessions_still_running_are_marked_and_listed_first(tmp_path):
     async def run():
         store, session, native, execution, server = await running_server(tmp_path)
