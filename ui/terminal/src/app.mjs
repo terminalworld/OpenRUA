@@ -35,18 +35,23 @@ export class Chat {
     this.facts = facts;
     this.transcript = new Transcript({workspace: facts.workspace});
     this.settingResults = new Map();
+    this.seenSettings = new Set(); this.requestedSettings = new Set();
     // Every event the agent produces marks it as not quiet (QUIET_MS).
     const record = this.transcript.event.bind(this.transcript);
     this.transcript.event = event => {
       this.lastEvent = Date.now(); record(event);
+      let initialSetting = false;
       if (event.kind === 'agent_event' && ['setting', 'setting_rejected'].includes(event.data?.kind)) {
         const setting = event.data.data;
+        initialSetting = event.data.kind === 'setting' && !this.seenSettings.has(setting.setting)
+          && !this.requestedSettings.has(setting.setting);
+        this.seenSettings.add(setting.setting); this.requestedSettings.delete(setting.setting);
         this.settingResults.set(setting.setting, {kind: event.data.kind, ...setting});
       }
       // What an event says to the person (an interrupt's cancelled motions,
       // a setting the agent refused), as every client says it.
       const said = notice(event);
-      if (said) this.say(said);
+      if (said && !initialSetting) this.say(said);
     };
     this.controller = new Controller(client, this.transcript);
     this.status = new Text('Connecting…', 0, 0);
@@ -346,6 +351,7 @@ export class Chat {
   agentCommands() { return agentCommands(this.controller.state); }
 
   async configure(setting, value) {
+    this.requestedSettings.add(setting);
     this.settingResults.delete(setting);
     await this.client.command('configure', {setting, value});
     await this.refresh();

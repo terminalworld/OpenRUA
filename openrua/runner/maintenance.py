@@ -287,7 +287,8 @@ class Maintenance:
                         continue
                     result = subprocess.run([sys.executable, *argv], stdout=output, stderr=subprocess.STDOUT)
                     if result.returncode:
-                        raise RuntimeError(f'build failed for {image}; inspect robot logs: {self._tail(self.directory / "build.log")}')
+                        raise RuntimeError(f'build failed for {image}; use /robot logs for the failing step\n'
+                                           + self._tail(self.directory / 'build.log'))
 
     async def close(self):
         self.closing = True

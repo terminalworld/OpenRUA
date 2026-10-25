@@ -254,8 +254,13 @@ def check(dist: Path, version: str) -> None:
             subprocess.run([str(environment / "bin" / "openrua"), *args], cwd=root, check=True)
         run("-c", """
 from importlib.resources import files
+from pathlib import Path
+from openrua import __version__
+from openrua.robot.sim.install import render
 from openrua.web import assets
 assert all(content for mime, content in assets().values())
+dockerfile, _ = render({'python': '3.12'}, 'installed-release', Path.cwd())
+assert f'--no-deps --refresh-package openrua openrua=={__version__}' in dockerfile
 root = files('openrua')
 for path in ('sandbox/workspace/README.md', 'configs/agents/codex.yaml',
              'configs/agents/kimi.yaml', 'configs/agents/zcode.yaml',

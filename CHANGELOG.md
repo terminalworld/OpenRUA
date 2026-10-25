@@ -9,6 +9,17 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.25.1
+
+- Refresh OpenRUA's package metadata when installing a release into a simulator
+  image, so a cached index from before publication does not hide the new version.
+- Retain interactive-project facts in chat and show compact environment names.
+  Welcome text describes the project without claiming an unverified connection.
+- Show a single compact robot failure with a log shortcut. Keep full build
+  output in logs and operation details, and avoid echoing initial native settings.
+- Keep native ROS diagnostics on stderr so camera discovery and frame streams
+  remain parseable. Report failed discovery commands with their actual errors.
+
 ## 0.25.0
 
 - Make coding-agent selection an explicit setup step after the environment.

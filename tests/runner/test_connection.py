@@ -378,3 +378,21 @@ def test_agent_socket_returns_acceptance_without_waiting_for_its_own_turn(connec
             await owner.end()
             owner.store.close()
     asyncio.run(run())
+
+
+def test_build_failure_summary_points_to_logs_and_retains_the_actual_failing_step(tmp_path, monkeypatch):
+    from openrua.runner import maintenance
+    backend = {'kind': 'real', 'build': {'driver-image': tmp_path / 'driver'}}
+    conn = SimpleNamespace(read_config=lambda: SimpleNamespace(cfg={'machine': {'backend': backend}}))
+    manager = Maintenance(SimpleNamespace(name='build-error', home=tmp_path, robot=SimpleNamespace(connection=conn)))
+    manager.directory.mkdir(parents=True)
+    def fail(argv, stdout, **kwargs):
+        stdout.write('[build] driver-image\nERROR: required package cannot be resolved\n')
+        stdout.flush()
+        return SimpleNamespace(returncode=1)
+    monkeypatch.setattr(maintenance.subprocess, 'run', fail)
+    with pytest.raises(RuntimeError) as caught:
+        manager._build()
+    summary, details = str(caught.value).split('\n', 1)
+    assert '/robot logs' in summary and '[build]' not in summary
+    assert 'ERROR: required package cannot be resolved' in details

@@ -150,7 +150,7 @@ class ArchiveClient:
 
 
 ROBOT_FACTS = ('robot', 'robot_model', 'simulator', 'benchmark', 'suite', 'task_id', 'task',
-               'agent', 'agent_title', 'model', 'backend', 'status', 'workspace', 'project')
+               'agent', 'agent_title', 'model', 'backend', 'status', 'workspace', 'project', 'interactive')
 
 
 def robot_facts(home: Path, name: str) -> dict:

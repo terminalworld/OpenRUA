@@ -109,3 +109,28 @@ def test_a_real_robots_run_is_recorded_unless_told_not_to():
     assert recording(args(), real=False) is None         # a simulated one can be, so opt in
     assert recording(args("wrist, scene"), real=False) == ("wrist", "scene")
     assert recording(args(no_record=True), real=True) is None
+
+
+def test_native_stdout_diagnostics_cannot_corrupt_the_camera_protocol():
+    import subprocess
+    import sys
+    child = subprocess.run([sys.executable, '-c', '''
+import os
+from openrua.robot.camera_tap import protocol_output
+with protocol_output() as output:
+    os.write(1, b'native DDS diagnostic\\n')
+    output.write(b'{"cameras":{"front":"/front/color/image_raw"}}\\n')
+'''], capture_output=True, check=True)
+    assert json.loads(child.stdout)['cameras'] == {'front': '/front/color/image_raw'}
+    assert child.stderr == b'native DDS diagnostic\n'
+
+
+@pytest.mark.parametrize('code,stdout,stderr,match', [
+    (1, b'', b'ROS setup failed', 'ROS setup failed'),
+    (0, b'native diagnostic\n{}\n', b'protocol failed', 'no valid camera record'),
+])
+def test_camera_discovery_reports_the_actual_error(monkeypatch, code, stdout, stderr, match):
+    monkeypatch.setattr(cameras.subprocess, 'run',
+                        lambda *a, **k: SimpleNamespace(returncode=code, stdout=stdout, stderr=stderr))
+    with pytest.raises(RuntimeError, match=match):
+        cameras.list_cameras('box', '/{name}/color/image_raw')

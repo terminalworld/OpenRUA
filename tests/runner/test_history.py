@@ -92,7 +92,8 @@ def test_sessions_still_running_are_marked_and_listed_first(tmp_path):
 def test_the_terminal_knows_where_a_sessions_workspace_is_and_who_is_at_work(tmp_path):
     from openrua.runner import live_state
     live_state.save('s', tmp_path, status='running', robot='panda', robot_model='Franka Panda',
-                    agent='claude-code', agent_title='Claude Code', backend='sim',
+                    agent='claude-code', agent_title='Claude Code', backend='sim', interactive=True,
                     workspace=str(tmp_path / 'sandboxes' / 's' / 'workspace' / 'workspace'))
     facts = history.robot_facts(tmp_path, 's')
     assert facts['agent_title'] == 'Claude Code' and facts['workspace'].endswith('workspace/workspace')
+    assert facts['interactive'] is True

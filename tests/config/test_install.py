@@ -87,6 +87,7 @@ def test_render_is_a_dockerfile_over_the_base_with_its_files_in_context(tmp_path
     assert "COPY files/requirements/req.txt" in d and "-r /opt/openrua/build/files/requirements/req.txt" in d
     assert "editable_mode=compat -e cap-x" in d
     assert f"openrua=={config.__version__}" in d if hasattr(config, "__version__") else "openrua==" in d
+    assert '--no-deps --refresh-package openrua openrua==' in d
     assert "COPY here /opt/openrua/build/here" in d
     assert f"tar xzf /opt/openrua/build/here/suites.tar.gz -C {installer.ROOT}/cap-x" in d
     assert f"{installer.VENV}/bin/python -V" in d and "run()" in d
