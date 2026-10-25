@@ -43,9 +43,13 @@ To come back, `openrua --resume` lists this project's conversations, running one
 `openrua --resume --all` includes other projects and older unassigned sessions.
 `openrua --name NAME` (with `--gui` or `--cli`) reconnects to one by name.
 `/setup` opens project configuration inside terminal chat. Starting from that
-screen creates and switches to a new conversation; the previous session stays
-running and can be opened through `/resume`. Cancelling returns to the previous
-conversation. Model and permission menus still adjust the current conversation's
+screen creates and switches to a new conversation. Before leaving, choose whether
+to keep execution resources running: **No** is selected by default and stops the
+previous session's owned resources; **Yes** keeps them running in the background.
+Project files and conversation history are retained either way. The same choice
+appears on terminal exit and when switching through `/resume`. Cancelling setup
+or history selection before confirming departure leaves the current session
+unchanged. Model and permission menus still adjust the current conversation's
 supported next-turn settings.
 
 Startup options cannot change a running conversation. The agent's original terminal (`openrua up`,

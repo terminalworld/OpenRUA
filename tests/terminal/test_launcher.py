@@ -53,10 +53,13 @@ def test_startup_uses_checked_values_and_original_launcher():
 
 
 def test_history_switch_only_opens_existing_records():
-    initial = SimpleNamespace(url='http://127.0.0.1:1234', token='token')
+    ended = []
+    initial = SimpleNamespace(url='http://127.0.0.1:1234', token='token',
+        snapshot=lambda: {'state': {'closed': False}}, end=lambda: ended.append('live'))
     archive = SimpleNamespace(read_only=True, reason='Ended', snapshot=lambda: {'state': {}, 'cursor': 1},
                               events=lambda cursor: [{'seq': 1, 'kind': 'closed'}] if cursor == 0 else [])
-    responses = iter([{'action': 'history'}, {'action': 'select', 'id': 'old'}, {'action': 'quit'}])
+    responses = iter([{'action': 'history'}, {'action': 'select', 'id': 'old'},
+                      {'action': 'answer', 'value': 'no'}, {'action': 'quit'}])
     screens, opened = [], []
     def screen(spec):
         screens.append(spec)
@@ -64,6 +67,7 @@ def test_history_switch_only_opens_existing_records():
     assert launcher.chat(initial, 'live', lambda: [{'id': 'old'}],
                          lambda name: opened.append(name) or (archive, name), screen) == 0
     assert opened == ['old']
+    assert ended == ['live']
     assert screens[-1]['connection']['read_only']
     assert screens[-1]['connection']['events'] == [{'seq': 1, 'kind': 'closed'}]
 
@@ -287,10 +291,10 @@ def test_switching_agents_clears_the_previous_native_model_catalog():
 
 
 def test_session_setup_cancel_and_failure_return_to_the_same_conversation():
-    initial = SimpleNamespace(url='http://127.0.0.1:1234', token='token')
+    initial = SimpleNamespace(url='http://127.0.0.1:1234', token='token', snapshot=lambda: {'state': {'closed': True}})
     replies = iter([{'action': 'setup'}, {'action': 'setup'}, {'action': 'quit'}])
     screens, calls = [], []
-    def configure(name):
+    def configure(name, before_launch):
         calls.append(name)
         if len(calls) == 2:
             raise RuntimeError('Project setup failed')
@@ -307,15 +311,89 @@ def test_session_setup_cancel_and_failure_return_to_the_same_conversation():
 
 
 def test_session_setup_enters_the_new_session_and_history_can_return_to_the_old_one():
-    old = SimpleNamespace(url='http://127.0.0.1:1234', token='old')
-    new = SimpleNamespace(url='http://127.0.0.1:5678', token='new')
-    replies = iter([{'action': 'setup'}, {'action': 'history'},
-                    {'action': 'select', 'id': 'old'}, {'action': 'quit'}])
+    old = SimpleNamespace(url='http://127.0.0.1:1234', token='old', snapshot=lambda: {'state': {'closed': False}})
+    new = SimpleNamespace(url='http://127.0.0.1:5678', token='new', snapshot=lambda: {'state': {'closed': False}})
+    replies = iter([{'action': 'setup'}, {'action': 'answer', 'value': 'yes'}, {'action': 'history'},
+                    {'action': 'select', 'id': 'old'}, {'action': 'answer', 'value': 'yes'},
+                    {'action': 'quit'}, {'action': 'answer', 'value': 'yes'}])
     screens = []
     def screen(spec):
         screens.append(spec)
         return next(replies)
     assert launcher.chat(old, 'old', lambda: [{'id': 'old'}], lambda _: (old, 'old'), screen,
-                         setup_session=lambda name: (new, 'new')) == 0
+                         setup_session=lambda name, before_launch: (new, 'new') if before_launch() else None) == 0
     assert [spec['name'] for spec in screens if spec['mode'] == 'chat'] == ['old', 'new', 'old']
     assert [spec['connection']['token'] for spec in screens if spec['mode'] == 'chat'] == ['old', 'new', 'old']
+
+
+@pytest.mark.parametrize('choice,stops,leaves', [('no', 1, True), ('yes', 0, True), ('cancel', 0, False)])
+def test_resource_choice_only_stops_on_explicit_no(choice, stops, leaves):
+    calls = []
+    client = SimpleNamespace(snapshot=lambda: {'state': {'closed': False}}, end=lambda: calls.append('end'))
+    assert launcher.leave(client, 'current', lambda spec: {'action': 'answer', 'value': choice}) is leaves
+    assert calls == ['end'] * stops
+
+
+@pytest.mark.parametrize('readonly,closed', [(True, False), (False, True)])
+def test_history_without_live_resources_never_offers_to_stop(readonly, closed):
+    client = SimpleNamespace(read_only=readonly, snapshot=lambda: {'state': {'closed': closed}})
+    assert launcher.leave(client, 'old', lambda _: pytest.fail('no execution resources'))
+
+
+def test_cancelling_history_or_selecting_current_conversation_keeps_resources():
+    client = SimpleNamespace(url='http://127.0.0.1:1', token='token',
+        snapshot=lambda: pytest.fail('no departure has been selected'))
+    replies = iter([{'action': 'history'}, {'action': 'quit'},
+                    {'action': 'history_all'}, {'action': 'select', 'id': 'current'},
+                    {'action': 'quit', 'ended': True}])
+    assert launcher.chat(client, 'current', lambda: [], lambda _: pytest.fail('same conversation'),
+                         lambda _: next(replies), list_all=lambda: []) == 0
+
+
+def test_failed_resource_stop_cannot_open_another_conversation():
+    def fail():
+        raise RuntimeError('driver shutdown unconfirmed')
+    client = SimpleNamespace(url='http://127.0.0.1:1', token='token',
+        snapshot=lambda: {'state': {'closed': False}}, end=fail)
+    replies = iter([{'action': 'history'}, {'action': 'select', 'id': 'other'},
+                    {'action': 'answer', 'value': 'no'}, {'action': 'quit'},
+                    {'action': 'quit', 'ended': True}])
+    screens = []
+    def screen(spec):
+        screens.append(spec)
+        return next(replies)
+    assert launcher.chat(client, 'current', lambda: [], lambda _: pytest.fail('stop failed'), screen) == 0
+    assert 'driver shutdown unconfirmed' in screens[-2]['notice']
+
+
+def test_setup_checks_before_departure_and_does_not_launch_when_departure_is_cancelled():
+    values = dict(robot='panda', sim='robosuite', bench='', agent='test', model='', name='fresh')
+    calls = []
+    result = launcher.setup(values, {}, 'config', lambda _: None,
+        lambda _: (calls.append('check') or True, 'Ready'), lambda _: pytest.fail('departure cancelled'),
+        {}, lambda: [], lambda _: None, lambda _: {'action': 'start', 'values': values},
+        prepare=lambda *_: calls.append('prepare'), before_launch=lambda: calls.append('leave') or False)
+    assert result is None
+    assert calls == ['prepare', 'check', 'leave']
+
+
+def test_failed_new_session_after_confirmed_stop_returns_to_retained_history():
+    calls = []
+    client = SimpleNamespace(url='http://127.0.0.1:1', token='token',
+        snapshot=lambda: {'state': {'closed': False}}, end=lambda: calls.append('end'))
+    archive = SimpleNamespace(read_only=True, reason='Ended',
+        snapshot=lambda: {'state': {'closed': True}, 'cursor': 0}, events=lambda _: [])
+    replies = iter([{'action': 'setup'}, {'action': 'answer', 'value': 'no'}, {'action': 'quit'}])
+    screens = []
+    def screen(spec):
+        screens.append(spec)
+        return next(replies)
+    def configure(name, before_launch):
+        assert before_launch()
+        assert before_launch()  # A preparation retry does not end the owner twice.
+        raise RuntimeError('new environment failed')
+    assert launcher.chat(client, 'current', lambda: [], lambda _: None, screen,
+        setup_session=configure, retained_session=lambda name: (archive, name)) == 0
+    assert calls == ['end']
+    assert screens[-1]['connection']['read_only']
+    assert 'new environment failed' in screens[-1]['notice']

@@ -20,6 +20,7 @@ if (!process.env.PI_IMAGE_PROTOCOL && !process.env.TMUX && !/^(screen|tmux)/.tes
 }
 
 async function createScreen(spec, host) {
+  if (spec.mode === 'leave') return new Leave('', host);
   if (spec.mode === 'update') return new Update(spec, undefined, host);
   if (spec.mode === 'setup') return new Setup(spec, undefined, host);
   if (spec.mode === 'workspace') return new Workspace(spec, undefined, host);
@@ -35,21 +36,27 @@ async function createScreen(spec, host) {
 }
 
 async function finishScreen(screen, spec, result, host, showProgress) {
+  if (spec.manage_leave && screen instanceof Chat) {
+    if (screen.endConfirmed || screen.controller?.state?.closed) result.ended = true;
+    return;
+  }
   if (!(screen instanceof Chat) || screen.client.readOnly || result?.action === 'setup'
-      || result?.action?.startsWith('history') || !spec.name) return;
+      || result?.action?.startsWith('history')) return;
   const ended = screen.endConfirmed || Boolean(screen.controller?.state?.closed);
-  let waiting = false, stage;
+  let waiting = false, canceled = false, stage;
   const messages = [];
-  const ok = await leave(spec.name, screen.client, {ended,
+  const ok = await leave(spec.name || 'current', screen.client, {ended,
     ask: async prompt => {
       const view = new Leave(prompt, host);
       const answer = await view.run();
       waiting = true;
-      return answer.value || '';
+      canceled = !answer.value || answer.value === 'cancel';
+      return answer.value || 'cancel';
     }, write: text => {
       messages.push(text);
       if (waiting || ended) stage = showProgress({title: 'Session status', line: text});
     }});
+  if (canceled) { result.action = 'stay'; return []; }
   if (!ok) {
     stage?.stop();
     const view = new Leave('', host);
@@ -80,18 +87,21 @@ try {
         throw new Error('Provide --endpoint, or both --input and --output. See --help.');
       const spec = values.input ? JSON.parse(await readFile(values.input, 'utf8')) : {mode: 'chat', endpoint: values.endpoint};
       const host = new TerminalHost();
-      const screen = await createScreen(spec, host);
-      const stop = () => host.close();
+      let screen, closing = false;
+      const stop = () => { closing = true; host.close(); };
       process.once('SIGINT', stop); process.once('SIGTERM', stop);
       let result, progress, summary;
       try {
-        result = await screen.run();
-        summary = await finishScreen(screen, spec, result, host, message => {
-          if (!progress) { progress = new Progress(host); progress.run().catch(() => {}); }
-          progress.update(message); return progress;
-        });
+        do {
+          screen = await createScreen(spec, host);
+          result = await screen.run();
+          summary = await finishScreen(screen, spec, result, host, message => {
+            if (!progress) { progress = new Progress(host); progress.run().catch(() => {}); }
+            progress.update(message); return progress;
+          });
+        } while (!closing && result?.action === 'stay');
       } finally {
-        screen.stop(); progress?.stop(); host.stop();
+        screen?.stop(); progress?.stop(); host.stop();
         process.removeListener('SIGINT', stop); process.removeListener('SIGTERM', stop);
       }
       for (const line of summary || []) console.log(line);

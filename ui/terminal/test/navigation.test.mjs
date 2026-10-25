@@ -136,3 +136,20 @@ test('restoring settings stays quiet while a recorded motion-cancellation failur
   assert.equal(messages.length, 1);
   assert.match(messages[0], /No answer from \/arm\/move/);
 });
+
+test('an active response keeps one model field when native metadata resolves an alias', async t => {
+  const {chat, client} = create(t);
+  let active = 'response';
+  client.snapshot = async () => ({cursor: 0, state: {connected: true, active,
+    messages: [{id: 'response', status: 'running', text: 'Inspect', turn_settings: {model: 'opus'}}],
+    requests: {}, settings: {model: 'claude-opus-5-5'}}});
+  client.events = async () => [];
+  await chat.refresh();
+  assert.match(chat.status.text, /model: claude-opus-5-5/);
+  assert.doesNotMatch(chat.status.text, /turn started with|This response uses|running:|next turn:/);
+  assert.equal(chat.status.text.match(/model:/g).length, 1);
+  active = null;
+  await chat.refresh();
+  assert.match(chat.status.text, /model: claude-opus-5-5/);
+  assert.equal(chat.status.text.match(/model:/g).length, 1);
+});

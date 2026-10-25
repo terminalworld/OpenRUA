@@ -120,7 +120,7 @@ def choose_history(list_sessions, open_session, screen=run_screen, *, environmen
 def setup(values, choices, location, save, check, launch, agent_models,
           list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None, authentication=None, resolve_agent=None,
           connect=None, ready=None, sign_in=None, list_all=None, scope=None, save_connect=None, application=None, resolve_values=None,
-          resolve_models=None, previous_session=None):
+          resolve_models=None, previous_session=None, before_launch=None):
     notice = ''
     authentication = dict(authentication or {})
     drafts = {}
@@ -173,6 +173,8 @@ def setup(values, choices, location, save, check, launch, agent_models,
                     perform('Docker setup', lambda: ready(incoming))
                 if sign_in is not None:
                     perform('Agent sign-in', lambda: sign_in(incoming))
+                if before_launch is not None and not before_launch():
+                    return None
                 return perform('Connecting robot', lambda: connect(incoming))
             except Exception as exc:
                 notice = str(exc) + '\n' + getattr(exc, 'hint', '')
@@ -219,29 +221,77 @@ def setup(values, choices, location, save, check, launch, agent_models,
                 perform('Agent sign-in', lambda: sign_in(values))
             ok, notice = perform('Checking preparation', lambda: check(values))
             if ok and action == 'start':
+                if before_launch is not None and not before_launch():
+                    return None
                 return perform('Starting session', lambda: launch(values)), values['name']
         except Exception as exc:
             notice = str(exc) + '\n' + getattr(exc, 'hint', '')
 
 
+def leave(client, name, screen=run_screen, *, application=None, after_end=None):
+    """Ask before leaving an execution owner, retaining files in either case."""
+    if getattr(client, 'read_only', False):
+        return True
+    state = client.snapshot()['state']
+    if state.get('closed'):
+        return True
+    answer = screen({'mode': 'leave', 'name': name})
+    if answer.get('action') == 'quit' or answer.get('value') == 'cancel':
+        return False
+    if answer.get('action') != 'answer' or answer.get('value') not in {'no', 'yes'}:
+        raise RuntimeError('Invalid resource choice; the current session was not ended.')
+    if answer['value'] == 'no':
+        if application:
+            application.perform('Stopping execution resources', client.end)
+        else:
+            client.end()
+        if after_end:
+            after_end()
+    return True
+
+
 def chat(client, name, list_sessions, open_session, screen=run_screen, *, facts=None,
-         list_all=None, scope=None, setup_session=None, version=''):
+         list_all=None, scope=None, setup_session=None, version='', application=None, retained_session=None):
     notice = ''
     while True:
         spec = {'mode': 'chat', 'name': name, 'connection': connection(client),
                 'facts': facts(name) if facts else {}, 'version': version,
-                'can_setup': setup_session is not None, 'notice': notice}
+                'can_setup': setup_session is not None, 'notice': notice, 'manage_leave': True}
         def display(files):
             spec['connection']['workspace'] = files
             return screen(spec)
         result = (client.with_workspace(display)
                   if getattr(client, 'read_only', False) and hasattr(client, 'with_workspace')
                   else screen(spec))
+        if result.get('ended') and result['action'] != 'quit' and retained_session:
+            client, _ = retained_session(name)
+        departure_confirmed = False
+        def ended():
+            nonlocal client, departure_confirmed
+            departure_confirmed = True
+            if retained_session:
+                client, _ = retained_session(name)
+        def leaving():
+            nonlocal departure_confirmed
+            if departure_confirmed:
+                return True
+            departure_confirmed = leave(client, name, screen, application=application, after_end=ended)
+            return departure_confirmed
+        def select(target):
+            if target == name and not getattr(client, 'read_only', False):
+                return client, name
+            return open_session(target) if leaving() else None
         if result['action'] == 'quit':
-            return 0
+            try:
+                if result.get('ended') or leaving():
+                    return 0
+                notice = ''
+            except Exception as exc:
+                notice = f'Could not confirm resource shutdown: {exc}\nInspect: openrua session --name {name} status'
+            continue
         if result['action'] == 'setup' and setup_session is not None:
             try:
-                selected = setup_session(name)
+                selected = setup_session(name, leaving)
                 if selected:
                     client, name = selected
                 notice = ''
@@ -250,7 +300,7 @@ def chat(client, name, list_sessions, open_session, screen=run_screen, *, facts=
             continue
         if result['action'] not in {'history', 'history_all'}:
             raise RuntimeError('Invalid chat result; no action was taken.')
-        selected = choose_history(list_sessions, open_session, screen, list_all=list_all,
+        selected = choose_history(list_sessions, select, screen, list_all=list_all,
                                   scope=(facts(name).get('project') if facts else scope),
                                   all_projects=result['action'] == 'history_all')
         if selected:

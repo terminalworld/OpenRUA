@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {Update} from '../src/update.mjs';
-import {Progress} from '../src/application.mjs';
+import {Leave, Progress} from '../src/application.mjs';
 import {TerminalHost} from '../src/surface.mjs';
 
 class Terminal {
@@ -13,6 +13,18 @@ class Terminal {
   clearFromCursor() {} clearScreen() {} setTitle() {} setProgress() {}
 }
 const spec = {mode: 'update', name: 'Example Agent', installed: '1.0', target: '2.0', required: false, phase: 'offer'};
+
+for (const [keys, value] of [['\r', 'no'], ['\x1b[B\r', 'yes'], ['\x1b', 'cancel']]) {
+  test(`resource choice ${JSON.stringify(keys)} selects ${value}`, async () => {
+    const terminal = new Terminal(), screen = new Leave('', null, terminal);
+    const result = screen.run();
+    await new Promise(resolve => setTimeout(resolve, 30));
+    assert.match(terminal.output, /Keep execution resources running/);
+    if (keys === '\x1b[B\r') { terminal.input('\x1b[B'); terminal.input('\r'); }
+    else terminal.input(keys);
+    assert.equal((await result).value, value);
+  });
+}
 
 for (const [key, action] of [['\r', 'continue'], ['\x1b', 'continue'], ['1', 'update'], ['3', 'skip'], ['\x04', 'quit']]) {
   test(`optional update ${JSON.stringify(key)} selects ${action}`, async () => {

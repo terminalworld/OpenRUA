@@ -1040,8 +1040,8 @@ test('/model stages model and native effort, Escape goes back, one confirmation 
   await until(client, s => s.settings?.model === 'next-model' && s.settings?.effort === 'medium');
   await chat.refresh();
   assert.equal(chat.panel, null);
-  assert.match(chat.status.text, /running: first-model.*high/);
-  assert.match(chat.status.text, /next turn: next-model.*medium/);
+  assert.match(chat.status.text, /model: next-model.*medium/);
+  assert.match(chat.status.text, /This response uses first-model.*high/);
   assert.equal(chat.editor.getText(), 'Keep my draft');
   const writes = (await call({op: 'writes'})).writes;
   assert.deepEqual(writes.filter(w => w.select_model), [{select_model: 'next-model', effort: 'medium'}]);
@@ -1050,8 +1050,8 @@ test('/model stages model and native effort, Escape goes back, one confirmation 
   // snapshot, so the terminal must not describe it as the current model.
   await call({op: 'frame', frame: {kind: 'setting', data: {setting: 'model', value: 'next-model'}}});
   await until(client, s => s.setting_effective_from?.model === null); await chat.refresh();
-  assert.match(chat.status.text, /turn started with: first-model/);
-  assert.doesNotMatch(chat.status.text, /next turn:/);
+  assert.match(chat.status.text, /model: next-model/);
+  assert.doesNotMatch(chat.status.text, /turn started with|This response uses|next turn:/);
 });
 
 test('the terminal offers every command the shared list gives it', async () => {

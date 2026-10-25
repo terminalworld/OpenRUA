@@ -21,7 +21,7 @@ pytestmark = pytest.mark.skipif(
 
 
 @pytest.mark.parametrize('columns,rows', [(100, 30), (40, 18)])
-def test_session_setup_cancel_new_conversation_and_resume_keep_both_owners(tmp_path, columns, rows):
+def test_session_setup_and_resume_choose_resource_retention(tmp_path, columns, rows):
     master, slave = pty.openpty()
     fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', rows, columns, 0, 0))
     result = tmp_path / 'result.json'
@@ -55,15 +55,21 @@ def test_session_setup_cancel_new_conversation_and_resume_keep_both_owners(tmp_p
         key(b'Original instruction\r'); wait('Working')
         assert b'Welcome to OpenRUA' not in frame
         key(b'/setup\r'); wait('Review your project')
-        assert b'Keep session running' not in output
+        assert b'Keep execution resources running?' not in output
         key(b'\x04'); wait('Welcome back to OpenRUA')
+        key(b'/resume\r'); wait('Original conversation'); key(b'\x1b')
+        wait('Welcome back to OpenRUA')
+        key(b'/quit\r'); wait('Keep execution resources running?'); key(b'\x1b')
+        wait('Welcome back to OpenRUA')
         key(b'/setup\r'); wait('Review your project'); key(b'1')
+        wait('Keep execution resources running?'); key(b'\x1b[B'); key(b'\r')
         wait('Welcome to OpenRUA')
         key(b'New instruction\r'); wait('Working')
         assert b'Welcome to OpenRUA' not in frame
         key(b'/resume\r'); wait('Original conversation'); key(b'\r')
+        wait('Keep execution resources running?'); key(b'\r')
         wait('Welcome back to OpenRUA'); key(b'/quit\r')
-        wait('Keep session running'); key(b'\r')
+        wait('Keep execution resources running?'); key(b'\r')
         deadline = time.monotonic() + 10
         while child.poll() is None and time.monotonic() < deadline:
             if select.select([master], [], [], .05)[0]:
@@ -75,7 +81,7 @@ def test_session_setup_cancel_new_conversation_and_resume_keep_both_owners(tmp_p
             except OSError: break
         assert json.loads(result.read_text()) == dict(calls=['original', 'original'], saves=1,
             messages=[['Original instruction'], ['New instruction']],
-            closed=[False, False], interrupted=[False, False])
+            closed=[True, True], interrupted=[False, False])
         assert output.count(b'\x1b[?1049h') == output.count(b'\x1b[?1049l') == 1
     finally:
         if child.poll() is None: child.kill()
@@ -145,7 +151,7 @@ def test_setup_retry_chat_and_leave_share_one_fullscreen(tmp_path, columns, rows
         wait('Workspace /programs'); key(b'\x1b[C')
         wait('Workspace /programs/nested'); key(b'\x1b')
         time.sleep(.1); key(b'\x04')
-        wait('Keep session running'); key(b'\r')
+        wait('Keep execution resources running?'); key(b'\r')
         deadline = time.monotonic() + 10
         while child.poll() is None and time.monotonic() < deadline:
             if select.select([master], [], [], .05)[0]:
@@ -160,7 +166,7 @@ def test_setup_retry_chat_and_leave_share_one_fullscreen(tmp_path, columns, rows
         assert facts['settings']['model'] == 'demo-b'
         assert facts['settings']['effort'] == 'medium'
         assert facts['active_settings']['model'] == 'demo-a'
-        assert not facts['closed']
+        assert facts['closed']
         assert not facts['interrupted']
         assert b'INSTALLATION_DETAIL_FOR_LOGS' not in output
         assert b'No active turn.' not in output

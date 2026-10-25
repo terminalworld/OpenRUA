@@ -4,7 +4,7 @@ async function askChoice(prompt) {
   const input = createInterface({input: process.stdin, output: process.stdout});
   input.on('SIGINT', () => input.close());
   try { return await input.question(prompt); }
-  catch { return ''; }
+  catch { return 'cancel'; }
   finally { input.close(); }
 }
 
@@ -22,10 +22,11 @@ export async function leave(name, client, {ended = false, ask = askChoice, write
     return false;
   }
   if (state.closed) { finished(); return true; }
-  write(`Session ${name} is open. Leaving this terminal keeps its resources in the background.`);
-  const answer = await ask('  Enter  leave it in the background\n'
-    + '  e      end the session and stop owned resources; keep files\n> ');
-  if (answer.trim().toLowerCase() === 'e') {
+  const answer = (await ask('Keep execution resources running?\n'
+    + '  Enter / no  stop owned resources; keep files and history\n'
+    + '  yes         keep execution running in the background\n> ')).trim().toLowerCase();
+  if (answer === 'cancel') return false;
+  if (answer === '' || answer === 'no') {
     write('Ending session… stopping the agent and owned resources.');
     try { await client.end(); }
     catch (error) {
@@ -34,8 +35,8 @@ export async function leave(name, client, {ended = false, ask = askChoice, write
       return false;
     }
     finished();
-  } else {
+  } else if (answer === 'yes') {
     write(`Left this terminal. Come back: openrua --resume · end it: openrua session --name ${name} end`);
-  }
+  } else return false;
   return true;
 }

@@ -46,18 +46,20 @@ export class Progress extends Screen {
 }
 
 export class Leave extends Screen {
-  constructor(prompt, host) {
-    super(undefined, host);
+  constructor(prompt, host, terminal) {
+    super(terminal, host);
     this.ui.setHeading('OpenRUA · Leave session');
-    this.ui.addChild(new Text('Leaving the interface can keep execution running in the background.', 0, 1));
+    this.ui.addChild(new Text('Keep execution resources running?', 0, 1));
+    this.ui.addChild(new Text('Your project files and conversation history are kept either way.\n'
+      + 'No stops this session\'s agent and owned robot resources. External services are left running.', 0, 1));
     const menu = selection([
-      {value: '', label: 'Keep session running', description: 'Return later with openrua --resume'},
-      {value: 'e', label: 'End session', description: 'Stop owned resources and retain project files'},
+      {value: 'no', label: 'No', description: 'Stop execution resources'},
+      {value: 'yes', label: 'Yes', description: 'Keep execution running in the background'},
     ], 4, {explicit: true});
-    menu.onCancel = () => this.finish({action: 'answer', value: ''});
+    menu.onCancel = () => this.finish({action: 'answer', value: 'cancel'});
     menu.onSelect = item => this.finish({action: 'answer', value: item.value});
     this.ui.addChild(menu); this.ui.setFocus(menu);
-    this.ui.setFooter(new Text(muted('↑/↓ Select · Enter Confirm · Esc Keep running'), 0, 1));
+    this.ui.setFooter(new Text(muted('↑/↓ Select · Enter Confirm · Esc Back'), 0, 1));
   }
 }
 
