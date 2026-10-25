@@ -113,7 +113,8 @@ export class Chat {
       }
       this.resetLeave(); this.updateKeys(); this.ui.requestRender();
       if (matchesKey(data, 'escape') && !this.editor.isShowingAutocomplete()) {
-        if (this.controller.state?.active) void this.interrupt().catch(error => this.say(error.message));
+        if (!this.client.readOnly && this.controller.state?.active)
+          void this.interrupt().catch(error => this.say(error.message));
         return {consume: true};
       }
     });

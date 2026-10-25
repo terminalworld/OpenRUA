@@ -227,6 +227,8 @@ test('Ctrl+C can leave captured history without interrupting its old active turn
   client.readOnly = true;
   chat.editor.setText('');
   chat.ui.setFocus(chat.editor); chat.ui.start();
+  terminal.input('\x1b');
+  assert.deepEqual(calls, []);
   terminal.input('\x03');
   assert.equal(chat.done, false);
   assert.match(chat.keys.text, /Press Ctrl\+C again to leave/);
