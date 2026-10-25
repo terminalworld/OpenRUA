@@ -14,7 +14,7 @@ The list currently contains:
 
 | Robot | Simulator | Benchmark | Checked default scene |
 |---|---|---|---|
-| `panda` | `robosuite` | Native scene (no benchmark) | `Lift` |
+| `panda` | `robosuite` | Simulation scene (no benchmark) | `Lift` |
 | `panda` | `robosuite` | `capbench` | `capbench_lift` |
 | `panda` | `robosuite` | `libero_pro` | `libero_goal_task`, task 0, seed 0 |
 | `panda-omron` | `robosuite` | `robocasa365` | `CloseBlenderLid` |
@@ -74,7 +74,7 @@ the sign-in is the agent's own, so OpenRUA never handles the account's password.
 
 Build output is streamed and retained in `~/.openrua/preparation/`. A failed
 build never launches the session. Retry reuses completed images and Docker's
-build cache. **Save project and check preparation** does not download, build or start
+build cache. **Save project settings and check setup** does not download, build or start
 a robot. Existing
 images are reused; declaration-change warnings still require an explicit rebuild.
 A proxy's whitelist is given when it starts and its name carries the hash of

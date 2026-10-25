@@ -24,11 +24,11 @@ openrua
 The runtime is included. No separate Node/npm install or frontend flag is needed
 (`--tui pi` remains an explicit alias for this terminal).
 First choose **Real robot** or **Simulation**. Real robots can use a project
-configuration or **Connect a new robot**. Simulation offers **Native scene**
+configuration or **Connect a new robot**. Simulation offers **Simulation scene**
 and **Benchmark environment**, followed by a supported starting environment
 or a custom configuration path. Selecting a benchmark here opens an interactive
 task, not batch evaluation. Next, **Choose your coding agent** lists Claude Code,
-Codex, Kimi Code and ZCode, plus **Other agent or manifest…**. Select an agent,
+Codex, Kimi Code and ZCode, plus **Other agent or configuration file…**. Select an agent,
 review its model and authentication, then choose **Continue to review**.
 **Advanced options** holds the session name and preparation check.
 Arrows and Enter select, number keys choose compatible menu entries, and Escape
@@ -64,7 +64,7 @@ the key into the menu. API mode is offered only when the selected plugin support
 it. Each agent keeps its own saved choice; switching agents never borrows another
 agent's key path. Switching back to native login clears the selected path without
 deleting the key file. These defaults apply to new sessions, not running ones.
-For an external plugin, choose **Other agent or manifest…** in the agent list.
+For an external plugin, choose **Other agent or configuration file…** in the agent list.
 OpenRUA loads the manifest's shared-chat and authentication capabilities before
 showing its options. An invalid path returns to setup with an error; selecting
 an agent alone does not save defaults, start resources, or call a model. Unsaved
@@ -79,7 +79,7 @@ missing or not usable (the commands are shown and run only on a yes; see
 [Docker](install.md#docker)), builds missing images with logs, offers the
 agent's sign-in when it is not signed in, checks readiness and opens chat.
 **Connect robot** sets up the same two first. Existing images are
-reused. **Save project and check preparation** only checks preparation. Logs remain in
+reused. **Save project settings and check setup** only checks preparation. Logs remain in
 `~/.openrua/preparation/` for retry. See [setup validation](setup-validation.md)
 and [your agent's login](install.md#your-agents-login).
 Preparation logs appear within the same interface; failures return to setup for
