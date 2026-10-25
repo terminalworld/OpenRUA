@@ -68,7 +68,11 @@ class Connection:
             self.machine.shutdown()
             self.machine = None
 
-    def start(self, resolved=None, prepared=None):
+    def start(self, resolved=None, prepared=None, *, cancelled=None):
+        def check_cancelled():
+            if cancelled is not None and cancelled():
+                raise InterruptedError('robot startup cancelled')
+        check_cancelled()
         if self.machine is not None:
             raise ValueError('the robot already has an owned connection; use restart')
         resolved = resolved or self.prepare()
@@ -82,16 +86,19 @@ class Connection:
             from openrua.runner.robot_client import guide
             guide(materials)
         try:
+            check_cancelled()
             self.machine = bringup.start_robot(
                 cfg, config_path, live_state.container_names(self.request.name)[0], self.sandbox,
                 self.request.task_suite or resolved.suite,
                 self.request.task_id if self.request.task_id is not None else resolved.task_id,
                 self.network, self.domain, self.robot_log, wait_ready=False)
-            self.machine.wait_ready()
+            self.machine.wait_ready(**({'cancelled': cancelled} if cancelled is not None else {}))
+            check_cancelled()
             if cfg['machine']['backend']['kind'] == 'sim':
-                task = bringup.start_episode(self.machine, self.request.init_state).get('language', '')
+                task = bringup.start_episode(self.machine, self.request.init_state, cancelled=cancelled).get('language', '')
             else:
                 task = self.request.task or ''
+            check_cancelled()
             self._retain(task)
             self.generation += 1
         except BaseException:

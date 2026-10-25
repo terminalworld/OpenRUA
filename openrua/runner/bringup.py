@@ -146,14 +146,15 @@ def sandbox_reachability(backend: dict, network: str, robot_name: str,
     return out
 
 
-def start_episode(machine: robot.Handle, init_state_id: int) -> dict:
+def start_episode(machine: robot.Handle, init_state_id: int, *, cancelled=None) -> dict:
     """Reset a simulated robot to an initial state and ask its bridge
     what the task is. Returns the bridge's task_info answer (``language``
     and whatever else the loader records about this episode's world)."""
-    r = machine.rpc({"cmd": "reset", "init_state_id": init_state_id})
+    options = {'cancelled': cancelled} if cancelled is not None else {}
+    r = machine.rpc({"cmd": "reset", "init_state_id": init_state_id}, **options)
     if not r.get("ok"):
         raise RuntimeError(f"reset failed: {r}")
-    return machine.rpc({"cmd": "task_info"})
+    return machine.rpc({"cmd": "task_info"}, **options)
 
 
 def address_on(container: str, network: str, timeout_s: float = 30.0) -> str:

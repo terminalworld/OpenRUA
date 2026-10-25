@@ -22,7 +22,7 @@ class RealHandle(Handle):
         self._container = container
         self._stop_timeout_s = stop_timeout_s
 
-    def wait_ready(self, timeout_s: float = 300.0) -> None:
+    def wait_ready(self, timeout_s: float = 300.0, *, cancelled=None) -> None:
         """Poll ``probe_argv`` until it exits 0 (the graph is visible), or
         raise TimeoutError. Without a probe, return at once."""
         if not self._probe:
@@ -30,6 +30,8 @@ class RealHandle(Handle):
         deadline = time.monotonic() + timeout_s
         diagnostic = ""
         while True:
+            if cancelled is not None and cancelled():
+                raise InterruptedError('robot startup cancelled')
             if self.proc is not None and self.proc.poll() is not None:
                 raise TimeoutError(f"launch command exited with {self.proc.returncode} "
                                    "before the graph came up")
@@ -41,7 +43,16 @@ class RealHandle(Handle):
             with subprocess.Popen(self._probe, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                   text=True, start_new_session=True) as probe:
                 try:
-                    stdout, stderr = probe.communicate(timeout=max(0, deadline - time.monotonic()))
+                    while True:
+                        if cancelled is not None and cancelled():
+                            raise InterruptedError('robot startup cancelled')
+                        remaining = max(0, deadline - time.monotonic())
+                        try:
+                            stdout, stderr = probe.communicate(timeout=min(.1, remaining) if cancelled else remaining)
+                            break
+                        except subprocess.TimeoutExpired:
+                            if time.monotonic() >= deadline:
+                                raise
                 except BaseException as exc:
                     try:
                         os.killpg(probe.pid, signal.SIGKILL)
@@ -63,9 +74,15 @@ class RealHandle(Handle):
                 if probe.returncode == 0:
                     return
                 diagnostic = (stderr or stdout).strip()[-300:]
-            time.sleep(min(5, max(0, deadline - time.monotonic())))
+            retry_at = min(deadline, time.monotonic() + 5)
+            while time.monotonic() < retry_at:
+                if cancelled is not None and cancelled():
+                    raise InterruptedError('robot startup cancelled')
+                time.sleep(min(.1 if cancelled else 5, max(0, retry_at - time.monotonic())))
 
-    def rpc(self, obj: dict, timeout_note: str = "", timeout_s: float = 900.0) -> dict:
+    def rpc(self, obj: dict, timeout_note: str = "", timeout_s: float = 900.0, *, cancelled=None) -> dict:
+        if cancelled is not None and cancelled():
+            raise InterruptedError('robot startup cancelled')
         return {"ok": True, "not_applicable": True, "cmd": obj.get("cmd")}
 
     def shutdown(self) -> None:

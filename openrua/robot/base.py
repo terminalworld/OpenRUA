@@ -13,14 +13,15 @@ class Handle:
 
     name: str
 
-    def wait_ready(self, timeout_s: float = 1800.0) -> None:
-        """Block until the robot answers, or raise TimeoutError."""
+    def wait_ready(self, timeout_s: float = 1800.0, *, cancelled=None) -> None:
+        """Wait for readiness; raise InterruptedError if cancelled() is true."""
         raise NotImplementedError
 
-    def rpc(self, obj: dict, timeout_note: str = "", timeout_s: float = 900.0) -> dict:
+    def rpc(self, obj: dict, timeout_note: str = "", timeout_s: float = 900.0, *, cancelled=None) -> dict:
         """One truth-side question (reset, success, task_info, steps ...),
         one answer. A backend with no truth side answers
-        ``{"ok": True, "not_applicable": True}``."""
+        ``{"ok": True, "not_applicable": True}``. The caller may cancel a
+        pending startup request through the optional predicate."""
         raise NotImplementedError
 
     def shutdown(self) -> None:

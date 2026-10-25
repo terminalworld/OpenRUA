@@ -72,7 +72,7 @@ def connection(tmp_path, monkeypatch):
     fail = {'ready': False, 'stop': False}
     class Driver:
         dead = None
-        def wait_ready(self):
+        def wait_ready(self, *, cancelled=None):
             if fail['ready']:
                 raise TimeoutError('graph unavailable')
         def shutdown(self):
@@ -97,6 +97,80 @@ async def owner_for(tmp_path, conn):
     owner.maintenance = Maintenance(owner)
     await owner.maintenance.begin(connect=False)
     return owner, native
+
+
+def test_ending_during_startup_cancels_readiness_and_keeps_cleanup_owned(connection, tmp_path, monkeypatch):
+    import threading
+    conn, calls, _, _ = connection
+    waiting, release = threading.Event(), threading.Event()
+
+    class StartingDriver:
+        def wait_ready(self, *, cancelled=None):
+            waiting.set()
+            while not release.wait(.01):
+                if cancelled is not None and cancelled():
+                    raise InterruptedError('robot startup cancelled')
+        def shutdown(self):
+            calls.append('stop')
+        def stopped(self):
+            return None
+
+    monkeypatch.setattr(module.bringup, 'start_robot', lambda *a, **kw: StartingDriver())
+
+    async def run():
+        owner, _ = await owner_for(tmp_path, conn)
+        ending = None
+        try:
+            await owner.maintenance.action({'operation': 'start', 'request_id': 'boot'})
+            await until(waiting.is_set)
+            ending = asyncio.create_task(owner.end())
+            await asyncio.wait_for(asyncio.shield(ending), 1)
+            state = owner.store.snapshot()['state']
+            assert state['closed'] and conn.machine is None
+            assert state['maintenance']['boot']['status'] == 'cancelled'
+            assert calls == ['stop']
+            assert not any(e['kind'] == 'robot_status' and e['data']['status'] == 'ready'
+                           for e in owner.store.events(0))
+        finally:
+            release.set()
+            if ending is not None:
+                await ending
+            await owner.end()
+            owner.store.close()
+    asyncio.run(run())
+
+
+def test_ending_before_driver_start_prevents_a_late_launch(connection, tmp_path, monkeypatch):
+    import threading
+    conn, calls, _, _ = connection
+    preparing, release = threading.Event(), threading.Event()
+
+    def prepare(*args):
+        preparing.set()
+        release.wait(5)
+
+    monkeypatch.setattr(Maintenance, '_build', prepare)
+
+    async def run():
+        owner, _ = await owner_for(tmp_path, conn)
+        ending = None
+        try:
+            await owner.maintenance.action({'operation': 'start', 'request_id': 'boot'})
+            await until(preparing.is_set)
+            ending = asyncio.create_task(owner.end())
+            await until(lambda: owner.maintenance.closing)
+            release.set()
+            await asyncio.wait_for(asyncio.shield(ending), 1)
+            assert not calls and conn.machine is None
+            assert owner.store.snapshot()['state']['closed']
+            assert owner.store.snapshot()['state']['maintenance']['boot']['status'] == 'cancelled'
+        finally:
+            release.set()
+            if ending is not None:
+                await ending
+            await owner.end()
+            owner.store.close()
+    asyncio.run(run())
 
 
 def test_failed_start_keeps_agent_and_accepts_repair_then_retries_in_place(connection, tmp_path):

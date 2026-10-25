@@ -43,6 +43,70 @@ def test_real_probe_failure_is_a_timeout(tmp_path):
         h.wait_ready(timeout_s=0)
 
 
+@pytest.mark.parametrize('phase', ['wait', 'reset'])
+def test_cancelled_sim_startup_removes_its_owned_container_without_waiting_for_rpc(tmp_path, monkeypatch, phase):
+    import importlib
+    import subprocess
+    import sys
+    import threading
+    import time
+    module = importlib.import_module('openrua.robot.sim.client')
+    stopped, cancelled = [], threading.Event()
+    process = subprocess.Popen([sys.executable, '-u', '-c', 'import time; time.sleep(30)'],
+                               stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True)
+
+    def down(name):
+        stopped.append(name)
+        process.terminate()
+        process.wait(timeout=2)
+
+    monkeypatch.setattr(module, 'down', down)
+    handle = module.BridgeClient(process, 'owned-boot')
+    timer = threading.Timer(.1, cancelled.set)
+    try:
+        timer.start()
+        started = time.monotonic()
+        with pytest.raises(InterruptedError, match='cancelled'):
+            if phase == 'wait':
+                handle.wait_ready(timeout_s=30, cancelled=cancelled.is_set)
+            else:
+                handle.rpc({'cmd': 'reset'}, cancelled=cancelled.is_set)
+        assert time.monotonic() - started < 2
+        assert process.poll() is None
+        handle.shutdown()
+        assert stopped == ['owned-boot']
+        assert process.poll() is not None
+    finally:
+        timer.cancel()
+        if process.poll() is None:
+            process.kill()
+        process.wait()
+        process.stdin.close(); process.stdout.close()
+
+
+def test_cancelled_real_readiness_stops_only_its_probe_group(tmp_path):
+    import subprocess
+    import sys
+    import threading
+    import time
+    from openrua.robot.real.up import RealHandle
+    marker = tmp_path / 'probe-child-finished'
+    child = f'import time; from pathlib import Path; time.sleep(.7); Path({str(marker)!r}).touch()'
+    script = f'import subprocess,sys,time; subprocess.Popen([sys.executable,"-c",{child!r}]); time.sleep(30)'
+    handle = RealHandle('existing-service', None, [sys.executable, '-c', script])
+    cancelled = threading.Event()
+    timer = threading.Timer(.1, cancelled.set)
+    try:
+        timer.start()
+        with pytest.raises(InterruptedError, match='cancelled'):
+            handle.wait_ready(timeout_s=30, cancelled=cancelled.is_set)
+        handle.shutdown()
+        time.sleep(.8)
+        assert not marker.exists()
+    finally:
+        timer.cancel()
+
+
 def test_sim_up_requires_rendered_peers_with_static_peer():
     # The runner renders the peers profile once and hands it in; a
     # static_peer without it would silently lose Humble DDS peering.

@@ -13,6 +13,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
+import threading
 from uuid import uuid4
 
 from openrua import agents
@@ -32,8 +33,16 @@ class Maintenance:
         self.directory = paths.sandbox_dir(owned.name, owned.home) / 'maintenance'
         self.task = None
         self.server = None
-        self.closing = False
+        self._closing = threading.Event()
         self.socket_alias = None
+
+    @property
+    def closing(self):
+        return self._closing.is_set()
+
+    def _check_closing(self):
+        if self.closing:
+            raise InterruptedError('robot startup cancelled; session is ending')
 
     @property
     def connection(self):
@@ -161,6 +170,7 @@ class Maintenance:
                     changed_resources = True
                 if operation in {'start', 'restart'}:
                     await asyncio.to_thread(self._build, True)
+                    self._check_closing()
                     try:
                         resolved = await asyncio.to_thread(connection.prepare)
                     except EnvironmentChanged as changed:
@@ -168,6 +178,7 @@ class Maintenance:
                         self._record(identity, status='completed', summary='environment updated; connection ready')
                         return
                     prepared = await asyncio.to_thread(connection.stage, resolved)
+                    self._check_closing()
                 if operation == 'start' and connection.machine is not None:
                     raise ValueError('a robot connection is already owned; use restart')
                 await self._status(
@@ -178,17 +189,21 @@ class Maintenance:
                 if operation in {'stop', 'restart'}:
                     await asyncio.to_thread(connection.shutdown)
                 if operation in {'start', 'restart'}:
-                    await asyncio.to_thread(connection.start, resolved, prepared)
+                    await asyncio.to_thread(connection.start, resolved, prepared, cancelled=self._closing.is_set)
+                    self._check_closing()
                     await self._status('ready', 'connection ready; acquire current observations')
                 else:
                     await self._status('stopped', 'connection stopped; chat and project remain available')
             self._record(identity, status='completed', summary=f'{operation} completed')
         except Exception as exc:
-            details = str(exc) + (f"; {exc.hint}" if getattr(exc, 'hint', '') else '')
-            summary = (details.splitlines() or ['operation failed'])[0][:400]
-            self._record(identity, status='failed', summary=summary, details=details)
-            if changed_resources or self.jobs()[identity].get('resources_changed'):
-                await self._status('failed', summary)
+            if self.closing and isinstance(exc, InterruptedError):
+                self._record(identity, status='cancelled', summary=str(exc))
+            else:
+                details = str(exc) + (f"; {exc.hint}" if getattr(exc, 'hint', '') else '')
+                summary = (details.splitlines() or ['operation failed'])[0][:400]
+                self._record(identity, status='failed', summary=summary, details=details)
+                if changed_resources or self.jobs()[identity].get('resources_changed'):
+                    await self._status('failed', summary)
         finally:
             if not self.closing:
                 self.owned.store.update(lambda state: (state.pop('handover_pending', None), []))
@@ -226,7 +241,9 @@ class Maintenance:
                                      'restoring the maintenance environment')
             raise
         self._record(identity, status='running', summary='tool environment ready; starting the robot')
-        await asyncio.to_thread(self.connection.start, resolved)
+        self._check_closing()
+        await asyncio.to_thread(self.connection.start, resolved, cancelled=self._closing.is_set)
+        self._check_closing()
         await self._status('ready', 'environment updated; acquire current observations')
 
     def _prepare_environment(self, resolved):
@@ -291,13 +308,13 @@ class Maintenance:
                                            + self._tail(self.directory / 'build.log'))
 
     async def close(self):
-        self.closing = True
+        self._closing.set()
         self.owned.store.update(lambda state: (state.update(handover_pending=True), []))
         if self.server:
             self.server.close()
             await self.server.wait_closed()
         if self.task is not None and not self.task.done():
-            # Do not abandon a thread that may own a live driver.
+            # Cancel its blocking readiness wait, then join its owned cleanup.
             await self.task
         (self.directory / 'control.sock').unlink(missing_ok=True)
         if self.socket_alias:
