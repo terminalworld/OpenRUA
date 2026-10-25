@@ -266,3 +266,21 @@ def test_model_discovery_keeps_unsaved_agent_choices_and_first_setup_step():
     assert result is None and discovered == [(values, 'start')]
     assert screens[1]['view'] == 'models' and screens[1]['agent_step']
     assert screens[1]['model_choices'] == [{'value': 'native-model', 'label': 'Native model'}]
+
+
+def test_switching_agents_clears_the_previous_native_model_catalog():
+    values = dict(robot='panda', sim='robosuite', bench='', agent='first', model='first-model', name='id')
+    replies = iter([{'action': 'models', 'values': values},
+                    {'action': 'agent', 'values': values, 'agent': 'second'}, {'action': 'quit'}])
+    screens = []
+    def screen(spec):
+        screens.append(spec)
+        return next(replies)
+    launcher.setup(values, {}, 'project', lambda _: pytest.fail('must not save'),
+        lambda _: None, lambda _: None, {}, lambda: [], lambda _: None, screen,
+        resolve_models=lambda *_: [{'value': 'first-native-model'}],
+        resolve_agent=lambda _: {'model': 'second-model', 'model_selection': False})
+    assert screens[1]['model_choices'] == [{'value': 'first-native-model'}]
+    assert screens[2]['values']['agent'] == 'second'
+    assert screens[2]['values']['model'] == 'second-model'
+    assert screens[2]['model_choices'] == []

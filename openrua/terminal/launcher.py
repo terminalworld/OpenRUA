@@ -202,6 +202,7 @@ def setup(values, choices, location, save, check, launch, agent_models,
                 continue
             fields = [key for key in ('model', 'auth_mode', 'api_key_file') if key in values]
             drafts[values['agent']] = {key: values[key] for key in fields}
+            model_choices = []
             authentication = {**authentication, name: facts}
             selected = drafts.get(name, {key: facts[key] for key in fields})
             values = {**values, **selected, 'agent': name}
