@@ -304,7 +304,8 @@ def open_robot(request: RobotRequest, *, interactive: bool = False, resolved=Non
                    proxy=agent_proxy_url(cfg["machine"]["backend"], proxy_url),
                    limits=limits, permissions=request.permissions, mounts=list(mounts),
                    agent=adapter.name, agent_title=adapter.title or adapter.name,
-                   agent_spec=cfg_agent["name"], agent_version=cfg_agent.get("version"),
+                   agent_spec=cfg_agent["name"], agent_version=agents.version_from_output(cli_version)
+                       or (previous or {}).get('agent_version') or cfg_agent.get('version'),
                    model=model,
                    auth_mode=previous.get('auth_mode', 'native') if previous else "api" if key_file is not None else "native",
                    options={**adapter.default_options,

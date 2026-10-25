@@ -2,6 +2,8 @@ ARG BASE_IMAGE=scratch
 FROM ${BASE_IMAGE}
 
 USER root
+ARG PREPARE=""
+RUN if [ -n "${PREPARE}" ]; then eval "${PREPARE}"; fi
 ARG PREINSTALL
 ARG PREINSTALL_STAMP
 RUN if [ -n "${PREINSTALL}" ]; then eval "${PREINSTALL}"; fi

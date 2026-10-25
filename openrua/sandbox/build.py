@@ -58,7 +58,7 @@ def build(preinstall: str = "", distro: str = "jazzy",
           robot_uid: int | None = None,
           tag: str | None = None,
           labels: dict[str, str] | None = None,
-          stamp: str = "", base_image: str | None = None) -> tuple[str, str]:
+          stamp: str = "", base_image: str | None = None, prepare: str = "") -> tuple[str, str]:
     """Build the sandbox image for a ROS 2 distro; returns (tag, digest).
     The tag defaults to openrua-sandbox-<distro>, the name a profile's
     ros_distro resolves to. ``labels`` are
@@ -78,7 +78,7 @@ def build(preinstall: str = "", distro: str = "jazzy",
     if base_image is not None:
         if robot_uid is not None:
             raise SandboxError('--base-image preserves existing users; --robot-uid applies to fresh sandbox images')
-        return _extend(base_image, preinstall, tag, labels or {}, stamp)
+        return _extend(base_image, preinstall, tag, labels or {}, stamp, prepare)
     uid = os.getuid() if robot_uid is None else robot_uid
     # The image says what was baked into it: doctor compares this label
     # with the install chain the selected agents would emit today.
@@ -87,10 +87,10 @@ def build(preinstall: str = "", distro: str = "jazzy",
     return tag, _docker_build(
         _HERE / "sandbox.Dockerfile", _HERE, tag,
         {"ROS_DISTRO": distro, "ROBOT_UID": str(uid),
-         "PREINSTALL": preinstall, "PREINSTALL_STAMP": stamp}, labels)
+         "PREPARE": prepare, "PREINSTALL": preinstall, "PREINSTALL_STAMP": stamp}, labels)
 
 
-def _extend(base_image: str, preinstall: str, tag: str, labels: dict, stamp: str) -> tuple[str, str]:
+def _extend(base_image: str, preinstall: str, tag: str, labels: dict, stamp: str, prepare: str) -> tuple[str, str]:
     result = subprocess.run(['docker', 'image', 'inspect', base_image, '--format', '{{json .}}'],
                             capture_output=True, text=True)
     if result.returncode:
@@ -108,7 +108,7 @@ def _extend(base_image: str, preinstall: str, tag: str, labels: dict, stamp: str
     try:
         return tag, _docker_build(dockerfile, _HERE, tag,
                                  {'BASE_IMAGE': base_tag, 'BASE_USER': facts['Config'].get('User') or 'root',
-                                  'PREINSTALL': preinstall, 'PREINSTALL_STAMP': stamp}, labels)
+                                  'PREPARE': prepare, 'PREINSTALL': preinstall, 'PREINSTALL_STAMP': stamp}, labels)
     finally:
         subprocess.run(['docker', 'rmi', base_tag], capture_output=True)
 
@@ -118,6 +118,7 @@ def main() -> int:
     ap.add_argument("--preinstall", default="",
                     help="one-line install command chain baked into the "
                     "image (empty = the bare terminal)")
+    ap.add_argument('--prepare', default='', help='runtime preparation before the independently cached install layer')
     ap.add_argument("--distro", default="jazzy", help="ROS 2 distro: jazzy | humble")
     ap.add_argument("--robot-uid", type=int, default=None,
                     help="container uid (default: current user)")
@@ -127,7 +128,7 @@ def main() -> int:
     try:
         tag, digest = build(preinstall=args.preinstall,
                             distro=args.distro,
-                            robot_uid=args.robot_uid, tag=args.tag, base_image=args.base_image)
+                            robot_uid=args.robot_uid, tag=args.tag, base_image=args.base_image, prepare=args.prepare)
     except SandboxError as e:
         raise SystemExit(str(e))
     print(f"{tag} {digest}")

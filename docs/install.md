@@ -145,7 +145,7 @@ image carries the fingerprint of the declaration it was rendered from.
 Those labels are how `doctor` later knows whether an image is stale.
 The proxy image holds no whitelist.
 
-A manifest pins no version, so `build sandbox` installs the agent's
+An unpinned manifest lets `build sandbox` install the agent's
 release current at build time (it never reuses an older build's layer
 for that), and prints the version each CLI got. To pin one, say so where
 you build and where you run: `openrua build sandbox --agent
@@ -373,18 +373,32 @@ openrua`); run `openrua` again to start the new version. `openrua up`
 and `openrua exec` print one line instead of asking. An install from a
 source checkout is never offered one: `git pull` updates it.
 
-The agent CLIs live in the sandbox image, so a newer CLI comes with a
-rebuild of that image. `openrua` looks for one at most once a day and,
-when the sandbox's CLI is older, asks before the session starts: update
-now (rebuild the sandbox), skip, or skip until the next version. A CLI
-older than OpenRUA can run must be updated to start. `openrua up` and
-`openrua exec` print one line instead of asking; a pinned version
-(`agent.version`) is never offered an update; a trial never changes its
-CLI. Inside the sandbox the CLIs' own updaters are off.
+Agent updates change only the selected CLI in an existing image. Compatible
+runtime dependencies, robot tools and other agents remain in place; a missing
+prerequisite is prepared through that plugin's declared check and command.
+The candidate must pass its native version check before replacing the image tag.
+Running sessions retain their current environment.
+
+The fullscreen update page offers **Update now**, **Continue with current
+version**, and **Skip this version**. Progress is compact; **L** reveals live
+logs, and **View update log** opens the retained output after completion or
+failure. Retrying requires an explicit selection. Optional failures allow the
+current version; an unsupported CLI still requires an update or exit. Plain CLI
+entry points retain their text interaction. Noninteractive commands print a
+notice and never update automatically. Pinned plugins are not offered a newer,
+unvalidated release.
+
+For an explicit component update, select its release and existing tool image:
+
+```sh
+openrua update --agent codex@0.164.0 --image openrua-sandbox-jazzy
+```
+
+The same operation accepts a project manifest with `@version`. This does not
+rebuild simulator or driver images. See [plugin preparation](agents.md#installing-and-updating-a-component).
 
 ```bash
-pip install -U openrua                   # then rebuild: a simulator image carries the package too
-openrua build --all                      # rebuild every simulator image (cached layers make it quick)
+pip install -U openrua                   # next launch prepares the selected project when needed
 pip uninstall openrua
 rm -r ~/.openrua                         # personal preferences, logins and retained session state
 docker image rm $(docker image ls -q 'openrua-*')

@@ -108,8 +108,8 @@ class Application:
         finally:
             path.unlink(missing_ok=True)
 
-    def progress(self, line):
-        self._send({'kind': 'progress', 'line': str(line)})
+    def progress(self, line='', **details):
+        self._send({'kind': 'progress', 'line': str(line), **details})
 
     def perform(self, title, operation, *, native=False):
         self._send({'kind': 'progress', 'title': title, 'line': ''})

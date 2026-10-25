@@ -10,9 +10,13 @@ export class Progress extends Screen {
   constructor(host, parentPid) {
     super(undefined, host, {quitKeys: false});
     this.parentPid = parentPid; this.lines = [];
+    this.compact = false; this.details = false; this.summary = ''; this.started = Date.now();
     this.output = new Text('', 0, 0); this.ui.addChild(this.output);
     this.ui.setFooter(new Text(muted('Preparing the project · Ctrl+C Interrupt'), 0, 1));
     this.ui.addInputListener(data => {
+      if (this.compact && data.toLowerCase() === 'l') {
+        this.details = !this.details; this.draw(); return {consume: true};
+      }
       if (matchesKey(data, 'ctrl+c') || matchesKey(data, 'ctrl+d')) {
         if (Number.isInteger(parentPid) && parentPid > 0) process.kill(parentPid, 'SIGINT');
         return {consume: true};
@@ -20,12 +24,25 @@ export class Progress extends Screen {
     });
   }
   update(message) {
-    if (message.title) { this.lines = []; this.ui.setHeading(`OpenRUA · ${plain(message.title)}`); }
+    if (message.title) {
+      this.lines = []; this.started = Date.now(); this.compact = Boolean(message.compact);
+      this.details = false; this.summary = plain(message.summary || '');
+      this.ui.setHeading(`OpenRUA · ${plain(message.title)}`, message.detail || '');
+    }
+    if (message.summary) this.summary = plain(message.summary);
     if (message.line) this.lines.push(plain(message.line));
     this.lines = this.lines.slice(-100);
-    this.output.setText(this.lines.join('\n'));
+    if (this.compact && !this.timer) { this.timer = setInterval(() => this.draw(), 1000); this.timer.unref(); }
+    this.draw();
+  }
+  draw() {
+    this.output.setText(this.compact ? `${this.summary}\n\nElapsed ${Math.floor((Date.now() - this.started) / 1000)}s`
+      + (this.details ? '\n\n' + this.lines.join('\n') : '') : this.lines.join('\n'));
+    this.ui.setFooter(new Text(muted(this.compact ? `L ${this.details ? 'Hide' : 'Show'} logs · Ctrl+C Interrupt`
+      : 'Preparing the project · Ctrl+C Interrupt'), 0, 1));
     this.ui.requestRender();
   }
+  stop() { clearInterval(this.timer); super.stop(); }
 }
 
 export class Leave extends Screen {

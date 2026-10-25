@@ -43,7 +43,9 @@ knowledge appears anywhere else.
 | `default_model` | yes | model when the config names none |
 | `entry_point` | for launch | the module behind the manifest: a bundled name (`plugins/agents/<name>.py`) or a path relative to the manifest (`./my_agent.py`) |
 | `binary` | | the CLI executable inside the sandbox |
-| `install` | | one-line root shell chain that installs the CLI into the sandbox image; `{version}` in it is replaced by a pin when one is given |
+| `prepare` | | dependency preparation command; paired with `prepare_check` and run only when that check fails |
+| `prepare_check` | | native command that exits zero when the runtime dependencies are compatible |
+| `install` | | command installing only the CLI; `{version}` selects the release, without re-preparing unrelated tools |
 | `version` | | a pin the manifest itself carries; normally absent (see below) |
 | `whitelist` | | regexes of the hosts the CLI must reach (its model service and login); a run limited to the model service lets only these through its proxy |
 | `credentials` | | `dirname`, `filename`, `config_env`, `mount_point`, optional `native_dir`: a profile-directory login with native discovery; optional `login`: the CLI's own sign-in command, which `openrua login` runs in the sandbox image |
@@ -55,6 +57,33 @@ knowledge appears anywhere else.
 
 [config.md](config.md#agentmanifest) lists the same keys with their
 descriptions.
+
+## Installing and updating a component
+
+Runtime preparation and CLI installation are separate steps. Keep knowledge of
+both in the plugin. A native package manager installs the selected release;
+OpenRUA does not infer or rewrite its dependency graph. For example:
+
+```yaml
+prepare: apt-get update && apt-get install -y required-runtime
+prepare_check: required-runtime --version
+install: native-package-manager install agent@{version}
+```
+
+The compatibility check must test the versions and tools the install needs,
+not just whether any executable exists. Both preparation fields must be declared
+together. A failed preparation or a failed final check fails the candidate.
+`install` must update only this CLI. Keep robot interfaces in the robot's own
+build declaration, and runtime installers in `prepare`.
+
+`openrua update --agent ./my-agent.yaml@2.0.0 --image my-tools` retains the
+existing image's tools, settings and other components. It prepares dependencies
+only when their check fails, installs the explicit target, validates the native
+CLI version, then promotes its candidate. A current compatible CLI is a no-op.
+The image records its base digest, recipe identity and selected release. Running
+containers keep their original environment. Rebuilding a complete image still
+uses the plugin's two-part recipe; extending an existing environment retains its
+installed agent release unless a different one was explicitly selected.
 
 ## The hooks module
 

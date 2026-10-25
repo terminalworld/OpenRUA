@@ -13,13 +13,14 @@ binary: claude
 # {version} is replaced with a pin when one is given (openrua build sandbox
 # --agent claude-code@2.1.301, or agent.version in a config); without a
 # pin the release current at build time is installed.
-install: >-
+prepare: >-
   apt-get update
   && apt-get install -y --no-install-recommends curl ca-certificates
   && curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   && apt-get install -y --no-install-recommends nodejs
-  && npm install -g @anthropic-ai/claude-code@{version}
   && rm -rf /var/lib/apt/lists/*
+prepare_check: node -e 'if (parseInt(process.versions.node) < 22) process.exit(1)'
+install: npm install -g @anthropic-ai/claude-code@{version}
 # Hosts the CLI must reach through the proxy (tinyproxy filter regexes).
 whitelist:
   - '^api\.anthropic\.com$'

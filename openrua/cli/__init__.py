@@ -69,6 +69,9 @@ def main(argv: list[str] | None = None) -> int:
         if e.hint:
             print(f"hint: {e.hint}", file=sys.stderr)
         return e.exit_code
+    except KeyboardInterrupt:
+        print('Interrupted.', file=sys.stderr)
+        return 130
 
 
 if __name__ == "__main__":

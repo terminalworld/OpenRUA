@@ -10,13 +10,20 @@ import pytest
 from openrua import agents
 from openrua.runner.skills import prepare
 from openrua.sandbox import project
-from tests.conftest import requires_image
+from tests.conftest import image_present
 from tests.test_skills import write_skill
 
 
-@requires_image('openrua-sandbox-jazzy')
 @pytest.mark.parametrize('agent_name', ['claude-code', 'codex'])
-def test_native_discovery_after_new_process_and_profile(tmp_path, agent_name):
+def test_native_discovery_after_new_process_and_profile(tmp_path, agent_name, request):
+    image = request.config.getoption('--native-agent-image')
+    if not image_present(image):
+        pytest.skip(f'native CLI image {image} is not available')
+    adapter = agents.get(agent_name)
+    present = subprocess.run(['docker', 'run', '--rm', '--entrypoint', '', image,
+                              'sh', '-c', 'command -v ' + adapter.binary], capture_output=True, timeout=30)
+    if present.returncode:
+        pytest.skip(f'{image} does not carry {agent_name}; select --native-agent-image')
     async def run():
         root, home, materials = tmp_path / 'project', tmp_path / 'home', tmp_path / 'materials'
         adapter = agents.get(agent_name)
@@ -41,7 +48,7 @@ def test_native_discovery_after_new_process_and_profile(tmp_path, agent_name):
                     '-e', 'HOME=/home/robot', '-v', f'{root}:/workspace']
             for mount in mounts:
                 argv.extend(['-v', mount])
-            argv.extend(['openrua-sandbox-jazzy', 'sleep', 'infinity'])
+            argv.extend([image, 'sleep', 'infinity'])
             subprocess.run(argv, check=True, capture_output=True, timeout=30)
             try:
                 connection = adapter.conversation(name, adapter.default_model, '', limits={'account_connectors': False})

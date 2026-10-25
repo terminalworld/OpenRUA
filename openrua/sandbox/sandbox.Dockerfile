@@ -88,6 +88,8 @@ ENV PATH=/opt/ros/${ROS_DISTRO}/bin:${PATH} \
 # (an unpinned CLI): a new value misses the layer cache, so an old
 # build's layer is never reused for "the current release".
 USER root
+ARG PREPARE=""
+RUN if [ -n "${PREPARE}" ]; then bash -c "${PREPARE}"; fi
 ARG PREINSTALL=""
 ARG PREINSTALL_STAMP=""
 RUN if [ -n "${PREINSTALL}" ]; then bash -c "${PREINSTALL}"; fi
