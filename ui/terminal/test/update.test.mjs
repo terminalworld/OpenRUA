@@ -27,6 +27,21 @@ for (const [keys, value] of [['\r', 'no'], ['\x1b[B\r', 'yes'], ['\x1b[B\x1b[B\r
   });
 }
 
+for (const [key, value] of [['\r', 'no'], ['\x1b', 'cancel']]) {
+  test(`leave choice survives exit shortcut events until ${value}`, async t => {
+    const terminal = new Terminal(), screen = new Leave('', null, terminal);
+    t.after(() => screen.stop());
+    const result = screen.run();
+    for (const data of ['\x03', '\x04', '\x1b[99;5:1u', '\x1b[99;5:2u',
+      '\x1b[99;5:3u', '\x1b[100;5:2u', '\x1b[100;5:3u']) {
+      terminal.input(data);
+      assert.equal(screen.done, false);
+    }
+    terminal.input(key);
+    assert.equal((await result).value, value);
+  });
+}
+
 for (const [key, action] of [['\r', 'continue'], ['\x1b', 'continue'], ['1', 'update'], ['3', 'skip'], ['\x04', 'quit']]) {
   test(`optional update ${JSON.stringify(key)} selects ${action}`, async () => {
     const terminal = new Terminal(), screen = new Update(spec, terminal);

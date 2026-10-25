@@ -236,3 +236,20 @@ test('Ctrl+C can leave captured history without interrupting its old active turn
   assert.equal(chat.done, true);
   assert.deepEqual(calls, []);
 });
+
+for (const [key, code] of [['C', 99], ['D', 100]]) {
+  for (const event of [2, 3]) {
+    test(`Ctrl+${key} event ${event} is not a second physical press`, t => {
+      const {chat, terminal} = create(t);
+      chat.controller.state.active = null;
+      chat.editor.setText('');
+      chat.ui.setFocus(chat.editor); chat.ui.start();
+      terminal.input(`\x1b[${code};5:1u`);
+      terminal.input(`\x1b[${code};5:${event}u`);
+      assert.equal(chat.done, false);
+      assert.match(chat.keys.text, /again to leave/);
+      terminal.input(`\x1b[${code};5:1u`);
+      assert.equal(chat.done, true);
+    });
+  }
+}

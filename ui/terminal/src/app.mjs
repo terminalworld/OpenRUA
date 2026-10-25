@@ -1,5 +1,5 @@
 import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, SelectList, Spacer, Text,
-  matchesKey} from '@earendil-works/pi-tui';
+  isKeyRepeat, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
 import {SettingChanges, agentCommands, commandsFor, notice, parseCommand, permissionChoices, status, typedAnswer} from './session.mjs';
 import {DialogHeading, PendingMessages, Transcript, Welcome, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
@@ -96,6 +96,8 @@ export class Chat {
       return false;
     });
     this.ui.addInputListener(data => {
+      if (isKeyRepeat(data) && (matchesKey(data, 'ctrl+c')
+          || (matchesKey(data, 'ctrl+d') && !this.editor.getText()))) return {consume: true};
       this.inputRevision++;
       if (this.panel) return;
       if (matchesKey(data, 'ctrl+d') && !this.editor.getText()) {

@@ -1,4 +1,4 @@
-import {Container, ProcessTerminal, ScrollView, Text, TuiAltScreen, VStack, matchesKey, truncateToWidth} from '@earendil-works/pi-tui';
+import {Container, ProcessTerminal, ScrollView, Text, TuiAltScreen, VStack, isKeyRelease, isKeyRepeat, matchesKey, truncateToWidth} from '@earendil-works/pi-tui';
 import {bold, muted, plain} from './view.mjs';
 
 class Renderer extends TuiAltScreen {
@@ -49,7 +49,11 @@ export function surface(terminal, host = null, area = 'body') {
     },
     setBody(component) { body = component; mount(); },
     setFooter(component) { bottom = component; mount(); },
-    addInputListener(callback) { const remove = renderer.addInputListener(callback); listeners.push(remove); return remove; },
+    addInputListener(callback) {
+      // Pi filters releases before focused components, after custom listeners.
+      const remove = renderer.addInputListener(data => isKeyRelease(data) ? undefined : callback(data));
+      listeners.push(remove); return remove;
+    },
     setNavigationHandler(callback) {
       renderer.navigation = callback;
       listeners.push(() => { if (renderer.navigation === callback) renderer.navigation = null; });
@@ -75,7 +79,8 @@ export class Screen {
     this.ui.setCloseHandler(() => this.finish());
     this.ui.addInputListener(data => {
       if (quitKeys && (matchesKey(data, 'ctrl+c') || matchesKey(data, 'ctrl+d'))) {
-        this.finish(); return {consume: true};
+        if (!isKeyRepeat(data)) this.finish();
+        return {consume: true};
       }
     });
   }
