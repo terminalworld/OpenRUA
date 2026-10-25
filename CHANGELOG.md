@@ -9,6 +9,14 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.30.1
+
+- Keep short service liveness checks separate from normal command timeouts,
+  so resource shutdown can finish before leaving or switching conversations.
+- Confirm a lost shutdown reply from explicitly closed retained records,
+  without repeating the shutdown request or returning to a dead connection.
+  Unconfirmed shutdown failures still block departure.
+
 ## 0.30.0
 
 - Give Ctrl+C Claude Code's interrupt priority: stop a running response while

@@ -366,6 +366,45 @@ def test_failed_resource_stop_cannot_open_another_conversation():
     assert 'driver shutdown unconfirmed' in screens[-2]['notice']
 
 
+@pytest.mark.parametrize('failed', ['snapshot', 'end'])
+def test_confirmed_closed_records_resolve_a_lost_shutdown_reply(failed):
+    calls = []
+
+    def unavailable():
+        calls.append(failed)
+        raise RuntimeError('session service unavailable or result unknown')
+
+    client = SimpleNamespace(url='http://127.0.0.1:1', token='token',
+        snapshot=unavailable if failed == 'snapshot' else lambda: {'state': {'closed': False}},
+        end=unavailable)
+    archive = SimpleNamespace(read_only=True, snapshot=lambda: {'state': {'closed': True}})
+    replies = iter([{'action': 'quit'}, {'action': 'answer', 'value': 'no'}])
+    assert launcher.chat(client, 'current', lambda: [], lambda _: None,
+        lambda _: next(replies), retained_session=lambda _: (archive, 'current')) == 0
+    assert calls == [failed]
+
+
+@pytest.mark.parametrize('readonly,closed', [(True, False), (False, True)])
+def test_unconfirmed_records_cannot_turn_a_failed_stop_into_success(readonly, closed):
+    def unavailable():
+        raise RuntimeError('shutdown reply lost')
+
+    client = SimpleNamespace(url='http://127.0.0.1:1', token='token',
+        snapshot=lambda: {'state': {'closed': False}}, end=unavailable)
+    archive = SimpleNamespace(read_only=readonly, snapshot=lambda: {'state': {'closed': closed}})
+    replies = iter([{'action': 'quit'}, {'action': 'answer', 'value': 'no'},
+                    {'action': 'quit', 'ended': True}])
+    screens = []
+
+    def screen(spec):
+        screens.append(spec)
+        return next(replies)
+
+    assert launcher.chat(client, 'current', lambda: [], lambda _: None, screen,
+        retained_session=lambda _: (archive, 'current')) == 0
+    assert 'shutdown reply lost' in screens[-1]['notice']
+
+
 def test_setup_checks_before_departure_and_does_not_launch_when_departure_is_cancelled():
     values = dict(robot='panda', sim='robosuite', bench='', agent='test', model='', name='fresh')
     calls = []

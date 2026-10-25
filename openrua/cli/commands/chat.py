@@ -82,7 +82,6 @@ def run(args) -> int:
         except RuntimeError as exc:
             raise UnavailableError(str(exc)) from exc
         client = connect(args)
-        client.timeout = 5
         from openrua.cli.commands.start import open_terminal
         return open_terminal(args.home, client, args.name)
     client = connect(args)

@@ -272,10 +272,25 @@ def chat(client, name, list_sessions, open_session, screen=run_screen, *, facts=
             if retained_session:
                 client, _ = retained_session(name)
         def leaving():
-            nonlocal departure_confirmed
+            nonlocal client, departure_confirmed
             if departure_confirmed:
                 return True
-            departure_confirmed = leave(client, name, screen, application=application, after_end=ended)
+            try:
+                departure_confirmed = leave(client, name, screen, application=application, after_end=ended)
+            except Exception:
+                # A lost reply does not undo closure. Read the recorded outcome
+                # without retrying end or starting another execution owner.
+                confirmed = False
+                if retained_session:
+                    try:
+                        recorded, _ = retained_session(name)
+                        confirmed = (getattr(recorded, 'read_only', False)
+                                     and recorded.snapshot()['state'].get('closed') is True)
+                    except Exception:
+                        pass
+                if not confirmed:
+                    raise
+                client, departure_confirmed = recorded, True
             return departure_confirmed
         def select(target):
             if target == name and not getattr(client, 'read_only', False):

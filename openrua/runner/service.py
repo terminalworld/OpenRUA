@@ -17,8 +17,7 @@ from openrua.sessions.client import Client
 def connect(endpoint: Path) -> Client:
     """Check liveness using the API, not just the endpoint file."""
     client = Client.from_file(endpoint)
-    client.timeout = 3
-    snapshot = client.snapshot()
+    snapshot = client.snapshot(timeout=3)
     if snapshot['state']['closed']:
         raise RuntimeError('session is closed; start with a new name')
     return client

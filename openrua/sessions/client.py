@@ -25,11 +25,11 @@ class Client:
         facts = json.loads(path.read_text())
         return cls(facts["url"], facts["token"])
 
-    def request(self, path: str, body: dict | None = None):
+    def request(self, path: str, body: dict | None = None, *, timeout: float | None = None):
         req = Request(self.url + path, data=json.dumps(body).encode() if body is not None else None,
                       headers={"Authorization": "Bearer " + self.token, "Content-Type": "application/json"})
         try:
-            with self._opener.open(req, timeout=self.timeout) as response:
+            with self._opener.open(req, timeout=self.timeout if timeout is None else timeout) as response:
                 return json.load(response)
         except HTTPError as exc:
             try:
@@ -40,8 +40,8 @@ class Client:
         except (URLError, TimeoutError) as exc:
             raise RuntimeError("session service unavailable or result unknown; inspect its state before retrying a command") from exc
 
-    def snapshot(self) -> dict:
-        return self.request("/api/session")
+    def snapshot(self, *, timeout: float | None = None) -> dict:
+        return self.request("/api/session", timeout=timeout)
 
     def workspace_list(self, path: str = "") -> dict:
         return self.request("/api/workspace/list?path=" + quote(path, safe=""))
