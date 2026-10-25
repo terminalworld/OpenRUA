@@ -32,18 +32,21 @@ class BridgeClient(Handle):
         # final verdict.
         self._rpc_lock = threading.Lock()
         self._rx = b""
+        self._cancelled = False
 
-    def _read_line(self, deadline: float, note: str) -> str:
+    def _read_line(self, deadline: float, note: str, cancelled=None) -> str:
         """One line via raw-fd reads (a TextIO buffer would hide bytes
         from select and fake a timeout)."""
         fd = self.proc.stdout.fileno()
         while b"\n" not in self._rx:
+            if cancelled is not None and cancelled():
+                raise InterruptedError('robot startup cancelled')
             remaining = deadline - time.time()
             if remaining <= 0:
                 raise RuntimeError(f"bridge rpc timeout {note}")
-            ready, _, _ = select.select([fd], [], [], remaining)
+            ready, _, _ = select.select([fd], [], [], min(.1, remaining) if cancelled else remaining)
             if not ready:
-                raise RuntimeError(f"bridge rpc timeout {note}")
+                continue
             chunk = os.read(fd, 65536)
             if not chunk:
                 raise RuntimeError(f"bridge died mid-rpc {note}")
@@ -51,7 +54,7 @@ class BridgeClient(Handle):
         line, _, self._rx = self._rx.partition(b"\n")
         return line.decode()
 
-    def rpc(self, obj: dict, timeout_note: str = "", timeout_s: float = 900.0) -> dict:
+    def rpc(self, obj: dict, timeout_note: str = "", timeout_s: float = 900.0, *, cancelled=None) -> dict:
         """One request/response, serialized, bounded, id-matched: a late
         answer to an abandoned (timed-out) request is discarded instead
         of being taken for the next reply."""
@@ -60,22 +63,28 @@ class BridgeClient(Handle):
         deadline = time.time() + timeout_s
         note = f"{obj.get('cmd')} {timeout_note}"
         with self._rpc_lock:
-            self.proc.stdin.write(json.dumps({**obj, "id": rid}) + "\n")
-            self.proc.stdin.flush()
-            while True:
-                resp = json.loads(self._read_line(deadline, note))
-                if resp.get("id") in (rid, None):
-                    return resp
-                print(f"[rpc] drained stale answer (id {resp.get('id')}) "
-                      f"while waiting for {note}", file=sys.stderr, flush=True)
+            try:
+                if cancelled is not None and cancelled():
+                    raise InterruptedError('robot startup cancelled')
+                self.proc.stdin.write(json.dumps({**obj, "id": rid}) + "\n")
+                self.proc.stdin.flush()
+                while True:
+                    resp = json.loads(self._read_line(deadline, note, cancelled))
+                    if resp.get("id") in (rid, None):
+                        return resp
+                    print(f"[rpc] drained stale answer (id {resp.get('id')}) "
+                          f"while waiting for {note}", file=sys.stderr, flush=True)
+            except InterruptedError:
+                self._cancelled = True
+                raise
 
-    def wait_ready(self, timeout_s: float = 1800.0) -> None:
+    def wait_ready(self, timeout_s: float = 1800.0, *, cancelled=None) -> None:
         """The control line answers once the whole robot is up (env,
         graph and MoveIt). The bound is generous: concurrent software
         renders legitimately take minutes; it turns a dead boot into a
         clean error, not a speed limit."""
         try:
-            if self.rpc({"cmd": "success"}, "boot", timeout_s=timeout_s).get("ok"):
+            if self.rpc({"cmd": "success"}, "boot", timeout_s=timeout_s, cancelled=cancelled).get("ok"):
                 return
         except (RuntimeError, json.JSONDecodeError) as e:
             raise TimeoutError(f"bridge not ready: {e}") from e
@@ -88,6 +97,11 @@ class BridgeClient(Handle):
     def shutdown(self) -> None:
         """Ask the bridge to stop; if it does not answer in seconds,
         remove the container."""
+        if self._cancelled:
+            # A booting bridge cannot answer shutdown until initialization ends.
+            down(self.name)
+            self.proc.wait(timeout=30)
+            return
         try:
             self.rpc({"cmd": "shutdown"}, timeout_s=15.0)
             self.proc.wait(timeout=30)

@@ -46,6 +46,7 @@ To come back, `openrua --resume` lists this project's conversations, running one
 screen creates and switches to a new conversation. Before leaving, choose whether
 to keep execution resources running: **No** is selected by default and stops the
 previous session's owned resources; **Yes** keeps them running in the background.
+A robot that is still starting is stopped without waiting for it to become ready.
 Project files and conversation history are retained either way. The same choice
 appears on terminal exit and when switching through `/resume`. Cancelling setup
 or history selection before confirming departure leaves the current session

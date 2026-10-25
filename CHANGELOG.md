@@ -9,6 +9,14 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.30.3
+
+- Cancel robot readiness and scene initialization when ending a session during
+  startup, then join the existing owner's cleanup. Stop no longer waits for
+  the robot to finish starting before releasing it.
+- Cancel only the owned readiness probes or simulation resources. Existing
+  robot services and configured real-driver shutdown grace remain unchanged.
+
 ## 0.30.2
 
 - Count physical presses for the double exit shortcut. Key releases and held
