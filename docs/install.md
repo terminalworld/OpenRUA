@@ -291,6 +291,9 @@ choice of the simulator's native scene. See [projects](projects.md).
 in `~/.openrua/config.yaml`. The user file also accepts sandbox options such as
 rootless Podman's `--userns=keep-id`. Robot, simulator and benchmark defaults
 belong to the project and are not accepted in this file.
+`openrua config schema --user` describes the personal settings, including when
+the current file is invalid. Fix the named file before restarting; the accepted
+top-level keys are `agent`, `agents` and `sandbox`.
 
 ```sh
 openrua config set --user --agent codex --model MODEL
