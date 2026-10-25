@@ -584,25 +584,28 @@ test('a file preview names the file on this computer and how to open it', async 
   assert.match(shown, /Ctrl\+click in Cursor or VS Code/);
 });
 
-test('the welcome says where you are, in OpenRUA\'s words, and welcomes you back', async () => {
+test('the branded welcome identifies the project without claiming a connection', async () => {
   const {Welcome} = await import('../src/view.mjs');
   const plainText = lines => lines.join('\n').replace(/\x1b\[[0-9;]*m/g, '');
-  const sim = new Welcome('s1', {robot: 'panda', robot_model: 'Franka Panda', simulator: 'robosuite',
-    backend: 'sim', agent: 'claude-code', agent_title: 'Claude Code', task: 'lift the red cube'});
-  let shown = plainText(sim.render(80));
-  assert.match(shown, /Welcome to OpenRUA/);
-  assert.match(shown, /project uses a Franka Panda, simulated in/);
-  assert.doesNotMatch(shown, /connected|still up/);
-  assert.match(shown, /Try "what do you see\?"/);
-  assert.match(shown, /"lift the red cube"/);
-  assert.match(shown, /Esc stops the robot/);
-  assert.ok(sim.render(80).slice(0, -1).every(line => line.replace(/\x1b\[[0-9;]*m/g, '').length === 62));
-  sim.returning = true;
-  assert.match(plainText(sim.render(80)), /Welcome back to OpenRUA[\s\S]*Continue your Franka Panda project/);
+  const welcome = new Welcome('s1', {robot: 'panda', robot_model: 'Franka Panda', simulator: 'robosuite',
+    backend: 'sim', agent: 'claude-code', agent_title: 'Claude Code', model: 'native-model',
+    project: '/work/my-project', version: '1.2.3', canSetup: true});
+  for (const width of [80, 40]) {
+    const lines = welcome.render(width), shown = plainText(lines);
+    assert.match(shown, /╭ OpenRUA v1.2.3/);
+    assert.match(shown, /Welcome to OpenRUA/);
+    assert.match(shown, /Claude Code[\s\S]*native-model/);
+    assert.match(shown, /Simulation[\s\S]*Franka Panda[\s\S]*robosuite/);
+    assert.match(shown, /my-project/);
+    assert.match(shown, /\/setup New session/);
+    assert.doesNotMatch(shown, /connected|still up/);
+    assert.ok(lines.every(line => line.replace(/\x1b\[[0-9;]*m/g, '').length <= width));
+  }
+  welcome.returning = true;
+  assert.match(plainText(welcome.render(80)), /Welcome back to OpenRUA/);
   const real = plainText(new Welcome('s2', {robot: './arm.yaml', robot_model: 'Franka Panda',
     backend: 'real', agent: 'codex', agent_title: 'Codex'}).render(80));
-  assert.match(real, /your Franka Panda project with Codex/);
-  assert.match(real, /stop button within reach/);
+  assert.match(real, /Real robot[\s\S]*Franka Panda/);
   assert.match(plainText(new Welcome('old', {}, true).render(80)), /past conversation, read-only/);
 });
 
@@ -1174,4 +1177,46 @@ test('fixed-model agent settings never render a foreign native model catalog', a
   assert.match(shown, /configured-model/);
   assert.match(shown, /preview plugin uses the model configured in its agent manifest/);
   assert.doesNotMatch(shown, /Foreign native model|foreign-native-model|Enter a model ID|Reload native models/);
+});
+
+test('/setup opens local setup without sending a message or ending the owner', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 10, canSetup: true});
+  const running = chat.run();
+  await until(client, state => state.connected);
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(resolve => setTimeout(resolve, 10));
+  await chat.submit('/setup');
+  assert.deepEqual(await running, {action: 'setup'});
+  const state = (await client.snapshot()).state;
+  assert.equal(state.closed, false);
+  assert.equal(state.messages.length, 0);
+  assert.equal((await call({op: 'writes'})).writes.some(row => row.submit), false);
+});
+
+test('welcome stays above restored history until a message is sent, and yields space to dialogs', {timeout: 15000}, async t => {
+  const {client, call} = await fixture(t);
+  const previous = await client.command('enqueue', {client_id: 'previous', request_id: 'one', text: 'Previous inspection'});
+  await call({op: 'frame', frame: {kind: 'text_delta', turn_id: previous.id,
+    data: {item_id: 'answer', text: Array.from({length: 80}, (_, i) => `Recorded observation ${i}`).join('\n')}}});
+  await call({op: 'frame', frame: {kind: 'turn_finished', turn_id: previous.id, data: {status: 'completed'}}});
+  await until(client, state => !state.active);
+  const terminal = new Terminal();
+  const chat = new Chat(client, {terminal, pollMs: 10, canSetup: true});
+  const running = chat.run();
+  await until(client, state => state.connected);
+  for (let i = 0; i < 100 && !terminal.input; i++) await new Promise(resolve => setTimeout(resolve, 10));
+  await chat.refresh();
+  assert.equal(chat.headingWelcome, true);
+  assert.equal(chat.welcome.returning, true);
+  assert.match(chat.transcript.render(80).join('\n'), /Recorded observation 79/);
+  const panel = chat.dialog(new Transcript());
+  assert.equal(chat.headingWelcome, false);
+  panel.hide();
+  assert.equal(chat.headingWelcome, true);
+  await chat.submit('Inspect the project');
+  assert.equal(chat.headingWelcome, false);
+  assert.equal((await client.snapshot()).state.messages.length, 2);
+  await chat.submit('/setup');
+  assert.deepEqual(await running, {action: 'setup'});
 });

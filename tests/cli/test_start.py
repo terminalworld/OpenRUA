@@ -528,3 +528,32 @@ def test_entered_external_plugin_can_explicitly_select_api_in_setup(tmp_path, pl
     assert saved.agents[manifest].auth.mode == 'api'
     assert saved.agents[manifest].auth.key_file == str(key)
     assert key.read_text() not in (tmp_path / 'config.yaml').read_text()
+
+
+def test_chat_setup_uses_fresh_launch_options_and_returns_the_new_session(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from openrua.terminal import launcher
+    project = Path.cwd()
+    old = SimpleNamespace(url='http://127.0.0.1:1', token='old')
+    new = SimpleNamespace(url='http://127.0.0.1:2', token='new')
+    monkeypatch.setattr(start.history, 'project_directory', lambda home, name: str(project))
+    monkeypatch.setattr(start.history, 'new_id', lambda: 'fresh-session')
+    seen = []
+    def configure(args, selected, application, **kwargs):
+        seen.append((args, selected, application, kwargs))
+        return new, args.name
+    monkeypatch.setattr(start, 'setup_project', configure)
+    def chat(client, name, *args, **kwargs):
+        assert (client, name) == (old, 'old-session')
+        assert kwargs['setup_session']('old-session') == (new, 'fresh-session')
+        return 0
+    monkeypatch.setattr(launcher, 'chat', chat)
+    host = SimpleNamespace(screen=lambda _: pytest.fail('trusted project needs no prompt'))
+    assert start.open_terminal(tmp_path, old, 'old-session', application=host) == 0
+    request, selected, application, context = seen[0]
+    assert selected == project and application is host
+    assert request.workspace == str(project) and request.setup
+    assert request.name == 'fresh-session'
+    assert request.permissions is None and request.task_suite is None and request.task_id is None
+    assert request.resume is None
+    assert context == {'previous_session': 'old-session'}

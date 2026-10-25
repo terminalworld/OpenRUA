@@ -9,6 +9,14 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.27.2
+
+- Add `/setup` to configure and open a new conversation inside the current
+  terminal. Keep the previous conversation running and available in `/resume`;
+  cancelling setup returns to it.
+- Show an OpenRUA welcome card with project, environment and agent context on
+  entry. Collapse it after the first message so the conversation has room.
+
 ## 0.27.1
 
 - Keep native model catalogs scoped to the selected agent. Clear cached choices

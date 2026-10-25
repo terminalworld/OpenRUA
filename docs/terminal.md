@@ -86,7 +86,11 @@ Preparation logs appear within the same interface; failures return to setup for
 editing and retry. Native sign-in and sudo prompts temporarily use the ordinary
 terminal, then return to OpenRUA.
 
-Use `openrua --setup`, `openrua config set`, or `.openrua/settings.json`
+Use `/setup` in chat to review project settings and start a fresh conversation
+within the same terminal. The previous session stays running and available in
+`/resume`; cancelling returns to it. The new conversation uses the selected
+environment and agent with its own context. You can also use `openrua --setup`,
+`openrua config set`, or `.openrua/settings.json`
 to change project settings. Each ordinary launch creates a new ID in the current project
 directory; the first use asks whether you trust it. `--workspace DIR` selects
 another project. `/resume` in chat, the setup menu's resume entry, or
@@ -105,9 +109,11 @@ fallback. Startup failures keep their logs in `~/.openrua/launches/NAME/`.
 
 ## Work in the conversation
 
-A conversation opens with a welcome: which robot you are on, simulated or
-real, which agent is at the controls, and a few things to try. It is
-OpenRUA's own greeting; the agent has not looked at anything yet.
+A conversation opens with an OpenRUA welcome card showing the project,
+environment and coding agent. It stays visible before your first message,
+then collapses to a compact project heading when you send. Connection status
+appears separately below; the welcome does not imply the agent has inspected
+the robot.
 
 | Key or command | Action |
 | --- | --- |
@@ -125,6 +131,7 @@ OpenRUA's own greeting; the agent has not looked at anything yet.
 | `/model` | Open native model choices or enter a model ID; `/model <name>` changes the next-turn setting directly |
 | The agent's own commands | `/compact`, `/clear`, and what else the agent lists (Claude Code's skills and custom commands) go to the agent, as in its own terminal; `/help` lists them |
 | `/retry` | Retry an unconfirmed send with its original request ID |
+| `/setup` | Configure and open a new conversation, retaining the current session in history; cancel to return |
 | `/resume` | Resume this project's conversations; `--all` searches all projects |
 | `/end` | Confirm ending execution, retaining history and workspace |
 | Ctrl+D on empty input or `/quit` | Choose Keep session running or End session, then confirm with Enter; Escape keeps it running |
@@ -281,6 +288,6 @@ model configured in their manifest and explain that limitation.
 
 Setup preparation shows stages and elapsed time. Press L to inspect live details;
 full build logs remain available at the reported path. Every project conversation
-has a short welcome, environment context and help hint. Saved projects reuse their
-selection on ordinary startup; use `openrua --setup` to review it or `--resume`
+opens with a welcome card that collapses after you send a message. Saved projects reuse their
+selection on ordinary startup; use `/setup` or `openrua --setup` to review it, or `--resume`
 to resume a retained conversation.

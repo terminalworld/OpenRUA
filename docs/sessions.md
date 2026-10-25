@@ -42,6 +42,12 @@ agent available to inspect logs and work on the project.
 To come back, `openrua --resume` lists this project's conversations, running ones first;
 `openrua --resume --all` includes other projects and older unassigned sessions.
 `openrua --name NAME` (with `--gui` or `--cli`) reconnects to one by name.
+`/setup` opens project configuration inside terminal chat. Starting from that
+screen creates and switches to a new conversation; the previous session stays
+running and can be opened through `/resume`. Cancelling returns to the previous
+conversation. Model and permission menus still adjust the current conversation's
+supported next-turn settings.
+
 Startup options cannot change a running conversation. The agent's original terminal (`openrua up`,
 then `openrua agent`) is a separate session that cannot take over a shared
 conversation, and `openrua exec` holds no conversation at all

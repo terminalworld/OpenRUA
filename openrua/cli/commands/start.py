@@ -6,7 +6,7 @@ import argparse
 import sys
 from pathlib import Path
 
-from openrua import agents, config, doctor
+from openrua import __version__, agents, config, doctor
 from openrua.cli.commands import chat, connect, login, session, up
 from openrua.config import paths, projects, settings, startup
 from openrua.cli import agent_settings, docker_setup, updates, workspace
@@ -249,14 +249,74 @@ def reconnect(home, name, application=None):
     return open_history(home, name)
 
 
+def setup_project(args, selected: Path, application=None, *, values=None, models=None, previous_session=None):
+    """Configure and start a fresh session using the project's existing setup flow."""
+    if values is None:
+        values, models = values_for(args)
+    def interact(title):
+        return (lambda operation: application.perform(title, operation, native=True)) if application else None
+    environments = startup.verified_environments()
+    if any(paths.is_path(values[key]) for key in startup.FIELDS if values[key]):
+        environments = [dict(selection={key: values[key] for key in startup.FIELDS}), *environments]
+    if values['robot'] in startup.options(environments, {}, 'robot'):
+        values = startup.select(environments, values, 'robot', values['robot'])
+    choices = {'agent': [entry.name for entry in paths.available('agents')
+                         if 'conversation' in agents.get(entry.name, args.home).capabilities]}
+    choices.update({field: startup.options(environments, values, field) for field in startup.FIELDS})
+    from openrua.terminal.launcher import setup as terminal_setup
+    result = terminal_setup(values, choices, str(projects.settings_path(selected)),
+                            lambda values: save_guided_values(args.home, values, selected),
+                            lambda values: check_values(args.home, values),
+                            lambda values: launch(args, {**values, **projects.selection(selected)}), models,
+                            lambda: history.entries(args.home, selected),
+                            lambda name: reconnect(args.home, name, application),
+                            list_all=lambda: history.entries(args.home), scope=str(selected),
+                            **({'screen': application.screen, 'application': application} if application else {}),
+                            environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress, limit_overrides(args), environment_only=True),
+                            authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']])), project=selected),
+                            resolve_agent=lambda name: authentication_choices(args.home, [name], project=selected)[name],
+                            ready=lambda values: docker_setup.ensure(**({'interact': interact('Docker setup')} if application else {})),
+                            save_connect=lambda values: connect.save_values(args.home, values),
+                            sign_in=lambda values: login.ensure(args.home, values['agent'] or None,
+                                                                values.get('auth_mode', 'native'), **({'interact': interact('Agent sign-in')} if application else {})),
+                            resolve_values=lambda incoming: setup_values(selected, incoming),
+                            resolve_models=lambda incoming, intent: discover_models(args.home, incoming, intent,
+                                application, interact),
+                            previous_session=previous_session,
+                            connect=lambda values: connect.launch(args.home,
+                                                                  agent=values['agent'] or None,
+                                                                  model=values['model'] or None, project=selected))
+    return result
+
+
 def open_terminal(home, client, name: str, frontend: str = 'pi', application=None) -> int:
+    if application is None:
+        from openrua.terminal.application import Application
+        from openrua.terminal.launcher import runtime, entrypoint
+        with Application(runtime, entrypoint) as host:
+            return open_terminal(home, client, name, frontend, host)
     from openrua.terminal.launcher import chat as terminal_chat
     current = {'project': history.project_directory(home, name) or str(Path.cwd().resolve())}
     def select(name):
         result = reconnect(home, name, application)
         current['project'] = history.project_directory(home, name) or current['project']
         return result
+    def configure(name):
+        project = history.project_directory(home, name) or current['project']
+        if not Path(project).is_dir():
+            raise UsageError('this project directory is missing', hint='open an existing project with openrua --setup')
+        selected = workspace.choose(project, home, **({'screen': application.screen} if application else {}))
+        if selected is None:
+            return None
+        from openrua.cli import build_parser
+        args = build_parser().parse_args(['--home', str(home), '--workspace', str(selected), '--setup'])
+        args.name = history.new_id()
+        result = setup_project(args, selected, application, previous_session=name)
+        if result:
+            current['project'] = history.project_directory(home, result[1]) or str(selected)
+        return result
     return terminal_chat(client, name, lambda: history.entries(home, Path(current['project'])), select,
+                         setup_session=configure, version=__version__,
                          facts=lambda name: history.robot_facts(home, name),
                          list_all=lambda: history.entries(home), scope=current['project'],
                          **({'screen': application.screen} if application else {}))
@@ -377,36 +437,7 @@ def _run(args, application=None) -> int:
         if not sys.stdin.isatty() or not sys.stdout.isatty():
             raise UsageError('terminal setup needs an interactive terminal',
                              hint='use openrua config set or edit config.yaml, then use --gui or --cli')
-        environments = startup.verified_environments()
-        if any(paths.is_path(values[key]) for key in startup.FIELDS if values[key]):
-            environments = [dict(selection={key: values[key] for key in startup.FIELDS}), *environments]
-        if values['robot'] in startup.options(environments, {}, 'robot'):
-            values = startup.select(environments, values, 'robot', values['robot'])
-        choices = {'agent': [entry.name for entry in paths.available('agents')
-                             if 'conversation' in agents.get(entry.name, args.home).capabilities]}
-        choices.update({field: startup.options(environments, values, field) for field in startup.FIELDS})
-        from openrua.terminal.launcher import setup as terminal_setup
-        result = terminal_setup(values, choices, str(projects.settings_path(selected)),
-                                lambda values: save_guided_values(args.home, values, selected),
-                                lambda values: check_values(args.home, values),
-                                lambda values: launch(args, {**values, **projects.selection(selected)}), models,
-                                lambda: history.entries(args.home, selected),
-                                lambda name: reconnect(args.home, name, application),
-                                list_all=lambda: history.entries(args.home), scope=str(selected),
-                                **({'screen': application.screen, 'application': application} if application else {}),
-                                environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress, limit_overrides(args), environment_only=True),
-                                authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']])), project=selected),
-                                resolve_agent=lambda name: authentication_choices(args.home, [name], project=selected)[name],
-                                ready=lambda values: docker_setup.ensure(**({'interact': interact('Docker setup')} if application else {})),
-                                save_connect=lambda values: connect.save_values(args.home, values),
-                                sign_in=lambda values: login.ensure(args.home, values['agent'] or None,
-                                                                    values.get('auth_mode', 'native'), **({'interact': interact('Agent sign-in')} if application else {})),
-                                resolve_values=lambda incoming: setup_values(selected, incoming),
-                                resolve_models=lambda incoming, intent: discover_models(args.home, incoming, intent,
-                                    application, interact),
-                                connect=lambda values: connect.launch(args.home,
-                                                                      agent=values['agent'] or None,
-                                                                      model=values['model'] or None, project=selected))
+        result = setup_project(args, selected, application, values=values, models=models)
         if result is None:
             return 0
         client, name = result

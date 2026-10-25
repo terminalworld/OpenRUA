@@ -284,3 +284,38 @@ def test_switching_agents_clears_the_previous_native_model_catalog():
     assert screens[2]['values']['agent'] == 'second'
     assert screens[2]['values']['model'] == 'second-model'
     assert screens[2]['model_choices'] == []
+
+
+def test_session_setup_cancel_and_failure_return_to_the_same_conversation():
+    initial = SimpleNamespace(url='http://127.0.0.1:1234', token='token')
+    replies = iter([{'action': 'setup'}, {'action': 'setup'}, {'action': 'quit'}])
+    screens, calls = [], []
+    def configure(name):
+        calls.append(name)
+        if len(calls) == 2:
+            raise RuntimeError('Project setup failed')
+        return None
+    def screen(spec):
+        screens.append(spec)
+        return next(replies)
+    assert launcher.chat(initial, 'old', lambda: [], lambda _: None, screen,
+                         setup_session=configure) == 0
+    assert calls == ['old', 'old']
+    assert [spec['name'] for spec in screens] == ['old', 'old', 'old']
+    assert all(spec['can_setup'] for spec in screens)
+    assert 'Project setup failed' in screens[-1]['notice']
+
+
+def test_session_setup_enters_the_new_session_and_history_can_return_to_the_old_one():
+    old = SimpleNamespace(url='http://127.0.0.1:1234', token='old')
+    new = SimpleNamespace(url='http://127.0.0.1:5678', token='new')
+    replies = iter([{'action': 'setup'}, {'action': 'history'},
+                    {'action': 'select', 'id': 'old'}, {'action': 'quit'}])
+    screens = []
+    def screen(spec):
+        screens.append(spec)
+        return next(replies)
+    assert launcher.chat(old, 'old', lambda: [{'id': 'old'}], lambda _: (old, 'old'), screen,
+                         setup_session=lambda name: (new, 'new')) == 0
+    assert [spec['name'] for spec in screens if spec['mode'] == 'chat'] == ['old', 'new', 'old']
+    assert [spec['connection']['token'] for spec in screens if spec['mode'] == 'chat'] == ['old', 'new', 'old']

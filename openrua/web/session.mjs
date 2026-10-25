@@ -9,6 +9,7 @@
 // the page retries an unconfirmed send with its Send button.
 export const COMMANDS = [
   {name: 'help', description: 'Keyboard shortcuts and commands', clients: ['terminal', 'browser']},
+  {name: 'setup', description: 'Configure a new session and keep this conversation in history', clients: ['terminal']},
   {name: 'tools', description: 'Expand or collapse a tool result', clients: ['terminal']},
   {name: 'files', description: 'Browse saved workspace files and images', clients: ['terminal', 'browser']},
   {name: 'project', description: 'Project skills, reviews and accumulation settings', clients: ['terminal']},

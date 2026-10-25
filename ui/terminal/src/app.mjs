@@ -26,10 +26,13 @@ const elapsed = since => {
 // The component composition follows Pi's chat-simple example and interactive UI:
 // transcript, status, editor, completion; application actions stay callbacks.
 export class Chat {
-  constructor(client, {terminal = new ProcessTerminal(), pollMs = 350, history = false, name = '', facts = {}, host = null} = {}) {
+  constructor(client, {terminal = new ProcessTerminal(), pollMs = 350, history = false, name = '', facts = {}, host = null,
+    canSetup = false, version = '', initialNotice = ''} = {}) {
     this.client = client;
     this.ending = false; this.endConfirmed = false;
     this.history = history; this.result = {action: 'quit'};
+    this.canSetup = canSetup; this.version = version; this.showWelcome = !client.readOnly;
+    this.initialNotice = initialNotice;
     this.ui = surface(terminal, host, 'footer');
     this.ui.setHeading('OpenRUA', facts.project || name);
     this.facts = facts;
@@ -55,7 +58,7 @@ export class Chat {
     };
     this.controller = new Controller(client, this.transcript);
     this.status = new Text('Connecting…', 0, 0);
-    this.notice = new Text('', 0, 0);
+    this.notice = new Text(plain(initialNotice), 0, 0);
     this.projectStatus = new Text('', 0, 0);
     this.pendingMessages = new PendingMessages();
     this.editor = new Editor(this.ui, editorTheme);
@@ -76,10 +79,12 @@ export class Chat {
     this.panels = [];
     this.shownQuestions = new Set();
     this.questionDrafts = new Map();
-    this.welcome = new Welcome(name, facts, client.readOnly);
+    this.welcome = new Welcome(name, {...facts, version, canSetup}, client.readOnly);
     const conversation = new Container();
-    conversation.addChild(this.welcome); conversation.addChild(this.transcript);
+    if (client.readOnly) conversation.addChild(this.welcome);
+    conversation.addChild(this.transcript);
     this.ui.setBody(conversation);
+    this.updateHeading();
     this.ui.addChild(new Spacer(1)); this.ui.addChild(this.status);
     this.ui.addChild(this.pendingMessages); this.ui.addChild(this.projectStatus); this.ui.addChild(this.notice); this.ui.addChild(this.editor);
     this.keys = new Text('', 0, 0);
@@ -109,6 +114,14 @@ export class Chat {
 
   say(message) { if (!this.done) { this.notice.setText(plain(message)); this.ui.requestRender(); } }
 
+  updateHeading() {
+    const welcome = this.showWelcome && !this.panel;
+    if (this.headingWelcome === welcome) return;
+    this.headingWelcome = welcome;
+    if (welcome) this.ui.setHeader(this.welcome);
+    else this.ui.setHeading('OpenRUA', this.facts.project || this.welcome.name);
+  }
+
   // A dialog takes the editor's place below the transcript, the way a coding
   // agent's own menus do: nothing is drawn over the conversation, and while one
   // is open Escape closes it instead of meaning interrupt. Dialogs stack: a
@@ -135,8 +148,10 @@ export class Chat {
       }
       this.ui.requestRender();
       this.updateKeys();
+      this.updateHeading();
     }};
     this.panels.push(handle);
+    this.updateHeading();
     this.updateKeys();
     this.ui.setFocus(component); this.ui.requestRender();
     return handle;
@@ -296,7 +311,8 @@ export class Chat {
     await this.controller.refresh();
     if (this.done || this.ending) return;
     const state = this.controller.state;
-    this.welcome.facts = {...this.facts, model: state.settings?.model || this.facts.model};
+    this.welcome.facts = {...this.facts, version: this.version, canSetup: this.canSetup,
+      model: state.settings?.model || this.facts.model};
     this.pendingMessages.messages = state.messages;
     if (this.welcome.seen === undefined) {
       // Coming back to a conversation that already has messages.
@@ -397,6 +413,7 @@ export class Chat {
       if (command?.kind === 'ours') {
         await this.handlers()[command.name](command.args);
       } else if (command?.kind === 'agent') {
+        this.showWelcome = false; this.updateHeading();
         await this.controller.send(text.trim());
         this.editor.addToHistory(text);
         await this.refresh();
@@ -405,9 +422,11 @@ export class Chat {
       } else if (this.projectDraft === text && Object.values(this.controller.state?.requests ?? {}).some(r => r.status === 'pending')) {
         throw new Error('Answer the pending agent question before sending this skill merge request. The draft is kept.');
       } else if (this.answerTyped(text)) {
+        this.showWelcome = false; this.updateHeading();
         this.editor.addToHistory(text);
         this.say('');
       } else {
+        this.showWelcome = false; this.updateHeading();
         await this.controller.send(text);
         this.editor.addToHistory(text);
         this.say('');
@@ -476,6 +495,12 @@ export class Chat {
           + `then press Watch under Cameras.\n${this.client.token}\nThe key opens this session: keep it to yourself.`);
       },
       quit: async () => { this.stop(); },
+      setup: async args => {
+        if (!this.canSetup) throw new Error('Open this project with openrua --setup to configure a new session.');
+        if (args.length) throw new Error('Use /setup to configure a new session.');
+        if (this.controller.pending) throw new Error('Resolve the unconfirmed send before opening setup.');
+        this.result = {action: 'setup'}; this.stop();
+      },
       resume: async (args) => {
         if (!this.history) throw new Error('Use openrua --resume to select history.');
         if (this.controller.pending) throw new Error('Resolve the unconfirmed send before changing conversations.');
@@ -525,6 +550,7 @@ export class Chat {
 
   async run() {
     await this.refresh();
+    if (this.initialNotice) this.say(this.initialNotice);
     if (this.done) return this.result;
     this.ui.setFocus(this.panel?.component ?? this.editor);
     this.ui.start();

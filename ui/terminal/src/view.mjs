@@ -52,53 +52,43 @@ export class Welcome {
 
   invalidate() {}
 
-  lines() {
-    const f = this.facts;
-    const agent = plain(f.agent_title || f.agent || 'your coding agent');
-    const model = plain(f.robot_model || f.robot || 'robot');
-    const a = /^[aeiou]/i.test(model) ? 'an' : 'a';
-    const real = f.backend === 'real';
-    let hello;
-    if (f.interactive) hello = `${agent} is ready to work on your ${model} project. The connection status appears below; you can keep chatting while the robot connects or is being repaired.`;
-    else if (f.backend === 'connect') hello = `Hi! Let's connect your robot. ${agent} does the work with you, and OpenRUA checks each step.`;
-    else if (!f.robot) hello = `Hi! ${agent} is ready.`;
-    else if (this.returning) hello = `Continue your ${model} project with ${agent}. Check the connection status below.`;
-    else if (real) hello = `Work on your ${model} project with ${agent}. Check the connection status below.`;
-    else hello = `Your project uses ${a} ${model}, simulated in ${configName(f.simulator)}, with ${agent}. Check the connection status below.`;
-    const paragraphs = [hello];
-    if (real) paragraphs.push('Keep the stop button within reach.');
-    if (f.backend !== 'connect') {
-      const tries = ['"what do you see?"'].concat(f.task ? [`"${plain(f.task)}"`] : []);
-      paragraphs.push(tries.map((t, i) => (i ? '    ' : 'Try ') + t).join('\n'));
-    }
-    paragraphs.push(muted(`/help for commands · Esc ${f.backend === 'connect' ? 'interrupts' : 'stops the robot'}`));
-    return paragraphs;
-  }
-
   render(width) {
     const f = this.facts;
-    if (f.interactive && !this.readOnly) return [
-      bold(this.returning ? 'Welcome back to OpenRUA' : 'Welcome to OpenRUA'),
-      ...wrapTextWithAnsi([f.robot_model || configName(f.robot), configName(f.simulator),
-        configName(f.benchmark)].filter(Boolean).join(' · '), width).map(muted),
-      muted('/help for commands · Esc stops the robot'), ''];
-    const scene = [configName(f.benchmark), f.suite && (f.task_id != null ? `${f.suite} #${f.task_id}` : f.suite)]
-      .filter(Boolean).map(plain).join(' / ');
-    const below = muted('  ' + [this.name && `session ${plain(this.name)}`, f.model && plain(f.model), scene]
-      .filter(Boolean).join(' · '));
     if (this.readOnly) return [`${bold('OpenRUA')}${muted(` · ${plain(this.name)} · a past conversation, read-only`)}`];
-    const inner = Math.max(20, Math.min(width, 62) - 4);
-    const body = [`${accent('✻')} ${bold(this.returning ? 'Welcome back to OpenRUA' : 'Welcome to OpenRUA')}`];
-    for (const paragraph of this.lines()) {
-      body.push('');
-      for (const line of paragraph.split('\n')) body.push(...wrapTextWithAnsi(line, inner - 2).map(l => '  ' + l));
+    if (width < 16) return [truncateToWidth(bold('OpenRUA'), width)];
+    const inside = Math.max(1, Math.min(width, 88) - 4);
+    const title = ` OpenRUA${f.version ? ' v' + plain(f.version) : ''} `;
+    const top = accent('╭') + accent(truncateToWidth(title, inside + 2))
+      + accent('─'.repeat(Math.max(0, inside + 2 - visibleWidth(title)))) + accent('╮');
+    const agent = [plain(f.agent_title || f.agent || 'Coding agent'), plain(f.model || 'Native model')].join(' · ');
+    const runtime = [f.backend === 'real' ? 'Real robot' : f.backend === 'connect' ? 'Robot setup'
+      : f.simulator || f.backend === 'sim' ? 'Simulation' : 'Robot project',
+      plain(f.robot_model || configName(f.robot))].filter(Boolean).join(' · ');
+    const scene = [configName(f.simulator), configName(f.benchmark)].filter(Boolean).join(' · ');
+    const environment = [runtime, scene].filter(Boolean).join(' · ');
+    const path = plain(f.project || f.workspace || '');
+    const parts = path.split(/[\\/]/);
+    let project = path;
+    while (visibleWidth(project) > inside && parts.length > 1) { parts.shift(); project = '…/' + parts.join('/'); }
+    const greeting = this.returning ? 'Welcome back to OpenRUA' : 'Welcome to OpenRUA';
+    const commands = f.canSetup ? '/setup New session · /help Commands' : '/help Commands · Esc Interrupt';
+    const rows = [];
+    if (inside >= 56) {
+      const mark = ['   ╭─╮  ', ' ╭─┴─┴─╮', ' │ • • │', ' ╰─────╯'];
+      const text = [bold(greeting), muted('Your robot, your code.'), agent, muted(environment)];
+      for (let i = 0; i < mark.length; i++) rows.push(accent(mark[i]) + '   ' + truncateToWidth(text[i], inside - 11));
+    } else {
+      rows.push(accent('[• •] ') + bold(greeting),
+        agent, muted(runtime));
+      if (scene) rows.push(muted(scene));
     }
-    const edge = muted('│');
-    const box = [muted('╭' + '─'.repeat(inner + 2) + '╮'),
-      ...body.map(line => `${edge} ${line}${' '.repeat(Math.max(0, inner - visibleWidth(line)))} ${edge}`),
-      muted('╰' + '─'.repeat(inner + 2) + '╯')];
-    if (f.project) box.push(muted(`  project ${plain(f.project)}`));
-    return below.trim() ? box.concat(below) : box;
+    if (project) rows.push(muted(project));
+    rows.push(muted(commands));
+    const edge = accent('│');
+    return [top, ...rows.map(row => {
+      const text = truncateToWidth(row, inside);
+      return `${edge} ${text}${' '.repeat(Math.max(0, inside - visibleWidth(text)))} ${edge}`;
+    }), accent('╰' + '─'.repeat(inside + 2) + '╯'), ''];
   }
 }
 

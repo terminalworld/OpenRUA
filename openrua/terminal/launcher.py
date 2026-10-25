@@ -120,7 +120,7 @@ def choose_history(list_sessions, open_session, screen=run_screen, *, environmen
 def setup(values, choices, location, save, check, launch, agent_models,
           list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None, authentication=None, resolve_agent=None,
           connect=None, ready=None, sign_in=None, list_all=None, scope=None, save_connect=None, application=None, resolve_values=None,
-          resolve_models=None):
+          resolve_models=None, previous_session=None):
     notice = ''
     authentication = dict(authentication or {})
     drafts = {}
@@ -134,6 +134,7 @@ def setup(values, choices, location, save, check, launch, agent_models,
                          'location': location, 'models': agent_models, 'notice': notice,
                          'environments': environments, 'authentication': authentication,
                          'project': scope, 'view': view, 'intent': intent, 'model_choices': model_choices,
+                         'previous_session': previous_session,
                          'agent_step': agent_step})
         action = result['action']
         view = result.get('view') or 'review'
@@ -224,10 +225,12 @@ def setup(values, choices, location, save, check, launch, agent_models,
 
 
 def chat(client, name, list_sessions, open_session, screen=run_screen, *, facts=None,
-         list_all=None, scope=None):
+         list_all=None, scope=None, setup_session=None, version=''):
+    notice = ''
     while True:
         spec = {'mode': 'chat', 'name': name, 'connection': connection(client),
-                'facts': facts(name) if facts else {}}
+                'facts': facts(name) if facts else {}, 'version': version,
+                'can_setup': setup_session is not None, 'notice': notice}
         def display(files):
             spec['connection']['workspace'] = files
             return screen(spec)
@@ -236,6 +239,15 @@ def chat(client, name, list_sessions, open_session, screen=run_screen, *, facts=
                   else screen(spec))
         if result['action'] == 'quit':
             return 0
+        if result['action'] == 'setup' and setup_session is not None:
+            try:
+                selected = setup_session(name)
+                if selected:
+                    client, name = selected
+                notice = ''
+            except Exception as exc:
+                notice = str(exc) + '\n' + getattr(exc, 'hint', '')
+            continue
         if result['action'] not in {'history', 'history_all'}:
             raise RuntimeError('Invalid chat result; no action was taken.')
         selected = choose_history(list_sessions, open_session, screen, list_all=list_all,
