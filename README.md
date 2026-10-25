@@ -15,9 +15,9 @@
 [![Forks](https://img.shields.io/github/forks/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/forks)
 [![Watchers](https://img.shields.io/github/watchers/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/watchers)
 
-https://github.com/user-attachments/assets/3b134c51-a949-44dd-9474-5249c3879aa0
+[![Recorded OpenRUA robot demonstration](docs/media/libero10-mugs.jpg)](https://github.com/terminalworld/OpenRUA/releases/download/v0.0.7/libero10-mugs.mp4)
 
-*Codex (GPT-6 Astra) on LIBERO-10, "put the yellow and white mug on the left plate and put the white mug on the right plate": the commands it typed on the left, the robot's cameras on the right, task success. More in [docs/demos.md](docs/demos.md).*
+*[Watch the 35-second demo](https://github.com/terminalworld/OpenRUA/releases/download/v0.0.7/libero10-mugs.mp4). Codex (GPT-6 Astra) on LIBERO-10, "put the yellow and white mug on the left plate and put the white mug on the right plate": the commands it typed on the left, the robot's cameras on the right, task success. More in [docs/demos.md](docs/demos.md).*
 
 </div>
 
