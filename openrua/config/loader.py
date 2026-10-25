@@ -62,16 +62,13 @@ def load_user_config(path: Path) -> UserConfig:
     """The user's defaults file; absent = no defaults."""
     if not path.is_file():
         return UserConfig()
-    data = load_yaml(path)
-    if isinstance(data, dict) and isinstance(data.get("agent"), dict):
-        old = data["agent"]
-        name = old.get("name", "<name>")
-        facts = {k: v for k, v in old.items() if k != "name"}
-        raise ConfigError(f"{path}: agent: is a name now, and an agent's facts live under "
-                          f"agents.<name>",
-                          hint="rewrite it as:\n  agent: " + str(name) + "\n  agents:\n    "
-                               + str(name) + ": " + (str(facts) if facts else "{}"))
-    return validate(UserConfig, data, path)
+    try:
+        return validate(UserConfig, load_yaml(path), path)
+    except ConfigError as exc:
+        exc.hint = (f'Edit {path}; personal settings use only {", ".join(UserConfig.model_fields)}. '
+                    'openrua config schema --user describes these fields. '
+                    'Choose the robot environment with openrua --setup in your project after fixing this file.')
+        raise
 
 
 def default_agent_name(*defaults: UserConfig) -> str | None:

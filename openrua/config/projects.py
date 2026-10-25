@@ -10,6 +10,7 @@ import tempfile
 
 from openrua.config import paths
 from openrua import __version__
+from openrua.errors import ConfigError
 
 
 def resolve(directory: str | Path) -> Path:
@@ -60,9 +61,13 @@ def selection(directory: Path) -> dict[str, str]:
     path = directory / '.openrua' / 'settings.json'
     if not path.exists():
         return {}
-    value = json.loads(path.read_text())
+    hint = f'Edit {path}; project settings must be a JSON object of strings using keys: {", ".join(FIELDS)}.'
+    try:
+        value = json.loads(path.read_text())
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise ConfigError(f'{path}: not valid UTF-8 JSON', hint=hint) from exc
     if not isinstance(value, dict) or set(value) - set(FIELDS) or not all(isinstance(v, str) for v in value.values()):
-        raise ValueError(f'invalid project settings: {path}')
+        raise ConfigError(f'invalid project settings: {path}', hint=hint)
     return {key: _absolute(item, directory, key) for key, item in value.items()}
 
 

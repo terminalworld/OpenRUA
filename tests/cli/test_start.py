@@ -54,6 +54,88 @@ def args(tmp_path, *flags):
     return build_parser().parse_args(['--home', str(tmp_path), *flags])
 
 
+@pytest.mark.parametrize('contents', [
+    'robot: panda\nsimulator: robosuite\nbenchmark: libero_pro\nagent: codex\n',
+    'agent: codex\nagents: [\n',
+])
+def test_bad_personal_config_keeps_config_exit_code_and_repair_hint(tmp_path, contents, capsys, monkeypatch):
+    path = tmp_path / 'config.yaml'
+    path.write_text(contents)
+    monkeypatch.setattr(start, 'prepare', lambda *a, **kw: pytest.fail('must not prepare resources'))
+    monkeypatch.setattr(start, 'launch', lambda *a, **kw: pytest.fail('must not start a session'))
+    assert main(['--home', str(tmp_path), '--cli']) == 78
+    error = capsys.readouterr().err
+    assert str(path) in error
+    assert 'config schema --user' in error
+    assert 'session may still be running' not in error and '--resume' not in error
+    assert path.read_text() == contents
+
+
+@pytest.mark.parametrize('contents', ['{', '{"unknown": "value"}'])
+def test_bad_project_config_is_a_config_error_before_resources_start(tmp_path, contents, capsys, monkeypatch):
+    path = projects.settings_path(tmp_path / 'project')
+    path.parent.mkdir()
+    path.write_text(contents)
+    monkeypatch.setattr(start, 'prepare', lambda *a, **kw: pytest.fail('must not prepare resources'))
+    assert main(['--home', str(tmp_path), '--cli']) == 78
+    error = capsys.readouterr().err
+    assert str(path) in error
+    assert 'session may still be running' not in error
+    assert path.read_text() == contents
+
+
+def test_missing_robot_keeps_missing_file_exit_code(tmp_path, capsys):
+    profile = tmp_path / 'missing-robot.yaml'
+    assert main(['--home', str(tmp_path), '--cli', '--robot', str(profile)]) == 66
+    assert str(profile) in capsys.readouterr().err
+
+
+def test_personal_schema_can_be_read_with_a_broken_preferences_file(tmp_path, capsys):
+    import json
+    path = tmp_path / 'config.yaml'
+    path.write_text('agent: [')
+    assert main(['--home', str(tmp_path), 'config', 'schema', '--user']) == 0
+    schema = json.loads(capsys.readouterr().out)
+    assert set(schema['properties']) == {'agent', 'agents', 'sandbox'}
+    assert path.read_text() == 'agent: ['
+
+
+def test_setup_resolves_an_agent_manifest_in_the_selected_project(tmp_path, monkeypatch):
+    from openrua.config import paths
+    from openrua.terminal import launcher
+    project = tmp_path / 'other-project'
+    (project / 'adapters').mkdir(parents=True)
+    (project / 'adapters/agent.yaml').write_bytes(paths.find('agents', 'codex').read_bytes())
+    monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
+    monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+    monkeypatch.setattr('sys.stdout.isatty', lambda: True)
+    facts = []
+    def setup(*args, **callbacks):
+        facts.append(callbacks['resolve_agent']('./adapters/agent.yaml'))
+    monkeypatch.setattr(launcher, 'setup', setup)
+    assert start.run(args(tmp_path, '--setup', '--workspace', str(project), '--trust-workspace')) == 0
+    assert facts[0]['api'] and facts[0]['auth_mode'] == 'native'
+
+
+def test_setup_resolves_an_api_key_file_in_the_selected_project(tmp_path, monkeypatch):
+    from openrua.terminal import launcher
+    project = tmp_path / 'other-project'
+    (project / 'keys').mkdir(parents=True)
+    key = project / 'keys/provider.key'
+    key.write_text('synthetic-provider-key')
+    key.chmod(0o600)
+    monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
+    monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+    monkeypatch.setattr('sys.stdout.isatty', lambda: True)
+    def setup(values, *args, **callbacks):
+        chosen = callbacks['resolve_values']({**values, 'robot': 'panda', 'sim': 'robosuite',
+            'agent': 'codex', 'auth_mode': 'api', 'api_key_file': 'keys/provider.key'})
+        auth = start.validate_values(tmp_path, chosen)['agent']['auth']
+        assert auth['key_file'] == str(key)
+    monkeypatch.setattr(launcher, 'setup', setup)
+    assert start.run(args(tmp_path, '--setup', '--workspace', str(project), '--trust-workspace')) == 0
+
+
 def test_cli_and_setup_edit_the_same_project(tmp_path):
     config_command.run(args(tmp_path, 'config', 'set', '--robot', 'panda', '--sim', 'robosuite', '--agent', 'codex', '--model', 'm1'))
     values, models = start.values_for(args(tmp_path))

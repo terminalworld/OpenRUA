@@ -9,6 +9,17 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.24.2
+
+- Preserve configuration and missing-file errors during startup, including
+  their repair hints and exit codes, instead of describing them as session
+  failures. Give malformed project settings the configuration error code.
+- Point invalid personal preferences to their actual file and user schema.
+  Make `openrua config schema --user` describe personal preferences even when
+  the current configuration is invalid.
+- Resolve agent manifests and API-key paths entered in setup against the
+  selected project, including when it differs from the launch directory.
+
 ## 0.24.1
 
 - Align the README, setup, installation and session guides with the fullscreen

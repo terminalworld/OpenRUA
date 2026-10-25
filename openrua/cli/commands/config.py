@@ -26,7 +26,8 @@ def run(args) -> int:
                          hint='run openrua config set in that project without --user')
     path = paths.config_path(args.home)
     if args.what == "schema":
-        print(json.dumps(config.ResolvedConfig.model_json_schema(), indent=2))
+        model = config.UserConfig if args.user else config.ResolvedConfig
+        print(json.dumps(model.model_json_schema(), indent=2))
         return 0
     if args.what == "show":
         print(f"# {path}" + ("" if path.is_file() else " (absent: package defaults apply)"))

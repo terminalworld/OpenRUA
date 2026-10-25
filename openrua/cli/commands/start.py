@@ -11,7 +11,7 @@ from openrua.cli.commands import chat, connect, login, session, up
 from openrua.config import paths, projects, settings, startup
 from openrua.cli import agent_settings, docker_setup, updates, workspace
 from openrua.cli.preparation import prepare
-from openrua.errors import NotFound, UnavailableError, UsageError
+from openrua.errors import NotFound, OpenRUAError, UnavailableError, UsageError
 from openrua.runner import service, history, live_state
 from openrua.runner.limits import limit_overrides
 
@@ -77,11 +77,12 @@ def values_for(args) -> tuple[dict[str, str], dict[str, str]]:
     return values, models
 
 
-def authentication_choices(home: Path, names: list[str]) -> dict:
+def authentication_choices(home: Path, names: list[str], *, project: Path | None = None) -> dict:
     """Describe plugin capabilities and saved choices, without reading keys."""
     result = {}
     for name in names:
-        adapter, selected = agent_settings.resolve(home, name)
+        spec = projects.options(project, {'agent': name}, relative_to=project)['agent'] if project else name
+        adapter, selected = agent_settings.resolve(home, spec)
         if 'conversation' not in adapter.capabilities:
             raise UsageError(f'{adapter.name} does not support shared chat',
                              hint='use this plugin in its own terminal (openrua up, then openrua agent) or select a conversation-capable agent')
@@ -90,6 +91,14 @@ def authentication_choices(home: Path, names: list[str]) -> dict:
                         'auth_mode': auth.get('mode', 'native'),
                         'api_key_file': auth.get('key_file') or '', 'model': selected.get('model') or ''}
     return result
+
+
+def setup_values(project: Path, incoming: dict) -> dict:
+    values = {**incoming, **projects.options(project,
+        {key: incoming[key] for key in projects.FIELDS}, relative_to=project)}
+    if values.get('api_key_file'):
+        values['api_key_file'] = str((project / Path(values['api_key_file']).expanduser()).resolve())
+    return values
 
 
 def save_guided_values(home: Path, values: dict, project: Path) -> None:
@@ -253,8 +262,10 @@ def run(args) -> int:
         from openrua.terminal.launcher import runtime, entrypoint
         with Application(runtime, entrypoint) as application:
             return _run(args, application)
+    except OpenRUAError:
+        raise
     except (RuntimeError, OSError, ValueError) as exc:
-        raise UnavailableError(str(exc), hint='the session may still be running; inspect it with --resume') from exc
+        raise UnavailableError(str(exc)) from exc
 
 
 def offer_update(args, values: dict, interact=None) -> bool:
@@ -356,14 +367,13 @@ def _run(args, application=None) -> int:
                                 list_all=lambda: history.entries(args.home), scope=str(selected),
                                 **({'screen': application.screen, 'application': application} if application else {}),
                                 environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress, limit_overrides(args), environment_only=True),
-                                authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']]))),
-                                resolve_agent=lambda name: authentication_choices(args.home, [name])[name],
+                                authentication=authentication_choices(args.home, list(dict.fromkeys(choices['agent'] + [values['agent']])), project=selected),
+                                resolve_agent=lambda name: authentication_choices(args.home, [name], project=selected)[name],
                                 ready=lambda values: docker_setup.ensure(**({'interact': interact('Docker setup')} if application else {})),
                                 save_connect=lambda values: connect.save_values(args.home, values),
                                 sign_in=lambda values: login.ensure(args.home, values['agent'] or None,
                                                                     values.get('auth_mode', 'native'), **({'interact': interact('Agent sign-in')} if application else {})),
-                                resolve_values=lambda incoming: {**incoming, **projects.options(selected,
-                                    {key: incoming[key] for key in projects.FIELDS}, relative_to=selected)},
+                                resolve_values=lambda incoming: setup_values(selected, incoming),
                                 connect=lambda values: connect.launch(args.home,
                                                                       agent=values['agent'] or None,
                                                                       model=values['model'] or None, project=selected))

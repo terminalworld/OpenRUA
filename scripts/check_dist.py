@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import select
 import time
@@ -10,6 +11,38 @@ from pathlib import Path
 import subprocess
 import tempfile
 import venv
+
+
+def invalid_config_smoke(executable: Path, home: Path, environment: dict) -> None:
+    """Check startup error handling in the installed wheel with existing files."""
+    project = home / 'project'
+    project.mkdir(parents=True)
+    config = home / 'config.yaml'
+    config.write_text('robot: panda\nsimulator: robosuite\nbenchmark: libero_pro\nagent: codex\n')
+    original = config.read_bytes()
+    argv = [str(executable), '--home', str(home), '--workspace', str(project),
+            '--trust-workspace', '--cli']
+    def start(*extra):
+        return subprocess.run([*argv, *extra], cwd=project, env=environment,
+                              capture_output=True, text=True, timeout=15)
+    failed = start()
+    assert failed.returncode == 78, failed.stderr
+    assert 'config schema --user' in failed.stderr
+    assert 'session may still be running' not in failed.stderr
+    assert config.read_bytes() == original
+    schema = subprocess.run([str(executable), '--home', str(home), 'config', 'schema', '--user'],
+                            capture_output=True, text=True, check=True, env=environment)
+    assert set(json.loads(schema.stdout)['properties']) == {'agent', 'agents', 'sandbox'}
+    config.write_text('agent: codex\n')
+    settings = project / '.openrua/settings.json'
+    settings.parent.mkdir()
+    settings.write_text('{')
+    failed = start()
+    assert failed.returncode == 78 and str(settings) in failed.stderr, failed.stderr
+    settings.unlink()
+    failed = start('--robot', str(project / 'missing.yaml'))
+    assert failed.returncode == 66, failed.stderr
+    assert not (home / 'sandboxes').exists()
 
 
 def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Path | None = None) -> None:
@@ -239,6 +272,8 @@ env = dict(os.environ, PATH=os.path.dirname(__import__('sys').executable))
 assert shutil.which('node', path=env['PATH']) is None
 assert runtime()([str(entrypoint()), '--help'], env=env, return_completed_process=True).returncode == 0
 """)
+        invalid_config_smoke(environment / 'bin' / 'openrua', root / 'invalid-home',
+                             dict(os.environ, PATH=str(environment / 'bin')))
         terminal_smoke(environment / 'bin' / 'openrua', root / 'empty-home',
                        dict(os.environ, PATH=str(environment / 'bin')))
         manifest = root / 'external-agent.yaml'

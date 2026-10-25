@@ -139,3 +139,71 @@ def test_parent_exit_restores_terminal_and_does_not_reopen_an_exit_menu(tmp_path
         if child.poll() is None: child.kill()
         child.wait()
         os.close(master)
+
+
+def test_real_startup_reports_invalid_preferences_then_opens_after_explicit_repair(tmp_path):
+    import yaml
+    home, project = tmp_path / 'home', tmp_path / 'project'
+    home.mkdir(); project.mkdir()
+    config = home / 'config.yaml'
+    preferences = {'agent': 'codex', 'agents': {'codex': {'model': 'personal-model'}}}
+    config.write_text(yaml.safe_dump({**preferences, 'robot': 'panda',
+                                    'simulator': 'robosuite', 'benchmark': 'libero_pro'}))
+    original = config.read_bytes()
+
+    def run(actions):
+        master, slave = pty.openpty()
+        fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 30, 100, 0, 0))
+        child = subprocess.Popen([sys.executable, '-m', 'ui.terminal.test.startup',
+                                  '--home', str(home), '--workspace', str(project)],
+            cwd=Path(__file__).resolve().parents[2], stdin=slave, stdout=slave, stderr=slave,
+            env={**os.environ, 'TERM': 'xterm-256color'})
+        os.close(slave)
+        output, frame = bytearray(), bytearray()
+        try:
+            for marker, key in actions:
+                deadline = time.monotonic() + 15
+                while marker.encode() not in frame:
+                    if select.select([master], [], [], .05)[0]:
+                        try: data = os.read(master, 65536)
+                        except OSError as exc:
+                            raise AssertionError(output.decode(errors='replace')) from exc
+                        output.extend(data); frame.extend(data)
+                    assert child.poll() is None, output.decode(errors='replace')
+                    assert time.monotonic() < deadline, output.decode(errors='replace')
+                time.sleep(.2)
+                while select.select([master], [], [], 0)[0]: output.extend(os.read(master, 65536))
+                frame.clear(); os.write(master, key)
+            deadline = time.monotonic() + 10
+            while child.poll() is None and time.monotonic() < deadline:
+                if select.select([master], [], [], .05)[0]:
+                    try: output.extend(os.read(master, 65536))
+                    except OSError: break
+            code = child.wait(timeout=2)
+            while select.select([master], [], [], 0)[0]:
+                try: output.extend(os.read(master, 65536))
+                except OSError: break
+            assert output.count(b'\x1b[?1049h') == output.count(b'\x1b[?1049l') == 1
+            assert not (home / 'sandboxes').exists()
+            assert not (project / '.openrua/settings.json').exists()
+            return code, bytes(output)
+        finally:
+            if child.poll() is None: child.kill()
+            child.wait(); os.close(master)
+
+    code, output = run([('Use and trust this robot workspace?', b'\r')])
+    assert code == 78
+    assert b'config schema --user' in output
+    assert b'session may still be running' not in output
+    assert config.read_bytes() == original
+
+    # The schema stays strict. Repair is explicit and retains personal facts.
+    config.write_text(yaml.safe_dump(preferences))
+    cleaned = config.read_bytes()
+    code, output = run([
+        ('Choose your environment', b'2'), ('Choose a simulation', b'1'),
+        ('Choose an environment', b'1'), ('Review your project', b'3'),
+        ('personal-model', b'\x04'),
+    ])
+    assert code == 0
+    assert config.read_bytes() == cleaned
