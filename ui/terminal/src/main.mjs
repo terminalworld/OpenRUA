@@ -28,13 +28,15 @@ async function createScreen(spec, host) {
     const client = spec.endpoint ? await Client.fromFile(spec.endpoint)
       : spec.connection.read_only ? new ArchiveClient(spec.connection)
       : new Client(spec.connection.url, spec.connection.token);
-    return new Chat(client, {history: !spec.endpoint, name: spec.name, facts: spec.facts || {}, host});
+    return new Chat(client, {history: !spec.endpoint, name: spec.name, facts: spec.facts || {}, host,
+      canSetup: Boolean(spec.can_setup), version: spec.version || '', initialNotice: spec.notice || ''});
   }
   throw new Error('Unknown terminal screen.');
 }
 
 async function finishScreen(screen, spec, result, host, showProgress) {
-  if (!(screen instanceof Chat) || screen.client.readOnly || result?.action?.startsWith('history') || !spec.name) return;
+  if (!(screen instanceof Chat) || screen.client.readOnly || result?.action === 'setup'
+      || result?.action?.startsWith('history') || !spec.name) return;
   const ended = screen.endConfirmed || Boolean(screen.controller?.state?.closed);
   let waiting = false, stage;
   const messages = [];

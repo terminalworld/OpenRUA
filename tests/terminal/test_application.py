@@ -19,6 +19,69 @@ pytestmark = pytest.mark.skipif(
     reason='terminal integration job installs the pinned npm dependencies',
 )
 
+
+@pytest.mark.parametrize('columns,rows', [(100, 30), (40, 18)])
+def test_session_setup_cancel_new_conversation_and_resume_keep_both_owners(tmp_path, columns, rows):
+    master, slave = pty.openpty()
+    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', rows, columns, 0, 0))
+    result = tmp_path / 'result.json'
+    child = subprocess.Popen([sys.executable, '-m', 'ui.terminal.test.session_setup', str(result)],
+        cwd=Path(__file__).resolve().parents[2], stdin=slave, stdout=slave, stderr=slave,
+        env={**os.environ, 'TERM': 'xterm-256color'})
+    os.close(slave)
+    output, frame = bytearray(), bytearray()
+
+    def wait(text):
+        deadline = time.monotonic() + 12
+        while text.encode() not in frame:
+            if select.select([master], [], [], .05)[0]:
+                try: data = os.read(master, 65536)
+                except OSError: break
+                output.extend(data); frame.extend(data)
+            assert child.poll() is None, output.decode(errors='replace')
+            assert time.monotonic() < deadline, output.decode(errors='replace')
+        assert text.encode() in frame, output.decode(errors='replace')
+
+    def key(data):
+        time.sleep(.2)
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
+        frame.clear(); os.write(master, data)
+
+    try:
+        wait('Welcome to OpenRUA')
+        assert '╭'.encode() in frame and b'OpenRUA' in frame
+        key(b'Original instruction\r'); wait('Working')
+        assert b'Welcome to OpenRUA' not in frame
+        key(b'/setup\r'); wait('Review your project')
+        assert b'Keep session running' not in output
+        key(b'\x04'); wait('Welcome back to OpenRUA')
+        key(b'/setup\r'); wait('Review your project'); key(b'1')
+        wait('Welcome to OpenRUA')
+        key(b'New instruction\r'); wait('Working')
+        assert b'Welcome to OpenRUA' not in frame
+        key(b'/resume\r'); wait('Original conversation'); key(b'\r')
+        wait('Welcome back to OpenRUA'); key(b'/quit\r')
+        wait('Keep session running'); key(b'\r')
+        deadline = time.monotonic() + 10
+        while child.poll() is None and time.monotonic() < deadline:
+            if select.select([master], [], [], .05)[0]:
+                try: output.extend(os.read(master, 65536))
+                except OSError: break
+        assert child.wait(timeout=2) == 0, output.decode(errors='replace')
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
+        assert json.loads(result.read_text()) == dict(calls=['original', 'original'], saves=1,
+            messages=[['Original instruction'], ['New instruction']],
+            closed=[False, False], interrupted=[False, False])
+        assert output.count(b'\x1b[?1049h') == output.count(b'\x1b[?1049l') == 1
+    finally:
+        if child.poll() is None: child.kill()
+        child.wait(); os.close(master)
+
+
 @pytest.mark.parametrize('columns,rows', [(100, 30), (40, 18)])
 def test_setup_retry_chat_and_leave_share_one_fullscreen(tmp_path, columns, rows):
     master, slave = pty.openpty()

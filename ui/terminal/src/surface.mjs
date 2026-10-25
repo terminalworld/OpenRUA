@@ -42,6 +42,7 @@ export function surface(terminal, host = null, area = 'body') {
   const local = {
     children: canvas.children,
     addChild: component => canvas.addChild(component),
+    setHeader(component) { header = component; mount(); },
     setHeading(title, detail = '') {
       header = {render: width => [bold(plain(title)), ...(detail ? [muted(truncateToWidth(plain(detail), width))] : []), '']};
       mount();

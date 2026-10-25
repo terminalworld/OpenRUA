@@ -90,7 +90,8 @@ export class Setup extends Screen {
     const environment = this.intent === 'connect' ? 'Real robot / New connection'
       : this.values.bench || [this.values.robot, this.values.sim].filter(Boolean).join(' / ') || 'Not selected';
     this.list('Review', 'Review your project', [
-      {value: 'start', label: this.intent === 'connect' ? 'Connect robot' : 'Save project and start'},
+      {value: 'start', label: this.intent === 'connect' ? 'Connect robot'
+        : this.spec.previous_session ? 'Save project and start new session' : 'Save project and start'},
       {value: 'environment', label: 'Change environment…'},
       {value: 'agent', label: 'Agent settings…'},
       {value: 'advanced', label: 'Advanced options…'},
@@ -101,7 +102,9 @@ export class Setup extends Screen {
       else if (value === 'advanced') this.advanced();
       else if (value === 'history') this.submit('history');
       else this.submit(this.intent === 'connect' ? 'connect' : 'start');
-    }, () => this.environment(), {summary: [bold('Environment'), `  ${plain(environment)}`, bold('Agent'),
+    }, () => this.environment(), {summary: [
+      ...(this.spec.previous_session ? [muted('A new conversation will open. The current session stays in history.'), ''] : []),
+      bold('Environment'), `  ${plain(environment)}`, bold('Agent'),
       `  ${plain(this.values.agent || 'Configured default')} · ${plain(this.values.model || 'Default model')}`]});
   }
   chooseAgent(step = true) {
