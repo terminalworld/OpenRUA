@@ -39,15 +39,15 @@ test('an unavailable owner has unknown status and is never described as running'
   assert.doesNotMatch(lines.join('\n'), /still running|stays under control|Session robot ended/);
 });
 
-test('Enter only detaches and e ends owned resources once with visible progress', async () => {
-  let ends = 0;
-  const client = {snapshot: async () => ({state: {closed: false}}), end: async () => { ends++; }};
-  for (const answer of ['', 'end', 'e']) {
+test('No is the default, Yes keeps execution, and cancellation never changes resources', async () => {
+  for (const answer of ['', 'no', 'yes', 'cancel']) {
+    let ends = 0;
+    const client = {snapshot: async () => ({state: {closed: false}}), end: async () => { ends++; }};
     const {lines, options} = output(answer);
-    assert.equal(await leave('robot', client, options), true);
-    assert.equal(ends, answer === 'e' ? 1 : 0);
+    assert.equal(await leave('robot', client, options), answer !== 'cancel');
+    assert.equal(ends, answer === '' || answer === 'no' ? 1 : 0);
     assert.doesNotMatch(lines.join('\n'), /powers off|stays under control/);
-    if (answer === 'e') {
+    if (ends) {
       assert.ok(lines.findIndex(line => line.startsWith('Ending session'))
         < lines.findIndex(line => line.startsWith('Session robot ended')));
     }
@@ -56,7 +56,7 @@ test('Enter only detaches and e ends owned resources once with visible progress'
 
 test('a lost end reply stays unconfirmed without an automatic retry or success claim', async () => {
   let ends = 0;
-  const {lines, options} = output('e');
+  const {lines, options} = output('no');
   const client = {snapshot: async () => ({state: {closed: false}}), end: async () => {
     ends++; throw new Error('reply lost');
   }};

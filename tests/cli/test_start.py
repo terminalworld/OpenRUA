@@ -545,7 +545,7 @@ def test_chat_setup_uses_fresh_launch_options_and_returns_the_new_session(tmp_pa
     monkeypatch.setattr(start, 'setup_project', configure)
     def chat(client, name, *args, **kwargs):
         assert (client, name) == (old, 'old-session')
-        assert kwargs['setup_session']('old-session') == (new, 'fresh-session')
+        assert kwargs['setup_session']('old-session', lambda: True) == (new, 'fresh-session')
         return 0
     monkeypatch.setattr(launcher, 'chat', chat)
     host = SimpleNamespace(screen=lambda _: pytest.fail('trusted project needs no prompt'))
@@ -556,4 +556,5 @@ def test_chat_setup_uses_fresh_launch_options_and_returns_the_new_session(tmp_pa
     assert request.name == 'fresh-session'
     assert request.permissions is None and request.task_suite is None and request.task_id is None
     assert request.resume is None
-    assert context == {'previous_session': 'old-session'}
+    assert context['previous_session'] == 'old-session'
+    assert callable(context['before_launch'])

@@ -55,7 +55,7 @@ async def main():
                     application=application, prepare=prepare, scope=str(workspace))
                 assert result == (client, 'fixture'), result
                 await asyncio.to_thread(chat, client, 'fixture', lambda: [], lambda n: None,
-                    screen=application.screen, facts=lambda n: {'interactive': True,
+                    screen=application.screen, application=application, facts=lambda n: {'interactive': True,
                         'project': str(workspace), 'robot_model': 'Fixture robot', 'model': 'demo-a'})
             state = store.snapshot()['state']
             Path(sys.argv[1]).write_text(json.dumps({'builds': len(builds), 'saves': len(saves),

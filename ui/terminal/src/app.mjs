@@ -329,15 +329,13 @@ export class Chat {
     const model = state.settings?.model || this.facts.model;
     const effort = state.settings?.effort;
     const nextTurn = state.setting_effective_from?.model === 'next_turn';
-    if (state.active) {
-      const running = state.messages.find(message => message.id === state.active)?.turn_settings;
-      extra.push(muted(`${nextTurn ? 'running' : 'turn started with'}: ${plain(running?.model || 'model not reported')}`
-        + (running?.effort === undefined ? '' : `/${plain(running.effort)}`)));
-    }
     const running = state.active && state.messages.find(message => message.id === state.active)?.turn_settings;
     const same = running && running.model === model && running.effort === effort;
-    if (model && !same) extra.push(muted(`${state.active && nextTurn ? 'next turn' : 'model'}: ${plain(model)}`
+    if (model) extra.push(muted(`model: ${plain(model)}`
       + (effort === undefined ? '' : `/${plain(effort)}`)));
+    if (running?.model && nextTurn && !same)
+      extra.push(muted(`This response uses ${plain(running.model)}`
+        + (running.effort === undefined ? '' : `/${plain(running.effort)}`)));
     this.status.setText([head, ...extra].join(muted(' · ')));
     this.updateKeys();
     this.showPendingQuestion();

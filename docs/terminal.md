@@ -87,8 +87,11 @@ editing and retry. Native sign-in and sudo prompts temporarily use the ordinary
 terminal, then return to OpenRUA.
 
 Use `/setup` in chat to review project settings and start a fresh conversation
-within the same terminal. The previous session stays running and available in
-`/resume`; cancelling returns to it. The new conversation uses the selected
+within the same terminal. Before switching, choose whether to keep the previous
+conversation's execution resources. No is selected by default and stops owned
+resources; Yes leaves them running in the background. Files and history remain
+available through `/resume` either way. Cancelling setup before confirming
+departure returns to the current conversation without stopping it. The new conversation uses the selected
 environment and agent with its own context. You can also use `openrua --setup`,
 `openrua config set`, or `.openrua/settings.json`
 to change project settings. Each ordinary launch creates a new ID in the current project
@@ -134,7 +137,7 @@ the robot.
 | `/setup` | Configure and open a new conversation, retaining the current session in history; cancel to return |
 | `/resume` | Resume this project's conversations; `--all` searches all projects |
 | `/end` | Confirm ending execution, retaining history and workspace |
-| Ctrl+D on empty input or `/quit` | Choose Keep session running or End session, then confirm with Enter; Escape keeps it running |
+| Ctrl+D on empty input or `/quit` | Choose whether to keep execution resources; Enter defaults to No, Yes keeps them running, Escape returns |
 
 In `/files`, Up/Down selects an entry, Left returns to the parent directory,
 and Right or Enter opens the selected directory or file. Returning to a parent
@@ -150,7 +153,10 @@ Escape in an idle conversation leaves the draft and feedback in place.
 
 Ending shows progress until the owner confirms resource shutdown. A successful
 `/end` does not ask you to end the session again. On ordinary exit the terminal
-checks the current session state before offering the background/end choice. If
+checks the current session state before asking whether to keep execution resources.
+The same choice appears before switching to another conversation through history
+or setup. Merely opening or cancelling either screen does not stop resources.
+Selecting the current conversation or leaving read-only history needs no choice. If
 the service cannot be reached, it reports an unconfirmed status and gives a
 `session status` command instead of claiming the robot is still running or stopped.
 Stopping owned resources does not guarantee physical motor power is off; that

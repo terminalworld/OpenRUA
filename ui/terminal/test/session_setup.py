@@ -25,16 +25,17 @@ async def main():
         try:
             source = Path(__file__).parents[1] / 'src/main.mjs'
             with Application(runtime, lambda: source) as application:
-                def configure(name):
+                def configure(name, before_launch):
                     calls.append(name)
                     return setup(dict(robot='fixture', sim='', bench='', agent='fixture', model='demo', name='fresh'),
                         {}, str(root / 'settings.json'), lambda values: saves.append(values.copy()),
                         lambda values: (True, 'Ready'), lambda values: clients[1], {},
                         lambda: rows, lambda name: (clients[0], name),
-                        screen=application.screen, application=application, previous_session=name)
+                        screen=application.screen, application=application, previous_session=name,
+                        before_launch=before_launch)
                 await asyncio.to_thread(chat, clients[0], 'original', lambda: rows,
                     lambda name: (clients[['original', 'fresh'].index(name)], name),
-                    screen=application.screen, setup_session=configure,
+                    screen=application.screen, setup_session=configure, application=application,
                     facts=lambda name: dict(project=str(root), robot='fixture',
                         robot_model='Fixture robot', agent_title='Fixture agent', model='demo'))
             states = [owner[0].snapshot()['state'] for owner in owners]

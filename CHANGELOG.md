@@ -9,6 +9,19 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.29.0
+
+- Ask whether to keep execution resources when leaving a terminal conversation
+  or switching through history or setup. Default to No: stop owned execution
+  resources while retaining project files and history. Yes keeps execution in
+  the background. Cancelling selection or setup leaves the current session
+  unchanged; an unconfirmed shutdown prevents the switch.
+
+- Keep one stable model field in the conversation status. Show a response's
+  different model only when the native agent confirms that new settings apply
+  after it finishes; retain the start snapshot in history without displaying it
+  on every active response.
+
 ## 0.28.0
 
 - Keep generated project declarations and build inputs in `.openrua/configs/`.

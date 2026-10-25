@@ -249,12 +249,16 @@ def reconnect(home, name, application=None):
     return open_history(home, name)
 
 
-def setup_project(args, selected: Path, application=None, *, values=None, models=None, previous_session=None):
+def setup_project(args, selected: Path, application=None, *, values=None, models=None, previous_session=None, before_launch=None):
     """Configure and start a fresh session using the project's existing setup flow."""
     if values is None:
         values, models = values_for(args)
     def interact(title):
         return (lambda operation: application.perform(title, operation, native=True)) if application else None
+    def open_previous(name):
+        if before_launch is not None and name != previous_session and not before_launch():
+            return None
+        return reconnect(args.home, name, application)
     environments = startup.verified_environments()
     if any(paths.is_path(values[key]) for key in startup.FIELDS if values[key]):
         environments = [dict(selection={key: values[key] for key in startup.FIELDS}), *environments]
@@ -269,7 +273,7 @@ def setup_project(args, selected: Path, application=None, *, values=None, models
                             lambda values: check_values(args.home, values),
                             lambda values: launch(args, {**values, **projects.selection(selected)}), models,
                             lambda: history.entries(args.home, selected),
-                            lambda name: reconnect(args.home, name, application),
+                            open_previous,
                             list_all=lambda: history.entries(args.home), scope=str(selected),
                             **({'screen': application.screen, 'application': application} if application else {}),
                             environments=environments, prepare=lambda v, progress: prepare(args.home, v, progress, limit_overrides(args), environment_only=True),
@@ -283,6 +287,7 @@ def setup_project(args, selected: Path, application=None, *, values=None, models
                             resolve_models=lambda incoming, intent: discover_models(args.home, incoming, intent,
                                 application, interact),
                             previous_session=previous_session,
+                            before_launch=before_launch,
                             connect=lambda values: connect.launch(args.home,
                                                                   agent=values['agent'] or None,
                                                                   model=values['model'] or None, project=selected))
@@ -301,7 +306,7 @@ def open_terminal(home, client, name: str, frontend: str = 'pi', application=Non
         result = reconnect(home, name, application)
         current['project'] = history.project_directory(home, name) or current['project']
         return result
-    def configure(name):
+    def configure(name, before_launch):
         project = history.project_directory(home, name) or current['project']
         if not Path(project).is_dir():
             raise UsageError('this project directory is missing', hint='open an existing project with openrua --setup')
@@ -311,12 +316,13 @@ def open_terminal(home, client, name: str, frontend: str = 'pi', application=Non
         from openrua.cli import build_parser
         args = build_parser().parse_args(['--home', str(home), '--workspace', str(selected), '--setup'])
         args.name = history.new_id()
-        result = setup_project(args, selected, application, previous_session=name)
+        result = setup_project(args, selected, application, previous_session=name, before_launch=before_launch)
         if result:
             current['project'] = history.project_directory(home, result[1]) or str(selected)
         return result
     return terminal_chat(client, name, lambda: history.entries(home, Path(current['project'])), select,
-                         setup_session=configure, version=__version__,
+                         setup_session=configure, version=__version__, application=application,
+                         retained_session=lambda name: history.open_session(home, name),
                          facts=lambda name: history.robot_facts(home, name),
                          list_all=lambda: history.entries(home), scope=current['project'],
                          **({'screen': application.screen} if application else {}))
