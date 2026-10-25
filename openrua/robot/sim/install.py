@@ -121,7 +121,7 @@ def render(install: dict, name: str, code_root: Path) -> tuple[str, dict[str, Pa
         lines.append(f"COPY src {FILES}/src")
         lines.append(f"RUN {cache} uv pip install -q --python {PYTHON} --no-deps {FILES}/src")
     else:
-        lines.append(f"RUN {cache} uv pip install -q --python {PYTHON} --no-deps "
+        lines.append(f"RUN {cache} uv pip install -q --python {PYTHON} --no-deps --refresh-package openrua "
                      f"openrua=={__version__}")
     lines.append(f"ENV PATH={VENV}/bin:$PATH")
     return "\n".join(lines) + "\n", files

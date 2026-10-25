@@ -117,8 +117,15 @@ def list_cameras(sandbox: str, pattern: str) -> dict[str, str]:
     r = subprocess.run(["docker", "exec", "-u", "robot", sandbox, "python3", "-c",
                         TAP.read_text(), f"--pattern={pattern}", "--list"],
                        capture_output=True, timeout=60)
+    if r.returncode:
+        raise RuntimeError(f'camera discovery failed (exit {r.returncode}): '
+                           + r.stderr.decode(errors='replace').strip())
     first = r.stdout.split(b"\n", 1)[0]
-    return json.loads(first).get("cameras", {}) if first.strip() else {}
+    try:
+        return json.loads(first)['cameras']
+    except (ValueError, KeyError, TypeError) as exc:
+        raise RuntimeError('camera discovery returned no valid camera record; '
+                           + r.stderr.decode(errors='replace').strip()) from exc
 
 
 class CameraView:

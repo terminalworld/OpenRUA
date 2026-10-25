@@ -591,16 +591,17 @@ test('the welcome says where you are, in OpenRUA\'s words, and welcomes you back
     backend: 'sim', agent: 'claude-code', agent_title: 'Claude Code', task: 'lift the red cube'});
   let shown = plainText(sim.render(80));
   assert.match(shown, /Welcome to OpenRUA/);
-  assert.match(shown, /connected to a Franka Panda, simulated in/);
+  assert.match(shown, /project uses a Franka Panda, simulated in/);
+  assert.doesNotMatch(shown, /connected|still up/);
   assert.match(shown, /Try "what do you see\?"/);
   assert.match(shown, /"lift the red cube"/);
   assert.match(shown, /Esc stops the robot/);
   assert.ok(sim.render(80).slice(0, -1).every(line => line.replace(/\x1b\[[0-9;]*m/g, '').length === 62));
   sim.returning = true;
-  assert.match(plainText(sim.render(80)), /Welcome back to OpenRUA[\s\S]*Franka Panda is still up/);
+  assert.match(plainText(sim.render(80)), /Welcome back to OpenRUA[\s\S]*Continue your Franka Panda project/);
   const real = plainText(new Welcome('s2', {robot: './arm.yaml', robot_model: 'Franka Panda',
     backend: 'real', agent: 'codex', agent_title: 'Codex'}).render(80));
-  assert.match(real, /your Franka Panda, with Codex at/);
+  assert.match(real, /your Franka Panda project with Codex/);
   assert.match(real, /stop button within reach/);
   assert.match(plainText(new Welcome('old', {}, true).render(80)), /past conversation, read-only/);
 });
@@ -1066,7 +1067,7 @@ test('what the session means is read the same way by every client', async () => 
     checks: {host: {status: 'passed'}}, agent_commands: [{name: 'compact'}, {name: 'help'}]};
   const {head, notes} = status(state);
   assert.equal(head.kind, 'paused');
-  assert.deepEqual(notes.map(n => n.text), ['robot stopped: driver exited · /robot', 'host ✓', 'asks before commands',
+  assert.deepEqual(notes.map(n => n.text), ['robot stopped · /robot', 'host ✓', 'asks before commands',
     '1 queued', 'agent disconnected: exit 1', '1 question(s): type the answer, or /questions to choose']);
   assert.equal(status(state, {readOnly: true}).head.kind, 'readonly');
   assert.deepEqual(parseCommand('/model m2', state), {kind: 'ours', name: 'model', args: ['m2']});
@@ -1124,4 +1125,41 @@ test('/resume --all opens all-project history without sending an agent instructi
   const chat = new Chat({readOnly: true}, {terminal: new Terminal(), history: true});
   await chat.submit('/resume --all');
   assert.deepEqual(chat.result, {action: 'history_all'});
+});
+
+test('interactive project context uses short names and never claims the robot is connected', async () => {
+  const {Welcome} = await import('../src/view.mjs');
+  const welcome = new Welcome('session', {interactive: true, robot: '/work/project/configs/robots/panda.yaml',
+    robot_model: 'Franka Emika Panda', simulator: '/work/project/configs/simulators/robosuite.yaml',
+    benchmark: '/work/project/configs/benchmarks/libero_pro.yaml'});
+  for (const width of [100, 40]) {
+    const text = welcome.render(width).join('\n');
+    assert.match(text, /Franka Emika Panda[\s\S]*robosuite[\s\S]*libero_pro/);
+    assert.ok(welcome.render(width).every(line => line.replace(/\x1b\[[0-9;]*m/g, '').length <= width));
+    assert.doesNotMatch(text, /\/work|connected|still up|session/);
+  }
+});
+
+test('a failed startup is compact once while an independent build failure stays visible', async () => {
+  const {status} = await import('../src/session.mjs');
+  const details = 'build failed for image; inspect logs: ' + '/work/project/'.repeat(20);
+  const state = {connected: true, messages: [], requests: {}, robot: {status: 'failed', reason: details},
+    maintenance: {start: {operation: 'start', status: 'failed', summary: details}}};
+  const {head, notes} = status(state);
+  assert.equal(head.text, 'Ready to chat'); assert.notEqual(head.tone, 'good');
+  assert.deepEqual(notes.map(note => note.text), ['robot failed · /robot logs']);
+  state.robot = {status: 'ready'};
+  state.maintenance.start.operation = 'build';
+  assert.ok(status(state).notes.some(note => note.text === 'build: failed · /robot'));
+});
+
+test('initial native settings stay in status and later changes remain visible', () => {
+  const chat = new Chat({readOnly: false}, {terminal: new Terminal()});
+  const notices = []; chat.say = text => notices.push(text);
+  const frame = value => ({kind: 'agent_event', data: {kind: 'setting',
+    data: {setting: 'permissions', value}}});
+  chat.transcript.event(frame('auto'));
+  assert.deepEqual(notices, []);
+  chat.transcript.event(frame('ask'));
+  assert.deepEqual(notices, ['permissions: ask.']);
 });

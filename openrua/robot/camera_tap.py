@@ -28,6 +28,13 @@ import threading
 import time
 
 
+def protocol_output():
+    """Keep native ROS diagnostics off the JSON and image-byte stream."""
+    output = os.fdopen(os.dup(sys.stdout.fileno()), 'wb')
+    os.dup2(sys.stderr.fileno(), sys.stdout.fileno())
+    return output
+
+
 def discover(node, pattern: str) -> dict[str, str]:
     """Camera name -> topic for every topic on the graph matching
     ``pattern`` ({name} stands for the camera's name)."""
@@ -88,6 +95,7 @@ def main() -> int:
     except OSError:
         pass
 
+    out = protocol_output()
     import rclpy
     from rclpy.qos import qos_profile_sensor_data
     from sensor_msgs.msg import CompressedImage, Image
@@ -97,7 +105,6 @@ def main() -> int:
     cameras = dict(c.split("=", 1) for c in args.camera)
     if args.pattern:
         cameras.update(discover(node, args.pattern))
-    out = sys.stdout.buffer
     if args.list:
         out.write((json.dumps({"t": time.time(), "cameras": cameras, "frames": []}) + "\n").encode())
         out.flush()

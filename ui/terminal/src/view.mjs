@@ -5,6 +5,7 @@ import {toolSummary} from './session.mjs';
 
 // Control bytes must not become terminal instructions, including OSC clipboard writes.
 export const plain = value => String(value ?? '').replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, '');
+const configName = value => plain(value).split(/[\\/]/).at(-1).replace(/\.ya?ml$/i, '');
 const style = (open, close) => text => `\x1b[${open}m${text}\x1b[${close}m`;
 // The 16-colour palette only, so the terminal's own theme decides how it looks.
 export const bold = style(1, 22), muted = style(90, 39), accent = style(36, 39);
@@ -61,9 +62,9 @@ export class Welcome {
     if (f.interactive) hello = `${agent} is ready to work on your ${model} project. The connection status appears below; you can keep chatting while the robot connects or is being repaired.`;
     else if (f.backend === 'connect') hello = `Hi! Let's connect your robot. ${agent} does the work with you, and OpenRUA checks each step.`;
     else if (!f.robot) hello = `Hi! ${agent} is ready.`;
-    else if (this.returning) hello = `The ${model} is still up, with ${agent} at the controls.`;
-    else if (real) hello = `Hi! You're connected to your ${model}, with ${agent} at the controls.`;
-    else hello = `Hi! You're connected to ${a} ${model}, simulated in ${plain(f.simulator)}, with ${agent} at the controls.`;
+    else if (this.returning) hello = `Continue your ${model} project with ${agent}. Check the connection status below.`;
+    else if (real) hello = `Work on your ${model} project with ${agent}. Check the connection status below.`;
+    else hello = `Your project uses ${a} ${model}, simulated in ${configName(f.simulator)}, with ${agent}. Check the connection status below.`;
     const paragraphs = [hello];
     if (real) paragraphs.push('Keep the stop button within reach.');
     if (f.backend !== 'connect') {
@@ -76,8 +77,9 @@ export class Welcome {
 
   render(width) {
     const f = this.facts;
-    if (f.interactive && !this.readOnly) return [muted([f.robot_model || f.robot, f.simulator].filter(Boolean).map(plain).join(' · ')), ''];
-    const scene = [f.benchmark, f.suite && (f.task_id != null ? `${f.suite} #${f.task_id}` : f.suite)]
+    if (f.interactive && !this.readOnly) return [...wrapTextWithAnsi([f.robot_model || configName(f.robot),
+      configName(f.simulator), configName(f.benchmark)].filter(Boolean).join(' · '), width).map(muted), ''];
+    const scene = [configName(f.benchmark), f.suite && (f.task_id != null ? `${f.suite} #${f.task_id}` : f.suite)]
       .filter(Boolean).map(plain).join(' / ');
     const below = muted('  ' + [this.name && `session ${plain(this.name)}`, f.model && plain(f.model), scene]
       .filter(Boolean).join(' · '));
