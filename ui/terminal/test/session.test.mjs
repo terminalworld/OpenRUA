@@ -1163,3 +1163,15 @@ test('initial native settings stay in status and later changes remain visible', 
   chat.transcript.event(frame('ask'));
   assert.deepEqual(notices, ['permissions: ask.']);
 });
+
+test('fixed-model agent settings never render a foreign native model catalog', async () => {
+  const {Setup} = await import('../src/setup.mjs');
+  const terminal = new Terminal();
+  const setup = new Setup({view: 'models', values: {agent: 'fixed', model: 'configured-model'},
+    authentication: {fixed: {model_selection: false}},
+    model_choices: [{value: 'foreign-native-model', label: 'Foreign native model'}]}, terminal);
+  const shown = setup.body.render(100).join('\n');
+  assert.match(shown, /configured-model/);
+  assert.match(shown, /preview plugin uses the model configured in its agent manifest/);
+  assert.doesNotMatch(shown, /Foreign native model|foreign-native-model|Enter a model ID|Reload native models/);
+});

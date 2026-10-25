@@ -139,7 +139,7 @@ export class Setup extends Screen {
   }
   models() {
     const selectionAllowed = this.authentication[this.values.agent]?.model_selection !== false;
-    const rows = (this.spec.model_choices || []).map(row => ({value: row.value,
+    const rows = (selectionAllowed ? this.spec.model_choices || [] : []).map(row => ({value: row.value,
       label: plain(row.label || row.value), description: plain(row.description || '')}));
     this.list('Agent › Model', 'Select Model', [
       ...rows,

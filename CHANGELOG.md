@@ -9,6 +9,14 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.27.1
+
+- Keep native model catalogs scoped to the selected agent. Clear cached choices
+  when switching agents and keep fixed-model previews free of another agent's
+  models, including after discovery in the same setup.
+- Include the native permission defaults, model discovery, account labels,
+  compact preparation and project welcome described in 0.27.0.
+
 ## 0.27.0
 
 - Use each agent's native permission identifiers and supported modes. Claude
