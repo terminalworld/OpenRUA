@@ -54,9 +54,11 @@ def launch(home: Path, folder: Path | None = None, agent: str | None = None,
         raise UsageError(f"session name {name!r} already has retained or running work",
                          hint="choose a new --name")
     preparation.prepare_connect(home, agent, distro)
+    adapter, _ = agent_settings.resolve(home, agent)
     argv = [sys.executable, "-m", "openrua", "--home", str(home), "serve",
-            "--connect", str(folder.resolve()), "--name", name, "--distro", distro,
-            "--permissions", "ask"]
+            "--connect", str(folder.resolve()), "--name", name, "--distro", distro]
+    if adapter.default_permissions is not None:
+        argv.extend(['--permissions', adapter.default_permissions])
     if project is not None:
         argv += ['--workspace', str(project)]
     for key, value in (("agent", agent), ("model", model)):

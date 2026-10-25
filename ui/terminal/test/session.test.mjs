@@ -362,7 +362,7 @@ test('hierarchical setup separates the environment from agent settings and prese
   const next = new Setup({...spec, values: nextValues}, nextTerminal);
   const checking = next.run(); next.advanced();
   nextTerminal.input('\x1b[B'); nextTerminal.input('\r');
-  assert.deepEqual(await checking, {action: 'check', values: nextValues, intent: 'start', view: 'review'});
+  assert.deepEqual(await checking, {action: 'check', values: nextValues, intent: 'start', view: 'review', agent_step: false});
   const historyTerminal = new Terminal();
   const history = new History({rows: [{id: 'a', title: 'Cup', status: 'Ended', time: ''},
     {id: 'b', title: 'Bowl', status: 'Service recorded', time: ''}]}, historyTerminal);
@@ -987,7 +987,7 @@ test('/permissions and /model change the agent; its own commands go to it', {tim
   chat.panel.hide();
   await chat.submit('/permissions ask');
   assert.equal((await client.snapshot()).state.settings.permissions, 'ask');
-  assert.match(chat.status.text, /asks before commands/);
+  assert.match(chat.status.text, /Permissions: Manual/);
   await chat.submit('/model other-model');
   assert.equal((await client.snapshot()).state.settings.model, 'other-model');
   const writes = (await call({op: 'writes'})).writes;
@@ -1067,7 +1067,7 @@ test('what the session means is read the same way by every client', async () => 
     checks: {host: {status: 'passed'}}, agent_commands: [{name: 'compact'}, {name: 'help'}]};
   const {head, notes} = status(state);
   assert.equal(head.kind, 'paused');
-  assert.deepEqual(notes.map(n => n.text), ['robot stopped · /robot', 'host ✓', 'asks before commands',
+  assert.deepEqual(notes.map(n => n.text), ['robot stopped · /robot', 'host ✓', 'Permissions: ask',
     '1 queued', 'agent disconnected: exit 1', '1 question(s): type the answer, or /questions to choose']);
   assert.equal(status(state, {readOnly: true}).head.kind, 'readonly');
   assert.deepEqual(parseCommand('/model m2', state), {kind: 'ours', name: 'model', args: ['m2']});

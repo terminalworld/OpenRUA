@@ -54,6 +54,7 @@ class ConnectRequest:
     project: Path
     agent: str | None = None
     model: str | None = None
+    permissions: str | None = None
     distro: str = "jazzy"   # the connecting terminal's ROS 2 (the robot's comes later)
 
 
@@ -157,6 +158,10 @@ def open_connect(request: ConnectRequest, continuing: bool = False) -> LiveRobot
     scaffold(folder)
     check_directory(request)
     adapter, selected, model, user = _agent(request)
+    permissions = request.permissions or adapter.default_permissions
+    if permissions is not None and permissions not in adapter.permission_modes:
+        raise UsageError(f'{adapter.name} does not support permission mode {permissions!r}',
+                         hint='choose one of: ' + ', '.join(adapter.permission_modes))
     try:
         key_file = agents.api_key_file(adapter, selected.get("auth"))
     except ValueError as exc:
@@ -210,7 +215,8 @@ def open_connect(request: ConnectRequest, continuing: bool = False) -> LiveRobot
                agent_spec=adapter.name, agent_version=selected.get("version"), model=model,
                auth_mode="api" if key_file is not None else "native",
                options={**adapter.default_options, **(selected.get("options") or {})},
-               workspace=str(root), project=str(root), task="", limits=limits, permissions="ask",
+               workspace=str(root), project=str(root), task="", limits=limits,
+               permissions=permissions, permissions_format='native',
                mounts=list(profile_mounts), robot=str(robot_file(folder)),
                robot_model="being connected", connect={"folder": str(folder)})
 
@@ -470,10 +476,14 @@ class ConnectFlow:
 
     async def _move_to_robot(self) -> None:
         file = str(robot_file(self.folder))
-        settings = self.owned.store.snapshot()["state"].get("settings") or {}
+        current = self.owned.store.snapshot()['state']
+        settings = current.get('settings') or {}
+        facts = state.load(self.request.name, self.request.home)
+        adapter = agents.get(facts.get('agent_spec') or facts['agent'], self.request.home,
+                             version=facts.get('agent_version'))
         request = RobotRequest(home=self.request.home, name=self.request.name, robot=file,
                                agent=self.agent, model=settings.get("model"), continuing=True,
-                               permissions=settings.get("permissions", "ask"), project=self.request.project)
+                               permissions=agents.saved_permissions(adapter, facts, current), project=self.request.project)
         print("[connect] every check passed: moving to the robot's own terminal", flush=True)
         self.owned.execution.session.robot_status('updating', 'moving from connection setup to robot work', hold=True)
         try:

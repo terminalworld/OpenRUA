@@ -28,13 +28,8 @@ export const COMMANDS = [
 
 export const commandsFor = client => COMMANDS.filter(c => c.clients.includes(client));
 
-export const PERMISSIONS = [
-  {value: 'ask', label: 'Ask before each command that changes something'},
-  {value: 'auto', label: 'Run commands without asking'},
-];
-
 export function permissionChoices(state) {
-  return state?.setting_choices?.permissions ?? PERMISSIONS;
+  return state?.setting_choices?.permissions ?? [];
 }
 
 // The agent's own commands (its /compact, its skills...), as it reported
@@ -73,8 +68,7 @@ export function status(state, {readOnly = false} = {}) {
   const checks = Object.entries(state.checks ?? {});
   if (checks.length) notes.push({tone: 'plain', kind: 'checks', checks,
     text: checks.map(([step, check]) => `${step} ${{passed: '✓', failed: '✗', running: '…'}[check.status] ?? ''}`).join(' ')});
-  if (state.settings?.permissions === 'ask') notes.push({tone: 'muted', text: 'asks before commands'});
-  else if (state.settings?.permissions) {
+  if (state.settings?.permissions && (!state.setting_controls || state.setting_controls.includes('permissions'))) {
     const current = permissionChoices(state).find(choice => choice.value === state.settings.permissions);
     notes.push({tone: 'muted', text: `Permissions: ${current?.label ?? state.settings.permissions}`});
   }

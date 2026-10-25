@@ -250,3 +250,19 @@ def test_a_declined_sign_in_stays_editable_with_the_command():
         lambda v: pytest.fail('must not launch'), {}, lambda: [], lambda n: None, screen,
         connect=lambda v: pytest.fail('must not connect'), sign_in=sign_in) is None
     assert 'not signed in' in notices[1] and 'openrua login test' in notices[1]
+
+
+def test_model_discovery_keeps_unsaved_agent_choices_and_first_setup_step():
+    values = dict(robot='panda', sim='robosuite', bench='', agent='selected', model='old', name='id')
+    responses = iter([{'action': 'models', 'values': values, 'agent_step': True}, {'action': 'quit'}])
+    screens, discovered = [], []
+    def screen(spec):
+        screens.append(spec)
+        return next(responses)
+    result = launcher.setup(values, {}, 'project', lambda _: pytest.fail('discovery must not save settings'),
+        lambda _: pytest.fail('discovery must not start/check a robot'), lambda _: None, {}, lambda: [],
+        lambda _: None, screen, resolve_models=lambda incoming, intent: discovered.append((incoming, intent))
+            or [{'value': 'native-model', 'label': 'Native model'}])
+    assert result is None and discovered == [(values, 'start')]
+    assert screens[1]['view'] == 'models' and screens[1]['agent_step']
+    assert screens[1]['model_choices'] == [{'value': 'native-model', 'label': 'Native model'}]

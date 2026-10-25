@@ -9,7 +9,7 @@ from openrua.plugins.agents.codex_conversation import CodexConversation
 
 
 def ready(session_id=None):
-    protocol = CodexConversation("model", session_id=session_id)
+    protocol = CodexConversation("model", session_id=session_id, permissions="never")
     start = protocol.begin().outbound[0]
     update = protocol.receive({"id": start["id"], "result": {}})
     assert update.outbound[0] == {"method": "initialized", "params": {}}
@@ -27,18 +27,18 @@ def started(protocol, local="message-1", native="turn-1"):
 
 
 def test_native_auto_reviewer_uses_workspace_policy_and_can_be_switched_off():
-    protocol = CodexConversation('model', permissions='ask')
+    protocol = CodexConversation('model', permissions='untrusted')
     initialize = protocol.begin().outbound[0]
     thread = protocol.receive({'id': initialize['id'], 'result': {}}).outbound[1]
     ready_event = protocol.receive({'id': thread['id'], 'result': {
         'thread': {'id': 'thread-1'}, 'approvalsReviewer': 'user'}})
     modes = next(e.data['choices'] for e in ready_event.events if e.kind == 'setting' and e.data['setting'] == 'permissions')
-    assert any(mode['value'] == 'auto-review' for mode in modes)
-    protocol.configure('permissions', 'auto-review')
+    assert any(mode['value'] == 'auto_review' for mode in modes)
+    protocol.configure('permissions', 'auto_review')
     params = protocol.submit('reviewed', 'inspect').outbound[0]['params']
     assert params['approvalPolicy'] == 'on-request' and params['approvalsReviewer'] == 'auto_review'
     assert params['sandboxPolicy'] == {'type': 'workspaceWrite', 'writableRoots': ['/workspace'], 'networkAccess': True}
-    protocol.configure('permissions', 'auto')
+    protocol.configure('permissions', 'never')
     assert protocol._approval_params() == {'approvalPolicy': 'never', 'approvalsReviewer': 'user'}
     assert protocol._sandbox_policy() == {'type': 'dangerFullAccess'}
 
@@ -46,8 +46,8 @@ def test_native_auto_reviewer_uses_workspace_policy_and_can_be_switched_off():
 def test_an_old_native_server_cannot_silently_claim_automatic_review():
     protocol = ready()
     with pytest.raises(ValueError, match='did not advertise'):
-        protocol.configure('permissions', 'auto-review')
-    protocol = CodexConversation('model', permissions='auto-review')
+        protocol.configure('permissions', 'auto_review')
+    protocol = CodexConversation('model', permissions='auto_review')
     initialize = protocol.begin().outbound[0]
     thread = protocol.receive({'id': initialize['id'], 'result': {}}).outbound[1]
     with pytest.raises(ValueError, match='not confirmed'):
@@ -94,7 +94,7 @@ def test_codex_factory_uses_native_process_and_existing_profile():
 
 
 def test_resume_requires_exact_native_identity():
-    protocol = CodexConversation("model", session_id="original")
+    protocol = CodexConversation("model", session_id="original", permissions="never")
     request = protocol.begin().outbound[0]
     request = protocol.receive({"id": request["id"], "result": {}}).outbound[-1]
     assert request["params"]["threadId"] == "original"
@@ -268,7 +268,7 @@ def test_codex_items_read_as_a_person_reads_them():
 
 
 def test_codex_reports_settings_and_commands_when_ready():
-    protocol = CodexConversation("model", permissions="ask")
+    protocol = CodexConversation("model", permissions="untrusted")
     start = protocol.begin().outbound[0]
     request = protocol.receive({"id": start["id"], "result": {}}).outbound[1]
     assert request["params"]["approvalPolicy"] == "untrusted"
@@ -321,8 +321,8 @@ def test_codex_old_server_skill_discovery_failure_does_not_break_the_conversatio
 
 def test_codex_settings_apply_from_the_next_turn():
     protocol = ready()
-    assert protocol.configure("permissions", "ask").events[0].data == {
-        "setting": "permissions", "value": "ask", "effective_from": "next_turn"}
+    assert protocol.configure("permissions", "untrusted").events[0].data == {
+        "setting": "permissions", "value": "untrusted", "effective_from": "next_turn"}
     protocol.configure("model", "gpt-6-astra")
     params = protocol.submit("message-1", "text").outbound[0]["params"]
     assert params["approvalPolicy"] == "untrusted" and params["model"] == "gpt-6-astra"
@@ -331,7 +331,7 @@ def test_codex_settings_apply_from_the_next_turn():
 
 
 def test_codex_model_choices_come_from_native_metadata_without_a_model_turn():
-    protocol = CodexConversation('requested-model')
+    protocol = CodexConversation('requested-model', permissions='never')
     initialize = protocol.begin().outbound[0]
     thread = protocol.receive({'id': initialize['id'], 'result': {}}).outbound[1]
     ready_update = protocol.receive({'id': thread['id'], 'result': {'thread': {'id': 'native'}, 'model': 'resolved-model'}})
@@ -349,7 +349,8 @@ def test_codex_model_choices_come_from_native_metadata_without_a_model_turn():
     assert setting['choices'][0]['default_effort'] == 'low'
     assert update.outbound[0]['params']['cursor'] == 'page-two'
     failed = protocol.receive({'id': update.outbound[0]['id'], 'error': {'message': 'metadata unavailable'}})
-    assert failed.events[0].kind == 'native' and protocol.can_submit
+    assert failed.events[0].kind == 'setting' and protocol.can_submit
+    assert failed.events[0].data['error'] == 'metadata unavailable'
     protocol.configure('model', 'gpt-6-astra')
     assert protocol.effort == 'low'
     with pytest.raises(ValueError, match='native effort'):

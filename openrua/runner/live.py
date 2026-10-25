@@ -49,9 +49,8 @@ class RobotRequest:
     # What the agent may reach, over a free session's defaults (nothing
     # limited): config.schema.Limits field -> value.
     limits: dict | None = None
-    # Whether the agent asks before each command that changes something
-    # ("ask") or runs it ("auto"); /permissions switches it later.
-    permissions: str = "auto"
+    # An explicit native mode, or the selected plugin's default.
+    permissions: str | None = None
     # The handle already exists with the agent's profile in it: a robot
     # just connected takes over the session it was connected in, and the
     # conversation goes on (its native record lives in that profile).
@@ -175,8 +174,9 @@ def open_robot(request: RobotRequest, *, interactive: bool = False, resolved=Non
     adapter = agents.get(cfg_agent["name"], request.home,
                          version=previous.get('agent_version') if previous else cfg_agent.get("version"))
     permission_modes = getattr(adapter, 'permission_modes', agents.Agent.permission_modes)
-    if request.permissions not in permission_modes:
-        raise UsageError(f'{adapter.name} does not support permission mode {request.permissions!r}',
+    permissions = request.permissions or agents.saved_permissions(adapter, previous or {})
+    if permissions is not None and permissions not in permission_modes:
+        raise UsageError(f'{adapter.name} does not support permission mode {permissions!r}',
                          hint='choose one of: ' + ', '.join(permission_modes))
     key_file = None
     if previous is None:
@@ -302,7 +302,7 @@ def open_robot(request: RobotRequest, *, interactive: bool = False, resolved=Non
                    backend=cfg["machine"]["backend"]["kind"], interactive=interactive,
                    network=network,
                    proxy=agent_proxy_url(cfg["machine"]["backend"], proxy_url),
-                   limits=limits, permissions=request.permissions, mounts=list(mounts),
+                   limits=limits, permissions=permissions, permissions_format='native', mounts=list(mounts),
                    agent=adapter.name, agent_title=adapter.title or adapter.name,
                    agent_spec=cfg_agent["name"], agent_version=agents.version_from_output(cli_version)
                        or (previous or {}).get('agent_version') or cfg_agent.get('version'),

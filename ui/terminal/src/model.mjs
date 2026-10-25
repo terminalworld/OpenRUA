@@ -35,7 +35,10 @@ export function modelPicker(chat, selected) {
         description: plain(choice.description || '')})),
       effort => apply(model, effort), {selected: initial, onCancel: () => modelPicker(chat, model)});
   };
-  chat.picker('Select Model' + (nextTurn ? '\nApplies to the next turn. An active turn keeps its model.' : ''), [
+  const problem = state?.setting_errors?.model;
+  const availability = problem ? `\nNative model list: ${plain(problem)}`
+    : !choices.length ? '\nNative model list is not available. You can enter a model ID.' : '';
+  chat.picker('Select Model' + availability + (nextTurn ? '\nApplies to the next turn. An active turn keeps its model.' : ''), [
     ...(!choices.some(choice => choice.value === current) && current
       ? [{value: current, label: `✓ ${plain(current)}`}]: []),
     ...choices.map(choice => ({value: choice.value,

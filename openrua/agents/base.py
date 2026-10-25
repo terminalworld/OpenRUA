@@ -39,6 +39,24 @@ def version_from_output(text: str | None) -> str | None:
     return found.group() if found else None
 
 
+def saved_permissions(agent, facts: dict, state: dict | None = None) -> str | None:
+    """Restore a recorded mode using its own catalog, including older identifiers."""
+    if getattr(agent, 'permission_modes', None) == ():
+        return None
+    state = state or {}
+    value = (state.get('settings') or {}).get('permissions')
+    native = facts.get('permissions_format') == 'native'
+    if value:
+        choices = (state.get('setting_choices') or {}).get('permissions') or []
+        if choices:
+            native = all(row.get('value') in agent.permission_modes for row in choices)
+    else:
+        value = facts.get('permissions')
+    if not value:
+        return getattr(agent, 'default_permissions', Agent.default_permissions)
+    return value if native else getattr(agent, 'legacy_permission_modes', {}).get(value, value)
+
+
 @dataclass(frozen=True)
 class Credentials:
     """How a CLI keeps its login, when it keeps one in a profile directory.
@@ -138,7 +156,7 @@ def read_api_key(path: Path) -> str:
 # "has" a capability when its hooks class overrides the hook.
 HOOK_NAMES = (
     "inspect_login", "prepare_profile", "prepare_api_profile", "interactive_argv", "conversation", "sandbox_cli_check", "login_hint", "token_hint",
-    "quota_probe_argv", "quota_window_open", "matches_quota_anomaly",
+    "quota_probe_argv", "quota_window_open", "matches_quota_anomaly", "model_catalog",
     "read_rate_limits", "quota_since", "read_final", "scan_transcript",
     "assistant_turns_before", "replay_ops", "collect",
 )
@@ -165,7 +183,10 @@ class Agent:
                                         # the proxy (tinyproxy filter syntax)
     credentials: Credentials | None = None   # profile-directory login, or None
     skills: SkillLocations | None = None
-    permission_modes: tuple[str, ...] = ('ask', 'auto')
+    permission_modes: tuple[str, ...] = ()
+    default_permissions: str | None = None
+    legacy_permission_modes: dict[str, str] = {}
+    model_selection: bool = True
     token_env: str | None = None        # env var carrying a long-lived token, when
                                         # the CLI accepts one (passed by file)
     version_argv: tuple[str, ...] | None = None   # prints the CLI version (provenance)
@@ -313,6 +334,10 @@ class Agent:
         not a new caller-generated identifier. No process starts in this hook.
         Existing batch and terminal-only plugins need not implement it.
         """
+        return None
+
+    def model_catalog(self, sandbox: str, model: str, proxy: str, **kwargs):
+        """A metadata-only native connection, or None when unsupported."""
         return None
 
     def version_probe(self) -> str | None:

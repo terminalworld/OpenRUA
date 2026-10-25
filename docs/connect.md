@@ -100,9 +100,8 @@ existing project continues from its maintained files. Your coding agent finds
 out what the robot is, builds and starts its ROS 2 drivers and writes
 the robot's config, as an engineer would with you beside the robot. It
 asks you for what only a person can do (power, brakes, the vendor's web
-interface, the emergency stop, cables, `sudo`), and asks before each
-command that changes something: the session starts with
-`--permissions ask` (`/permissions` switches).
+interface, the emergency stop, cables, `sudo`). The session uses the selected
+agent's native permission default; `/permissions` lists its supported modes.
 
 ## The folder
 

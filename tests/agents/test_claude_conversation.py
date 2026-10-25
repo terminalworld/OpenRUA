@@ -277,23 +277,23 @@ def test_a_question_takes_an_answer_of_ones_own():
 
 
 def test_initialize_reports_the_agents_commands_and_its_permissions():
-    protocol = ClaudeConversation("session-1", permissions="ask")
+    protocol = ClaudeConversation("session-1", permissions="default")
     request = protocol.begin().outbound[0]
     response = ack(request)
     response["response"]["response"] = {"commands": [
         {"name": "compact", "description": "Clear history, keep a summary"}, {"bad": True}]}
     events = protocol.receive(response).events
-    assert [e.kind for e in events] == ["ready", "setting", "commands"]
-    assert events[1].data['setting'] == 'permissions' and events[1].data['value'] == 'ask'
-    assert any(choice['value'] == 'auto-review' for choice in events[1].data['choices'])
-    assert events[2].data["commands"] == [{"name": "compact",
+    assert [e.kind for e in events] == ["ready", "setting", "setting", "commands"]
+    assert events[1].data['setting'] == 'permissions' and events[1].data['value'] == 'default'
+    assert any(choice['value'] == 'auto' for choice in events[1].data['choices'])
+    assert events[3].data["commands"] == [{"name": "compact",
                                            "description": "Clear history, keep a summary"}]
 
 
 @pytest.mark.parametrize("setting,value,subtype,field", [
-    ("permissions", "ask", "set_permission_mode", ("mode", "default")),
-    ("permissions", "auto", "set_permission_mode", ("mode", "bypassPermissions")),
-    ("permissions", "auto-review", "set_permission_mode", ("mode", "auto")),
+    ("permissions", "default", "set_permission_mode", ("mode", "default")),
+    ("permissions", "bypassPermissions", "set_permission_mode", ("mode", "bypassPermissions")),
+    ("permissions", "auto", "set_permission_mode", ("mode", "auto")),
     ("permissions", "acceptEdits", "set_permission_mode", ("mode", "acceptEdits")),
     ("permissions", "plan", "set_permission_mode", ("mode", "plan")),
     ("permissions", "dontAsk", "set_permission_mode", ("mode", "dontAsk")),
@@ -320,7 +320,7 @@ def test_a_refused_setting_is_reported_and_the_connection_stays_usable():
 
 def test_refused_native_auto_mode_keeps_the_last_acknowledged_permissions():
     protocol = ready()
-    request = protocol.configure('permissions', 'auto-review').outbound[0]
+    request = protocol.configure('permissions', 'bypassPermissions').outbound[0]
     assert protocol.permissions == 'auto'
     event = protocol.receive(ack(request, success=False)).events[0]
     assert event.kind == 'setting_rejected' and event.data['reason'] == 'rejected'
@@ -349,9 +349,9 @@ def test_clear_begins_a_new_native_conversation():
 
 def test_a_session_that_asks_starts_in_the_default_mode_and_may_switch():
     plugin = agents.get("claude-code")
-    asking = plugin.conversation("box", "model", "", permissions="ask").argv
+    asking = plugin.conversation("box", "model", "", permissions="default").argv
     assert asking[asking.index("--permission-mode") + 1] == "default"
     assert "--allow-dangerously-skip-permissions" in asking
     assert "--dangerously-skip-permissions" not in asking
     running = plugin.conversation("box", "model", "").argv
-    assert running[running.index('--permission-mode') + 1] == 'bypassPermissions'
+    assert running[running.index('--permission-mode') + 1] == 'auto'

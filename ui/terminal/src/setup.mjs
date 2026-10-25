@@ -9,7 +9,7 @@ export class Setup extends Screen {
     this.spec = spec; this.values = {...spec.values};
     this.authentication = {...spec.authentication}; this.positions = new Map();
     this.intent = spec.intent || 'start';
-    this.agentStep = spec.view === 'agent-step';
+    this.agentStep = spec.agent_step ?? spec.view === 'agent-step';
     this.ui.setHeading('OpenRUA · Setup', spec.project || spec.location);
     this.body = new Container(); this.ui.addChild(this.body);
     this.notice = new Text(plain(spec.notice), 0, 0);
@@ -19,13 +19,14 @@ export class Setup extends Screen {
     this.show(view);
   }
   show(view) {
-    if (view === 'agent' || view === 'agent-step') this.agentSettings();
+    if (view === 'models') this.models();
+    else if (view === 'agent' || view === 'agent-step') this.agentSettings();
     else if (view === 'choose-agent') this.chooseAgent();
     else if (view === 'environment') this.environment();
     else this.menu();
   }
   submit(action) {
-    this.finish({action, values: {...this.values}, intent: this.intent, view: 'review'});
+    this.finish({action, values: {...this.values}, intent: this.intent, view: 'review', agent_step: this.agentStep});
   }
   list(path, title, items, select, back, {selected, summary = []} = {}) {
     this.body.clear(); this.view = path;
@@ -130,9 +131,29 @@ export class Setup extends Screen {
     rows.push({value: 'back', label: 'Back'});
     this.list('Agent', 'Agent settings', rows, value => value === 'continue' ? this.menu()
       : value === 'back' ? this.agentStep ? this.chooseAgent() : this.menu()
-      : value === 'agent' ? this.chooseAgent(this.agentStep) : this.edit(value,
+      : value === 'agent' ? this.chooseAgent(this.agentStep)
+      : value === 'model' ? this.authentication[this.values.agent]?.model_selection === false
+        ? this.models() : this.submit('models') : this.edit(value,
       {agent: 'Coding agent', model: 'Model ID', auth_mode: 'Authentication', api_key_file: 'API key file path'}[value], false,
       () => this.agentSettings()), () => this.agentStep ? this.chooseAgent() : this.menu());
+  }
+  models() {
+    const selectionAllowed = this.authentication[this.values.agent]?.model_selection !== false;
+    const rows = (this.spec.model_choices || []).map(row => ({value: row.value,
+      label: plain(row.label || row.value), description: plain(row.description || '')}));
+    this.list('Agent › Model', 'Select Model', [
+      ...rows,
+      ...(selectionAllowed ? [{value: '\0reload', label: 'Reload native models'},
+        {value: '\0custom', label: 'Enter a model ID…'}] : []),
+      {value: '\0back', label: 'Back'},
+    ], value => {
+      if (value === '\0back') this.agentSettings();
+      else if (value === '\0reload') this.submit('models');
+      else if (value === '\0custom') this.edit('model', 'Model ID', true, () => this.models(), () => this.agentSettings());
+      else { this.values.model = value; this.agentSettings(); }
+    }, () => this.agentSettings(), {selected: this.values.model,
+      summary: [muted(`Current model: ${plain(this.values.model || 'Native default')}`),
+        ...(!selectionAllowed ? [muted('This preview plugin uses the model configured in its agent manifest.')] : [])]});
   }
   advanced() {
     this.list('Advanced', 'Advanced options', [
@@ -167,7 +188,10 @@ export class Setup extends Screen {
     return [...new Set(this.spec.environments.filter(row => before.every(k => !this.values[k] || this.values[k] === row.selection[k]))
       .map(row => row.selection[key]))].sort();
   }
-  authLabel(mode) { return mode === 'api' ? 'API key file (API billing)' : 'Native CLI profile'; }
+  authLabel(mode) {
+    return mode === 'api' ? 'API key (billed separately)'
+      : `${plain(this.authentication[this.values.agent]?.title || 'Agent')} account`;
+  }
   edit(key, label, custom = false, back = () => this.menu(), after) {
     this.returnTo = after || (['agent', 'model', 'auth_mode', 'api_key_file'].includes(key) ? () => this.agentSettings() : () => this.menu());
     this.customEdit = custom;

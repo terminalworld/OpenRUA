@@ -91,7 +91,7 @@ class ZCodeConversation(ConversationProtocol):
             if result['sessionId'] != self.session_id:
                 raise ValueError('subscription belongs to a different session')
             self.ready = True
-            return Update(events=[Event('ready', data={'session_id': self.session_id, 'identity_confirmed': True})])
+            return Update(events=[Event('ready', data={'session_id': self.session_id, 'identity_confirmed': True, 'settings': []})])
         if operation == 'session/send':
             if result.get('accepted') is not True or result.get('sessionId') != self.session_id:
                 raise ValueError('native submission acknowledgement is invalid')

@@ -130,10 +130,9 @@ cameras until someone watches, and reading stops when the tab is hidden or
 request). A simulated camera renders only while it is read and the world moves
 only while a command runs, so between commands the picture holds still and a
 motion arrives as its end state.
-The **Agent** panel switches permissions (ask before each command that changes
-something, or run without asking) and the model, and lists the agent's own
-commands. The message box takes the same `/` commands as the terminal where
-they mean something on a page (`/help` lists them; `/permissions ask`,
+The **Agent** panel uses the selected agent's native permission modes and model
+choices, and lists its own commands. The message box takes the same `/` commands as the terminal where
+they mean something on a page (`/help` lists them; `/permissions default`,
 `/model <name>`, `/interrupt`, ...); the agent's own commands go to the agent.
 Under the execution state, the page shows the notes the terminal's status line
 shows: a stopped robot, the checks while connecting a robot, permissions,
@@ -274,12 +273,12 @@ openrua session --name shared edit MESSAGE_ID "Revised instruction" --revision 0
 openrua session --name shared withdraw MESSAGE_ID
 openrua session --name shared resume PAUSE_ID
 openrua session --name shared respond REQUEST_ID '{"question-id":["answer"]}'
-openrua session --name shared configure permissions ask    # or auto; model <name>
+openrua session --name shared configure permissions auto   # Claude Code native mode; model <name>
 ```
 
-A session starts with `--permissions auto` (the agent runs commands without
-asking) unless started with `--permissions ask`, as `openrua connect` starts
-one; either can be switched while it runs. Asked, the agent's request to run a command arrives as a question.
+The selected plugin supplies its native permission default: Claude Code Auto
+or Codex automatic review. `/permissions` lists that agent's supported choices.
+A native request for manual approval arrives as a question.
 
 An interrupt stops the agent's turn through its own CLI and asks the robot's
 motion actions (each arm's trajectory and gripper ports, the planner's move

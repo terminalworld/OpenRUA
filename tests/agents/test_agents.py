@@ -661,7 +661,7 @@ def test_codex_runs_without_the_accounts_apps_when_limited():
     codex = agents.get("codex")
     limits = {"account_connectors": False, "web_search": False}
     argv = codex.conversation("sandbox", "model", "http://proxy", limits=limits).argv
-    assert "features.apps=false" in argv and 'sandbox_mode="danger-full-access"' in argv
+    assert "features.apps=false" in argv and 'sandbox_mode="danger-full-access"' not in argv
     assert 'web_search="disabled"' in argv
     for argv in (codex.launch_argv("box", "task", "m", 3, "http://p", limits=limits),
                  codex.interactive_argv("box", "m", "http://p", limits=limits)):
@@ -675,4 +675,4 @@ def test_codex_left_unlimited_passes_its_users_own_config():
     assert "features.apps=false" not in argv
     assert not any(a.startswith("web_search=") for a in argv)
     assert not any(a.startswith(("HTTPS_PROXY", "HTTP_PROXY")) for a in argv)
-    assert 'sandbox_mode="danger-full-access"' in argv
+    assert 'sandbox_mode="danger-full-access"' not in argv

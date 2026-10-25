@@ -72,6 +72,8 @@ class ClaudeCode(Agent):
     skills = SkillLocations('.claude/skills', '/claude-config/skills',
                            '.claude/rules/openrua-skills.md')
     permission_modes = tuple(ClaudeConversation.MODES)
+    default_permissions = ClaudeConversation.DEFAULT_PERMISSIONS
+    legacy_permission_modes = {'ask': 'default', 'auto-review': 'auto', 'auto': 'bypassPermissions'}
 
     def prepare_profile(self, source: Path, dest: Path, *,
                         require_credentials: bool = True,
@@ -172,10 +174,12 @@ class ClaudeCode(Agent):
     def conversation(self, sandbox: str, model: str, proxy: str,
                      options: dict[str, Any] | None = None,
                      session_id: str | None = None, limits: dict | None = None,
-                     permissions: str = "auto", **_: Any) -> Conversation:
+                     permissions: str | None = None, **_: Any) -> Conversation:
+        permissions = self.default_permissions if permissions is None else permissions
         opts = self._opts(options)
         native_id = session_id or str(uuid4())
         protocol = ClaudeConversation(native_id, permissions)
+        protocol.model = model
         argv = [*self.exec_argv(sandbox, self._env(proxy, opts, limits), stdin=True),
                 self.binary, "-p", "--model", model,
                 "--effort", str(opts["effort"]), "--autocompact", str(opts["autocompact"]),
@@ -190,6 +194,9 @@ class ClaudeCode(Agent):
         return Conversation(argv, protocol)
 
     # ------------------------------------------------------------ auth
+
+    def model_catalog(self, sandbox: str, model: str, proxy: str, **kwargs):
+        return self.conversation(sandbox, model, proxy, **kwargs)
 
     def token_hint(self, token_file: Path | str) -> str:
         """Minting authorises whichever account is logged in to the browser,

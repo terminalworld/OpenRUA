@@ -73,7 +73,7 @@ class KimiConversation(ConversationProtocol):
                 if not sid or (self.session_id and sid != self.session_id):
                     raise ValueError('native conversation identity differs from requested session')
                 self.session_id, self.ready = sid, True
-                return Update(events=[Event('ready', data={'session_id': sid, 'identity_confirmed': True})])
+                return Update(events=[Event('ready', data={'session_id': sid, 'identity_confirmed': True, 'settings': []})])
             if method == 'submit' and result.get('prompt_id') != target:
                 raise ValueError('native prompt acknowledgement differs from submitted input')
             if method == 'cancel':

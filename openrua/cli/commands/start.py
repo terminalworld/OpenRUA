@@ -91,8 +91,32 @@ def authentication_choices(home: Path, names: list[str], *, project: Path | None
                         'auth_mode': auth.get('mode', 'native'),
                         'api_key_file': auth.get('key_file') or '', 'model': selected.get('model') or adapter.default_model,
                         'title': adapter.title or adapter.name, 'version': adapter.version,
+                        'model_selection': adapter.model_selection,
+                        'model_discovery': 'model_catalog' in adapter.capabilities,
                         'native_hint': adapter.login_hint(paths.credentials_dir(home) / adapter.name)}
     return result
+
+
+def discover_models(home, values, intent, application, interact):
+    from openrua.cli import model_catalog
+    adapter, _ = agent_settings.resolve(home, values['agent'] or None)
+    if 'model_catalog' not in adapter.capabilities:
+        raise UnavailableError('This plugin does not expose a native model list.',
+                               hint='use its configured model or enter a supported model ID when available')
+    docker_setup.ensure(**({'interact': interact('Docker setup')} if application else {}))
+    progress = application.progress if application else print
+    if intent == 'connect':
+        from openrua.cli.preparation import prepare_connect
+        prepare_connect(home, values['agent'] or None, progress=progress)
+        from openrua.config.schema import sandbox_image
+        image = sandbox_image('jazzy')
+    else:
+        prepare(home, values, progress=progress, environment_only=True)
+        image = validate_values(home, values)['machine']['backend']['sandbox_image']
+    if values.get('auth_mode', 'native') == 'native':
+        login.ensure(home, values['agent'] or None, 'native',
+                     **({'interact': interact('Agent sign-in')} if application else {}))
+    return model_catalog.choices(home, values, image)
 
 
 def setup_values(project: Path, incoming: dict) -> dict:
@@ -206,7 +230,10 @@ def open_history(home: Path, name: str, *, screen=None):
         if value is not None or key in {'simulator', 'benchmark'}:
             argv.extend([flag, str(value) if value is not None else ''])
     argv.extend(['--name', name, '--workspace', str(selected), '--resume-conversation'])
-    argv.extend(['--permissions', settings.get('permissions') or facts.get('permissions', 'auto')])
+    adapter = agents.get(facts.get('agent_spec') or facts['agent'], home, version=facts.get('agent_version'))
+    permissions = agents.saved_permissions(adapter, facts, snapshot)
+    if permissions is not None:
+        argv.extend(['--permissions', permissions])
     for key, value in (facts.get('limits') or {}).items():
         flag = key.replace('_', '-')
         argv.append(f'--{flag}' if value is True else f'--no-{flag}' if value is False else f'--{flag}={value}')
@@ -375,6 +402,8 @@ def _run(args, application=None) -> int:
                                 sign_in=lambda values: login.ensure(args.home, values['agent'] or None,
                                                                     values.get('auth_mode', 'native'), **({'interact': interact('Agent sign-in')} if application else {})),
                                 resolve_values=lambda incoming: setup_values(selected, incoming),
+                                resolve_models=lambda incoming, intent: discover_models(args.home, incoming, intent,
+                                    application, interact),
                                 connect=lambda values: connect.launch(args.home,
                                                                       agent=values['agent'] or None,
                                                                       model=values['model'] or None, project=selected))

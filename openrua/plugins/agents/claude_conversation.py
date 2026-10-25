@@ -19,18 +19,19 @@ from openrua.agents.conversation import ConversationProtocol, Event, Update
 
 
 class ClaudeConversation(ConversationProtocol):
-    MODES = {'ask': 'default', 'auto': 'bypassPermissions', 'auto-review': 'auto',
+    DEFAULT_PERMISSIONS = 'auto'
+    MODES = {'default': 'default', 'auto': 'auto', 'bypassPermissions': 'bypassPermissions',
              'acceptEdits': 'acceptEdits', 'plan': 'plan', 'dontAsk': 'dontAsk'}
     PERMISSIONS = [
-        {'value': 'ask', 'label': 'Manual', 'description': 'Native default permission mode'},
-        {'value': 'auto-review', 'label': 'Auto', 'description': 'Native auto mode classifies actions before execution'},
+        {'value': 'default', 'label': 'Default', 'description': 'Ask for approval using the native default mode'},
+        {'value': 'auto', 'label': 'Auto', 'description': 'Native auto mode classifies actions before execution'},
         {'value': 'acceptEdits', 'label': 'Accept edits', 'description': 'Native acceptEdits mode'},
         {'value': 'plan', 'label': 'Plan', 'description': 'Native plan mode'},
         {'value': 'dontAsk', 'label': "Don't ask", 'description': 'Native dontAsk mode denies actions that would prompt'},
-        {'value': 'auto', 'label': 'Bypass permissions', 'description': 'Native bypassPermissions mode'},
+        {'value': 'bypassPermissions', 'label': 'Bypass permissions', 'description': 'Skip native permission checks'},
     ]
     SETTINGS = {"permissions": tuple(MODES), "model": None}
-    def __init__(self, session_id: str, permissions: str = "auto"):
+    def __init__(self, session_id: str, permissions: str = DEFAULT_PERMISSIONS):
         if permissions not in self.MODES:
             raise ValueError('unsupported native permission mode')
         self.session_id = session_id
@@ -54,6 +55,7 @@ class ClaudeConversation(ConversationProtocol):
         self._steers: dict[str, str] = {}   # echoed uuid -> message ID it carried
         self._settings: dict[str, tuple[str, str]] = {}  # request ID -> (setting, value)
         self._clearing = False              # the running turn is /clear
+        self.model = ''
 
     @property
     def can_submit(self) -> bool:
@@ -169,6 +171,15 @@ class ClaudeConversation(ConversationProtocol):
                 return Update(events=[Event("protocol_error", turn_id,
                                             {"operation": operation, "error": response.get("error")})])
             if operation == "initialize":
+                details = response.get('response') or {}
+                choices = [dict(value=row['value'], label=row.get('displayName') or row['value'],
+                                description=row.get('description') or '', resolved_model=row.get('resolvedModel'))
+                           for row in details.get('models') or []
+                           if isinstance(row, dict) and isinstance(row.get('value'), str) and row['value']]
+                confirmed = details.get('current_permission_mode')
+                if confirmed and confirmed != self.permissions:
+                    self.ready = False
+                    raise ValueError(f'Native permission mode {confirmed} differs from requested {self.permissions}')
                 self.ready = True
                 # The ID was passed with --session-id/--resume. Confirmation
                 # arrives in a native session event after the first message.
@@ -177,9 +188,13 @@ class ClaudeConversation(ConversationProtocol):
                             if isinstance(c, dict) and c.get("name")]
                 return Update(events=[
                     Event("ready", data={"session_id": self.session_id,
+                                         'settings': list(self.SETTINGS),
                                          "identity_confirmed": self._confirmed}),
                     Event("setting", data={"setting": "permissions", "value": self.permissions,
                                            "choices": self.PERMISSIONS}),
+                    Event('setting', data={'setting': 'model', 'value': self.model,
+                                          'choices': choices,
+                                          'error': None if choices else 'The native CLI did not supply a model list.'}),
                     Event("commands", data={"commands": commands})])
             self._cancel_pending = False
             return Update(events=[Event("interrupt_acknowledged", turn_id)])

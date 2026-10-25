@@ -77,8 +77,11 @@ export class Welcome {
 
   render(width) {
     const f = this.facts;
-    if (f.interactive && !this.readOnly) return [...wrapTextWithAnsi([f.robot_model || configName(f.robot),
-      configName(f.simulator), configName(f.benchmark)].filter(Boolean).join(' · '), width).map(muted), ''];
+    if (f.interactive && !this.readOnly) return [
+      bold(this.returning ? 'Welcome back to OpenRUA' : 'Welcome to OpenRUA'),
+      ...wrapTextWithAnsi([f.robot_model || configName(f.robot), configName(f.simulator),
+        configName(f.benchmark)].filter(Boolean).join(' · '), width).map(muted),
+      muted('/help for commands · Esc stops the robot'), ''];
     const scene = [configName(f.benchmark), f.suite && (f.task_id != null ? `${f.suite} #${f.task_id}` : f.suite)]
       .filter(Boolean).map(plain).join(' / ');
     const below = muted('  ' + [this.name && `session ${plain(this.name)}`, f.model && plain(f.model), scene]

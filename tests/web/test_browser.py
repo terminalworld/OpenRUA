@@ -303,10 +303,13 @@ def test_the_page_changes_the_agents_settings_and_says_what_events_say(tmp_path)
     from openrua.sessions.core import Session
 
     async def check(page, store, native, server):
-        await send(page, "/permissions ask")
-        await playwright.expect(page.locator("#notes")).to_contain_text("asks before commands")
+        await emit(native, 'setting', None, setting='permissions', value='default', choices=[
+            {'value': 'default', 'label': 'Default'}, {'value': 'auto', 'label': 'Auto'}])
+        await playwright.expect(page.locator('#permissions')).to_be_enabled()
+        await send(page, "/permissions default")
+        await playwright.expect(page.locator("#notes")).to_contain_text("Permissions: Default")
         await page.locator("#permissions").select_option("auto")
-        await playwright.expect(page.locator("#notes")).not_to_contain_text("asks before commands")
+        await playwright.expect(page.locator("#notes")).to_contain_text("Permissions: Auto")
         await send(page, "/model m2")
         await playwright.expect(page.locator("#agent-model")).to_have_text("m2")
         await playwright.expect(page.locator("#notice")).to_contain_text("model: m2")

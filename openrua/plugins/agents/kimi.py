@@ -11,6 +11,9 @@ from openrua.plugins.agents.kimi_conversation import KimiConversation
 
 
 class Kimi(Agent):
+    model_selection = False
+    permission_modes = ()
+    default_permissions = None
     def __init__(self, **fields):
         super().__init__(**fields)
         if self.version != '2.1.1':

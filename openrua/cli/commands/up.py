@@ -71,7 +71,7 @@ def robot_request(args) -> RobotRequest:
         init_state=args.init_state,
         project=Path(args.workspace) if args.workspace else None,
         ros_domain=args.ros_domain, limits=limit_overrides(args),
-        permissions=getattr(args, "permissions", None) or "auto")
+        permissions=getattr(args, "permissions", None))
 
 
 
@@ -162,8 +162,8 @@ def add_permissions_option(p) -> None:
     """How a shared conversation's agent starts (openrua, serve); the native
     terminal (``openrua agent``) keeps the CLI's own prompting."""
     p.add_argument("--permissions", default=None, metavar='MODE',
-                   help="native permission mode: ask, auto-review, auto (legacy bypass default), "
-                   "or another mode supported by the selected agent; /permissions lists choices")
+                   help="selected agent's native permission mode; the plugin supplies its default; "
+                   "/permissions lists supported choices")
 
 
 def add_parser(sub) -> None:

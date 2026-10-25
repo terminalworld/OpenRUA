@@ -119,20 +119,25 @@ def choose_history(list_sessions, open_session, screen=run_screen, *, environmen
 
 def setup(values, choices, location, save, check, launch, agent_models,
           list_sessions, open_session, screen=run_screen, *, environments=None, prepare=None, authentication=None, resolve_agent=None,
-          connect=None, ready=None, sign_in=None, list_all=None, scope=None, save_connect=None, application=None, resolve_values=None):
+          connect=None, ready=None, sign_in=None, list_all=None, scope=None, save_connect=None, application=None, resolve_values=None,
+          resolve_models=None):
     notice = ''
     authentication = dict(authentication or {})
     drafts = {}
     view, intent = None, 'start'
+    model_choices = []
+    agent_step = None
     def perform(title, operation, native=False):
         return application.perform(title, operation, native=native) if application else operation()
     while True:
         result = screen({'mode': 'setup', 'values': values, 'choices': choices,
                          'location': location, 'models': agent_models, 'notice': notice,
                          'environments': environments, 'authentication': authentication,
-                         'project': scope, 'view': view, 'intent': intent})
+                         'project': scope, 'view': view, 'intent': intent, 'model_choices': model_choices,
+                         'agent_step': agent_step})
         action = result['action']
         view = result.get('view') or 'review'
+        agent_step = result.get('agent_step', view == 'agent-step')
         intent = result.get('intent') or intent
         if action == 'quit':
             return None
@@ -145,7 +150,7 @@ def setup(values, choices, location, save, check, launch, agent_models,
                 return selected
             continue
         incoming = result.get('values')
-        if (action in {'start', 'check', 'connect'} and resolve_values and isinstance(incoming, dict)
+        if (action in {'start', 'check', 'connect', 'models'} and resolve_values and isinstance(incoming, dict)
                 and set(incoming) == set(values) and all(isinstance(v, str) for v in incoming.values())):
             try:
                 incoming = resolve_values(incoming)
@@ -171,9 +176,20 @@ def setup(values, choices, location, save, check, launch, agent_models,
             except Exception as exc:
                 notice = str(exc) + '\n' + getattr(exc, 'hint', '')
                 continue
-        if action not in {'agent', 'check', 'start'} or not isinstance(incoming, dict) or set(incoming) != set(values) or not all(isinstance(v, str) for v in incoming.values()):
+        if action not in {'agent', 'check', 'start', 'models'} or not isinstance(incoming, dict) or set(incoming) != set(values) or not all(isinstance(v, str) for v in incoming.values()):
             raise RuntimeError('Invalid setup result; settings were not saved.')
         values = incoming
+        if action == 'models':
+            view = 'models'
+            model_choices = []
+            try:
+                if resolve_models is None:
+                    raise RuntimeError('Native model discovery is not available in this entry point.')
+                model_choices = perform('Reading native models', lambda: resolve_models(values, intent))
+                notice = ''
+            except Exception as exc:
+                notice = str(exc) + '\n' + getattr(exc, 'hint', '')
+            continue
         if action == 'agent':
             name = result.get('agent')
             if not isinstance(name, str) or not name.strip() or resolve_agent is None:

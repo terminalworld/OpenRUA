@@ -11,6 +11,9 @@ from openrua.plugins.agents.zcode_conversation import ZCodeConversation
 
 
 class ZCode(Agent):
+    model_selection = False
+    permission_modes = ()
+    default_permissions = None
     def __init__(self, **fields):
         super().__init__(**fields)
         if self.version != "0.16.9":
