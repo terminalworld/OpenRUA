@@ -384,13 +384,14 @@ def test_confirmed_closed_records_resolve_a_lost_shutdown_reply(failed):
     assert calls == [failed]
 
 
-def test_unconfirmed_records_cannot_turn_a_failed_stop_into_success():
+@pytest.mark.parametrize('readonly,closed', [(True, False), (False, True)])
+def test_unconfirmed_records_cannot_turn_a_failed_stop_into_success(readonly, closed):
     def unavailable():
         raise RuntimeError('shutdown reply lost')
 
     client = SimpleNamespace(url='http://127.0.0.1:1', token='token',
         snapshot=lambda: {'state': {'closed': False}}, end=unavailable)
-    archive = SimpleNamespace(read_only=True, snapshot=lambda: {'state': {'closed': False}})
+    archive = SimpleNamespace(read_only=readonly, snapshot=lambda: {'state': {'closed': closed}})
     replies = iter([{'action': 'quit'}, {'action': 'answer', 'value': 'no'},
                     {'action': 'quit', 'ended': True}])
     screens = []
