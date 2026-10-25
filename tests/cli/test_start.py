@@ -117,6 +117,25 @@ def test_setup_resolves_an_agent_manifest_in_the_selected_project(tmp_path, monk
     assert facts[0]['api'] and facts[0]['auth_mode'] == 'native'
 
 
+def test_setup_offers_every_bundled_conversation_agent(tmp_path, monkeypatch):
+    from openrua.terminal import launcher
+    monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
+    monkeypatch.setattr('sys.stdin.isatty', lambda: True)
+    monkeypatch.setattr('sys.stdout.isatty', lambda: True)
+    captured = []
+    def setup(values, choices, *args, **callbacks):
+        captured.append(choices['agent'])
+        for name in ('claude-code', 'codex', 'kimi', 'zcode'):
+            facts = callbacks['authentication'][name]
+            assert facts['title'] and facts['model'] and facts['api']
+            assert facts['auth_mode'] == 'native'
+    monkeypatch.setattr(launcher, 'setup', setup)
+    assert start.run(args(tmp_path, '--setup')) == 0
+    assert captured == [['claude-code', 'codex', 'kimi', 'zcode']]
+    assert not (tmp_path / 'config.yaml').exists()
+    assert not (tmp_path / 'sandboxes').exists()
+
+
 def test_setup_resolves_an_api_key_file_in_the_selected_project(tmp_path, monkeypatch):
     from openrua.terminal import launcher
     project = tmp_path / 'other-project'
@@ -480,7 +499,10 @@ def test_connect_setup_passes_new_api_choice_to_its_service(tmp_path, monkeypatc
 def test_entered_external_plugin_can_explicitly_select_api_in_setup(tmp_path, plugin):
     from pathlib import Path
     from openrua.terminal import launcher
-    manifest = str(Path(__file__).resolve().parents[2] / 'examples/plugins' / plugin / 'agent.yaml')
+    source = Path(__file__).resolve().parents[2] / 'openrua/configs/agents' / (plugin + '.yaml')
+    manifest_file = tmp_path / 'project' / (plugin + '.yaml')
+    manifest_file.write_bytes(source.read_bytes())
+    manifest = str(manifest_file)
     key = tmp_path / 'provider.key'
     key.write_text('synthetic-key-no-model-calls')
     values, models = start.values_for(args(tmp_path, '--bench', 'capbench'))

@@ -89,7 +89,9 @@ def authentication_choices(home: Path, names: list[str], *, project: Path | None
         auth = selected.get('auth') or {}
         result[name] = {'api': 'prepare_api_profile' in adapter.capabilities,
                         'auth_mode': auth.get('mode', 'native'),
-                        'api_key_file': auth.get('key_file') or '', 'model': selected.get('model') or ''}
+                        'api_key_file': auth.get('key_file') or '', 'model': selected.get('model') or adapter.default_model,
+                        'title': adapter.title or adapter.name, 'version': adapter.version,
+                        'native_hint': adapter.login_hint(paths.credentials_dir(home) / adapter.name)}
     return result
 
 

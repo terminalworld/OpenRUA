@@ -9,6 +9,7 @@ export class Setup extends Screen {
     this.spec = spec; this.values = {...spec.values};
     this.authentication = {...spec.authentication}; this.positions = new Map();
     this.intent = spec.intent || 'start';
+    this.agentStep = spec.view === 'agent-step';
     this.ui.setHeading('OpenRUA · Setup', spec.project || spec.location);
     this.body = new Container(); this.ui.addChild(this.body);
     this.notice = new Text(plain(spec.notice), 0, 0);
@@ -18,7 +19,8 @@ export class Setup extends Screen {
     this.show(view);
   }
   show(view) {
-    if (view === 'agent') this.agentSettings();
+    if (view === 'agent' || view === 'agent-step') this.agentSettings();
+    else if (view === 'choose-agent') this.chooseAgent();
     else if (view === 'environment') this.environment();
     else this.menu();
   }
@@ -54,8 +56,8 @@ export class Setup extends Screen {
       {value: 'new', label: 'Connect a new robot…'},
     ], value => {
       this.values.sim = ''; this.values.bench = '';
-      if (value === 'new') { this.intent = 'connect'; this.menu(); }
-      else this.edit('robot', 'Robot configuration path', true, () => this.real());
+      if (value === 'new') { this.intent = 'connect'; this.chooseAgent(); }
+      else this.edit('robot', 'Robot configuration path', true, () => this.real(), () => this.chooseAgent());
     }, () => this.environment());
   }
   simulation() {
@@ -77,11 +79,13 @@ export class Setup extends Screen {
         if (benchmark) this.values.robot = '';
         this.edit(benchmark ? 'bench' : 'sim', benchmark ? 'Benchmark configuration path' : 'Simulator configuration path', true,
           () => this.environments(benchmark), !benchmark && !this.values.robot
-            ? () => this.edit('robot', 'Robot type or configuration', true, () => this.environments(false)) : undefined);
-      } else { Object.assign(this.values, rows[Number(value)].selection); this.menu(); }
+            ? () => this.edit('robot', 'Robot type or configuration', true, () => this.environments(false), () => this.chooseAgent())
+            : () => this.chooseAgent());
+      } else { Object.assign(this.values, rows[Number(value)].selection); this.chooseAgent(); }
     }, () => this.simulation());
   }
   menu() {
+    this.agentStep = false;
     const environment = this.intent === 'connect' ? 'Real robot / New connection'
       : this.values.bench || [this.values.robot, this.values.sim].filter(Boolean).join(' / ') || 'Not selected';
     this.list('Review', 'Review your project', [
@@ -99,15 +103,36 @@ export class Setup extends Screen {
     }, () => this.environment(), {summary: [bold('Environment'), `  ${plain(environment)}`, bold('Agent'),
       `  ${plain(this.values.agent || 'Configured default')} · ${plain(this.values.model || 'Default model')}`]});
   }
+  chooseAgent(step = true) {
+    this.agentStep = step;
+    const names = [...(this.spec.choices.agent || [])];
+    if (this.values.agent && !names.includes(this.values.agent)) names.unshift(this.values.agent);
+    const items = names.map(value => {
+      const facts = this.authentication[value] || {};
+      return {value, label: `${this.values.agent === value ? '✓ ' : ''}${plain(facts.title || value)}`,
+        description: [facts.version, facts.model || this.spec.models?.[value]].filter(Boolean).map(plain).join(' · ')};
+    });
+    items.push({value: '\0custom', label: 'Other agent or manifest…'});
+    const back = () => !step ? this.agentSettings() : this.intent === 'connect' || !(this.values.sim || this.values.bench)
+      ? this.real() : this.environments(Boolean(this.values.bench));
+    this.list('Agent', 'Choose your coding agent', items, value => {
+      this.returnTo = () => this.agentSettings();
+      if (value === '\0custom') this.edit('agent', 'Coding agent name or manifest path', true, () => this.chooseAgent(step));
+      else this.update('agent', value);
+    }, back, {selected: this.values.agent});
+  }
   agentSettings() {
-    const rows = [{value: 'agent', label: `Coding agent: ${plain(this.values.agent || 'Configured default')}`},
+    const rows = [...(this.agentStep ? [{value: 'continue', label: 'Continue to review'}] : []),
+      {value: 'agent', label: `Coding agent: ${plain(this.authentication[this.values.agent]?.title || this.values.agent || 'Configured default')}`},
       {value: 'model', label: `Model: ${plain(this.values.model || 'Native default')}`}];
     if (Object.hasOwn(this.values, 'auth_mode')) rows.push({value: 'auth_mode', label: `Authentication: ${this.authLabel(this.values.auth_mode)}`});
     if (this.values.auth_mode === 'api') rows.push({value: 'api_key_file', label: `API key file: ${plain(this.values.api_key_file || 'Not selected')}`});
     rows.push({value: 'back', label: 'Back'});
-    this.list('Agent', 'Agent settings', rows, value => value === 'back' ? this.menu() : this.edit(value,
+    this.list('Agent', 'Agent settings', rows, value => value === 'continue' ? this.menu()
+      : value === 'back' ? this.agentStep ? this.chooseAgent() : this.menu()
+      : value === 'agent' ? this.chooseAgent(this.agentStep) : this.edit(value,
       {agent: 'Coding agent', model: 'Model ID', auth_mode: 'Authentication', api_key_file: 'API key file path'}[value], false,
-      () => this.agentSettings()), () => this.menu());
+      () => this.agentSettings()), () => this.agentStep ? this.chooseAgent() : this.menu());
   }
   advanced() {
     this.list('Advanced', 'Advanced options', [
@@ -119,7 +144,8 @@ export class Setup extends Screen {
   }
   update(key, value) {
     if (key === 'agent' && value.trim() !== this.values.agent) {
-      this.finish({action: 'agent', agent: value.trim(), values: {...this.values}, view: 'agent', intent: this.intent}); return;
+      this.finish({action: 'agent', agent: value.trim(), values: {...this.values},
+        view: this.agentStep ? 'agent-step' : 'agent', intent: this.intent}); return;
     }
     this.values[key] = value.trim();
     if (key === 'auth_mode' && value === 'native') this.values.api_key_file = '';
@@ -141,7 +167,7 @@ export class Setup extends Screen {
     return [...new Set(this.spec.environments.filter(row => before.every(k => !this.values[k] || this.values[k] === row.selection[k]))
       .map(row => row.selection[key]))].sort();
   }
-  authLabel(mode) { return mode === 'api' ? 'API key file (API billing)' : 'Native CLI login'; }
+  authLabel(mode) { return mode === 'api' ? 'API key file (API billing)' : 'Native CLI profile'; }
   edit(key, label, custom = false, back = () => this.menu(), after) {
     this.returnTo = after || (['agent', 'model', 'auth_mode', 'api_key_file'].includes(key) ? () => this.agentSettings() : () => this.menu());
     this.customEdit = custom;
@@ -150,7 +176,9 @@ export class Setup extends Screen {
       this.list(label, label, [
         ...choices.map(value => ({value, label: key === 'auth_mode' ? this.authLabel(value) : plain(value) || 'Native scene'})),
         ...(!['auth_mode', 'robot', 'sim', 'bench'].includes(key) ? [{value: '\0custom', label: 'Enter a name or profile path…'}] : []),
-      ], value => value === '\0custom' ? this.edit(key, label, true, back) : this.update(key, value), back, {selected: this.values[key]});
+      ], value => value === '\0custom' ? this.edit(key, label, true, back) : this.update(key, value), back,
+      {selected: this.values[key], summary: key === 'auth_mode' && this.authentication[this.values.agent]?.native_hint
+        ? [muted(plain(this.authentication[this.values.agent].native_hint))] : []});
       return;
     }
     this.body.clear(); this.body.addChild(new Text(bold(label), 0, 1));

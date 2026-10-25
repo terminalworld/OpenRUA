@@ -363,77 +363,22 @@ The shared queue and execution owner consume this contract without vendor
 branches; their boundaries and current validation scope are described in
 [sessions.md](sessions.md).
 
-## Additional native integrations under development
+## Additional bundled agents
 
-Kimi Code and ZCode are not yet selectable bundled agents. A successful native
-API file task is a separate check from a complete OpenRUA robot integration.
-The default remains the configured native login; saving a provider key does
-not select it or authorize an automatic API fallback.
+[Kimi Code](agents/kimi.md) and [ZCode](agents/zcode.md) are included as preview
+agents in the ordinary installation and setup chooser. Their plugin code,
+version pins, installation recipes and transport are packaged with OpenRUA;
+users can select `--agent kimi` or `--agent zcode` directly.
 
-`plugins/agents/zcode_conversation.py` provides a version-specific conversation
-adapter for external plugin development, checked against the official ZCode
-CLI 0.16.9 source at commit `29628c9`. It uses the native `app-server` session
-compatibility methods. These methods are being replaced upstream; a future
-CLI version must be revalidated before this adapter is used with it. The
-module does not install ZCode, configure authentication, or register a robot
-setup option.
+Both use the existing Conversation and Execution contracts. Real native CLI
+checks cover shared conversations, approvals, resume, interruption and failure
+handling with a local model fixture. Bounded real-provider checks have also
+covered file work and shared chat. The guides distinguish API, native profile
+and robot-task evidence. Native profile import is limited to the documented
+formats; ZCode OAuth account reuse remains unsupported. Neither plugin switches
+from native authentication to API billing on its own.
 
-The adapter runs through the existing `Conversation` and `Execution` contracts.
-With the real CLI and a local model fixture, validation covered two clients
-sharing one native session, an explicitly approved file write, exact session
-resume after restarting the native process, interruption with a retained
-paused queue, and a provider error that pauses subsequent messages. Protocol
-regressions additionally cover late acknowledgements, duplicate and foreign
-turn events, permission retries, and unknown completion statuses. These checks
-exercise protocol behavior, not model capability or robot control. Subscription
-callbacks, structured user questions and robot tasks remain to be validated.
-The external example below additionally validates container installation and
-the same lifecycle checks in that container. Unsupported client requests are rejected rather than
-answered on the user's behalf.
-
-Kimi Code 2.1.1's ACP reports `end_turn` for some non-authentication provider
-errors as well as normal completion. A local error fixture reproduced this
-behavior. Its official local server instead exposes a correlated transcript
-turn with `state: failed` and the provider error. The experimental Kimi example below uses that native status source, with
-prompt-correlated completion and the existing shared queue.
-
-Upstream references: [ZCode source](https://github.com/zai-org/ZCode),
-[Kimi ACP reference](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/reference/kimi-acp.md),
-and [Kimi local server reference](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/reference/server-api.md).
-
-### Experimental ZCode external example
-
-The [ZCode example](../examples/plugins/zcode/README.md) adds a pinned source
-installation and an explicit API profile to the existing conversation adapter.
-It uses the standard external-manifest entry point and shared session service.
-Native subscription reuse and robot-task performance are not validated, so it
-is not listed as a bundled agent or offered in guided setup. See the example
-for its supported endpoint, container lifecycle checks, and remaining
-limitations. Bounded real-provider checks completed a file task and two
-shared-chat turns in the same native session, retaining conversational context.
-
-### Experimental Kimi Code external example
-
-The [Kimi Code example](../examples/plugins/kimi/README.md) supplies a pinned
-2.1.1 install, an isolated native profile for explicitly selected Moonshot API
-authentication, and shared chat through the official local server. A small
-plugin-owned pipe/HTTP bridge keeps the existing execution owner and user
-queue unchanged. Native process and container checks cover file tools,
-approvals, exact resume, cancellation and failure pause using a local model
-fixture. A bounded real-provider check also completed two shared-chat turns
-in the same native session and retained conversational context. Native
-subscription reuse and robot-task performance remain unvalidated; the example
-is not a default setup option.
-
-### Staging new integrations
-
-New integrations remain external manifests until their documented capabilities
-have been validated. Being present in `examples/plugins/` does not make a plugin
-a bundled setup choice. Record which paths have offline checks, real-provider
-checks and robot-task evidence separately before considering promotion.
-
-The Kimi example now stages native file-based OAuth profiles; the ZCode example
-imports self-contained, selected native Coding Plan key profiles. These paths
-have offline checks only. ZCode OAuth accounts remain unsupported. Both retain
-explicit API mode and reject unsupported native profiles without switching
-billing modes. See each example for prerequisites and the next live checks.
+New external agents can still use a project manifest and the same setup path.
+The manifest's `title`, pinned version, default model and capabilities supply the
+chooser and authentication options. A plugin that cannot provide shared chat
+is rejected before starting a shared session.

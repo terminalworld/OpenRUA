@@ -1,5 +1,5 @@
-# Experimental external plugin. Native OAuth is pending live validation; see README.md.
 name: kimi
+title: Kimi Code (preview)
 default_model: kimi-k2.6
 binary: kimi
 version: 2.1.1
@@ -27,4 +27,4 @@ version_argv:
 - --version
 default_options:
   api_base_url: https://api.moonshot.ai/v1
-entry_point: ./adapter.py
+entry_point: kimi

@@ -1,4 +1,4 @@
-"""ZCode CLI 0.16.9's native session protocol, for external plugin development.
+"""ZCode CLI 0.16.9's native session protocol.
 
 The upstream compatibility methods are version-specific. This module does not
 install an agent, select credentials, or register a selectable robot plugin.

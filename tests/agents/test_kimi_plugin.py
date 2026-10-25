@@ -1,5 +1,5 @@
-"""External Kimi profile isolation, configuration and native launch contracts."""
-import importlib.util
+"""Bundled Kimi profile isolation, configuration and native launch contracts."""
+import json
 from pathlib import Path
 
 import pytest
@@ -9,13 +9,13 @@ from openrua.cli import build_parser
 from openrua.cli.commands import config as configure
 from openrua.testing import check_manifest
 
-MANIFEST = Path(__file__).resolve().parents[2] / 'examples/plugins/kimi/agent.yaml'
+MANIFEST = Path(__file__).resolve().parents[2] / 'openrua/configs/agents/kimi.yaml'
 
 
-def test_external_manifest_uses_the_existing_contract_without_becoming_a_default():
+def test_external_manifest_uses_the_existing_contract_and_is_available_by_name():
     agent = check_manifest(MANIFEST)
     assert agent.name == 'kimi'
-    assert all(m.name != 'kimi' for m in agents.manifests())
+    assert any(m.name == 'kimi' for m in agents.manifests())
     assert not agent.inspect_login(Path('/missing')).available
     with pytest.raises(ValueError, match='native'):
         agent.prepare_profile(Path('/missing'), Path('/unused'))
@@ -63,9 +63,27 @@ def test_all_launch_modes_use_native_kimi_and_exact_resume():
 
 
 def bridge(tmp_path):
-    spec = importlib.util.spec_from_file_location('kimi_bridge', MANIFEST.with_name('bridge.py'))
-    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
-    return module.Bridge(tmp_path / 'profile', tmp_path / 'workspace', ['kimi'])
+    from openrua.plugins.agents.kimi_server import Bridge
+    return Bridge(tmp_path / 'profile', tmp_path / 'workspace', ['kimi'])
+
+
+def test_native_registry_is_not_assumed_to_mean_http_is_ready(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from openrua.plugins.agents import kimi_server
+    b = bridge(tmp_path)
+    instances = b.home / 'server/instances'
+    instances.mkdir(parents=True)
+    (instances / 'server.json').write_text(json.dumps({'pid': 12345, 'host': '127.0.0.1', 'port': 1234}))
+    monkeypatch.setattr(kimi_server.subprocess, 'Popen', lambda *a, **kw: SimpleNamespace(pid=12345, poll=lambda: None))
+    reads = []
+    def request(path):
+        reads.append(path)
+        if len(reads) == 1: raise TimeoutError('native HTTP routes are still starting')
+        return {'server_version': '2.1.1'}
+    b.request = request
+    b.start()
+    assert reads == ['meta', 'meta']
+    assert b.base == 'http://127.0.0.1:1234'
 
 
 def test_bridge_rejects_resume_from_a_different_workspace_or_pending_native_work(tmp_path):

@@ -57,6 +57,8 @@ def test_setup_retry_chat_and_leave_share_one_fullscreen(tmp_path, columns, rows
         wait('Choose your environment'); key(b'2')
         wait('Choose a simulation'); key(b'2')
         wait('Choose an environment'); key(b'1')
+        wait('Choose your coding agent'); key(b'1')
+        wait('Agent settings'); key(b'1')
         wait('Review your project'); key(b'1')
         wait('Fixture build failed'); key(b'1')
         wait('Ready'); key(b'Inspect\r')
@@ -117,6 +119,8 @@ def test_parent_exit_restores_terminal_and_does_not_reopen_an_exit_menu(tmp_path
         wait('Choose your environment'); key(b'2')
         wait('Choose a simulation'); key(b'2')
         wait('Choose an environment'); key(b'1')
+        wait('Choose your coding agent'); key(b'1')
+        wait('Agent settings'); key(b'1')
         wait('Review your project'); key(b'1')
         wait('Fixture build failed'); key(b'1')
         wait('Ready')
@@ -202,7 +206,8 @@ def test_real_startup_reports_invalid_preferences_then_opens_after_explicit_repa
     cleaned = config.read_bytes()
     code, output = run([
         ('Choose your environment', b'2'), ('Choose a simulation', b'1'),
-        ('Choose an environment', b'1'), ('Review your project', b'3'),
+        ('Choose an environment', b'1'), ('Choose your coding agent', b'2'),
+        ('Agent settings', b'1'), ('Review your project', b'3'),
         ('personal-model', b'\x04'),
     ])
     assert code == 0

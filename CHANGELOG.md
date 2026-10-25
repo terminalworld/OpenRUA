@@ -9,6 +9,15 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.25.0
+
+- Make coding-agent selection an explicit setup step after the environment.
+  Review the selected agent's model and authentication before saving the project.
+- Include Kimi Code 2.1.1 and ZCode 0.16.9 as preview choices alongside Claude Code,
+  Codex and custom manifests. Keep native profiles and API billing separate.
+- Wait for Kimi's local HTTP server to become ready after its instance file
+  appears, without replaying prompt submissions.
+
 ## 0.24.2
 
 - Preserve configuration and missing-file errors during startup, including

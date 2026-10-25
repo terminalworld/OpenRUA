@@ -85,14 +85,15 @@ a new conversation; `--resume` finds this project's earlier ones, and
 `--resume --all` searches every project ([robot projects](docs/projects.md)).
 
 **A simulated robot.** Choose **Simulation**, then **Native scene** or
-**Benchmark environment** and an environment. Review the selection, adjust
-**Agent settings** if needed, then choose **Save project and start**. The first
+**Benchmark environment** and an environment. Choose your coding agent and its settings, continue to
+review, then choose **Save project and start**. The first
 start builds the images, which takes a few minutes. Then tell the agent what you want, for example:
 
 > Look through the cameras and describe the scene, without moving the robot.
 
-**A real robot.** Choose **Real robot → Connect a new robot**, then
-**Connect robot** (or run `openrua connect`).
+**A real robot.** Choose **Real robot → Connect a new robot**, choose your
+coding agent and settings, continue to review, then **Connect robot**
+(or run `openrua connect`).
 Your agent sets the robot up with you, step by step, and OpenRUA checks each
 step, up to a first small motion with the emergency stop at hand
 ([Connect a real robot](docs/connect.md)).
@@ -255,13 +256,14 @@ list; `openrua bench --config <name>` runs one.
 |---|---|
 | [Claude Code](https://claude.com/claude-code) | supported (`--agent claude-code`) |
 | [Codex](https://github.com/openai/codex) | supported (`--agent codex`) |
+| [Kimi Code](docs/agents/kimi.md) | preview (`--agent kimi`) |
+| [ZCode](docs/agents/zcode.md) | preview (`--agent zcode`) |
 
-Experimental external plugins are available for
-[Kimi Code](examples/plugins/kimi/README.md) and
-[ZCode](examples/plugins/zcode/README.md). Both have passed small real-provider
-file tasks and two-turn shared-chat checks. Their API paths have real-provider checks; native Kimi OAuth and ZCode
-Coding Plan key profile staging have offline checks only. ZCode OAuth reuse
-remains unsupported, and robot tasks remain unvalidated. They are not default setup choices.
+[Kimi Code](docs/agents/kimi.md) (`--agent kimi`) and
+[ZCode](docs/agents/zcode.md) (`--agent zcode`) are bundled preview choices.
+Their API paths have real-provider checks; native OAuth/Coding Plan profile
+import has the documented limits. Setup explicitly asks for the coding agent
+after the environment and before the final review.
 
 Bring your own agent. An agent is a manifest (how to install its CLI in the sandbox, which
 hosts it talks to, how it logs in) and a small hooks class (how to

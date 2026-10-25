@@ -1,4 +1,4 @@
-"""Experimental ZCode plugin using native Coding Plan profiles or explicit API auth."""
+"""Preview ZCode plugin using native Coding Plan profiles or explicit API auth."""
 from __future__ import annotations
 
 import json
@@ -42,7 +42,7 @@ class ZCode(Agent):
                     ('https://open.bigmodel.cn/api/anthropic', 'https://api.z.ai/api/anthropic')):
                 raise ValueError('native ZCode requires an official Coding Plan endpoint')
             if selected['modelId'] != self.default_model:
-                raise ValueError('set default_model in the external manifest to the model selected in native ZCode')
+                raise ValueError('set default_model in a project agent manifest to the model selected in native ZCode')
             # Resolve only a self-contained provider rule. Inherited templates
             # need explicit materialization by the native client first.
             return {"schemaVersion": 1, "config": {
@@ -99,9 +99,9 @@ class ZCode(Agent):
 
     def _validate(self, model, options):
         if model != self.default_model:
-            raise ValueError("set default_model in the external manifest before preparing the API profile")
+            raise ValueError("set default_model in a project agent manifest before preparing the API profile")
         if options and any(self.default_options.get(k) != v for k, v in options.items()):
-            raise ValueError("configure ZCode options in the external manifest before preparing the profile")
+            raise ValueError("configure ZCode options in a project agent manifest before preparing the profile")
 
     def launch_argv(self, sandbox, prompt, model, max_turns, proxy, options=None,
                     session_id=None, resume=False, token_file=None, **unused):

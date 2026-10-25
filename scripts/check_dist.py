@@ -45,7 +45,8 @@ def invalid_config_smoke(executable: Path, home: Path, environment: dict) -> Non
     assert not (home / 'sandboxes').exists()
 
 
-def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Path | None = None) -> None:
+def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Path | None = None,
+                   *, agent: str = 'codex') -> None:
     """Exercise real TTY startup and detachment without starting robot resources."""
     import pty
     import fcntl
@@ -79,17 +80,17 @@ def terminal_smoke(executable: Path, home: Path, environment: dict, manifest: Pa
         wait(b'Choose your environment'); key(b'2')
         wait(b'Choose a simulation'); key(b'1')
         wait(b'Choose an environment'); key(b'1')
-        wait(b'Review your project'); key(b'3')
-        wait(b'Agent settings'); key(b'1')
-        wait(b'Enter a name or profile path')
+        wait(b'Choose your coding agent')
+        for title in (b'Claude Code', b'Codex', b'Kimi Code (preview)', b'ZCode (preview)', b'Other agent or manifest'):
+            assert title in frame, output.decode(errors='replace')
         if manifest:
-            key(b'3')
-            wait(b'Enter Confirm'); key(str(manifest).encode() + b'\r')
+            key(b'5')
+            wait(b'Coding agent name or manifest path'); key(str(manifest).encode() + b'\r')
         else:
-            key(b'2')
-        wait(b'Agent settings'); key(b'3')
-        wait(b'API key file (API billing)'); key(b'2')
+            key({'claude-code': b'1', 'codex': b'2', 'kimi': b'3', 'zcode': b'4'}[agent])
         wait(b'Agent settings'); key(b'4')
+        wait(b'API key file (API billing)'); key(b'2')
+        wait(b'Agent settings'); key(b'5')
         wait(b'Do not paste the key here'); key(b'\x04')
         child.wait(timeout=5)
         while select.select([master], [], [], 0)[0]:
@@ -257,6 +258,8 @@ from openrua.web import assets
 assert all(content for mime, content in assets().values())
 root = files('openrua')
 for path in ('sandbox/workspace/README.md', 'configs/agents/codex.yaml',
+             'configs/agents/kimi.yaml', 'configs/agents/zcode.yaml',
+             'plugins/agents/kimi_server.py',
              'configs/agents/claude-code.yaml', 'terminal/assets/src/workspace.mjs',
              'terminal/assets/src/exit.mjs', 'terminal/assets/src/project.mjs',
              'terminal/assets/src/schedules.mjs', 'cli/project_skills.py', 'cli/skill_tasks.py',
@@ -276,6 +279,9 @@ assert runtime()([str(entrypoint()), '--help'], env=env, return_completed_proces
                              dict(os.environ, PATH=str(environment / 'bin')))
         terminal_smoke(environment / 'bin' / 'openrua', root / 'empty-home',
                        dict(os.environ, PATH=str(environment / 'bin')))
+        for agent in ('claude-code', 'kimi', 'zcode'):
+            terminal_smoke(environment / 'bin' / 'openrua', root / f'{agent}-home',
+                           dict(os.environ, PATH=str(environment / 'bin')), agent=agent)
         manifest = root / 'external-agent.yaml'
         run('-c', "from importlib.resources import files; from pathlib import Path; import sys; "
             "Path(sys.argv[1]).write_bytes(files('openrua').joinpath('configs/agents/codex.yaml').read_bytes())", str(manifest))

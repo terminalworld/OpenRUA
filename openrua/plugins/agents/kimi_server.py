@@ -16,6 +16,7 @@ import sys
 import threading
 import time
 from urllib.parse import quote
+from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler, Request, build_opener
 
 
@@ -54,10 +55,18 @@ class Bridge:
                 info = json.loads(path.read_text())
                 if info['pid'] == self.process.pid and info['host'] == '127.0.0.1' and info['port'] > 0:
                     self.base = f"http://127.0.0.1:{info['port']}"
-                    meta = self.request('meta')
-                    if meta['server_version'] != '2.1.1':
-                        raise RuntimeError('Kimi server version mismatch; install the pinned 2.1.1 release')
-                    return
+                    try:
+                        meta = self.request('meta')
+                    except HTTPError:
+                        raise
+                    except (TimeoutError, URLError):
+                        # The native registry can appear before HTTP is ready.
+                        # Only this read is retried; prompts are never replayed.
+                        break
+                    else:
+                        if meta['server_version'] != '2.1.1':
+                            raise RuntimeError('Kimi server version mismatch; install the pinned 2.1.1 release')
+                        return
             time.sleep(.05)
         raise TimeoutError('Kimi server did not start; inspect the private profile/server.log')
 

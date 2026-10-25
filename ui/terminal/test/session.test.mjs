@@ -401,7 +401,9 @@ test('new robot connection remains a connection when setup is retried', async ()
   const terminal = new Terminal();
   const setup = new Setup(spec, terminal);
   const running = setup.run();
-  terminal.input('1'); terminal.input('2'); terminal.input('1');
+  terminal.input('1'); terminal.input('2');
+  assert.match(setup.body.render(80).join('\n'), /Choose your coding agent/);
+  terminal.input('1'); terminal.input('1'); terminal.input('1');
   const result = await running;
   assert.equal(result.action, 'connect'); assert.equal(result.intent, 'connect');
   const retryTerminal = new Terminal();
@@ -411,6 +413,46 @@ test('new robot connection remains a connection when setup is retried', async ()
   retryTerminal.input('1');
   assert.equal((await retried).action, 'connect');
 });
+
+for (const [index, name] of ['claude-code', 'codex', 'kimi', 'zcode'].entries()) {
+  test(`environment selection explicitly offers ${name} before review`, async t => {
+    const {Setup} = await import('../src/screens.mjs');
+    const names = ['claude-code', 'codex', 'kimi', 'zcode'];
+    const authentication = Object.fromEntries(names.map(value => [value,
+      {api: true, title: value, model: `${value}-model`, auth_mode: 'native', api_key_file: ''}]));
+    const spec = {values: {robot: '', sim: '', bench: '', agent: 'claude-code',
+      model: 'claude-code-model', name: 'id', auth_mode: 'native', api_key_file: ''},
+      choices: {agent: names}, authentication,
+      environments: [{selection: {robot: 'panda', sim: 'robosuite', bench: ''}}]};
+    let terminal = new Terminal(), setup = new Setup(spec, terminal);
+    t.after(() => setup.stop());
+    let running = setup.run();
+    terminal.input('2'); terminal.input('1'); terminal.input('1');
+    const page = setup.body.render(100).join('\n');
+    assert.match(page, /Choose your coding agent/);
+    assert.doesNotMatch(page, /Save project and start/);
+    for (const value of names) assert.ok(page.includes(value));
+    terminal.input(String(index + 1));
+    if (name !== 'claude-code') {
+      const action = await running;
+      assert.equal(action.action, 'agent'); assert.equal(action.view, 'agent-step');
+      terminal = new Terminal();
+      setup = new Setup({...spec, ...action, values: {...action.values, agent: name,
+        model: `${name}-model`}}, terminal);
+      running = setup.run();
+    }
+    assert.match(setup.body.render(100).join('\n'), /Continue to review/);
+    terminal.input('\x1b');
+    assert.match(setup.body.render(100).join('\n'), /Choose your coding agent/);
+    assert.equal(setup.values.agent, name);
+    terminal.input(String(index + 1));
+    terminal.input('1');
+    assert.match(setup.body.render(100).join('\n'), /Review your project/);
+    assert.equal(setup.values.model, `${name}-model`);
+    terminal.input('\x04');
+    assert.equal((await running).action, 'quit');
+  });
+}
 
 test('end requires confirmation and releases execution through the service', {timeout: 15000}, async t => {
   const {client} = await fixture(t);
