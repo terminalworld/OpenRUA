@@ -391,7 +391,7 @@ class Session:
                                  'Check the session log before restarting.')
             if state["active"] or any(
                     m["status"] == "unknown" for m in state["messages"]):
-                raise ValueError("Wait for the current response to finish, then check any unconfirmed results before continuing.")
+                raise ValueError("Wait for the current response to finish. Check the robot and record the outcome of each unconfirmed message before continuing.")
             if not state["paused"] and pause_id == state["pause_id"]:
                 return None, []
             if not pause_id or pause_id != state["pause_id"]:
@@ -405,7 +405,7 @@ class Session:
         """Continue an ended conversation without replaying prior queued work."""
         def change(state):
             if not state['closed']:
-                raise ValueError('This conversation has not been confirmed stopped. Check its status before reopening it.')
+                raise ValueError('This conversation has not been confirmed stopped. Connect to its running session, or check its status before reopening it.')
             if state['active']:
                 raise ValueError('This conversation still has an unfinished message. Check its result before reopening it.')
             withdrawn = []
@@ -422,7 +422,7 @@ class Session:
             state['robot'] = None
             state['context_note'] = note
             if any(m['status'] == 'unknown' for m in state['messages']):
-                _pause(state, 'Check the robot and any unconfirmed results before continuing.')
+                _pause(state, 'Check the robot and record the outcome of any unconfirmed messages before continuing.')
             else:
                 state['paused'] = False
                 state['pause_reason'] = None

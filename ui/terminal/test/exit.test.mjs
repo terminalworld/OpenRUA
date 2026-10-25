@@ -35,6 +35,7 @@ test('an unavailable owner has unknown status and is never described as running'
     end: () => assert.fail('do not mutate an unknown session')};
   assert.equal(await leave('robot', client, options), false);
   assert.match(lines.join('\n'), /could not check its status/);
+  assert.match(lines.join('\n'), /may still be running/);
   assert.match(lines.join('\n'), /openrua session --name robot status/);
   assert.doesNotMatch(lines.join('\n'), /still running|stays under control|Session robot ended/);
 });
@@ -48,8 +49,9 @@ test('No is the default, Yes keeps execution, and cancellation never changes res
     assert.equal(ends, answer === '' || answer === 'no' ? 1 : 0);
     assert.doesNotMatch(lines.join('\n'), /powers off|stays under control/);
     if (ends) {
-      assert.ok(lines.findIndex(line => line.startsWith('Ending session'))
-        < lines.findIndex(line => line.startsWith('Session robot ended')));
+      const stopping = lines.findIndex(line => line.startsWith('Stopping the agent'));
+      const stopped = lines.findIndex(line => line.startsWith('Session robot ended'));
+      assert.ok(stopping >= 0 && stopped > stopping);
     }
   }
 });

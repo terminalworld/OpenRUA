@@ -43,7 +43,9 @@ export class History extends Screen {
   constructor(spec, terminal, host) {
     super(terminal, host);
     this.ui.setHeading('OpenRUA · Resume', spec.scope ?? 'All projects');
-    this.ui.addChild(new Text('Choose a conversation to open.'
+    this.ui.addChild(new Text('Choose a conversation to open.\n'
+      + 'Stopped project conversations can restart the agent and robot connection so you can continue chatting.\n'
+      + 'Records that cannot be resumed open for viewing only; you cannot send messages from those records.'
       + (spec.can_all ? spec.scope === 'All projects' ? '\nTab: Show this project' : '\nTab: Show all projects' : ''), 0, 1));
     if (spec.can_all) this.ui.addInputListener(data => {
       if (matchesKey(data, 'tab')) { this.finish({action: 'scope'}); return {consume: true}; }
@@ -90,7 +92,7 @@ export class ArchiveClient {
   }
   async snapshot() { return this.data.snapshot; }
   async events(after = 0) { return this.data.events.filter(event => event.seq > after).slice(0, 1000); }
-  async command() { throw new Error('You can view this conversation, but you cannot send messages here.'); }
+  async command() { throw new Error('You can view this conversation, but you cannot send messages here. The agent and robot have not been restarted from this view.'); }
   async end() { return this.command(); }
   close() { this.files?.close(); }
 }

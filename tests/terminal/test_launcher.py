@@ -155,7 +155,7 @@ def test_missing_workspace_keeps_transcript_and_closes_server_on_screen_error(tm
 
     directory, store = retained(tmp_path, 'ended', closed=True)
     store.close()
-    for root, message in [(None, 'file location'), (tmp_path / 'missing', 'project directory is missing')]:
+    for root, message in [(None, 'file location'), (tmp_path / 'missing', "directory containing this conversation.s files is missing")]:
         archive = ArchiveClient(directory / 'conversation.sqlite', 'Ended', root)
         clients = []
         def screen(spec):

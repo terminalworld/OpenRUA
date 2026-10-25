@@ -198,7 +198,7 @@ def test_crash_after_delivery_intent_is_unknown_not_replayed(tmp_path):
     restored.recover()
     assert state(restored)["messages"][0]["status"] == "unknown"
     restored.native(Event("ready", data={"session_id": "native-1"}))
-    with pytest.raises(ValueError, match="check any unconfirmed results"):
+    with pytest.raises(ValueError, match="record the outcome of each unconfirmed message"):
         restored.resume(state(restored)["pause_id"])
     restored.resolve_unknown(first, "User checked the robot and will not repeat the grasp")
     restored.resume(state(restored)["pause_id"])

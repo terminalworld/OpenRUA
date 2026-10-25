@@ -73,7 +73,7 @@ export function workspaceBrowser(api) {
         image.src = `data:${file.mime};base64,${file.data}`;
         image.onerror = () => {
           get("file-note").textContent =
-            "This image could not be displayed. Download the file to open it.";
+            "The image could not be decoded for display. Download the file to inspect it.";
         };
         get("file-content").append(image);
       } else if (file.kind === "text") {
@@ -83,10 +83,10 @@ export function workspaceBrowser(api) {
       }
       get("file-note").textContent =
         file.kind === "image"
-          ? "This is a saved image. Use Cameras to watch live video."
+          ? "This is a saved image, not live video. Use Cameras to watch live video."
           : file.kind === "binary"
-            ? "This file cannot be previewed here. Download it to open it."
-            : "This is a preview. Opening a file here does not run it.";
+            ? "This is a binary file. Download it and open it with a tool that supports its format."
+            : "This preview is for viewing only. Opening a file here does not run its code.";
       const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
       downloadURL = URL.createObjectURL(
         new Blob([bytes], { type: "application/octet-stream" }),

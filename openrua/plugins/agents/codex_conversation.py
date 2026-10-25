@@ -25,9 +25,9 @@ class CodexConversation(ConversationProtocol):
     APPROVAL = {"untrusted": "untrusted", "never": "never", "auto_review": "on-request"}
     SETTINGS = {'permissions': tuple(APPROVAL), 'model': None, 'effort': None}
     PERMISSIONS = [
-        {"value": "untrusted", "label": "Ask for approval", "description": "Ask before running commands that need approval"},
-        {"value": "auto_review", "label": "Approve for me", "description": "Let Codex review requests for extra access automatically"},
-        {"value": "never", "label": "Full access", "description": "Run commands in this session without asking for approval"},
+        {"value": "untrusted", "label": "Ask for approval", "description": "Use Codex's untrusted command policy in the agent container. Ask when its rules require approval"},
+        {"value": "auto_review", "label": "Approve for me", "description": "Keep Codex's workspace restrictions and let it review requests for extra access automatically"},
+        {"value": "never", "label": "Full access", "description": "Run commands inside the agent container without asking for approval"},
     ]
 
     def __init__(self, model: str, session_id: str | None = None, effort: str = "high",

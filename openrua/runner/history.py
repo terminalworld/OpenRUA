@@ -100,7 +100,7 @@ class ArchivedFiles:
             try:
                 self.reader = WorkspaceFiles(self.root)
             except FileNotFoundError as exc:
-                raise ValueError(f'The saved project directory is missing: {self.root}. You can still read its messages.') from exc
+                raise ValueError(f"The directory containing this conversation's files is missing: {self.root}. You can still read its messages.") from exc
         return self.reader
 
     def list(self, path: str = '') -> dict:
@@ -142,7 +142,7 @@ class ArchiveClient:
         return _read(self.database, 'events', after, limit)
 
     def command(self, operation: str, **params):
-        raise RuntimeError('You can view this conversation, but you cannot send messages here.')
+        raise RuntimeError('You can view this conversation, but you cannot send messages here. The agent and robot have not been restarted from this view.')
 
     def end(self):
         raise RuntimeError('This view shows saved messages. It cannot stop a running session.')
@@ -176,7 +176,7 @@ def open_session(home: Path, name: str):
             if not client.snapshot(timeout=3)['state']['closed']:
                 return client, name
         except (OSError, RuntimeError, ValueError, KeyError):
-            reason = 'OpenRUA cannot connect to this conversation. You can still read saved messages and files.'
+            reason = 'OpenRUA cannot connect to this conversation and cannot confirm whether it is still running. You can still read its saved messages and available files.'
     try:
         workspace = live_state.load(name, home, require_running=False).get('workspace')
     except NotFound:

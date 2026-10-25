@@ -17,7 +17,7 @@ export async function leave(name, client, {ended = false, ask = askChoice, write
   let state;
   try { ({state} = await client.snapshot()); }
   catch (error) {
-    write(`Session ${name}: we could not check its status. ${error.message}`);
+    write(`Session ${name}: we could not check its status. Its agent and robot resources may still be running. ${error.message}`);
     write(inspection);
     return false;
   }

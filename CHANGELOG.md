@@ -9,6 +9,14 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.30.5
+
+- Restore information omitted during the wording update: conversation recovery
+  and viewing limits, waiting-message behavior, robot request results and IDs,
+  connection errors, environment update reasons and skill validation limits.
+- Keep the clearer English while preserving supported input routes, permission
+  boundaries, file-preview limitations and the scope of recurring reviews.
+
 ## 0.30.4
 
 - Use plain English across setup, history, chat, robot controls, files, skills,

@@ -600,7 +600,7 @@ test('a file preview names the file on this computer and how to open it', async 
     () => {}, () => {}, () => {}, () => 24, '/home/me/.openrua/sandboxes/s/workspace/workspace/snaps/front.png');
   const shown = preview.render(100).join('\n');
   assert.match(shown, /On this computer:.*\/home\/me\/\.openrua\/sandboxes\/s\/workspace\/workspace\/snaps\/front\.png/);
-  assert.match(shown, /Ctrl\+click it in Cursor or VS Code/);
+  assert.match(shown.replace(/\x1b\[[0-9;]*m/g, '').replace(/\s+/g, ' '), /Ctrl\+click it in Cursor or VS Code/);
 });
 
 test('the branded welcome identifies the project without claiming a connection', async () => {
@@ -902,6 +902,8 @@ test('temporary transport loss shows disconnected status and recovers without lo
   offline = true;
   await waitFor(() => /Connection lost.*Reconnecting/.test(chat.status.render(120).join('\n')));
   assert.doesNotMatch(chat.status.render(120).join('\n'), /Working/);
+  assert.match(chat.status.render(120).join('\n'), /Cannot connect to this session/);
+  assert.match(chat.keys.render(120).join('\n'), /Waiting messages are kept/);
   await owner.command('enqueue', {client_id: 'other-ui', request_id: 'queued', text: 'Then wait'});
   await call({op: 'frame', frame: {kind: 'item', turn_id: first, data: {
     item_id: 'during-disconnect', kind: 'tool', phase: 'completed', text: 'Read', output: 'camera saved'}}});
@@ -1194,7 +1196,7 @@ test('fixed-model agent settings never render a foreign native model catalog', a
     model_choices: [{value: 'foreign-native-model', label: 'Foreign native model'}]}, terminal);
   const shown = setup.body.render(100).join('\n');
   assert.match(shown, /configured-model/);
-  assert.match(shown, /Set the model in the agent configuration file/);
+  assert.match(shown, /model comes from its configuration file and cannot be changed here/);
   assert.doesNotMatch(shown, /Foreign native model|foreign-native-model|Enter a model ID|Refresh model list/);
 });
 

@@ -253,7 +253,7 @@ test('robot restart confirms once and retries the same unconfirmed operation', {
   client.request = async (path, body) => {
     calls.push({path, body: {...body}});
     if (++attempts === 1) throw new Error('lost acknowledgement');
-    return {result: {...body, status: 'accepted', summary: 'accepted'}};
+    return {result: {...body, status: 'accepted', summary: 'Driver restart accepted. Read driver.log for the startup diagnostics.'}};
   };
   await chat.submit('/robot restart');
   assert.equal(attempts, 0);
@@ -263,6 +263,8 @@ test('robot restart confirms once and retries the same unconfirmed operation', {
   await chat.submit('/robot retry');
   assert.equal(attempts, 2);
   assert.equal(chat.pendingRobot, null);
+  assert.match(chat.notice.render(100).join('\n'), /Driver restart accepted/);
+  assert.match(chat.notice.render(100).join('\n'), /driver\.log/);
   assert.deepEqual(calls[0].body, calls[1].body);
   assert.equal(calls[0].path, '/api/actions/robot');
 });

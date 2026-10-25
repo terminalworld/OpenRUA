@@ -12,18 +12,18 @@ export const COMMANDS = [
   {name: 'setup', description: 'Configure a new session and keep this conversation in history', clients: ['terminal']},
   {name: 'tools', description: 'Expand or collapse a tool result', clients: ['terminal']},
   {name: 'files', description: 'Browse saved workspace files and images', clients: ['terminal', 'browser']},
-  {name: 'project', description: 'Manage skills and review finished work', clients: ['terminal']},
+  {name: 'project', description: 'Manage skills, review finished work and choose how the agent saves useful methods', clients: ['terminal']},
   {name: 'robot', description: 'Robot connection status, logs, build and restart', clients: ['terminal', 'browser']},
   {name: 'watch', description: "See the robot's cameras live, in a browser", clients: ['terminal', 'browser']},
   {name: 'queue', description: 'Inspect, edit or withdraw queued messages', clients: ['terminal', 'browser']},
   {name: 'questions', description: 'Answer pending agent questions', clients: ['terminal', 'browser']},
-  {name: 'resume', description: 'Open a saved conversation; --all includes other projects', clients: ['terminal']},
+  {name: 'resume', description: 'Open a saved conversation from this project; --all includes other projects', clients: ['terminal']},
   {name: 'end', description: 'Stop this session and free its resources; keep files and chat history', clients: ['terminal', 'browser']},
-  {name: 'interrupt', description: 'Stop the current response and ask the robot to cancel its actions', clients: ['terminal', 'browser']},
+  {name: 'interrupt', description: 'Stop the current response and ask the robot to cancel its actions; waiting messages run next', clients: ['terminal', 'browser']},
   {name: 'continue', description: 'Continue paused messages', clients: ['terminal', 'browser']},
   {name: 'permissions', description: "Choose the agent's permission mode", clients: ['terminal', 'browser']},
   {name: 'model', description: 'Show the model, or change it: /model <name>', clients: ['terminal', 'browser']},
-  {name: 'retry', description: 'Retry sending a message without sending it twice', clients: ['terminal']},
+  {name: 'retry', description: 'Retry an unconfirmed message with the same request ID to avoid submitting it twice', clients: ['terminal']},
   {name: 'quit', description: 'Leave; you choose whether the session keeps running', clients: ['terminal']},
 ];
 
@@ -34,7 +34,7 @@ export function displayStatus(value) {
     cancelled: 'Cancelled', canceled: 'Cancelled', interrupted: 'Interrupted', failed: 'Failed',
     unknown: 'Result unknown', queued: 'Waiting', dispatching: 'Sending',
     steering: 'Adding to the current response', steered: 'Added to the current response',
-    withdrawn: 'Removed', reconciled: 'Checked', busy: 'Busy', skipped: 'Skipped',
+    withdrawn: 'Removed', reconciled: 'Outcome recorded', busy: 'Busy', skipped: 'Skipped',
     timed_out: 'Time limit reached', quota_limited: 'Usage limit reached',
     authentication_required: 'Sign-in needed', turn_limit: 'Turn limit reached',
     invalid_output: 'Could not read the result', cancel_requested: 'Stopping',
@@ -42,12 +42,13 @@ export function displayStatus(value) {
 }
 
 export function robotPrompt(operation) {
-  return {
+  const message = {
     start: 'Start the robot?\n\nOpenRUA will start the simulator or drivers configured in this project. Chat stays open.',
     restart: 'Restart the robot connection?\n\nOpenRUA will apply your project settings and restart the simulator or drivers it started. Chat stays open. Check the scene before sending more robot instructions.',
-    stop: 'Stop the simulator or drivers OpenRUA started?\n\nChat stays open. Drivers you started yourself keep running. This is not the robot emergency stop.',
+    stop: 'Stop the simulator or drivers OpenRUA started?\n\nChat stays open. Drivers you started yourself keep running. OpenRUA uses the stop procedure configured for its drivers. This is not the robot emergency stop.',
     build: 'Prepare the robot software?\n\nOpenRUA will build the software configured in this project. Running drivers keep running.',
   }[operation];
+  return message && message + '\nInstructions waiting for your review will not run automatically.';
 }
 
 export function permissionChoices(state) {
@@ -103,7 +104,7 @@ export function status(state, {readOnly = false} = {}) {
   const asking = Object.values(state.requests ?? {}).filter(r => r.status === 'pending').length;
   if (asking) notes.push({tone: 'warn', kind: 'questions', text: `${asking} question${asking === 1 ? '' : 's'} to answer. Type a reply or open /questions.`});
   let head;
-  if (readOnly) head = {kind: 'readonly', tone: 'muted', text: 'Viewing saved conversation'};
+  if (readOnly) head = {kind: 'readonly', tone: 'muted', text: 'Viewing saved conversation. You cannot send messages here.'};
   else if (state.closed) head = {kind: 'closed', tone: 'muted', text: 'Session stopped'};
   else if (state.paused) {
     if (state.pause_reason && (state.connected || !state.pause_reason.startsWith('agent disconnected')))
@@ -123,14 +124,15 @@ export function status(state, {readOnly = false} = {}) {
 // A notice an event carries for the person, or null.
 export function notice(record) {
   const data = record?.data ?? {};
-  if (record?.kind === 'session_reopened') return 'The robot connection has restarted. Check the scene before continuing. Earlier instructions will not run again automatically.';
+  if (record?.kind === 'session_reopened') return data.note ?? 'The robot connection has restarted. Check the scene before continuing. Earlier instructions will not run again automatically.';
   if (record?.kind === 'motion_canceled') {
     const {canceled = [], failed = []} = data;
     return [canceled.length ? `Motion canceled: ${canceled.join(', ')}` : '',
       failed.length ? `No answer from ${failed.join(', ')}: use the emergency stop if it still moves` : '']
       .filter(Boolean).join('\n') || null;
   }
-  if (record?.kind === 'handed_over') return 'Updating the robot tools. This conversation stays open.';
+  if (record?.kind === 'handed_over') return 'Updating the environment used by this session. This conversation stays open.'
+    + (data.reason ? `\nReason: ${data.reason}` : '');
   if (record?.kind === 'agent_event' && data.kind === 'setting_rejected') {
     const {setting, value, reason} = data.data ?? {};
     return `The agent could not change ${setting} to ${value}${reason ? `: ${reason}` : '.'}`;

@@ -48,7 +48,7 @@ async function startReview(chat, options) {
     chat.pendingReview = null;
     chat.reviewTask = task;
     await updateReview(chat, true);
-    chat.say('The review is running in the background. You can keep working or close this terminal. Open /project for the results.');
+    chat.say('Review requested. The task runs separately from this conversation. You can keep working or close this terminal. Open /project to check its status and results.');
   });
 }
 
@@ -85,7 +85,7 @@ export function reviewOptions(chat, options, identity = null, flow = {}) {
 
 async function candidateMenu(chat, id, data, candidate) {
   if (chat.done) return;
-  const rows = [{value: 'read', label: 'Read suggested skill'}, {value: 'diff', label: 'See changes and source files'}];
+  const rows = [{value: 'read', label: 'Read suggested skill'}, {value: 'diff', label: 'See changes and supporting evidence'}];
   if (candidate.can_import) rows.push({value: 'import', label: 'Import new skill into this project…'});
   rows.push({value: 'merge', label: 'Ask the agent to combine these skills…'}, {value: 'back', label: 'Back to review'});
   chat.picker(`${plain(candidate.name)}${candidate.existing ? ' · existing skill' : ' · proposed new skill'}`
@@ -95,10 +95,10 @@ async function candidateMenu(chat, id, data, candidate) {
     if (key === 'back') return showReview(chat, id);
     if (key === 'read') return preview(chat, await chat.client.projectSkills('candidate', {id, key: candidate.key}), back);
     if (key === 'diff') return preview(chat, textFile('Review changes and evidence', data.diff + '\n\n' + data.summary), back);
-    if (key === 'import') return chat.confirm(`Import ${candidate.name} into this project?\n\nYour existing skills are kept. This saves the instructions without testing them on the robot.`, async () => {
+    if (key === 'import') return chat.confirm(`Import ${candidate.name} into this project?\n\nYour existing skills will not be overwritten. Saving these instructions does not test them on the robot.`, async () => {
       const result = await chat.client.projectSkills('import', {id, key: candidate.key, fingerprint: candidate.fingerprint});
       chat.say(`Imported ${plain(result.name)} at ${plain(result.imported)}.`
-        + (result.issues?.length ? ` ${result.issues.map(plain).join('; ')}` : ' Your agent can now use this skill.'));
+        + (result.issues?.length ? ` ${result.issues.map(plain).join('; ')}` : ' Your agent can use this skill through its own skills feature.'));
     });
     const {draft} = await chat.client.projectSkills('merge', {id, key: candidate.key});
     chat.confirm('Add this request to your draft?\n\nIt will not be sent yet. Your existing text stays above it.', async () => {
@@ -113,7 +113,7 @@ async function candidateMenu(chat, id, data, candidate) {
 export async function showReview(chat, id) {
   const data = await chat.client.projectSkills('report', {id});
   if (chat.done) return;
-  const rows = [{value: 'summary', label: 'Read review report'}, {value: 'diff', label: 'See all changes'},
+  const rows = [{value: 'summary', label: 'Read review report and supporting evidence'}, {value: 'diff', label: 'See all changes'},
     ...data.candidates.map(row => ({value: row.key, label: plain(row.name),
       description: `${row.existing ? 'existing skill' : 'new suggestion'}${row.source_changed ? ' · project files have changed' : ''}`})),
     {value: 'refresh', label: 'Refresh report'}, {value: 'back', label: 'Back'}];
@@ -129,7 +129,7 @@ export async function showReview(chat, id) {
 
 export async function projectMenu(chat) {
   if (chat.client.readOnly || !chat.client.projectSkills)
-    throw new Error('Open a running conversation to use this menu. You can also run openrua skills in the project directory.');
+    throw new Error('Open a running conversation for this project to use this menu. You can also run openrua skills in the project directory.');
   const data = await chat.client.projectSkills('overview');
   if (chat.done) return;
   const active = data.tasks.find(task => ['running', 'starting', 'cancel_requested'].includes(task.status));
@@ -140,7 +140,7 @@ export async function projectMenu(chat) {
     {value: 'policy', label: `Save useful methods: ${policyNames[data.policy] || data.policy}`},
     ...(data.defaults ? [{value: 'start', label: 'Review completed work…'}] : []),
     ...(chat.pendingReview ? [{value: 'retry', label: 'Check the last review request…'}] : []),
-    {value: 'schedules', label: 'Scheduled reviews…'},
+    {value: 'schedules', label: 'Recurring review schedules…'},
     {value: 'refresh', label: 'Refresh'}];
   chat.picker(`Project skills and reviews\n${plain(data.project)}`
     + (data.review_error ? `\nReview unavailable: ${plain(data.review_error)}` : ''), rows, async key => {
@@ -153,7 +153,7 @@ export async function projectMenu(chat) {
         chat.confirm(`Use "${policyNames[mode]}" for saving useful methods?`, async () => {
           await chat.client.projectSkills('policy', {mode}); chat.say('Saved. This preference guides the agent in future work.');
         }));
-    if (key === 'skills') return chat.picker('Saved skills',
+    if (key === 'skills') return chat.picker('Saved skills\nNames and descriptions come from the saved files. They do not show whether a skill has been tested on this robot.',
       data.entries.map(entry => ({value: entry.key, label: `${plain(entry.name)} [${entry.scope}]`, description: plain(entry.error || entry.description)})),
       async key => preview(chat, await chat.client.projectSkills('skill', {key}), () => projectMenu(chat)));
     if (key === 'reviews') return chat.picker('Review reports', data.reports.map(report => ({value: report.id,

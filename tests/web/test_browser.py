@@ -206,7 +206,7 @@ def test_browser_previews_saved_files_without_submitting_tasks(tmp_path):
         await page.unroute("**/api/workspace/list?path=")
         await page.get_by_role("button", name="Refresh", exact=True).click()
         await page.locator("#files-list").get_by_role("button", name="camera.png", exact=True).click()
-        await playwright.expect(page.locator("#file-note")).to_contain_text("This is a saved image. Use Cameras to watch live video.")
+        await playwright.expect(page.locator("#file-note")).to_contain_text("This is a saved image, not live video. Use Cameras to watch live video.")
         await page.wait_for_function("document.querySelector('#file-content img')?.naturalWidth === 1")
         async with page.expect_download() as download:
             await page.locator("#file-download").click()

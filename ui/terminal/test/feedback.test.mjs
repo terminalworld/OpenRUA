@@ -75,3 +75,14 @@ test('interruption is pending until execution finishes and does not leave a succ
   state.active = null;
   assert.equal(status(state).head.text, 'Ready');
 });
+
+
+test('reopened conversations retain the connection-specific context supplied by the owner', () => {
+  const note = 'The robot connection changed. Read the project connection notes and obtain a fresh camera image.';
+  assert.equal(notice({kind: 'session_reopened', data: {note}}), note);
+});
+
+test('environment changes keep their supplied reason visible', () => {
+  const reason = 'The project changed the driver tool image to include its new ROS package.';
+  assert.ok(notice({kind: 'handed_over', data: {reason}}).includes(reason));
+});

@@ -59,7 +59,7 @@ class StdioTransport:
                 with os.fdopen(fd, 'ab') as stream:
                     stream.write(line)
                 where = str(self.invalid_output)
-            raise ValueError(f'The agent returned output OpenRUA could not read. See {where}. '
+            raise ValueError(f'The agent returned a response that is not a JSON object. OpenRUA cannot read it. Check {where}. '
                              'The agent is not connected. /continue cannot reconnect it.')
 
     async def write(self, frame: dict) -> None:
@@ -144,7 +144,7 @@ class Execution:
             if self._closing or self._owner is None:
                 if self._handover and operation in coordination:
                     return coordination[operation](**params)
-                raise RuntimeError("This session is stopping and cannot accept commands.")
+                raise RuntimeError("The agent for this session cannot accept commands.")
             if operation == "respond":
                 if not self._usable:
                     raise ValueError("The agent is not connected. Your reply was not sent.")
