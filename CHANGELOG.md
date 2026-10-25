@@ -9,6 +9,12 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.29.1
+
+- Use plain language when asking whether to keep a session running in the
+  background. State that files and chat history are saved, and describe the
+  choices as stopping the session or keeping it running.
+
 ## 0.29.0
 
 - Ask whether to keep execution resources when leaving a terminal conversation

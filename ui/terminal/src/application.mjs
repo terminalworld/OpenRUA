@@ -49,12 +49,11 @@ export class Leave extends Screen {
   constructor(prompt, host, terminal) {
     super(terminal, host);
     this.ui.setHeading('OpenRUA · Leave session');
-    this.ui.addChild(new Text('Keep execution resources running?', 0, 1));
-    this.ui.addChild(new Text('Your project files and conversation history are kept either way.\n'
-      + 'No stops this session\'s agent and owned robot resources. External services are left running.', 0, 1));
+    this.ui.addChild(new Text('Keep this session running?', 0, 1));
+    this.ui.addChild(new Text('Your files and chat history are saved.', 0, 1));
     const menu = selection([
-      {value: 'no', label: 'No', description: 'Stop execution resources'},
-      {value: 'yes', label: 'Yes', description: 'Keep execution running in the background'},
+      {value: 'no', label: 'No', description: 'Stop this session'},
+      {value: 'yes', label: 'Yes', description: 'Run in the background'},
     ], 4, {explicit: true});
     menu.onCancel = () => this.finish({action: 'answer', value: 'cancel'});
     menu.onSelect = item => this.finish({action: 'answer', value: item.value});
