@@ -9,6 +9,16 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.30.0
+
+- Give Ctrl+C Claude Code's interrupt priority: stop a running response while
+  keeping the input draft; when idle, clear input or open the leave choice.
+  Keep Claude Code's double press before the No/Yes leave choice, with a visible
+  hint and a Back option to cancel leaving.
+- Explain that No stops the agent, frees memory and stops any simulator or
+  drivers OpenRUA started. Retain files and chat history.
+- Remove dash punctuation from the maintained workspace guide.
+
 ## 0.29.1
 
 - Use plain language when asking whether to keep a session running in the

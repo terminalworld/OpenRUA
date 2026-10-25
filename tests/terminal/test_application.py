@@ -61,6 +61,9 @@ def test_session_setup_and_resume_choose_resource_retention(tmp_path, columns, r
         wait('Welcome back to OpenRUA')
         key(b'/quit\r'); wait('Keep this session running?'); key(b'\x1b')
         wait('Welcome back to OpenRUA')
+        key(b'/quit\r'); wait('Keep this session running?')
+        key(b'\x1b[B'); key(b'\x1b[B'); key(b'\r')
+        wait('Welcome back to OpenRUA')
         key(b'/setup\r'); wait('Review your project'); key(b'1')
         wait('Keep this session running?'); key(b'\x1b[B'); key(b'\r')
         wait('Welcome to OpenRUA')
@@ -151,6 +154,7 @@ def test_setup_retry_chat_and_leave_share_one_fullscreen(tmp_path, columns, rows
         wait('Workspace /programs'); key(b'\x1b[C')
         wait('Workspace /programs/nested'); key(b'\x1b')
         time.sleep(.1); key(b'\x04')
+        wait('Press Ctrl+D again to leave.'); key(b'\x04')
         wait('Keep this session running?'); key(b'\r')
         deadline = time.monotonic() + 10
         while child.poll() is None and time.monotonic() < deadline:

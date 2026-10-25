@@ -14,13 +14,14 @@ class Terminal {
 }
 const spec = {mode: 'update', name: 'Example Agent', installed: '1.0', target: '2.0', required: false, phase: 'offer'};
 
-for (const [keys, value] of [['\r', 'no'], ['\x1b[B\r', 'yes'], ['\x1b', 'cancel']]) {
+for (const [keys, value] of [['\r', 'no'], ['\x1b[B\r', 'yes'], ['\x1b[B\x1b[B\r', 'cancel'], ['\x1b', 'cancel']]) {
   test(`resource choice ${JSON.stringify(keys)} selects ${value}`, async () => {
     const terminal = new Terminal(), screen = new Leave('', null, terminal);
     const result = screen.run();
     await new Promise(resolve => setTimeout(resolve, 30));
     assert.match(terminal.output, /Keep this session running/);
     if (keys === '\x1b[B\r') { terminal.input('\x1b[B'); terminal.input('\r'); }
+    else if (keys === '\x1b[B\x1b[B\r') { terminal.input('\x1b[B'); terminal.input('\x1b[B'); terminal.input('\r'); }
     else terminal.input(keys);
     assert.equal((await result).value, value);
   });

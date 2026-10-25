@@ -17,6 +17,8 @@ const commands = commandsFor('terminal');
 // slow model and a stalled one are not mistaken for each other silently.
 const QUIET_MS = 60_000;
 const SPINNER = ['✻', '✢', '✳', '✶', '✳', '✢'];
+// Use Claude Code's documented Ctrl+D window for both exit shortcuts.
+const QUIT_CONFIRM_MS = 800;
 
 const elapsed = since => {
   const seconds = Math.max(0, Math.round((Date.now() - since) / 1000));
@@ -84,6 +86,8 @@ export class Chat {
     this.ui.addChild(this.keys);
     this.started = null;
     this.frame = 0;
+    this.quitConfirmation = null;
+    this.quitTimer = null;
     this.editor.onSubmit = text => { void this.submit(text); };
     this.ui.setNavigationHandler(data => {
       if (this.panel && ['pageUp', 'pageDown', 'home', 'end'].some(key => matchesKey(data, key))) {
@@ -94,19 +98,46 @@ export class Chat {
     this.ui.addInputListener(data => {
       this.inputRevision++;
       if (this.panel) return;
-      if (matchesKey(data, 'ctrl+d') && !this.editor.getText()) { this.stop(); return {consume: true}; }
+      if (matchesKey(data, 'ctrl+d') && !this.editor.getText()) {
+        this.requestLeave('Ctrl+D'); return {consume: true};
+      }
       if (matchesKey(data, 'ctrl+c')) {
-        if (this.editor.getText()) this.editor.setText(''); else this.stop();
+        if (!this.client.readOnly && this.controller.state?.active) {
+          this.resetLeave(); this.updateKeys();
+          void this.interrupt().catch(error => this.say(error.message));
+        } else {
+          if (this.editor.getText()) { this.editor.setText(''); this.resetLeave(); }
+          this.requestLeave('Ctrl+C');
+        }
         return {consume: true};
       }
+      this.resetLeave(); this.updateKeys(); this.ui.requestRender();
       if (matchesKey(data, 'escape') && !this.editor.isShowingAutocomplete()) {
-        if (this.controller.state?.active) void this.submit('/interrupt');
+        if (this.controller.state?.active) void this.interrupt().catch(error => this.say(error.message));
         return {consume: true};
       }
     });
   }
 
   say(message) { if (!this.done) { this.notice.setText(plain(message)); this.ui.requestRender(); } }
+
+  resetLeave() {
+    clearTimeout(this.quitTimer);
+    this.quitTimer = null; this.quitConfirmation = null;
+  }
+
+  requestLeave(key) {
+    if (this.quitConfirmation?.key === key && Date.now() < this.quitConfirmation.until) {
+      this.stop(); return;
+    }
+    this.resetLeave();
+    this.quitConfirmation = {key, until: Date.now() + QUIT_CONFIRM_MS};
+    this.quitTimer = setTimeout(() => {
+      this.resetLeave(); this.updateKeys(); this.ui.requestRender();
+    }, QUIT_CONFIRM_MS);
+    this.quitTimer.unref();
+    this.updateKeys(); this.ui.requestRender();
+  }
 
   updateHeading() {
     const welcome = this.showWelcome && !this.panel;
@@ -123,6 +154,7 @@ export class Chat {
   get panel() { return this.panels.at(-1) ?? null; }
 
   dialog(component, {requestId = null} = {}) {
+    this.resetLeave();
     this.inputRevision++;
     const slot = replacement => {
       const at = this.ui.children.indexOf(this.panel?.component ?? this.editor);
@@ -154,9 +186,11 @@ export class Chat {
   updateKeys() {
     if (!this.keys) return;
     const state = this.controller.state;
-    this.keys.setText(muted(this.panel ? '' : this.client.readOnly
-      ? '/files Browse · /resume History · Ctrl+D Close'
-      : state?.active ? 'Enter Send · / Commands · Esc Interrupt'
+    if (!this.client.readOnly && state?.active && this.quitConfirmation?.key === 'Ctrl+C') this.resetLeave();
+    this.keys.setText(muted(this.panel ? ''
+      : this.quitConfirmation ? `Press ${this.quitConfirmation.key} again to leave.`
+      : this.client.readOnly ? '/files Browse · /resume History · Ctrl+D Close'
+      : state?.active ? 'Enter Send · Ctrl+C/Esc Interrupt'
       : 'Enter Send · Ctrl+J Newline · / Commands · Ctrl+D Leave'));
   }
 
@@ -427,6 +461,13 @@ export class Chat {
     } finally { this.busy = false; }
   }
 
+  async interrupt() {
+    const id = this.controller.state?.active;
+    if (!id) { this.say('No agent response to interrupt.'); return; }
+    await this.client.command('interrupt', {message_id: id});
+    await this.refresh();
+  }
+
   // One handler for each command the terminal offers (commandsFor('terminal')).
   handlers() {
     const state = this.controller.state;
@@ -520,14 +561,7 @@ export class Chat {
           key => { this.transcript.toggleTool(key); this.ui.requestRender(); }, {empty: 'No tool calls yet.'});
       },
       queue: async () => { this.queue(); },
-      interrupt: async () => {
-        // As in a coding agent's own terminal: stop now, no dialog; what is
-        // queued goes next.
-        const id = state?.active;
-        if (!id) { this.say('No agent response to interrupt.'); return; }
-        await this.client.command('interrupt', {message_id: id});
-        await this.refresh();
-      },
+      interrupt: () => this.interrupt(),
       continue: async () => {
         const id = state?.pause_id;
         if (!id) { this.say('Nothing to continue.'); return; }
@@ -547,6 +581,7 @@ export class Chat {
   }
 
   stop() {
+    this.resetLeave();
     this.workspaceBrowser?.close();
     if (this.done) return;
     this.done = true;

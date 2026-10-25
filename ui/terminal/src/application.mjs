@@ -50,10 +50,12 @@ export class Leave extends Screen {
     super(terminal, host);
     this.ui.setHeading('OpenRUA · Leave session');
     this.ui.addChild(new Text('Keep this session running?', 0, 1));
-    this.ui.addChild(new Text('Your files and chat history are saved.', 0, 1));
+    this.ui.addChild(new Text('Stopping also closes any simulator or drivers OpenRUA started.\n'
+      + 'Your files and chat history are saved.', 0, 1));
     const menu = selection([
-      {value: 'no', label: 'No', description: 'Stop this session'},
-      {value: 'yes', label: 'Yes', description: 'Run in the background'},
+      {value: 'no', label: 'No', description: 'Stop the agent and free up memory'},
+      {value: 'yes', label: 'Yes', description: 'Keep running in the background'},
+      {value: 'cancel', label: 'Back', description: 'Cancel leaving'},
     ], 4, {explicit: true});
     menu.onCancel = () => this.finish({action: 'answer', value: 'cancel'});
     menu.onSelect = item => this.finish({action: 'answer', value: item.value});

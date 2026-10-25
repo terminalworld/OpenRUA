@@ -137,7 +137,20 @@ the robot.
 | `/setup` | Configure and open a new conversation, retaining the current session in history; cancel to return |
 | `/resume` | Resume this project's conversations; `--all` searches all projects |
 | `/end` | Confirm ending execution, retaining history and workspace |
-| Ctrl+D on empty input or `/quit` | Choose whether to keep execution resources; Enter defaults to No, Yes keeps them running, Escape returns |
+| Ctrl+D twice on empty input or `/quit` | Choose whether to keep execution resources; No is selected by default, Yes keeps them running, Back or Escape cancels leaving |
+| Ctrl+C | Interrupt a running response and keep the draft; when idle, clear input and show a hint, then press again to open the leave choice |
+
+The keyboard follows Claude Code's interrupt and input priorities. A running
+response receives Ctrl+C before the input is cleared. The existing No/Yes leave
+choice follows the double press, so you can still return without stopping anything.
+Press the same shortcut again within 800 ms; typing or opening a menu cancels
+the shortcut hint. Back and Escape on the leave page return without stopping
+the session. `/quit` opens that page directly.
+With text in the editor, Ctrl+D deletes the next character instead of leaving.
+
+No stops the agent and frees the memory used by the session. Any simulator or
+drivers OpenRUA started for it also stop. Your project files and chat history
+are saved. Drivers you started outside OpenRUA keep running.
 
 In `/files`, Up/Down selects an entry, Left returns to the parent directory,
 and Right or Enter opens the selected directory or file. Returning to a parent

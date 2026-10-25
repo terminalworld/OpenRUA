@@ -55,8 +55,8 @@ records remain read-only. See [robot projects](../../docs/projects.md).
 | Ctrl+J | Insert a newline |
 | `/` | Complete OpenRUA's commands and the agent's own |
 | Esc or `/interrupt` | Stop the current turn and cancel the robot's motions; queued messages go next |
-| Ctrl+D on an empty input, or `/quit` | Choose whether to keep execution resources; No is selected by default, Yes keeps them running, Esc returns |
-| Ctrl+C | Clear a draft; leave as Ctrl+D does if the input is empty |
+| Ctrl+D twice on an empty input, or `/quit` | Choose whether to keep execution resources; No is selected by default, Yes keeps them running, Back or Esc returns |
+| Ctrl+C | Interrupt a response; when idle, clear input and press again to leave |
 
 `/help` lists every other command (`/files`, `/watch`, `/tools`, `/queue`,
 `/questions`, `/permissions`, `/model`, `/continue`, `/retry`, `/resume`,
