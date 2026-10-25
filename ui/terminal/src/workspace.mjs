@@ -14,19 +14,19 @@ export class FilePreview extends Container {
     this.offset = 0;
     this.lines = file.kind === 'text' ? plain(file.text.slice(0, 131072)).split('\n') : [];
     if (file.kind === 'text' && file.text.length > 131072) this.lines.push('[Preview limited to 131,072 characters.]');
-    const saved = file.kind === 'image' ? 'This is a saved image. Use /watch for live camera images.' : 'This is a saved file.';
+    const saved = file.kind === 'image' ? 'This is a saved image, not live video. Use /watch for live camera images.' : 'This is a saved file.';
     this.addChild(new Text(`${plain(file.path)} · ${file.size} byte${file.size === 1 ? '' : 's'}\n${muted(saved)}`
       + (where ? `\n${muted('On this computer:')} ${plain(where)}` : ''), 0, 1));
     this.body = file.kind === 'image'
       ? new Image(file.data, file.mime, {fallbackColor: plain},
         {filename: plain(file.path), maxWidthCells: 72, maxHeightCells: 16})
-      : new Text(file.kind === 'text' ? '' : `File format (${plain(file.mime)}). Open it in the browser or ask the agent to read it.`, 0, 0);
+      : new Text(file.kind === 'text' ? '' : `This is a binary file (${plain(file.mime)}). It cannot be shown as text here. Open it in the browser or ask the agent to read it.`, 0, 0);
     this.position = new Text('', 0, 0);
     this.addChild(this.body); this.addChild(this.position);
     this.addChild(new Text(muted((file.kind === 'text' ? '↑/↓, PgUp/PgDn scroll · ' : '') + 'r refresh · Esc back' +
       (file.kind !== 'image' ? '' : where
-        ? '\nTo view the image, open the path above. You can Ctrl+click it in Cursor or VS Code.'
-        : '\nIf the image does not appear, open it in the session browser.')), 0, 1));
+        ? '\nYour terminal may not support images. To view the image, open the path above. You can Ctrl+click it in Cursor or VS Code.'
+        : '\nYour terminal may not support images. If the image does not appear, open it in the session browser.')), 0, 1));
     this.window();
     this.handleInput = data => {
       if (matchesKey(data, 'escape')) close();
@@ -135,7 +135,7 @@ export class WorkspaceBrowser extends Container {
     const entry = this.listing.entries.find(item => item.name === value);
     if (!entry) return;
     if (entry.kind !== 'file' && entry.kind !== 'directory') {
-      this.feedback.setText('This file cannot be previewed here. Ask the agent to inspect it.'); this.draw(); return;
+      this.feedback.setText('Symbolic links and special files cannot be previewed here. Ask the agent to inspect this entry.'); this.draw(); return;
     }
     const target = this.path ? `${this.path}/${entry.name}` : entry.name;
     this.remember();

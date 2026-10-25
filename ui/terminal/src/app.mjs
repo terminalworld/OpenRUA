@@ -308,7 +308,7 @@ export class Chat {
       this.questionDrafts.set(id, this.editor.getText().trim());
     this.shownQuestions.add(id);
     if (request.questions.some(q => q.secret)) {
-      this.say('This answer needs a private input field. Open the session in the browser to reply.'); return;
+      this.say('This question requires private input. Answer through the session browser or the session CLI.'); return;
     }
     const options = {requestId: id};
     const answers = {};
@@ -385,8 +385,8 @@ export class Chat {
   async poll() {
     try { await this.refresh(); void updateReview(this); } catch (error) {
       if (!this.done && !this.ending) {
-        this.status.setText(yellow('⚠ Connection lost. Reconnecting…'));
-        this.keys.setText(yellow('Your draft is still here. The agent may still be working.'));
+        this.status.setText(yellow(`⚠ Connection lost. Reconnecting…\nReason: ${plain(error.message)}`));
+        this.keys.setText(yellow('Your draft is still here. Waiting messages are kept. The agent may still be working.'));
         this.ui.requestRender();
       }
     }
@@ -413,7 +413,7 @@ export class Chat {
 
   effort() {
     const state = this.controller.state;
-    if (state?.settings?.effort === undefined) throw new Error('The reasoning effort setting is not available in this session.');
+    if (state?.settings?.effort === undefined) throw new Error('The agent has not provided a reasoning effort setting for this session.');
     const now = state.settings.effort;
     const choices = state.setting_choices?.effort ?? [];
     const title = `Reasoning effort: ${plain(now)}`;
@@ -499,7 +499,7 @@ export class Chat {
       },
       model: async ([value, level]) => {
         if (state?.setting_controls && !state.setting_controls.includes('model')) {
-          this.say('This agent does not let OpenRUA change its model. Set the model in the agent configuration file.'); return;
+          this.say('This agent has not provided model controls to OpenRUA. It continues using the model in its configuration file. To choose another model, edit that file.'); return;
         }
         if (value === 'effort') {
           writable();

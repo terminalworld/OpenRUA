@@ -24,7 +24,7 @@ class ClaudeConversation(ConversationProtocol):
              'acceptEdits': 'acceptEdits', 'plan': 'plan', 'dontAsk': 'dontAsk'}
     PERMISSIONS = [
         {'value': 'default', 'label': 'Default', 'description': 'Ask before actions that need permission'},
-        {'value': 'auto', 'label': 'Auto', 'description': 'Review actions automatically before running them'},
+        {'value': 'auto', 'label': 'Auto', 'description': 'Let Claude Code classify and review actions automatically before running them'},
         {'value': 'acceptEdits', 'label': 'Accept edits', 'description': 'Allow file edits automatically; ask before other restricted actions'},
         {'value': 'plan', 'label': 'Plan', 'description': 'Review and plan without changing project files'},
         {'value': 'dontAsk', 'label': "Don't ask", 'description': 'Run allowed actions. Reject actions that would need approval'},

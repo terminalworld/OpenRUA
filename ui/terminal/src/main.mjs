@@ -67,7 +67,7 @@ async function finishScreen(screen, spec, result, host, showProgress) {
     view.ui.setFooter(new Text('Enter Close · Esc Close', 0, 0));
     view.ui.children.splice(0, view.ui.children.length);
     view.ui.addChild(new Text(messages.join('\n'), 0, 1));
-    const close = new SelectList([{value: '', label: 'Close OpenRUA'}], 1, selectTheme);
+    const close = new SelectList([{value: '', label: 'Close the terminal interface'}], 1, selectTheme);
     close.onSelect = close.onCancel = () => view.finish();
     view.ui.addChild(close); view.ui.setFocus(close);
     await view.run();

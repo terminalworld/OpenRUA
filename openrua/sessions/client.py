@@ -38,7 +38,7 @@ class Client:
                 message = str(exc)
             raise RuntimeError(message) from exc
         except (URLError, TimeoutError) as exc:
-            raise RuntimeError("Cannot connect to this session. The last command may still be running. Check its status before trying again.") from exc
+            raise RuntimeError("Cannot connect to this session. The last command may still be running, and its result is not confirmed. Check its status before trying again.") from exc
 
     def snapshot(self, *, timeout: float | None = None) -> dict:
         return self.request("/api/session", timeout=timeout)

@@ -54,7 +54,7 @@ export class Welcome {
 
   render(width) {
     const f = this.facts;
-    if (this.readOnly) return [`${bold('OpenRUA')}${muted(` · ${plain(this.name)}`)}`, muted('Viewing saved messages.')];
+    if (this.readOnly) return [`${bold('OpenRUA')}${muted(` · ${plain(this.name)}`)}`, muted('Viewing saved messages. You cannot send messages from this view.')];
     if (width < 16) return [truncateToWidth(bold('OpenRUA'), width)];
     const inside = Math.max(1, Math.min(width, 88) - 4);
     const title = ` OpenRUA${f.version ? ' v' + plain(f.version) : ''} `;
@@ -164,7 +164,7 @@ const RESULT = {
   interrupted: () => yellow('‖ interrupted'),
   unknown: text => yellow(`? Result not confirmed${text ? ': ' + text : '.'} Check the robot before retrying. Run openrua session --help to record what happened.`),
   withdrawn: () => muted('withdrawn'),
-  reconciled: text => muted(`Checked${text ? ': ' + text : ''}`),
+  reconciled: text => muted(`Outcome recorded${text ? ': ' + text : ''}`),
 };
 
 const PENDING = new Set(['queued', 'dispatching', 'steering']);
@@ -214,7 +214,7 @@ export class Transcript extends Container {
     }
     if (message.origin === 'agent') {
       // A turn the agent started by itself, a background task having finished.
-      turn.user.setText(muted('⏺ The agent continued working.'));
+      turn.user.setText(muted('⏺ The agent continued working on its own.'));
     } else {
       const note = message.status === 'steered' ? 'The agent received this message during its current response.' : '';
       turn.user.setText(`${note ? muted(note) + '\n' : ''}${accent('❯')} ${bold(plain(message.text))}`);

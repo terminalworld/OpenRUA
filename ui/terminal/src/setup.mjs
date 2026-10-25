@@ -105,7 +105,7 @@ export class Setup extends Screen {
     }, () => this.environment(), {summary: [
       ...(this.spec.previous_session ? [muted('This opens a new conversation. You can find this one in /resume.'), ''] : []),
       bold('Environment'), `  ${plain(environment)}`, bold('Agent'),
-      `  ${plain(this.values.agent || 'Default agent')} · ${plain(this.values.model || 'Default model')}`]});
+      `  ${plain(this.values.agent || 'Configured default agent')} · ${plain(this.values.model || 'Default model')}`]});
   }
   chooseAgent(step = true) {
     this.agentStep = step;
@@ -116,7 +116,7 @@ export class Setup extends Screen {
       return {value, label: `${this.values.agent === value ? '✓ ' : ''}${plain(facts.title || value)}`,
         description: [facts.version, facts.model || this.spec.models?.[value]].filter(Boolean).map(plain).join(' · ')};
     });
-    items.push({value: '\0custom', label: 'Other agent…'});
+    items.push({value: '\0custom', label: 'Other agent or configuration file…'});
     const back = () => !step ? this.agentSettings() : this.intent === 'connect' || !(this.values.sim || this.values.bench)
       ? this.real() : this.environments(Boolean(this.values.bench));
     this.list('Agent', 'Choose your coding agent', items, value => {
@@ -127,7 +127,7 @@ export class Setup extends Screen {
   }
   agentSettings() {
     const rows = [...(this.agentStep ? [{value: 'continue', label: 'Continue to review'}] : []),
-      {value: 'agent', label: `Coding agent: ${plain(this.authentication[this.values.agent]?.title || this.values.agent || 'Default agent')}`},
+      {value: 'agent', label: `Coding agent: ${plain(this.authentication[this.values.agent]?.title || this.values.agent || 'Configured default agent')}`},
       {value: 'model', label: `Model: ${plain(this.values.model || 'Agent default')}`}];
     if (Object.hasOwn(this.values, 'auth_mode')) rows.push({value: 'auth_mode', label: `Authentication: ${this.authLabel(this.values.auth_mode)}`});
     if (this.values.auth_mode === 'api') rows.push({value: 'api_key_file', label: `API key file: ${plain(this.values.api_key_file || 'Not selected')}`});
@@ -156,12 +156,12 @@ export class Setup extends Screen {
       else { this.values.model = value; this.agentSettings(); }
     }, () => this.agentSettings(), {selected: this.values.model,
       summary: [muted(`Current model: ${plain(this.values.model || 'Agent default')}`),
-        ...(!selectionAllowed ? [muted('Set the model in the agent configuration file.')] : [])]});
+        ...(!selectionAllowed ? [muted('This agent is in preview. Its model comes from its configuration file and cannot be changed here.')] : [])]});
   }
   advanced() {
     this.list('Advanced', 'Advanced options', [
       {value: 'name', label: `Session name: ${plain(this.values.name || 'Automatic')}`},
-      ...(this.intent !== 'connect' ? [{value: 'check', label: 'Save settings and check setup'}] : []),
+      ...(this.intent !== 'connect' ? [{value: 'check', label: 'Save project settings and check setup'}] : []),
       {value: 'back', label: 'Back'},
     ], value => value === 'back' ? this.menu() : value === 'check' ? this.submit('check')
       : this.edit('name', 'Session name', false, () => this.advanced()), () => this.menu());

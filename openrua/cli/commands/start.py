@@ -210,7 +210,7 @@ def open_history(home: Path, name: str, *, screen=None):
     if facts.get('status') != 'stopped' or facts.get('backend') == 'connect':
         return client, name
     if not Path(project).is_dir():
-        client.reason = 'The project directory is missing. You can still read the saved messages.'
+        client.reason = 'The original project directory is missing. You can read the saved messages, but you cannot continue this conversation.'
         return client, name
     settings = snapshot.get('settings') or {}
     facts['model'] = settings.get('model') or facts.get('model')
@@ -340,7 +340,7 @@ def open_interface(args, client, name: str, application=None) -> int:
         return application.perform('Opening interface', lambda: open_interface(args, client, name), native=True)
     if args.gui or args.cli:
         if getattr(client, 'read_only', False):
-            raise UsageError('You can view this saved conversation in the terminal.',
+            raise UsageError('This saved conversation is available for viewing only in the terminal. You cannot send messages from this view.',
                              hint=f'openrua --resume {name} opens its saved messages')
         if args.gui:
             return session.run(argparse.Namespace(home=args.home, name=name, action='web', no_open=False))

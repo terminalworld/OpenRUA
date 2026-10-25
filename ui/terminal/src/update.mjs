@@ -21,9 +21,9 @@ export class Update extends Screen {
     const message = offer ? spec.required ? 'This update is required for this agent to work with OpenRUA.'
       : 'An update is available. You can continue with the installed version.'
       : spec.success ? spec.restart ? 'Update installed. Close OpenRUA and run it again to use the new version.'
-        : 'Update installed. New sessions will use it. Sessions already running keep their current version.'
-        : spec.restart ? 'Update failed. Open the log to see what went wrong.'
-          : 'Update failed. Sessions already running are unaffected. Open the log to see what went wrong.';
+        : 'Update installed. New sessions will use it. Sessions already running keep their current version and environment.'
+        : spec.restart ? 'Update failed. Open the update log to see what went wrong before retrying.'
+          : 'Update failed. Sessions already running are unaffected. Open the update log to see what went wrong before retrying.';
     this.ui.addChild(new Text(message, 0, 1));
     const rows = offer ? [
       {value: 'update', label: 'Update now'},

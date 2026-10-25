@@ -53,7 +53,7 @@ export class Client {
       this.requests.add(request);
       const timer = setTimeout(() => request.destroy(new Error('The session did not reply in time.')), this.timeout);
       request.once('close', () => { clearTimeout(timer); this.requests.delete(request); });
-      request.on('error', () => reject(new Error('Cannot connect to this session. The last command may still be running. Check its status before trying again.')));
+      request.on('error', () => reject(new Error('Cannot connect to this session. The last command may still be running, and its result is not confirmed. Check its status before trying again.')));
       request.end(raw);
     });
   }

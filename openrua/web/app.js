@@ -109,7 +109,7 @@ function turn(message) {
     turns.set(message.id, entry);
   }
   // A turn the agent started by itself has no instruction of its own.
-  entry.user.textContent = message.origin === "agent" ? "(the agent continued working)" : message.text;
+  entry.user.textContent = message.origin === "agent" ? "(the agent continued working on its own)" : message.text;
   entry.status.textContent =
     displayStatus(message.status);
   return entry;
@@ -284,7 +284,7 @@ function render() {
   $("execution-description").textContent = state.closed
     ? "This session has stopped. Your files and chat history are saved."
     : state.robot && state.robot.status !== 'ready'
-      ? `Robot ${state.robot.status}: ${state.robot.reason}. You can keep chatting to check the problem and fix it. Review earlier instructions before sending them again.`
+      ? `Robot ${state.robot.status}: ${state.robot.reason}. You can keep chatting to check the problem and fix it. Earlier instructions are saved and will wait for your review before they can be sent.`
       : state.paused
       ? `Paused${state.pause_reason ? `: ${state.pause_reason}` : ""}. Your waiting messages are saved. Check them before continuing.`
       : state.active
@@ -334,7 +334,7 @@ function render() {
   $("send").textContent = pending ? "Retry same message ↑" : "Send message ↑";
   $("message").readOnly = !!pending;
   $("send-hint").textContent = pending
-    ? "We have not confirmed that this message arrived. Retry sends it safely without creating a duplicate."
+    ? "We have not confirmed that this message arrived. Retry keeps the same request ID, so the message is not submitted twice."
     : state.paused
       ? "Your message will wait until you choose Continue."
       : "While the agent works, new messages join its current response when supported. Otherwise, they wait.";
@@ -496,7 +496,7 @@ export const handlers = {
       if (body.request_id && error.status >= 400 && error.status < 500) {
         pendingRobot = null; saveDraft();
       }
-      throw new Error(error.message + (pendingRobot ? ' We have not confirmed this request. Use /robot retry to try it again safely.' : ''));
+      throw new Error(error.message + (pendingRobot ? ` We have not confirmed request ${pendingRobot.request_id}. Use /robot retry to retry it with the same request ID.` : ''));
     }
   },
   help: () => {

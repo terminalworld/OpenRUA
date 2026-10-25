@@ -12,11 +12,11 @@ export async function schedulesMenu(chat, context, reviewOptions, openReport) {
   const rows = data.schedules.map(plan => ({value: plan.id,
     label: `${plan.enabled ? 'Enabled' : 'Paused'} · ${plain(plan.name)}`,
     description: `${plain(plan.calendar.time)} ${plain(plan.calendar.timezone)} · ${plain(plan.calendar.days)}`}));
-  if (context.defaults) rows.push({value: 'create', label: 'Schedule a review…'});
+  if (context.defaults) rows.push({value: 'create', label: 'Schedule a recurring review…'});
   if (chat.pendingSchedule) rows.push({value: 'retry', label: 'Check the last schedule request…'});
   rows.push({value: 'refresh', label: 'Refresh'});
-  chat.picker(`Scheduled skill reviews · scheduler: ${plain(displayStatus(data.scheduler.state))}\n`
-    + 'Reviews keep running when you close this terminal. After restarting your computer, open OpenRUA to start scheduling again.\n'
+  chat.picker(`Recurring skill reviews · scheduler: ${plain(displayStatus(data.scheduler.state))}\n`
+    + 'Reviews still start on their schedule when this terminal is closed. After restarting your computer, open OpenRUA to start scheduling again.\n'
     + 'Missed reviews are combined into one catch-up review. Sign-in or usage-limit problems pause the schedule.', rows, async key => {
     if (key === 'refresh') return back();
     if (key === 'retry') {
@@ -83,7 +83,7 @@ export async function schedulesMenu(chat, context, reviewOptions, openReport) {
           + `Agent: ${plain(options.agent)}\nModel: ${plain(options.model || 'default')} · effort: ${plain(options.effort || 'default')}\n`
           + `Container image: ${plain(options.image)} · Review time limit: ${options.wall_clock_min} minutes\n\n`
           + 'Reviews run in the background using your account or API key. The time limit does not limit API costs. '
-          + 'Reviews do not start a robot. You choose which suggested skills to save.', async () => {
+          + 'Reviews do not start a robot. Results are suggestions. You choose which skills to add or update.', async () => {
           let saved;
           if (existing) saved = await api('schedule-update', {id: existing.id, revision: existing.revision, definition});
           else {
@@ -99,7 +99,7 @@ export async function schedulesMenu(chat, context, reviewOptions, openReport) {
           return back();
         });
       }
-      chat.editText(key === 'time' ? 'Local time (HH:MM)' : key === 'timezone' ? 'Time zone, such as UTC or Europe/London' : 'Schedule name',
+      chat.editText(key === 'time' ? 'Local time (HH:MM)' : key === 'timezone' ? 'Time zone (IANA name), such as UTC or Europe/London' : 'Schedule name',
         key === 'name' ? definition.name : calendar[key], value => {
           if (key === 'name') definition.name = value.trim(); else calendar[key] = value.trim();
           form(definition, existing);

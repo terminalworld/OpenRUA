@@ -20,7 +20,9 @@ async function send(chat) {
     const {result} = await chat.client.request('/api/actions/robot', body);
     chat.pendingRobot = null;
     const action = {start: 'Robot startup', stop: 'Robot shutdown', restart: 'Robot restart', build: 'Software build'}[result.operation];
-    chat.say(`${action}: ${displayStatus(result.status).toLowerCase()}.\nOpen /robot to check progress. You can keep chatting.`);
+    chat.say(`${action}: ${displayStatus(result.status).toLowerCase()}.`
+      + (result.summary ? `\n${plain(result.summary)}` : '')
+      + '\nOpen /robot to check progress. You can keep chatting.');
     await chat.refresh();
   } catch (error) {
     if (error instanceof ResponseError && error.status >= 400 && error.status < 500) chat.pendingRobot = null;
@@ -45,13 +47,13 @@ export async function robotMenu(chat, [operation] = []) {
   if (operation) { show(chat, JSON.stringify(result, null, 2)); return; }
   const robot = result.robot;
   chat.picker(`Robot ${plain(robot?.status || 'not connected')}${robot?.reason ? '\n' + plain(robot.reason) : ''}`, [
-    {value: 'status', label: 'Check the connection'},
+    {value: 'status', label: 'Connection status and request results'},
     {value: 'logs', label: 'Read driver and build logs'},
     {value: 'start', label: 'Connect robot…'},
     {value: 'restart', label: 'Apply settings and reconnect…'},
     {value: 'stop', label: 'Stop the simulator or drivers…'},
     {value: 'build', label: 'Prepare robot software…', description: 'Running drivers keep running'},
-    ...(chat.pendingRobot ? [{value: 'retry', label: 'Retry the last robot request'}] : []),
+    ...(chat.pendingRobot ? [{value: 'retry', label: 'Retry the last robot request', description: `Request ID: ${plain(chat.pendingRobot.request_id)}`}] : []),
     {value: 'back', label: 'Back to conversation'},
   ], async key => { if (key !== 'back') await robotMenu(chat, [key]); });
 }

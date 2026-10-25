@@ -31,7 +31,7 @@ export function modelPicker(chat, selected) {
   };
   const problem = state?.setting_errors?.model;
   const availability = problem ? `\nCould not load the model list: ${plain(problem)}`
-    : !choices.length ? '\nCould not load the model list. Enter a model ID to select it.' : '';
+    : !choices.length ? "\nThe agent's model list is not available. You can enter a supported model ID." : '';
   chat.picker('Select Model' + availability, [
     ...(!choices.some(choice => choice.value === current) && current
       ? [{value: current, label: `✓ ${plain(current)}`}]: []),
