@@ -283,7 +283,7 @@ openrua config show
 ```
 
 Selected simulation declarations and build files are copied into project
-`configs/`. Project references are relative to its root. A normal launch's
+`.openrua/configs/`. Project references are relative to its root. A normal launch's
 flags apply only to that run. `config set --bench null` explicitly saves a
 choice of the simulator's native scene. See [projects](projects.md).
 

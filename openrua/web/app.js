@@ -2,6 +2,7 @@ import { workspaceBrowser } from "/workspace.js";
 import { cameraView } from "/cameras.js";
 import {
   permissionChoices,
+  SettingChanges,
   agentCommands,
   commandsFor,
   notice as eventNotice,
@@ -18,7 +19,8 @@ const make = (tag, text, className) => {
   return e;
 };
 const key = "openrua-draft";
-const settingResults = new Map();
+const settingChanges = new SettingChanges(notice);
+let replayThrough = null;
 let saved;
 try {
   saved = JSON.parse(sessionStorage.getItem(key));
@@ -112,13 +114,11 @@ function turn(message) {
   return entry;
 }
 function event(record) {
-  if (record.kind === 'agent_event' && ['setting', 'setting_rejected'].includes(record.data?.kind)) {
-    const data = record.data.data;
-    settingResults.set(data.setting, {kind: record.data.kind, ...data});
-  }
+  const handled = settingChanges.receive(record, state);
   // What an event says to the person, as every client says it.
   const said = eventNotice(record);
-  if (said) notice(said);
+  const oldSetting = record.seq <= replayThrough && record.kind === 'agent_event' && record.data?.kind === 'setting_rejected';
+  if (said && !handled && !oldSetting) notice(said);
   if (record.kind !== "agent_event") return;
   lastEvent = Date.now();
   const e = record.data,
@@ -386,6 +386,7 @@ async function sync() {
   try {
     const snapshot = await api("/api/session");
     if (current !== generation) return;
+    if (replayThrough === null) replayThrough = snapshot.cursor;
     state = snapshot.state;
     const atBottom =
       $("thread").scrollHeight -
@@ -431,6 +432,8 @@ async function sync() {
 $("connect-form").onsubmit = async (e) => {
   e.preventDefault();
   generation++;
+  settingChanges.clear();
+  replayThrough = null;
   token = $("token").value.trim();
   try {
     await api("/api/session");
@@ -462,16 +465,12 @@ $("disconnect").onclick = () => {
   $("disconnect").hidden = true;
 };
 async function configure(setting, value) {
-  settingResults.delete(setting);
+  if (state?.settings?.[setting] === value) return true;
+  const change = settingChanges.begin({[setting]: value});
   const accepted = await act("configure", { setting, value });
-  const result = settingResults.get(setting);
-  if (result?.kind === 'setting_rejected' && result.value === value) return false;
-  if (accepted && state?.settings?.[setting] === value) {
-    notice(`${setting}: ${value}${state.setting_effective_from?.[setting] === 'next_turn' ? ' from the next turn' : ''}.`);
-  } else if (accepted) {
-    notice(`Requested ${setting}: ${value}. Waiting for the agent to confirm.`);
-  }
-  return accepted;
+  if (!accepted) { settingChanges.cancel(change); return false; }
+  try { return settingChanges.complete(change, state); }
+  catch (error) { notice(error.message); return false; }
 }
 // One handler for each command the page offers (commandsFor("browser"));
 // the agent's own commands go to it as a message, as in its terminal.
@@ -527,12 +526,11 @@ export const handlers = {
   },
   end: () => $("end").click(),
   interrupt: async () => {
-    if (!state?.active) throw new Error("No active turn.");
-    if (await act("interrupt", { message_id: state.active }))
-      notice("Interrupted. Queued messages go next.");
+    if (!state?.active) { notice('No agent response to interrupt.'); return; }
+    await act("interrupt", { message_id: state.active });
   },
   continue: () => {
-    if (!state?.paused) throw new Error("The queue is not paused.");
+    if (!state?.paused) { notice('Nothing to continue.'); return; }
     $("resume").click();
   },
   permissions: async ([value]) => {

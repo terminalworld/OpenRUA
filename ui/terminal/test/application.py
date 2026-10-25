@@ -21,6 +21,7 @@ async def main():
         workspace = root / 'project'
         workspace.mkdir()
         (workspace / 'measurement.txt').write_text('Recorded measurement\n' * 70)
+        (workspace / 'programs' / 'nested').mkdir(parents=True)
         store, session, native, execution, server = await running_server(root, artifacts=WorkspaceFiles(workspace))
         catalog = [
             {'value': 'demo-a', 'efforts': [{'value': 'high'}]},
@@ -28,8 +29,9 @@ async def main():
              'efforts': [{'value': 'low'}, {'value': 'medium'}]},
         ]
         for setting, value, choices in [('model', 'demo-a', catalog), ('effort', 'high', [{'value': 'high'}])]:
-            session.native(Event('setting', data={'setting': setting, 'value': value,
-                'choices': choices, 'effective_from': 'next_turn'}))
+            for _ in range(2):
+                session.native(Event('setting', data={'setting': setting, 'value': value,
+                    'choices': choices, 'effective_from': 'next_turn'}))
         client = Client(server.url, server.token)
         builds, saves = [], []
 
@@ -58,7 +60,7 @@ async def main():
             state = store.snapshot()['state']
             Path(sys.argv[1]).write_text(json.dumps({'builds': len(builds), 'saves': len(saves),
                 'settings': state['settings'], 'active_settings': state['messages'][0].get('turn_settings'),
-                'closed': state['closed']}))
+                'closed': state['closed'], 'interrupted': state['messages'][0]['cancel_requested']}))
         finally:
             await stop(store, execution, server)
 

@@ -39,7 +39,7 @@ openrua
 ```
 
 This copies the selected bundled robot and simulator declarations, including
-required build files, into `configs/` in your project. Edit these maintained
+required build files, into `.openrua/configs/` in your project. Edit these maintained
 files to change your scene or control configuration. Selecting a benchmark
 also copies its declaration and dependencies. Existing files are retained.
 Project settings store paths relative to this directory; YAML references
@@ -48,6 +48,10 @@ and `.openrua/settings.json` together. `.openrua/requirements.txt` records the
 OpenRUA version used when the project was first saved; install it with
 `python -m pip install -r .openrua/requirements.txt`. Update that dependency
 explicitly when you choose to upgrade the project.
+
+The project's `.openrua/configs/` files are editable inputs, not a cache.
+Saving another agent or model retains existing configuration paths, including
+files you keep in your own directory layout.
 
 Command-line overrides on ordinary launches and `exec` apply to that run only.
 Use `config set` or the setup screen to save choices. `config show` displays
@@ -82,6 +86,7 @@ cup-sorting/
   notes/                   findings, progress and program entry points
   observations/            saved sensor data, identified by acquisition time
   .openrua/
+    configs/               editable environment declarations and build inputs
     settings.json          this project's environment selection
     runs/<session>/        resolved configuration and robot logs for each run
 ```

@@ -88,6 +88,8 @@ export function status(state, {readOnly = false} = {}) {
     text: `Paused${state.pause_reason ? ': ' + state.pause_reason : ''} · /queue to review` +
       (state.connected ? ', /continue to go on' : ' · agent unavailable; inspect session logs before restarting')};
   else if (asking) head = {kind: 'waiting', tone: 'warn', text: 'Waiting for your response'};
+  else if (state.active && state.messages.find(message => message.id === state.active)?.cancel_requested)
+    head = {kind: 'interrupting', tone: 'busy', text: 'Interrupting…'};
   else if (state.active) head = {kind: 'working', tone: 'busy', text: 'Working…'};
   else head = {kind: 'ready', tone: state.robot && state.robot.status !== 'ready' ? 'plain' : 'good',
     text: state.robot && state.robot.status !== 'ready' ? 'Ready to chat' : 'Ready'};
@@ -109,11 +111,56 @@ export function notice(record) {
     const {setting, value, reason} = data.data ?? {};
     return `The agent did not take ${setting} ${value}${reason ? `: ${reason}` : ''}`;
   }
-  if (record?.kind === 'agent_event' && data.kind === 'setting' && data.data?.effective_from === 'next_turn')
-    return `${data.data.setting} ${data.data.value} applies from the next turn.`;
-  if (record?.kind === 'agent_event' && data.kind === 'setting')
-    return `${data.data.setting}: ${data.data.value}.`;
   return null;
+}
+
+// Settings are state. Only a locally requested change needs a confirmation.
+export class SettingChanges {
+  constructor(notify) { this.notify = notify; this.pending = new Set(); }
+  begin(values) {
+    for (const change of this.pending)
+      if (Object.keys(values).some(key => key in change.values)) this.pending.delete(change);
+    const change = {values, sending: true, rejected: null};
+    this.pending.add(change);
+    return change;
+  }
+  cancel(change) { this.pending.delete(change); }
+  clear() { this.pending.clear(); }
+  receive(record, state) {
+    if (record.kind !== 'agent_event' || !['setting', 'setting_rejected'].includes(record.data?.kind)) return false;
+    const data = record.data.data;
+    let handled = false;
+    for (const change of [...this.pending]) {
+      if (!(data.setting in change.values) || change.values[data.setting] !== data.value) continue;
+      handled = true;
+      if (record.data.kind === 'setting_rejected') change.rejected = notice(record);
+      if (!change.sending) {
+        try { this.complete(change, state); }
+        catch (error) { this.notify(error.message); }
+      }
+    }
+    return handled;
+  }
+  complete(change, state) {
+    if (!this.pending.has(change)) return false;
+    if (change.rejected) {
+      this.cancel(change);
+      throw new Error(change.rejected);
+    }
+    if (Object.entries(change.values).every(([key, value]) => state?.settings?.[key] === value)) {
+      this.cancel(change);
+      const values = change.values;
+      this.notify(values.model !== undefined
+        ? `Model changed to ${values.model}${values.effort === undefined ? '' : ` · ${values.effort}`}.`
+        : values.permissions !== undefined
+          ? `Permissions: ${permissionChoices(state).find(choice => choice.value === values.permissions)?.label || values.permissions}.`
+          : `Reasoning effort: ${values.effort}.`);
+      return true;
+    }
+    if (change.sending) this.notify(`Updating ${Object.keys(change.values).join(' and ')}…`);
+    change.sending = false;
+    return false;
+  }
 }
 
 // What a typed line does while the agent waits on a question: answers it

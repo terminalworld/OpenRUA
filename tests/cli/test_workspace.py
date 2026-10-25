@@ -92,7 +92,7 @@ def test_project_selection_outlives_changes_to_global_defaults(tmp_path):
     args = build_parser().parse_args(['--home', str(home), '--workspace', str(root)])
     values, _ = start.values_for(args)
     assert (values['robot'], values['sim'], values['bench'], values['agent'], values['model']) == (
-        str(root / 'configs/robots/panda.yaml'), str(root / 'configs/simulators/robosuite.yaml'), '', 'codex', 'project-model')
+        str(root / '.openrua/configs/robots/panda.yaml'), str(root / '.openrua/configs/simulators/robosuite.yaml'), '', 'codex', 'project-model')
     contents = (root / '.openrua/settings.json').read_text()
     assert 'private-key' not in contents and 'auth_mode' not in contents
 

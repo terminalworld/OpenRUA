@@ -1013,8 +1013,8 @@ usage: openrua config [-h] [--user] [-C WORKSPACE] [--trust-workspace]
                       {show,set,schema}
 
 Save this project in .openrua/settings.json. Bundled environment choices
-create maintained configuration files in configs/. --user selects personal
-agent preferences and authentication in ~/.openrua/config.yaml.
+create maintained configuration files in .openrua/configs/. --user selects
+personal agent preferences and authentication in ~/.openrua/config.yaml.
 
 positional arguments:
   {show,set,schema}     what to do

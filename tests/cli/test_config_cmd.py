@@ -20,8 +20,8 @@ def test_config_creates_owned_templates_and_relative_project_settings(tmp_path, 
     root.mkdir(); monkeypatch.chdir(root)
     run(home, 'config', 'set', '--trust-workspace', '--robot', 'panda', '--sim', 'robosuite', '--agent', 'codex')
     raw = json.loads(projects.settings_path(root).read_text())
-    assert raw['robot'] == './configs/robots/panda.yaml'
-    assert raw['sim'] == './configs/simulators/robosuite.yaml'
+    assert raw['robot'] == './.openrua/configs/robots/panda.yaml'
+    assert raw['sim'] == './.openrua/configs/simulators/robosuite.yaml'
     assert not (home / 'config.yaml').exists()
     chosen = projects.selection(root)
     assert compose(chosen['robot'], chosen['sim'], chosen['bench'], home).suite == 'Lift'
@@ -118,8 +118,8 @@ def test_doctor_and_build_receive_the_same_project_selection(tmp_path, monkeypat
     monkeypatch.setattr(doctor_command.doctor, 'run', lambda **kwargs: seen.append(kwargs) or SimpleNamespace())
     monkeypatch.setattr(doctor_command.doctor, 'print_report', lambda *a, **k: 0)
     run(home, 'doctor', '-C', str(root))
-    assert seen[-1]['robot'] == str(root / 'configs/robots/panda.yaml')
-    assert seen[-1]['sim'] == str(root / 'configs/simulators/robosuite.yaml')
+    assert seen[-1]['robot'] == str(root / '.openrua/configs/robots/panda.yaml')
+    assert seen[-1]['sim'] == str(root / '.openrua/configs/simulators/robosuite.yaml')
     assert seen[-1]['agent_names'] == ['codex']
     monkeypatch.setattr(build, '_sandbox', lambda *a: ('sandbox', 'digest'))
     monkeypatch.setattr(build, 'build_proxy', lambda *a: ('proxy', 'digest'))

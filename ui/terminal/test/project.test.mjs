@@ -172,7 +172,7 @@ test('model ID entry remains usable when native choices are absent', {timeout: 5
 test('reasoning effort uses native choices and changes only on user selection', {timeout: 5000}, async t => {
   const {chat, calls} = await setup(t);
   await chat.submit('/model effort');
-  assert.match(chat.panel.component.render(100).join('\n'), /Reasoning effort setting: high/);
+  assert.match(chat.panel.component.render(100).join('\n'), /Reasoning effort: high/);
   assert.equal(calls.some(call => call.command), false);
   await choose(chat, 0);
   assert.deepEqual(calls.find(call => call.command)?.params, {setting: 'effort', value: 'medium'});

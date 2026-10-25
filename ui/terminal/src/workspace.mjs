@@ -1,5 +1,6 @@
 import {Container, Image, Text, matchesKey} from '@earendil-works/pi-tui';
 import {muted, plain} from './view.mjs';
+import {selection} from './selection.mjs';
 
 // Presentation only: the existing authenticated API bounds all workspace reads.
 // Text is shown through a window of `rows()` lines that the arrow keys move;
@@ -59,31 +60,126 @@ export class FilePreview extends Container {
   }
 }
 
+// One browser owns the directory, selection and pending reads until it closes.
+export class WorkspaceBrowser extends Container {
+  constructor(chat) {
+    super();
+    this.chat = chat; this.path = ''; this.positions = new Map(); this.revision = 0;
+    this.closed = false; this.pending = false; this.preview = null;
+    this.heading = new Text('Workspace /', 0, 1);
+    this.feedback = new Text('', 0, 0);
+    this.progress = new Text('', 0, 0);
+    this.footer = new Text(muted('← Parent · → Open · Enter Select · Esc Close'), 0, 1);
+    this.closedPromise = new Promise(resolve => { this.resolveClose = resolve; });
+    this.listing = {entries: []}; this.list();
+    this.handle = chat.dialog(this);
+  }
+
+  list(selected = this.positions.get(this.path)) {
+    const items = [{value: '\0refresh', label: 'Refresh directory'}];
+    if (this.path) items.push({value: '\0parent', label: '../'});
+    for (const entry of this.listing.entries) items.push({value: entry.name,
+      label: plain(entry.name) + (entry.kind === 'directory' ? '/' : ''),
+      description: `${entry.kind} · ${entry.size} bytes`});
+    this.menu = selection(items, Math.max(2, Math.min(8, this.chat.rows() - 12)), {selected});
+    this.menu.onSelect = item => { void this.open(item.value); };
+    this.draw();
+  }
+
+  draw() {
+    this.clear();
+    if (this.preview) this.addChild(this.preview);
+    else {
+      this.heading.setText(`Workspace /${plain(this.path)}${this.listing.truncated ? ' (listing truncated)' : ''}`);
+      this.addChild(this.heading); this.addChild(this.menu); this.addChild(this.footer);
+    }
+    if (this.progress.text) this.addChild(this.progress);
+    if (this.feedback.text) this.addChild(this.feedback);
+    this.chat.ui.requestRender();
+  }
+
+  remember() { this.positions.set(this.path, this.menu.getSelectedItem()?.value); }
+  valid(revision) { return !this.closed && !this.chat.done && revision === this.revision; }
+
+  async read(title, operation, apply) {
+    const revision = ++this.revision;
+    this.pending = true; this.progress.setText(muted(title)); this.feedback.setText(''); this.draw();
+    try {
+      const result = await operation();
+      if (this.valid(revision)) apply(result);
+    } catch (error) {
+      if (this.valid(revision)) this.feedback.setText(plain(error.message));
+    } finally {
+      if (this.valid(revision)) { this.pending = false; this.progress.setText(''); this.draw(); }
+    }
+  }
+
+  async navigate(path, selected) {
+    this.remember();
+    await this.read(`Loading /${plain(path)}…`, () => this.chat.client.workspaceList(path), listing => {
+      this.path = path; this.listing = listing; this.preview = null; this.list(selected);
+    });
+  }
+
+  parent() {
+    if (!this.path) return;
+    const parts = this.path.split('/'), child = parts.pop();
+    void this.navigate(parts.join('/'), child);
+  }
+
+  async open(value) {
+    if (this.pending) return;
+    if (value === '\0refresh') return this.navigate(this.path);
+    if (value === '\0parent') return this.parent();
+    const entry = this.listing.entries.find(item => item.name === value);
+    if (!entry) return;
+    if (entry.kind !== 'file' && entry.kind !== 'directory') {
+      this.feedback.setText('Symlinks and special files cannot be previewed.'); this.draw(); return;
+    }
+    const target = this.path ? `${this.path}/${entry.name}` : entry.name;
+    this.remember();
+    if (entry.kind === 'directory') return this.navigate(target);
+    return this.showFile(target);
+  }
+
+  async showFile(target) {
+    await this.read(`Reading ${plain(target)}…`, () => this.chat.client.workspaceRead(target), file => {
+      const where = this.chat.facts?.workspace ? `${this.chat.facts.workspace}/${target}` : null;
+      this.preview = new FilePreview(file, () => this.back(), () => { void this.showFile(target); },
+        () => this.chat.ui.requestRender(), () => this.chat.rows(), where);
+    });
+  }
+
+  back() {
+    this.revision++; this.pending = false; this.preview = null;
+    this.progress.setText(''); this.feedback.setText(''); this.draw();
+  }
+
+  close() {
+    if (this.closed) return;
+    this.closed = true; this.revision++; this.handle.hide(); this.resolveClose();
+  }
+
+  handleInput(data) {
+    if (matchesKey(data, 'escape')) {
+      if (this.preview) this.back(); else this.close();
+      return;
+    }
+    if (this.pending) return;
+    if (this.preview) { this.preview.handleInput(data); return; }
+    if (matchesKey(data, 'left')) this.parent();
+    else if (matchesKey(data, 'right')) {
+      const value = this.menu.getSelectedItem()?.value;
+      if (value !== '\0refresh') void this.open(value);
+    } else this.menu.handleInput(data);
+    this.chat.ui.requestRender();
+  }
+}
+
 export async function browseWorkspace(chat, path = '') {
   if (!chat.client.workspaceList) throw new Error('Workspace access is unavailable for this conversation.');
-  const listing = await chat.client.workspaceList(path);
-  if (chat.done) return;
-  const parent = path.split('/').slice(0, -1).join('/');
-  const items = [{value: {action: 'refresh'}, label: 'Refresh directory'}];
-  if (path) items.push({value: {action: 'parent'}, label: '../'});
-  for (const entry of listing.entries) {
-    items.push({value: entry, label: plain(entry.name) + (entry.kind === 'directory' ? '/' : ''),
-      description: `${entry.kind} · ${entry.size} bytes`});
-  }
-  chat.picker(`Workspace /${plain(path)}${listing.truncated ? ' (listing truncated)' : ''}`, items, async entry => {
-    if (entry.action) return browseWorkspace(chat, entry.action === 'parent' ? parent : path);
-    const target = path ? `${path}/${entry.name}` : entry.name;
-    if (entry.kind === 'directory') return browseWorkspace(chat, target);
-    if (entry.kind !== 'file') throw new Error('Symlinks and special files cannot be previewed.');
-    const show = async () => {
-      const file = await chat.client.workspaceRead(target);
-      if (chat.done) return;
-      const back = () => { handle.hide(); void browseWorkspace(chat, path).catch(e => chat.say(e.message)); };
-      const refresh = () => { handle.hide(); void show().catch(e => chat.say(e.message)); };
-      const where = chat.facts?.workspace ? `${chat.facts.workspace}/${target}` : null;
-      const preview = new FilePreview(file, back, refresh, () => chat.ui.requestRender(), () => chat.rows(), where);
-      const handle = chat.dialog(preview);
-    };
-    await show();
-  });
+  chat.workspaceBrowser?.close();
+  const browser = new WorkspaceBrowser(chat);
+  chat.workspaceBrowser = browser;
+  await Promise.race([browser.navigate(path), browser.closedPromise]);
 }

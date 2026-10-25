@@ -85,7 +85,7 @@ openrua-proxy-<hash>, openrua-internal, openrua-internet  standing proxies (one 
   sandboxes/<name>/                                      session workspace, profile copy and state; retained until explicitly deleted with openrua clean
   launches/<name>/                                       a session's startup log
 <project>/robot.yaml, driver/, cameras/                 maintained real-robot adaptation
-<project>/configs/                                      maintained simulation declarations and build inputs
+<project>/.openrua/configs/                                      maintained simulation declarations and build inputs
 <project>/.openrua/settings.json                         project selection, using project-relative paths
 <project>/.openrua/runs/                                 resolved inputs and robot logs
 ./runs/                                                 isolated benchmark trial data (--runs-root)

@@ -1,7 +1,7 @@
 import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, SelectList, Spacer, Text,
   matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
-import {agentCommands, commandsFor, notice, parseCommand, permissionChoices, status, typedAnswer} from './session.mjs';
+import {SettingChanges, agentCommands, commandsFor, notice, parseCommand, permissionChoices, status, typedAnswer} from './session.mjs';
 import {DialogHeading, PendingMessages, Transcript, Welcome, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
@@ -37,24 +37,17 @@ export class Chat {
     this.ui.setHeading('OpenRUA', facts.project || name);
     this.facts = facts;
     this.transcript = new Transcript({workspace: facts.workspace});
-    this.settingResults = new Map();
-    this.seenSettings = new Set(); this.requestedSettings = new Set();
+    this.settingChanges = new SettingChanges(message => this.say(message));
     // Every event the agent produces marks it as not quiet (QUIET_MS).
     const record = this.transcript.event.bind(this.transcript);
-    this.transcript.event = event => {
+    this.transcript.event = (event, {replay = false} = {}) => {
       this.lastEvent = Date.now(); record(event);
-      let initialSetting = false;
-      if (event.kind === 'agent_event' && ['setting', 'setting_rejected'].includes(event.data?.kind)) {
-        const setting = event.data.data;
-        initialSetting = event.data.kind === 'setting' && !this.seenSettings.has(setting.setting)
-          && !this.requestedSettings.has(setting.setting);
-        this.seenSettings.add(setting.setting); this.requestedSettings.delete(setting.setting);
-        this.settingResults.set(setting.setting, {kind: event.data.kind, ...setting});
-      }
+      const handled = this.settingChanges.receive(event, this.controller?.state);
       // What an event says to the person (an interrupt's cancelled motions,
       // a setting the agent refused), as every client says it.
       const said = notice(event);
-      if (said && !initialSetting) this.say(said);
+      const oldSetting = replay && event.kind === 'agent_event' && event.data?.kind === 'setting_rejected';
+      if (said && !handled && !oldSetting) this.say(said);
     };
     this.controller = new Controller(client, this.transcript);
     this.status = new Text('Connecting…', 0, 0);
@@ -107,7 +100,8 @@ export class Chat {
         return {consume: true};
       }
       if (matchesKey(data, 'escape') && !this.editor.isShowingAutocomplete()) {
-        void this.submit('/interrupt'); return {consume: true};
+        if (this.controller.state?.active) void this.submit('/interrupt');
+        return {consume: true};
       }
     });
   }
@@ -169,15 +163,14 @@ export class Chat {
   rows() { return this.ui.terminal?.rows ?? 24; }
 
   picker(title, items, select, options = {}) {
-    if (!items.length) { this.say('Nothing to show.'); return; }
     const menu = selection(items, Math.max(2, Math.min(options.requestId ? 6 : 8, this.rows() - 12)),
       {explicit: Boolean(options.requestId || options.explicit)});
     const initial = items.findIndex(item => item.value === options.selected);
     if (initial >= 0) menu.setSelectedIndex(initial);
     const box = new Container();
     const heading = new DialogHeading(title, options.requestId, () => this.rows(), () => this.ui.requestRender());
-    box.addChild(heading); box.addChild(menu);
-    box.addChild(new Text(muted('↑/↓ select · Enter confirm · Esc back'), 0, 1));
+    box.addChild(heading); box.addChild(items.length ? menu : new Text(options.empty || 'No items.', 0, 1));
+    box.addChild(new Text(muted(`↑/↓ Select · Enter Confirm · Esc ${options.onCancel ? 'Back' : 'Close'}`), 0, 1));
     box.handleInput = data => { if (!heading.handleInput(data)) menu.handleInput(data); };
     let handle = this.dialog(box, options);
     menu.onCancel = () => { handle.hide(); options.onCancel?.(); };
@@ -332,7 +325,7 @@ export class Chat {
     if (this.controller.pending) extra.push(yellow('send unconfirmed: /retry'));
     const head = said.kind === 'working'
       ? accent(`${SPINNER[this.frame++ % SPINNER.length]} Working… ${elapsed(this.started)}`)
-      : tone[said.tone]({readonly: '◇ ', closed: '◇ ', paused: '‖ ', ready: '✓ ', waiting: '? '}[said.kind] + plain(said.text));
+      : tone[said.tone](({readonly: '◇ ', closed: '◇ ', paused: '‖ ', ready: '✓ ', waiting: '? ', interrupting: '… '}[said.kind] || '') + plain(said.text));
     const model = state.settings?.model || this.facts.model;
     const effort = state.settings?.effort;
     const nextTurn = state.setting_effective_from?.model === 'next_turn';
@@ -367,20 +360,17 @@ export class Chat {
   agentCommands() { return agentCommands(this.controller.state); }
 
   async configure(setting, value) {
-    this.requestedSettings.add(setting);
-    this.settingResults.delete(setting);
-    await this.client.command('configure', {setting, value});
-    await this.refresh();
-    const result = this.settingResults.get(setting);
-    if (result?.kind === 'setting_rejected' && result.value === value)
-      throw new Error(`The agent rejected ${setting}: ${value}${result.reason ? `: ${result.reason}` : ''}`);
-    if (this.controller.state?.settings?.[setting] === value) {
-      const when = this.controller.state.setting_effective_from?.[setting] === 'next_turn' ? ' from the next turn' : '';
-      this.say(`${setting}: ${value}${when}.`);
-      return true;
-    }
-    this.say(`Requested ${setting}: ${value}. Waiting for the agent to confirm.`);
-    return false;
+    return this.changeSettings('configure', {setting, value}, {[setting]: value});
+  }
+
+  async changeSettings(operation, params, values) {
+    if (Object.entries(values).every(([key, value]) => this.controller.state?.settings?.[key] === value)) return true;
+    const change = this.settingChanges.begin(values);
+    try {
+      await this.client.command(operation, params);
+      await this.refresh();
+      return this.settingChanges.complete(change, this.controller.state);
+    } catch (error) { this.settingChanges.cancel(change); throw error; }
   }
 
   effort() {
@@ -388,7 +378,7 @@ export class Chat {
     if (state?.settings?.effort === undefined) throw new Error('This agent has not reported a live effort setting.');
     const now = state.settings.effort;
     const choices = state.setting_choices?.effort ?? [];
-    const title = `Reasoning effort setting: ${plain(now)}\nApplies to the next turn. Choices come from the selected native model.`;
+    const title = `Reasoning effort: ${plain(now)}`;
     this.picker(title, [...choices.map(choice => ({value: choice.value,
       label: `${now === choice.value ? '✓ ' : ''}${plain(choice.label || choice.value)}`, description: plain(choice.description || '')})),
       ...(!choices.length ? [{value: null, label: 'Enter an effort level…'}] : [])], async value => {
@@ -479,9 +469,7 @@ export class Chat {
         }
         const now = state?.settings?.model || this.facts.model || 'not reported';
         const title = `Model setting: ${plain(now)}`
-          + (state?.settings?.effort !== undefined ? ` · effort: ${plain(state.settings.effort)}` : '')
-          + (state?.setting_effective_from?.model === 'next_turn'
-            ? '\nChanges apply to the next turn. An active turn keeps its model.' : '');
+          + (state?.settings?.effort !== undefined ? ` · effort: ${plain(state.settings.effort)}` : '');
         if (this.client.readOnly) { this.say(title); return; }
         modelPicker(this);
       },
@@ -524,25 +512,27 @@ export class Chat {
           });
       },
       questions: async () => { this.questions(); },
-      retry: async () => { await this.controller.retry(); await this.refresh(); },
+      retry: async () => {
+        if (!this.controller.pending) { this.say('Nothing to retry.'); return; }
+        await this.controller.retry(); await this.refresh();
+      },
       tools: async () => {
         this.picker('Tool results', [...this.transcript.tools].map(([key, tool]) => ({value: key,
           label: `${tool.expanded ? '▾' : '▸'} ${tool.label}`, description: `${tool.phase}${tool.details ? ' · ' + plain(String(tool.details.command ?? tool.details.file_path ?? '')).split('\n')[0] : ''}`})),
-          key => { this.transcript.toggleTool(key); this.ui.requestRender(); });
+          key => { this.transcript.toggleTool(key); this.ui.requestRender(); }, {empty: 'No tool calls yet.'});
       },
       queue: async () => { this.queue(); },
       interrupt: async () => {
         // As in a coding agent's own terminal: stop now, no dialog; what is
         // queued goes next.
         const id = state?.active;
-        if (!id) throw new Error('No active turn.');
+        if (!id) { this.say('No agent response to interrupt.'); return; }
         await this.client.command('interrupt', {message_id: id});
-        this.say('Interrupted. Queued messages go next.');
         await this.refresh();
       },
       continue: async () => {
         const id = state?.pause_id;
-        if (!id) throw new Error('The queue is not paused.');
+        if (!id) { this.say('Nothing to continue.'); return; }
         this.confirm('Review /queue first. Continue this paused queue?', () => this.client.command('resume', {pause_id: id}));
       },
     };
@@ -559,6 +549,7 @@ export class Chat {
   }
 
   stop() {
+    this.workspaceBrowser?.close();
     if (this.done) return;
     this.done = true;
     clearTimeout(this.timer);
