@@ -9,6 +9,15 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.30.4
+
+- Use plain English across setup, history, chat, robot controls, files, skills,
+  scheduled reviews, updates and the browser. Explain what happened and what
+  to do next. Keep each agent's permission names and behavior.
+- Simplify the resume page and explain saved conversations when they open.
+- Record separate shutdown times for pending robot work, the agent and resource
+  cleanup in the service log, so a slow stop can be traced to the right step.
+
 ## 0.30.3
 
 - Cancel robot readiness and scene initialization when ending a session during

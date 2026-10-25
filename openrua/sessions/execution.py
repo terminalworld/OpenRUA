@@ -59,8 +59,8 @@ class StdioTransport:
                 with os.fdopen(fd, 'ab') as stream:
                     stream.write(line)
                 where = str(self.invalid_output)
-            raise ValueError(f'Native stdout contained a non-JSON-object frame; inspect {where}. '
-                             'The agent connection is unavailable; /continue cannot reconnect it.')
+            raise ValueError(f'The agent returned output OpenRUA could not read. See {where}. '
+                             'The agent is not connected. /continue cannot reconnect it.')
 
     async def write(self, frame: dict) -> None:
         self.process.stdin.write((json.dumps(frame, ensure_ascii=False) + "\n").encode())
@@ -110,14 +110,14 @@ class Execution:
 
     async def start(self, *, reopen: bool = False, context_note: str | None = None) -> None:
         if self._owner is not None:
-            raise RuntimeError("execution owner already started")
+            raise RuntimeError("The agent for this session has already started.")
         self._owner_path.parent.mkdir(parents=True, exist_ok=True)
         owner = self._owner_path.open("a")
         try:
             fcntl.flock(owner, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
             owner.close()
-            raise RuntimeError("this session already has an execution owner; connect to it instead") from exc
+            raise RuntimeError("Another agent process already controls this session. Connect to it instead.") from exc
         self._owner = owner
         try:
             if reopen:
@@ -144,14 +144,14 @@ class Execution:
             if self._closing or self._owner is None:
                 if self._handover and operation in coordination:
                     return coordination[operation](**params)
-                raise RuntimeError("execution owner is not accepting commands")
+                raise RuntimeError("This session is stopping and cannot accept commands.")
             if operation == "respond":
                 if not self._usable:
-                    raise ValueError("native connection is unavailable; reply was not sent")
+                    raise ValueError("The agent is not connected. Your reply was not sent.")
                 request_id = params["request_id"]
                 pending = self.session.store.snapshot()["state"]["requests"].get(request_id)
                 if not pending or pending["status"] != "pending":
-                    raise ValueError("input request is no longer pending")
+                    raise ValueError("The agent is no longer waiting for this answer.")
                 # Validate in the plugin before committing a send intent.
                 update = self.conversation.protocol.respond(request_id, params["answers"])
                 self.session.claim_response(request_id)
@@ -164,13 +164,13 @@ class Execution:
                 result = None
             elif operation == "configure":
                 if not self._usable:
-                    raise ValueError("native connection is unavailable; nothing was changed")
+                    raise ValueError("The agent is not connected. No settings were changed.")
                 await self._update(self.conversation.protocol.configure(params["setting"],
                                                                         params["value"]))
                 result = None
             elif operation == 'select_model':
                 if not self._usable:
-                    raise ValueError('native connection is unavailable; nothing was changed')
+                    raise ValueError('The agent is not connected. No settings were changed.')
                 await self._update(self.conversation.protocol.select_model(params['model'], params['effort']))
                 result = None
             else:

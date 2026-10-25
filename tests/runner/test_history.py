@@ -41,7 +41,7 @@ def test_stale_or_ended_session_opens_readonly_without_replay(tmp_path):
         client, found = history.open_session(tmp_path, name)
         assert found == name and client.read_only
         assert client.snapshot() == before
-        with pytest.raises(RuntimeError, match='read-only'):
+        with pytest.raises(RuntimeError, match='cannot send messages'):
             client.command('enqueue', text='must never run')
         assert client.snapshot() == before
 

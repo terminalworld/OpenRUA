@@ -25,12 +25,12 @@ def _message(state: dict, message_id: str) -> dict:
     for message in state["messages"]:
         if message["id"] == message_id:
             return message
-    raise ValueError("unknown message")
+    raise ValueError("This message could not be found.")
 
 
 def _open(state: dict) -> None:
     if state["closed"]:
-        raise ValueError("session is closed; its records are retained")
+        raise ValueError("This session has stopped. Your files and chat history are saved.")
 
 
 def _pause(state: dict, reason: str) -> None:
@@ -59,7 +59,7 @@ class Session:
             for message in state["messages"]:
                 if (message["client_id"], message["request_id"]) == (client_id, request_id):
                     if message["original_text"] != text:
-                        raise ValueError("request ID was already used with different content")
+                        raise ValueError("This request ID was already used for a different message.")
                     return message, []
             _open(state)
             message = {"id": str(uuid4()), "client_id": client_id, "request_id": request_id,
@@ -76,7 +76,7 @@ class Session:
             _open(state)
             message = _message(state, message_id)
             if message["status"] != "queued" or message["revision"] != revision:
-                raise ValueError("message changed or has already been dispatched; refresh before editing")
+                raise ValueError("This message has changed or has already been sent. Refresh before editing it.")
             message["text"] = text
             message["revision"] += 1
             return message, [_event("message_edited", message=message)]
@@ -89,7 +89,7 @@ class Session:
             if message["status"] == "withdrawn":
                 return None, []
             if message["status"] != "queued":
-                raise ValueError("only queued messages can be withdrawn")
+                raise ValueError("Only messages that have not been sent can be removed.")
             message["status"] = "withdrawn"
             return None, [_event("message_withdrawn", message_id=message_id)]
         self.store.update(change)
@@ -100,9 +100,9 @@ class Session:
             _open(state)
             message = _message(state, message_id)
             if message['status'] != 'queued' or message['revision'] != revision:
-                raise ValueError('message changed or was dispatched; refresh before releasing it')
+                raise ValueError('This message has changed or has already been sent. Refresh before sending it.')
             if not message.get('held_reason'):
-                raise ValueError('this instruction is not held')
+                raise ValueError('This instruction is not waiting for your review.')
             message.pop('held_reason')
             message['revision'] += 1
             return message, [_event('message_released', message=message)]
@@ -134,7 +134,7 @@ class Session:
         def change(state):
             _open(state)
             if state["active"] != message_id:
-                raise ValueError("interrupt target is no longer the active turn")
+                raise ValueError("That response is no longer running.")
             message = _message(state, message_id)
             if message["cancel_requested"]:
                 return None, []
@@ -260,7 +260,7 @@ class Session:
             _open(state)
             request = state["requests"].get(request_id)
             if not request or request["status"] != "pending":
-                raise ValueError("input request is no longer pending; refresh its status")
+                raise ValueError("The agent is no longer waiting for this answer. Refresh to see the latest questions.")
             request["status"] = "sending"
             # Do not persist answers to secret questions. The reply itself is
             # delivered through the live owner, separate from the event journal.
@@ -280,8 +280,8 @@ class Session:
         for message in state["messages"]:
             if message["status"] == "steering":
                 message["status"] = "unknown"
-                message["uncertainty"] = (f"sent into a running turn, delivery unconfirmed "
-                                          f"({reason})")
+                message["uncertainty"] = (f"This message was sent while the agent was working, "
+                                          f"but delivery was not confirmed. {reason}")
         if state["active"]:
             message = _message(state, state["active"])
             message["status"] = "unknown"
@@ -373,11 +373,11 @@ class Session:
 
     def resolve_unknown(self, message_id: str, note: str) -> None:
         if not note.strip():
-            raise ValueError("record how the uncertain execution was checked")
+            raise ValueError("Describe what you checked and what happened.")
         def change(state):
             message = _message(state, message_id)
             if message["status"] != "unknown":
-                raise ValueError("only uncertain executions need reconciliation")
+                raise ValueError("Only messages with an unconfirmed result need a recorded outcome.")
             message["status"] = "reconciled"
             message["resolution"] = note
             return None, [_event("execution_reconciled", message_id=message_id, note=note)]
@@ -387,15 +387,15 @@ class Session:
         def change(state):
             _open(state)
             if not state['connected']:
-                raise ValueError('agent connection is unavailable; /continue only releases a queue pause, '
-                                 'it cannot reconnect the agent. Inspect the session logs before restarting execution.')
+                raise ValueError('The agent is disconnected. /continue cannot reconnect it. '
+                                 'Check the session log before restarting.')
             if state["active"] or any(
                     m["status"] == "unknown" for m in state["messages"]):
-                raise ValueError("wait for the active turn and reconcile uncertain execution before resuming")
+                raise ValueError("Wait for the current response to finish, then check any unconfirmed results before continuing.")
             if not state["paused"] and pause_id == state["pause_id"]:
                 return None, []
             if not pause_id or pause_id != state["pause_id"]:
-                raise ValueError("pause state changed; refresh before resuming")
+                raise ValueError("The paused messages have changed. Refresh before continuing.")
             state["paused"] = False
             state["pause_reason"] = None
             return None, [_event("queue_resumed")]
@@ -405,9 +405,9 @@ class Session:
         """Continue an ended conversation without replaying prior queued work."""
         def change(state):
             if not state['closed']:
-                raise ValueError('conversation is not ended; connect to its owner instead')
+                raise ValueError('This conversation has not been confirmed stopped. Check its status before reopening it.')
             if state['active']:
-                raise ValueError('conversation still has active execution; inspect it before reopening')
+                raise ValueError('This conversation still has an unfinished message. Check its result before reopening it.')
             withdrawn = []
             for message in state['messages']:
                 if message['status'] == 'queued':
@@ -422,7 +422,7 @@ class Session:
             state['robot'] = None
             state['context_note'] = note
             if any(m['status'] == 'unknown' for m in state['messages']):
-                _pause(state, 'inspect the current robot and reconcile uncertain execution')
+                _pause(state, 'Check the robot and any unconfirmed results before continuing.')
             else:
                 state['paused'] = False
                 state['pause_reason'] = None

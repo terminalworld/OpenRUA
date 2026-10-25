@@ -23,12 +23,12 @@ class ClaudeConversation(ConversationProtocol):
     MODES = {'default': 'default', 'auto': 'auto', 'bypassPermissions': 'bypassPermissions',
              'acceptEdits': 'acceptEdits', 'plan': 'plan', 'dontAsk': 'dontAsk'}
     PERMISSIONS = [
-        {'value': 'default', 'label': 'Default', 'description': 'Ask for approval using the native default mode'},
-        {'value': 'auto', 'label': 'Auto', 'description': 'Native auto mode classifies actions before execution'},
-        {'value': 'acceptEdits', 'label': 'Accept edits', 'description': 'Native acceptEdits mode'},
-        {'value': 'plan', 'label': 'Plan', 'description': 'Native plan mode'},
-        {'value': 'dontAsk', 'label': "Don't ask", 'description': 'Native dontAsk mode denies actions that would prompt'},
-        {'value': 'bypassPermissions', 'label': 'Bypass permissions', 'description': 'Skip native permission checks'},
+        {'value': 'default', 'label': 'Default', 'description': 'Ask before actions that need permission'},
+        {'value': 'auto', 'label': 'Auto', 'description': 'Review actions automatically before running them'},
+        {'value': 'acceptEdits', 'label': 'Accept edits', 'description': 'Allow file edits automatically; ask before other restricted actions'},
+        {'value': 'plan', 'label': 'Plan', 'description': 'Review and plan without changing project files'},
+        {'value': 'dontAsk', 'label': "Don't ask", 'description': 'Run allowed actions. Reject actions that would need approval'},
+        {'value': 'bypassPermissions', 'label': 'Bypass permissions', 'description': 'Run actions without permission checks'},
     ]
     SETTINGS = {"permissions": tuple(MODES), "model": None}
     def __init__(self, session_id: str, permissions: str = DEFAULT_PERMISSIONS):

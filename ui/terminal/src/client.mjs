@@ -51,9 +51,9 @@ export class Client {
         });
       });
       this.requests.add(request);
-      const timer = setTimeout(() => request.destroy(new Error('Session request timed out.')), this.timeout);
+      const timer = setTimeout(() => request.destroy(new Error('The session did not reply in time.')), this.timeout);
       request.once('close', () => { clearTimeout(timer); this.requests.delete(request); });
-      request.on('error', () => reject(new Error('Session unavailable or command result unknown. Reconnect and inspect state before retrying.')));
+      request.on('error', () => reject(new Error('Cannot connect to this session. The last command may still be running. Check its status before trying again.')));
       request.end(raw);
     });
   }

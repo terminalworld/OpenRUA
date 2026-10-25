@@ -79,7 +79,7 @@ def entries(home: Path, workspace: Path | None = None) -> list[dict]:
         try:
             records.append(describe(directory))
         except (OSError, sqlite3.Error, ValueError, KeyError, TypeError) as exc:
-            records.append(dict(id=directory.name, title='Unreadable retained conversation',
+            records.append(dict(id=directory.name, title='Cannot read this conversation',
                                 updated=0, time='', status=f'Cannot read: {exc}'))
     # Sessions still running first (a robot may be under control), then the
     # most recent.
@@ -95,12 +95,12 @@ class ArchivedFiles:
 
     def _reader(self):
         if self.root is None:
-            raise ValueError('No workspace path was recorded for this conversation; its transcript is still available.')
+            raise ValueError('The file location for this conversation was not saved. You can still read its messages.')
         if self.reader is None:
             try:
                 self.reader = WorkspaceFiles(self.root)
             except FileNotFoundError as exc:
-                raise ValueError(f'Retained workspace is missing: {self.root}. Its transcript is still available.') from exc
+                raise ValueError(f'The saved project directory is missing: {self.root}. You can still read its messages.') from exc
         return self.reader
 
     def list(self, path: str = '') -> dict:
@@ -124,7 +124,7 @@ class ArchiveClient:
         """Supply a temporary read-only file endpoint for the consumer's lifetime."""
         async def serve():
             async def reject():
-                raise RuntimeError('Retained conversation is read-only.')
+                raise RuntimeError('You can view this saved conversation, but you cannot change it.')
             server = LocalServer(None, reject, secrets.token_urlsafe(32),
                                  snapshot=self.snapshot, artifacts=self.artifacts,
                                  read_only=True)
@@ -142,10 +142,10 @@ class ArchiveClient:
         return _read(self.database, 'events', after, limit)
 
     def command(self, operation: str, **params):
-        raise RuntimeError('retained conversation is read-only; no execution has been restarted')
+        raise RuntimeError('You can view this conversation, but you cannot send messages here.')
 
     def end(self):
-        raise RuntimeError('cannot stop an execution owner through retained records')
+        raise RuntimeError('This view shows saved messages. It cannot stop a running session.')
 
 
 ROBOT_FACTS = ('robot', 'robot_model', 'simulator', 'benchmark', 'suite', 'task_id', 'task',
@@ -169,14 +169,14 @@ def open_session(home: Path, name: str):
         closed = _read(directory / 'conversation.sqlite', 'snapshot')['state']['closed']
     except (sqlite3.Error, OSError, ValueError, KeyError, TypeError) as exc:
         raise RuntimeError(f'cannot read retained conversation {name!r}: {exc}') from exc
-    reason = 'Ended conversation' if closed else 'Execution status unknown'
+    reason = 'This conversation has stopped. You can read its saved messages and files.' if closed else 'OpenRUA cannot confirm whether this conversation is still running.'
     if endpoint.exists():
         try:
             client = Client.from_file(endpoint)
             if not client.snapshot(timeout=3)['state']['closed']:
                 return client, name
         except (OSError, RuntimeError, ValueError, KeyError):
-            reason = 'Service unavailable; execution status unknown'
+            reason = 'OpenRUA cannot connect to this conversation. You can still read saved messages and files.'
     try:
         workspace = live_state.load(name, home, require_running=False).get('workspace')
     except NotFound:

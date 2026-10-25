@@ -30,8 +30,8 @@ export function modelPicker(chat, selected) {
       effort => apply(model, effort), {selected: initial, onCancel: () => modelPicker(chat, model)});
   };
   const problem = state?.setting_errors?.model;
-  const availability = problem ? `\nNative model list: ${plain(problem)}`
-    : !choices.length ? '\nNative model list is not available. You can enter a model ID.' : '';
+  const availability = problem ? `\nCould not load the model list: ${plain(problem)}`
+    : !choices.length ? '\nCould not load the model list. Enter a model ID to select it.' : '';
   chat.picker('Select Model' + availability, [
     ...(!choices.some(choice => choice.value === current) && current
       ? [{value: current, label: `✓ ${plain(current)}`}]: []),

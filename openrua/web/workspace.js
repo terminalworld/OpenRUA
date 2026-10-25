@@ -44,9 +44,9 @@ export function workspaceBrowser(api) {
       }
       status(
         result.truncated
-          ? "Directory listing limited. Enter a subdirectory path to browse further."
+          ? "There are more files than this list can show. Open a subdirectory to see more."
           : result.entries.length
-            ? `${result.entries.length} entries. Select a file to inspect it.`
+            ? `${result.entries.length} item${result.entries.length === 1 ? '' : 's'}. Select a file to open it.`
             : "This directory is empty.",
       );
     } catch (error) {
@@ -73,7 +73,7 @@ export function workspaceBrowser(api) {
         image.src = `data:${file.mime};base64,${file.data}`;
         image.onerror = () => {
           get("file-note").textContent =
-            "The image could not be decoded. You can download the file for inspection.";
+            "This image could not be displayed. Download the file to open it.";
         };
         get("file-content").append(image);
       } else if (file.kind === "text") {
@@ -83,10 +83,10 @@ export function workspaceBrowser(api) {
       }
       get("file-note").textContent =
         file.kind === "image"
-          ? "Saved observation or image, not a live camera feed."
+          ? "This is a saved image. Use Cameras to watch live video."
           : file.kind === "binary"
-            ? "Binary file. Download to inspect it with an appropriate tool."
-            : "Read-only preview. Code is not executed.";
+            ? "This file cannot be previewed here. Download it to open it."
+            : "This is a preview. Opening a file here does not run it.";
       const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
       downloadURL = URL.createObjectURL(
         new Blob([bytes], { type: "application/octet-stream" }),
@@ -94,7 +94,7 @@ export function workspaceBrowser(api) {
       get("file-download").href = downloadURL;
       get("file-download").download = file.path.split("/").pop();
       get("file-dialog").showModal();
-      status("File loaded. Refresh the directory to see new artifacts.");
+      status("File opened. Refresh the directory to see new files.");
     } catch (error) {
       if (current === revision) status(error.message);
     }

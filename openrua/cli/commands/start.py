@@ -101,7 +101,7 @@ def discover_models(home, values, intent, application, interact):
     from openrua.cli import model_catalog
     adapter, _ = agent_settings.resolve(home, values['agent'] or None)
     if 'model_catalog' not in adapter.capabilities:
-        raise UnavailableError('This plugin does not expose a native model list.',
+        raise UnavailableError('This agent does not provide a model list.',
                                hint='use its configured model or enter a supported model ID when available')
     docker_setup.ensure(**({'interact': interact('Docker setup')} if application else {}))
     progress = application.progress if application else print
@@ -210,13 +210,13 @@ def open_history(home: Path, name: str, *, screen=None):
     if facts.get('status') != 'stopped' or facts.get('backend') == 'connect':
         return client, name
     if not Path(project).is_dir():
-        client.reason = 'Project directory is missing; retained conversation is read-only.'
+        client.reason = 'The project directory is missing. You can still read the saved messages.'
         return client, name
     settings = snapshot.get('settings') or {}
     facts['model'] = settings.get('model') or facts.get('model')
     selected = workspace.choose(project, home, **({'screen': screen} if screen else {}))
     if selected is None:
-        raise UsageError('workspace was not trusted; conversation was not restarted')
+        raise UsageError('This directory was not trusted, so the conversation was not restarted.')
     if selected != Path(project).resolve():
         raise UsageError('resuming this conversation needs its original project directory',
                          hint='start a new conversation to work in the other directory')
@@ -238,13 +238,13 @@ def open_history(home: Path, name: str, *, screen=None):
         flag = key.replace('_', '-')
         argv.append(f'--{flag}' if value is True else f'--no-{flag}' if value is False else f'--{flag}={value}')
     directory, logs = paths.sandbox_dir(name, home), paths.launch_dir(name, home)
-    print('Reconnecting this conversation to the robot. Past actions and queued instructions are not replayed.', flush=True)
+    print('Restarting the robot for this conversation. Previous actions and waiting instructions will not run again.', flush=True)
     return service.start(argv, directory / 'endpoint.json', logs / 'service.log', logs / 'start.lock'), name
 
 
 def reconnect(home, name, application=None):
     if application:
-        return application.perform('Reconnecting session',
+        return application.perform('Opening conversation',
                                    lambda: open_history(home, name, screen=application.screen))
     return open_history(home, name)
 
@@ -340,8 +340,8 @@ def open_interface(args, client, name: str, application=None) -> int:
         return application.perform('Opening interface', lambda: open_interface(args, client, name), native=True)
     if args.gui or args.cli:
         if getattr(client, 'read_only', False):
-            raise UsageError('this conversation is available as read-only history',
-                             hint=f'openrua --resume {name} opens its retained transcript in the TUI')
+            raise UsageError('You can view this saved conversation in the terminal.',
+                             hint=f'openrua --resume {name} opens its saved messages')
         if args.gui:
             return session.run(argparse.Namespace(home=args.home, name=name, action='web', no_open=False))
         return chat.run(argparse.Namespace(home=args.home, name=name, tui=False,
@@ -402,7 +402,7 @@ def _run(args, application=None) -> int:
                                      hint='change to its directory, or use --resume ID --all explicitly')
                 selected = reconnect(args.home, args.resume, application)
             except (OSError, RuntimeError, ValueError) as exc:
-                raise UnavailableError(str(exc), hint='use openrua --resume to find retained conversations') from exc
+                raise UnavailableError(str(exc), hint='use openrua --resume to find a saved conversation') from exc
         else:
             if not sys.stdin.isatty() or not sys.stdout.isatty():
                 raise UsageError('history selection needs an interactive terminal', hint='use openrua --resume ID to select a conversation explicitly')

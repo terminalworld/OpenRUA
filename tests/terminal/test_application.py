@@ -346,7 +346,7 @@ def test_real_startup_reports_invalid_preferences_then_opens_after_explicit_repa
             if child.poll() is None: child.kill()
             child.wait(); os.close(master)
 
-    code, output = run([('Use and trust this robot workspace?', b'\r')])
+    code, output = run([('Trust this project directory?', b'\r')])
     assert code == 78
     assert b'config schema --user' in output
     assert b'session may still be running' not in output
@@ -399,7 +399,7 @@ def test_startup_update_retry_log_and_continue_share_one_fullscreen(tmp_path, co
         assert b'RAW INSTALLER OUTPUT' not in output
         key(b'3'); wait('RAW INSTALLER OUTPUT')
         key(b'\x1b'); wait('Update failed')
-        key(b'2'); wait('Update verified')
+        key(b'2'); wait('Update installed')
         key(b'1'); wait('Choose your environment'); key(b'\x04')
         child.wait(timeout=5)
         while select.select([master], [], [], 0)[0]:

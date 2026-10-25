@@ -14,18 +14,19 @@ export class FilePreview extends Container {
     this.offset = 0;
     this.lines = file.kind === 'text' ? plain(file.text.slice(0, 131072)).split('\n') : [];
     if (file.kind === 'text' && file.text.length > 131072) this.lines.push('[Preview limited to 131,072 characters.]');
-    this.addChild(new Text(`${plain(file.path)} · ${file.size} bytes\n${muted('Saved workspace file, not a live camera feed.')}`
+    const saved = file.kind === 'image' ? 'This is a saved image. Use /watch for live camera images.' : 'This is a saved file.';
+    this.addChild(new Text(`${plain(file.path)} · ${file.size} byte${file.size === 1 ? '' : 's'}\n${muted(saved)}`
       + (where ? `\n${muted('On this computer:')} ${plain(where)}` : ''), 0, 1));
     this.body = file.kind === 'image'
       ? new Image(file.data, file.mime, {fallbackColor: plain},
         {filename: plain(file.path), maxWidthCells: 72, maxHeightCells: 16})
-      : new Text(file.kind === 'text' ? '' : `Binary file (${plain(file.mime)}); inspect it with the agent or browser.`, 0, 0);
+      : new Text(file.kind === 'text' ? '' : `File format (${plain(file.mime)}). Open it in the browser or ask the agent to read it.`, 0, 0);
     this.position = new Text('', 0, 0);
     this.addChild(this.body); this.addChild(this.position);
     this.addChild(new Text(muted((file.kind === 'text' ? '↑/↓, PgUp/PgDn scroll · ' : '') + 'r refresh · Esc back' +
       (file.kind !== 'image' ? '' : where
-        ? '\nNo picture above? Open the path on this computer (Ctrl+click in Cursor or VS Code).'
-        : '\nImage display depends on your terminal. Use the session browser if only metadata appears.')), 0, 1));
+        ? '\nTo view the image, open the path above. You can Ctrl+click it in Cursor or VS Code.'
+        : '\nIf the image does not appear, open it in the session browser.')), 0, 1));
     this.window();
     this.handleInput = data => {
       if (matchesKey(data, 'escape')) close();
@@ -134,7 +135,7 @@ export class WorkspaceBrowser extends Container {
     const entry = this.listing.entries.find(item => item.name === value);
     if (!entry) return;
     if (entry.kind !== 'file' && entry.kind !== 'directory') {
-      this.feedback.setText('Symlinks and special files cannot be previewed.'); this.draw(); return;
+      this.feedback.setText('This file cannot be previewed here. Ask the agent to inspect it.'); this.draw(); return;
     }
     const target = this.path ? `${this.path}/${entry.name}` : entry.name;
     this.remember();
@@ -177,7 +178,7 @@ export class WorkspaceBrowser extends Container {
 }
 
 export async function browseWorkspace(chat, path = '') {
-  if (!chat.client.workspaceList) throw new Error('Workspace access is unavailable for this conversation.');
+  if (!chat.client.workspaceList) throw new Error('The saved files for this conversation are not available here.');
   chat.workspaceBrowser?.close();
   const browser = new WorkspaceBrowser(chat);
   chat.workspaceBrowser = browser;

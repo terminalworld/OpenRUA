@@ -12,22 +12,43 @@ export const COMMANDS = [
   {name: 'setup', description: 'Configure a new session and keep this conversation in history', clients: ['terminal']},
   {name: 'tools', description: 'Expand or collapse a tool result', clients: ['terminal']},
   {name: 'files', description: 'Browse saved workspace files and images', clients: ['terminal', 'browser']},
-  {name: 'project', description: 'Project skills, reviews and accumulation settings', clients: ['terminal']},
+  {name: 'project', description: 'Manage skills and review finished work', clients: ['terminal']},
   {name: 'robot', description: 'Robot connection status, logs, build and restart', clients: ['terminal', 'browser']},
   {name: 'watch', description: "See the robot's cameras live, in a browser", clients: ['terminal', 'browser']},
   {name: 'queue', description: 'Inspect, edit or withdraw queued messages', clients: ['terminal', 'browser']},
   {name: 'questions', description: 'Answer pending agent questions', clients: ['terminal', 'browser']},
-  {name: 'resume', description: 'Resume in this project; --all shows every project', clients: ['terminal']},
-  {name: 'end', description: 'End execution while retaining the workspace and history', clients: ['terminal', 'browser']},
-  {name: 'interrupt', description: 'Stop the current turn; queued messages go on', clients: ['terminal', 'browser']},
-  {name: 'continue', description: 'Confirm continuation of the paused queue', clients: ['terminal', 'browser']},
-  {name: 'permissions', description: "Choose the current agent's native permission mode", clients: ['terminal', 'browser']},
+  {name: 'resume', description: 'Open a saved conversation; --all includes other projects', clients: ['terminal']},
+  {name: 'end', description: 'Stop this session and free its resources; keep files and chat history', clients: ['terminal', 'browser']},
+  {name: 'interrupt', description: 'Stop the current response and ask the robot to cancel its actions', clients: ['terminal', 'browser']},
+  {name: 'continue', description: 'Continue paused messages', clients: ['terminal', 'browser']},
+  {name: 'permissions', description: "Choose the agent's permission mode", clients: ['terminal', 'browser']},
   {name: 'model', description: 'Show the model, or change it: /model <name>', clients: ['terminal', 'browser']},
-  {name: 'retry', description: 'Retry an unconfirmed send with the same request ID', clients: ['terminal']},
+  {name: 'retry', description: 'Retry sending a message without sending it twice', clients: ['terminal']},
   {name: 'quit', description: 'Leave; you choose whether the session keeps running', clients: ['terminal']},
 ];
 
 export const commandsFor = client => COMMANDS.filter(c => c.clients.includes(client));
+
+export function displayStatus(value) {
+  return {accepted: 'Requested', running: 'Running', starting: 'Starting', completed: 'Finished',
+    cancelled: 'Cancelled', canceled: 'Cancelled', interrupted: 'Interrupted', failed: 'Failed',
+    unknown: 'Result unknown', queued: 'Waiting', dispatching: 'Sending',
+    steering: 'Adding to the current response', steered: 'Added to the current response',
+    withdrawn: 'Removed', reconciled: 'Checked', busy: 'Busy', skipped: 'Skipped',
+    timed_out: 'Time limit reached', quota_limited: 'Usage limit reached',
+    authentication_required: 'Sign-in needed', turn_limit: 'Turn limit reached',
+    invalid_output: 'Could not read the result', cancel_requested: 'Stopping',
+    stopped: 'Stopped', enabled: 'Enabled', paused: 'Paused'}[value] || value;
+}
+
+export function robotPrompt(operation) {
+  return {
+    start: 'Start the robot?\n\nOpenRUA will start the simulator or drivers configured in this project. Chat stays open.',
+    restart: 'Restart the robot connection?\n\nOpenRUA will apply your project settings and restart the simulator or drivers it started. Chat stays open. Check the scene before sending more robot instructions.',
+    stop: 'Stop the simulator or drivers OpenRUA started?\n\nChat stays open. Drivers you started yourself keep running. This is not the robot emergency stop.',
+    build: 'Prepare the robot software?\n\nOpenRUA will build the software configured in this project. Running drivers keep running.',
+  }[operation];
+}
 
 export function permissionChoices(state) {
   return state?.setting_choices?.permissions ?? [];
@@ -74,19 +95,22 @@ export function status(state, {readOnly = false} = {}) {
     notes.push({tone: 'muted', text: `Permissions: ${current?.label ?? state.settings.permissions}`});
   }
   const held = state.messages.filter(m => m.status === 'queued' && m.held_reason).length;
-  if (held) notes.push({tone: 'warn', text: `${held} held for review · /queue`});
+  if (held) notes.push({tone: 'warn', text: `${held} instruction${held === 1 ? ' needs' : 's need'} review. Open /queue.`});
   const queued = state.messages.filter(m => m.status === 'queued' && !m.held_reason).length;
-  if (queued) notes.push({tone: 'plain', text: `${queued} queued`});
+  if (queued) notes.push({tone: 'plain', text: `${queued} waiting`});
   if (!(state.connected || state.closed || readOnly)) notes.push({tone: 'warn',
     text: state.pause_reason?.startsWith('agent disconnected') ? state.pause_reason : 'agent disconnected'});
   const asking = Object.values(state.requests ?? {}).filter(r => r.status === 'pending').length;
-  if (asking) notes.push({tone: 'warn', kind: 'questions', text: `${asking} question(s): type the answer, or /questions to choose`});
+  if (asking) notes.push({tone: 'warn', kind: 'questions', text: `${asking} question${asking === 1 ? '' : 's'} to answer. Type a reply or open /questions.`});
   let head;
-  if (readOnly) head = {kind: 'readonly', tone: 'muted', text: 'Read-only history'};
-  else if (state.closed) head = {kind: 'closed', tone: 'muted', text: 'Closed'};
-  else if (state.paused) head = {kind: 'paused', tone: 'warn',
-    text: `Paused${state.pause_reason ? ': ' + state.pause_reason : ''} · /queue to review` +
-      (state.connected ? ', /continue to go on' : ' · agent unavailable; inspect session logs before restarting')};
+  if (readOnly) head = {kind: 'readonly', tone: 'muted', text: 'Viewing saved conversation'};
+  else if (state.closed) head = {kind: 'closed', tone: 'muted', text: 'Session stopped'};
+  else if (state.paused) {
+    if (state.pause_reason && (state.connected || !state.pause_reason.startsWith('agent disconnected')))
+      notes.push({tone: 'warn', text: `Reason: ${state.pause_reason}`});
+    head = {kind: 'paused', tone: 'warn', text: 'Messages are paused. Open /queue to review them.' +
+      (state.connected ? ' Use /continue when ready.' : ' The agent is disconnected. Check the session log before restarting.')};
+  }
   else if (asking) head = {kind: 'waiting', tone: 'warn', text: 'Waiting for your response'};
   else if (state.active && state.messages.find(message => message.id === state.active)?.cancel_requested)
     head = {kind: 'interrupting', tone: 'busy', text: 'Interrupting…'};
@@ -99,17 +123,17 @@ export function status(state, {readOnly = false} = {}) {
 // A notice an event carries for the person, or null.
 export function notice(record) {
   const data = record?.data ?? {};
-  if (record?.kind === 'session_reopened') return data.note ?? 'Conversation reopened; observe the current scene before continuing.';
+  if (record?.kind === 'session_reopened') return 'The robot connection has restarted. Check the scene before continuing. Earlier instructions will not run again automatically.';
   if (record?.kind === 'motion_canceled') {
     const {canceled = [], failed = []} = data;
     return [canceled.length ? `Motion canceled: ${canceled.join(', ')}` : '',
       failed.length ? `No answer from ${failed.join(', ')}: use the emergency stop if it still moves` : '']
       .filter(Boolean).join('\n') || null;
   }
-  if (record?.kind === 'handed_over') return `Updating the execution environment: ${data.reason || 'internal handover'}. This conversation stays open.`;
+  if (record?.kind === 'handed_over') return 'Updating the robot tools. This conversation stays open.';
   if (record?.kind === 'agent_event' && data.kind === 'setting_rejected') {
     const {setting, value, reason} = data.data ?? {};
-    return `The agent did not take ${setting} ${value}${reason ? `: ${reason}` : ''}`;
+    return `The agent could not change ${setting} to ${value}${reason ? `: ${reason}` : '.'}`;
   }
   return null;
 }

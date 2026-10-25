@@ -63,7 +63,7 @@ export class Setup extends Screen {
   }
   simulation() {
     this.list('Environment › Simulation', 'Choose a simulation', [
-      {value: 'scene', label: 'Native scene', description: 'Explore a simulated environment'},
+      {value: 'scene', label: 'Simulation scene', description: 'Explore a simulated environment'},
       {value: 'benchmark', label: 'Benchmark environment', description: 'Work on a task; this does not start batch evaluation'},
     ], value => this.environments(value === 'benchmark'), () => this.environment());
   }
@@ -103,9 +103,9 @@ export class Setup extends Screen {
       else if (value === 'history') this.submit('history');
       else this.submit(this.intent === 'connect' ? 'connect' : 'start');
     }, () => this.environment(), {summary: [
-      ...(this.spec.previous_session ? [muted('A new conversation will open. The current session stays in history.'), ''] : []),
+      ...(this.spec.previous_session ? [muted('This opens a new conversation. You can find this one in /resume.'), ''] : []),
       bold('Environment'), `  ${plain(environment)}`, bold('Agent'),
-      `  ${plain(this.values.agent || 'Configured default')} · ${plain(this.values.model || 'Default model')}`]});
+      `  ${plain(this.values.agent || 'Default agent')} · ${plain(this.values.model || 'Default model')}`]});
   }
   chooseAgent(step = true) {
     this.agentStep = step;
@@ -116,19 +116,19 @@ export class Setup extends Screen {
       return {value, label: `${this.values.agent === value ? '✓ ' : ''}${plain(facts.title || value)}`,
         description: [facts.version, facts.model || this.spec.models?.[value]].filter(Boolean).map(plain).join(' · ')};
     });
-    items.push({value: '\0custom', label: 'Other agent or manifest…'});
+    items.push({value: '\0custom', label: 'Other agent…'});
     const back = () => !step ? this.agentSettings() : this.intent === 'connect' || !(this.values.sim || this.values.bench)
       ? this.real() : this.environments(Boolean(this.values.bench));
     this.list('Agent', 'Choose your coding agent', items, value => {
       this.returnTo = () => this.agentSettings();
-      if (value === '\0custom') this.edit('agent', 'Coding agent name or manifest path', true, () => this.chooseAgent(step));
+      if (value === '\0custom') this.edit('agent', 'Agent name or configuration file', true, () => this.chooseAgent(step));
       else this.update('agent', value);
     }, back, {selected: this.values.agent});
   }
   agentSettings() {
     const rows = [...(this.agentStep ? [{value: 'continue', label: 'Continue to review'}] : []),
-      {value: 'agent', label: `Coding agent: ${plain(this.authentication[this.values.agent]?.title || this.values.agent || 'Configured default')}`},
-      {value: 'model', label: `Model: ${plain(this.values.model || 'Native default')}`}];
+      {value: 'agent', label: `Coding agent: ${plain(this.authentication[this.values.agent]?.title || this.values.agent || 'Default agent')}`},
+      {value: 'model', label: `Model: ${plain(this.values.model || 'Agent default')}`}];
     if (Object.hasOwn(this.values, 'auth_mode')) rows.push({value: 'auth_mode', label: `Authentication: ${this.authLabel(this.values.auth_mode)}`});
     if (this.values.auth_mode === 'api') rows.push({value: 'api_key_file', label: `API key file: ${plain(this.values.api_key_file || 'Not selected')}`});
     rows.push({value: 'back', label: 'Back'});
@@ -146,7 +146,7 @@ export class Setup extends Screen {
       label: plain(row.label || row.value), description: plain(row.description || '')}));
     this.list('Agent › Model', 'Select Model', [
       ...rows,
-      ...(selectionAllowed ? [{value: '\0reload', label: 'Reload native models'},
+      ...(selectionAllowed ? [{value: '\0reload', label: 'Refresh model list'},
         {value: '\0custom', label: 'Enter a model ID…'}] : []),
       {value: '\0back', label: 'Back'},
     ], value => {
@@ -155,13 +155,13 @@ export class Setup extends Screen {
       else if (value === '\0custom') this.edit('model', 'Model ID', true, () => this.models(), () => this.agentSettings());
       else { this.values.model = value; this.agentSettings(); }
     }, () => this.agentSettings(), {selected: this.values.model,
-      summary: [muted(`Current model: ${plain(this.values.model || 'Native default')}`),
-        ...(!selectionAllowed ? [muted('This preview plugin uses the model configured in its agent manifest.')] : [])]});
+      summary: [muted(`Current model: ${plain(this.values.model || 'Agent default')}`),
+        ...(!selectionAllowed ? [muted('Set the model in the agent configuration file.')] : [])]});
   }
   advanced() {
     this.list('Advanced', 'Advanced options', [
       {value: 'name', label: `Session name: ${plain(this.values.name || 'Automatic')}`},
-      ...(this.intent !== 'connect' ? [{value: 'check', label: 'Save project and check preparation'}] : []),
+      ...(this.intent !== 'connect' ? [{value: 'check', label: 'Save settings and check setup'}] : []),
       {value: 'back', label: 'Back'},
     ], value => value === 'back' ? this.menu() : value === 'check' ? this.submit('check')
       : this.edit('name', 'Session name', false, () => this.advanced()), () => this.menu());
@@ -201,8 +201,8 @@ export class Setup extends Screen {
     const choices = custom ? [] : this.options(key);
     if (choices.length) {
       this.list(label, label, [
-        ...choices.map(value => ({value, label: key === 'auth_mode' ? this.authLabel(value) : plain(value) || 'Native scene'})),
-        ...(!['auth_mode', 'robot', 'sim', 'bench'].includes(key) ? [{value: '\0custom', label: 'Enter a name or profile path…'}] : []),
+        ...choices.map(value => ({value, label: key === 'auth_mode' ? this.authLabel(value) : plain(value) || 'Simulation scene'})),
+        ...(!['auth_mode', 'robot', 'sim', 'bench'].includes(key) ? [{value: '\0custom', label: 'Enter a name or configuration file…'}] : []),
       ], value => value === '\0custom' ? this.edit(key, label, true, back) : this.update(key, value), back,
       {selected: this.values[key], summary: key === 'auth_mode' && this.authentication[this.values.agent]?.native_hint
         ? [muted(plain(this.authentication[this.values.agent].native_hint))] : []});

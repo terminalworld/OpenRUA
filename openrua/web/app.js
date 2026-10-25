@@ -10,6 +10,8 @@ import {
   status,
   toolSummary,
   typedAnswer,
+  displayStatus,
+  robotPrompt,
 } from "/session.mjs";
 const $ = (id) => document.getElementById(id);
 const make = (tag, text, className) => {
@@ -87,7 +89,7 @@ async function act(operation, params) {
     await sync();
     return true;
   } catch (e) {
-    notice(`${e.message}. Refresh state before repeating an operation.`);
+    notice(`${e.message}\nCheck the session status before trying again.`);
     return false;
   }
 }
@@ -107,10 +109,9 @@ function turn(message) {
     turns.set(message.id, entry);
   }
   // A turn the agent started by itself has no instruction of its own.
-  entry.user.textContent = message.origin === "agent" ? "(the agent went on by itself)" : message.text;
+  entry.user.textContent = message.origin === "agent" ? "(the agent continued working)" : message.text;
   entry.status.textContent =
-    { steering: "joining the running turn", steered: "joined the running turn" }[message.status] ||
-    message.status;
+    displayStatus(message.status);
   return entry;
 }
 function event(record) {
@@ -279,18 +280,18 @@ function render() {
           : "Starting";
   $("state").textContent = label;
   $("summary").textContent =
-    `${state.messages.length} messages · ${queued.length} queued · ${label.toLowerCase()}`;
+    `${state.messages.length} message${state.messages.length === 1 ? '' : 's'} · ${queued.length} waiting · ${label.toLowerCase()}`;
   $("execution-description").textContent = state.closed
-    ? "Resources stopped. Conversation and workspace retained."
+    ? "This session has stopped. Your files and chat history are saved."
     : state.robot && state.robot.status !== 'ready'
-      ? `Robot ${state.robot.status}: ${state.robot.reason}. You can keep chatting to inspect and repair it. Earlier instructions remain held for review.`
+      ? `Robot ${state.robot.status}: ${state.robot.reason}. You can keep chatting to check the problem and fix it. Review earlier instructions before sending them again.`
       : state.paused
-      ? `Paused${state.pause_reason ? `: ${state.pause_reason}` : ""}. Queued instructions are retained. Review them before continuing.`
+      ? `Paused${state.pause_reason ? `: ${state.pause_reason}` : ""}. Your waiting messages are saved. Check them before continuing.`
       : state.active
-        ? "The agent is working. A new message joins its turn when the agent can take one."
+        ? "The agent is working. New messages join its current response when supported. Otherwise, they wait."
         : state.connected
           ? "Ready for your next instruction."
-          : "Waiting for the native agent connection.";
+          : "Connecting to the agent…";
   // The same notes the terminal's status line shows.
   const { notes } = status(state);
   if (state.active && lastEvent && Date.now() - lastEvent > 60000)
@@ -317,7 +318,7 @@ function render() {
   $("agent-model").textContent = settings.model || "";
   const theirs = agentCommands(state);
   $("agent-commands").textContent = theirs.length
-    ? `Its own commands: ${theirs.map((c) => "/" + c.name).join(" ")}`
+    ? `Agent commands: ${theirs.map((c) => "/" + c.name).join(" ")}`
     : "";
   $("cursor").textContent = `Event ${cursor}`;
   $("interrupt").disabled = !online || !state.active || state.closed;
@@ -333,29 +334,29 @@ function render() {
   $("send").textContent = pending ? "Retry same message ↑" : "Send message ↑";
   $("message").readOnly = !!pending;
   $("send-hint").textContent = pending
-    ? "Awaiting acceptance. Retry keeps the same request ID."
+    ? "We have not confirmed that this message arrived. Retry sends it safely without creating a duplicate."
     : state.paused
-      ? "Your message will remain queued until you continue."
-      : "New messages join the running turn when the agent can take one.";
+      ? "Your message will wait until you choose Continue."
+      : "While the agent works, new messages join its current response when supported. Otherwise, they wait.";
   $("queue-count").textContent = queued.length;
   $("queue").replaceChildren();
   if (!queued.length)
-    $("queue").append(make("p", "No queued messages.", "hint"));
+    $("queue").append(make("p", "No messages are waiting.", "hint"));
   for (const m of queued) {
     const row = make("div", undefined, "queue-item"),
       actions = make("div", undefined, "queue-actions");
     row.append(make("p", m.text));
     if (m.held_reason) {
-      row.append(make('p', `Held for review: ${m.held_reason}`, 'hint'));
-      actions.append(button('Send held instruction', () => {
-        if (confirm('Send this instruction now? Inspect current robot state and uncertain execution first.'))
+      row.append(make('p', `Not sent yet: ${m.held_reason}`, 'hint'));
+      actions.append(button('Send this instruction now', () => {
+        if (confirm('Send this instruction now? Check the robot and the result of earlier actions first.'))
           return act('release', {message_id: m.id, revision: m.revision});
       }, !online || state.closed));
     }
     actions.append(
       button("Edit", () => edit(m, "edit"), !online || state.closed),
       button(
-        "Withdraw",
+        "Remove",
         () => act("withdraw", { message_id: m.id }),
         !online || state.closed,
       ),
@@ -478,11 +479,11 @@ export const handlers = {
   robot: async ([operation = 'status']) => {
     if (!['status', 'logs', 'start', 'stop', 'restart', 'build', 'retry'].includes(operation))
       throw new Error('Use /robot status, logs, start, stop, restart, build or retry.');
-    if (operation === 'retry' && !pendingRobot) throw new Error('No unconfirmed robot request.');
+    if (operation === 'retry' && !pendingRobot) throw new Error('There is no robot request waiting to be retried.');
     let body = operation === 'retry' ? pendingRobot : {operation};
     if (!['status', 'logs', 'retry'].includes(operation)) {
-      if (pendingRobot) throw new Error('A robot request is unconfirmed. Inspect /robot status or use /robot retry.');
-      if (!confirm(`${operation} the configured robot resources? This does not end the conversation or replay held tasks.`)) return;
+      if (pendingRobot) throw new Error('We have not confirmed the last robot request. Check /robot status or use /robot retry.');
+      if (!confirm(robotPrompt(operation))) return;
       body.request_id = crypto.randomUUID();
       pendingRobot = body;
       saveDraft();
@@ -495,7 +496,7 @@ export const handlers = {
       if (body.request_id && error.status >= 400 && error.status < 500) {
         pendingRobot = null; saveDraft();
       }
-      throw new Error(error.message + (pendingRobot ? ` · request ${pendingRobot.request_id} unconfirmed; /robot retry uses the same ID` : ''));
+      throw new Error(error.message + (pendingRobot ? ' We have not confirmed this request. Use /robot retry to try it again safely.' : ''));
     }
   },
   help: () => {
@@ -613,7 +614,7 @@ $("compose").onsubmit = async (e) => {
     $("message").value = "";
     notice("");
   } catch (e) {
-    notice(`${e.message}. The original request is kept for a safe retry.`);
+    notice(`${e.message}\nThe original request is kept for a safe retry.`);
   }
   sending = false;
   await sync();
@@ -623,13 +624,13 @@ $("interrupt").onclick = () => {
   if (state?.active) act("interrupt", { message_id: state.active });
 };
 $("resume").onclick = () => {
-  if (state?.paused && confirm("Continue the queued messages in order?"))
+  if (state?.paused && confirm("Send the waiting messages in order?"))
     act("resume", { pause_id: state.pause_id });
 };
 $("end").onclick = async () => {
   if (
     !confirm(
-      "End this session and stop its resources? Your conversation and workspace will be retained.",
+      "Stop this session and free its resources? Your files and chat history are saved.",
     )
   )
     return;
@@ -644,9 +645,9 @@ $("end").onclick = async () => {
     files.disconnect();
     cameras.disconnect();
     connection("Session ended", true);
-    notice("Session ended. Your conversation and workspace are retained.");
+    notice("This session has stopped. Your files and chat history are saved.");
   } catch (e) {
-    notice(`${e.message}. Check state before assuming resources have stopped.`);
+    notice(`${e.message}\nCheck the session status to confirm it has stopped.`);
   } finally {
     ending = false;
     render();
