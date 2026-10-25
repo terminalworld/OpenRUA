@@ -243,7 +243,7 @@ test('settings distinguish pending requests, native rejection and later confirma
   } finally { chat.stop(); }
 });
 
-test('Pi keyboard editor submits, queues, interrupts on Escape and detaches', {timeout: 15000}, async t => {
+test('Pi keyboard editor submits, queues, interrupts on Escape or Ctrl+C and detaches', {timeout: 15000}, async t => {
   const {client, call} = await fixture(t);
   const terminal = new Terminal();
   const chat = new Chat(client, {terminal, pollMs: 20});
@@ -267,8 +267,26 @@ test('Pi keyboard editor submits, queues, interrupts on Escape and detaches', {t
   await call({op: 'frame', frame: {kind: 'turn_finished', turn_id: id, data: {status: 'interrupted'}}});
   // ...and what was queued goes next.
   await until(client, s => s.messages[1].status === 'dispatching' || s.messages[1].status === 'running');
+  const second = (await client.snapshot()).state.active;
+  await call({op: 'frame', frame: {kind: 'turn_started', turn_id: second, data: {}}});
+  await chat.refresh();
+  terminal.input('Keep this draft');
+  chat.busy = true;
+  terminal.input('\x03');
+  await until(client, s => s.messages[1].cancel_requested);
+  assert.equal(chat.editor.getText(), 'Keep this draft');
+  assert.equal(chat.done, false);
+  chat.busy = false;
+  await call({op: 'frame', frame: {kind: 'turn_finished', turn_id: second, data: {status: 'interrupted'}}});
+  await until(client, s => !s.active);
+  await chat.refresh();
+  terminal.input('\x03');
+  assert.equal(chat.editor.getText(), '');
+  assert.equal(chat.done, false);
   const observer = new Client(client.origin, client.token);
   t.after(() => observer.close());
+  terminal.input('\x04');
+  assert.equal(chat.done, false);
   terminal.input('\x04');
   await running;
   state = (await observer.snapshot()).state;
@@ -332,6 +350,7 @@ test('a typed line answers the question the agent is waiting on', {timeout: 1500
   assert.equal((await client.snapshot()).state.messages.length, 1);   // not queued as a message
   // Wait for the UI to close the answered question before sending a chat key.
   await chat.refresh();
+  terminal.input('\x04');
   terminal.input('\x04');
   await running;
 });

@@ -21,7 +21,7 @@ spans), final approach in small sensed steps: short servo bursts where
 the machine has a `cartesian_twist` port, short trajectory moves
 otherwise. Avoid long blind moves of either kind.
 
-## P3. Approach–grasp–verify (generic pick pattern)
+## P3. Approach, grasp, verify (generic pick pattern)
 
 1. Snapshot cameras; locate the target object in the image (pixels +
    depth + intrinsics → world position, 20-perception B3).

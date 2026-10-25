@@ -52,6 +52,11 @@ or history selection before confirming departure leaves the current session
 unchanged. Model and permission menus still adjust the current conversation's
 supported next-turn settings.
 
+The leave page includes Back, and Escape also returns without stopping anything.
+Ctrl+C or Ctrl+D requires a second press before opening that page; `/quit`
+opens it directly. While the agent is working, Ctrl+C interrupts its response
+instead of leaving.
+
 Startup options cannot change a running conversation. The agent's original terminal (`openrua up`,
 then `openrua agent`) is a separate session that cannot take over a shared
 conversation, and `openrua exec` holds no conversation at all

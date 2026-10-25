@@ -153,3 +153,86 @@ test('an active response keeps one model field when native metadata resolves an 
   assert.match(chat.status.text, /model: claude-opus-5-5/);
   assert.equal(chat.status.text.match(/model:/g).length, 1);
 });
+
+test('idle Ctrl+C clears input before leaving and Ctrl+D edits nonempty input', t => {
+  const {chat, terminal, calls} = create(t);
+  chat.controller.state.active = null;
+  chat.ui.setFocus(chat.editor);
+  chat.ui.start();
+  terminal.input('\x03');
+  assert.equal(chat.editor.getText(), '');
+  assert.equal(chat.done, false);
+  chat.editor.setText('abc');
+  terminal.input('\x01');
+  terminal.input('\x04');
+  assert.equal(chat.editor.getText(), 'bc');
+  assert.equal(chat.done, false);
+  terminal.input('\x03');
+  assert.equal(chat.editor.getText(), '');
+  terminal.input('\x03');
+  assert.equal(chat.done, true);
+  assert.deepEqual(calls, []);
+});
+
+test('Ctrl+C closes a menu before interrupting the running response', t => {
+  const {chat, terminal, calls} = create(t);
+  chat.picker('Choose', [{value: 'back', label: 'Back'}], () => {});
+  chat.ui.start();
+  terminal.input('\x03');
+  assert.equal(chat.panel, null);
+  assert.equal(chat.editor.getText(), 'Keep this draft');
+  assert.equal(chat.done, false);
+  assert.deepEqual(calls, []);
+});
+
+test('empty input requires the same exit shortcut twice', t => {
+  const {chat, terminal, calls} = create(t);
+  chat.controller.state.active = null;
+  chat.editor.setText('');
+  chat.ui.setFocus(chat.editor); chat.ui.start();
+  terminal.input('\x04');
+  assert.equal(chat.done, false);
+  assert.match(chat.keys.text, /Press Ctrl\+D again to leave/);
+  terminal.input('\x03');
+  assert.equal(chat.done, false);
+  assert.match(chat.keys.text, /Press Ctrl\+C again to leave/);
+  terminal.input('\x04');
+  assert.equal(chat.done, false);
+  terminal.input('\x04');
+  assert.equal(chat.done, true);
+  assert.deepEqual(calls, []);
+});
+
+test('typing and an expired confirmation prevent an accidental departure', async t => {
+  const {chat, terminal} = create(t);
+  chat.controller.state.active = null;
+  chat.editor.setText('');
+  chat.ui.setFocus(chat.editor); chat.ui.start();
+  terminal.input('\x04');
+  terminal.input('x');
+  assert.doesNotMatch(chat.keys.text, /again to leave/);
+  terminal.input('\x03');
+  assert.equal(chat.editor.getText(), '');
+  assert.equal(chat.done, false);
+  await new Promise(resolve => setTimeout(resolve, 850));
+  assert.doesNotMatch(chat.keys.text, /again to leave/);
+  terminal.input('\x03');
+  assert.equal(chat.done, false);
+  terminal.input('\x03');
+  assert.equal(chat.done, true);
+});
+
+test('Ctrl+C can leave captured history without interrupting its old active turn', t => {
+  const {chat, client, terminal, calls} = create(t);
+  client.readOnly = true;
+  chat.editor.setText('');
+  chat.ui.setFocus(chat.editor); chat.ui.start();
+  terminal.input('\x1b');
+  assert.deepEqual(calls, []);
+  terminal.input('\x03');
+  assert.equal(chat.done, false);
+  assert.match(chat.keys.text, /Press Ctrl\+C again to leave/);
+  terminal.input('\x03');
+  assert.equal(chat.done, true);
+  assert.deepEqual(calls, []);
+});

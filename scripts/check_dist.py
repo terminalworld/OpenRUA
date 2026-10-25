@@ -144,7 +144,7 @@ save('ended', home, status='stopped', workspace=str(workspace))
             elif stage == 1 and b'notes.txt' in output:
                 os.write(master, b'\x1b[B\r'); stage = 2
             elif stage == 2 and b'retained measurement' in output:
-                for key in (b'\x1b', b'\x1b', b'\x04'):
+                for key in (b'\x1b', b'\x1b', b'\x04', b'\x04'):
                     os.write(master, key); time.sleep(0.2)
                 stage = 3
         child.wait(timeout=5)
