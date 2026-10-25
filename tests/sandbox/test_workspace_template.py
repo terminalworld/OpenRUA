@@ -15,7 +15,8 @@ from openrua.sandbox import workspace
 # interrupted; fjt_send takes a position list that starts with a negative
 # number and says "canceled" for a goal canceled elsewhere.
 # Camera snapshots create output directories and report image write failures.
-PINNED = "0c5f8fb8ee160d0f8988ddf0494816d55d8d6793cf704f36df9c064e43a2da8d"
+# The approach, grasp, verify guide heading uses commas instead of dash punctuation.
+PINNED = "d88c274b5a9a8f73b40e5c7b308cc80c8d3441cfb566ff230d9e12b44e336da7"
 
 
 def test_workspace_template_hash_is_unchanged():
