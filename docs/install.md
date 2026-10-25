@@ -45,7 +45,8 @@ The default install includes the terminal UI. Run `openrua` to configure and
 start a new shared session with an automatic ID. Use `openrua --resume` to find
 a previous conversation, or `/resume` inside the TUI. Use
 `openrua --gui` for the browser and `openrua --cli` for plain text chat.
-The first-run form saves to the same file as `openrua config set`.
+Guided setup saves the environment selection in the project's
+`.openrua/settings.json`. See [robot projects](projects.md) for settings and file locations.
 See [Your first shared robot session](../examples/shared-session.md) for a full
 example, or [First task in simulation](../examples/first-task.md) for one task
 with `openrua exec` and the agent's original terminal.
@@ -103,13 +104,19 @@ or retry failed robot instructions after authentication failure.
 
 ## The images
 
-OpenRUA runs up to three containers: the robot (when simulated), the
-sandbox (the agent's terminal: `ros2`, `rclpy`, the docs, the agent's
-CLI) and, when a run limits the agent to its model service, the proxy
-(then the sandbox's route out, and for a simulated robot its only one; see
-[what the agent can reach](#what-the-agent-can-reach)). **Save project and start** in the product TUI automatically builds missing
+A session uses an agent sandbox with `ros2`, `rclpy`, documentation and the
+agent CLI. A simulated robot runs in its own container. OpenRUA-managed
+real-robot drivers run in the containers declared by the robot configuration;
+the number depends on that configuration. If you connect to an existing robot service, stopping the OpenRUA session
+does not stop that service.
+
+When a recorded run limits the agent to its model service, a proxy is its
+route out and, for a simulated robot, the simulator's only route out too.
+See [what the agent can reach](#what-the-agent-can-reach).
+
+**Save project and start** in the product TUI automatically builds missing
 images for the selected environment and agent. Root `--cli` and `--gui` launches
-prepare them too. Browsing options or choosing **Save project and check preparation**
+prepare them too. Browsing options or choosing **Save project settings and check setup**
 never builds.
 First-time simulation builds can download large datasets. Progress is displayed,
 and logs are retained under `~/.openrua/preparation/` for retry.

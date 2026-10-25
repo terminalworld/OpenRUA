@@ -22,12 +22,10 @@ Run `openrua` for a new session with an automatic ID. First it asks
 whether you trust the current directory as your project; you can choose or
 create another one. Your files remain there across conversations; see
 [robot projects](../docs/projects.md). The TUI links robot,
-simulator and benchmark choices using recorded startup checks. **Prepare and
-start** saves a valid selection, sets up Docker and the agent's sign-in when
+simulator and benchmark choices using recorded startup checks. **Save project and start** saves a valid selection, sets up Docker and the agent's sign-in when
 they are missing, builds missing images with visible progress, then starts the
 background service and opens chat.
-Existing images are reused; failed builds keep logs for retry. **Save and check
-preparation** reports preparation without downloading or starting resources.
+Existing images are reused; failed builds keep logs for retry. **Save project settings and check setup** reports preparation without downloading or starting resources.
 
 The guided list offers Panda in the native robosuite Lift scene, Panda in
 CaP-Bench, Panda in LIBERO-PRO, and Panda-Omron in RoboCasa365. Their default scenes have passed
@@ -37,7 +35,7 @@ available through explicit CLI options. See
 [setup validation](../docs/setup-validation.md) for evidence and adding combinations.
 
 To change defaults later, use `openrua --setup`, `openrua config set`, or edit
-the same `config.yaml`. Changes apply to new sessions, not the running one.
+`.openrua/settings.json` in the project. Changes apply to new sessions, not the running one.
 The steps below use explicit settings and a name so commands can refer to the
 same example session.
 
@@ -53,7 +51,7 @@ openrua serve --help
 openrua session --help
 ```
 
-If the selected agent is not signed in on this computer, **Prepare and start**
+If the selected agent is not signed in on this computer, **Save project and start**
 offers its sign-in, or run `openrua login codex` first
 ([your agent's login](../docs/install.md#your-agents-login)). You need an
 available model and account quota when you send a task.
@@ -80,16 +78,18 @@ openrua --robot panda-omron --sim robosuite --bench robocasa365 \
   --name chat-demo --port 8765
 ```
 
-The TUI shows these choices. Select **Prepare and start** to save the defaults,
-check the preparation, and start the background service. This selects a
-blender-lid closing scene, independent of a saved benchmark default; it starts one
-interactive scene, not a benchmark campaign. Leave the model field blank for
-the configured default, or select one available to your account.
+This command supplies the environment and agent explicitly, so OpenRUA checks
+preparation and opens chat directly. It selects a blender-lid closing scene,
+independent of a saved benchmark default; it starts one interactive scene,
+not a benchmark campaign. Without `--model`, the selected agent's configured
+model remains in use. Add `--setup` to review these choices in the menu before
+starting, or use `/model` in chat to choose a model available to your account.
 
 Wait for chat to open. Type an instruction and press **Enter** to send;
 **Ctrl+J** inserts a newline. `/queue` opens queued instructions; `/tools`
-opens tool output. **Ctrl+D** on empty input asks whether to keep the session
-running: press Enter to keep it, as the next steps need. If port 8765 is
+opens tool output. **Ctrl+D** twice on empty input opens the resource choice. Select **Yes**
+to keep it running for the next steps. **No** is selected by default and
+stops the agent and the simulator or drivers OpenRUA started. If port 8765 is
 occupied or `chat-demo` has retained work from an ended session, choose a new
 port or name. Existing records are never overwritten.
 
@@ -114,8 +114,8 @@ TUI. Use it to inspect saved images. In the TUI, `/files` opens the same workspa
 images on supported terminals; see
 [workspace controls](../ui/terminal/README.md#saved-workspace-files).
 
-In a free terminal on the same execution host (leave the TUI first with Ctrl+D
-and Enter, which keeps the session running, if it is occupying the terminal):
+In a free terminal on the same execution host (leave the TUI with `/quit`
+and select **Yes** to keep the session running if it is occupying the terminal):
 
 ```sh
 openrua --gui --name chat-demo
@@ -190,7 +190,7 @@ turn to test interruption rather than assuming cancellation was exercised.
 
 ## 6. End the session and find your files
 
-Select **End session** in the browser, or run:
+Select **Stop session** in the browser, or run:
 
 ```sh
 openrua session --name chat-demo end

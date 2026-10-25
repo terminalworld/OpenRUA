@@ -60,5 +60,5 @@ performance, native subscription validity and benchmark reproduction remain
 separate validation work.
 
 For another model or endpoint, copy the bundled manifest into the project,
-change its owned settings, then choose **Other agent or manifest…**. The normal
+change its owned settings, then choose **Other agent or configuration file…**. The normal
 model field cannot override a profile that was prepared for another model.

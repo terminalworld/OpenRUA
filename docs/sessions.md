@@ -31,8 +31,9 @@ starts or reconnects to a named session;
 `openrua --gui` selects the browser and `openrua --cli` selects plain chat.
 Choose **Save project and start** in keyboard setup to set up Docker and the agent's
 sign-in when they are missing, prepare the agent environment and check it;
-**Advanced options → Save project and check preparation** only inspects
-preparation. Explicit API configuration remains a choice of your own; OpenRUA never changes billing mode
+**Advanced options → Save project settings and check setup** saves project
+settings and reports what still needs preparation. It does not download,
+build or start resources. Explicit API configuration remains a choice of your own; OpenRUA never changes billing mode
 for you. The service runs in the background,
 with startup output in `~/.openrua/launches/<name>/service.log`.
 The conversation becomes available before the robot is ready. Missing robot

@@ -9,6 +9,12 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- Put the project overview, quick start, core capabilities and key results in
+  the README. Link detailed environment and result tables, project news and
+  guides from a documentation index.
+- Align setup labels, project settings and exit instructions in the user guides
+  with the current terminal, including No as the default resource choice.
+
 ## 0.30.5
 
 - Restore information omitted during the wording update: conversation recovery

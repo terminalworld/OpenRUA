@@ -53,5 +53,5 @@ performance, OAuth account reuse and benchmark reproduction remain separate
 validation work.
 
 For another model or endpoint, copy the bundled manifest into the project and
-select it through **Other agent or manifest…**. The normal model field cannot
+select it through **Other agent or configuration file…**. The normal model field cannot
 override a profile that was prepared for a different model.

@@ -231,10 +231,13 @@ If the launch command exits while the session runs (a driver that crashed
 after an emergency stop, say), the session says so in its service log and
 the terminal, and holds the queued instructions until you look.
 
-Leaving the terminal (Ctrl+D, Ctrl+C, /quit) asks whether to keep the
-session running. Kept, the robot stays under its driver and the agent keeps
-its sandbox; `openrua --resume` brings you back, and `/end` or
-`openrua session --name <session> end` ends it. It preserves your profile instead of sending it through the
+Use `/quit`, or Ctrl+D twice on empty input, to choose whether to keep the
+session running. **No** is selected by default and stops the agent and the
+drivers OpenRUA started. **Yes** keeps them running in the background;
+`openrua --resume` brings you back. Project files and chat history are kept
+either way. Ctrl+C first interrupts an active response; see the
+[terminal key rules](terminal.md#work-in-the-conversation) for idle input and
+leaving. `/end` or `openrua session --name <session> end` explicitly ends the session. It preserves your profile instead of sending it through the
 simulation setup menu. This is a software entry point; physical robot operation
 still requires validation on your hardware.
 
