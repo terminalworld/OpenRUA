@@ -146,6 +146,8 @@ choice follows the double press, so you can still return without stopping anythi
 Press the same shortcut again within 800 ms; typing or opening a menu cancels
 the shortcut hint. Back and Escape on the leave page return without stopping
 the session. `/quit` opens that page directly.
+Key releases and held-key repeats do not count as a second exit press.
+Ctrl+C and Ctrl+D leave the resource choice open; use Back or Escape to return.
 With text in the editor, Ctrl+D deletes the next character instead of leaving.
 
 No stops the agent and frees the memory used by the session. Any simulator or

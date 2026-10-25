@@ -9,6 +9,13 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.30.2
+
+- Count physical presses for the double exit shortcut. Key releases and held
+  Ctrl+C/Ctrl+D repeats no longer trigger exit shortcuts with Kitty input.
+- Keep the resource choice open after further Ctrl+C or Ctrl+D input. Use Back
+  or Escape to return, or Enter to confirm the selected option.
+
 ## 0.30.1
 
 - Keep short service liveness checks separate from normal command timeouts,

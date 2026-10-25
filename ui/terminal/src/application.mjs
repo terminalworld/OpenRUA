@@ -47,7 +47,10 @@ export class Progress extends Screen {
 
 export class Leave extends Screen {
   constructor(prompt, host, terminal) {
-    super(terminal, host);
+    super(terminal, host, {quitKeys: false});
+    this.ui.addInputListener(data => {
+      if (matchesKey(data, 'ctrl+c') || matchesKey(data, 'ctrl+d')) return {consume: true};
+    });
     this.ui.setHeading('OpenRUA · Leave session');
     this.ui.addChild(new Text('Keep this session running?', 0, 1));
     this.ui.addChild(new Text('Stopping also closes any simulator or drivers OpenRUA started.\n'

@@ -183,6 +183,70 @@ def test_setup_retry_chat_and_leave_share_one_fullscreen(tmp_path, columns, rows
         os.close(master)
 
 
+@pytest.mark.parametrize('keyboard', ['legacy', 'kitty'])
+def test_ctrl_c_exit_choice_survives_key_release_and_further_shortcuts(tmp_path, keyboard):
+    master, slave = pty.openpty()
+    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 24, 100, 0, 0))
+    result = tmp_path / 'result.json'
+    child = subprocess.Popen([sys.executable, '-m', 'ui.terminal.test.session_setup', str(result)],
+        cwd=Path(__file__).resolve().parents[2], stdin=slave, stdout=slave, stderr=slave,
+        env={**os.environ, 'TERM': 'xterm-kitty' if keyboard == 'kitty' else 'xterm-256color'})
+    os.close(slave)
+    output, frame = bytearray(), bytearray()
+
+    def read_for(seconds):
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline:
+            if select.select([master], [], [], .02)[0]:
+                try: data = os.read(master, 65536)
+                except OSError: break
+                output.extend(data); frame.extend(data)
+
+    def wait(text):
+        deadline = time.monotonic() + 12
+        while text.encode() not in frame:
+            read_for(.02)
+            assert child.poll() is None, output.decode(errors='replace')
+            assert time.monotonic() < deadline, output.decode(errors='replace')
+
+    def key(data):
+        read_for(.05)
+        frame.clear(); os.write(master, data)
+
+    press = b'\x1b[99;5:1u' if keyboard == 'kitty' else b'\x03'
+    try:
+        wait('Welcome to OpenRUA')
+        if keyboard == 'kitty':
+            key(b'\x1b[?7u\x1b[?1;2c')
+        key(press); wait('Press Ctrl+C again to leave.')
+        if keyboard == 'kitty':
+            key(b'\x1b[99;5:3u'); read_for(.1)
+            key(b'\x1b[99;5:2u'); read_for(.1)
+            assert b'Keep this session running?' not in output
+        key(press); wait('Keep this session running?')
+        if keyboard == 'kitty':
+            key(b'\x1b[99;5:3u')
+            key(b'\x1b[99;5:2u')
+        key(press); key(b'\x04'); read_for(.15)
+        assert child.poll() is None
+        assert b'Welcome to OpenRUA' not in frame
+        key(b'\x1b'); wait('Welcome to OpenRUA')
+        key(b'/quit\r'); wait('Keep this session running?')
+        key(b'\r')
+        deadline = time.monotonic() + 12
+        while child.poll() is None and time.monotonic() < deadline:
+            read_for(.05)
+        assert child.wait(timeout=2) == 0, output.decode(errors='replace')
+        read_for(.05)
+        facts = json.loads(result.read_text())
+        assert facts == dict(calls=[], saves=0, messages=[[], []],
+                             closed=[True, False], interrupted=[False, False])
+        assert output.count(b'\x1b[?1049h') == output.count(b'\x1b[?1049l') == 1
+    finally:
+        if child.poll() is None: child.kill()
+        child.wait(); os.close(master)
+
+
 def test_parent_exit_restores_terminal_and_does_not_reopen_an_exit_menu(tmp_path):
     master, slave = pty.openpty()
     fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 24, 80, 0, 0))
