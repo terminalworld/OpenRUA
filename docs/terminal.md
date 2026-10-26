@@ -14,6 +14,12 @@ previous terminal screen. The terminal consumes
 the same session API as the browser; the existing service owns
 the native coding agent, robot, message queue and history.
 
+OpenRUA keeps your terminal's background and uses green accents for its welcome
+screen and selected items. Where the terminal reports its appearance, local
+surfaces and text adapt to light or dark colors. Other terminals use their own
+color palette. Set `NO_COLOR=1` to keep the interface without color; labels and
+symbols still distinguish status and selection.
+
 ## Start and configure
 
 ```sh

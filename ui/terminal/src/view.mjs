@@ -1,15 +1,13 @@
 import {existsSync} from 'node:fs';
 import {join} from 'node:path';
-import {Container, Markdown, Spacer, Text, matchesKey, truncateToWidth, visibleWidth, wrapTextWithAnsi} from '@earendil-works/pi-tui';
+import {Container, Editor, Markdown, Spacer, Text, matchesKey, truncateToWidth, visibleWidth, wrapTextWithAnsi} from '@earendil-works/pi-tui';
 import {toolSummary} from './session.mjs';
+import {accent, bold, border, brand, green, muted, panel, red, selected, style, yellow} from './theme.mjs';
+export {accent, bold, green, muted, red, yellow} from './theme.mjs';
 
 // Control bytes must not become terminal instructions, including OSC clipboard writes.
 export const plain = value => String(value ?? '').replace(/[\x00-\x08\x0b-\x1f\x7f-\x9f]/g, '');
 const configName = value => plain(value).split(/[\\/]/).at(-1).replace(/\.ya?ml$/i, '');
-const style = (open, close) => text => `\x1b[${open}m${text}\x1b[${close}m`;
-// The 16-colour palette only, so the terminal's own theme decides how it looks.
-export const bold = style(1, 22), muted = style(90, 39), accent = style(36, 39);
-export const green = style(32, 39), yellow = style(33, 39), red = style(31, 39);
 export class DialogHeading {
   constructor(title, requestId, rows, redraw) {
     this.body = new Text(plain(title), 0, requestId ? 0 : 1);
@@ -34,9 +32,14 @@ export class DialogHeading {
     this.redraw(); return true;
   }
 }
-export const selectTheme = {selectedPrefix: accent, selectedText: bold, description: muted,
+export const selectTheme = {selectedPrefix: brand, selectedText: text => selected(brand(bold(text))), description: muted,
   scrollInfo: muted, noMatch: muted};
-export const editorTheme = {borderColor: muted, selectList: selectTheme};
+export const editorTheme = {borderColor: border, selectList: selectTheme};
+export class Composer extends Editor {
+  render(width) {
+    return super.render(width).map(line => panel(line + ' '.repeat(Math.max(0, width - visibleWidth(line)))));
+  }
+}
 const markdownTheme = {heading: bold, link: accent, linkUrl: muted, code: accent,
   codeBlock: text => text, codeBlockBorder: muted, quote: muted, quoteBorder: muted,
   hr: muted, listBullet: accent, bold, italic: style(3, 23), strikethrough: style(9, 29), underline: style(4, 24)};
@@ -54,12 +57,12 @@ export class Welcome {
 
   render(width) {
     const f = this.facts;
-    if (this.readOnly) return [`${bold('OpenRUA')}${muted(` · ${plain(this.name)}`)}`, muted('Viewing saved messages. You cannot send messages from this view.')];
-    if (width < 16) return [truncateToWidth(bold('OpenRUA'), width)];
+    if (this.readOnly) return [`${brand(bold('OpenRUA'))}${muted(` · ${plain(this.name)}`)}`, muted('Viewing saved messages. You cannot send messages from this view.')];
+    if (width < 16) return [truncateToWidth(brand(bold('OpenRUA')), width)];
     const inside = Math.max(1, Math.min(width, 88) - 4);
     const title = ` OpenRUA${f.version ? ' v' + plain(f.version) : ''} `;
-    const top = accent('╭') + accent(truncateToWidth(title, inside + 2))
-      + accent('─'.repeat(Math.max(0, inside + 2 - visibleWidth(title)))) + accent('╮');
+    const top = border('╭') + brand(bold(truncateToWidth(title, inside + 2)))
+      + border('─'.repeat(Math.max(0, inside + 2 - visibleWidth(title)))) + border('╮');
     const agent = [plain(f.agent_title || f.agent || 'Coding agent'), plain(f.model || 'Native model')].join(' · ');
     const runtime = [f.backend === 'real' ? 'Real robot' : f.backend === 'connect' ? 'Robot setup'
       : f.simulator || f.backend === 'sim' ? 'Simulation' : 'Robot project',
@@ -76,19 +79,19 @@ export class Welcome {
     if (inside >= 56) {
       const mark = ['   ╭─╮  ', ' ╭─┴─┴─╮', ' │ • • │', ' ╰─────╯'];
       const text = [bold(greeting), muted('Turn your robot into a coding project.'), agent, muted(environment)];
-      for (let i = 0; i < mark.length; i++) rows.push(accent(mark[i]) + '   ' + truncateToWidth(text[i], inside - 11));
+      for (let i = 0; i < mark.length; i++) rows.push(brand(mark[i]) + '   ' + truncateToWidth(text[i], inside - 11));
     } else {
-      rows.push(accent('[• •] ') + bold(greeting),
+      rows.push(brand('[• •] ') + bold(greeting),
         agent, muted(runtime));
       if (scene) rows.push(muted(scene));
     }
     if (project) rows.push(muted(project));
     rows.push(muted(commands));
-    const edge = accent('│');
-    return [top, ...rows.map(row => {
+    const edge = border('│');
+    return [...[top, ...rows.map(row => {
       const text = truncateToWidth(row, inside);
       return `${edge} ${text}${' '.repeat(Math.max(0, inside - visibleWidth(text)))} ${edge}`;
-    }), accent('╰' + '─'.repeat(inside + 2) + '╯'), ''];
+    }), border('╰' + '─'.repeat(inside + 2) + '╯')].map(panel), ''];
   }
 }
 

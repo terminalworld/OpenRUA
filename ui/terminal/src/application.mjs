@@ -67,10 +67,10 @@ export class Leave extends Screen {
   }
 }
 
-export async function serve(fd, parentPid, createScreen, finishScreen) {
+export async function serve(fd, parentPid, createScreen, finishScreen, theme) {
   const control = new net.Socket({fd, readable: true, writable: true});
   const lines = createInterface({input: control});
-  const host = new TerminalHost();
+  const host = new TerminalHost(undefined, {theme});
   const stop = () => control.destroy();
   process.once('SIGINT', stop); process.once('SIGTERM', stop);
   let current = null, progress = null, pending = null, summary = [], closing = false;
