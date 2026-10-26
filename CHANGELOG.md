@@ -9,9 +9,10 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
-- Put the project overview, quick start, core capabilities and key results in
-  the README. Link detailed environment and result tables, project news and
-  guides from a documentation index.
+- Restore the README's product positioning, inline demo and visible agent,
+  robot, simulator and benchmark coverage. Keep quick start focused on a first
+  task, illustrate the native ROS 2 workflow and link paper results from the
+  benchmark section. Select major news while keeping the full history linked.
 - Align setup labels, project settings and exit instructions in the user guides
   with the current terminal, including No as the default resource choice.
 

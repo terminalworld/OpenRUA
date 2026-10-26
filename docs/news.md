@@ -10,6 +10,7 @@ These announcements describe their releases. For current behavior, use the
 [terminal guide](terminal.md) and [shared-session guide](sessions.md).
 [CHANGELOG.md](../CHANGELOG.md) records all release changes and upgrade notes.
 
+- **[2026-10-24]** **Robot work belongs to the coding project.** Real-robot setup, simulation environment files and ongoing development stay together in the project directory. ([v0.23.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.23.0))
 - **[2026-10-23]** 📂 **Run a task in the same robot project.** `openrua exec "<task>"` reuses your code and notes, with a separate record for each run. `bench` keeps isolated evaluation workspaces. ([v0.20.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.20.0))
 - **[2026-10-22]** 📁 **Your robot is a coding project.** Open OpenRUA in a directory, keep programs and notes there, and continue in a new conversation the next day. Resume searches this project's history; `--all` shows every project. ([v0.19.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.19.0))
 - **[2026-10-22]** 🧰 **Bring OpenRUA to your own robot, starting from a bare computer.** Missing Docker or an agent login? `openrua` sets them up with you, and your coding agent connects the robot step by step. ([v0.18.2](https://github.com/terminalworld/OpenRUA/releases/tag/v0.18.2))
