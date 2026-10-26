@@ -2,9 +2,7 @@
 
 # OpenRUA
 
-**Turn your robot into a coding project.**
-
-Let your Claude Code or Codex control any robot, real or simulated.
+**Let Your Claude Code or Codex Control Any Robot, Real or Simulated**
 
 *Through the standard ROS&nbsp;2 CLI and client library, without relying on any VLA model.*
 
@@ -31,6 +29,8 @@ ROS&nbsp;2 interfaces. The agent works in a workspace containing robot
 documentation and starter tools, writes perception and control programs, and
 uses execution feedback to continue the task.
 
+> **Turn your robot into a coding project.**
+>
 > Your agent explores the robot like a live codebase, pulls sensor streams
 > into files for reading, and runs commands and programs to move it.
 >
