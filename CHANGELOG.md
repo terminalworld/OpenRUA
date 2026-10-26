@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.31.0
+
 - Remove the duplicate plain text chat interface, including `--cli` and the
   `chat` command. Use `openrua` for terminal chat, `openrua --gui` for the
   browser, or `openrua --name NAME` to reconnect. Scripts can submit messages
