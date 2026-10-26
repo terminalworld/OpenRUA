@@ -1,7 +1,13 @@
 import {Container, ProcessTerminal, ScrollView, Text, TuiAltScreen, VStack, isKeyRelease, isKeyRepeat, matchesKey, truncateToWidth} from '@earendil-works/pi-tui';
 import {bold, muted, plain} from './view.mjs';
+import {isImageLine} from '@earendil-works/pi-tui/dist/terminal-image.js';
+import {brand, TerminalTheme} from './theme.mjs';
 
 class Renderer extends TuiAltScreen {
+  constructor(terminal, theme) { super(terminal); this.theme = theme; }
+  applyLineResets(lines) {
+    return super.applyLineResets(lines.map(line => isImageLine(line) ? line : this.theme.paint(line)));
+  }
   handleViewportInput(data) {
     if (this.navigation?.(data)) return {consume: true};
     return super.handleViewportInput(data);
@@ -9,12 +15,24 @@ class Renderer extends TuiAltScreen {
 }
 
 export class TerminalHost {
-  constructor(terminal = new ProcessTerminal()) {
-    this.renderer = new Renderer(terminal);
+  constructor(terminal = new ProcessTerminal(), {theme = new TerminalTheme()} = {}) {
+    this.theme = theme;
+    this.renderer = new Renderer(terminal, theme);
     this.active = false;
+    if (theme.adaptive) {
+      this.renderer.onTerminalColorSchemeChange(appearance => {
+        if (theme.setAppearance(appearance)) this.renderer.requestRender(true);
+      });
+      this.renderer.setTerminalColorSchemeNotifications(true);
+    }
   }
   start() {
     if (!this.active) { this.renderer.start(); this.active = true; }
+    if (this.theme.adaptive && !this.queriedColors) {
+      this.queriedColors = true;
+      const update = colors => { if (this.theme.update(colors) && this.active) this.renderer.requestRender(true); };
+      this.renderer.queryTerminalColors({timeoutMs: 150, onLateReply: update}).then(update);
+    }
     this.renderer.requestRender();
   }
   stop() {
@@ -29,7 +47,7 @@ export function surface(terminal, host = null, area = 'body') {
   const owner = host || new TerminalHost(terminal);
   const renderer = owner.renderer;
   const canvas = new Container(), empty = new Container();
-  let header = new Text(bold('OpenRUA'), 0, 1);
+  let header = new Text(brand(bold('OpenRUA')), 0, 1);
   let body = area === 'body' ? canvas : empty;
   let bottom = area === 'footer' ? canvas : new Container();
   const listeners = [];
@@ -44,7 +62,7 @@ export function surface(terminal, host = null, area = 'body') {
     addChild: component => canvas.addChild(component),
     setHeader(component) { header = component; mount(); },
     setHeading(title, detail = '') {
-      header = {render: width => [bold(plain(title)), ...(detail ? [muted(truncateToWidth(plain(detail), width))] : []), '']};
+      header = {render: width => [brand(bold(plain(title))), ...(detail ? [muted(truncateToWidth(plain(detail), width))] : []), '']};
       mount();
     },
     setBody(component) { body = component; mount(); },

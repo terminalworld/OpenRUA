@@ -1,8 +1,8 @@
-import {CombinedAutocompleteProvider, Container, Editor, ProcessTerminal, SelectList, Spacer, Text,
+import {CombinedAutocompleteProvider, Container, ProcessTerminal, SelectList, Spacer, Text,
   isKeyRepeat, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
 import {SettingChanges, agentCommands, commandsFor, notice, parseCommand, permissionChoices, status, typedAnswer} from './session.mjs';
-import {DialogHeading, PendingMessages, Transcript, Welcome, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
+import {Composer, DialogHeading, PendingMessages, Transcript, Welcome, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
 import {projectMenu, updateReview} from './project.mjs';
@@ -56,7 +56,7 @@ export class Chat {
     this.notice = new Text(plain(initialNotice), 0, 0);
     this.projectStatus = new Text('', 0, 0);
     this.pendingMessages = new PendingMessages();
-    this.editor = new Editor(this.ui, editorTheme);
+    this.editor = new Composer(this.ui, editorTheme);
     // Only slash commands: do not complete unrelated host files outside the
     // workspace. The agent's own commands join ours once it has said them.
     const completion = () => new CombinedAutocompleteProvider(
@@ -230,7 +230,7 @@ export class Chat {
   }
 
   editText(title, initial, apply, options = {}) {
-    const editor = new Editor(this.ui, editorTheme);
+    const editor = new Composer(this.ui, editorTheme);
     editor.setText(initial);
     const heading = new DialogHeading(title, options.requestId, () => this.rows(), () => this.ui.requestRender());
     const box = new Container(); box.addChild(heading); box.addChild(editor);

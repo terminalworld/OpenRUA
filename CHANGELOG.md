@@ -9,6 +9,15 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.31.1
+
+- Give the terminal a consistent OpenRUA palette, with lime brand accents,
+  quiet local surfaces and distinct status colors. Adapt to light and dark
+  terminals while preserving the terminal's overall background and supporting
+  limited-color and no-color displays.
+- Introduce the project workflow film in the README's inline player. Keep the
+  original robot task video directly playable in the detailed demo guide.
+
 ## 0.31.0
 
 - Remove the duplicate plain text chat interface, including `--cli` and the

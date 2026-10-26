@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import {parseArgs} from 'node:util';
-import {Text, SelectList} from '@earendil-works/pi-tui';
+import {Text, SelectList, getCapabilities} from '@earendil-works/pi-tui';
 import {selectTheme} from './view.mjs';
 import {readFile, writeFile} from 'node:fs/promises';
 import {Client} from './client.mjs';
@@ -10,6 +10,7 @@ import {ArchiveClient, History, Setup, Workspace} from './screens.mjs';
 import {leave} from './exit.mjs';
 import {serve, Leave, Progress} from './application.mjs';
 import {TerminalHost} from './surface.mjs';
+import {colorMode, TerminalTheme} from './theme.mjs';
 
 // Pi tells terminals that draw pictures apart by variables an SSH connection
 // drops; these two travel: iTerm2 sends LC_TERMINAL, kitty sets TERM. Under
@@ -83,13 +84,14 @@ try {
     console.log('Usage: openrua\nDevelopment: node src/main.mjs --endpoint /path/to/endpoint.json\n\nCtrl+D or /quit leaves; choose whether to keep the session running.');
   } else {
     if (!process.stdin.isTTY || !process.stdout.isTTY) throw new Error('Run in an interactive terminal; use openrua session for scripts.');
+    const theme = new TerminalTheme(colorMode(process.env, getCapabilities()));
     if (values['control-fd']) {
-      await serve(Number(values['control-fd']), Number(values['parent-pid']), createScreen, finishScreen);
+      await serve(Number(values['control-fd']), Number(values['parent-pid']), createScreen, finishScreen, theme);
     } else {
       if (Boolean(values.input) !== Boolean(values.output) || Boolean(values.endpoint) === Boolean(values.input))
         throw new Error('Provide --endpoint, or both --input and --output. See --help.');
       const spec = values.input ? JSON.parse(await readFile(values.input, 'utf8')) : {mode: 'chat', endpoint: values.endpoint};
-      const host = new TerminalHost();
+      const host = new TerminalHost(undefined, {theme});
       let screen, closing = false;
       const stop = () => { closing = true; host.close(); };
       process.once('SIGINT', stop); process.once('SIGTERM', stop);

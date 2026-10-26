@@ -15,9 +15,9 @@
 [![Forks](https://img.shields.io/github/forks/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/forks)
 [![Watchers](https://img.shields.io/github/watchers/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/watchers)
 
-https://github.com/user-attachments/assets/c652a2d4-f637-47d4-b4a4-b43fbb8ed792
+https://github.com/user-attachments/assets/5da8fee1-4e49-4035-87b9-a768f8e7c3b2
 
-*Codex (GPT-6 Astra) on LIBERO-10, "put the yellow and white mug on the left plate and put the white mug on the right plate": the commands it typed on the left, the robot's cameras on the right, task success. More in [docs/demos.md](docs/demos.md).*
+*Watch Codex observe a simulated robot, write and run code, and save images, programs and notes in one coding project. [More demos](docs/demos.md).*
 
 </div>
 

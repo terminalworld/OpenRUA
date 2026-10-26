@@ -7,6 +7,13 @@ Markdown, and keyboard selectors. The existing OpenRUA service owns execution,
 the native coding agent, robot resources, queue, and durable history. No Pi
 agent runtime or model provider is imported.
 
+The host owns its color theme. Components use semantic color roles, and the
+renderer resolves them using Pi's color capabilities and terminal appearance
+reports. This also recolors cached text when the terminal changes appearance.
+The overall terminal background is inherited; welcome, editor and selected
+items have local surfaces. Unknown appearance uses the terminal palette, and
+`NO_COLOR` removes color without changing keyboard behavior or cursor control.
+
 ## Start
 
 The terminal comes with the package; all interaction uses the keyboard:
