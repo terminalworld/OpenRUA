@@ -11,6 +11,10 @@ cameras recorded and rendered by `openrua demo`: the commands the agent
 typed on the left, the robot's cameras on the right, on the trial's own
 clock. The command file each was replayed from is linked.
 
+https://github.com/user-attachments/assets/c652a2d4-f637-47d4-b4a4-b43fbb8ed792
+
+*Codex (GPT-6 Astra) on LIBERO-10, "put the yellow and white mug on the left plate and put the white mug on the right plate": the commands it typed on the left, the robot's cameras on the right, task success.*
+
 | Benchmark | Task | Agent / model | Clip | Commands |
 |:---|:---|:---|:---|:---|
 | LIBERO-10 (`libero_pro`, `libero_10_task` 4, seed 0) | put the yellow and white mug on the left plate and put the white mug on the right plate | Codex, GPT-6 Astra | [mp4](https://github.com/terminalworld/OpenRUA/releases/download/v0.0.7/libero10-mugs.mp4) (35 s) | [commands.sh](media/libero10-mugs-commands.sh) |
