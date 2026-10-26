@@ -38,25 +38,28 @@ uses execution feedback to continue the task.
 
 ## Why OpenRUA
 
-- **Use your coding agent.** Work with Claude Code or Codex and your existing
-  account or API key. The agent uses standard `ros2` commands and client
-  libraries such as `rclpy`.
-- **Start with a prepared environment.** OpenRUA prepares the agent environment,
-  simulators and configured robot drivers in containers, keeping their
-  dependencies separate from your host setup.
-- **Keep work in your project.** Programs, saved observations, notes and
-  reusable methods stay available across conversations, for real robots and
-  simulation.
-- **Work interactively or run recorded tasks.** Chat from the terminal or
-  browser, inspect outputs and watch cameras. Use the same project for a task
-  on its own, or run isolated benchmark trials.
+- **Your coding agent, ready for robot work.** Use Claude Code or Codex with
+  your account or API key. OpenRUA prepares the ROS 2 tools, simulators and
+  configured drivers in containers, keeping their dependencies separate from
+  your host setup.
+- **Work with the robot while your agent works.** Inspect camera images and
+  tool activity, send a follow-up instruction, and stop an action from a shared
+  conversation in the terminal or browser.
+- **Keep building on what you learn.** Programs, observations and notes stay
+  in your project across conversations. Useful methods can become skills your
+  agent reuses in later work, in simulation or on hardware.
+
+### How it works
+
+[![Your coding agent uses native ROS 2 tools to read observations and run programs on a real or simulated robot, while keeping code, images and notes in your project.](docs/media/native-workflow.svg)](docs/architecture.md)
+
+The agent decides when to observe, what program to write and how to check the
+result. It works through the robot's native interfaces. See
+[how the pieces fit together](docs/architecture.md).
 
 ## Quick start
 
-Use a **Linux host with Python 3.10 or newer**. You need Docker and a supported
-coding-agent account or API key; OpenRUA guides Docker setup and agent sign-in
-when they are missing. The agent CLI does not need to be installed on the host.
-See [installation](docs/install.md) for requirements and authentication.
+On **Linux with Python 3.10 or newer**, run:
 
 ```sh
 pip install -U openrua
@@ -65,53 +68,30 @@ cd my-robot-project
 openrua
 ```
 
-1. Trust your project directory, or choose another one.
-2. Choose **Simulation** and a simulation scene or benchmark environment,
-   then choose your coding agent, model and authentication settings.
-3. Review the settings and choose **Save project and start**. The first run
-   prepares the required software, which can take a few minutes.
-
-Once the robot is ready, try:
+Follow setup to choose a simulation environment and your coding agent.
+OpenRUA guides Docker setup and agent sign-in when needed; the first
+preparation can take a few minutes. Once the robot is ready, try:
 
 > Look through the cameras and describe the scene, without moving the robot.
 
-For hardware, choose **Real robot → Connect a new robot**, or run
-`openrua connect`. Your agent works through setup with you; see
-[connect a real robot](docs/connect.md).
+See [installation](docs/install.md) for requirements and authentication.
 
-### Keep working in the same project
+### Connect your own robot
 
-Opening `openrua` again starts a new conversation in this directory. Use
-`openrua --resume` or `/resume` to find its previous conversations;
-`--resume --all` includes other projects. `/setup` lets you configure a fresh
-conversation with another environment or agent.
+In your project, run `openrua connect`. Your coding agent works with you to
+identify the robot, prepare its ROS 2 drivers and save its setup in the project.
+See [connect a real robot](docs/connect.md) for the walkthrough.
 
-`/watch` opens live cameras, `/files` browses saved files, `/project` opens
-skills and reviews, and `/help` lists commands and keyboard controls. Model
-and permission choices come from the selected agent.
+### Ways to work
 
-In the terminal, `/quit` opens the resource choice. **No**, selected by default,
-stops the agent and any simulator or drivers OpenRUA started. **Yes** keeps
-them running in the background. Your project files and chat history are kept
-either way. See [terminal controls](docs/terminal.md) and
-[project history](docs/projects.md#resume-a-conversation) for the full behavior.
+| Workflow | Start with |
+|---|---|
+| [Terminal chat](docs/terminal.md) | `openrua` |
+| [Browser or plain text chat](docs/sessions.md) | `openrua --gui` or `openrua --cli` |
+| [The agent's own terminal](examples/first-task.md#1a-the-agents-own-terminal) | `openrua agent` |
+| [One recorded task](docs/projects.md#run-a-task-without-the-interactive-interface) | `openrua exec "<task>"` |
 
-## Ways to work
-
-| Use | Entry | Guide |
-|---|---|---|
-| Shared terminal chat | `openrua` | [Shared session](examples/shared-session.md) |
-| Browser or plain text chat | `openrua --gui` or `openrua --cli` | [Sessions and reconnection](docs/sessions.md) |
-| The agent's own terminal | `openrua agent` | [First task](examples/first-task.md#1a-the-agents-own-terminal) |
-| One recorded task in your project | `openrua exec "<task>"` | [Project tasks](docs/projects.md#run-a-task-without-the-interactive-interface) |
-| Isolated benchmark trials | `openrua bench --config <name>` | [Running experiments](docs/running-experiments.md) |
-
-To join an existing shared conversation from another client, use its session ID
-with `--name`; the [session guide](docs/sessions.md) covers browser access,
-reconnection and resource shutdown. Closing a browser page leaves its session
-running.
-
-## Supported agents and environments
+## Supported agents
 
 | Agent | Status |
 |---|---|
@@ -120,54 +100,91 @@ running.
 | [Kimi Code](docs/agents/kimi.md) | Preview (`--agent kimi`) |
 | [ZCode](docs/agents/zcode.md) | Preview (`--agent zcode`) |
 
-Kimi Code and ZCode have documented authentication and feature limits in their
-guides. [Add your own agent](docs/agents.md) through a configuration file and
-its hooks; `openrua agents` lists available capabilities.
+Model and permission choices follow the selected agent. The preview guides
+explain authentication and feature limits. You can also
+[bring another coding agent](docs/agents.md).
 
-Connect real robots through their ROS&nbsp;2 interfaces, or start with bundled
-robosuite, ManiSkill, RoboTwin, CALVIN and VLABench environments. The
-[environment catalog](docs/environments.md) lists every bundled robot,
-simulator and benchmark, including LIBERO variants, CaP-Bench and RoboCasa.
+## Supported robots
 
-## How it works
+Start with a bundled simulation robot or connect your own ROS 2 hardware.
+Robot setup, programs and observations belong to your coding project.
 
-The agent works inside its sandbox with `ros2`, `rclpy`, robot documentation
-and readable starter tools. It saves observations to files, writes programs,
-and executes them against the robot's native interfaces. OpenRUA prescribes
-no robot-task workflow or task-specific primitive library.
+| Robot | Environment |
+|---|---|
+| Franka Emika Panda (`panda`) | robosuite, ManiSkill, CALVIN, VLABench |
+| Panda on an Omron mobile base (`panda-omron`) | robosuite through RoboCasa and RoboCasa365 |
+| Trossen WidowX 250S (`widowx`) | ManiSkill through SimplerEnv |
+| AgileX Cobot Magic, two ARX X5 arms (`aloha-agilex`) | RoboTwin |
+| **Your ROS 2 robot** | Your ROS 2 drivers; [connect](docs/connect.md) or [describe it yourself](docs/your-own-robot.md) |
 
-The project preserves the code, measurements and notes used in that work.
-Useful methods can become ordinary skills that the native coding agent
-reuses in later conversations. See [robot projects](docs/projects.md),
-[reusable methods](docs/skills.md) and [architecture](docs/architecture.md).
-The [paper](https://arxiv.org/abs/2610.02459) analyzes the resulting perception
-and control behavior without relying on a VLA model.
+## Supported simulators
 
-## Paper results
-
-Zero-shot simulation results from the
-[paper](https://arxiv.org/abs/2610.02459), using Claude Code with Claude Opus 5
-at high reasoning effort, without privileged simulator state or access to the
-success predicate during execution:
-
-| Benchmark | Evaluation scope | Success |
+| Simulator | Engine | Robots |
 |---|---|---|
-| CaP-Bench | Seven manipulation tasks | 99.0% |
-| LIBERO-PRO | All four suites, both perturbation types | 87.0% |
+| [robosuite](https://robosuite.ai) | MuJoCo | Panda; Panda-Omron through RoboCasa |
+| [ManiSkill](https://maniskill.ai) | SAPIEN / PhysX | Panda, WidowX |
+| [RoboTwin](https://robotwin-platform.github.io) | SAPIEN / PhysX | ALOHA-AgileX |
+| [CALVIN](https://github.com/mees/calvin) | PyBullet | Panda |
+| [VLABench](https://github.com/OpenMOSS/VLABench) | dm_control / MuJoCo | Panda |
 
-[Full results and model comparison](docs/results.md) include the separate
-LIBERO-10 comparison scope. See [demos](docs/demos.md) for recorded tasks.
+The [environment catalog](docs/environments.md) covers native scenes, versions
+and configuration choices. [Simulation setup](docs/simulation.md) covers
+images and rendering.
+
+## Benchmarks
+
+Run community benchmark scenes with their original success predicates.
+`openrua bench` runs task sets as isolated trials and keeps their scores,
+agent transcripts and workspace files. `openrua exec` runs one task in your
+coding project and records the run.
+
+| Benchmark | Tasks | Simulator |
+|---|---|---|
+| [LIBERO](https://github.com/Lifelong-Robot-Learning/LIBERO) | Standard manipulation suites and LIBERO-90 | robosuite |
+| [LIBERO-PRO](https://github.com/Zxy-MLlab/LIBERO-PRO) | Perturbed LIBERO tasks | robosuite |
+| [LIBERO-Plus](https://github.com/sylvestf/LIBERO-plus) | Large-scale perturbations of LIBERO tasks | robosuite |
+| [LIBERO-Mem](https://github.com/libero-mem/libero-mem) | Tasks requiring memory | robosuite |
+| [RoboCerebra](https://github.com/qiuboxiang/RoboCerebra) | Long-horizon tabletop tasks | robosuite |
+| [CaP-Bench](https://github.com/capgym/cap-x) | Tabletop manipulation | robosuite |
+| [RoboCasa](https://robocasa.ai) | Kitchen tasks | robosuite |
+| [RoboCasa365](https://robocasa.ai) | The 365-task kitchen benchmark | robosuite |
+| [ManiSkill](https://maniskill.ai) | Eleven tabletop Panda tasks | ManiSkill |
+| [SimplerEnv](https://simpler-env.github.io) | WidowX Bridge tasks | ManiSkill |
+| [MIKASA-Robo](https://github.com/CognitiveAISystems/MIKASA-Robo) | Memory-conditioned tasks | ManiSkill |
+| [RoboTwin 2.0](https://robotwin-platform.github.io) | Dual-arm manipulation, Easy protocol | RoboTwin |
+| [CALVIN](https://github.com/mees/calvin) | Five-task sequences | CALVIN |
+| [VLABench](https://github.com/OpenMOSS/VLABench) | Language-conditioned manipulation | VLABench |
+
+[Run experiments and render demos](docs/running-experiments.md) ·
+[Full benchmark details](docs/environments.md#supported-benchmarks) ·
+[Paper results and model comparisons](docs/results.md)
+
+## News
+
+- **2026-10-24:** Robot setup, environment files and ongoing development now
+  belong to the coding project for both real robots and simulation.
+  ([v0.23.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.23.0))
+- **2026-10-21:** Your coding agent can connect a real robot with you, preparing
+  its drivers and checking the setup step by step.
+  ([v0.13.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.13.0))
+- **2026-09-14:** OpenRUA is public. Give Claude Code or Codex a robot,
+  simulated or real.
+  ([v0.0.7](https://github.com/terminalworld/OpenRUA/releases/tag/v0.0.7))
+
+[More project news](docs/news.md) · [All release changes](CHANGELOG.md)
 
 ## Documentation
 
-Start with [installation](docs/install.md),
-[your first shared session](examples/shared-session.md) or
-[connecting a real robot](docs/connect.md).
+- [Your first shared session](examples/shared-session.md): chat, cameras and the
+  robot in one conversation.
+- [Connect a real robot](docs/connect.md): prepare and maintain your robot setup.
+- [Robot projects](docs/projects.md) and [skills](docs/skills.md): keep developing
+  across conversations and reuse useful methods.
+- [Terminal controls](docs/terminal.md): messages, history, files and session controls.
+- [Extend OpenRUA](docs/agents.md) and [contribute](CONTRIBUTING.md): add agents
+  and work on the package.
 
-The [documentation index](docs/README.md) links all guides, including native
-agent setup, project files, skills, recorded tasks, demos and extension APIs.
-[Project news](docs/news.md) preserves the announcements;
-[CHANGELOG.md](CHANGELOG.md) records release changes and upgrade notes.
+See the [full documentation index](docs/README.md) for all guides and references.
 
 ## Citation
 
