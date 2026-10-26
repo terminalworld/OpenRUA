@@ -76,7 +76,7 @@ In your project, run `openrua connect`. Your coding agent works with you to
 identify the robot, prepare its ROS 2 drivers and save its setup in the project.
 See [connect a real robot](docs/connect.md) for the walkthrough.
 
-### Ways to work
+## <img src="docs/media/fluent/compass.svg" width="30" height="24" alt="">Ways to work
 
 | Workflow | Start with |
 |---|---|
@@ -85,7 +85,7 @@ See [connect a real robot](docs/connect.md) for the walkthrough.
 | [The agent's own terminal](examples/first-task.md#1a-the-agents-own-terminal) | `openrua agent` |
 | [One recorded task](docs/projects.md#run-a-task-without-the-interactive-interface) | `openrua exec "<task>"` |
 
-## Why OpenRUA
+## <img src="docs/media/fluent/light-bulb.svg" width="30" height="24" alt="">Why OpenRUA
 
 - <img src="docs/media/fluent/laptop.svg" width="20" height="20" alt=""> **Your coding agent, ready for robot work.** Use Claude Code or Codex with
   your account or API key. OpenRUA prepares the ROS 2 tools, simulators and
@@ -98,7 +98,7 @@ See [connect a real robot](docs/connect.md) for the walkthrough.
   in your project across conversations. Useful methods can become skills your
   agent reuses in later work, in simulation or on hardware.
 
-### How it works
+## <img src="docs/media/fluent/gear.svg" width="30" height="24" alt="">How it works
 
 [![OpenRUA paper overview: an off-the-shelf coding agent runs commands and programs through native ROS 2 interfaces, saves observations as files and inspects feedback to control a real or simulated robot.](docs/media/paper-overview.png)](docs/media/paper-overview.pdf)
 
@@ -108,7 +108,7 @@ The agent decides when to observe, what program to write and how to check the
 result. It works through the robot's native interfaces. See
 [how the pieces fit together](docs/architecture.md).
 
-## Supported agents
+## <img src="docs/media/fluent/laptop.svg" width="30" height="24" alt="">Supported agents
 
 | Agent | Status |
 |---|---|
@@ -121,7 +121,7 @@ Model and permission choices follow the selected agent. The preview guides
 explain authentication and feature limits. You can also
 [bring another coding agent](docs/agents.md).
 
-## Supported robots
+## <img src="docs/media/fluent/robot.svg" width="30" height="24" alt="">Supported robots
 
 Start with a bundled simulation robot or connect your own ROS 2 hardware.
 Robot setup, programs and observations belong to your coding project.
@@ -134,7 +134,11 @@ Robot setup, programs and observations belong to your coding project.
 | AgileX Cobot Magic, two ARX X5 arms (`aloha-agilex`) | RoboTwin |
 | **Your ROS 2 robot** | Your ROS 2 drivers; [connect](docs/connect.md) or [describe it yourself](docs/your-own-robot.md) |
 
-## Supported simulators
+## <img src="docs/media/fluent/joystick.svg" width="30" height="24" alt="">Simulation
+
+<a id="supported-simulators"></a>
+
+### Simulators
 
 | Simulator | Engine | Robots |
 |---|---|---|
@@ -148,7 +152,7 @@ The [environment catalog](docs/environments.md) covers native scenes, versions
 and configuration choices. [Simulation setup](docs/simulation.md) covers
 images and rendering.
 
-## Benchmarks
+### Benchmarks
 
 Run community benchmark scenes with their original success predicates.
 `openrua bench` runs task sets as isolated trials and keeps their scores,
@@ -189,7 +193,7 @@ coding project and records the run.
 
 See the [full documentation index](docs/README.md) for all guides and references.
 
-## Citation
+## <img src="docs/media/fluent/memo.svg" width="30" height="24" alt="">Citation
 
 If you use OpenRUA in your research, please cite our [paper](https://arxiv.org/abs/2610.02459):
 
@@ -205,11 +209,11 @@ If you use OpenRUA in your research, please cite our [paper](https://arxiv.org/a
 }
 ```
 
-## License
+## <img src="docs/media/fluent/scroll.svg" width="30" height="24" alt="">License
 
 [Apache-2.0](LICENSE)
 
-## Feedback
+## <img src="docs/media/fluent/speech-balloon.svg" width="30" height="24" alt="">Feedback
 
 Try OpenRUA with your coding agent and robot, and tell us how it goes.
 Bug reports, confusing steps, and ideas for improving the experience are welcome
