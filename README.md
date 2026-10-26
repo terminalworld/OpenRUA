@@ -4,7 +4,9 @@
 
 **Turn your robot into a coding project.**
 
-*Use Claude Code or Codex with real robots and simulation through their native ROS&nbsp;2 interfaces.*
+Let your Claude Code or Codex control any robot, real or simulated.
+
+*Through the standard ROS&nbsp;2 CLI and client library, without relying on any VLA model.*
 
 [![CI](https://github.com/terminalworld/OpenRUA/actions/workflows/ci.yml/badge.svg)](https://github.com/terminalworld/OpenRUA/actions/workflows/ci.yml)
 [![arXiv](https://img.shields.io/badge/arXiv-2610.02459-b31b1b.svg)](https://arxiv.org/abs/2610.02459)
@@ -15,19 +17,24 @@
 [![Forks](https://img.shields.io/github/forks/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/forks)
 [![Watchers](https://img.shields.io/github/watchers/terminalworld/OpenRUA)](https://github.com/terminalworld/OpenRUA/watchers)
 
-[![Recorded OpenRUA robot demonstration](docs/media/libero10-mugs.jpg)](https://github.com/terminalworld/OpenRUA/releases/download/v0.0.7/libero10-mugs.mp4)
+https://github.com/user-attachments/assets/c652a2d4-f637-47d4-b4a4-b43fbb8ed792
 
-*[Watch the 35-second demo](https://github.com/terminalworld/OpenRUA/releases/download/v0.0.7/libero10-mugs.mp4). Codex (GPT-6 Astra) on LIBERO-10, "put the yellow and white mug on the left plate and put the white mug on the right plate": the commands it typed on the left, the robot's cameras on the right, task success. More in [docs/demos.md](docs/demos.md).*
+*Codex (GPT-6 Astra) on LIBERO-10, "put the yellow and white mug on the left plate and put the white mug on the right plate": the commands it typed on the left, the robot's cameras on the right, task success. More in [docs/demos.md](docs/demos.md).*
 
 </div>
 
-OpenRUA gives your coding agent a project, robot documentation and the robot's
-native ROS&nbsp;2 tools. Tell it what you want to do. The agent reads observations,
-writes perception and control programs, and uses execution feedback to keep
-working.
-
-A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html)
+A [robot-use agent](https://web.mit.edu/phillipi/www/writing/robot-use-agents.html) (RUA)
 uses a robot just as a computer-use agent uses a computer.
+
+OpenRUA connects off-the-shelf coding agents to robots through their native
+ROS&nbsp;2 interfaces. The agent works in a workspace containing robot
+documentation and starter tools, writes perception and control programs, and
+uses execution feedback to continue the task.
+
+> Your agent explores the robot like a live codebase, pulls sensor streams
+> into files for reading, and runs commands and programs to move it.
+>
+> *Start playing with your robot like you code a project :)*
 
 ## Why OpenRUA
 
