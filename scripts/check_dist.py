@@ -21,7 +21,7 @@ def invalid_config_smoke(executable: Path, home: Path, environment: dict) -> Non
     config.write_text('robot: panda\nsimulator: robosuite\nbenchmark: libero_pro\nagent: codex\n')
     original = config.read_bytes()
     argv = [str(executable), '--home', str(home), '--workspace', str(project),
-            '--trust-workspace', '--cli']
+            '--trust-workspace', '--gui']
     def start(*extra):
         return subprocess.run([*argv, *extra], cwd=project, env=environment,
                               capture_output=True, text=True, timeout=15)
@@ -206,7 +206,7 @@ server.serve_forever(); server.server_close(); endpoint.unlink()
             assert time.monotonic() < deadline, 'test owner did not start'
             time.sleep(.02)
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 120, 0, 0))
-        child = subprocess.Popen([str(executable), '--home', str(home), 'chat', '--name', 'exit-check', '--tui'],
+        child = subprocess.Popen([str(executable), '--home', str(home), '--name', 'exit-check'],
                                  stdin=slave, stdout=slave, stderr=slave, env=environment)
         os.close(slave); slave = None
         output, stage = bytearray(), 0
@@ -311,15 +311,17 @@ def check(dist: Path, version: str) -> None:
             subprocess.run([python, *args], cwd=root, check=True)
         run("-m", "pip", "install", str(wheels[0]))
         run("-c", "from openrua import __version__; import sys; assert __version__ == sys.argv[1]", version)
-        for args in (("--version",), ("chat", "--help"), ("session", "--help"), ("update", "--help")):
+        for args in (("--version",), ("--help",), ("session", "--help"), ("update", "--help")):
             subprocess.run([str(environment / "bin" / "openrua"), *args], cwd=root, check=True)
         run("-c", """
 from importlib.resources import files
+from importlib.util import find_spec
 from pathlib import Path
 from openrua import __version__
 from openrua.robot.sim.install import render
 from openrua.web import assets
 assert all(content for mime, content in assets().values())
+assert find_spec('openrua.cli.commands.chat') is None
 dockerfile, _ = render({'python': '3.12'}, 'installed-release', Path.cwd())
 assert f'--no-deps --refresh-package openrua openrua=={__version__}' in dockerfile
 root = files('openrua')

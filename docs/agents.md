@@ -289,7 +289,7 @@ The default returns `None`; existing plugins need no migration. The hook
 returns a `Conversation` containing a piped native-process command and a
 `ConversationProtocol`. Construction starts no process. This capability is
 consumed by OpenRUA's shared sessions: its terminal (`openrua`), the browser
-(`openrua --gui`), plain chat (`--cli`) and `openrua connect`, all through the
+(`openrua --gui`) and `openrua connect`, all through the
 same session API.
 
 The protocol is independent of transport and contains all vendor-specific

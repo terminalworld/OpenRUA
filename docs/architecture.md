@@ -16,7 +16,7 @@ These entry paths share the same resource and agent contracts:
 
 | Path | Composition | Lifetime |
 |---|---|---|
-| Shared chat | default startup → background `serve` → `runner.managed` → live resources, native conversation, session execution; TUI, browser, and plain CLI use its HTTP API | The service owns execution; closing a client only detaches |
+| Shared chat | default startup → background `serve` → `runner.managed` → live resources, native conversation, session execution; TUI, browser, and session commands use its HTTP API | The service owns execution; terminal exit asks whether to stop its resources |
 | Native terminal | `up` then `agent` use `runner.live` and the selected agent's native terminal | `up` retains the resources until Ctrl-C or `down`; exiting the agent leaves them up |
 | Recorded run | `exec` (one project task) or `bench` (isolated trials) → `runner.main.run_set` → trial runner → project or fresh workspace, operator, preflight, scoring, records | `exec` reuses project files; `bench` keeps isolated inputs; both record and tear down resources |
 | Skill review | `skills review` → completed project records and bounded snapshots → isolated native file task → proposals and report | Temporary worker/profile are removed; source skills are never replaced |
@@ -47,7 +47,7 @@ Its queue orders user instructions, not individual robot movements.
 | `openrua/agents/` | `base.Agent` (the contract), the registry (manifests under `configs/agents/`, the module each names under `entry_point`), the launcher, credentials staging, the prompts. | `python -m openrua.agents launch` |
 | `openrua/runner/` | composition and ownership: `live.py` opens robot resources, `live_state.py` retains their state, `managed.py` adds a native conversation and shared execution owner (and moves it to new resources between turns), `connect.py` is `openrua connect`: the connecting terminal, the checks it asks the host for, and the move to the robot's own terminal. Trial execution stays separate: `main.py` (`openrua bench`, and `run_set`, the trial loop `openrua exec` shares), `limits.py` (the limit flags), `bringup.py` (one resolved config to sandbox + robot, and the sandbox's way out), `trial.py`, `operators.py`, `session.py` (the agent operator across segments), `preflight.py` (every promise the workspace docs make, checked before the agent starts), `record.py` (the only writer under `runs/`), `lock.py`. | `openrua serve`, `up`, `exec`, `bench` |
 | `openrua/demo/` | a video from a recorded trial's files (`frames/`, `ops.jsonl`): `compose.py` renders the terminal beside the cameras. Reads files, imports `errors` only; its libraries are the `demo` extra. | `openrua demo` |
-| `openrua/sessions/` | shared user-message queue, durable events and native connection ownership through injected storage/transport contracts; independent of robot task planning. See [sessions.md](sessions.md). | `openrua`, `--gui`, `--cli`; `serve`, `chat`, `session` for explicit operation |
+| `openrua/sessions/` | shared user-message queue, durable events and native connection ownership through injected storage/transport contracts; independent of robot task planning. See [sessions.md](sessions.md). | `openrua`, `--gui`; `serve`, `session` for explicit operation |
 | `openrua/web/` | bundled browser assets, supplied to the HTTP server by its caller. The browser consumes the session API. | `openrua session --name NAME web` |
 | `openrua/artifacts.py` | bounded, read-only workspace file access; the owner supplies the root and reader to the HTTP server. | file operations in the session API |
 | `openrua/reviews.py` | bounded snapshots, candidate validation and diffs through the artifact reader; no runtime dependencies. `runner.skill_review` selects completed records and coordinates a temporary worker; `proxy.relay` exposes only its fixed upstream model proxy through a private Unix socket. | `openrua skills review`, `openrua skills reviews` |
@@ -178,7 +178,7 @@ save resource facts after startup also triggers resource cleanup.
 
 `runner.managed` combines a live robot with the plugin's native conversation
 and the session execution owner. The `serve` CLI supplies a local HTTP front
-end; `chat`, the TUI, `session`, and the browser consume that API.
+end; the TUI, `session` commands, and the browser consume that API.
 Browser assets live in `openrua.web`, a leaf supplied explicitly to the HTTP
 adapter; session coordination never imports it. HTTP connection loss does not close
 the execution owner. `down` routes managed sessions through their owner, and

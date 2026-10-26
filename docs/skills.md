@@ -29,8 +29,8 @@ skills from their descriptions. You can also select one explicitly:
   passes an unambiguous skill through Codex's structured skill input. For
   same-name definitions, name resolution stays with the native agent.
 
-The agent's own terminal keeps its native skill interface. Terminal, browser
-and plain chat share the same conversation adapter. `exec` uses the same
+The agent's own terminal keeps its native skill interface. Terminal and browser
+chat share the same conversation adapter. `exec` uses the same
 project and personal skill files, with the agent's own headless invocation.
 Simulation and real robots follow the same file rules.
 

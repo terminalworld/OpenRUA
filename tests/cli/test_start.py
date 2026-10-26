@@ -63,7 +63,7 @@ def test_bad_personal_config_keeps_config_exit_code_and_repair_hint(tmp_path, co
     path.write_text(contents)
     monkeypatch.setattr(start, 'prepare', lambda *a, **kw: pytest.fail('must not prepare resources'))
     monkeypatch.setattr(start, 'launch', lambda *a, **kw: pytest.fail('must not start a session'))
-    assert main(['--home', str(tmp_path), '--cli']) == 78
+    assert main(['--home', str(tmp_path), '--gui']) == 78
     error = capsys.readouterr().err
     assert str(path) in error
     assert 'config schema --user' in error
@@ -77,7 +77,7 @@ def test_bad_project_config_is_a_config_error_before_resources_start(tmp_path, c
     path.parent.mkdir()
     path.write_text(contents)
     monkeypatch.setattr(start, 'prepare', lambda *a, **kw: pytest.fail('must not prepare resources'))
-    assert main(['--home', str(tmp_path), '--cli']) == 78
+    assert main(['--home', str(tmp_path), '--gui']) == 78
     error = capsys.readouterr().err
     assert str(path) in error
     assert 'session may still be running' not in error
@@ -86,7 +86,7 @@ def test_bad_project_config_is_a_config_error_before_resources_start(tmp_path, c
 
 def test_missing_robot_keeps_missing_file_exit_code(tmp_path, capsys):
     profile = tmp_path / 'missing-robot.yaml'
-    assert main(['--home', str(tmp_path), '--cli', '--robot', str(profile)]) == 66
+    assert main(['--home', str(tmp_path), '--gui', '--robot', str(profile)]) == 66
     assert str(profile) in capsys.readouterr().err
 
 
@@ -237,10 +237,10 @@ def test_existing_session_reconnects_without_reading_changed_defaults(tmp_path, 
     monkeypatch.setattr(start.service, 'connect', lambda path: client)
     opened = []
     monkeypatch.setattr(start, 'open_interface', lambda args, c, name, **kw: opened.append((c, name)) or 0)
-    assert start.run(args(tmp_path, '--cli', '--name', 'openrua')) == 0
+    assert start.run(args(tmp_path, '--gui', '--name', 'openrua')) == 0
     assert opened == [(client, 'openrua')]
     with pytest.raises(UsageError, match='startup options'):
-        start.run(args(tmp_path, '--cli', '--name', 'openrua', '--agent', 'codex'))
+        start.run(args(tmp_path, '--gui', '--name', 'openrua', '--agent', 'codex'))
 
 
 def test_retained_directory_is_not_overwritten(tmp_path, monkeypatch):
@@ -285,7 +285,7 @@ def test_unnamed_starts_create_distinct_ids_without_reconnecting_old_default(tmp
     monkeypatch.setattr(start, 'launch', lambda a, v: launched.append(v['name']) or object())
     monkeypatch.setattr(start, 'open_interface', lambda *a, **kw: 0)
     for _ in range(2):
-        start.run(args(tmp_path, '--cli', '--robot', 'panda', '--sim', 'robosuite'))
+        start.run(args(tmp_path, '--gui', '--robot', 'panda', '--sim', 'robosuite'))
     assert len(set(launched)) == 2 and all(len(name) == 32 for name in launched)
 
 
@@ -295,10 +295,10 @@ def test_resume_does_not_load_config_or_launch_resources(tmp_path, monkeypatch):
     monkeypatch.setattr(start.history, 'open_session', lambda home, name: (selected, name))
     opened = []
     monkeypatch.setattr(start, 'open_interface', lambda a, c, n, **kw: opened.append((c, n)) or 0)
-    assert start.run(args(tmp_path, '--cli', '--resume', 'old')) == 0
+    assert start.run(args(tmp_path, '--gui', '--resume', 'old')) == 0
     assert opened == [(selected, 'old')]
     with pytest.raises(UsageError):
-        start.run(args(tmp_path, '--cli', '--resume', 'old', '--robot', 'panda'))
+        start.run(args(tmp_path, '--gui', '--resume', 'old', '--robot', 'panda'))
 
 
 def test_pi_uses_same_launcher_after_keyboard_setup(tmp_path, monkeypatch):
@@ -350,7 +350,7 @@ def test_bad_selection_never_overwrites_existing_settings(tmp_path):
 
 
 def test_launch_preserves_explicit_cleared_environment(tmp_path, monkeypatch):
-    selected = args(tmp_path, '--cli', '--robot', 'panda', '--sim', 'robosuite')
+    selected = args(tmp_path, '--gui', '--robot', 'panda', '--sim', 'robosuite')
     values = dict(robot='panda', sim='robosuite', bench='', agent='claude-code', model='', name='new')
     calls = []
     monkeypatch.setattr(start.service, 'start', lambda *a: calls.append(a))
@@ -366,23 +366,26 @@ def test_invalid_saved_combination_still_opens_editable_setup(tmp_path):
     assert values['robot'] == 'panda' and values['sim'] == 'maniskill'
 
 
-@pytest.mark.parametrize('flag', ['--gui', '--cli'])
-def test_non_tui_resume_needs_no_terminal_runtime(tmp_path, monkeypatch, flag):
+def test_browser_resume_needs_no_terminal_runtime(tmp_path, monkeypatch):
     from openrua.terminal import launcher
     monkeypatch.setattr(launcher, 'check_terminal', lambda: pytest.fail('must not open terminal'))
     monkeypatch.setattr(start.history, 'open_session', lambda home, name: ('client', name))
     monkeypatch.setattr(start, 'open_interface', lambda *args, **kw: 0)
-    assert start.run(args(tmp_path, flag, '--resume', 'running')) == 0
+    assert start.run(args(tmp_path, '--gui', '--resume', 'running')) == 0
 
 
-def test_legacy_chat_tui_opens_the_same_keyboard_frontend(tmp_path, monkeypatch):
-    from openrua.cli.commands import chat
+def test_named_session_opens_the_keyboard_frontend(tmp_path, monkeypatch):
+    monkeypatch.setattr(start.sys.stdin, 'isatty', lambda: True)
+    monkeypatch.setattr(start.sys.stdout, 'isatty', lambda: True)
     from openrua.terminal import launcher
     monkeypatch.setattr(launcher, 'check_terminal', lambda: None)
-    monkeypatch.setattr(chat, 'connect', lambda args: type('Client', (), {})())
+    directory = tmp_path / 'sandboxes/old'
+    directory.mkdir(parents=True)
+    (directory / 'endpoint.json').write_text('{}')
+    monkeypatch.setattr(start.service, 'connect', lambda path: type('Client', (), {})())
     opened = []
     monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops, **kw: opened.append(name) or 0)
-    assert main(['--home', str(tmp_path), 'chat', '--tui', '--name', 'old']) == 0
+    assert main(['--home', str(tmp_path), '--name', 'old']) == 0
     assert opened == ['old']
 
 
@@ -393,7 +396,7 @@ def test_custom_benchmark_selector_survives_preview_and_launch(tmp_path, monkeyp
     profile.write_text(paths.find('benchmarks', 'capbench').read_text())
     if saved:
         config_command.run(args(tmp_path, 'config', 'set', '--bench', str(profile)))
-    selected = args(tmp_path, '--cli', *([] if saved else ['--bench', str(profile)]))
+    selected = args(tmp_path, '--gui', *([] if saved else ['--bench', str(profile)]))
     values, _ = start.values_for(selected)
     assert values['bench'] == str(profile)
     captured = []

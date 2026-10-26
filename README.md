@@ -81,7 +81,7 @@ See [connect a real robot](docs/connect.md) for the walkthrough.
 | Workflow | Start with |
 |---|---|
 | [Terminal chat](docs/terminal.md) | `openrua` |
-| [Browser or plain text chat](docs/sessions.md) | `openrua --gui` or `openrua --cli` |
+| [Browser chat](docs/sessions.md) | `openrua --gui` |
 | [The agent's own terminal](examples/first-task.md#1a-the-agents-own-terminal) | `openrua agent` |
 | [One recorded task](docs/projects.md#run-a-task-without-the-interactive-interface) | `openrua exec "<task>"` |
 

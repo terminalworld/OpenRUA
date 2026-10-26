@@ -100,7 +100,7 @@ def render_cli() -> str:
     # widths differ between Python versions and the page must not.
     out = [CLI_HEAD, _parser_reference(ap), "\n"]
     out.append("Without a subcommand, an unnamed launch opens setup with a new session ID. An explicit name reconnects "
-               "to the named shared session. `--gui` selects the browser, `--cli` plain chat, "
+               "to the named shared session. `--gui` selects the browser, "
                "`--resume [ID]` selects history, and `--setup` edits the project settings. With no interface selected, "
                "non-interactive invocations print help.\n")
     for name, sub in verbs.choices.items():
