@@ -36,26 +36,20 @@ uses execution feedback to continue the task.
 >
 > *Start playing with your robot like you code a project :)*
 
-## Why OpenRUA
+## News
 
-- **Your coding agent, ready for robot work.** Use Claude Code or Codex with
-  your account or API key. OpenRUA prepares the ROS 2 tools, simulators and
-  configured drivers in containers, keeping their dependencies separate from
-  your host setup.
-- **Work with the robot while your agent works.** Inspect camera images and
-  tool activity, send a follow-up instruction, and stop an action from a shared
-  conversation in the terminal or browser.
-- **Keep building on what you learn.** Programs, observations and notes stay
-  in your project across conversations. Useful methods can become skills your
-  agent reuses in later work, in simulation or on hardware.
+- **2026-10-24:** Robot setup, environment files and ongoing development now
+  belong to the coding project for both real robots and simulation.
+  ([v0.23.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.23.0))
+- **2026-10-21:** Your coding agent can connect a real robot with you, preparing
+  its drivers and checking the setup step by step.
+  ([v0.13.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.13.0))
+- **2026-10-01:** **The paper is out:** [OpenRUA: Robot-Use Agents Are Zero-Shot Visuomotor Policies](https://arxiv.org/abs/2610.02459).
+- **2026-09-14:** OpenRUA is public. Give Claude Code or Codex a robot,
+  simulated or real.
+  ([v0.0.7](https://github.com/terminalworld/OpenRUA/releases/tag/v0.0.7))
 
-### How it works
-
-[![Your coding agent uses native ROS 2 tools to read observations and run programs on a real or simulated robot, while keeping code, images and notes in your project.](docs/media/native-workflow.svg)](docs/architecture.md)
-
-The agent decides when to observe, what program to write and how to check the
-result. It works through the robot's native interfaces. See
-[how the pieces fit together](docs/architecture.md).
+[More project news](docs/news.md) · [All release changes](CHANGELOG.md)
 
 ## Quick start
 
@@ -90,6 +84,29 @@ See [connect a real robot](docs/connect.md) for the walkthrough.
 | [Browser or plain text chat](docs/sessions.md) | `openrua --gui` or `openrua --cli` |
 | [The agent's own terminal](examples/first-task.md#1a-the-agents-own-terminal) | `openrua agent` |
 | [One recorded task](docs/projects.md#run-a-task-without-the-interactive-interface) | `openrua exec "<task>"` |
+
+## Why OpenRUA
+
+- **Your coding agent, ready for robot work.** Use Claude Code or Codex with
+  your account or API key. OpenRUA prepares the ROS 2 tools, simulators and
+  configured drivers in containers, keeping their dependencies separate from
+  your host setup.
+- **Work with the robot while your agent works.** Inspect camera images and
+  tool activity, send a follow-up instruction, and stop an action from a shared
+  conversation in the terminal or browser.
+- **Keep building on what you learn.** Programs, observations and notes stay
+  in your project across conversations. Useful methods can become skills your
+  agent reuses in later work, in simulation or on hardware.
+
+### How it works
+
+[![OpenRUA paper overview: an off-the-shelf coding agent runs commands and programs through native ROS 2 interfaces, saves observations as files and inspects feedback to control a real or simulated robot.](docs/media/paper-overview.png)](docs/media/paper-overview.pdf)
+
+*Overview from our [paper](https://arxiv.org/abs/2610.02459). Click the figure for the original PDF.*
+
+The agent decides when to observe, what program to write and how to check the
+result. It works through the robot's native interfaces. See
+[how the pieces fit together](docs/architecture.md).
 
 ## Supported agents
 
@@ -158,20 +175,6 @@ coding project and records the run.
 [Run experiments and render demos](docs/running-experiments.md) ·
 [Full benchmark details](docs/environments.md#supported-benchmarks) ·
 [Paper results and model comparisons](docs/results.md)
-
-## News
-
-- **2026-10-24:** Robot setup, environment files and ongoing development now
-  belong to the coding project for both real robots and simulation.
-  ([v0.23.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.23.0))
-- **2026-10-21:** Your coding agent can connect a real robot with you, preparing
-  its drivers and checking the setup step by step.
-  ([v0.13.0](https://github.com/terminalworld/OpenRUA/releases/tag/v0.13.0))
-- **2026-09-14:** OpenRUA is public. Give Claude Code or Codex a robot,
-  simulated or real.
-  ([v0.0.7](https://github.com/terminalworld/OpenRUA/releases/tag/v0.0.7))
-
-[More project news](docs/news.md) · [All release changes](CHANGELOG.md)
 
 ## Documentation
 
