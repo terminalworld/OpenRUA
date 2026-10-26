@@ -36,7 +36,7 @@ uses execution feedback to continue the task.
 >
 > *Start playing with your robot like you code a project :)*
 
-## <img src="docs/media/fluent/sparkles.svg" width="24" height="24" alt=""> News
+## <img src="docs/media/fluent/sparkles.svg" width="30" height="24" alt="">News
 
 - **2026-10-24:** Robot setup, environment files and ongoing development now
   belong to the coding project for both real robots and simulation.
@@ -51,7 +51,7 @@ uses execution feedback to continue the task.
 
 [More project news](docs/news.md) · [All release changes](CHANGELOG.md)
 
-## <img src="docs/media/fluent/rocket.svg" width="24" height="24" alt=""> Quick start
+## <img src="docs/media/fluent/rocket.svg" width="30" height="24" alt="">Quick start
 
 On **Linux with Python 3.10 or newer**, run:
 
@@ -176,7 +176,7 @@ coding project and records the run.
 [Full benchmark details](docs/environments.md#supported-benchmarks) ·
 [Paper results and model comparisons](docs/results.md)
 
-## <img src="docs/media/fluent/open-book.svg" width="24" height="24" alt=""> Documentation
+## <img src="docs/media/fluent/open-book.svg" width="30" height="24" alt="">Documentation
 
 - [Your first shared session](examples/shared-session.md): chat, cameras and the
   robot in one conversation.
