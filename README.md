@@ -36,7 +36,7 @@ uses execution feedback to continue the task.
 >
 > *Start playing with your robot like you code a project :)*
 
-## News
+## <img src="docs/media/fluent/sparkles.svg" width="24" height="24" alt=""> News
 
 - **2026-10-24:** Robot setup, environment files and ongoing development now
   belong to the coding project for both real robots and simulation.
@@ -51,7 +51,7 @@ uses execution feedback to continue the task.
 
 [More project news](docs/news.md) · [All release changes](CHANGELOG.md)
 
-## Quick start
+## <img src="docs/media/fluent/rocket.svg" width="24" height="24" alt=""> Quick start
 
 On **Linux with Python 3.10 or newer**, run:
 
@@ -87,14 +87,14 @@ See [connect a real robot](docs/connect.md) for the walkthrough.
 
 ## Why OpenRUA
 
-- **Your coding agent, ready for robot work.** Use Claude Code or Codex with
+- <img src="docs/media/fluent/laptop.svg" width="20" height="20" alt=""> **Your coding agent, ready for robot work.** Use Claude Code or Codex with
   your account or API key. OpenRUA prepares the ROS 2 tools, simulators and
   configured drivers in containers, keeping their dependencies separate from
   your host setup.
-- **Work with the robot while your agent works.** Inspect camera images and
+- <img src="docs/media/fluent/speech-balloon.svg" width="20" height="20" alt=""> **Work with the robot while your agent works.** Inspect camera images and
   tool activity, send a follow-up instruction, and stop an action from a shared
   conversation in the terminal or browser.
-- **Keep building on what you learn.** Programs, observations and notes stay
+- <img src="docs/media/fluent/file-folder.svg" width="20" height="20" alt=""> **Keep building on what you learn.** Programs, observations and notes stay
   in your project across conversations. Useful methods can become skills your
   agent reuses in later work, in simulation or on hardware.
 
@@ -176,7 +176,7 @@ coding project and records the run.
 [Full benchmark details](docs/environments.md#supported-benchmarks) ·
 [Paper results and model comparisons](docs/results.md)
 
-## Documentation
+## <img src="docs/media/fluent/open-book.svg" width="24" height="24" alt=""> Documentation
 
 - [Your first shared session](examples/shared-session.md): chat, cameras and the
   robot in one conversation.
