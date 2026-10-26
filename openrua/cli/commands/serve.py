@@ -65,7 +65,7 @@ async def serve(args) -> None:
         if flow:
             await flow.begin(server)
         print(f"[serve] {args.name} at {server.url}\n"
-              f"[serve] open another terminal: openrua --home {args.home} chat --name {args.name}\n"
+              f"[serve] open another terminal: openrua --home {args.home} --name {args.name}\n"
               f"[serve] browser: openrua --home {args.home} session --name {args.name} web\n"
               "[serve] closing a chat client keeps this session running; Ctrl-C here ends it", flush=True)
         while True:

@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from openrua import __version__, agents, config, doctor
-from openrua.cli.commands import chat, connect, login, session, up
+from openrua.cli.commands import connect, login, session, up
 from openrua.config import paths, projects, settings, startup
 from openrua.cli import agent_settings, docker_setup, updates, workspace
 from openrua.cli.preparation import prepare
@@ -30,7 +30,6 @@ def add_options(parser) -> None:
     interface.add_argument('--gui', action='store_true', help='open the browser instead of terminal chat')
     interface.add_argument('--tui', choices=['pi'], default='pi', metavar='UI',
                            help='keyboard terminal frontend (default: pi, included)')
-    interface.add_argument('--cli', action='store_true', help='use plain text chat instead of the TUI')
     group.add_argument('--port', type=int, default=None, help='local service port for a new session (default: a free port)')
     group.add_argument('--setup', action='store_true', help='edit this project in the keyboard setup menu')
     group.add_argument('--resume', nargs='?', const='', default=None, metavar='ID',
@@ -336,22 +335,19 @@ def choose_history(home, frontend: str = 'pi', *, project: Path | None = None, a
 
 
 def open_interface(args, client, name: str, application=None) -> int:
-    if application and (args.gui or args.cli):
+    if application and args.gui:
         return application.perform('Opening interface', lambda: open_interface(args, client, name), native=True)
-    if args.gui or args.cli:
+    if args.gui:
         if getattr(client, 'read_only', False):
             raise UsageError('This saved conversation is available for viewing only in the terminal. You cannot send messages from this view.',
                              hint=f'openrua --resume {name} opens its saved messages')
-        if args.gui:
-            return session.run(argparse.Namespace(home=args.home, name=name, action='web', no_open=False))
-        return chat.run(argparse.Namespace(home=args.home, name=name, tui=False,
-                                           message=None, follow=False, after=0))
+        return session.run(argparse.Namespace(home=args.home, name=name, action='web', no_open=False))
     return open_terminal(args.home, client, name, args.tui, **({'application': application} if application else {}))
 
 
 def run(args) -> int:
     try:
-        if (args.gui or args.cli) and not args.setup and args.resume != '':
+        if args.gui and not args.setup and args.resume != '':
             return _run(args)
         from openrua.terminal.application import Application
         from openrua.terminal.launcher import runtime, entrypoint
@@ -385,7 +381,7 @@ def _run(args, application=None) -> int:
     autostart(args.home)
     if args.all and args.resume is None:
         raise UsageError('--all is used with --resume', hint='openrua --resume --all')
-    if not (args.gui or args.cli) or args.setup or args.resume == '':
+    if not args.gui or args.setup or args.resume == '':
         from openrua.terminal.launcher import check_terminal
         try:
             check_terminal()
@@ -442,7 +438,7 @@ def _run(args, application=None) -> int:
     if args.setup or not (values['robot'] or values['bench']):
         if not sys.stdin.isatty() or not sys.stdout.isatty():
             raise UsageError('terminal setup needs an interactive terminal',
-                             hint='use openrua config set or edit config.yaml, then use --gui or --cli')
+                             hint='use an interactive terminal for setup, or configure the project with openrua config set and use --gui')
         result = setup_project(args, selected, application, values=values, models=models)
         if result is None:
             return 0

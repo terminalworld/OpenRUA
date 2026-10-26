@@ -1,5 +1,5 @@
 ---
-summary: Shared browser and CLI chat, queue operations, retained files, and session API contracts
+summary: Shared terminal and browser chat, queue operations, retained files, and session API contracts
 read_when:
   - You want to manage a shared robot conversation or inspect saved observations
   - You are implementing a client or checking session lifecycle and validation limits
@@ -15,7 +15,7 @@ boundaries and validation evidence follow the user-facing instructions.
 The `openrua.sessions` package coordinates user messages and native agent
 connections. It does not plan robot actions or replace the coding agent's own
 workflow. The local service connects the existing robot startup path to
-this coordinator. CLI and browser clients use the same HTTP API.
+this coordinator. Terminal, browser and session commands use the same HTTP API.
 
 For a chat-first terminal with streamed replies, collapsible tools and an
 editable queue, see [Terminal chat](terminal.md). It uses this same service.
@@ -28,7 +28,7 @@ trust question on first use. `--workspace DIR` chooses another directory.
 See [robot projects](projects.md) for file organization and continuing work.
 `openrua --resume` finds a previous conversation in this project and `--name NAME` explicitly
 starts or reconnects to a named session;
-`openrua --gui` selects the browser and `openrua --cli` selects plain chat.
+`openrua --gui` selects the browser.
 Choose **Save project and start** in keyboard setup to set up Docker and the agent's
 sign-in when they are missing, prepare the agent environment and check it;
 **Advanced options → Save project settings and check setup** saves project
@@ -42,7 +42,7 @@ agent available to inspect logs and work on the project.
 
 To come back, `openrua --resume` lists this project's conversations, running ones first;
 `openrua --resume --all` includes other projects and older unassigned sessions.
-`openrua --name NAME` (with `--gui` or `--cli`) reconnects to one by name.
+`openrua --name NAME` reconnects in the terminal; add `--gui` for the browser.
 `/setup` opens project configuration inside terminal chat. Starting from that
 screen creates and switches to a new conversation. Before leaving, choose whether
 to keep execution resources running: **No** is selected by default and stops the
@@ -89,21 +89,19 @@ openrua serve panda --sim robosuite --name shared --agent claude-code
 process. Keep it running when leaving a client. In another terminal:
 
 ```sh
-openrua chat --name shared
-openrua chat --name shared "Inspect the scene before moving."
+openrua --name shared
 openrua session --name shared send "Describe what you observed."
 openrua session --name shared status
 ```
 
-Each client may submit to the same queue. `chat` displays native text and tool
-activity and waits for its message; `session send` returns after acceptance.
-A message sent while a turn runs joins that turn when the agent can take one
-(Claude Code, Codex); otherwise it waits in the queue. Ctrl-C in **chat**
-only detaches. To reconnect without submitting a message:
+The terminal and browser submit to the same queue. `session send` submits a
+message and returns after acceptance. A message sent while a turn runs joins
+that turn when the agent can take one (Claude Code, Codex); otherwise it waits
+in the queue. Leaving the terminal asks whether to stop its execution resources
+or keep them running. To inspect retained events without submitting a message:
 
 ```sh
-openrua chat --name shared --follow
-openrua chat --name shared --follow --after 42
+openrua session --name shared events
 openrua session --name shared events --after 42
 ```
 
@@ -231,7 +229,7 @@ Startup or driver failure does not require leaving chat or restarting OpenRUA.
 
 Ask the agent to inspect or apply your driver changes, or use `/robot` in the
 terminal. The menu provides status, driver/build logs, build, start, stop and
-restart. The browser and plain chat accept `/robot status`, `/robot logs`,
+restart. The browser accepts `/robot status`, `/robot logs`,
 `/robot build`, `/robot start`, `/robot stop` and `/robot restart`.
 The equivalent command-line operations use the same owner:
 

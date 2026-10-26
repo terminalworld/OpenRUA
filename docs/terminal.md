@@ -11,7 +11,7 @@ OpenRUA uses Pi's fullscreen renderer, editor, Markdown and keyboard
 selectors. A project header, scrollable conversation and fixed input area share
 one interface from setup through preparation and chat. Leaving restores the
 previous terminal screen. The terminal consumes
-the same session API as the browser and plain CLI; the existing service owns
+the same session API as the browser; the existing service owns
 the native coding agent, robot, message queue and history.
 
 ## Start and configure
@@ -105,8 +105,8 @@ or queued instructions. Older or uncertain sessions open read-only.
 See [robot projects](projects.md). `--resume ID` selects one
 directly. Explicit `--name NAME` still starts or connects to that named session.
 
-`openrua chat --tui --name NAME` also opens this keyboard interface for an
-existing service. `--gui` and `--cli` select the browser and plain text client;
+`openrua --name NAME` also opens this keyboard interface for an
+existing service. `--gui` selects the browser;
 `openrua up` and `openrua agent` open the native coding agent terminal. There is no Textual
 fallback. Startup failures keep their logs in `~/.openrua/launches/NAME/`.
 

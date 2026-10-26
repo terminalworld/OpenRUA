@@ -1,5 +1,5 @@
 ---
-summary: Start TUI, browser, and CLI chat with one simulated robot, reconnect, and keep your work
+summary: Start terminal and browser chat with one simulated robot, reconnect, and keep your work
 read_when:
   - You want to try shared robot chat for the first time
   - You want a manual check of the browser, queue, and saved observations
@@ -8,7 +8,7 @@ read_when:
 # Your first shared robot session
 
 This walkthrough uses one simulated Panda-Omron in RoboCasa365 and one native coding agent, with
-OpenRUA's TUI, browser, or plain CLI as clients. They share the same agent
+OpenRUA's terminal and browser as clients. They share the same agent
 conversation and queue. OpenRUA manages delivery and resources; the agent
 still decides which ROS commands and programs to execute.
 
@@ -157,14 +157,13 @@ openrua session --name chat-demo send "Summarize what you observed. Do not move 
 The browser should show the new message joining the running turn, then
 joined: Claude Code and Codex take what you send mid-turn, as in their own
 terminals. If the first turn already finished, the second starts as a turn of
-its own. To observe the
-same conversation from the terminal without submitting another task:
+its own. To inspect the conversation's saved events without submitting another task:
 
 ```sh
-openrua chat --name chat-demo --follow
+openrua session --name chat-demo events
 ```
 
-Ctrl-C here only detaches this client. Close or disconnect the browser while a
+The command prints the events and exits. Close or disconnect the browser while a
 turn runs, then reconnect with the same address and token. Execution continues
 in the background, and the browser reloads retained messages. Reloading the page
 requires pasting the token again. Do not resend a task just to reconnect.
@@ -220,7 +219,8 @@ stopped session and its retained materials, run `openrua clean --name chat-demo`
 |---|---|
 | Browser and CLI submit | Messages appear in one conversation and share queue order |
 | View an image or program | Saved file opens without sending the agent another task |
-| Close a browser or chat client | Execution continues in the background service |
+| Close the browser | Execution continues in the background service |
+| Leave the terminal | Choose whether to stop execution resources or keep them running |
 | Reconnect or reload | Retained progress returns; old tasks are not resubmitted |
 | Send during a turn | The message joins the running turn |
 | Interrupt | The turn stops and the next queued message starts |

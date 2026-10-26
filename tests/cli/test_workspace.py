@@ -66,7 +66,7 @@ def test_default_start_uses_cwd_and_creates_fresh_conversations(tmp_path, monkey
     monkeypatch.setattr(start, 'launch', lambda args, values: launched.append((args.workspace, args.name)) or object())
     monkeypatch.setattr(start, 'open_interface', lambda *a, **kw: 0)
     for _ in range(2):
-        args = build_parser().parse_args(['--home', str(home), '--cli', '--robot', 'panda', '--sim', 'robosuite'])
+        args = build_parser().parse_args(['--home', str(home), '--gui', '--robot', 'panda', '--sim', 'robosuite'])
         start.run(args)
     assert [path for path, _ in launched] == [str(root), str(root)]
     assert launched[0][1] != launched[1][1]

@@ -9,6 +9,12 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- Remove the duplicate plain text chat interface, including `--cli` and the
+  `chat` command. Use `openrua` for terminal chat, `openrua --gui` for the
+  browser, or `openrua --name NAME` to reconnect. Scripts can submit messages
+  and inspect results with `session send`, `session status` and `session events`.
+  Keep the shared session service, history, native agent and `exec` paths.
+
 - Restore the README's product positioning, inline demo and visible agent,
   robot, simulator and benchmark coverage. Keep quick start focused on a first
   task, illustrate the native ROS 2 workflow and link paper results from the

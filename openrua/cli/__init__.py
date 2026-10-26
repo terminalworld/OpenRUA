@@ -4,7 +4,7 @@
     openrua build [robot|sandbox|proxy]    the three images (or one of them)
     openrua config set --robot panda --sim robosuite   your defaults
     openrua serve <robot> --name shared    a robot and shared conversation service
-    openrua chat --tui --name shared      attach the terminal UI
+    openrua --name shared                 attach the terminal UI
     openrua session --name shared web     open the browser client
     openrua session --name shared end     end and retain files
     openrua exec "pick up the red cube"    the agent does a task on its own, recorded
@@ -56,7 +56,7 @@ def main(argv: list[str] | None = None) -> int:
     # default; from here on the user directory travels as a parameter.
     ap = build_parser(default_home=os.environ.get("OPENRUA_HOME") or None)
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)
-    if not args.verb and not (sys.stdin.isatty() and sys.stdout.isatty()) and not (args.gui or args.cli or args.setup or args.resume is not None):
+    if not args.verb and not (sys.stdin.isatty() and sys.stdout.isatty()) and not (args.gui or args.setup or args.resume is not None):
         ap.print_help()
         return 0
     if args.home is None:

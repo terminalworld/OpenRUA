@@ -43,7 +43,7 @@ def check_terminal() -> None:
     runtime()
     entrypoint()
     if not sys.stdin.isatty() or not sys.stdout.isatty():
-        raise RuntimeError('Terminal chat needs an interactive terminal; use --cli for plain text interaction.')
+        raise RuntimeError('Terminal chat needs an interactive terminal; use --gui for the browser or session commands for non-interactive operation.')
 
 
 def run_screen(spec: dict) -> dict:

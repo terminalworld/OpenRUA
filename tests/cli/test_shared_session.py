@@ -61,10 +61,10 @@ def test_closed_session_records_remain_readable_without_service(tmp_path, capsys
     assert result["state"]["messages"][0]["text"] == "inspect"
 
 
-def test_serve_chat_and_down_share_one_resource_owner(tmp_path, monkeypatch, capsys):
+def test_serve_session_commands_and_down_share_one_resource_owner(tmp_path, monkeypatch, capsys):
     import asyncio
     from types import SimpleNamespace
-    from openrua.cli.commands import chat, serve
+    from openrua.cli.commands import session, serve
     from openrua.runner.managed import ManagedSession
     from openrua.sessions.store import SQLiteStore
     from tests.sessions.test_execution import setup, until
@@ -82,13 +82,15 @@ def test_serve_chat_and_down_share_one_resource_owner(tmp_path, monkeypatch, cap
         serving = asyncio.create_task(serve.serve(args))
         try:
             await until(lambda: (directory / "endpoint.json").exists())
-            chat_args = build_parser().parse_args(["--home", str(tmp_path), "chat", "--name", "shared", "inspect"])
-            chatting = asyncio.create_task(asyncio.to_thread(chat.run, chat_args))
+            send_args = build_parser().parse_args(["--home", str(tmp_path), "session", "--name", "shared", "send", "inspect"])
+            assert await asyncio.to_thread(session.run, send_args) == 0
             await until(lambda: bool(store.snapshot()["state"]["active"]))
             turn_id = store.snapshot()["state"]["active"]
             await native.frames.put({"kind": "text_delta", "turn_id": turn_id, "data": {"text": "inspection complete", "item_id": "reply"}})
             await native.frames.put({"kind": "turn_finished", "turn_id": turn_id, "data": {"status": "completed"}})
-            assert await asyncio.wait_for(chatting, 3) == 0
+            await until(lambda: store.snapshot()["state"]["messages"][0]["status"] == "completed")
+            events_args = build_parser().parse_args(["--home", str(tmp_path), "session", "--name", "shared", "events"])
+            assert await asyncio.to_thread(session.run, events_args) == 0
             assert stopped == [] and not serving.done()
             end_args = build_parser().parse_args(["--home", str(tmp_path), "down", "--name", "shared"])
             assert await asyncio.to_thread(down.run, end_args) == 0

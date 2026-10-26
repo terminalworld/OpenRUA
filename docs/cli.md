@@ -18,8 +18,8 @@ usage: openrua [-h] [--version] [--home HOME] [--robot ROBOT] [--sim SIM]
                ROS_DOMAIN] [--internet {open,model-only}] [--web-search |
                --no-web-search] [--account-connectors |
                --no-account-connectors] [--permissions MODE] [--model MODEL]
-               [--gui | --tui UI | --cli] [--port PORT] [--setup] [--resume
-               [ID]] [--all] <verb> ...
+               [--gui | --tui UI] [--port PORT] [--setup] [--resume [ID]]
+               [--all] <verb> ...
 
 Open a robot conversation, or use ``openrua <verb> ...``.
 
@@ -76,7 +76,6 @@ start or reconnect (without a subcommand):
                         configuration)
   --gui                 open the browser instead of terminal chat
   --tui UI              keyboard terminal frontend (default: pi, included)
-  --cli                 use plain text chat instead of the TUI
   --port PORT           local service port for a new session (default: a free
                         port)
   --setup               edit this project in the keyboard setup menu
@@ -98,7 +97,6 @@ start or reconnect (without a subcommand):
 | `up` | bring a robot up with a sandbox terminal on it |
 | `connect` | connect a real robot, your coding agent doing the work |
 | `serve` | own a robot and shared native conversation for local clients |
-| `chat` | chat with an existing shared agent, or reconnect to its events |
 | `session` | inspect, queue messages, pause/resume or end a shared session |
 | `agent` | your coding agent's own terminal, on a robot |
 | `down` | power a robot and its terminal off, retaining session files |
@@ -112,7 +110,7 @@ start or reconnect (without a subcommand):
 | `clean` | explicitly delete retained session files |
 | `doctor` | check the install: docker, images, simulator, login |
 
-Without a subcommand, an unnamed launch opens setup with a new session ID. An explicit name reconnects to the named shared session. `--gui` selects the browser, `--cli` plain chat, `--resume [ID]` selects history, and `--setup` edits the project settings. With no interface selected, non-interactive invocations print help.
+Without a subcommand, an unnamed launch opens setup with a new session ID. An explicit name reconnects to the named shared session. `--gui` selects the browser, `--resume [ID]` selects history, and `--setup` edits the project settings. With no interface selected, non-interactive invocations print help.
 
 ## openrua robots
 
@@ -524,26 +522,6 @@ options:
                         project workspace
   --distro {jazzy,humble}
                         with --connect: the connecting terminal's ROS 2
-```
-
-## openrua chat
-
-```
-usage: openrua chat [-h] [--name NAME] [--tui] [--follow] [--after AFTER]
-                    [message]
-
-Chat with a shared native agent; leaving this client does not end its session.
-
-positional arguments:
-  message        one message; omit for a conversation
-
-options:
-  -h, --help     show this help message and exit
-  --name NAME
-  --tui          open keyboard terminal chat (included in the default
-                 installation)
-  --follow       observe events without submitting anything
-  --after AFTER  event cursor for --follow (default: from the beginning)
 ```
 
 ## openrua session

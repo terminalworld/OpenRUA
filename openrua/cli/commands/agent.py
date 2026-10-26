@@ -173,7 +173,7 @@ def run(args) -> int:
     if args.name and (paths.sandbox_dir(args.name, args.home) / "endpoint.json").exists():
         raise UnavailableError(
             "this robot has a managed conversation; direct terminal input would bypass its queue",
-            hint=f"openrua chat --name {args.name}; use a separate up session for a native terminal")
+            hint=f"openrua --name {args.name}; use a separate up session for a native terminal")
     if args.name and state.path(args.name, args.home).is_file():
         name, owner = args.name, None
     elif args.name is None and (up := _running(args.home, Path(getattr(args, 'workspace', None) or Path.cwd()))):

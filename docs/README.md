@@ -16,7 +16,7 @@ For hardware, use [connect a real robot](connect.md).
 |---|---|
 | [docs/install.md](install.md) | setting a machine up: Docker, your agent's login, images, doctor |
 | [examples/first-task.md](../examples/first-task.md) | your first task on the simulated Panda: one recorded run with `exec`, and the agent's original terminal with `openrua agent` |
-| [examples/shared-session.md](../examples/shared-session.md) | TUI, browser and CLI chat, queue checks, reconnection, saved images and shutdown |
+| [examples/shared-session.md](../examples/shared-session.md) | Terminal and browser chat, queue checks, reconnection, saved images and shutdown |
 | [docs/terminal.md](terminal.md) | TUI shortcuts, expandable panels, and current limitations |
 | [docs/sessions.md](sessions.md) | shared-session operations, API, architecture and validation scope |
 | [docs/projects.md](projects.md) | persistent project files, workspace trust and project-scoped conversations |

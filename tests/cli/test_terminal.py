@@ -3,12 +3,16 @@
 import subprocess
 import sys
 
+import pytest
+
 from openrua.cli import main
 
 
-def test_tui_rejects_plain_chat_flags_before_connecting(capsys):
-    assert main(["chat", "--tui", "--follow"]) == 2
-    assert "cannot be combined" in capsys.readouterr().err
+@pytest.mark.parametrize('argv', [['--cli'], ['chat'], ['chat', '--tui']])
+def test_removed_plain_chat_entry_points_are_rejected(argv):
+    with pytest.raises(SystemExit) as exc:
+        main(argv)
+    assert exc.value.code == 2
 
 
 def test_missing_tui_dependency_has_an_actionable_repair_error():
@@ -27,7 +31,7 @@ assert main(["--version"]) is None
     result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     result = subprocess.run([sys.executable, "-c", code.replace('assert main(["--version"]) is None',
-                            'raise SystemExit(main(["chat", "--tui"]))')], capture_output=True, text=True)
+                            'raise SystemExit(main(["--resume", "running"]))')], capture_output=True, text=True)
     assert result.returncode == 69
     assert "pip install -U openrua" in result.stderr
     assert "Traceback" not in result.stderr

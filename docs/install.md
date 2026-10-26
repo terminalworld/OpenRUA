@@ -44,7 +44,7 @@ openrua --version
 The default install includes the terminal UI. Run `openrua` to configure and
 start a new shared session with an automatic ID. Use `openrua --resume` to find
 a previous conversation, or `/resume` inside the TUI. Use
-`openrua --gui` for the browser and `openrua --cli` for plain text chat.
+`openrua --gui` for the browser.
 Guided setup saves the environment selection in the project's
 `.openrua/settings.json`. See [robot projects](projects.md) for settings and file locations.
 See [Your first shared robot session](../examples/shared-session.md) for a full
@@ -115,7 +115,7 @@ route out and, for a simulated robot, the simulator's only route out too.
 See [what the agent can reach](#what-the-agent-can-reach).
 
 **Save project and start** in the product TUI automatically builds missing
-images for the selected environment and agent. Root `--cli` and `--gui` launches
+images for the selected environment and agent. `openrua --gui` launches
 prepare them too. Browsing options or choosing **Save project settings and check setup**
 never builds.
 First-time simulation builds can download large datasets. Progress is displayed,
@@ -390,8 +390,7 @@ The fullscreen update page offers **Update now**, **Continue with current
 version**, and **Skip this version**. Progress is compact; **L** reveals live
 logs, and **View update log** opens the retained output after completion or
 failure. Retrying requires an explicit selection. Optional failures allow the
-current version; an unsupported CLI still requires an update or exit. Plain CLI
-entry points retain their text interaction. Noninteractive commands print a
+current version; an unsupported CLI still requires an update or exit. Browser launches retain text update prompts in the invoking terminal. Noninteractive commands print a
 notice and never update automatically. Pinned plugins are not offered a newer,
 unvalidated release.
 
