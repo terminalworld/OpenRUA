@@ -1,6 +1,6 @@
 <div align="center">
 
-<h1>Vibe Roboting with&nbsp;<picture><source media="(prefers-color-scheme: dark)" srcset="docs/media/terminal-dark.svg"><source media="(prefers-color-scheme: light)" srcset="docs/media/terminal-light.svg"><img src="docs/media/terminal-light.svg" width="28" height="24" alt=""></picture>&nbsp;OpenRUA</h1>
+<h1>Vibe Roboting with&nbsp;<picture><source media="(prefers-color-scheme: dark)" srcset="docs/media/terminal-dark.svg"><source media="(prefers-color-scheme: light)" srcset="docs/media/terminal-light.svg"><img src="docs/media/terminal-light.svg" width="32" height="24" alt=""></picture>&nbsp;OpenRUA</h1>
 
 **Let Your Claude Code or Codex Control Any Robot, Real or Simulated**
 
