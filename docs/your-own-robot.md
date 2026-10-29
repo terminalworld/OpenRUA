@@ -54,7 +54,8 @@ The draft preserves this ROS distribution. Probing requires the matching sandbox
 image and access to the ROS graph; it does not require a model login or the
 OpenRUA proxy. The selected domain is used for this probe; pass it again when
 starting a session. With `--name`, the probe reuses the existing sandbox and
-leaves the deployment distribution as a TODO to review in the draft.
+preserves the ROS distribution and discovery settings from that session's saved
+configuration.
 A failed topic, action or service query stops the probe and reports the native
 error instead of producing a profile from incomplete query results. A missing
 robot description is optional: the draft leaves joint and frame facts for you

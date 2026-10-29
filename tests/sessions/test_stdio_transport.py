@@ -38,6 +38,39 @@ print('{"kind": "finished"}', flush=True)
     asyncio.run(run())
 
 
+@pytest.mark.parametrize('valid_utf8', [True, False])
+def test_split_utf8_is_decoded_or_retained_without_losing_the_next_frame(tmp_path, valid_utf8):
+    expected = {'output': 'caf\u00e9 \U0001f916'}
+    raw = json.dumps(expected, ensure_ascii=False).encode() if valid_utf8 else b'{"output":"\xff"}'
+    program = '''
+import sys, time
+for byte in bytes.fromhex(sys.argv[1]):
+    sys.stdout.buffer.write(bytes([byte]))
+    sys.stdout.buffer.flush()
+    time.sleep(0.001)
+sys.stdout.buffer.write(b'\\n \\r\\n{"kind":"finished"}\\n')
+'''
+
+    async def run():
+        transport = await StdioTransport.start(
+            [sys.executable, '-u', '-c', program, raw.hex()], tmp_path / 'agent.log',
+            buffer_bytes=1)
+        try:
+            if valid_utf8:
+                assert await asyncio.wait_for(transport.read(), 10) == expected
+                assert not transport.invalid_output.exists()
+            else:
+                with pytest.raises(ValueError, match='not a JSON object'):
+                    await asyncio.wait_for(transport.read(), 10)
+                assert transport.invalid_output.read_bytes() == raw + b'\n'
+                assert transport.invalid_output.stat().st_mode & 0o777 == 0o600
+            assert await transport.read() == {'kind': 'finished'}
+            assert await transport.read() is None
+        finally:
+            await transport.close()
+    asyncio.run(run())
+
+
 @pytest.mark.parametrize('valid', [True, False])
 def test_large_last_frame_at_eof_is_decoded_or_retained(tmp_path, valid):
     size = 5 * 1024 * 1024

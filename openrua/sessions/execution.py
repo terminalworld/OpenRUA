@@ -10,9 +10,7 @@ import asyncio
 import fcntl
 import json
 import os
-import shutil
 import signal
-import tempfile
 from pathlib import Path
 from typing import Awaitable, Callable, Protocol
 
@@ -51,43 +49,38 @@ class StdioTransport:
     async def read(self) -> dict | None:
         while True:
             # The pipe limit bounds buffered chunks, not native message size.
-            # Spill unfinished large messages to disk while waiting for the
-            # delimiter. Decoding still needs one complete JSON object.
-            with tempfile.SpooledTemporaryFile(max_size=self.buffer_bytes) as raw:
-                nonblank = False
-                while True:
-                    complete = True
-                    try:
-                        chunk = await self.process.stdout.readuntil(b'\n')
-                    except asyncio.LimitOverrunError as exc:
-                        chunk = await self.process.stdout.readexactly(exc.consumed)
-                        complete = False
-                    except asyncio.IncompleteReadError as exc:
-                        chunk = exc.partial
-                        if not chunk and not raw.tell():
-                            return None
-                    raw.write(chunk)
-                    nonblank = nonblank or bool(chunk.strip())
-                    if complete:
-                        break
-                if not nonblank:
-                    continue
-                raw.seek(0)
+            # Decode only complete messages, preserving split UTF-8 sequences.
+            raw = bytearray()
+            while True:
+                complete = True
                 try:
-                    frame = json.load(raw)
-                    if isinstance(frame, dict):
-                        return frame
-                except (ValueError, UnicodeError):
-                    pass
-                where = 'the native process output'
-                if self.invalid_output is not None:
-                    fd = os.open(self.invalid_output, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
-                    raw.seek(0)
-                    with os.fdopen(fd, 'ab') as stream:
-                        shutil.copyfileobj(raw, stream, self.buffer_bytes)
-                    where = str(self.invalid_output)
-                raise ValueError(f'The agent returned a response that is not a JSON object. OpenRUA cannot read it. Check {where}. '
-                                 'The agent is disconnected. Use /resume in the terminal to reopen this conversation.')
+                    chunk = await self.process.stdout.readuntil(b'\n')
+                except asyncio.LimitOverrunError as exc:
+                    chunk = await self.process.stdout.readexactly(exc.consumed)
+                    complete = False
+                except asyncio.IncompleteReadError as exc:
+                    chunk = exc.partial
+                    if not chunk and not raw:
+                        return None
+                raw.extend(chunk)
+                if complete:
+                    break
+            if raw.isspace():
+                continue
+            try:
+                frame = json.loads(raw)
+                if isinstance(frame, dict):
+                    return frame
+            except (ValueError, UnicodeError):
+                pass
+            where = 'the native process output'
+            if self.invalid_output is not None:
+                fd = os.open(self.invalid_output, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+                with os.fdopen(fd, 'ab') as stream:
+                    stream.write(raw)
+                where = str(self.invalid_output)
+            raise ValueError(f'The agent returned a response that is not a JSON object. OpenRUA cannot read it. Check {where}. '
+                             'The agent is disconnected. Use /resume in the terminal to reopen this conversation.')
 
     async def write(self, frame: dict) -> None:
         self.process.stdin.write((json.dumps(frame, ensure_ascii=False) + "\n").encode())
