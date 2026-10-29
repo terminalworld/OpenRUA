@@ -26,7 +26,10 @@ are offered when needed.
 
 Before opening the connecting terminal, OpenRUA builds its sandbox image if
 missing, using your selected agent and ROS distro (`--distro jazzy` by default,
-or `--distro humble`). Build output is shown as it runs; failure logs remain
+or `--distro humble`). When started from the setup screen, preparation and
+startup use a compact stage display; **L** shows the detailed output. The
+direct `openrua connect` command prints preparation output before opening chat.
+Failure logs remain
 under `~/.openrua/preparation/`. Retry the same command or menu entry after
 fixing a build error; completed images are reused. No robot configuration is
 needed for this initial preparation.
@@ -96,7 +99,11 @@ This opens a session whose terminal reaches what connecting a robot
 needs: this computer's docker, its network (the robot's controller and
 ROS 2 graph) and its devices (read-only, under `/host/dev`), working in
 the coding project. The initial message names the adaptation directory. An
-existing project continues from its maintained files. Your coding agent finds
+existing project continues from its maintained files. The agent first reads
+existing adaptation and connection notes, reuses matching drivers and launch
+scripts, and checks what is available on this computer. It asks for missing
+facts needed for the next step or a specific action you need to take, while
+continuing work it can do independently. For new or changed hardware, it finds
 out what the robot is, builds and starts its ROS 2 drivers and writes
 the robot's config, as an engineer would with you beside the robot. It
 asks you for what only a person can do (power, brakes, the vendor's web
@@ -121,6 +128,10 @@ is (`openrua --robot <folder>/robot.yaml`).
 The agent runs `python3 /openrua-connect/check.py <step>` in its
 terminal; OpenRUA runs the check on this computer and prints the result.
 The terminal's status line shows each step's last result.
+While connection setup is unfinished, **Ready to chat** means the agent is
+available for your next message. The separate setup note and check results
+show that the robot is not yet ready. A pending question is shown alongside
+ongoing work, or as **Waiting for your response** when the agent is idle.
 
 | Step | Check |
 |---|---|

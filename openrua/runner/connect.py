@@ -36,6 +36,7 @@ from openrua.runner import live_state as state
 from openrua.runner.bringup import host_network_dds
 from openrua.runner.live import LiveRobot, RobotRequest, check_agent_cli, open_robot
 from openrua.runner.preflight import run_preflight
+from openrua.runner.startup import phase
 from openrua.sandbox.down import down as sandbox_down
 from openrua.sandbox.up import up as sandbox_up
 from openrua.sandbox.check import cli_ready
@@ -154,9 +155,10 @@ def open_connect(request: ConnectRequest, continuing: bool = False) -> LiveRobot
     root = request.project.expanduser().resolve()
     if not folder.is_relative_to(root):
         raise UsageError('robot adaptation files must be inside the project')
-    project_files.initialize(root)
-    scaffold(folder)
-    check_directory(request)
+    with phase('Preparing project files'):
+        project_files.initialize(root)
+        scaffold(folder)
+        check_directory(request)
     adapter, selected, model, user = _agent(request)
     permissions = request.permissions or adapter.default_permissions
     if permissions is not None and permissions not in adapter.permission_modes:
@@ -173,39 +175,42 @@ def open_connect(request: ConnectRequest, continuing: bool = False) -> LiveRobot
                                hint="install docker and add this account to its group")
     session_dir = paths.sandbox_dir(request.name, request.home)
     limits = Limits().model_dump()
-    if continuing:
-        # Prepared already: preparing again would replace the profile, and
-        # with it the conversation's native record.
-        profile_mounts = tuple(state.load(request.name, request.home,
-                                          require_running=False)["mounts"])
-    else:
-        state.reserve(request.name, request.home)
-        if key_file is not None:
-            profile = adapter.prepare_api_profile(key_file, session_dir / "profile", limits=limits)
+    with phase('Preparing agent settings'):
+        if continuing:
+            # Prepared already: preparing again would replace the profile, and
+            # with it the conversation's native record.
+            profile_mounts = tuple(state.load(request.name, request.home,
+                                              require_running=False)["mounts"])
         else:
-            creds_home = agents.resolve_profile(adapter, selected.get("credentials_dir"),
-                                                paths.credentials_dir(request.home) / adapter.name,
-                                                user_home=Path.home(), environment=os.environ,
-                                                link=True)
-            profile = adapter.prepare_profile(creds_home, session_dir / "profile", limits=limits)
-        profile_mounts = profile.mounts
+            state.reserve(request.name, request.home)
+            if key_file is not None:
+                profile = adapter.prepare_api_profile(key_file, session_dir / "profile", limits=limits)
+            else:
+                creds_home = agents.resolve_profile(adapter, selected.get("credentials_dir"),
+                                                    paths.credentials_dir(request.home) / adapter.name,
+                                                    user_home=Path.home(), environment=os.environ,
+                                                    link=True)
+                profile = adapter.prepare_profile(creds_home, session_dir / "profile", limits=limits)
+            profile_mounts = profile.mounts
     service = session_dir / "connect"
     _service_files(service)
     _, sandbox_name = state.container_names(request.name)
     dds_profile, dds_env = host_network_dds(request.distro, [])
     print(f"[connect] terminal {sandbox_name}, working in project {root}", flush=True)
-    sandbox_up({"machine": {"workspace_template": None}}, root,
-               image=sandbox_image(request.distro), network="host", internet="open",
-               name=sandbox_name, seed_workspace=False, ros_domain=0,
-               peers_xml=dds_profile, env=dds_env,
-               mounts=(*profile_mounts, f"{root}:{root}",
-                       f"{socket}:{socket}", f"{Path(docker_cli).resolve()}:/usr/local/bin/docker:ro",
-                       "/dev:/host/dev:ro", f"{service}:/openrua-connect:ro"),
-               run_args=("--group-add", str(socket.stat().st_gid),
-                         *user.sandbox.run_args))
+    with phase('Starting the agent container'):
+        sandbox_up({"machine": {"workspace_template": None}}, root,
+                   image=sandbox_image(request.distro), network="host", internet="open",
+                   name=sandbox_name, seed_workspace=False, ros_domain=0,
+                   peers_xml=dds_profile, env=dds_env,
+                   mounts=(*profile_mounts, f"{root}:{root}",
+                           f"{socket}:{socket}", f"{Path(docker_cli).resolve()}:/usr/local/bin/docker:ro",
+                           "/dev:/host/dev:ro", f"{service}:/openrua-connect:ro"),
+                   run_args=("--group-add", str(socket.stat().st_gid),
+                             *user.sandbox.run_args))
     try:
-        check_agent_cli(sandbox_name, adapter, {"sandbox_image": sandbox_image(request.distro),
-                                                "ros_distro": request.distro}, "")
+        with phase('Checking agent tools'):
+            check_agent_cli(sandbox_name, adapter, {"sandbox_image": sandbox_image(request.distro),
+                                                    "ros_distro": request.distro}, "")
     except BaseException:
         sandbox_down(sandbox_name)
         raise
@@ -237,7 +242,11 @@ def opening_message(folder: Path, host: str, project: Path) -> str:
             f"({project} on the host). Maintain its adaptation files in /workspace/{relative}. "
             f"Read /workspace/{relative}/CONNECT.md for the steps and files to "
             "write and how each step is checked. This computer, as OpenRUA found it:\n" + host +
-            "\nStart with what the robot is: ask me what you cannot find out yourself.")
+            "\nStart by reading this project's existing adaptation and connection notes. "
+            "Reuse its drivers, launch commands and checks where they match the current robot. "
+            "Continue what you can investigate or prepare independently; ask me only for "
+            "missing facts needed for the next step or specific actions I need to take. "
+            "Get my confirmation before the first robot motion.")
 
 
 class Checks:
@@ -459,6 +468,11 @@ class ConnectFlow:
             self._move = True
         return result
 
+    def prepare(self) -> None:
+        """Record the initial check before clients can discover this session."""
+        self._host_run = uuid.uuid4().hex
+        self.owned.execution.session.checked("host", "running", "", self._host_run)
+
     async def begin(self, server) -> None:
         """Tell the sandbox where to ask, check this computer, and open
         the conversation."""
@@ -466,10 +480,11 @@ class ConnectFlow:
         endpoint = paths.sandbox_dir(self.request.name, self.request.home) / "connect" / "endpoint.json"
         endpoint.write_text(json.dumps({"url": server.url, "token": server.token}))
         endpoint.chmod(0o600)
-        ok, text = host_report()
+        with phase('Checking this computer'):
+            ok, text = host_report()
         (check_directory(self.request) / 'host.log').write_text(text + '\n')
         self.owned.execution.session.checked("host", "passed" if ok else "failed", text,
-                                              uuid.uuid4().hex)
+                                              self._host_run)
         await self.owned.execution.command("enqueue", client_id="openrua",
                                            request_id=uuid.uuid4().hex,
                                            text=opening_message(self.folder, text, self.request.project.resolve()))

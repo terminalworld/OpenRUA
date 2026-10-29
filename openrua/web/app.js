@@ -299,15 +299,19 @@ function render() {
   if (!state) return;
   const queued = state.messages.filter((m) => m.status === "queued"),
     unknown = state.messages.filter((m) => m.status === "unknown");
+  const { head, notes } = status(state);
+  const setup = notes.find(note => note.kind === 'setup');
   const label = state.closed
     ? "Ended"
     : state.paused
       ? "Paused"
-      : state.active
-        ? "Working"
-        : state.connected
-          ? (state.robot && state.robot.status !== 'ready' ? 'Ready to chat' : 'Ready')
-          : "Starting";
+      : head.kind === 'waiting'
+        ? head.text
+        : state.active
+          ? "Working"
+          : state.connected
+            ? head.text
+            : "Starting";
   $("state").textContent = label;
   $("summary").textContent =
     `${state.messages.length} message${state.messages.length === 1 ? '' : 's'} · ${queued.length} waiting · ${label.toLowerCase()}`;
@@ -316,14 +320,17 @@ function render() {
     : state.robot && state.robot.status !== 'ready'
       ? `Robot ${state.robot.status}: ${state.robot.reason}. You can keep chatting to check the problem and fix it. Earlier instructions are saved and will wait for your review before they can be sent.`
       : state.paused
-      ? `Paused${state.pause_reason ? `: ${state.pause_reason}` : ""}. Your waiting messages are saved. Check them before continuing.`
-      : state.active
-        ? "The agent is working. New messages join its current response when supported. Otherwise, they wait."
-        : state.connected
-          ? "Ready for your next instruction."
-          : "Connecting to the agent…";
+        ? `Paused${state.pause_reason ? `: ${state.pause_reason}` : ""}. Your waiting messages are saved. Check them before continuing.`
+        : head.kind === 'waiting'
+          ? "The agent has a question for you. Answer it below."
+          : state.active
+            ? "The agent is working. New messages join its current response when supported. Otherwise, they wait."
+            : state.connected
+              ? setup
+                ? `${setup.text}. You can keep chatting to finish the connection.`
+                : "Ready for your next instruction."
+              : "Connecting to the agent…";
   // The same notes the terminal's status line shows.
-  const { notes } = status(state);
   if (state.active && lastEvent && Date.now() - lastEvent > 60000)
     notes.splice(1, 0, {
       tone: "warn",

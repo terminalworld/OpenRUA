@@ -63,6 +63,20 @@ For a real robot, run `openrua connect` here. Its `robot.yaml`, `driver/` and
 through later robot work. `--dir robot` selects a subdirectory inside the
 project. See [connect](connect.md).
 
+If you already have a complete `robot.yaml` and its driver files, choose
+**Real robot → Use a project configuration** and select that file. You can
+also save the selection explicitly:
+
+```sh
+openrua config set --robot ./robot.yaml
+openrua
+```
+
+Keep the configuration, drivers, camera files and `.openrua/settings.json`
+together when moving a project. Use Git or an archive tool that preserves
+executable permissions. A folder containing only adaptation files needs its
+configuration selected once; a complete project already remembers that choice.
+
 Copying the project preserves maintained inputs. A new machine still needs
 the declared software dependencies, authentication and its own workspace
 trust. Session history remains local to OpenRUA's user directory.

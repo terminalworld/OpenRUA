@@ -24,6 +24,7 @@ from openrua.robot.cameras import camera_topics
 from openrua.runner import live_state as state
 from openrua.runner.motion import cancel_motion, motion_actions
 from openrua.runner.record import session_provenance
+from openrua.runner.startup import phase
 from openrua.runner.bringup import (agent_proxy_url, bring_up, ensure_internal_network,
                                     internet_access, start_episode, prepare_sandbox)
 from openrua.sandbox.down import down as sandbox_down
@@ -195,40 +196,43 @@ def open_robot(request: RobotRequest, *, interactive: bool = False, resolved=Non
     if request.project is None:
         workdir.mkdir(parents=True, exist_ok=True)
     limits = Limits(**(request.limits or {})).model_dump()
-    network = ensure_internal_network()
-    # A proxy only when the agent may reach no more than its model
-    # service; otherwise the sandbox goes out directly.
-    proxy_url = (ensure_proxy(network, "\n".join(adapter.whitelist))
-                 if limits["internet"] == "model-only" else "")
+    with phase('Preparing Docker networking'):
+        network = ensure_internal_network()
+        # A proxy only when the agent may reach no more than its model
+        # service; otherwise the sandbox goes out directly.
+        proxy_url = (ensure_proxy(network, "\n".join(adapter.whitelist))
+                     if limits["internet"] == "model-only" else "")
     # cfg["agent"] is already the chosen agent's (compose took --agent):
     # its model, version, login directory and options are that agent's.
     model = request.model or cfg_agent.get("model") or adapter.default_model
-    if previous is not None:
-        # Prepared already; preparing again would replace it, and with it
-        # the conversation's native record.
-        mounts = tuple(previous["mounts"])
-    elif key_file is not None:
-        print(f"[up] {adapter.name}: explicitly selected API authentication", flush=True)
-        profile = adapter.prepare_api_profile(key_file, sandbox_dir / "profile", limits=limits)
-    else:
-        creds_home = agents.resolve_profile(adapter, cfg_agent.get('credentials_dir'),
-                                            paths.credentials_dir(request.home) / adapter.name,
-                                            user_home=Path.home(), environment=os.environ, link=True)
-        print(f"[up] {adapter.name} native login: {creds_home} (source: {creds_home.resolve()})", flush=True)
-        profile = adapter.prepare_profile(creds_home, sandbox_dir / "profile", limits=limits)
-    if previous is None:
-        mounts = profile.mounts
+    with phase('Preparing agent settings'):
+        if previous is not None:
+            # Prepared already; preparing again would replace it, and with it
+            # the conversation's native record.
+            mounts = tuple(previous["mounts"])
+        elif key_file is not None:
+            print(f"[up] {adapter.name}: explicitly selected API authentication", flush=True)
+            profile = adapter.prepare_api_profile(key_file, sandbox_dir / "profile", limits=limits)
+        else:
+            creds_home = agents.resolve_profile(adapter, cfg_agent.get('credentials_dir'),
+                                                paths.credentials_dir(request.home) / adapter.name,
+                                                user_home=Path.home(), environment=os.environ, link=True)
+            print(f"[up] {adapter.name} native login: {creds_home} (source: {creds_home.resolve()})", flush=True)
+            profile = adapter.prepare_profile(creds_home, sandbox_dir / "profile", limits=limits)
+        if previous is None:
+            mounts = profile.mounts
     project_root = request.project.expanduser().resolve() if request.project is not None else None
     if project_root is not None:
-        materials = sandbox_dir / "robot-materials"
-        project.prepare(cfg, project_root, materials)
-        from openrua.runner.skills import prepare as prepare_skills
-        skill_mounts = prepare_skills(project_root, request.home, adapter, materials)
-        workdir = project.run_directory(project_root, request.name)
-        mounts = (*(m for m in mounts if not m.endswith(":/robot:ro")), f"{materials}:/robot:ro")
-        if skill_mounts:
-            destinations = {mount.split(':')[1] for mount in skill_mounts}
-            mounts = (*(mount for mount in mounts if mount.split(':')[1] not in destinations), *skill_mounts)
+        with phase('Preparing project files'):
+            materials = sandbox_dir / "robot-materials"
+            project.prepare(cfg, project_root, materials)
+            from openrua.runner.skills import prepare as prepare_skills
+            skill_mounts = prepare_skills(project_root, request.home, adapter, materials)
+            workdir = project.run_directory(project_root, request.name)
+            mounts = (*(m for m in mounts if not m.endswith(":/robot:ro")), f"{materials}:/robot:ro")
+            if skill_mounts:
+                destinations = {mount.split(':')[1] for mount in skill_mounts}
+                mounts = (*(mount for mount in mounts if mount.split(':')[1] not in destinations), *skill_mounts)
     if interactive:
         from openrua.runner.robot_client import prepare_client, guide
         service = sandbox_dir / 'maintenance'
@@ -249,10 +253,11 @@ def open_robot(request: RobotRequest, *, interactive: bool = False, resolved=Non
     try:
         if interactive:
             from openrua.runner.connection import Connection
-            config_path, domain = prepare_sandbox(
-                cfg, workdir, sim_name, sandbox_name, network, internet_access(proxy_url),
-                mounts, request.ros_domain,
-                **({"workspace": project_root, "seed_workspace": False} if project_root is not None else {}))
+            with phase('Starting the agent container'):
+                config_path, domain = prepare_sandbox(
+                    cfg, workdir, sim_name, sandbox_name, network, internet_access(proxy_url),
+                    mounts, request.ros_domain,
+                    **({"workspace": project_root, "seed_workspace": False} if project_root is not None else {}))
             chosen = cfg_agent['name'] + ('@' + adapter.version if adapter.version else '')
             connection = Connection(replace(request, agent=chosen, model=model, project=project_root,
                                             robot=None if composed.robot.startswith('(') else composed.robot,
@@ -275,8 +280,9 @@ def open_robot(request: RobotRequest, *, interactive: bool = False, resolved=Non
                                hint=f"read {workdir / 'robot.log'}") from e
 
     try:
-        cli_version = check_agent_cli(sandbox_name, adapter, cfg["machine"]["backend"],
-                                      composed.robot)
+        with phase('Checking agent tools'):
+            cli_version = check_agent_cli(sandbox_name, adapter, cfg["machine"]["backend"],
+                                          composed.robot)
         (sandbox_dir / "provenance.json").write_text(json.dumps(
             session_provenance(_robot_file(composed.robot), cfg, paths.code_root(),
                                agent_cli={"name": adapter.name, "version": cli_version},

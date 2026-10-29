@@ -166,6 +166,95 @@ def test_aborted_service_with_failed_shutdown_keeps_deletion_guard(tmp_path, mon
     asyncio.run(run())
 
 
+@pytest.mark.parametrize('outcome', ['repair', 'begin_failure', 'shutdown_failure'])
+def test_connect_service_publishes_initial_check_and_preserves_shutdown_guard(tmp_path, monkeypatch, outcome):
+    import asyncio
+    from types import SimpleNamespace
+    from openrua.cli import skill_scheduler
+    from openrua.cli.commands import serve
+    from openrua.runner import connect
+    from openrua.runner.managed import ManagedSession
+    from openrua.sessions.client import Client
+    from openrua.sessions.store import SQLiteStore
+    from tests.sessions.test_execution import setup, until
+
+    async def run():
+        directory = tmp_path / 'sandboxes/connecting'
+        store, core, native, execution = await setup(directory)
+        (directory / 'connect').mkdir()
+        project = tmp_path / 'project'
+        project.mkdir()
+        connect.state.save('connecting', tmp_path, agent_spec='fixture')
+        public_endpoint = directory / 'endpoint.json'
+        stopped, order = [], []
+
+        def power_off():
+            stopped.append(True)
+            if outcome == 'shutdown_failure':
+                raise RuntimeError('driver shutdown unconfirmed')
+
+        owned = ManagedSession(SimpleNamespace(power_off=power_off), execution, store,
+                               name='connecting', home=tmp_path)
+
+        async def start(request, **kwargs):
+            return owned
+
+        write = serve.write_endpoint
+
+        def publish(*args):
+            assert store.snapshot()['state']['checks']['host']['status'] == 'running'
+            order.append('publish')
+            write(*args)
+
+        def report():
+            assert public_endpoint.exists()
+            assert (directory / 'connect/endpoint.json').exists()
+            order.append('report')
+            if outcome != 'repair':
+                raise RuntimeError('host inspection failed')
+            return False, 'A host setting needs repair.'
+
+        monkeypatch.setattr(skill_scheduler, 'autostart', lambda home: None)
+        monkeypatch.setattr(serve.managed, 'start', start)
+        monkeypatch.setattr(serve, 'write_endpoint', publish)
+        monkeypatch.setattr(connect, 'host_report', report)
+        args = build_parser().parse_args([
+            '--home', str(tmp_path), 'serve', '--name', 'connecting',
+            '--connect', str(project), '--workspace', str(project)])
+        serving = asyncio.create_task(serve.serve(args))
+        try:
+            if outcome == 'repair':
+                await until(lambda: public_endpoint.exists())
+                assert store.snapshot()['state']['checks']['host']['status'] == 'failed'
+                endpoint_data = json.loads(public_endpoint.read_text())
+                client = Client(endpoint_data['url'], endpoint_data['token'])
+                await asyncio.to_thread(client.end)
+                await asyncio.wait_for(serving, 3)
+            else:
+                expected = 'driver shutdown unconfirmed' if outcome == 'shutdown_failure' else 'host inspection failed'
+                with pytest.raises((RuntimeError, UnavailableError), match=expected):
+                    await serving
+            assert order == ['publish', 'report']
+            assert stopped == [True]
+            assert public_endpoint.exists() == (outcome == 'shutdown_failure')
+            if outcome == 'shutdown_failure':
+                selected = build_parser().parse_args([
+                    '--home', str(tmp_path), 'clean', '--name', 'connecting', '--all'])
+                with pytest.raises(UnavailableError, match='files kept'):
+                    clean.run(selected)
+            retained = SQLiteStore.open_readonly(directory / 'session.sqlite')
+            try:
+                assert retained.snapshot()['state']['closed'] == (outcome != 'shutdown_failure')
+            finally:
+                retained.close()
+        finally:
+            if not serving.done():
+                serving.cancel()
+            await asyncio.gather(serving, return_exceptions=True)
+            await execution.close()
+    asyncio.run(run())
+
+
 @pytest.mark.parametrize("no_open", [True, False])
 def test_web_opens_only_local_url_and_explicitly_shows_token(tmp_path, monkeypatch, capsys, no_open):
     from openrua.cli.commands import session

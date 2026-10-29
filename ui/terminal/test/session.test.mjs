@@ -1237,6 +1237,39 @@ test('a failed startup is compact once while an independent build failure stays 
   assert.ok(status(state).notes.some(note => note.text === 'build: failed · /robot'));
 });
 
+test('connection checks do not imply the robot is ready', async () => {
+  const {status} = await import('../src/session.mjs');
+  const state = {connected: true, messages: [], requests: {}, checks: {host: {status: 'passed'}}};
+  assert.equal(status(state).head.text, 'Ready to chat');
+  assert.equal(status(state).head.tone, 'plain');
+  assert.equal(status(state).notes.find(note => note.kind === 'setup').text, 'Robot setup is not finished');
+  state.active = 'connect';
+  assert.equal(status(state).head.kind, 'working');
+  state.checks.drivers = {status: 'failed'};
+  assert.equal(status(state).notes.find(note => note.kind === 'setup').text, 'Robot setup needs attention');
+  assert.equal(status(state).notes.find(note => note.kind === 'setup').tone, 'warn');
+  state.active = null;
+  state.robot = {status: 'ready'};
+  assert.equal(status(state).head.text, 'Ready');
+  assert.equal(status(state).head.tone, 'good');
+  assert.ok(!status(state).notes.some(note => note.kind === 'setup'));
+});
+
+test('an asynchronous question shows waiting only when the agent is idle', async () => {
+  const {status} = await import('../src/session.mjs');
+  const state = {connected: true, messages: [], active: 'connect', checks: {host: {status: 'passed'}},
+    requests: {power: {status: 'pending', reply_as_message: true}}};
+  assert.equal(status(state).head.kind, 'working');
+  state.active = null;
+  assert.equal(status(state).head.text, 'Waiting for your response');
+  state.requests.power.status = 'answered';
+  assert.equal(status(state).head.text, 'Ready to chat');
+  state.paused = true;
+  assert.equal(status(state).head.kind, 'paused');
+  state.closed = true;
+  assert.equal(status(state).head.kind, 'closed');
+});
+
 test('native setting synchronization does not create action confirmations', () => {
   const chat = new Chat({readOnly: false}, {terminal: new Terminal()});
   const notices = []; chat.say = text => notices.push(text);
