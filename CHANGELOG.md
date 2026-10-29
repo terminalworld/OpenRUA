@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.31.2
+
 - Probe real robots using the project's discovery settings, ROS distribution
   and sandbox image. Query the selected ROS graph directly instead of reusing
   another connection's CLI daemon, including during startup checks. Keep a
