@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.31.3
+
 - Show the actual startup stage in the compact terminal progress view,
   including Docker checks, container startup and the agent connection.
   Keep detailed output behind **L** and retain phase timings in the service log.
