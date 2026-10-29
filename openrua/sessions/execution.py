@@ -87,7 +87,7 @@ class StdioTransport:
                         shutil.copyfileobj(raw, stream, self.buffer_bytes)
                     where = str(self.invalid_output)
                 raise ValueError(f'The agent returned a response that is not a JSON object. OpenRUA cannot read it. Check {where}. '
-                                 'The agent is not connected. /continue cannot reconnect it.')
+                                 'The agent is disconnected. Use /resume in the terminal to reopen this conversation.')
 
     async def write(self, frame: dict) -> None:
         self.process.stdin.write((json.dumps(frame, ensure_ascii=False) + "\n").encode())

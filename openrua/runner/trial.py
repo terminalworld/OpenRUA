@@ -320,14 +320,25 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     except BaseException:
         held.release()
         raise
-    secrets = record.secret_strings(creds_home) if creds_home is not None else []
-    if profile.read_secrets is not None:
-        secrets += profile.read_secrets()
-    if token_file:
-        # The token never reaches the record: it is as much a secret as
-        # anything in the credentials file, and the agent can print its
-        # own environment.
-        secrets += record.secret_strings_from_env_file(Path(token_file))
+    secrets = []
+
+    def read_secrets() -> None:
+        try:
+            secrets.extend(record.secret_strings(creds_home, strict=True) if creds_home is not None else [])
+            if profile.read_secrets is not None:
+                secrets.extend(profile.read_secrets())
+            if token_file:
+                secrets.extend(record.secret_strings_from_env_file(Path(token_file), strict=True))
+        except Exception:  # noqa: BLE001; credential errors can themselves contain secrets
+            raise RuntimeError(
+                'Could not read current credentials for redaction. No new result data was saved. '
+                'Any earlier result and the profile are retained.') from None
+
+    try:
+        read_secrets()
+    except BaseException:
+        held.release()
+        raise
     # Container construction inside the try: a failure after the sandbox
     # is up must still write result.json and tear the sandbox down, not
     # orphan it and kill the rest of the invocation's queue.
@@ -337,14 +348,13 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     op_meta = None
     real = cfg.get("machine", {}).get("backend", {}).get("kind") == "real"
 
-    def read_secrets() -> None:
-        secrets.extend(record.secret_strings(creds_home) if creds_home is not None else [])
-        if profile.read_secrets is not None:
-            secrets.extend(profile.read_secrets())
-
-    def persist() -> None:
+    def persist(*, refresh_secrets: bool = True) -> None:
         # Each snapshot states how far the runner got; later scoring or
         # cleanup replaces it without discarding the execution outcome.
+        # Exceptions can contain a token refreshed just before the failure.
+        # Refuse a new snapshot if its redaction inputs cannot be read.
+        if refresh_secrets:
+            read_secrets()
         rec["wall_seconds"] = round(time.time() - t0, 1)
         record.write_result(trial_dir, record.scrub_value(rec, secrets))
 
@@ -427,9 +437,6 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         rec["agent_final_message"] = last_words(trial_dir / "transcript.jsonl", agent)
         if judge is not None and not scored:
             rec["verdict"] = "pending"
-        # Credentials can rotate during the task. The first completed
-        # snapshot is scrubbed before it can survive an interrupted verdict.
-        read_secrets()
         persist()
         with held_interrupts():
             if scored:
@@ -481,13 +488,17 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
                     if clean("credential redaction", read_secrets):
                         clean("trial artifacts", lambda: record.finalize_trial(
                             trial_dir, agent, secrets, profile_dir=profile.directory))
+                    profile_removed = False
                     if not rec["cleanup"]["errors"] and paths.sandbox_dir(stem, home).exists():
-                        clean("temporary profile", lambda: shutil.rmtree(
+                        profile_removed = clean("temporary profile", lambda: shutil.rmtree(
                             paths.sandbox_dir(stem, home)))
                     if rec["cleanup"]["errors"]:
                         rec["cleanup"]["retained_directory"] = str(paths.sandbox_dir(stem, home))
                     rec["cleanup"]["status"] = "failed" if rec["cleanup"]["errors"] else "completed"
-                    persist()
+                    # Native processes have stopped and the final credential
+                    # read succeeded before artifact collection. Only skip a
+                    # reread when we just removed that profile ourselves.
+                    persist(refresh_secrets=not profile_removed)
         finally:
             held.release()
     return record.scrub_value(rec, secrets)

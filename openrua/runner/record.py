@@ -28,13 +28,27 @@ import yaml
 from openrua import __version__ as openrua_version
 
 
-def secret_strings(creds_dir: Path) -> list[str]:
-    """Every long string value in the credential files = a secret."""
+def secret_strings(creds_dir: Path, *, strict: bool = False) -> list[str]:
+    """Every long string value in the credential files = a secret.
+
+    Strict reads fail when existing files cannot be read or parsed, so a
+    caller about to publish data can refuse an incomplete redaction list.
+    An absent profile directory still supplies no credentials.
+    """
     secrets: list[str] = []
-    for f in creds_dir.glob("*.json"):
+    if strict:
+        try:
+            files = [f for f in creds_dir.iterdir() if f.name.endswith('.json')]
+        except FileNotFoundError:
+            return []
+    else:
+        files = creds_dir.glob("*.json")
+    for f in files:
         try:
             blob = json.loads(f.read_text())
         except Exception:  # noqa: BLE001
+            if strict:
+                raise
             continue
 
         def walk(v):
@@ -51,7 +65,7 @@ def secret_strings(creds_dir: Path) -> list[str]:
     return secrets
 
 
-def secret_strings_from_env_file(path: Path) -> list[str]:
+def secret_strings_from_env_file(path: Path, *, strict: bool = False) -> list[str]:
     """The values in a KEY=value env file = secrets, same rule as above.
 
     Used for the sandbox's minted auth token, which lives in a file rather
@@ -62,6 +76,8 @@ def secret_strings_from_env_file(path: Path) -> list[str]:
     try:
         text = path.read_text()
     except OSError:
+        if strict:
+            raise
         return []
     out = []
     for line in text.splitlines():

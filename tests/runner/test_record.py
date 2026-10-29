@@ -83,6 +83,34 @@ def test_secret_strings_collects_only_long_values(tmp_path):
     assert "abc" not in secrets
 
 
+def test_strict_credentials_allow_absent_profile_but_reject_broken_files(tmp_path):
+    from openrua.runner.record import secret_strings, secret_strings_from_env_file
+
+    assert secret_strings(tmp_path / 'not-created', strict=True) == []
+    (tmp_path / 'auth.json').write_text('not json')
+    with pytest.raises(json.JSONDecodeError):
+        secret_strings(tmp_path, strict=True)
+    assert secret_strings(tmp_path) == []
+    missing = tmp_path / 'missing.env'
+    with pytest.raises(FileNotFoundError):
+        secret_strings_from_env_file(missing, strict=True)
+    assert secret_strings_from_env_file(missing) == []
+
+
+@pytest.mark.parametrize('operation', ['list', 'read'])
+def test_strict_credentials_report_access_failure(monkeypatch, tmp_path, operation):
+    from openrua.runner.record import secret_strings
+
+    (tmp_path / 'auth.json').write_text('{}')
+
+    def fail(*args, **kwargs):
+        raise PermissionError('credential access unavailable')
+
+    monkeypatch.setattr(Path, 'iterdir' if operation == 'list' else 'read_text', fail)
+    with pytest.raises(PermissionError):
+        secret_strings(tmp_path, strict=True)
+
+
 def test_scrub_file_redacts_every_secret(tmp_path):
     from openrua.runner.record import scrub_file
     f = tmp_path / "transcript.jsonl"

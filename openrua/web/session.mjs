@@ -113,7 +113,7 @@ export function status(state, {readOnly = false} = {}) {
     if (state.pause_reason && (state.connected || !state.pause_reason.startsWith('agent disconnected')))
       notes.push({tone: 'warn', text: `Reason: ${state.pause_reason}`});
     head = {kind: 'paused', tone: 'warn', text: 'Messages are paused. Open /queue to review them.' +
-      (state.connected ? ' Use /continue when ready.' : ' The agent is disconnected. Check the session log before restarting.')};
+      (state.connected ? ' Use /continue when ready.' : ' The agent is disconnected. Use /resume in the terminal to reconnect it.')};
   }
   else if (questions.some(request => !request.reply_as_message))
     head = {kind: 'waiting', tone: 'warn', text: 'Waiting for your response'};

@@ -297,3 +297,151 @@ def test_failed_automatic_measurement_keeps_unknown_success_and_execution(monkey
     assert rec['anomaly'] == 'RuntimeError: scene not answering'
     assert rec['cleanup']['status'] == 'completed'
     assert handle.calls[-1] == 'shutdown'
+
+
+def _rotating_profile(monkeypatch, state):
+    from dataclasses import replace
+
+    agent = trial.agents.get('claude-code')
+    prepare = agent.prepare_profile
+    profiles = []
+
+    def prepare_profile(*args, **kwargs):
+        profile = prepare(*args, **kwargs)
+        profiles.append(profile.directory)
+
+        def read_secrets():
+            assert profile.directory.is_dir(), 'refresh before removing the profile'
+            if state.get('unreadable'):
+                raise OSError(f'credential contents unavailable: {state["secret"]}')
+            return [state['secret']]
+
+        return replace(profile, read_secrets=read_secrets)
+
+    monkeypatch.setattr(agent, 'prepare_profile', prepare_profile)
+    monkeypatch.setattr(trial.agents, 'get', lambda *args, **kwargs: agent)
+    return profiles
+
+
+@pytest.mark.parametrize('phase', ['preflight', 'operator'])
+def test_rotated_credentials_are_redacted_in_every_exception_snapshot(
+        monkeypatch, tmp_path, proxy_address, phase):
+    handle, cfg, token = _harness(monkeypatch, tmp_path)
+    state = {'secret': 'synthetic-initial-profile-secret'}
+    profiles = _rotating_profile(monkeypatch, state)
+    rotated = 'synthetic-rotated-profile-secret'
+    snapshots = []
+    write_result = trial.record.write_result
+
+    def write(directory, rec):
+        snapshots.append(json.dumps(rec))
+        write_result(directory, rec)
+
+    def fail(*args, **kwargs):
+        state['secret'] = rotated
+        raise RuntimeError(f'failed after refresh: {rotated}')
+
+    monkeypatch.setattr(trial.record, 'write_result', write)
+    if phase == 'preflight':
+        monkeypatch.setattr(trial, 'run_preflight', fail)
+    rec = trial.run_trial(cfg, tmp_path / 'config.yaml', tmp_path / 'run', 'suite', 0, 0,
+                          fail, 60, token_file=str(token), task='inspect', home=tmp_path / 'home')
+    assert snapshots and all(rotated not in snapshot for snapshot in snapshots)
+    assert json.loads(snapshots[0])['anomaly'] == 'RuntimeError: failed after refresh: [REDACTED]'
+    assert rec['termination'] == 'anomaly' and rec['success'] is None
+    assert handle.calls[-1] == 'shutdown'
+    assert not profiles[0].exists()
+
+
+@pytest.mark.parametrize('completed', [False, True])
+def test_unreadable_credentials_preserve_last_safe_result_and_still_clean_resources(
+        monkeypatch, tmp_path, proxy_address, completed):
+    import traceback
+    from openrua.runner import lock
+
+    handle, cfg, token = _harness(monkeypatch, tmp_path)
+    state = {'secret': 'synthetic-initial-profile-secret'}
+    profiles = _rotating_profile(monkeypatch, state)
+    rotated = 'synthetic-rotated-profile-secret'
+    directory = tmp_path / 'run/trials/suite-0/seed0'
+    snapshots, cleaned = [], []
+    write_result = trial.record.write_result
+
+    def write(dest, rec):
+        snapshots.append(json.dumps(rec))
+        write_result(dest, rec)
+
+    def fail(*args):
+        state.update(secret=rotated, unreadable=True)
+        raise RuntimeError(f'operation failed: {rotated}')
+
+    monkeypatch.setattr(trial.record, 'write_result', write)
+    monkeypatch.setattr(trial, 'sandbox_down', lambda _: cleaned.append('sandbox'))
+    monkeypatch.setattr(trial.record, 'finalize_trial', lambda *a, **k: cleaned.append('artifacts'))
+    with pytest.raises(RuntimeError, match='credentials') as caught:
+        trial.run_trial(cfg, tmp_path / 'config.yaml', tmp_path / 'run', 'suite', 0, 0,
+                        (lambda _: {'termination': 'self_finished'}) if completed else fail,
+                        60, token_file=str(token), task='inspect', home=tmp_path / 'home',
+                        judge=fail if completed else None)
+    assert rotated not in ''.join(traceback.format_exception(caught.value))
+    assert all(rotated not in snapshot for snapshot in snapshots)
+    assert handle.calls[-1] == 'shutdown' and cleaned == ['sandbox']
+    assert profiles[0].is_dir()
+    assert lock.holder(directory) is None
+    if completed:
+        assert len(snapshots) == 1
+        saved = json.loads((directory / 'result.json').read_text())
+        assert saved == json.loads(snapshots[0])
+        assert saved['termination'] == 'self_finished' and saved['verdict'] == 'pending'
+    else:
+        assert snapshots == [] and not (directory / 'result.json').exists()
+
+
+def test_initial_credential_read_failure_releases_claim_without_reporting_secret(
+        monkeypatch, tmp_path, proxy_address):
+    import traceback
+    from openrua.runner import lock
+
+    _, cfg, token = _harness(monkeypatch, tmp_path)
+    state = {'secret': 'synthetic-secret-in-credential-error', 'unreadable': True}
+    profiles = _rotating_profile(monkeypatch, state)
+    with pytest.raises(RuntimeError, match='credentials') as caught:
+        trial.run_trial(cfg, tmp_path / 'config.yaml', tmp_path / 'run', 'suite', 0, 0,
+                        lambda _: pytest.fail('must not start the operator'), 60,
+                        token_file=str(token), task='inspect', home=tmp_path / 'home')
+    assert state['secret'] not in ''.join(traceback.format_exception(caught.value))
+    assert profiles[0].is_dir()
+    directory = tmp_path / 'run/trials/suite-0/seed0'
+    assert lock.holder(directory) is None and not (directory / 'result.json').exists()
+
+
+@pytest.mark.parametrize('source', ['json', 'env_file'])
+def test_failed_native_credential_refresh_refuses_exception_snapshot(
+        monkeypatch, tmp_path, proxy_address, source):
+    import traceback
+
+    handle, cfg, token = _harness(monkeypatch, tmp_path)
+    credentials = tmp_path / 'credentials'
+    credentials.mkdir()
+    credential_file = credentials / 'auth.json'
+    credential_file.write_text(json.dumps({'token': 'synthetic-initial-credential-value'}))
+    rotated = 'synthetic-rotated-credential-value'
+    writes, cleaned = [], []
+    monkeypatch.setattr(trial.record, 'write_result', lambda *a: writes.append(a))
+    monkeypatch.setattr(trial.record, 'finalize_trial', lambda *a, **k: cleaned.append('artifacts'))
+    monkeypatch.setattr(trial, 'sandbox_down', lambda _: cleaned.append('sandbox'))
+
+    def fail(_):
+        if source == 'json':
+            credential_file.write_text('{"token": "' + rotated)
+        else:
+            token.unlink()
+        raise RuntimeError(f'operator failed: {rotated}')
+
+    with pytest.raises(RuntimeError, match='credentials') as caught:
+        trial.run_trial(cfg, tmp_path / 'config.yaml', tmp_path / 'run', 'suite', 0, 0,
+                        fail, 60, credentials_dir=credentials, token_file=str(token),
+                        task='inspect', home=tmp_path / 'home')
+    assert rotated not in ''.join(traceback.format_exception(caught.value))
+    assert writes == [] and cleaned == ['sandbox']
+    assert handle.calls[-1] == 'shutdown'

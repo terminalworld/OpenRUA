@@ -190,6 +190,11 @@ A retained temporary profile is named in `cleanup.retained_directory` when
 cleanup could not finish. Do not treat it as a public experiment artifact:
 it may still contain login information.
 
+Each saved snapshot uses the current credentials for redaction. If those
+credentials cannot be read, or the result cannot be written, the command reports
+the failure and keeps the last complete result, if one exists. Resource cleanup
+is still attempted.
+
 | field | meaning |
 |---|---|
 | `task_suite`, `task_id`, `init_state_id` | the trial key; `init_state_id` is the seed |
