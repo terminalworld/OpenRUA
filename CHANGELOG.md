@@ -9,6 +9,15 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.31.4
+
+- Load native model choices without preparing ROS or robot dependencies. Reuse
+  a compatible installed CLI image, or prepare a small agent-only image from
+  the same installation declaration. Sign-in uses that selected environment.
+- Cancel model loading back to its menu with draft choices intact. Stop owned
+  installation processes and temporary containers, retaining logs and reporting
+  any unconfirmed cleanup.
+
 ## 0.31.3
 
 - Show the actual startup stage in the compact terminal progress view,

@@ -6,6 +6,7 @@ import hashlib
 import os
 from pathlib import Path
 import shlex
+import signal
 import subprocess
 import sys
 
@@ -81,6 +82,26 @@ def prepare_connect(home: Path, agent: str | None = None, distro: str = 'jazzy',
                     {image: _agent_probe(adapter)})
 
 
+def prepare_agent(home: Path, agent: str | None = None, progress=print) -> str:
+    """Prepare the selected CLI without resolving or installing a robot."""
+    from openrua.cli import agent_images
+    from openrua.cli.commands.build import agent_image
+    adapter, selected = resolve(home, agent)
+    check = adapter.installation_check()
+    probe = check[1] if check else _agent_probe(adapter)
+    progress('[prepare] Checking agent tools')
+    existing = agent_images.find(adapter, probe)
+    if existing:
+        return existing
+    image = agent_image(adapter)
+    requested = paths.agent_spec(selected['name'])
+    if adapter.version:
+        requested += '@' + adapter.version
+    _prepare_images(home, [(image, ['build', 'agent', '--agent', requested, '--tag', image])],
+                    progress, {image: probe}, retain_tools=False)
+    return image
+
+
 def _agent_probe(adapter) -> str | None:
     check = adapter.sandbox_cli_check()
     return check[1] if check else adapter.version_probe() or (
@@ -96,7 +117,7 @@ def _ready(image: str, probe: str | None) -> bool:
 
 
 def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress,
-                    probes: dict[str, str | None] | None = None) -> None:
+                    probes: dict[str, str | None] | None = None, *, retain_tools: bool = True) -> None:
     """Share image locks, build output and failure logs across startup paths."""
     progress('[prepare] Checking Docker')
     try:
@@ -121,7 +142,7 @@ def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress,
                 progress(f'Reusing {image}')
                 continue
             log = directory / f'{key}.log'
-            if probe is not None and image_exists(image):
+            if retain_tools and probe is not None and image_exists(image):
                 command = [*command, '--base-image', image]
                 progress(f'Keeping the existing tools and runtime settings in {image}.')
             progress(f'Building {image}. First-time downloads may be large. Log: {log}')
@@ -130,17 +151,44 @@ def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress,
             argv = [sys.executable, '-m', 'openrua', '--home', str(home), *command]
             with open(log, 'w', opener=lambda p, f: os.open(p, f, 0o600)) as stream:
                 process = subprocess.Popen(argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                           text=True, bufsize=1)
+                                           stdin=subprocess.DEVNULL, text=True, bufsize=1,
+                                           start_new_session=True)
                 try:
                     for line in process.stdout:
                         stream.write(line)
                         stream.flush()
                         progress(line.rstrip())
                     code = process.wait()
-                except BaseException:
-                    process.terminate()
-                    process.wait()
+                except BaseException as interrupted:
+                    # The build command owns Docker children too. Interrupt
+                    # its whole group and wait before returning to the menu.
+                    try:
+                        os.killpg(process.pid, signal.SIGINT)
+                    except ProcessLookupError:
+                        pass
+                    forced = False
+                    try:
+                        # A native check can need up to 30 seconds to remove
+                        # its container; keep the owner alive for that cleanup.
+                        remaining, _ = process.communicate(timeout=35)
+                    except (subprocess.TimeoutExpired, KeyboardInterrupt):
+                        forced = True
+                        try:
+                            os.killpg(process.pid, signal.SIGKILL)
+                        except ProcessLookupError:
+                            pass
+                        remaining, _ = process.communicate()
+                    if remaining:
+                        stream.write(remaining)
+                        stream.flush()
+                    if forced or process.returncode not in (0, 130, -signal.SIGINT):
+                        detail = (remaining or '').strip()[-2000:]
+                        raise UnavailableError(
+                            f'Could not confirm that preparation stopped cleanly. {detail}'.strip(),
+                            hint=f'inspect {log} and Docker before retrying') from interrupted
                     raise
+                finally:
+                    process.stdout.close()
             if code or not _ready(image, probe):
                 hint = f'inspect {log}, then retry startup; completed images are reused'
                 with log.open('rb') as stream:

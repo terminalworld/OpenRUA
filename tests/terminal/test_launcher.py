@@ -290,6 +290,60 @@ def test_switching_agents_clears_the_previous_native_model_catalog():
     assert screens[2]['model_choices'] == []
 
 
+def test_canceling_model_loading_preserves_drafts_and_allows_retry():
+    values = dict(robot='', sim='', bench='', agent='selected', model='draft-model',
+                  name='draft-session', auth_mode='api', api_key_file='/keys/draft.key')
+    replies = iter([{'action': 'models', 'values': values, 'intent': 'connect', 'agent_step': True},
+                    {'action': 'models', 'values': values, 'intent': 'connect', 'agent_step': True},
+                    {'action': 'quit'}])
+    screens, discovered = [], []
+    def screen(spec):
+        screens.append(spec)
+        return next(replies)
+    def discover(incoming, intent):
+        discovered.append((incoming.copy(), intent))
+        if len(discovered) == 1:
+            raise KeyboardInterrupt
+        return [{'value': 'native-model'}]
+    launcher.setup(values, {}, 'project', lambda _: pytest.fail('must not save'),
+        lambda _: pytest.fail('must not check a robot'), lambda _: pytest.fail('must not launch'),
+        {}, lambda: [], lambda _: None, screen, resolve_models=discover)
+    assert screens[1]['notice'] == 'Model loading canceled.'
+    assert screens[1]['values'] == values
+    assert screens[1]['view'] == 'models' and screens[1]['agent_step']
+    assert screens[1]['model_choices'] == []
+    assert screens[2]['notice'] == ''
+    assert screens[2]['model_choices'] == [{'value': 'native-model'}]
+    assert discovered == [(values, 'connect'), (values, 'connect')]
+
+
+def test_failed_model_loading_can_retry_with_changed_authentication():
+    from openrua.errors import AuthError
+    values = dict(robot='fixture', sim='', bench='', agent='selected', model='draft-model',
+                  name='draft-session', auth_mode='native', api_key_file='')
+    changed = {**values, 'auth_mode': 'api', 'api_key_file': '/keys/selected.key'}
+    replies = iter([{'action': 'models', 'values': values},
+                    {'action': 'models', 'values': changed}, {'action': 'quit'}])
+    screens, discovered = [], []
+    def screen(spec):
+        screens.append(spec)
+        return next(replies)
+    def discover(incoming, intent):
+        discovered.append(incoming.copy())
+        if len(discovered) == 1:
+            raise AuthError('Sign-in expired.', hint='Sign in again or select API authentication.')
+        return [{'value': 'api-model'}]
+    launcher.setup(values, {}, 'project', lambda _: pytest.fail('must not save'),
+        lambda _: pytest.fail('must not check a robot'), lambda _: pytest.fail('must not launch'),
+        {}, lambda: [], lambda _: None, screen, resolve_models=discover)
+    assert screens[1]['notice'] == 'Sign-in expired.\nSign in again or select API authentication.'
+    assert screens[1]['model_choices'] == []
+    assert screens[2]['notice'] == ''
+    assert screens[2]['values'] == changed
+    assert screens[2]['model_choices'] == [{'value': 'api-model'}]
+    assert discovered == [values, changed]
+
+
 def test_session_setup_cancel_and_failure_return_to_the_same_conversation():
     initial = SimpleNamespace(url='http://127.0.0.1:1234', token='token', snapshot=lambda: {'state': {'closed': True}})
     replies = iter([{'action': 'setup'}, {'action': 'setup'}, {'action': 'quit'}])

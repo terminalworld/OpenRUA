@@ -1,5 +1,5 @@
 """``openrua build [--bench B ...] [--sim S ...] [--all]`` and
-``openrua build sandbox | proxy | base | driver``: the images.
+``openrua build sandbox | agent | proxy | base | driver``: the images.
 
 A simulated robot's image is rendered from a declaration: the
 simulator's ``install:`` with the benchmark's over it, one image per
@@ -19,7 +19,11 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
+import os
+import shlex
 import subprocess
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -31,7 +35,8 @@ from openrua.config.schema import sim_image
 from openrua.proxy.build import build as build_proxy
 from openrua.robot.real.build import DriverBuildError, build as build_driver
 from openrua.robot.sim.build import build_base, build_simulator
-from openrua.sandbox.build import build as build_sandbox
+from openrua.sandbox.build import agent_recipe_sha256, build_agent, build as build_sandbox
+from openrua.sandbox.check import cli_result
 
 
 def default_agent(home: Path | None) -> str:
@@ -50,7 +55,7 @@ def preinstall_for(names: list[str] | None, home: Path | None) -> str:
     return agents.preinstall(manifests_for(names, home))
 
 
-def agent_labels(manifests: list[agents.Manifest], kind: str) -> dict[str, str]:
+def agent_labels(manifests: list[agents.Manifest | agents.Agent], kind: str) -> dict[str, str]:
     """One label per agent baked into an image: the hash of its install
     line, so doctor can tell which agents an image carries and whether
     their manifests changed."""
@@ -78,6 +83,12 @@ def simulator_targets(benches: list[str], sims: list[str], every: bool,
 
 def run(args) -> int:
     unit = getattr(args, "unit", None)
+    if unit == 'agent':
+        from openrua.cli.agent_settings import resolve
+        adapter, _ = resolve(args.home, args.agent)
+        tag, digest = _agent(adapter, tag=args.tag, robot_uid=args.robot_uid)
+        print(f"{tag} {digest}")
+        return 0
     selected = projects.selection(projects.resolve(args.workspace or Path.cwd()))
     bare = unit is None and not (args.bench or args.sim or args.all)
     if unit is None and not (args.bench or args.sim or args.all):
@@ -166,6 +177,30 @@ def _drivers(robot: str, image: str | None, home: Path | None) -> list[tuple[str
     return built
 
 
+def agent_image(adapter: agents.Agent, robot_uid: int | None = None) -> str:
+    """Reuse only the same CLI recipe, requested version and filesystem user."""
+    facts = {'name': adapter.name, 'prepare': agents.preparation([adapter]),
+             'install': agents.preinstall([adapter]), 'version': adapter.version,
+             'minimum': adapter.min_version, 'recipe': agent_recipe_sha256(),
+             'uid': os.getuid() if robot_uid is None else robot_uid}
+    identity = hashlib.sha256(json.dumps(facts, sort_keys=True).encode()).hexdigest()[:16]
+    return f'openrua-agent-{identity}'
+
+
+def _agent(adapter: agents.Agent, tag: str | None = None,
+           robot_uid: int | None = None) -> tuple[str, str]:
+    """Build and validate one resolved CLI without reading a robot project."""
+    tag = tag or agent_image(adapter, robot_uid)
+    labels = agent_labels([adapter], 'install')
+    if adapter.version:
+        labels[f'openrua.agent.{adapter.name}.version'] = adapter.version
+    stamp = '' if adapter.version else datetime.now(timezone.utc).isoformat()
+    return _publish_image(tag, [adapter], lambda candidate: build_agent(
+        tag=candidate, preinstall=agents.preinstall([adapter]),
+        prepare=agents.preparation([adapter]), robot_uid=robot_uid,
+        labels=labels, stamp=stamp))
+
+
 def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None, *, base_image=None, expected_base=None):
     chosen = manifests_for(agent, home)
     if base_image is not None and preinstall is None:
@@ -194,14 +229,21 @@ def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None, *, bas
     # docker from reusing an older build's layer for it.
     fresh = preinstall is None and any(not m.fields.get("version") for m in chosen)
     stamp = datetime.now(timezone.utc).isoformat() if fresh else ""
-    # Built under a candidate tag and checked before it takes the real one:
-    # a build whose CLI is too old must not replace a sandbox that works.
     tag = tag or config.schema.sandbox_image(distro)
+    return _publish_image(tag, chosen, lambda candidate: build_sandbox(
+        preinstall=chain, distro=distro, robot_uid=robot_uid,
+        tag=candidate, labels=labels, stamp=stamp, prepare=prepare,
+        **({'base_image': base_image} if base_image is not None else {})),
+        expected_base=expected_base)
+
+
+def _publish_image(tag: str, chosen: list[agents.Manifest | agents.Agent],
+                   compile_image: Callable[[str], tuple[str, str]],
+                   *, expected_base: str | None = None) -> tuple[str, str]:
+    """Check a candidate before replacing the requested image tag."""
     candidate = f"{tag}-candidate-{uuid4().hex}"
     try:
-        _, digest = build_sandbox(preinstall=chain, distro=distro, robot_uid=robot_uid,
-                                  tag=candidate, labels=labels, stamp=stamp, prepare=prepare,
-                                  **({'base_image': base_image} if base_image is not None else {}))
+        _, digest = compile_image(candidate)
         _report_versions(candidate, chosen)
         if expected_base is not None:
             current = subprocess.run(['docker', 'image', 'inspect', tag, '--format', '{{.Id}}'],
@@ -215,20 +257,18 @@ def _sandbox(agent, preinstall, distro, robot_uid, tag, home, robot=None, *, bas
     return tag, digest
 
 
-def _report_versions(image: str, chosen: list[agents.Manifest]) -> None:
+def _report_versions(image: str, chosen: list[agents.Manifest | agents.Agent]) -> None:
     """Say which CLI each agent got, and refuse an image whose CLI is
     older than its adapter's flags need: better at build time than as a
     disconnected agent at the first session."""
     for m in chosen:
-        agent = agents.compose(m)
+        agent = agents.compose(m) if isinstance(m, agents.Manifest) else m
         if not agent.version_argv:
             continue
-        found = subprocess.run(["docker", "run", "--rm", "--entrypoint", "", image,
-                                *agent.version_argv], capture_output=True, text=True)
+        found = cli_result(image, shlex.join(agent.version_argv))
         print(f"[build] {m.name}: {found.stdout.strip() or found.stderr.strip()}", flush=True)
         check = agent.installation_check()
-        if found.returncode or (check and subprocess.run(["docker", "run", "--rm", "--entrypoint", "", image,
-                                     "bash", "-c", check[1]]).returncode):
+        if found.returncode or (check and cli_result(image, check[1]).returncode):
             want = agent.version or (f"{agent.min_version} or newer" if agent.min_version else 'a working CLI')
             raise UnavailableError(f"{image} carries {m.name} {found.stdout.strip()}, "
                                    f"not {want}",
@@ -236,10 +276,10 @@ def _report_versions(image: str, chosen: list[agents.Manifest]) -> None:
 
 
 def add_parser(sub) -> None:
-    p = sub.add_parser("build", help="build the images: simulators, sandbox, proxy",
+    p = sub.add_parser("build", help="build simulator, sandbox, agent and proxy images",
                        description="Build simulator images from their declarations "
                        "(--bench / --sim, repeatable; --all: every bundled benchmark), "
-                       "or one of the agent-side images (sandbox, proxy), the ROS "
+                       "or one of the agent-side images (sandbox, agent, proxy), the ROS "
                        "base, or a real robot's driver images. Bare `openrua build` makes the sandbox and proxy images "
                        "for the default agent and the default benchmark's simulator "
                        "image. The sandbox takes its install line from the manifests "
@@ -274,6 +314,13 @@ def add_parser(sub) -> None:
     s.add_argument("--robot", default=None, metavar="NAME|PATH",
                    help="a real robot whose config declares backend.sandbox_install: "
                    "its distro, image name and install chain come from there")
+
+    a = units.add_parser("agent", help="the CLI image for model discovery and sign-in, without ROS")
+    a.add_argument("--agent", default=None, metavar="NAME[@VERSION]",
+                   help="agent name or manifest path, optionally pinned (default: the configured agent)")
+    a.add_argument("--tag", default=None, help="image tag (default: derived from the CLI recipe and user)")
+    a.add_argument("--robot-uid", type=int, default=None,
+                   help="container uid (default: the current user)")
 
     d = units.add_parser("driver", help="the images a real robot's launch command uses, "
                          "from the directories its config names (backend.build)")

@@ -330,7 +330,17 @@ Setup's Model page loads the selected CLI's own model catalog using its chosen
 account or explicit API profile. Claude Code supplies models from initialization;
 Codex supplies its paginated model list and reasoning levels. A temporary
 metadata terminal submits no prompt and connects to no robot. If agent tools are
-missing, their preparation stays in the compact fullscreen progress view.
+already installed in a compatible OpenRUA image, the lookup reuses them. Otherwise
+OpenRUA prepares a small CLI image using the selected agent's installation recipe.
+Choosing a model does not build ROS, drivers or a simulator. First-time CLI downloads
+still appear in the compact progress view, with **L** for details. Any required
+sign-in uses the same prepared image.
+
+Ctrl+C during model loading cancels the lookup and returns to the model page,
+keeping your choices. Refresh retries the native query. The temporary container
+is removed when the lookup ends; cleanup failures are reported with the retained
+log or removal command. CLI images are reused across accounts, while each lookup
+uses only the account or API profile currently selected.
 
 Shared chat uses the native metadata on the running connection. Discovery errors
 are shown with the current model, reload/custom entry remain explicit, and the

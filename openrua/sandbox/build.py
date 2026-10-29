@@ -54,6 +54,33 @@ def recipe_sha256() -> str:
     return hashlib.sha256((_HERE / "sandbox.Dockerfile").read_bytes()).hexdigest()
 
 
+def agent_recipe_sha256() -> str:
+    """Identify the small CLI environment independently of the ROS recipe."""
+    return hashlib.sha256((_HERE / "agent.Dockerfile").read_bytes()).hexdigest()
+
+
+def _validate_preinstall(preinstall: str) -> None:
+    if '"' in preinstall or "\n" in preinstall.strip():
+        raise SandboxError(
+            "--preinstall must be a single-line command chain without "
+            "double quotes")
+
+
+def build_agent(*, tag: str, preinstall: str = "", prepare: str = "",
+                robot_uid: int | None = None, labels: dict[str, str] | None = None,
+                stamp: str = "") -> tuple[str, str]:
+    """Build a CLI environment from supplied install steps, without ROS."""
+    _validate_preinstall(preinstall)
+    uid = os.getuid() if robot_uid is None else robot_uid
+    labels = {"openrua.preinstall_sha256": hashlib.sha256(preinstall.encode()).hexdigest(),
+              "openrua.agent_recipe_sha256": agent_recipe_sha256(),
+              "openrua.image_kind": "agent", **(labels or {})}
+    return tag, _docker_build(
+        _HERE / "agent.Dockerfile", _HERE, tag,
+        {"ROBOT_UID": str(uid), "PREPARE": prepare,
+         "PREINSTALL": preinstall, "PREINSTALL_STAMP": stamp}, labels)
+
+
 def build(preinstall: str = "", distro: str = "jazzy",
           robot_uid: int | None = None,
           tag: str | None = None,
@@ -70,10 +97,7 @@ def build(preinstall: str = "", distro: str = "jazzy",
     ``robot_uid`` applies only when building a fresh sandbox."""
     # Contract: PREINSTALL is a single-line command chain without double
     # quotes (the one quoting hazard of string-valued build args).
-    if '"' in preinstall or "\n" in preinstall.strip():
-        raise SandboxError(
-            "--preinstall must be a single-line command chain without "
-            "double quotes")
+    _validate_preinstall(preinstall)
     tag = tag or f"openrua-sandbox-{distro}"
     if base_image is not None:
         if robot_uid is not None:

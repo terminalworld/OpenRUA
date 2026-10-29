@@ -448,3 +448,79 @@ def test_interrupting_an_update_stops_its_installer_and_restores_the_terminal(tm
     finally:
         if child.poll() is None: child.kill()
         child.wait(); os.close(master)
+
+
+def test_model_loading_interrupt_returns_to_picker_and_can_retry(tmp_path):
+    source = Path(__file__).resolve().parents[2] / 'ui/terminal/src/main.mjs'
+    program = tmp_path / 'catalog.py'
+    program.write_text('''
+import json, sys
+from pathlib import Path
+from openrua.agents.conversation import Conversation
+from openrua.cli.model_catalog import read
+from openrua.plugins.agents.claude_conversation import ClaudeConversation
+from openrua.terminal.application import Application
+from openrua.terminal.launcher import runtime, setup
+
+root, source = Path(sys.argv[1]), Path(sys.argv[2])
+values = dict(robot='', sim='', bench='', agent='fixture', model='draft-model',
+              name='draft-session', auth_mode='api', api_key_file='/keys/draft.key')
+seen, saves = [], []
+first = True
+with Application(runtime, lambda: source) as application:
+    def screen(spec):
+        global first
+        if first:
+            first = False
+            return dict(action='models', values=values, intent='connect', agent_step=True)
+        return application.screen(spec)
+    def discover(incoming, intent):
+        seen.append(dict(incoming))
+        if len(seen) > 1:
+            return [dict(value='native-model', label='Refreshed native model')]
+        child = ("import os, sys; from pathlib import Path; "
+                 "sys.stdin.readline(); Path(sys.argv[1]).write_text(str(os.getpid())); sys.stdin.read()")
+        return read(Conversation([sys.executable, '-u', '-c', child, str(root/'catalog-pid')],
+                                 ClaudeConversation('native')))
+    setup(values, {}, 'Fixture project', saves.append, None, None, {}, lambda: [], lambda _: None,
+          screen=screen, application=application, resolve_models=discover)
+(root/'result.json').write_text(json.dumps(dict(seen=seen, saves=saves)))
+''')
+    master, slave = pty.openpty()
+    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 30, 100, 0, 0))
+    child = subprocess.Popen([sys.executable, str(program), str(tmp_path), str(source)],
+        stdin=slave, stdout=slave, stderr=slave, env={**os.environ, 'TERM': 'xterm-256color'})
+    os.close(slave)
+    output = bytearray()
+    def wait(condition):
+        deadline = time.monotonic() + 12
+        while not condition():
+            if select.select([master], [], [], .05)[0]:
+                try: output.extend(os.read(master, 65536))
+                except OSError: break
+            assert child.poll() is None, output.decode(errors='replace')
+            assert time.monotonic() < deadline, output.decode(errors='replace')
+        assert condition(), output.decode(errors='replace')
+    try:
+        wait(lambda: (tmp_path / 'catalog-pid').exists() and b'Loading models' in output)
+        os.write(master, b'\x03')
+        wait(lambda: b'Model loading canceled.' in output)
+        assert b'Select Model' in output and b'Current model: draft-model' in output
+        with pytest.raises(ProcessLookupError):
+            os.kill(int((tmp_path / 'catalog-pid').read_text()), 0)
+        os.write(master, b'1')
+        wait(lambda: b'Refreshed native model' in output)
+        os.write(master, b'\x04')
+        assert child.wait(timeout=5) == 0, output.decode(errors='replace')
+        while select.select([master], [], [], 0)[0]:
+            try: output.extend(os.read(master, 65536))
+            except OSError: break
+        facts = json.loads((tmp_path / 'result.json').read_text())
+        assert facts['saves'] == []
+        assert len(facts['seen']) == 2 and facts['seen'][0] == facts['seen'][1]
+        assert facts['seen'][1]['api_key_file'] == '/keys/draft.key'
+        assert b'Traceback' not in output
+        assert output.count(b'\x1b[?1049h') == output.count(b'\x1b[?1049l') == 1
+    finally:
+        if child.poll() is None: child.kill()
+        child.wait(); os.close(master)
