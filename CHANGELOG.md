@@ -9,6 +9,24 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.32.0
+
+- Record real robot cameras during task execution, starting after preflight
+  and stopping before the human verdict prompt. New recordings no longer
+  include setup or scoring waits. Existing recorded frames are preserved.
+- Save the effective model, agent options, time budget and network limits
+  before execution. Keep the resolved input alongside them in existing
+  provenance files, and record the selected ROS domain, CLI version and
+  container identities before the agent runs. Preserve custom agent manifests
+  and version pins when launching the task.
+- Use the sandbox's ROS setup for camera discovery and capture. Retain camera
+  diagnostics, reject incomplete image payloads, and report missing frames
+  separately from task results. Keep cleanup retryable when process shutdown
+  cannot be confirmed.
+- Make ZCode's native clarification questions answerable through the shared
+  terminal and browser controls, including multiple choices and free text.
+  Repeated native reminders preserve the current selection and draft.
+
 ## 0.31.4
 
 - Load native model choices without preparing ROS or robot dependencies. Reuse

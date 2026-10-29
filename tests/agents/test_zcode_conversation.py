@@ -143,3 +143,97 @@ def test_optional_startup_preferences_use_native_fallback():
     update=p.receive({'id':'server-1','method':'session/requestRuntimePreferences','params':{}})
     assert update.outbound[0]['error']['code']==-32601
     assert not update.events
+
+
+def question(p, key=9, *, logical='question'):
+    return p.receive({'id': key, 'method': 'interaction/requestUserInput', 'params': {
+        'sessionId': 'native', 'turnId': 'turn-native', 'requestId': logical,
+        'toolName': 'AskUserQuestion', 'prompt': 'Choose the object and where it should go.',
+        'questions': [
+            {'question': 'Which object?', 'header': 'Object', 'options': [
+                {'label': 'Cup', 'value': 'cup-id', 'description': 'The cup beside the plate.'},
+                {'label': 'Block', 'value': 'block-id'}]},
+            {'question': 'Which locations?', 'header': 'Locations', 'multiSelect': True,
+             'options': [{'label': 'Near', 'value': 'near-id'}, {'label': 'Far', 'value': 'far-id'}]},
+        ]}})
+
+
+def test_native_questions_use_shared_controls_and_return_native_option_values():
+    p = ready(); start(p)
+    update = question(p)
+    assert not update.outbound
+    event = update.events[-1]
+    assert event.kind == 'input_required'
+    first, second = event.data['questions']
+    assert first['choices'] == ['Cup', 'Block']
+    assert first['multiple'] is False and first['allow_other'] is True
+    assert 'The cup beside the plate.' in first['text']
+    assert second['multiple'] is True and second['allow_other'] is True
+    response = p.respond('input:question', {'0': ['Cup'], '1': ['Near', 'Shelf']})
+    assert response.outbound == [{'id': 9, 'result': {
+        'action': 'accept', 'content': {'answers': {
+            'Which object?': ['cup-id'], 'Which locations?': ['near-id', 'Shelf']}}}}]
+    with pytest.raises(ValueError, match='not pending'):
+        p.respond('input:question', {'0': ['Cup'], '1': ['Far']})
+
+
+@pytest.mark.parametrize('answers', [
+    {'0': ['Cup']}, {'0': ['Cup', 'Block'], '1': ['Near']},
+    {'0': ['Cup'], '1': ['Near', 'Near']}, {'0': ['Cup'], '1': ['Shelf', 'Drawer']},
+    {'0': [' '], '1': ['Near']}, {'0': 'Cup', '1': ['Near']},
+])
+def test_invalid_question_answers_leave_native_request_available(answers):
+    p = ready(); start(p); question(p)
+    with pytest.raises(ValueError):
+        p.respond('input:question', answers)
+    assert p.respond('input:question', {'0': ['Cup'], '1': ['Near']}).outbound[0]['id'] == 9
+
+
+def test_reannounced_question_keeps_controls_and_replies_to_latest_native_request():
+    p = ready(); start(p); question(p, 9)
+    update = question(p, 10)
+    assert not update.events and not update.outbound
+    response = p.respond('input:question', {'0': ['Cup'], '1': ['Near']})
+    assert response.outbound[0]['id'] == 10
+    assert not question(p, 11).events
+
+
+def test_plan_approval_keeps_the_plan_and_returns_the_native_decision_value():
+    p = ready(); start(p)
+    update = p.receive({'id': 12, 'method': 'interaction/requestUserInput', 'params': {
+        'sessionId': 'native', 'turnId': 'turn-native', 'requestId': 'plan',
+        'toolName': 'ExitPlanMode', 'schema': {'interaction': 'plan_approval'},
+        'input': {'plan': 'Inspect the camera, then write the measurement program.'},
+        'questions': [{'question': 'Review this implementation plan.', 'header': 'Plan',
+                       'options': [{'label': 'Approve', 'value': 'approve'}]}]}})
+    assert 'Inspect the camera' in update.events[0].data['questions'][0]['text']
+    response = p.respond('input:plan', {'0': ['Approve']}).outbound[0]
+    assert response['result'] == {'action': 'accept', 'content': {'answers': {
+        'Review this implementation plan.': ['approve']}}}
+
+
+def test_unstructured_user_input_is_explicitly_unsupported():
+    p = ready(); start(p)
+    update = p.receive({'id': 12, 'method': 'interaction/requestUserInput', 'params': {
+        'sessionId': 'native', 'turnId': 'turn-native', 'requestId': 'unknown', 'schema': {}}})
+    assert update.outbound[0]['error']['code'] == -32601
+    assert update.events[0].kind == 'unsupported_request'
+
+
+def test_resolved_question_expires_controls():
+    p = ready(); start(p); question(p)
+    event(p, 'permission.resolved', {'requestId': 'question'})
+    with pytest.raises(ValueError, match='not pending'):
+        p.respond('input:question', {'0': ['Cup'], '1': ['Near']})
+
+
+def test_interrupting_native_question_clears_controls_only_on_terminal_event():
+    p = ready(); start(p); question(p)
+    cancel = p.interrupt('input').outbound[0]
+    reply(p, cancel, {})
+    assert 'input:question' in p._requests
+    done = event(p, 'turn.completed', {'inputId': 'input', 'resultType': 'cancelled'})
+    assert [e.kind for e in done.events] == ['input_cancelled', 'turn_finished']
+    with pytest.raises(ValueError, match='not pending'):
+        p.respond('input:question', {'0': ['Cup'], '1': ['Near']})
+    assert p.can_submit

@@ -135,7 +135,7 @@ Recording adds rendering time to the run.
 
 ```
 <--runs-root, default ./runs>/<benchmark>/<--run-id>/
-  config.json                 the run's arguments
+  config.json                 the first invocation's inputs and effective configuration
   SUMMARY.md                  rewritten after every trial
   trials/<suite>-<task_id>/seed<N>/
     config.yaml               the resolved config this trial ran with
@@ -154,6 +154,19 @@ The tree above is for `bench`. A project `exec` run has the same record files
 under `.openrua/runs/<run id>/` (or the explicit `--runs-root` location), plus
 the opening `prompt.txt` template. Its `/workspace` is the project directory,
 retained in place instead of copied into the trial record.
+
+`config.yaml` contains the execution settings: the selected model, the agent's
+default options merged with explicit options, the active wall-clock budget and
+the run's network limits. For example, `--wall-clock-min 60` is recorded as
+60 even if the original protocol specified 240; a manifest's default reasoning
+effort is recorded even when the input's `agent.options` was empty.
+
+`config.json` and each trial's `provenance.json` preserve `input_config`, the
+resolved project or benchmark input before runtime overrides and agent defaults,
+alongside the effective `config`. This is a resolved input snapshot, not a copy
+of the original YAML text; `config_file` and `config_sha256` identify that source.
+The configuration is saved before the operator starts. A process lost during
+execution can leave these files without a completed `result.json`.
 
 A trial directory identifies a (suite, task, seed); a rerun of the
 same trial moves the previous attempt under `attempts/` and never
@@ -241,6 +254,14 @@ same declared trial inputs. Project `exec` records a `project` path and
 the template describes `/robot`, while project contents may evolve between
 runs. Equal template and image hashes do not identify equal project files.
 
+The trial's provenance is written before startup and updated before the operator
+runs with the selected `ros_domain`, attempt `containers`, reported CLI version
+in `agent_cli.version`, and the `agent_proxy` address passed to the launcher.
+Updates are atomic. `input_config` preserves the input and `config` contains the
+effective settings used to write `config.yaml`. The run-level `config.json` is
+kept from the first invocation; inspect a trial's own provenance for its actual
+runtime facts, especially when appending trials to an existing run.
+
 ## Budgets and quota walls
 
 `protocol.active_wall_clock_minutes` and `protocol.max_turns` are the
@@ -325,10 +346,36 @@ pay for; record the replay, not the experiment.
 
 A real robot's run cannot be replayed, so `openrua exec` records its
 cameras unless `--no-record` says not to (`--record wrist,scene` picks
-cameras; `bench` records a real robot only with `--record`). The frames
+cameras; `bench` records a real robot only with `--record`). Capture starts
+after preflight, just before execution, and stops when execution ends,
+before the human verdict prompt. It also stops on failure or interruption.
+The execution result is saved before the recorder is stopped, so a
+recording cleanup failure cannot erase a completed task.
+
+The frames
 come from the cameras' ROS topics, two a second, into the same
 `frames/` layout, each numbered with its wall time, and `openrua demo`
 composes them with the agent's commands in the same way. The grabber
 reads a camera's `/compressed` topic when there is one and runs at a low
 CPU priority, so the robot's control loop on the same computer comes
 first.
+
+`result.json` records the capture interval, received frame counts and
+first/last capture times per camera, missing cameras and recording errors.
+A completed recording means each requested camera supplied at least one
+frame and the recorder closed without a reported error; it does not prove
+continuous coverage. Missing frames and capture errors are reported
+separately from the task verdict. Diagnostics are saved in
+`frames/camera.log`. Existing frames remain available when capture fails;
+an incomplete image payload is not published as a frame.
+
+To create a video from those saved frames, without running the robot again:
+
+```bash
+openrua demo <trial-directory>
+```
+
+This produces an edited demonstration of camera frames and commands, not
+a recording at the original wall-clock speed. The frame index retains the
+capture times for analysis. Frames from previous runs are kept as recorded;
+this execution-only capture interval applies to new runs.

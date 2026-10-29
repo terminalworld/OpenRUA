@@ -20,6 +20,7 @@ import threading
 import time
 import uuid
 from contextlib import contextmanager
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -251,7 +252,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
               account_alias=None, script=None, token_file=None, task=None,
               record_cameras=None, record_every=1, record_size=None,
               progress=None, judge=None, project_root: Path | None = None,
-              prompt_template: str | None = None):
+              prompt_template: str | None = None, provenance: dict | None = None):
     """One trial: claim the directory, bring the robot and sandbox up,
     start the episode, preflight, operate, score, write the record.
     ``task`` is the task sentence for a robot with no truth side (a real
@@ -264,8 +265,15 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     watching); ``judge``, on a robot nothing scores, is asked whether the
     task was done, given the agent's last words, and answers True, False
     or None (no answer)."""
-    selected_agent = cfg.get("agent", {})
+    input_config = deepcopy(cfg)
+    cfg = deepcopy(cfg)
+    selected_agent = cfg.setdefault("agent", {})
     agent = agents.get(selected_agent.get("name"), home, version=selected_agent.get("version"))
+    selected_agent["name"] = paths.agent_spec(selected_agent.get("name") or agent.name)
+    selected_agent["version"] = agent.version
+    selected_agent["model"] = selected_agent.get("model") or agent.default_model
+    selected_agent["options"] = {**agent.default_options, **selected_agent.get("options", {})}
+    cfg["protocol"]["active_wall_clock_minutes"] = wall_cap_min
     key_file = agents.api_key_file(agent, selected_agent.get("auth"))
     if key_file is not None and (token_file or credentials_dir or account_alias):
         raise ValueError("explicit API authentication cannot be combined with token-file or account/profile overrides")
@@ -273,7 +281,6 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     trial_dir = run_dir / "trials" / f"{task_suite}-{task_id}" / f"seed{seed}"
     trial_dir.mkdir(parents=True, exist_ok=True)
     stem, sim_name, sandbox_name = attempt_names(run_dir, task_id, seed)
-    held = claim(trial_dir, stem)
     network = ensure_internal_network()
 
     t0 = time.time()
@@ -312,6 +319,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     # A token file is the sandbox's whole auth story, so the login
     # profile need not carry credentials then (see Agent.prepare_profile).
     profile_dir = paths.sandbox_dir(stem, home) / "profile"
+    held = claim(trial_dir, stem)
     try:
         profile = (agent.prepare_api_profile(key_file, profile_dir, limits=limits)
                    if key_file is not None else
@@ -355,6 +363,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         # Refuse a new snapshot if its redaction inputs cannot be read.
         if refresh_secrets:
             read_secrets()
+        if tap is not None:
+            rec["recording"] = tap.status()
         rec["wall_seconds"] = round(time.time() - t0, 1)
         record.write_result(trial_dir, record.scrub_value(rec, secrets))
 
@@ -369,7 +379,28 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             })
             return False
 
+    def finish_recording() -> None:
+        nonlocal tap
+        if tap is None:
+            return
+        current, tap = tap, None
+        stopped = clean("camera recording", current.stop)
+        rec["recording"] = current.status()
+        if not stopped:
+            rec["recording"]["status"] = "failed"
+
     try:
+        trial_provenance = {
+            **deepcopy(provenance or {}),
+            "input_config": deepcopy((provenance or {}).get("input_config", input_config)),
+            "config": cfg,
+            "wall_clock_cap_min": wall_cap_min,
+            "containers": rec["containers"],
+            "ros_domain": ros_domain,
+            "agent_cli": {"name": agent.name, "version_pin": agent.version},
+        }
+        record.write_run_config(run_dir, record.scrub_value(trial_provenance, secrets))
+        record.write_trial_provenance(trial_dir, record.scrub_value(trial_provenance, secrets))
         mounts = profile.mounts
         if project_root is not None:
             materials = paths.sandbox_dir(stem, home) / 'robot-materials'
@@ -393,13 +424,17 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             record_size=record_size,
             **({'workspace': project_root, 'seed_workspace': False} if project_root is not None else {}))
         sandbox_live = True
-        if real and record_cameras is not None:
-            tap = record_cameras_of(cfg, sandbox_name, trial_dir / "frames", record_cameras)
-            rec["recorded_cameras"] = sorted(tap.cameras)
         # The CLI version that actually ran: read inside the sandbox.
         rec["agent_version"] = _sandbox_version(sandbox_name, agent)
         task_language = episode_task(rec, machine, scored, seed, task,
                                      override=project_root is not None)
+        resolved_proxy = agent_proxy_url(cfg["machine"]["backend"], proxy_url)
+        trial_provenance.update({
+            "ros_domain": rec["ros_domain"],
+            "agent_cli": {**trial_provenance["agent_cli"], "version": rec["agent_version"]},
+            "agent_proxy": resolved_proxy,
+        })
+        record.write_trial_provenance(trial_dir, record.scrub_value(trial_provenance, secrets))
         # Preflight: every verifiable promise the workspace docs make,
         # asserted from the sandbox before the agent starts. Red refuses
         # the trial as an anomaly; the agent never pays for a wrong
@@ -409,6 +444,9 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         rec["preflight"] = conf["checks"]
         if not conf["ok"]:
             raise RuntimeError(f"preflight failed: {','.join(conf['failed'])}")
+        if real and record_cameras is not None:
+            tap = record_cameras_of(cfg, sandbox_name, trial_dir / "frames", record_cameras)
+            rec["recorded_cameras"] = sorted(tap.cameras)
         op_meta = operate(cfg, machine, sandbox_name, operator, {
             "machine": machine,
             "trial_dir": trial_dir,
@@ -418,7 +456,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             "sim": sim_name,
             "task_language": task_language,
             "active_wall_clock_min": wall_cap_min,
-            "proxy": agent_proxy_url(cfg["machine"]["backend"], proxy_url),
+            "proxy": resolved_proxy,
             "limits": limits,
             "script": script,
             "token_file": token_file,
@@ -439,8 +477,11 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             rec["verdict"] = "pending"
         persist()
         with held_interrupts():
+            finish_recording()
             if scored:
                 score(rec, machine)
+        if "recording" in rec:
+            persist()
         if judge is not None and not scored:
             try:
                 answer = judge(rec["agent_final_message"])
@@ -479,8 +520,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
                 persist()
             finally:
                 with held_interrupts():
-                    if tap is not None:
-                        clean("camera recording", tap.stop)
+                    finish_recording()
                     if machine is not None:
                         clean("robot", machine.shutdown)
                     if sandbox_live:

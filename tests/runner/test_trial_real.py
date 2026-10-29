@@ -200,11 +200,16 @@ def test_cleanup_failures_preserve_verdict_and_attempt_remaining_cleanup(monkeyp
 
     def fail(step):
         calls.append(step)
-        assert json.loads((directory / 'result.json').read_text())['success'] is True
+        snapshot = json.loads((directory / 'result.json').read_text())
+        assert snapshot['success'] is (None if step == 'camera' else True)
+        if step == 'camera':
+            assert snapshot['termination'] == 'self_finished'
+            assert snapshot['verdict'] == 'pending'
         raise RuntimeError(f'{step} unavailable: {secret}')
 
     monkeypatch.setattr(trial, 'record_cameras_of', lambda *_: SimpleNamespace(
-        cameras={'front': '/camera'}, stop=lambda: fail('camera')))
+        cameras={'front': '/camera'}, stop=lambda: fail('camera'),
+        status=lambda: {'status': 'recording'}))
     handle.shutdown = lambda: fail('robot')
     monkeypatch.setattr(trial, 'sandbox_down', lambda _: fail('sandbox'))
     monkeypatch.setattr(trial.record, 'finalize_trial', lambda *a, **k: fail('artifacts'))

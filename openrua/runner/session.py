@@ -39,12 +39,16 @@ def launcher_command(ctx: dict, agent, model: str, options: dict,
                      session_id: str, transcript: Path) -> list[str]:
     """The launcher invocation for this trial, without the per-segment
     turn budget and resume flag."""
+    spec = ctx.get("cfg", {}).get("agent", {}).get("name") or agent.name
+    if getattr(agent, 'version', None):
+        name, pin = agents.split_pin(spec)
+        spec = f'{name}@{pin or agent.version}'
     return [
         sys.executable, "-m", "openrua.agents.launcher",
         "--sandbox", ctx["sandbox"],
         "--task", ctx["task_language"],
         "--transcript", str(transcript),
-        "--agent", agent.name,
+        "--agent", spec,
         "--model", model,
         *(x for k, v in options.items() for x in ("--option", f"{k}={v}")),
         *(["--home", str(ctx["home"])] if ctx.get("home") else []),
@@ -231,12 +235,10 @@ def agent_operator(ctx: dict) -> dict:
     cfg = ctx["cfg"]
     agent_cfg = cfg.get("agent", {})
     agent = agents.get(agent_cfg.get("name"), ctx.get("home"), version=agent_cfg.get("version"))
-    model = agent_cfg.get("model") or agent.default_model
-    # Agent knobs (reasoning effort, compaction threshold, tool timeouts)
-    # are experimental parameters that do not appear in the transcript:
-    # the merged set is pinned here from the manifest's defaults and the
-    # config, passed to the launcher explicitly, and recorded.
-    options = {**agent.default_options, **agent_cfg.get("options", {})}
+    # The trial materializes defaults before writing its config. Launch
+    # exactly that snapshot, including after a quota wait.
+    model = agent_cfg["model"]
+    options = agent_cfg["options"]
     # Naming the session up front is what makes a suspended trial
     # resumable without scraping an id out of a half-written transcript.
     session_id = str(uuid.uuid4())

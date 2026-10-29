@@ -63,6 +63,8 @@ def test_the_view_reads_only_the_camera_watched(monkeypatch):
             self.latest = {n: {"t": 0.0, "mime": "image/jpeg", "data": b"x"} for n in self.cameras}
         def stop(self):
             self.running = False
+        def status(self):
+            return {"status": "recording", "errors": []}
 
     monkeypatch.setattr(cameras, "CameraTap", Tap)
     robot = SimpleNamespace(sandbox="box", cameras=({"wrist": "/w", "scene": "/s"}, None),
@@ -134,3 +136,240 @@ def test_camera_discovery_reports_the_actual_error(monkeypatch, code, stdout, st
                         lambda *a, **k: SimpleNamespace(returncode=code, stdout=stdout, stderr=stderr))
     with pytest.raises(RuntimeError, match=match):
         cameras.list_cameras('box', '/{name}/color/image_raw')
+
+
+def test_camera_process_reads_the_same_shell_setup_without_polluting_protocol(tmp_path, monkeypatch):
+    import os
+    import subprocess
+
+    setup = tmp_path / 'robot-setup.sh'
+    setup.write_text('export CAMERA_OVERLAY=ready\nprintf "setup diagnostic\\n"\n')
+    script = tmp_path / 'camera.py'
+    script.write_text('import json, os, sys\nprint(json.dumps({"overlay": os.environ["CAMERA_OVERLAY"], '
+                      '"discovery": os.environ["ROS_DISCOVERY_SERVER"], '
+                      '"super_client": os.environ["ROS_SUPER_CLIENT"], "args": sys.argv[1:]}))\n')
+    monkeypatch.setattr(cameras, 'TAP', script)
+    arg = '--camera=wrist=/camera with spaces; $(printf unwanted)'
+    command = cameras._command('box', arg)
+    result = subprocess.run(command[command.index('sh'):],
+                            env={**os.environ, 'BASH_ENV': str(setup),
+                                 'ROS_DISCOVERY_SERVER': '192.0.2.20:11811', 'ROS_SUPER_CLIENT': 'TRUE'},
+                            capture_output=True, check=True)
+    assert json.loads(result.stdout) == {'overlay': 'ready', 'args': [arg],
+                                        'discovery': '192.0.2.20:11811', 'super_client': 'TRUE'}
+    assert result.stderr == b'setup diagnostic\n'
+
+
+def test_a_truncated_frame_keeps_prior_complete_frames_and_reports_failure(tmp_path):
+    tap = cameras.CameraTap('box', {'wrist': '/w'}, record=tmp_path)
+    stream = _stream((2.0, [('wrist', b'complete')]), (3.0, [('wrist', b'incomplete')]))[:-3]
+    tap._proc = SimpleNamespace(stdout=io.BytesIO(stream))
+    tap._read()
+    status = tap.status()
+    assert status['status'] == 'failed'
+    assert 'received 7 of 10 bytes' in status['errors'][0]
+    assert status['cameras']['wrist'] == {'count': 1, 'first_t': 2.0, 'last_t': 2.0}
+    assert tap.latest['wrist']['data'] == b'complete'
+    assert list(tmp_path.glob('*.jpg')) == [tmp_path / '000000_wrist.jpg']
+    assert len((tmp_path / 'index.jsonl').read_text().splitlines()) == 1
+
+
+@pytest.mark.parametrize('header', [b'not json\n', b'[]\n',
+                                  b'{"frames":[{"name":"wrist","mime":"image/jpeg","bytes":-1}]}\n'])
+def test_invalid_camera_protocol_is_reported(header):
+    tap = cameras.CameraTap('box', {'wrist': '/w'})
+    tap._proc = SimpleNamespace(stdout=io.BytesIO(header))
+    tap._read()
+    assert tap.status()['status'] == 'failed'
+    assert tap.status()['missing_cameras'] == ['wrist']
+
+
+def test_camera_stderr_is_preserved_with_a_bounded_status_tail(tmp_path):
+    tap = cameras.CameraTap('box', {'wrist': '/w'}, record=tmp_path)
+    diagnostic = b'X' * 24000 + b'\nROS setup failed\n'
+    tap._read_errors(SimpleNamespace(stderr=io.BytesIO(diagnostic)))
+    assert (tmp_path / 'camera.log').read_bytes() == diagnostic
+    assert len(tap.status()['stderr'].encode()) <= 8192
+    assert tap.status()['stderr'].endswith('ROS setup failed')
+
+
+def _local_tap(monkeypatch, tmp_path, source, cameras_to_read=None):
+    import subprocess
+
+    script = tmp_path / 'camera.py'
+    script.write_text(source)
+    monkeypatch.setattr(cameras, 'TAP', script)
+    original = subprocess.Popen
+    def local(command, **kwargs):
+        assert command[:2] == ['docker', 'exec']
+        return original(command[command.index('sh'):], **kwargs)
+    monkeypatch.setattr(cameras.subprocess, 'Popen', local)
+    return cameras.CameraTap('box', cameras_to_read or {'wrist': '/w'}, record=tmp_path / 'frames')
+
+
+def test_normal_camera_stop_reports_missing_frames_without_changing_task_policy(monkeypatch, tmp_path):
+    tap = _local_tap(monkeypatch, tmp_path, 'import sys\nsys.stdin.buffer.read()\n')
+    tap.start()
+    assert tap.status()['status'] == 'recording'
+    tap.stop()
+    status = tap.status()
+    assert status['status'] == 'incomplete'
+    assert status['missing_cameras'] == ['wrist']
+    assert not status['errors']
+    assert status['stopped_at'] >= status['started_at']
+
+
+def test_clean_camera_stop_retains_per_camera_first_and_last_frame_times(monkeypatch, tmp_path):
+    import time
+
+    stream = _stream((2.0, [('wrist', b'one')]), (3.0, [('wrist', b'two')]))
+    tap = _local_tap(monkeypatch, tmp_path,
+                     f'import sys\nsys.stdout.buffer.write({stream!r})\nsys.stdout.buffer.flush()\n'
+                     'sys.stdin.buffer.read()\n')
+    tap.start()
+    deadline = time.monotonic() + 3
+    while tap.ticks < 2 and time.monotonic() < deadline:
+        time.sleep(0.01)
+    tap.stop()
+    status = tap.status()
+    assert status['status'] == 'completed'
+    assert status['cameras'] == {'wrist': {'count': 2, 'first_t': 2.0, 'last_t': 3.0}}
+    assert status['missing_cameras'] == []
+    assert not tap.running
+
+
+def test_camera_exit_retains_native_error_and_cannot_be_reported_complete(monkeypatch, tmp_path):
+    tap = _local_tap(monkeypatch, tmp_path,
+                     'import sys\nsys.stderr.write("ROS setup failed\\n")\nraise SystemExit(4)\n')
+    tap.start()
+    tap._proc.wait(timeout=3)
+    tap._reader.join(timeout=3)
+    tap.stop()
+    status = tap.status()
+    assert status['status'] == 'failed'
+    assert 'ROS setup failed' in status['stderr']
+    assert any('code 4' in error for error in status['errors'])
+    assert 'ROS setup failed' in (tmp_path / 'frames/camera.log').read_text()
+
+
+def test_forced_camera_stop_is_a_failed_recording():
+    import subprocess
+
+    calls = []
+    def wait(timeout):
+        calls.append(timeout)
+        if len(calls) == 1:
+            raise subprocess.TimeoutExpired('camera fixture', timeout)
+        return -9
+    tap = cameras.CameraTap('box', {'wrist': '/w'})
+    tap._proc = SimpleNamespace(stdin=io.BytesIO(), wait=wait, kill=lambda: None, returncode=-9)
+    with pytest.raises(RuntimeError, match='did not stop after its input was closed'):
+        tap.stop()
+    assert tap.status()['status'] == 'failed'
+    assert tap.status()['stopped_at'] is not None
+
+
+def test_unconfirmed_camera_stop_retains_its_process_for_cleanup_retry():
+    import subprocess
+
+    calls = []
+    def wait(timeout):
+        calls.append(timeout)
+        if len(calls) <= 2:
+            raise subprocess.TimeoutExpired('camera fixture', timeout)
+        return 0
+    tap = cameras.CameraTap('box', {'wrist': '/w'})
+    proc = tap._proc = SimpleNamespace(stdin=io.BytesIO(), wait=wait, kill=lambda: None, returncode=None)
+    with pytest.raises(RuntimeError, match='Could not confirm'):
+        tap.stop()
+    assert tap._proc is proc
+    assert tap.status()['status'] == 'failed' and tap.status()['stopped_at'] is None
+    tap.stop()
+    assert tap._proc is None
+    assert tap.status()['stopped_at'] is not None
+
+
+def test_camera_stop_retains_a_reader_that_is_still_running():
+    tap = cameras.CameraTap('box', {'wrist': '/w'})
+    proc = tap._proc = SimpleNamespace(stdin=io.BytesIO(), wait=lambda **kw: 0, returncode=0)
+    alive = iter([True, False])
+    tap._reader = SimpleNamespace(join=lambda **kw: None, is_alive=lambda: next(alive))
+    with pytest.raises(RuntimeError, match='frame reader did not stop'):
+        tap.stop()
+    assert tap._proc is proc and tap.status()['stopped_at'] is None
+    tap.stop()
+    assert tap._proc is None and tap.status()['stopped_at'] is not None
+
+
+def test_camera_idle_cleanup_reports_failure_and_retries_without_losing_ownership(caplog):
+    import threading
+
+    calls = []
+    def stop():
+        calls.append('stop')
+        if len(calls) == 1:
+            raise RuntimeError('camera still running')
+    waits = iter([False, False, True])
+    view = cameras.CameraView.__new__(cameras.CameraView)
+    view._stop = SimpleNamespace(wait=lambda _: next(waits))
+    view._tap = SimpleNamespace(stop=stop)
+    view._lock, view._asked, view.idle_s = threading.Lock(), -1, 0
+    view._idle()
+    assert calls == ['stop', 'stop']
+    assert view._tap is None
+    assert 'camera still running' in caplog.text
+
+
+def test_failed_camera_view_keeps_ownership_until_cleanup_is_confirmed(monkeypatch):
+    started = []
+    can_stop = False
+    class Tap:
+        def __init__(self, sandbox, cams, fps):
+            self.sandbox, self.cameras = sandbox, cams
+            self.running = False
+        def start(self):
+            started.append(self.sandbox)
+        def stop(self):
+            if not can_stop:
+                raise RuntimeError('Camera process still running')
+        def status(self):
+            return {'status': 'failed', 'errors': ['Camera process exited.'], 'stderr': 'ROS setup failed'}
+    monkeypatch.setattr(cameras, 'CameraTap', Tap)
+    view = cameras.CameraView(lambda: SimpleNamespace(sandbox='box', cameras=({'wrist': '/w'}, None)))
+    try:
+        for _ in range(2):
+            with pytest.raises(RuntimeError, match='Camera process still running'):
+                view.frame('wrist')
+        assert started == ['box']
+    finally:
+        can_stop = True
+        view.close()
+
+
+def test_camera_view_recovers_on_the_next_request_after_confirmed_cleanup(monkeypatch):
+    import threading
+
+    started, stopped = [], []
+    class Tap:
+        def __init__(self, sandbox, cams, fps):
+            self.sandbox, self.cameras = sandbox, cams
+            self.running = bool(started)
+            self.lock = threading.Lock()
+            self.latest = {'wrist': {'t': 1.0, 'mime': 'image/jpeg', 'data': b'recovered'}}
+        def start(self):
+            started.append(self.sandbox)
+        def stop(self):
+            stopped.append(self.sandbox)
+        def status(self):
+            return ({'status': 'recording', 'errors': []} if self.running else
+                    {'status': 'failed', 'errors': ['Camera process exited.'], 'stderr': 'ROS setup failed'})
+    monkeypatch.setattr(cameras, 'CameraTap', Tap)
+    view = cameras.CameraView(lambda: SimpleNamespace(sandbox='box', cameras=({'wrist': '/w'}, None)))
+    try:
+        with pytest.raises(RuntimeError, match='ROS setup failed'):
+            view.frame('wrist')
+        assert stopped == ['box'] and view._tap is None
+        assert view.frame('wrist')['data'] == 'cmVjb3ZlcmVk'
+        assert started == ['box', 'box']
+    finally:
+        view.close()

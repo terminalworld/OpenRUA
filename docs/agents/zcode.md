@@ -46,8 +46,12 @@ existing shared execution owner. Another native CLI version requires protocol
 validation before changing the pin.
 
 The pinned CLI with a deterministic local provider exercises two clients,
-an explicitly approved native file write, exact session resume, interruption
-and provider-error pause. Previous bounded real-provider checks completed a
+an explicitly approved native file write, clarification questions with multiple
+choices and free-text answers, exact session resume, interruption and
+provider-error pause. Questions appear in the existing terminal and browser
+controls. A native reminder of the same unanswered question keeps your current
+selection and draft. Esc hides the dialog; `/questions` opens it again.
+Previous bounded real-provider checks completed a
 native file task and two shared-chat turns with context retention. Robot-task
 performance, OAuth account reuse and benchmark reproduction remain separate
 validation work.
