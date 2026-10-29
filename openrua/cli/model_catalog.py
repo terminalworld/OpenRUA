@@ -65,11 +65,11 @@ def read(connection, *, timeout: float = 30) -> list[dict]:
                 child.stdin.close()
             try:
                 child.wait(timeout=3)
-            except subprocess.TimeoutExpired:
+            except (subprocess.TimeoutExpired, KeyboardInterrupt):
                 with suppress(ProcessLookupError):
                     os.killpg(child.pid, signal.SIGTERM)
                 try: child.wait(timeout=3)
-                except subprocess.TimeoutExpired:
+                except (subprocess.TimeoutExpired, KeyboardInterrupt):
                     with suppress(ProcessLookupError):
                         os.killpg(child.pid, signal.SIGKILL)
                     child.wait()
@@ -92,16 +92,32 @@ def choices(home: Path, values: dict, image: str) -> list[dict]:
                 paths.credentials_dir(home) / adapter.name, user_home=Path.home(), environment=os.environ)
             profile = adapter.prepare_profile(source, root / 'profile')
         name = 'openrua-model-catalog-' + uuid4().hex
-        command = ['docker', 'run', '-d', '--rm', '--network', 'none', '--cap-drop', 'ALL',
+        command = ['docker', 'run', '-d', '--rm', '--pull', 'never', '--network', 'none', '--cap-drop', 'ALL',
                    '--security-opt', 'no-new-privileges', '--name', name, '-v', f'{workspace}:/workspace']
         for mount in profile.mounts:
             command.extend(['-v', mount])
         command.extend([image, 'sleep', 'infinity'])
+        failure = None
         try:
             result = subprocess.run(command, capture_output=True, text=True, timeout=30)
             if result.returncode:
                 raise UnavailableError(result.stderr.strip() or 'Could not open the native metadata terminal.')
             return read(adapter.model_catalog(name, values.get('model') or selected.get('model')
                                               or adapter.default_model, '', options=selected.get('options')))
+        except BaseException as exc:
+            failure = exc
+            raise
         finally:
-            subprocess.run(['docker', 'rm', '-f', name], capture_output=True, timeout=30)
+            try:
+                removed = subprocess.run(['docker', 'rm', '-f', name], capture_output=True,
+                                         text=True, timeout=30)
+                detail = removed.stderr.strip()
+                if removed.returncode and 'No such container' not in detail:
+                    raise OSError(detail or 'Docker did not confirm removal')
+            except (OSError, subprocess.TimeoutExpired, KeyboardInterrupt) as exc:
+                reason = '' if failure is None else (str(failure) or (
+                    'Model loading was interrupted.' if isinstance(failure, KeyboardInterrupt)
+                    else type(failure).__name__))
+                raise UnavailableError(
+                    f'{reason}\nCould not remove the temporary model lookup container: {str(exc) or type(exc).__name__}'.strip(),
+                    hint=f'restore Docker access, then run docker rm -f {name}') from exc

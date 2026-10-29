@@ -91,7 +91,7 @@ start or reconnect (without a subcommand):
 | `simulators` | list the bundled simulators |
 | `benchmarks` | list the bundled benchmarks (or one benchmark's suites and tasks) |
 | `agents` | list the bundled agents |
-| `build` | build the images: simulators, sandbox, proxy |
+| `build` | build simulator, sandbox, agent and proxy images |
 | `update` | update one coding agent in an existing tool image |
 | `exec` | the agent does one task on its own; the run is recorded |
 | `up` | bring a robot up with a sandbox terminal on it |
@@ -177,10 +177,10 @@ usage: openrua build [-h] [--bench NAME] [--sim NAME] [--all] [-C WORKSPACE]
 
 Build simulator images from their declarations (--bench / --sim, repeatable;
 --all: every bundled benchmark), or one of the agent-side images (sandbox,
-proxy), the ROS base, or a real robot's driver images. Bare `openrua build`
-makes the sandbox and proxy images for the default agent and the default
-benchmark's simulator image. The sandbox takes its install line from the
-manifests of the agents named with --agent.
+agent, proxy), the ROS base, or a real robot's driver images. Bare `openrua
+build` makes the sandbox and proxy images for the default agent and the
+default benchmark's simulator image. The sandbox takes its install line from
+the manifests of the agents named with --agent.
 
 positional arguments:
   [<unit>]
@@ -200,6 +200,7 @@ options:
 |---|---|
 | `base` | the ROS base image simulator images build on |
 | `sandbox` | the agent terminal image |
+| `agent` | the CLI image for model discovery and sign-in, without ROS |
 | `driver` | the images a real robot's launch command uses, from the directories its config names (backend.build) |
 | `proxy` | the whitelist proxy image (runs that limit the agent to its model service start one per agent's hosts) |
 
@@ -241,6 +242,23 @@ options:
   --robot NAME|PATH     a real robot whose config declares
                         backend.sandbox_install: its distro, image name and
                         install chain come from there
+```
+
+### openrua build agent
+
+```
+usage: openrua build agent [-h] [--agent NAME[@VERSION]] [--tag TAG]
+                           [--robot-uid ROBOT_UID]
+
+options:
+  -h, --help            show this help message and exit
+  --agent NAME[@VERSION]
+                        agent name or manifest path, optionally pinned
+                        (default: the configured agent)
+  --tag TAG             image tag (default: derived from the CLI recipe and
+                        user)
+  --robot-uid ROBOT_UID
+                        container uid (default: the current user)
 ```
 
 ### openrua build driver

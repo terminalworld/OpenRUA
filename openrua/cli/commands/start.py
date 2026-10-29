@@ -98,23 +98,19 @@ def authentication_choices(home: Path, names: list[str], *, project: Path | None
 
 def discover_models(home, values, intent, application, interact):
     from openrua.cli import model_catalog
+    from openrua.cli.preparation import prepare_agent
     adapter, _ = agent_settings.resolve(home, values['agent'] or None)
     if 'model_catalog' not in adapter.capabilities:
         raise UnavailableError('This agent does not provide a model list.',
                                hint='use its configured model or enter a supported model ID when available')
     docker_setup.ensure(**({'interact': interact('Docker setup')} if application else {}))
     progress = application.progress if application else print
-    if intent == 'connect':
-        from openrua.cli.preparation import prepare_connect
-        prepare_connect(home, values['agent'] or None, progress=progress)
-        from openrua.config.schema import sandbox_image
-        image = sandbox_image('jazzy')
-    else:
-        prepare(home, values, progress=progress, environment_only=True)
-        image = validate_values(home, values)['machine']['backend']['sandbox_image']
+    image = prepare_agent(home, values['agent'] or None, progress=progress)
     if values.get('auth_mode', 'native') == 'native':
         login.ensure(home, values['agent'] or None, 'native',
+                     image=image,
                      **({'interact': interact('Agent sign-in')} if application else {}))
+    progress('[prepare] Loading models')
     return model_catalog.choices(home, values, image)
 
 

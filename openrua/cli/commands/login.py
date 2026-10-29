@@ -41,12 +41,13 @@ def image_with(name: str) -> str | None:
     return sorted(tags, key=lambda t: (not t.startswith("openrua-sandbox-jazzy"), t))[0] if tags else None
 
 
-def sign_in(home: Path, adapter: agents.Agent, where: Path) -> None:
+def sign_in(home: Path, adapter: agents.Agent, where: Path, *, image: str | None = None) -> None:
     """Run the agent's own sign-in in a sandbox image, writing to ``where``;
-    builds the shared sandbox first when no image carries the CLI."""
+    use an explicitly prepared image, or find/build a shared sandbox."""
     creds = adapter.credentials
     title = adapter.title or adapter.name
-    image = image_with(adapter.name)
+    if image is None:
+        image = image_with(adapter.name)
     if image is None:
         from openrua.cli.commands import build
         print(f"Preparing the sandbox {title} runs in (first time only, a few minutes)...",
@@ -71,7 +72,7 @@ def _yes(answer: str, default: bool) -> bool:
 
 
 def ensure(home: Path, name: str | None, auth_mode: str = "native",
-           ask: Callable[[str], str] = input, interact=None) -> None:
+           ask: Callable[[str], str] = input, interact=None, *, image: str | None = None) -> None:
     """Before a session starts at a terminal: when its agent signs in
     natively and is not signed in, offer to sign it in now. Declining is a
     AuthError with the command for later."""
@@ -86,14 +87,14 @@ def ensure(home: Path, name: str | None, auth_mode: str = "native",
     if login is None or login.available:
         return
     if interact is not None:
-        return interact(lambda: ensure(home, name, auth_mode, ask))
+        return interact(lambda: ensure(home, name, auth_mode, ask, image=image))
     title = adapter.title or adapter.name
     print(f"\n{title} is not signed in on this computer yet. OpenRUA works through your "
           f"{title} account.", flush=True)
     if not _yes(ask("Sign in now? [Y/n] "), default=True):
         raise AuthError(f"{title} is not signed in on this computer",
                           hint=f"run openrua login {adapter.name}")
-    sign_in(home, adapter, where)
+    sign_in(home, adapter, where, **({'image': image} if image is not None else {}))
 
 
 def run(args) -> int:

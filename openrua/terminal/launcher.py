@@ -190,6 +190,8 @@ def setup(values, choices, location, save, check, launch, agent_models,
                     raise RuntimeError('Native model discovery is not available in this entry point.')
                 model_choices = perform('Loading models', lambda: resolve_models(values, intent))
                 notice = ''
+            except KeyboardInterrupt:
+                notice = 'Model loading canceled.'
             except Exception as exc:
                 notice = str(exc) + '\n' + getattr(exc, 'hint', '')
             continue

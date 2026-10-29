@@ -128,9 +128,16 @@ commands (which still require prepared images), use:
 openrua build                            # the default agent's sandbox, the proxy image, and the default benchmark's simulator image
 openrua build --bench libero_pro         # one simulator image; --bench / --sim repeatable, --all: every bundled benchmark
 openrua build sandbox --agent codex      # --distro jazzy (default) | humble; --agent claude-code (default), repeatable
+openrua build agent --agent codex        # CLI tools for model lookup, without ROS or robot dependencies
 openrua build proxy                      # one image for every agent: each proxy gets its hosts when it starts
 openrua build driver --robot ./my-robot.yaml   # a real robot's driver images (backend.build)
 ```
+
+Setup's model picker reuses a compatible installed agent image, preferring newer
+builds that match the selected CLI recipe, version and filesystem user. If none
+is available, it prepares the small CLI image automatically. `build agent` also
+lets you rebuild those tools explicitly; `--agent NAME@VERSION` pins the CLI.
+The complete robot environment is prepared when you start a session.
 
 A simulated robot's image holds the whole environment: ROS 2, the
 simulator checkouts at their pinned commits, the assets, the Python
