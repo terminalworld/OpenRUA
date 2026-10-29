@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import argparse
+from copy import deepcopy
 import signal
 import threading
 from contextlib import contextmanager
@@ -183,6 +184,8 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
     ``args.task_suite``, on the resolved ``cfg`` (written from
     ``cfg_path``), recorded under ``<runs root>/<label>/<run id>``. The
     shared body of ``openrua bench`` and ``openrua exec``."""
+    input_config = deepcopy(cfg)
+    cfg = deepcopy(cfg)
     record_cameras = args.record
     if cfg["machine"]["backend"].get("kind") != "sim" and not args.task:
         raise UsageError("a real robot has no benchmark task to ask for",
@@ -239,12 +242,10 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
         template_hash=workspace.template_hash(cfg),
         prompt=prompt, resume_prompt=agents.RESUME_PROMPT,
         code_root=paths.code_root(), proxy_image=proxy.IMAGE,
-    ), "config": cfg}
+    ), "input_config": input_config}
     if project_root is not None:
         prov['project'] = str(project_root)
         prov['robot_materials_template_sha256'] = prov.pop('workspace_template_sha256')
-    record.write_run_config(run_dir, prov)
-
     op = OPERATORS[args.operator]
     for task_id in args.task_ids:
         for seed in args.seeds:
@@ -258,6 +259,7 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
                     record_cameras=record_cameras, record_every=args.record_every,
                     record_size=args.record_size, progress=getattr(args, "progress", None),
                     judge=getattr(args, "judge", None),
+                    provenance=prov,
                     **({'project_root': project_root, 'prompt_template': prompt}
                        if project_root is not None else {}),
                 )
@@ -266,11 +268,19 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
                 raise SystemExit(f"[trial] {e}")
             trial_dir = (run_dir / "trials" / f"{args.task_suite}-{task_id}"
                          / f"seed{seed}")
-            record.write_trial_provenance(trial_dir, prov)
             record.write_run_summary(run_dir)
             _say(f"[{args.task_suite}:{task_id} seed{seed}] "
                  f"success={rec['success']} term={rec['termination']} "
                  f"wall={rec['wall_seconds']}s")
+            recording = rec.get("recording", {})
+            if recording.get("status") in {"incomplete", "failed"}:
+                _say("[trial] Camera recording did not complete.")
+                if recording.get("missing_cameras"):
+                    _say("[trial] No frames arrived from: " + ", ".join(recording["missing_cameras"]))
+                for error in recording.get("errors", []):
+                    _say(f"[trial] {error}")
+                _say(f"[trial] Inspect {trial_dir / 'frames' / 'camera.log'} "
+                     f"and {trial_dir / 'result.json'} for recording details.")
             cleanup_errors = (rec.get("cleanup") or {}).get("errors", [])
             if rec.get("verdict_error") or cleanup_errors:
                 if rec.get("verdict_error"):

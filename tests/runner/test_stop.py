@@ -18,7 +18,7 @@ def test_ctrl_c_during_the_agent_ends_its_segment_as_stopped(tmp_path, monkeypat
     monkeypatch.setattr(R, "stop_processes", stopped.append)
     (tmp_path / "transcript.jsonl").write_text('{"type": "system", "subtype": "init"}\n')
     meta = R.agent_operator({
-        "cfg": {"agent": {"name": "claude-code", "model": "m"}, "protocol": {}},
+        "cfg": {"agent": {"name": "claude-code", "model": "m", "options": {}}, "protocol": {}},
         "sandbox": "rc-x-sandbox", "task_language": "T", "trial_dir": tmp_path,
         "profile_dir": tmp_path / "profile", "proxy": "", "sim": "rc-x-sim",
         "limits": {"internet": "open", "web_search": True, "account_connectors": True},

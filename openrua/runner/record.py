@@ -338,15 +338,26 @@ def write_config(trial_dir: Path, cfg: dict) -> Path:
 
 def write_result(trial_dir: Path, record: dict) -> None:
     """Replace a result only after the complete new record is durable."""
+    _write_json(trial_dir / 'result.json', record)
+
+
+def _write_json(path: Path, record: dict, *, replace: bool = True) -> None:
+    """Publish a complete, durable record, optionally only if absent."""
     data = json.dumps(record, indent=2) + "\n"
-    fd, temporary = tempfile.mkstemp(prefix='.result-', dir=trial_dir)
+    fd, temporary = tempfile.mkstemp(prefix=f'.{path.stem}-', dir=path.parent)
     try:
         with os.fdopen(fd, 'w') as stream:
             stream.write(data)
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, trial_dir / 'result.json')
-        directory = os.open(trial_dir, os.O_RDONLY | os.O_DIRECTORY)
+        if replace:
+            os.replace(temporary, path)
+        else:
+            try:
+                os.link(temporary, path)
+            except FileExistsError:
+                return
+        directory = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
         try:
             os.fsync(directory)
         finally:
@@ -395,15 +406,14 @@ def session_provenance(robot_file: Path | None, cfg: dict, code_root: Path,
 
 
 def write_trial_provenance(trial_dir: Path, prov: dict) -> None:
-    (trial_dir / "provenance.json").write_text(json.dumps(prov, indent=2))
+    _write_json(trial_dir / 'provenance.json', prov)
 
 
 def write_run_config(run_dir: Path, prov: dict) -> None:
     """Run-level config.json is write-once (concurrent single-trial
     runners must not rewrite each other's copy); the per-execution record
     is each trial's provenance.json."""
-    if not (run_dir / "config.json").exists():
-        (run_dir / "config.json").write_text(json.dumps(prov, indent=2))
+    _write_json(run_dir / 'config.json', prov, replace=False)
 
 
 def write_run_summary(run_dir: Path) -> Path | None:
@@ -509,6 +519,7 @@ def finalize_trial(trial_dir: Path, agent, secrets: list[str],
         scrub_file(Path(path), secrets)
     scrub_file(transcript, secrets)
     scrub_file(trial_dir / "bridge.log", secrets)
+    scrub_file(trial_dir / 'frames' / 'camera.log', secrets)
     scrub_tree(trial_dir / "workspace", secrets)
     if transcript.exists():
         extract_commands(transcript, trial_dir / "commands.sh", agent)

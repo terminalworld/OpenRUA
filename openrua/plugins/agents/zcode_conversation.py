@@ -21,6 +21,7 @@ class ZCodeConversation(ConversationProtocol):
         self._seen = set()
         self._events = set()
         self._requests = {}
+        self._answered = set()
         self._cancel_pending = False
         self._send_pending = False
 
@@ -51,6 +52,7 @@ class ZCodeConversation(ConversationProtocol):
         if not turn_id or turn_id in self._seen:
             raise ValueError('turn ID must be nonempty and new')
         self._seen.add(turn_id)
+        self._answered.clear()
         self._active, self._native_turn = turn_id, None
         self._send_pending = True
         return Update([self._request('session/send', {
@@ -161,6 +163,8 @@ class ZCodeConversation(ConversationProtocol):
         if (not self._active or params.get('sessionId') != self.session_id or
                 params.get('turnId') not in (None, self._native_turn)):
             return Update([{'id': frame['id'], 'error': {'code': -32602, 'message': 'No matching active turn'}}])
+        if frame['method'] == 'interaction/requestUserInput' and params.get('questions'):
+            return self._question(frame)
         if frame['method'] != 'interaction/requestPermission':
             # No credential callbacks, browser tools or user answers are fabricated.
             return Update([{'id': frame['id'], 'error': {'code': -32601, 'message': 'Unsupported client request'}}],
@@ -185,9 +189,68 @@ class ZCodeConversation(ConversationProtocol):
             'questions': [{'id': 'decision', 'text': params.get('reason') or f"Allow {params['toolName']}?",
                            'choices': ['allow', 'deny'], 'secret': False}], 'details': params})])
 
+    def _question(self, frame):
+        params = frame['params']
+        key = 'input:' + params['requestId']
+        if key in self._answered:
+            return Update()
+        pending = self._requests.get(key)
+        if pending:
+            if pending['details'] != params:
+                raise ValueError('native question changed while awaiting an answer')
+            # Native reannouncements replace the RPC id every second. Keep
+            # the same user controls while replying through the latest id.
+            pending['wire'] = frame['id']
+            return Update()
+        questions = []
+        for index, row in enumerate(params['questions']):
+            labels = [option['label'] for option in row['options']]
+            if len(set(labels)) != len(labels):
+                raise ValueError('native question has ambiguous option labels')
+            context = [row['question']]
+            if index == 0:
+                if params.get('prompt'):
+                    context.append(params['prompt'])
+                if isinstance(params.get('input'), dict) and params['input'].get('plan'):
+                    context.append(params['input']['plan'])
+            context.extend(f"{option['label']}: {option['description']}" for option in row['options']
+                           if option.get('description'))
+            context.extend(f"{option['label']}\n{option['preview']}" for option in row['options']
+                           if option.get('preview'))
+            questions.append({'id': str(index), 'text': '\n\n'.join(context), 'choices': labels,
+                              'multiple': row.get('multiSelect', False), 'allow_other': True,
+                              'secret': False})
+        if len({row['question'] for row in params['questions']}) != len(questions):
+            raise ValueError('native question texts must be unique')
+        self._requests[key] = {'wire': frame['id'], 'logical': params['requestId'],
+                               'questions': questions, 'details': params}
+        return Update(events=[Event('input_required', self._active, {'request_id': key,
+                              'questions': questions, 'details': params})])
+
     def respond(self, request_id, answers):
         if request_id not in self._requests:
             raise ValueError('input request is not pending')
+        pending = self._requests[request_id]
+        if 'questions' in pending:
+            questions = pending['questions']
+            if set(answers) != {q['id'] for q in questions}:
+                raise ValueError('answer each native question exactly once')
+            encoded = {}
+            for question, native in zip(questions, pending['details']['questions']):
+                values = answers[question['id']]
+                if (not isinstance(values, list) or not values
+                        or not all(isinstance(v, str) and v.strip() for v in values)
+                        or len(set(values)) != len(values)
+                        or (not question['multiple'] and len(values) != 1)):
+                    raise ValueError('provide valid answers for each native question')
+                options = {option['label']: option['value'] for option in native['options']}
+                if sum(value not in options for value in values) > 1:
+                    raise ValueError('provide at most one free-text answer per question')
+                encoded[native['question']] = [options.get(value, value) for value in values]
+            del self._requests[request_id]
+            self._answered.add(request_id)
+            return Update([{'id': pending['wire'], 'result': {
+                'action': 'accept', 'content': {'answers': encoded}}}])
         if set(answers) != {'decision'} or answers['decision'] not in (['allow'], ['deny']):
             raise ValueError('choose exactly one permission decision: allow or deny')
         pending = self._requests.pop(request_id)

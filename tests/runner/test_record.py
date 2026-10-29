@@ -120,6 +120,20 @@ def test_scrub_file_redacts_every_secret(tmp_path):
     assert "SECRETSECRET" not in body and body.count("[REDACTED]") == 2
 
 
+def test_finalize_scrubs_camera_diagnostics_without_rewriting_frames(tmp_path):
+    from openrua.runner.record import finalize_trial
+
+    frames = tmp_path / 'frames'
+    frames.mkdir()
+    secret = 'synthetic-camera-credential-value'
+    (frames / 'camera.log').write_text(f'camera failure: {secret}\n')
+    image = b'\xff\xd8\xff\x00camera-frame'
+    (frames / 'view.jpg').write_bytes(image)
+    finalize_trial(tmp_path, object(), [secret])
+    assert (frames / 'camera.log').read_text() == 'camera failure: [REDACTED]\n'
+    assert (frames / 'view.jpg').read_bytes() == image
+
+
 def test_archive_prior_attempt_moves_evidence_down(tmp_path):
     from openrua.runner.record import archive_prior_attempt
     trial = tmp_path / "seed0"
@@ -203,20 +217,22 @@ def test_run_config_is_write_once(tmp_path):
 
 
 @pytest.mark.parametrize('failure', ['fsync', 'replace'])
-def test_failed_result_update_keeps_the_previous_complete_record(tmp_path, monkeypatch, failure):
+@pytest.mark.parametrize('artifact', ['result', 'provenance'])
+def test_failed_record_update_keeps_the_previous_complete_record(tmp_path, monkeypatch, failure, artifact):
     from openrua.runner import record
 
     before = {'success': None, 'verdict': 'pending', 'termination': 'self_finished'}
-    record.write_result(tmp_path, before)
+    write = record.write_result if artifact == 'result' else record.write_trial_provenance
+    write(tmp_path, before)
 
     def failed(*args):
         raise OSError('disk unavailable')
 
     monkeypatch.setattr(record.os, failure, failed)
     with pytest.raises(OSError, match='disk unavailable'):
-        record.write_result(tmp_path, {**before, 'success': True, 'verdict': 'person'})
-    assert json.loads((tmp_path / 'result.json').read_text()) == before
-    assert not list(tmp_path.glob('.result-*'))
+        write(tmp_path, {**before, 'success': True, 'verdict': 'person'})
+    assert json.loads((tmp_path / f'{artifact}.json').read_text()) == before
+    assert not list(tmp_path.glob(f'.{artifact}-*'))
 
 
 def test_scrub_covers_the_archived_workspace_and_leaves_binaries_alone(tmp_path):
