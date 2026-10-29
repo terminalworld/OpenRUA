@@ -3,8 +3,9 @@
 This folder becomes the robot's adaptation: the files OpenRUA brings the
 robot up from and describes it to an agent with. A person is at the
 robot. They do what only a person can (power, brakes, the vendor's web
-interface, the emergency stop, cables, `sudo` on this computer) and
-approve each command that changes something here.
+interface, the emergency stop, cables, `sudo` on this computer).
+Command approval follows the agent's permission settings. Ask the person
+for the specific physical or host-side action you need them to take.
 
 ## What this terminal reaches
 
@@ -35,6 +36,19 @@ holds robot types OpenRUA ships, for the facts an arm's entry carries.
 `robot.draft.yaml` (written by `check.py probe`) is the live graph read
 into the same format: a starting point for `robot.yaml`'s machine facts.
 
+## Start with the existing project
+
+Read the project's adaptation files and connection notes first. Reuse the
+existing driver images, launch scripts and startup checks where they match
+the current robot. Inspect any supplied adaptation before replacing files
+or choosing new drivers. Use Git or native archive tools when moving files
+so executable permissions are preserved.
+
+Check what is available on this computer and what has changed since the
+recorded setup. Continue the work you can do independently. Ask the person
+only for facts you cannot establish and need for the next step, or for a
+specific action such as connecting power or enabling controller access.
+
 ## Steps
 
 Each step is done when its check passes: `python3 /openrua-connect/check.py <step>`.
@@ -45,13 +59,16 @@ is in the project's `.openrua/connect/<session>/<step>.log`.
    the devices present. What fails comes with the command that fixes it.
 2. **What the robot is**: the arm's make, model and controller or
    firmware version, the gripper, the cameras and their serial numbers.
-   The firmware version decides which driver release talks to it. The
-   person confirms the list before drivers are chosen.
-3. **Drivers** (`drivers`): a ROS 2 driver for each part, the vendor's or
-   the community's, in a version that matches what step 2 found, built as
-   an image from `driver/` and named under `backend.build`. Each part,
-   started on its own and only reading, shows its data (joint states,
-   images, the gripper's state) before parts are combined.
+   Read these from the existing project, accessible controller information
+   and attached devices. The firmware version decides which driver release
+   talks to it; resolve missing or conflicting facts before relying on them.
+3. **Drivers** (`drivers`): reuse the project's drivers when they match
+   the identified hardware and firmware. For a missing or incompatible
+   driver, use the vendor's or community's ROS 2 driver in a matching
+   version, built as an image from `driver/` and named under
+   `backend.build`. For newly added or changed components, start each part
+   on its own and only read its data (joint states, images, the gripper's
+   state) before combining them.
    Build names resolve to content-addressed tags. Pass the resolved image
    into a host launch script explicitly, for example
    `launch: python3 driver/up.py --image {images[driver]}` with

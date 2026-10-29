@@ -77,3 +77,24 @@ test('compact progress only reveals raw build output when logs are requested', a
   terminal.input('l'); assert.doesNotMatch(screen.output.text, /apt and Docker/);
   screen.stop(); host.stop(); await result;
 });
+
+test('startup phases replace the summary while elapsed time stays explicitly total', async () => {
+  const terminal = new Terminal(), host = new TerminalHost(terminal);
+  const screen = new Progress(host);
+  const result = screen.run();
+  screen.update({title: 'Starting session', compact: true, summary: 'Starting session'});
+  screen.started = Date.now() - 33000;
+  const started = screen.started;
+  screen.update({summary: 'Starting the agent container', line: '[startup] Starting the agent container'});
+  screen.update({line: '[startup timing] Preparing project files: completed in 0.250s'});
+  assert.match(screen.output.text, /Starting the agent container/);
+  assert.match(screen.output.text, /\d+s total/);
+  assert.equal(screen.started, started);
+  assert.doesNotMatch(screen.output.text, /Preparing project files/);
+  terminal.input('l'); assert.match(screen.output.text, /Preparing project files: completed/);
+  screen.update({summary: 'Connecting to the agent'});
+  assert.match(screen.output.text, /Connecting to the agent/);
+  assert.match(screen.output.text, /\d+s total/);
+  assert.equal(screen.started, started);
+  screen.stop(); host.stop(); await result;
+});

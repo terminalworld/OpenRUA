@@ -14,6 +14,7 @@ from openrua.config import paths
 from openrua.errors import UnavailableError
 from openrua.runner import live_state
 from openrua.runner.live import LiveRobot, RobotRequest, open_robot
+from openrua.runner.startup import phase
 from openrua.sessions.core import Session, initial_state
 from openrua.sessions.execution import Execution, StdioTransport
 from openrua.sessions.store import SQLiteStore
@@ -237,8 +238,9 @@ async def start(request: RobotRequest, open_resources: Callable | None = None) -
         facts = live_state.load(request.name, request.home)
         directory = paths.sandbox_dir(request.name, request.home)
         store = SQLiteStore(directory / "conversation.sqlite", initial_state())
-        execution = await _open_execution(request.name, request.home, store,
-                                           resume=continuing, reopen=continuing)
+        with phase('Connecting to the agent'):
+            execution = await _open_execution(request.name, request.home, store,
+                                               resume=continuing, reopen=continuing)
         managed = ManagedSession(robot, execution, store, WorkspaceFiles(Path(facts["workspace"])),
                                  name=request.name, home=request.home)
         execution.on_interrupt = managed.cancel_motion

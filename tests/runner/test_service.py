@@ -52,6 +52,33 @@ def test_start_failure_preserves_original_error(tmp_path):
     assert not endpoint.exists()
 
 
+def test_startup_progress_arrives_before_the_endpoint_without_old_or_raw_logs(tmp_path):
+    endpoint, log, lock = (tmp_path / name for name in ('endpoint.json', 'service.log', 'start.lock'))
+    log.write_text('[startup] An earlier startup\n')
+    program = '''
+from openrua.runner.startup import phase
+import time
+with phase('Starting the agent container'):
+    print('raw build detail', flush=True)
+    time.sleep(0.3)
+with phase('Checking agent tools'):
+    pass
+''' + WORKER
+    seen = []
+    client = service.start([sys.executable, '-c', program, str(endpoint)], endpoint, log, lock,
+                           timeout=10, progress=lambda line: seen.append((line, endpoint.exists())))
+    try:
+        assert ('[prepare] Starting the agent container', False) in seen
+        assert [line for line, _ in seen if line.startswith('[prepare]')] == [
+            '[prepare] Starting the agent container', '[prepare] Checking agent tools']
+        assert any(line.startswith('[startup timing] Starting the agent container: completed in ')
+                   for line, _ in seen)
+        assert all('raw build detail' not in line and 'An earlier startup' not in line for line, _ in seen)
+        assert 'raw build detail' in log.read_text()
+    finally:
+        client.end()
+
+
 def test_concurrent_launch_and_stale_endpoint_never_spawn(tmp_path, monkeypatch):
     endpoint, log, lock = (tmp_path / name for name in ('endpoint.json', 'service.log', 'start.lock'))
     monkeypatch.setattr(service.subprocess, 'Popen', lambda *a, **kw: pytest.fail('must not spawn'))

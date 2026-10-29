@@ -61,6 +61,8 @@ async def serve(args) -> None:
                                       **({"check": flow.check} if flow else {})}, cameras=view)
         owned.on_execution = lambda execution: setattr(server, 'execution', execution)
         server.start()
+        if flow:
+            flow.prepare()
         write_endpoint(endpoint, server.url, server.token)
         published = True
         if flow:

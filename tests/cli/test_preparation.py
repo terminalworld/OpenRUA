@@ -66,7 +66,11 @@ def test_prepare_builds_missing_only_and_retry_reuses_completed_images(tmp_path,
 
 
 def test_no_build_when_docker_cannot_be_reached(tmp_path, monkeypatch):
-    monkeypatch.setattr(preparation.subprocess, 'run', lambda *a, **k: SimpleNamespace(returncode=1, stderr='permission denied'))
+    seen = []
+    def docker(*args, **kwargs):
+        assert seen == ['[prepare] Checking Docker']
+        return SimpleNamespace(returncode=1, stderr='permission denied')
+    monkeypatch.setattr(preparation.subprocess, 'run', docker)
     monkeypatch.setattr(preparation.subprocess, 'Popen', lambda *a, **k: pytest.fail('must not build'))
     with pytest.raises(UnavailableError, match='permission denied'):
-        preparation.prepare(tmp_path, values())
+        preparation.prepare(tmp_path, values(), seen.append)

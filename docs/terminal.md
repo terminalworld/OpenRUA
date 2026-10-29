@@ -43,6 +43,12 @@ Maintained files remain editable in the project.
 **Connect a new robot** opens `openrua connect` inside
 the current coding project ([connect.md](connect.md)).
 
+During startup, the compact progress view names the current work, such as
+**Checking Docker**, **Starting the agent container**, or **Connecting to the
+agent**. The timer shows the total time for the current operation, not the time
+spent on that individual step. **L** shows or hides details. Startup phase
+durations are retained in the session's service log for diagnosis.
+
 Before a session starts, `openrua` offers available software updates in the same
 fullscreen interface. Optional updates default to **Continue with current
 version**; **Skip this version** remembers that release. A CLI below the plugin's

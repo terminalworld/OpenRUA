@@ -9,6 +9,15 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- Show the actual startup stage in the compact terminal progress view,
+  including Docker checks, container startup and the agent connection.
+  Keep detailed output behind **L** and retain phase timings in the service log.
+- Guide robot connection from the project's existing adaptation and startup
+  scripts. Ask only for missing facts or actions the user needs to take, while
+  keeping native command permissions and first-motion confirmation.
+- Distinguish chat readiness from unfinished robot setup in both clients.
+  Show pending questions without implying that ongoing agent work has stopped.
+
 ## 0.31.2
 
 - Probe real robots using the project's discovery settings, ROS distribution

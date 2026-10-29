@@ -461,6 +461,30 @@ def test_browser_robot_fault_holds_old_work_and_allows_repair_without_leaving(tm
     asyncio.run(browser_case(tmp_path, check))
 
 
+def test_browser_distinguishes_chat_readiness_from_unfinished_robot_setup(tmp_path):
+    async def check(page, store, native, server):
+        server.execution.session.checked('host', 'passed')
+        await playwright.expect(page.locator('#state')).to_have_text('Ready to chat')
+        await playwright.expect(page.locator('#notes')).to_contain_text('Robot setup is not finished')
+        await playwright.expect(page.locator('#execution-description')).to_contain_text('finish the connection')
+        server.execution.session.checked('drivers', 'failed', 'Controller is not available')
+        await playwright.expect(page.locator('#notes')).to_contain_text('Robot setup needs attention')
+        await send(page, 'Inspect the connection')
+        await until(lambda: store.snapshot()['state']['active'] is not None)
+        turn = store.snapshot()['state']['active']
+        await emit(native, 'input_required', turn, request_id='power', reply_as_message=True, questions=[
+            {'id': 'power', 'text': 'Is the controller on?', 'choices': ['Yes', 'No']}])
+        await playwright.expect(page.locator('#questions')).to_be_visible()
+        await playwright.expect(page.locator('#state')).to_have_text('Working')
+        await emit(native, 'turn_finished', turn, status='completed')
+        await until(lambda: store.snapshot()['state']['active'] is None)
+        await server.execution.robot_status('ready')
+        await playwright.expect(page.locator('#state')).to_have_text('Ready')
+        await playwright.expect(page.locator('#notes')).not_to_contain_text('Robot setup is not finished')
+        await playwright.expect(page.locator('#notes')).not_to_contain_text('Robot setup needs attention')
+    asyncio.run(browser_case(tmp_path, check))
+
+
 def test_browser_robot_request_survives_lost_ack_and_reload_with_same_identity(tmp_path):
     async def check(page, store, native, server):
         calls, jobs = [], {}

@@ -91,6 +91,12 @@ export function status(state, {readOnly = false} = {}) {
   if (maintenance && !connectionFailure) notes.push({tone: maintenance.status === 'failed' || maintenance.status === 'unknown' ? 'warn' : 'plain',
     text: `${maintenance.operation}: ${maintenance.status} · /robot`});
   const checks = Object.entries(state.checks ?? {});
+  const settingUp = !state.robot && checks.length > 0;
+  if (settingUp) {
+    const failed = checks.some(([, check]) => check.status === 'failed');
+    notes.push({tone: failed ? 'warn' : 'plain', kind: 'setup',
+      text: failed ? 'Robot setup needs attention' : 'Robot setup is not finished'});
+  }
   if (checks.length) notes.push({tone: 'plain', kind: 'checks', checks,
     text: checks.map(([step, check]) => `${step} ${{passed: '✓', failed: '✗', running: '…'}[check.status] ?? ''}`).join(' ')});
   if (state.settings?.permissions && (!state.setting_controls || state.setting_controls.includes('permissions'))) {
@@ -115,13 +121,15 @@ export function status(state, {readOnly = false} = {}) {
     head = {kind: 'paused', tone: 'warn', text: 'Messages are paused. Open /queue to review them.' +
       (state.connected ? ' Use /continue when ready.' : ' The agent is disconnected. Use /resume in the terminal to reconnect it.')};
   }
-  else if (questions.some(request => !request.reply_as_message))
+  else if (questions.some(request => !request.reply_as_message) || (asking && !state.active))
     head = {kind: 'waiting', tone: 'warn', text: 'Waiting for your response'};
   else if (state.active && state.messages.find(message => message.id === state.active)?.cancel_requested)
     head = {kind: 'interrupting', tone: 'busy', text: 'Interrupting…'};
   else if (state.active) head = {kind: 'working', tone: 'busy', text: 'Working…'};
-  else head = {kind: 'ready', tone: state.robot && state.robot.status !== 'ready' ? 'plain' : 'good',
-    text: state.robot && state.robot.status !== 'ready' ? 'Ready to chat' : 'Ready'};
+  else {
+    const chatOnly = settingUp || (state.robot && state.robot.status !== 'ready');
+    head = {kind: 'ready', tone: chatOnly ? 'plain' : 'good', text: chatOnly ? 'Ready to chat' : 'Ready'};
+  }
   return {head, notes};
 }
 

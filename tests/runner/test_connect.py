@@ -177,6 +177,46 @@ def test_a_check_runs_on_the_host_and_its_result_reaches_the_session(tmp_path, m
         done.start("everything")
 
 
+@pytest.mark.parametrize('host_ok', [True, False])
+def test_connection_records_the_host_check_before_reporting_and_keeps_its_run(tmp_path, monkeypatch, host_ok):
+    async def run():
+        done, session = checks(tmp_path)
+        commands, running = [], []
+
+        async def command(operation, **params):
+            commands.append((operation, params))
+
+        flow = connect.ConnectFlow.__new__(connect.ConnectFlow)
+        flow.request, flow.folder = done.request, done.folder
+        flow.owned = SimpleNamespace(execution=SimpleNamespace(session=session, command=command))
+        flow._task = None
+        service = connect.paths.sandbox_dir(done.request.name, done.request.home) / 'connect'
+        service.mkdir(parents=True)
+
+        def report():
+            current = session.store.snapshot()['state']['checks']['host']
+            assert current['status'] == 'running' and current['run']
+            running.append(current['run'])
+            return host_ok, 'host fixture result'
+
+        monkeypatch.setattr(connect, 'host_report', report)
+        try:
+            flow.prepare()
+            await flow.begin(SimpleNamespace(url='http://127.0.0.1:1234', token='fixture'))
+            current = session.store.snapshot()['state']['checks']['host']
+            assert current == {'status': 'passed' if host_ok else 'failed',
+                               'summary': 'host fixture result', 'run': running[0]}
+            assert commands[0][0] == 'enqueue'
+            assert 'host fixture result' in commands[0][1]['text']
+            assert (connect.check_directory(done.request) / 'host.log').read_text() == 'host fixture result\n'
+        finally:
+            await flow.close()
+            if flow._task is not None:
+                await asyncio.gather(flow._task, return_exceptions=True)
+            session.store.close()
+    asyncio.run(run())
+
+
 def test_done_names_what_has_not_passed_yet(tmp_path):
     done, session = checks(tmp_path)
     assert done.start("done")["status"] == "failed"

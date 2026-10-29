@@ -98,6 +98,7 @@ def _ready(image: str, probe: str | None) -> bool:
 def _prepare_images(home: Path, commands: list[tuple[str, list[str]]], progress,
                     probes: dict[str, str | None] | None = None) -> None:
     """Share image locks, build output and failure logs across startup paths."""
+    progress('[prepare] Checking Docker')
     try:
         check = subprocess.run(['docker', 'info', '--format', '{{.ServerVersion}}'],
                                capture_output=True, text=True, timeout=30)
