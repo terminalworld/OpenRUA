@@ -29,6 +29,8 @@ export const COMMANDS = [
 
 export const commandsFor = client => COMMANDS.filter(c => c.clients.includes(client));
 
+export const messageText = message => message.display_text ?? message.text;
+
 export function displayStatus(value) {
   return {accepted: 'Requested', running: 'Running', starting: 'Starting', completed: 'Finished',
     cancelled: 'Cancelled', canceled: 'Cancelled', interrupted: 'Interrupted', failed: 'Failed',
@@ -101,7 +103,8 @@ export function status(state, {readOnly = false} = {}) {
   if (queued) notes.push({tone: 'plain', text: `${queued} waiting`});
   if (!(state.connected || state.closed || readOnly)) notes.push({tone: 'warn',
     text: state.pause_reason?.startsWith('agent disconnected') ? state.pause_reason : 'agent disconnected'});
-  const asking = Object.values(state.requests ?? {}).filter(r => r.status === 'pending').length;
+  const questions = Object.values(state.requests ?? {}).filter(r => r.status === 'pending');
+  const asking = questions.length;
   if (asking) notes.push({tone: 'warn', kind: 'questions', text: `${asking} question${asking === 1 ? '' : 's'} to answer. Type a reply or open /questions.`});
   let head;
   if (readOnly) head = {kind: 'readonly', tone: 'muted', text: 'Viewing saved conversation. You cannot send messages here.'};
@@ -112,7 +115,8 @@ export function status(state, {readOnly = false} = {}) {
     head = {kind: 'paused', tone: 'warn', text: 'Messages are paused. Open /queue to review them.' +
       (state.connected ? ' Use /continue when ready.' : ' The agent is disconnected. Check the session log before restarting.')};
   }
-  else if (asking) head = {kind: 'waiting', tone: 'warn', text: 'Waiting for your response'};
+  else if (questions.some(request => !request.reply_as_message))
+    head = {kind: 'waiting', tone: 'warn', text: 'Waiting for your response'};
   else if (state.active && state.messages.find(message => message.id === state.active)?.cancel_requested)
     head = {kind: 'interrupting', tone: 'busy', text: 'Interrupting…'};
   else if (state.active) head = {kind: 'working', tone: 'busy', text: 'Working…'};

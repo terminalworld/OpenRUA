@@ -10,6 +10,13 @@ from openrua.config import load_user_config, projects
 from openrua.errors import UsageError
 
 
+class ConnectedClient:
+    def snapshot(self):
+        return {'state': {'connected': True}}
+    def request(self, *args):
+        pytest.fail('a connected agent must not restart')
+
+
 @pytest.fixture(autouse=True)
 def terminal_presentation(monkeypatch):
     from openrua.terminal import application
@@ -233,7 +240,7 @@ def test_existing_session_reconnects_without_reading_changed_defaults(tmp_path, 
     directory.mkdir(parents=True)
     (directory / 'endpoint.json').write_text('{}')
     (tmp_path / 'config.yaml').write_text('invalid: [')
-    client = object()
+    client = ConnectedClient()
     monkeypatch.setattr(start.service, 'connect', lambda path: client)
     opened = []
     monkeypatch.setattr(start, 'open_interface', lambda args, c, name, **kw: opened.append((c, name)) or 0)
@@ -291,7 +298,7 @@ def test_unnamed_starts_create_distinct_ids_without_reconnecting_old_default(tmp
 
 def test_resume_does_not_load_config_or_launch_resources(tmp_path, monkeypatch):
     (tmp_path / 'config.yaml').write_text('broken: [')
-    selected = object()
+    selected = ConnectedClient()
     monkeypatch.setattr(start.history, 'open_session', lambda home, name: (selected, name))
     opened = []
     monkeypatch.setattr(start, 'open_interface', lambda a, c, n, **kw: opened.append((c, n)) or 0)
@@ -330,11 +337,12 @@ def test_pi_resume_never_loads_new_settings_or_launches(tmp_path, monkeypatch):
     monkeypatch.setattr(launcher, 'entrypoint', lambda: None)
     monkeypatch.setattr(start, 'values_for', lambda a: pytest.fail('must not configure'))
     monkeypatch.setattr(start, 'launch', lambda *a: pytest.fail('must not launch'))
-    monkeypatch.setattr(start.history, 'open_session', lambda home, name: ('client', name))
+    client = ConnectedClient()
+    monkeypatch.setattr(start.history, 'open_session', lambda home, name: (client, name))
     opened = []
     monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops, **kw: opened.append((client, name)) or 0)
     assert start.run(args(tmp_path, '--resume', 'retained')) == 0
-    assert opened == [('client', 'retained')]
+    assert opened == [(client, 'retained')]
 
 
 def test_bad_selection_never_overwrites_existing_settings(tmp_path):
@@ -369,7 +377,7 @@ def test_invalid_saved_combination_still_opens_editable_setup(tmp_path):
 def test_browser_resume_needs_no_terminal_runtime(tmp_path, monkeypatch):
     from openrua.terminal import launcher
     monkeypatch.setattr(launcher, 'check_terminal', lambda: pytest.fail('must not open terminal'))
-    monkeypatch.setattr(start.history, 'open_session', lambda home, name: ('client', name))
+    monkeypatch.setattr(start.history, 'open_session', lambda home, name: (ConnectedClient(), name))
     monkeypatch.setattr(start, 'open_interface', lambda *args, **kw: 0)
     assert start.run(args(tmp_path, '--gui', '--resume', 'running')) == 0
 
@@ -382,7 +390,7 @@ def test_named_session_opens_the_keyboard_frontend(tmp_path, monkeypatch):
     directory = tmp_path / 'sandboxes/old'
     directory.mkdir(parents=True)
     (directory / 'endpoint.json').write_text('{}')
-    monkeypatch.setattr(start.service, 'connect', lambda path: type('Client', (), {})())
+    monkeypatch.setattr(start.service, 'connect', lambda path: ConnectedClient())
     opened = []
     monkeypatch.setattr(launcher, 'chat', lambda client, name, *ops, **kw: opened.append(name) or 0)
     assert main(['--home', str(tmp_path), '--name', 'old']) == 0

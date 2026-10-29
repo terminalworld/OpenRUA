@@ -292,6 +292,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         # out-of-band.
         "containers": {"sim": sim_name, "sandbox": sandbox_name},
         "ros_domain": ros_domain,   # None until bring_up picked one
+        "active_wall_cap_min": wall_cap_min,
+        "cleanup": {"status": "pending", "errors": []},
     }
     limits = cfg["protocol"]["limits"]
     if project_root is not None:
@@ -332,7 +334,31 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     sandbox_live = False
     machine = None
     tap = None
+    op_meta = None
     real = cfg.get("machine", {}).get("backend", {}).get("kind") == "real"
+
+    def read_secrets() -> None:
+        secrets.extend(record.secret_strings(creds_home) if creds_home is not None else [])
+        if profile.read_secrets is not None:
+            secrets.extend(profile.read_secrets())
+
+    def persist() -> None:
+        # Each snapshot states how far the runner got; later scoring or
+        # cleanup replaces it without discarding the execution outcome.
+        rec["wall_seconds"] = round(time.time() - t0, 1)
+        record.write_result(trial_dir, record.scrub_value(rec, secrets))
+
+    def clean(step, action) -> bool:
+        try:
+            action()
+            return True
+        except Exception as exc:  # noqa: BLE001; other resources still need cleanup
+            rec["cleanup"]["errors"].append({
+                "step": step, "error": f"{type(exc).__name__}: {exc}",
+                "traceback": traceback.format_exc(),
+            })
+            return False
+
     try:
         mounts = profile.mounts
         if project_root is not None:
@@ -390,69 +416,78 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             "progress": progress,
             **({'prompt_file': prompt_file} if prompt_file is not None else {}),
         })
+        rec["operator_meta"] = op_meta
+        rec["termination"] = op_meta.get("termination", "operator_done")
+        rec["success"] = None
+        rec["steps_total"] = None
+        rec["anomaly"] = None
         with held_interrupts():
             if op_meta.get("termination") == "stopped":
                 halt(cfg, sandbox_name, agent_stopped=True)
-            if scored:
-                score(rec, machine)
-            else:
-                rec["success"] = None
-                rec["steps_total"] = None
-        # The agent's own account of how it went, beside the verdict.
         rec["agent_final_message"] = last_words(trial_dir / "transcript.jsonl", agent)
         if judge is not None and not scored:
-            answer = judge(rec["agent_final_message"])
-            if answer is not None:
-                rec["success"], rec["verdict"] = bool(answer), "person"
-        rec["operator_meta"] = op_meta
-        rec["termination"] = op_meta.get("termination", "operator_done")
-        # Validity judgment (quota voiding and the like) belongs to
-        # whoever reads the artifacts; the runner records faithfully and
-        # flags only its own failures below.
-        rec["anomaly"] = None
+            rec["verdict"] = "pending"
+        # Credentials can rotate during the task. The first completed
+        # snapshot is scrubbed before it can survive an interrupted verdict.
+        read_secrets()
+        persist()
+        with held_interrupts():
+            if scored:
+                score(rec, machine)
+        if judge is not None and not scored:
+            try:
+                answer = judge(rec["agent_final_message"])
+            except (EOFError, KeyboardInterrupt):
+                # Leaving the scoring prompt does not undo the completed task.
+                rec["verdict"] = "not_applicable"
+            except Exception as exc:  # noqa: BLE001; an unanswered judgment is not failure
+                rec["verdict_error"] = f"{type(exc).__name__}: {exc}"
+            else:
+                rec["verdict"] = "not_applicable" if answer is None else "person"
+                if answer is not None:
+                    rec["success"] = bool(answer)
     except KeyboardInterrupt:
         # Stopped outside the agent's segment: during bring-up, preflight,
         # a quota wait, or the verdict. No verdict then.
-        with held_interrupts():
-            if sandbox_live:
-                halt(cfg, sandbox_name, agent_stopped=False)
-        rec["termination"] = "stopped"
+        if op_meta is None:
+            rec["termination"] = "stopped"
+        else:
+            rec["interrupted"] = True
         rec.setdefault("success", None)
         rec["anomaly"] = None
+        with held_interrupts():
+            if sandbox_live:
+                clean("active motion", lambda: halt(cfg, sandbox_name, agent_stopped=False))
     except Exception as exc:  # noqa: BLE001; anomaly ledger, not a crash
-        rec["success"] = False
-        rec["termination"] = "anomaly"
+        rec.setdefault("success", None)
+        if op_meta is None:
+            rec["termination"] = "anomaly"
         rec["anomaly"] = f"{type(exc).__name__}: {exc}"
         # The one-liner names the failure; the stack finds it. Host-side
         # errors have no bridge.log to fall back on.
         rec["anomaly_traceback"] = traceback.format_exc()
     finally:
-        with held_interrupts():
-            if tap is not None:
-                tap.stop()
-            if machine is not None:
-                machine.shutdown()
-            if sandbox_live:
-                sandbox_down(sandbox_name)
-            # Post-trial token values too; a mid-trial rotation would leave
-            # both generations potentially visible in the record.
+        try:
             try:
-                secrets += record.secret_strings(creds_home) if creds_home is not None else []
-                if profile.read_secrets is not None:
-                    secrets += profile.read_secrets()
-                record.finalize_trial(trial_dir, agent, secrets, profile_dir=profile.directory)
+                persist()
             finally:
-                try:
-                    shutil.rmtree(paths.sandbox_dir(stem, home), ignore_errors=True)
-                finally:
-                    held.release()
-    # wall_seconds spans the whole harness (boot, preflight, operator,
-    # teardown). The wall cap is enforced only on the operator and its
-    # verdict already sits in rec["termination"]; it is never rewritten
-    # from the harness span.
-    rec["wall_seconds"] = round(time.time() - t0, 1)
-    # Named for the semantics, so a result file says which budget it ran
-    # under.
-    rec["active_wall_cap_min"] = wall_cap_min
-    record.write_result(trial_dir, rec)
-    return rec
+                with held_interrupts():
+                    if tap is not None:
+                        clean("camera recording", tap.stop)
+                    if machine is not None:
+                        clean("robot", machine.shutdown)
+                    if sandbox_live:
+                        clean("agent sandbox", lambda: sandbox_down(sandbox_name))
+                    if clean("credential redaction", read_secrets):
+                        clean("trial artifacts", lambda: record.finalize_trial(
+                            trial_dir, agent, secrets, profile_dir=profile.directory))
+                    if not rec["cleanup"]["errors"] and paths.sandbox_dir(stem, home).exists():
+                        clean("temporary profile", lambda: shutil.rmtree(
+                            paths.sandbox_dir(stem, home)))
+                    if rec["cleanup"]["errors"]:
+                        rec["cleanup"]["retained_directory"] = str(paths.sandbox_dir(stem, home))
+                    rec["cleanup"]["status"] = "failed" if rec["cleanup"]["errors"] else "completed"
+                    persist()
+        finally:
+            held.release()
+    return record.scrub_value(rec, secrets)

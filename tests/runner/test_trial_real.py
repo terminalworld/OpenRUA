@@ -129,3 +129,171 @@ def test_a_trial_whose_protocol_opens_the_internet_starts_no_proxy(monkeypatch, 
     assert not [x for x in seen if x[0] == "proxy"]
     assert ("internet", "open") in seen
     assert contexts[0]["proxy"] == "" and rec["limits"]["internet"] == "open"
+
+
+@pytest.mark.parametrize('success', [True, False])
+def test_completed_execution_is_saved_before_judgment_and_cleanup(monkeypatch, tmp_path, proxy_address, success):
+    handle, cfg, token = _harness(monkeypatch, tmp_path)
+    run = tmp_path / 'run'
+    result = run / 'trials/suite-0/seed0/result.json'
+    secret = 'abcdefghijklmnopqrstuvwxyz0123456789'
+    monkeypatch.setattr(trial, 'last_words', lambda *_: f'Finished. {secret}')
+    observed = []
+
+    def judge(words):
+        snapshot = json.loads(result.read_text())
+        assert snapshot['termination'] == 'self_finished'
+        assert snapshot['operator_meta']['active_seconds'] == 12.5
+        assert snapshot['agent_final_message'] == 'Finished. [REDACTED]'
+        assert snapshot['success'] is None and snapshot['verdict'] == 'pending'
+        assert snapshot['active_wall_cap_min'] == 60
+        assert snapshot['cleanup'] == {'status': 'pending', 'errors': []}
+        assert 'shutdown' not in handle.calls
+        observed.append('judge')
+        return success
+
+    def shutdown():
+        snapshot = json.loads(result.read_text())
+        assert snapshot['success'] is success and snapshot['verdict'] == 'person'
+        assert snapshot['cleanup']['status'] == 'pending'
+        observed.append('shutdown')
+
+    handle.shutdown = shutdown
+    rec = trial.run_trial(cfg, tmp_path / 'config.yaml', run, 'suite', 0, 0,
+                          lambda _: {'termination': 'self_finished', 'active_seconds': 12.5}, 60,
+                          token_file=str(token), task='inspect', home=tmp_path / 'home', judge=judge)
+    assert observed == ['judge', 'shutdown']
+    assert rec['success'] is success and rec['cleanup']['status'] == 'completed'
+    assert json.loads(json.dumps(rec)) == json.loads(result.read_text())
+    assert secret not in result.read_text()
+
+
+@pytest.mark.parametrize('error', [KeyboardInterrupt, EOFError, RuntimeError])
+def test_judgment_error_does_not_rewrite_a_completed_execution(monkeypatch, tmp_path, proxy_address, error):
+    handle, cfg, token = _harness(monkeypatch, tmp_path)
+
+    def judge(words):
+        raise error('judgment unavailable')
+
+    rec = trial.run_trial(cfg, tmp_path / 'config.yaml', tmp_path / 'run', 'suite', 0, 0,
+                          lambda _: {'termination': 'self_finished'}, 60,
+                          token_file=str(token), task='inspect', home=tmp_path / 'home', judge=judge)
+    assert rec['termination'] == 'self_finished' and rec['anomaly'] is None
+    assert rec['success'] is None
+    assert rec['cleanup']['status'] == 'completed' and handle.calls[-1] == 'shutdown'
+    if error is RuntimeError:
+        assert rec['verdict'] == 'pending'
+        assert rec['verdict_error'] == 'RuntimeError: judgment unavailable'
+    else:
+        assert rec['verdict'] == 'not_applicable' and 'verdict_error' not in rec
+
+
+def test_cleanup_failures_preserve_verdict_and_attempt_remaining_cleanup(monkeypatch, tmp_path, proxy_address):
+    from types import SimpleNamespace
+    from openrua.runner import lock
+
+    handle, cfg, token = _harness(monkeypatch, tmp_path)
+    run = tmp_path / 'run'
+    directory = run / 'trials/suite-0/seed0'
+    calls = []
+    secret = 'abcdefghijklmnopqrstuvwxyz0123456789'
+
+    def fail(step):
+        calls.append(step)
+        assert json.loads((directory / 'result.json').read_text())['success'] is True
+        raise RuntimeError(f'{step} unavailable: {secret}')
+
+    monkeypatch.setattr(trial, 'record_cameras_of', lambda *_: SimpleNamespace(
+        cameras={'front': '/camera'}, stop=lambda: fail('camera')))
+    handle.shutdown = lambda: fail('robot')
+    monkeypatch.setattr(trial, 'sandbox_down', lambda _: fail('sandbox'))
+    monkeypatch.setattr(trial.record, 'finalize_trial', lambda *a, **k: fail('artifacts'))
+    rec = trial.run_trial(cfg, tmp_path / 'config.yaml', run, 'suite', 0, 0,
+                          lambda _: {'termination': 'self_finished'}, 60,
+                          token_file=str(token), task='inspect', home=tmp_path / 'home',
+                          judge=lambda _: True, record_cameras=())
+    assert calls == ['camera', 'robot', 'sandbox', 'artifacts']
+    assert rec['termination'] == 'self_finished' and rec['success'] is True
+    assert rec['anomaly'] is None and rec['verdict'] == 'person'
+    assert rec['cleanup']['status'] == 'failed'
+    assert [e['step'] for e in rec['cleanup']['errors']] == [
+        'camera recording', 'robot', 'agent sandbox', 'trial artifacts']
+    assert Path(rec['cleanup']['retained_directory']).is_dir()
+    assert json.loads(json.dumps(rec)) == json.loads((directory / 'result.json').read_text())
+    assert secret not in (directory / 'result.json').read_text()
+    assert secret not in json.dumps(rec)
+    assert lock.holder(directory) is None
+
+
+def test_killed_runner_leaves_completed_execution_waiting_for_judgment(monkeypatch, tmp_path, proxy_address):
+    import multiprocessing
+
+    _, cfg, token = _harness(monkeypatch, tmp_path)
+    context = multiprocessing.get_context('fork')
+    waiting = context.Event()
+
+    def judge(words):
+        waiting.set()
+        context.Event().wait(30)
+
+    def run():
+        trial.run_trial(cfg, tmp_path / 'config.yaml', tmp_path / 'run', 'suite', 0, 0,
+                        lambda _: {'termination': 'self_finished'}, 60,
+                        token_file=str(token), task='inspect', home=tmp_path / 'home', judge=judge)
+
+    process = context.Process(target=run)
+    process.start()
+    try:
+        assert waiting.wait(5), 'runner did not reach its judgment prompt'
+        process.kill()
+        process.join(5)
+        assert process.exitcode is not None and process.exitcode < 0
+        snapshot = json.loads((tmp_path / 'run/trials/suite-0/seed0/result.json').read_text())
+        assert snapshot['termination'] == 'self_finished'
+        assert snapshot['success'] is None and snapshot['verdict'] == 'pending'
+        assert snapshot['cleanup']['status'] == 'pending'
+    finally:
+        if process.is_alive():
+            process.kill()
+            process.join(5)
+
+
+def test_result_write_failure_still_cleans_resources_and_releases_claim(monkeypatch, tmp_path, proxy_address):
+    from openrua.runner import lock
+
+    handle, cfg, token = _harness(monkeypatch, tmp_path)
+    cleaned = []
+    monkeypatch.setattr(trial, 'sandbox_down', lambda _: cleaned.append('sandbox'))
+    monkeypatch.setattr(trial.record, 'finalize_trial', lambda *a, **k: cleaned.append('artifacts'))
+
+    def write_result(*args):
+        raise OSError('disk unavailable')
+
+    monkeypatch.setattr(trial.record, 'write_result', write_result)
+    with pytest.raises(OSError, match='disk unavailable'):
+        trial.run_trial(cfg, tmp_path / 'config.yaml', tmp_path / 'run', 'suite', 0, 0,
+                        lambda _: {'termination': 'self_finished'}, 60,
+                        token_file=str(token), task='inspect', home=tmp_path / 'home')
+    assert handle.calls[-1] == 'shutdown'
+    assert cleaned == ['sandbox', 'artifacts']
+    assert lock.holder(tmp_path / 'run/trials/suite-0/seed0') is None
+
+
+def test_failed_automatic_measurement_keeps_unknown_success_and_execution(monkeypatch, tmp_path, proxy_address):
+    handle, cfg, token = _harness(monkeypatch, tmp_path)
+    cfg['machine']['backend']['kind'] = 'sim'
+    result = tmp_path / 'run/trials/suite-0/seed0/result.json'
+
+    def score(rec, machine):
+        saved = json.loads(result.read_text())
+        assert saved['termination'] == 'self_finished' and saved['success'] is None
+        raise RuntimeError('scene not answering')
+
+    monkeypatch.setattr(trial, 'score', score)
+    rec = trial.run_trial(cfg, tmp_path / 'config.yaml', tmp_path / 'run', 'suite', 0, 0,
+                          lambda _: {'termination': 'self_finished'}, 60,
+                          token_file=str(token), task='inspect', home=tmp_path / 'home')
+    assert rec['success'] is None and rec['termination'] == 'self_finished'
+    assert rec['anomaly'] == 'RuntimeError: scene not answering'
+    assert rec['cleanup']['status'] == 'completed'
+    assert handle.calls[-1] == 'shutdown'

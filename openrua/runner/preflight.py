@@ -23,6 +23,19 @@ import shlex
 _CHECK_TIMEOUT_S = 60
 
 
+def _action_list(*, show_types: bool = False) -> str:
+    """Use ROS's list verb with direct discovery on both supported distros.
+
+    The action CLI does not expose --no-daemon on Humble or Jazzy, but
+    its native verb passes that setting to NodeStrategy.
+    """
+    code = ('from argparse import Namespace; '
+            'from ros2action.verb.list import ListVerb; '
+            'raise SystemExit(ListVerb().main(args=Namespace('
+            f'no_daemon=True, show_types={show_types}, count_actions=False)))')
+    return 'python3 -c ' + shlex.quote(code)
+
+
 def _arrives(topic: str) -> str:
     """A snippet passing once ``topic`` delivers a message. A topic the
     sandbox has not discovered yet makes ``ros2 topic echo`` give up at
@@ -30,7 +43,7 @@ def _arrives(topic: str) -> str:
     after the sandbox starts (a simulated one is waited for through
     /clock first): so it is asked again until it answers, within the
     ceiling."""
-    return (f"timeout {_CHECK_TIMEOUT_S} bash -c 'until ros2 topic echo --once {topic} "
+    return (f"timeout {_CHECK_TIMEOUT_S} bash -c 'until ros2 topic echo --no-daemon --once {topic} "
             ">/dev/null 2>&1; do sleep 1; done'")
 
 
@@ -54,7 +67,7 @@ def build_checks(cfg: dict, agent, *, materials_root: str = '/workspace') -> lis
     if simulated:
         checks.append(("clock_topic",
                        f"timeout {_CHECK_TIMEOUT_S} bash -c "
-                       "'until ros2 topic list | grep -qx /clock; do sleep 1; done'"))
+                       "'until ros2 topic list --no-daemon | grep -qx /clock; do sleep 1; done'"))
     if m.get("base") or any(a.get("joints") or a.get("gripper") for a in m.get("arms", [])):
         checks.append(("joint_states_flow", _arrives("/joint_states")))
     # Declared frames are a promise: the pixel-to-world tool needs the
@@ -74,45 +87,48 @@ def build_checks(cfg: dict, agent, *, materials_root: str = '/workspace') -> lis
         joints = arm.get("joints", [])
         if joints:
             checks.append((f"joint_names_match_manual{sfx}",
-                           f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic echo --once "
+                           f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic echo --no-daemon --once "
                            f"/joint_states | grep -q '{joints[0]}'\""))
         if aports.get("trajectory"):
+            command = (f"actions=$({_action_list()}) && printf '%s\\n' \"$actions\" | grep -Fxq "
+                       + shlex.quote(aports['trajectory']))
             checks.append((f"trajectory_action{sfx}",
-                           f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 action list | grep -qx "
-                           f"'{aports['trajectory']}'\""))
+                           f"timeout {_CHECK_TIMEOUT_S} bash -c {shlex.quote(command)}"))
         if aports.get("twist"):
             checks.append((f"twist_subscribed{sfx}",
-                           f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic info "
+                           f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic info --no-daemon "
                            f"'{aports['twist']}'"
                            f" | grep -q 'Subscription count: [1-9]'\""))
         grip_joint = (arm.get("gripper") or {}).get("joint")
         if grip_joint:
             # the declared joint is where the agent reads the gripper from
             checks.append((f"gripper_joint_reported{sfx}",
-                           f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic echo --once "
+                           f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic echo --no-daemon --once "
                            f"/joint_states | grep -q '{grip_joint}'\""))
         if aports.get("gripper"):
+            command = (f"actions=$({_action_list()}) && printf '%s\\n' \"$actions\" | grep -Fxq "
+                       + shlex.quote(aports['gripper']))
             checks.append((f"gripper_action{sfx}",
-                           f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 action list | grep -qx "
-                           f"'{aports['gripper']}'\""))
+                           f"timeout {_CHECK_TIMEOUT_S} bash -c {shlex.quote(command)}"))
         if aports.get("wrench"):
             checks.append((f"wrench_flow{sfx}",
-                           f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once "
+                           f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --no-daemon --once "
                            f"'{aports['wrench']}'"))
     if simulated and not any(a.get("ports", {}).get("gripper") for a in m.get("arms", [])):
         # A scene that removed the gripper must not still serve one: no
         # GripperCommand action at all, whatever its name.
+        command = (f"actions=$({_action_list(show_types=True)}) && "
+                   "! printf '%s\\n' \"$actions\" | grep -Fq 'control_msgs/action/GripperCommand'")
         checks.append(("gripper_absent",
-                       f"timeout {_CHECK_TIMEOUT_S} bash -c \"! ros2 action list -t | grep -q "
-                       "'control_msgs/action/GripperCommand'\""))
+                       f"timeout {_CHECK_TIMEOUT_S} bash -c {shlex.quote(command)}"))
     if ports.get("base_twist"):
         checks.append(("base_twist_subscribed",
-                       f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic info "
+                       f"timeout {_CHECK_TIMEOUT_S} bash -c \"ros2 topic info --no-daemon "
                        f"'{ports['base_twist']}' | grep -q "
                        f"'Subscription count: [1-9]'\""))
     if ports.get("odom"):
         checks.append(("odom_flow",
-                       f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --once '{ports['odom']}'"))
+                       f"timeout {_CHECK_TIMEOUT_S} ros2 topic echo --no-daemon --once '{ports['odom']}'"))
     # Cameras: every declared camera's streams must deliver (the
     # pixel-to-world tool dies without depth and intrinsics); a scene
     # that decides its cameras (list: null) must deliver at least one,
@@ -124,13 +140,13 @@ def build_checks(cfg: dict, agent, *, materials_root: str = '/workspace') -> lis
         t = types["openrua-sim"]["topics"]
         color, depth, info = (t[k].split("{name}")[-1] for k in ("color", "depth", "info"))
         checks.append(("camera_frame_flow",
-                       f"timeout 60 bash -c 'cam=$(ros2 topic list | grep -m1 {color}$) && "
-                       "[ -n \"$cam\" ] && ros2 topic echo --once \"$cam\" >/dev/null'"))
+                       f"timeout 60 bash -c 'cam=$(ros2 topic list --no-daemon | grep -m1 {color}$) && "
+                       "[ -n \"$cam\" ] && ros2 topic echo --no-daemon --once \"$cam\" >/dev/null'"))
         checks.append(("camera_depth_intrinsics_flow",
-                       f"timeout 60 bash -c 'cam=$(ros2 topic list | grep -m1 {color}$) && "
+                       f"timeout 60 bash -c 'cam=$(ros2 topic list --no-daemon | grep -m1 {color}$) && "
                        f"[ -n \"$cam\" ] && base=${{cam%{color}}} && "
-                       f"ros2 topic echo --once \"$base{depth}\" >/dev/null && "
-                       f"ros2 topic echo --once \"$base{info}\" >/dev/null'"))
+                       f"ros2 topic echo --no-daemon --once \"$base{depth}\" >/dev/null && "
+                       f"ros2 topic echo --no-daemon --once \"$base{info}\" >/dev/null'"))
     for e in entries or []:
         e = {"name": e, "type": "openrua-sim"} if isinstance(e, str) else e
         topics = {**types[e["type"]]["topics"], **(e.get("topics") or {})}

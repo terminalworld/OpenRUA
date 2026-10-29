@@ -45,6 +45,20 @@ def _event(kind: str, **data) -> dict:
     return {"kind": kind, "data": data}
 
 
+def _enqueue(state: dict, client_id: str, request_id: str, text: str) -> tuple[dict, list]:
+    for message in state['messages']:
+        if (message['client_id'], message['request_id']) == (client_id, request_id):
+            if message['original_text'] != text:
+                raise ValueError('This request ID was already used for a different message.')
+            return message, []
+    _open(state)
+    message = {'id': str(uuid4()), 'client_id': client_id, 'request_id': request_id,
+               'original_text': text, 'text': text, 'revision': 0, 'status': 'queued',
+               'cancel_requested': False, 'cancel_sent': False}
+    state['messages'].append(message)
+    return message, [_event('message_accepted', message=message)]
+
+
 class Session:
     def __init__(self, store: Store):
         self.store = store
@@ -56,17 +70,24 @@ class Session:
             raise ValueError("client ID, request ID and message text are required")
         def change(state):
             # Retries return the original acceptance even after edits or closure.
-            for message in state["messages"]:
-                if (message["client_id"], message["request_id"]) == (client_id, request_id):
-                    if message["original_text"] != text:
-                        raise ValueError("This request ID was already used for a different message.")
-                    return message, []
+            return _enqueue(state, client_id, request_id, text)
+        return self.store.update(change)
+
+    def enqueue_response(self, request_id: str, text: str, answers: dict[str, list[str]]) -> dict:
+        """Accept a message answer and dismiss its question in the same transaction."""
+        def change(state):
             _open(state)
-            message = {"id": str(uuid4()), "client_id": client_id, "request_id": request_id,
-                       "original_text": text, "text": text, "revision": 0, "status": "queued",
-                       "cancel_requested": False, "cancel_sent": False}
-            state["messages"].append(message)
-            return message, [_event("message_accepted", message=message)]
+            request = state['requests'].get(request_id)
+            if not request or request['status'] != 'pending' or not request.get('reply_as_message'):
+                raise ValueError('This question is no longer pending. Refresh before answering.')
+            if any(q.get('secret') for q in request['questions']):
+                raise ValueError('Private answers cannot be stored as conversation messages.')
+            message, events = _enqueue(state, 'question-reply', request_id, text)
+            message['display_text'] = '\n\n'.join(
+                q['text'] + '\nAnswer: ' + ', '.join(answers[q['id']]) for q in request['questions'])
+            state['requests'].pop(request_id)
+            return message, [*events, _event('input_reply_queued', request_id=request_id,
+                                            message_id=message['id'])]
         return self.store.update(change)
 
     def edit(self, message_id: str, text: str, revision: int) -> dict:
@@ -78,6 +99,7 @@ class Session:
             if message["status"] != "queued" or message["revision"] != revision:
                 raise ValueError("This message has changed or has already been sent. Refresh before editing it.")
             message["text"] = text
+            message.pop('display_text', None)
             message["revision"] += 1
             return message, [_event("message_edited", message=message)]
         return self.store.update(change)

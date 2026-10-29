@@ -321,7 +321,22 @@ def write_config(trial_dir: Path, cfg: dict) -> Path:
 
 
 def write_result(trial_dir: Path, record: dict) -> None:
-    (trial_dir / "result.json").write_text(json.dumps(record, indent=2))
+    """Replace a result only after the complete new record is durable."""
+    data = json.dumps(record, indent=2) + "\n"
+    fd, temporary = tempfile.mkstemp(prefix='.result-', dir=trial_dir)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, trial_dir / 'result.json')
+        directory = os.open(trial_dir, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
 
 
 def session_provenance(robot_file: Path | None, cfg: dict, code_root: Path,

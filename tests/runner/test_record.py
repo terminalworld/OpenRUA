@@ -174,6 +174,23 @@ def test_run_config_is_write_once(tmp_path):
     assert json.loads((tmp_path / "config.json").read_text()) == {"gen": 1}
 
 
+@pytest.mark.parametrize('failure', ['fsync', 'replace'])
+def test_failed_result_update_keeps_the_previous_complete_record(tmp_path, monkeypatch, failure):
+    from openrua.runner import record
+
+    before = {'success': None, 'verdict': 'pending', 'termination': 'self_finished'}
+    record.write_result(tmp_path, before)
+
+    def failed(*args):
+        raise OSError('disk unavailable')
+
+    monkeypatch.setattr(record.os, failure, failed)
+    with pytest.raises(OSError, match='disk unavailable'):
+        record.write_result(tmp_path, {**before, 'success': True, 'verdict': 'person'})
+    assert json.loads((tmp_path / 'result.json').read_text()) == before
+    assert not list(tmp_path.glob('.result-*'))
+
+
 def test_scrub_covers_the_archived_workspace_and_leaves_binaries_alone(tmp_path):
     from openrua.runner.record import scrub_file, scrub_tree
     ws = tmp_path / "workspace"

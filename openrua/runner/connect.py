@@ -28,9 +28,9 @@ import yaml
 
 from openrua import agents
 from openrua.agents.registry import split_pin
-from openrua.config import compose, paths, projects
+from openrua.config import compose, dump, load_yaml, paths, projects, validate
 from openrua.config.loader import default_agent_name, layer_agent, load_user_config
-from openrua.config.schema import Limits, RobotInstance, sandbox_image
+from openrua.config.schema import Limits, RealBackend, RobotInstance, sandbox_image
 from openrua.errors import UnavailableError, UsageError
 from openrua.runner import live_state as state
 from openrua.runner.bringup import host_network_dds
@@ -323,20 +323,37 @@ class Checks:
         return True, f"built: {', '.join(images)}"
 
     def _probe(self, out) -> tuple[bool, str]:
-        data = yaml.safe_load(robot_file(self.folder).read_text()) or {}
-        distro = (data.get("machine", {}).get("backend", {}) or {}).get("ros_distro")
-        distro = distro if distro in ("humble", "jazzy") else self.request.distro
+        file = robot_file(self.folder)
+        data = load_yaml(file) or {}
+        source = (data.get('machine', {}).get('backend', {}) or {})
+        # Robot facts and camera files can still be incomplete. Validate
+        # only the connection, using the same defaults and image derivation
+        # as the completed robot configuration.
+        connection_fields = {'kind', 'ros_distro', 'discovery', 'sandbox_image', 'sandbox_install'}
+        backend = dump(validate(RealBackend, {
+            key: value for key, value in source.items()
+            if key in connection_fields or key not in RealBackend.model_fields
+        }, f'{file}:machine.backend'))
+        discovery = backend['discovery']
+        if 'discovery_server' in discovery:
+            reach = ['--discovery-server', discovery['discovery_server']]
+        elif 'static_peers' in discovery:
+            reach = ['--static-peers', ','.join(discovery['static_peers'])]
+        else:
+            reach = ['--host']
         draft = self.folder / "robot.draft.yaml"
         with tempfile.TemporaryFile("w+") as drafted:
             code = subprocess.call([sys.executable, "-m", "openrua", "--home", str(self.request.home),
-                                    "probe", "--host", "--distro", distro],
+                                    "probe", *reach, "--distro", backend['ros_distro'],
+                                    "--image", backend['sandbox_image']],
                                    stdout=drafted, stderr=out)
             drafted.seek(0)
             text = drafted.read()
         if code or not text.strip():
             return False, "the probe read no graph; are the drivers running? (the log says more)"
         draft.write_text(text)
-        return True, f"wrote robot.draft.yaml ({len(text.splitlines())} lines, ROS 2 {distro})"
+        return True, (f"saved robot.draft.yaml from the project's ROS 2 {backend['ros_distro']} connection. "
+                      "Review its facts before updating robot.yaml; the robot check verifies the configured interfaces.")
 
     def _images(self, out, backend: dict) -> list[str]:
         """Build what this robot needs and lacks: its driver images and its

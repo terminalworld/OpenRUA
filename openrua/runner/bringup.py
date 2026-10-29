@@ -142,7 +142,11 @@ def sandbox_reachability(backend: dict, network: str, robot_name: str,
     out = {"network": "host", "static_peer": ",".join(peers) or None, "peers_xml": profile,
            "internet": internet, "networks": (), "env": env}
     if discovery.get("discovery_server"):
-        out["env"] += (f"ROS_DISCOVERY_SERVER={discovery['discovery_server']}",)
+        # Inspection tools need the complete graph, including endpoints
+        # they have not subscribed to yet. Set this at container creation
+        # so direct clients and shell commands see the same discovery.
+        out["env"] += (f"ROS_DISCOVERY_SERVER={discovery['discovery_server']}",
+                       "ROS_SUPER_CLIENT=TRUE")
     return out
 
 
@@ -173,11 +177,14 @@ def address_on(container: str, network: str, timeout_s: float = 30.0) -> str:
         time.sleep(0.2)
 
 
-def graph_probe(sandbox_name: str) -> list[str]:
+def graph_probe(sandbox_name: str, *, discovery_wait_s: float = 2.0) -> list[str]:
     """A command that exits 0 once the sandbox sees at least one ROS 2
     node: what a real robot's handle waits for."""
+    # Node metadata can arrive after endpoint discovery on Fast DDS. Give
+    # this fresh native client a discovery interval instead of borrowing
+    # another connection's daemon cache.
     return ["docker", "exec", sandbox_name, "bash", "-c",
-            "ros2 node list 2>/dev/null | grep -q ."]
+            f"ros2 node list --no-daemon --spin-time {discovery_wait_s} 2>/dev/null | grep -q ."]
 
 
 # The routed network a simulated robot's sandbox joins for an open

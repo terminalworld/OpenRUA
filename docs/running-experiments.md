@@ -175,22 +175,40 @@ its state; check it before restarting anything that launches trials.
 
 ## result.json
 
+The execution result is saved as soon as the agent finishes, before waiting
+for a human verdict or releasing resources. Updates replace the file atomically.
+While `exec` asks whether a real robot completed the task, `success` is `null`
+and `verdict` is `pending`. A computer restart at this point leaves the completed
+execution and pending judgment in the record. Skipping the question leaves
+`success: null` with `verdict: not_applicable`.
+
+Cleanup is recorded separately. A failed camera stop, robot shutdown or artifact
+collection does not overwrite the task's result, and the runner still attempts
+the other cleanup steps. The command reports the errors and exits nonzero;
+inspect `cleanup.errors` and the named containers before starting another trial.
+A retained temporary profile is named in `cleanup.retained_directory` when
+cleanup could not finish. Do not treat it as a public experiment artifact:
+it may still contain login information.
+
 | field | meaning |
 |---|---|
 | `task_suite`, `task_id`, `init_state_id` | the trial key; `init_state_id` is the seed |
 | `task_language` | the task sentence the agent was given, from the benchmark's own files |
 | `init_state` | what the loader records about the episode's world (RoboCasa: the kitchen) |
-| `success` | the benchmark's own predicate, latched per step (any-step success); on a real robot, the person's answer when `exec` asked (`verdict: person`), else `null` (`verdict: not_applicable`) |
+| `success` | the benchmark's own predicate, latched per step (any-step success); on a real robot, the person's answer when `exec` asked (`verdict: person`), else `null`. `verdict: pending` means judgment has not returned; `not_applicable` means no human verdict was supplied. A failed measurement also leaves the outcome unknown rather than inventing a failed task. |
 | `success_end_state` | the same predicate at the end of the episode |
 | `success_at` | step and time of the first success |
 | `steps_total` | simulator steps since reset |
 | `end_state` | the world when the operator was done: `objects` (every object's position and quaternion, by the simulator's own names) and `hand` (the hand's position and the grasp point); what a failed trial is measured against later |
 | `termination` | `self_finished`, `max_turns`, `wall_clock_cap`, `quota_limit`, `sandbox_lost`, `launcher_failed`, `operator_done`, `anomaly`, or `stopped`: a person stopped the run (Ctrl-C, or the terminal closed); the agent was ended, a real robot's motions cancelled, a simulated robot judged as it stood, and the command exits 130 |
 | `anomaly`, `anomaly_traceback` | a harness failure (preflight red, sim stall, bring-up error); the trial does not count |
+| `verdict_error` | an error while requesting a human verdict; execution remains complete and success stays unknown |
+| `cleanup` | `status` is `pending`, `completed` or `failed`; `errors` lists each failed step with its error and traceback. This is independent of task success and termination. |
+| `interrupted` | when present and true, the runner was stopped after the operator had already ended; the operator's termination is preserved and the command exits 130 |
 | `preflight` | every check and its verdict, from the sandbox's own vantage, before the agent started |
 | `agent_version` | the CLI version the sandbox reported |
 | `limits` | what the agent could reach: `internet`, `web_search`, `account_connectors` |
-| `wall_seconds` | the whole harness span (boot, preflight, operator, teardown) |
+| `wall_seconds` | elapsed harness time at this snapshot; after cleanup, the whole span including boot, preflight, operator, judgment and teardown |
 | `active_wall_cap_min` | the active wall-clock budget the operator ran under |
 | `agent_final_message` | what the agent said last: its own account of how the task went |
 | `operator_meta` | the operator's own record, below |

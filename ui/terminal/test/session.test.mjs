@@ -781,6 +781,66 @@ test('a waiting question opens on reconnect and closes when another client answe
   assert.equal(chat.panel, null);
 });
 
+test('async questions allow native choices and free text while work continues', async () => {
+  const {status} = await import('../src/session.mjs');
+  const writes = [];
+  const ids = ['["request_user_input_async","call_question",0]', '["request_user_input_async","call_question",1]'];
+  const state = {connected: true, messages: [{id: 'turn', status: 'running', text: 'Inspect'}], active: 'turn', requests: {
+    async: {request_id: 'async', status: 'pending', reply_as_message: true, questions: [
+      {id: ids[0], text: 'Which object?', choices: ['Cup', 'Bowl'], allow_other: true},
+      {id: ids[1], text: 'Where should it go?', choices: [], allow_other: true},
+    ]},
+  }};
+  const client = {readOnly: false, snapshot: async () => ({state}), events: async () => [],
+    command: async (...args) => { writes.push(args); state.requests = {}; }};
+  const chat = new Chat(client, {terminal: new Terminal()});
+  chat.controller.state = state;
+  chat.editor.setText('Keep my existing draft');
+  chat.showPendingQuestion();
+  assert.equal(status(state).head.kind, 'working');
+  const key = async data => { chat.panel.component.handleInput(data); await new Promise(resolve => setTimeout(resolve, 0)); };
+  await key('\x1b[B'); await key('\r');
+  assert.match(chat.panel.component.render(80).join('\n'), /Where should it go/);
+  await key('On the tray'); await key('\r');
+  assert.deepEqual(writes, []);
+  assert.match(chat.panel.component.render(80).join('\n'), /Your answer: Bowl/);
+  await key('\x1b[B'); await key('\r');
+  assert.deepEqual(writes, [['respond', {request_id: 'async', answers: {[ids[0]]: ['Bowl'], [ids[1]]: ['On the tray']}}]]);
+  assert.equal(chat.panel, null);
+  assert.equal(chat.editor.getText(), 'Keep my existing draft');
+});
+
+test('an async question ending mid-answer restores its draft without submitting', async () => {
+  const writes = [];
+  const chat = new Chat({readOnly: false, command: async (...args) => writes.push(args)}, {terminal: new Terminal()});
+  chat.controller.state = {requests: {async: {request_id: 'async', status: 'pending', reply_as_message: true,
+    questions: [{id: 'target', text: 'Which target?', choices: ['Cup'], allow_other: true}]}}};
+  chat.editor.setText('My existing draft');
+  chat.showPendingQuestion();
+  chat.panel.component.handleInput('\x1b[B'); chat.panel.component.handleInput('\r');
+  chat.panel.component.handleInput('The blue mug, but');
+  chat.controller.state.requests = {};
+  chat.showPendingQuestion();
+  assert.equal(chat.panel, null);
+  assert.equal(chat.editor.getText(), 'My existing draft\n\nThe blue mug, but');
+  assert.deepEqual(writes, []);
+  chat.showPendingQuestion();
+  assert.equal(chat.editor.getText(), 'My existing draft\n\nThe blue mug, but');
+});
+
+test('async answer history and queue show the answer without native protocol markup', async () => {
+  const {PendingMessages} = await import('../src/view.mjs');
+  const message = {id: 'reply', text: '<send_user_message_question_reply>internal JSON</send_user_message_question_reply>',
+    display_text: 'Which target?\nAnswer: Cup', status: 'queued'};
+  const pending = new PendingMessages(); pending.messages = [message];
+  assert.match(pending.render(80).join('\n'), /Which target.*Answer: Cup/);
+  assert.doesNotMatch(pending.render(80).join('\n'), /question_reply|JSON/);
+  const view = new Transcript();
+  view.snapshot({messages: [{...message, status: 'running'}]});
+  assert.match(view.render(80).join('\n'), /Answer: Cup/);
+  assert.doesNotMatch(view.render(80).join('\n'), /question_reply|JSON/);
+});
+
 test('new questions wait for an existing dialog and remain visible after dismissal', {timeout: 15000}, async t => {
   const {client, call} = await fixture(t);
   const terminal = new Terminal();

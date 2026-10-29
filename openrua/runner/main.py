@@ -271,10 +271,20 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
             _say(f"[{args.task_suite}:{task_id} seed{seed}] "
                  f"success={rec['success']} term={rec['termination']} "
                  f"wall={rec['wall_seconds']}s")
-            if rec["termination"] == "stopped":
+            cleanup_errors = (rec.get("cleanup") or {}).get("errors", [])
+            if rec.get("verdict_error") or cleanup_errors:
+                if rec.get("verdict_error"):
+                    _say(f"[trial] Could not obtain a human verdict: {rec['verdict_error']}")
+                for error in cleanup_errors:
+                    _say(f"[trial] Could not finish {error['step']}: {error['error']}")
+                _say(f"[trial] The execution result is saved. Inspect {trial_dir / 'result.json'} "
+                     "before starting another trial.")
+            if rec["termination"] == "stopped" or rec.get("interrupted"):
                 _say(f"[trial] stopped; the record is in {trial_dir}")
                 return STOPPED_EXIT
-            if project_root is not None and rec["termination"] == "anomaly":
+            if rec.get("verdict_error") or cleanup_errors:
+                return 1
+            if project_root is not None and rec.get("anomaly"):
                 _say(f"[exec] {rec['anomaly']}; inspect {trial_dir / 'result.json'}")
                 return 1
     return 0

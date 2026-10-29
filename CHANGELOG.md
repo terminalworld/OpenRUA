@@ -9,6 +9,26 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- Probe real robots using the project's discovery settings, ROS distribution
+  and sandbox image. Query the selected ROS graph directly instead of reusing
+  another connection's CLI daemon, including during startup checks. Keep a
+  generated profile draft distinct from verified robot readiness.
+- Make Codex asynchronous questions answerable in the terminal and browser,
+  with native choices, custom answers and multiple questions. Keep the agent
+  working while users answer, preserve unfinished input when a question closes,
+  and display readable replies in the conversation.
+- Read large native JSON responses without a fixed message-size cutoff.
+  Reopening a conversation can reconnect a lost native process in its existing
+  sandbox. Unconfirmed actions remain unknown and are never automatically replayed.
+- Save experiment execution results before human scoring and resource cleanup,
+  then update them atomically. Keep unknown outcomes as `null`, record cleanup
+  errors separately, attempt the remaining cleanup steps, and report failures
+  without replacing the task result.
+- Validate these paths with native ROS discovery fixtures on Humble and Jazzy,
+  terminal and browser interaction tests, large-output and reconnecting process
+  fixtures, and interrupted-result persistence tests. These checks do not replace
+  a physical robot experiment.
+
 ## 0.31.1
 
 - Give the terminal a consistent OpenRUA palette, with lime brand accents,

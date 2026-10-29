@@ -1,7 +1,7 @@
 import {CombinedAutocompleteProvider, Container, ProcessTerminal, SelectList, Spacer, Text,
   isKeyRepeat, matchesKey} from '@earendil-works/pi-tui';
 import {Controller} from './controller.mjs';
-import {SettingChanges, agentCommands, commandsFor, notice, parseCommand, permissionChoices, status, typedAnswer} from './session.mjs';
+import {SettingChanges, agentCommands, commandsFor, messageText, notice, parseCommand, permissionChoices, status, typedAnswer} from './session.mjs';
 import {Composer, DialogHeading, PendingMessages, Transcript, Welcome, accent, bold, editorTheme, green, muted, plain, red, selectTheme, yellow} from './view.mjs';
 import {browseWorkspace} from './workspace.mjs';
 import {answerQuestion} from './questions.mjs';
@@ -159,7 +159,7 @@ export class Chat {
   // menu that opens an editor gets its place back when the editor closes.
   get panel() { return this.panels.at(-1) ?? null; }
 
-  dialog(component, {requestId = null} = {}) {
+  dialog(component, {requestId = null, recoverDraft} = {}) {
     this.resetLeave();
     this.inputRevision++;
     const slot = replacement => {
@@ -167,7 +167,7 @@ export class Chat {
       if (at !== -1) this.ui.children.splice(at, 1, replacement);
     };
     slot(component);
-    const handle = {component, requestId, hide: () => {
+    const handle = {component, requestId, recoverDraft, hide: () => {
       const index = this.panels.indexOf(handle);
       if (index === -1) return;
       const top = index === this.panels.length - 1;
@@ -232,6 +232,8 @@ export class Chat {
   editText(title, initial, apply, options = {}) {
     const editor = new Composer(this.ui, editorTheme);
     editor.setText(initial);
+    const recover = options.recoverDraft;
+    options = {...options, recoverDraft: recover ? () => recover(editor.getText()) : undefined};
     const heading = new DialogHeading(title, options.requestId, () => this.rows(), () => this.ui.requestRender());
     const box = new Container(); box.addChild(heading); box.addChild(editor);
     box.addChild(new Text(muted('Enter submit · Ctrl+J newline · Esc cancel'), 0, 1));
@@ -255,18 +257,18 @@ export class Chat {
 
   queue() {
     const messages = this.controller.state?.messages.filter(m => m.status === 'queued') ?? [];
-    this.picker('Waiting messages', messages.map(m => ({value: m.id, label: plain(m.text),
+    this.picker('Waiting messages', messages.map(m => ({value: m.id, label: plain(messageText(m)),
       description: m.held_reason ? `Not sent yet: ${plain(m.held_reason)}` : 'Waiting to be sent'})), id => {
       const message = messages.find(m => m.id === id);
-      if (this.client.readOnly) { this.say(message.text); return; }
-      this.picker(plain(message.text), [{value: 'back', label: 'Back'}, {value: 'edit', label: 'Edit'},
+      if (this.client.readOnly) { this.say(messageText(message)); return; }
+      this.picker(plain(messageText(message)), [{value: 'back', label: 'Back'}, {value: 'edit', label: 'Edit'},
         ...(message.held_reason ? [{value: 'release', label: 'Send this instruction now…'}] : []),
         {value: 'withdraw', label: 'Remove this waiting message'}], async action => {
         if (action === 'release') this.confirm('Send this instruction now? Check the robot and the result of earlier actions first.', async () => {
           await this.client.command('release', {message_id: id, revision: message.revision});
           await this.refresh();
         });
-        if (action === 'edit') this.editText('Edit waiting message', message.text, async text => {
+        if (action === 'edit') this.editText('Edit waiting message', messageText(message), async text => {
           await this.client.command('edit', {message_id: id, revision: message.revision, text}); await this.refresh();
         });
         if (action === 'withdraw') this.confirm('Remove this message before it is sent?', async () => {
@@ -310,8 +312,10 @@ export class Chat {
     if (request.questions.some(q => q.secret)) {
       this.say('This question requires private input. Answer through the session browser or the session CLI.'); return;
     }
-    const options = {requestId: id};
     const answers = {};
+    const options = {requestId: id, recoverDraft: request.reply_as_message ? (draft = '') => [
+      ...request.questions.filter(q => answers[q.id]).map(q => `${q.text}\n${answers[q.id].join(', ')}`), draft,
+    ].filter(text => text.trim()).join('\n\n') : undefined};
     const next = index => {
       if (this.controller.state?.requests?.[id]?.status !== 'pending') return;
       if (index === request.questions.length) {
@@ -330,8 +334,19 @@ export class Chat {
     const state = this.controller.state;
     const pending = new Map(Object.values(state?.requests ?? {}).filter(r => r.status === 'pending')
       .map(request => [request.request_id, request]));
+    const recovered = new Set();
     for (const panel of [...this.panels].reverse())
-      if (panel.requestId && (!pending.has(panel.requestId) || state.closed)) panel.hide();
+      if (panel.requestId && (!pending.has(panel.requestId) || state.closed)) {
+        if (!recovered.has(panel.requestId)) {
+          const draft = panel.recoverDraft?.();
+          if (draft?.trim()) {
+            this.editor.setText([this.editor.getText(), draft].filter(Boolean).join('\n\n'));
+            this.say('The question has closed. Your unfinished answer is in the message box.');
+          }
+          recovered.add(panel.requestId);
+        }
+        panel.hide();
+      }
     for (const id of this.shownQuestions) if (!pending.has(id)) {
       this.shownQuestions.delete(id); this.questionDrafts.delete(id);
     }

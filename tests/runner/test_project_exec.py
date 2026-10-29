@@ -156,3 +156,29 @@ def test_project_startup_failure_returns_nonzero_and_keeps_the_record(tmp_path, 
     record = json.loads(next((root / '.openrua/runs').rglob('result.json')).read_text())
     assert record['termination'] == 'anomaly' and 'robot unavailable' in record['anomaly']
     assert (root / 'program.py').read_text() == 'print("maintained")\n'
+
+
+def test_cleanup_failure_returns_nonzero_without_erasing_task_success(tmp_path, monkeypatch, proxy_address, capsys):
+    handle, token, _, _, _, _ = apparatus(monkeypatch, tmp_path)
+    root = tmp_path / 'project'
+    root.mkdir()
+    monkeypatch.setitem(main.OPERATORS, 'agent', lambda _: {'termination': 'self_finished'})
+
+    def rpc(command, **kwargs):
+        return {'ok': True, 'success': True, 'language': 'inspect'}
+
+    def shutdown():
+        raise RuntimeError('driver did not stop')
+
+    handle.rpc, handle.shutdown = rpc, shutdown
+    args = build_parser().parse_args(['--home', str(tmp_path / 'home'), 'bench', '--config', 'libero_pro',
+                                     '--run-id', 'cleanup', '--task-suite', 'libero_goal_task',
+                                     '--operator', 'agent'])
+    args.project, args.token_file = root, str(token)
+    args.credentials_dir = str(tmp_path / 'credentials')
+    assert main.run(args) == 1
+    rec = json.loads(next((root / '.openrua/runs').rglob('result.json')).read_text())
+    assert rec['success'] is True and rec['termination'] == 'self_finished'
+    assert rec['cleanup']['status'] == 'failed' and rec['anomaly'] is None
+    output = capsys.readouterr().out
+    assert 'driver did not stop' in output and 'before starting another trial' in output

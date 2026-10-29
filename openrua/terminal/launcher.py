@@ -294,7 +294,7 @@ def chat(client, name, list_sessions, open_session, screen=run_screen, *, facts=
             return departure_confirmed
         def select(target):
             if target == name and not getattr(client, 'read_only', False):
-                return client, name
+                return (client, name) if client.snapshot()['state']['connected'] else open_session(target)
             return open_session(target) if leaving() else None
         if result['action'] == 'quit':
             try:

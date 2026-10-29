@@ -92,6 +92,34 @@ class ManagedSession:
                 self.on_execution(self.execution)
             self.watch_robot()
 
+    async def reconnect(self, body: dict) -> dict:
+        """Reconnect the retained native conversation without changing robot resources."""
+        if body != {}:
+            raise ValueError('reconnect takes an empty object')
+        async with self._end_lock:
+            if (self._ended or self._native_stopped or self._robot_stopped
+                    or (self.maintenance is not None and self.maintenance.closing)):
+                raise UnavailableError('this session is stopping or has stopped',
+                                       hint='finish stopping it before reopening the saved conversation')
+            if self.execution.usable:
+                return self.store.snapshot()
+            if self.maintenance and self.maintenance.task and not self.maintenance.task.done():
+                raise UnavailableError('the robot connection is being updated',
+                                       hint='wait for the connection operation to finish, then reopen this conversation')
+            current = self.store.snapshot()['state']
+            sent = any(message['status'] not in {'queued', 'withdrawn'} for message in current['messages'])
+            if sent and not current.get('native_session'):
+                raise UnavailableError('the native conversation identity was not saved',
+                                       hint='inspect the retained messages and agent log before starting a new conversation')
+            # Close the former connection before taking its exclusive lock.
+            # Disconnected work stays unknown or paused in Session.recover.
+            await self.execution.close()
+            self.execution = await _open_execution(self.name, self.home, self.store, resume=True)
+            self.execution.on_interrupt = self.cancel_motion
+            if self.on_execution:
+                self.on_execution(self.execution)
+            return self.store.snapshot()
+
     async def end(self) -> None:
         """Stop owned execution resources and retain all conversation materials."""
         if self.maintenance is not None:

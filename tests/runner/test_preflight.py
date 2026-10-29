@@ -236,3 +236,73 @@ def test_each_declared_camera_is_checked_on_its_own_topics(tmp_path):
     check = _names(cfg)["camera_flow_d405"]
     assert "/d405/aligned_depth_to_color/image_raw" in check
     assert "/d405/color/camera_info" in check
+
+
+def _write_action_verb(folder, current, stale, exit_code=0):
+    """A native verb stand-in with distinct direct and cached graphs."""
+    import json
+
+    package = folder / 'ros2action'
+    verb = package / 'verb'
+    verb.mkdir(parents=True)
+    (package / '__init__.py').touch()
+    (verb / '__init__.py').touch()
+    (folder / 'graph.json').write_text(json.dumps({
+        'current': current, 'stale': stale, 'exit_code': exit_code}))
+    (verb / 'list.py').write_text('''
+import json
+from pathlib import Path
+
+class ListVerb:
+    def main(self, *, args):
+        data = json.loads(Path('graph.json').read_text())
+        actions = data['current' if args.no_daemon else 'stale']
+        for name, kind in actions.items():
+            print(f'{name} [{kind}]' if args.show_types else name)
+        return data['exit_code']
+''')
+
+
+@pytest.mark.parametrize('present', [False, True])
+@pytest.mark.parametrize('exit_code', [0, 7])
+def test_action_checks_use_current_graph_and_require_a_successful_query(tmp_path, present, exit_code):
+    import subprocess
+
+    actions = {'/arm/follow_joint_trajectory': 'control_msgs/action/FollowJointTrajectory',
+               '/hand/gripper_cmd': 'control_msgs/action/GripperCommand'}
+    _write_action_verb(tmp_path, actions if present else {},
+                       {} if present else actions, exit_code)
+    checks = _names({'machine': {'backend': {'kind': 'real'}, 'ports': {
+        'trajectory': '/arm/follow_joint_trajectory', 'gripper': '/hand/gripper_cmd'}}})
+    for name in ('trajectory_action', 'gripper_action'):
+        result = subprocess.run(['bash', '-c', checks[name]], cwd=tmp_path,
+                                capture_output=True, text=True, timeout=10)
+        assert (result.returncode == 0) == (present and exit_code == 0), result.stderr
+
+
+@pytest.mark.parametrize('present', [False, True])
+@pytest.mark.parametrize('exit_code', [0, 7])
+def test_absent_gripper_requires_a_successful_current_graph_query(tmp_path, present, exit_code):
+    import subprocess
+
+    actions = {'/hand/gripper_cmd': 'control_msgs/action/GripperCommand'}
+    _write_action_verb(tmp_path, actions if present else {},
+                       {} if present else actions, exit_code)
+    command = _names({'machine': {'backend': {'kind': 'sim'}}})['gripper_absent']
+    result = subprocess.run(['bash', '-c', command], cwd=tmp_path,
+                            capture_output=True, text=True, timeout=10)
+    assert (result.returncode == 0) == (not present and exit_code == 0), result.stderr
+
+
+def test_every_topic_check_bypasses_a_daemon_from_another_connection():
+    import re
+
+    configs = [_ARM_CFG, {'machine': {
+        **_ARM_CFG['machine'], 'backend': {'kind': 'real'},
+        'ports': {**_ARM_CFG['machine']['ports'], 'base_twist': '/cmd_vel', 'odom': '/odom'},
+        'arm': {'joints': ['panda_joint1'], 'gripper': {'joint': 'finger'}},
+        'cameras': {'types': _camera_types(), 'list': [{'name': 'd405', 'type': './d405.yaml'}]},
+    }}]
+    for cfg in configs:
+        for name, command in _names(cfg).items():
+            assert not re.search(r'ros2 topic (?:echo|list|info)(?! --no-daemon)', command), name

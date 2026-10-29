@@ -196,11 +196,17 @@ def launch(args, values: dict[str, str]):
     return service.start(argv, directory / 'endpoint.json', logs / 'service.log', logs / 'start.lock')
 
 
+def _reconnect_agent(client):
+    if not client.snapshot()['state']['connected']:
+        client.request('/api/actions/reconnect', {})
+    return client
+
+
 def open_history(home: Path, name: str, *, screen=None):
     """Connect to a live owner, or restart a confirmed ended project conversation."""
     client, name = history.open_session(home, name)
     if not getattr(client, 'read_only', False):
-        return client, name
+        return _reconnect_agent(client), name
     project = history.project_directory(home, name)
     snapshot = client.snapshot()['state']
     if not project or not snapshot['closed']:
@@ -414,7 +420,7 @@ def _run(args, application=None) -> int:
             raise UsageError('a shared session already uses this name; startup options cannot change it',
                              hint='connect with --name only, or choose a new --name for those settings')
         try:
-            client = service.connect(endpoint)
+            client = _reconnect_agent(service.connect(endpoint))
         except (OSError, ValueError, KeyError, RuntimeError) as exc:
             raise UnavailableError(str(exc), hint='inspect the retained service log and session status before restarting') from exc
         return open_interface(args, client, args.name, application=application)

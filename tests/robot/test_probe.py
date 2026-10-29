@@ -1,9 +1,11 @@
 """The profile draft: read from the graph where it can, TODO where it cannot."""
 
+import json
+
 import pytest
 import yaml
 
-from openrua.robot.real.probe import draft_profile, read_graph
+from openrua.robot.real.probe import _GRAPH_FACTS, draft_profile, read_graph
 
 # A Panda in DROID configuration as the lab's driver serves it: the arm's
 # trajectory controller, a Robotiq gripper (a revolute knuckle joint) in
@@ -31,18 +33,18 @@ ACTIONS = """/joint_trajectory_controller/follow_joint_trajectory [control_msgs/
 """
 
 
+def _typed(lines):
+    return {line.partition(" [")[0]: line.partition(" [")[2].rstrip("]")
+            for line in lines.splitlines() if line}
+
+
 def _fake_run(cmd: str) -> str:
     import json
-    if cmd == "ros2 topic list -t":
-        return TOPICS
-    if cmd == "ros2 action list -t":
-        return ACTIONS
-    if cmd == "ros2 service list":
-        return "/compute_ik\n/compute_fk\n"
-    if cmd.startswith("ros2 param get /joint_trajectory_controller joints"):
-        return "String values are: ['panda_joint1', 'panda_joint2']\n"
-    if cmd.startswith("ros2 param get /gripper/robotiq_gripper_controller joint"):
-        return "String value is: robotiq_85_left_knuckle_joint\n"
+    if _GRAPH_FACTS in cmd:
+        return json.dumps({"topics": _typed(TOPICS), "actions": _typed(ACTIONS),
+                           "services": ["/compute_ik", "/compute_fk"],
+                           "controllers": {"/joint_trajectory_controller/follow_joint_trajectory": ["panda_joint1", "panda_joint2"],
+                                           "/gripper/robotiq_gripper_controller/gripper_cmd": "robotiq_85_left_knuckle_joint"}})
     if "robot_description_semantic" in cmd:
         return json.dumps(SRDF_FACTS)
     return json.dumps(URDF_FACTS)
@@ -80,7 +82,10 @@ def test_what_only_the_owner_knows_fails_validation_until_filled_in():
 
 def test_draft_without_a_urdf_marks_the_arm_todo():
     def run(cmd):
-        return "/joint_states [sensor_msgs/msg/JointState]\n" if cmd == "ros2 topic list -t" else ""
+        if _GRAPH_FACTS in cmd:
+            return json.dumps({"topics": {"/joint_states": "sensor_msgs/msg/JointState"},
+                               "actions": {}, "services": [], "controllers": {}})
+        return ""
     graph = read_graph(run)
     assert graph["urdf"] is None
     text = draft_profile(graph, {"static_peers": ["10.0.0.2"]})
@@ -135,19 +140,17 @@ def test_a_machine_with_two_arms_is_drafted_arm_by_arm():
                          for side in ("left", "right")]}
 
     def run(cmd):
-        if cmd == "ros2 topic list -t":
-            return "/joint_states [sensor_msgs/msg/JointState]\n"
-        if cmd == "ros2 action list -t":
-            return "".join(f"/{side}_arm_controller/follow_joint_trajectory [control_msgs/action/FollowJointTrajectory]\n"
-                           f"/{side}_gripper_controller/gripper_cmd [control_msgs/action/GripperCommand]\n"
-                           for side in ("right", "left"))
-        if cmd == "ros2 service list":
-            return ""
-        for side in ("left", "right"):
-            if cmd.startswith(f"ros2 param get /{side}_arm_controller joints"):
-                return f"String values are: ['{side}_joint1', '{side}_joint2']\n"
-            if cmd.startswith(f"ros2 param get /{side}_gripper_controller joint"):
-                return f"String value is: {side}_finger_joint\n"
+        if _GRAPH_FACTS in cmd:
+            actions = {}
+            for side in ("right", "left"):
+                actions[f"/{side}_arm_controller/follow_joint_trajectory"] = "control_msgs/action/FollowJointTrajectory"
+                actions[f"/{side}_gripper_controller/gripper_cmd"] = "control_msgs/action/GripperCommand"
+            controllers = {}
+            for side in ("left", "right"):
+                controllers[f"/{side}_arm_controller/follow_joint_trajectory"] = [f"{side}_joint1", f"{side}_joint2"]
+                controllers[f"/{side}_gripper_controller/gripper_cmd"] = f"{side}_finger_joint"
+            return json.dumps({"topics": {"/joint_states": "sensor_msgs/msg/JointState"},
+                               "actions": actions, "services": [], "controllers": controllers})
         if "robot_description_semantic" in cmd:
             return ""
         return json.dumps(urdf)
