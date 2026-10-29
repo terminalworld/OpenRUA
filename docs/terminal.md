@@ -223,24 +223,31 @@ your unsent draft and queued instructions remain intact. Connection recovery doe
 not retry a send whose result is unconfirmed; use `/retry` with its original ID.
 
 If the native agent connection has ended, `/continue` cannot reconnect it. Read
-the session's `agent.stderr.log` and service log first. Malformed native stdout
+the session's `agent.stderr.log` and service log first, then select this
+conversation in `/resume` to reconnect its native agent. The session service
+must still be running. This keeps the same sandbox and robot resources, and
+leaves uncertain work and queued instructions paused for review. Malformed native stdout
 is retained in `agent.stderr.invalid-output.log`; this private file may contain
 agent output, so inspect it locally before sharing. Blank lines alone do not
 break a native JSON connection. Queued instructions are not automatically
 replayed after a disconnection.
 
 Pending questions and command approvals open automatically below the transcript,
-with a highlighted **Your response is needed** heading. The status changes to
-**Waiting for your response**, rather than continuing to show Working. Existing
-draft text is kept. Escape hides the question; `/questions` reopens it, and the
-waiting status remains until the request is answered. Another client's answer
-closes an obsolete question dialog automatically.
+with a highlighted **Your response is needed** heading. A blocking question changes
+the status to **Waiting for your response**. An asynchronous question keeps the
+agent working while you choose an answer. Existing draft text is kept. Escape
+hides the question; `/questions` reopens it, and the status line keeps the question
+visible. Another client's answer closes an obsolete question dialog automatically.
 
 For question dialogs, single choices use Enter. Multiple-choice requests use
 Space or Enter to toggle selections, followed by **Continue**. When the native
 agent allows a custom answer, **Write another answer** opens a text editor.
 Escape cancels without sending; a final confirmation sends the collected
-answers. Replies answer the pending question rather than enqueueing a new task.
+answers. Blocking questions reply directly to the waiting tool. Asynchronous
+questions use the agent's native user-message format and the normal delivery
+queue, joining its current response when supported. Your answer appears as
+readable text in the conversation. If an asynchronous question closes while you are still
+typing, its unfinished answer returns to the message box without being sent.
 
 Long questions and commands use a bounded text window. PgUp/PgDn reads all
 details while the response heading and choices stay visible; scrolling never

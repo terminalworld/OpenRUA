@@ -127,9 +127,14 @@ The terminal's status line shows each step's last result.
 | This computer | `host`: docker usable, disk space, the real-time limit, devices present; what fails comes with its fix |
 | What the robot is | you confirm what the agent found (make, model, firmware, gripper, cameras) |
 | Drivers | `drivers`: every image under `backend.build` builds |
-| Together | `probe` reads the running graph into `robot.draft.yaml`; `config`: `robot.yaml` loads with no TODO left |
+| Together | `probe` uses the project's discovery settings and sandbox image to save `robot.draft.yaml` for review; `config`: `robot.yaml` loads with no TODO left |
 | The robot from its config | `robot`: missing images built, the robot started from `robot.yaml` twice and stopped in between, the live graph checked against what `robot.yaml` declares |
 | First motion | `done` passes once every check above has; the session then moves to the robot's own terminal (no docker there) and the conversation goes on: with your word that the emergency stop is at hand, the gripper opens and closes once and one joint moves a few degrees |
+
+Graph discovery uses the project's connection directly, including when another
+robot's ROS CLI daemon is already running on the computer. It leaves that daemon
+alone. A generated draft contains observations to review; the separate robot
+check verifies the interfaces declared in the completed configuration.
 
 After the move, `robot.yaml` is your default robot, so `openrua` starts
 it, after its own startup checks (`backend.startup_checks`: the

@@ -226,8 +226,9 @@ def test_stdio_transport_retains_invalid_output_and_does_not_skip_it(tmp_path, l
             [sys.executable, '-c', 'import sys; print(sys.argv[1]); print(\'{"ready":true}\')', line],
             tmp_path / 'agent.stderr.log')
         try:
-            with pytest.raises(ValueError, match='cannot reconnect') as caught:
+            with pytest.raises(ValueError, match='not a JSON object') as caught:
                 await transport.read()
+            assert 'Use /resume' in str(caught.value)
             saved = tmp_path / 'agent.stderr.invalid-output.log'
             assert str(saved) in str(caught.value)
             assert saved.read_text() == line + '\n'

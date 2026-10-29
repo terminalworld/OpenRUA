@@ -134,7 +134,11 @@ project. It matches the exact canonical directory, including when you entered
 that directory through a symlink. A repository's subdirectory is a separate
 workspace when you launch there.
 
-An active conversation reconnects to its current owner. A confirmed ended
+An active conversation reconnects to its current owner. If that owner's native
+agent connection failed, selecting the conversation reconnects the native agent
+in the same sandbox and retains its robot resources. Uncertain work and queued
+instructions stay paused until reviewed; see [session recovery](sessions.md#pause-input-and-end).
+A confirmed ended
 project conversation starts fresh robot resources and continues its native
 agent conversation. Startup uses the recorded environment selection and
 retained profile; the native conversation's model and permissions are kept.
@@ -145,8 +149,8 @@ Before the next ordinary user instruction, the agent receives a recorded reminde
 to read the current machine description and observe the scene. Uncertain prior
 execution still requires reconciliation.
 
-Older sessions without a project identity and sessions with unknown execution
-status remain available as read-only history under `--resume --all`. Starting
+Older sessions without a project identity and sessions whose execution owner
+is unavailable remain available as read-only history under `--resume --all`. Starting
 another conversation in a project always works independently of restoring an
 old conversation.
 If the recorded project directory is missing, its conversation remains

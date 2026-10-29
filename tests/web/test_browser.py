@@ -144,6 +144,61 @@ def test_browser_questions_are_separate_from_tasks_and_text_is_not_html(tmp_path
     asyncio.run(browser_case(tmp_path, check))
 
 
+def test_browser_async_choices_and_free_text_use_the_message_queue(tmp_path, monkeypatch):
+    from tests.sessions.test_execution import FakeProtocol
+    replies = []
+
+    def format_reply(self, request_id, answers):
+        replies.append((request_id, answers))
+        return '<native-answer>opaque reply format</native-answer>'
+
+    monkeypatch.setattr(FakeProtocol, 'response_message', format_reply)
+
+    async def check(page, store, native, server):
+        await send(page, 'Inspect the scene')
+        first = store.snapshot()['state']['active']
+        await emit(native, 'turn_started', first)
+        await emit(native, 'input_required', first, request_id='async', reply_as_message=True, questions=[
+            {'id': 'target', 'text': 'Which target?', 'choices': ['Cup', 'Bowl'], 'allow_other': True},
+            {'id': 'place', 'text': 'Where should it go?', 'choices': [], 'allow_other': True}])
+        await playwright.expect(page.locator('#questions')).to_be_visible()
+        await playwright.expect(page.locator('#state')).to_have_text('Working')
+        await page.locator('#question-list select').select_option('Cup')
+        await page.get_by_label('Where should it go?', exact=True).fill('On the tray')
+        await page.get_by_role('button', name='Send answer', exact=True).click()
+        await until(lambda: len(store.snapshot()['state']['messages']) == 2)
+        assert replies == [('async', {'target': ['Cup'], 'place': ['On the tray']})]
+        assert not any('reply' in frame for frame in native.writes)
+        assert not store.snapshot()['state']['paused']
+        await playwright.expect(page.locator('#questions')).to_be_hidden()
+        await playwright.expect(page.locator('#queue')).to_contain_text('Answer: Cup')
+        await playwright.expect(page.locator('#queue')).not_to_contain_text('native-answer')
+        await emit(native, 'turn_finished', first, status='completed')
+        await until(lambda: len([frame for frame in native.writes if 'submit' in frame]) == 2)
+        assert native.writes[-1]['text'] == '<native-answer>opaque reply format</native-answer>'
+        await playwright.expect(page.locator('#thread')).to_contain_text('Answer: On the tray')
+        await playwright.expect(page.locator('#thread')).not_to_contain_text('native-answer')
+        await playwright.expect(page.locator('#message')).to_have_value('')
+    asyncio.run(browser_case(tmp_path, check))
+
+
+def test_browser_restores_an_unfinished_async_answer_when_the_turn_ends(tmp_path):
+    async def check(page, store, native, server):
+        await send(page, 'Inspect the scene')
+        first = store.snapshot()['state']['active']
+        await emit(native, 'input_required', first, request_id='async', reply_as_message=True, questions=[
+            {'id': 'target', 'text': 'Which target?', 'choices': ['Cup'], 'allow_other': True}])
+        await playwright.expect(page.locator('#questions')).to_be_visible()
+        await page.get_by_label('Which target? (another answer)', exact=True).fill('The blue mug, but')
+        await page.locator('#message').fill('My existing draft')
+        await emit(native, 'turn_finished', first, status='completed')
+        await playwright.expect(page.locator('#questions')).to_be_hidden()
+        await playwright.expect(page.locator('#message')).to_have_value('My existing draft\n\nWhich target?\nThe blue mug, but')
+        assert len(store.snapshot()['state']['messages']) == 1
+        assert not any('reply' in frame for frame in native.writes)
+    asyncio.run(browser_case(tmp_path, check))
+
+
 def test_browser_does_not_claim_shutdown_on_error_and_keeps_unknown_queue_paused(tmp_path):
     async def check(page, store, native, server):
         await send(page, "Check the table")

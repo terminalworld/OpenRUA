@@ -1,5 +1,7 @@
 """Native protocol ordering and identity, without model or robot calls."""
 
+import json
+
 import pytest
 
 from openrua import agents
@@ -265,6 +267,69 @@ def test_codex_items_read_as_a_person_reads_them():
     asked = item({"type": "agentMessage", "id": "q", "text": "Is the e-stop released?",
                   "delivery": "async", "questions": [{"title": "Is the e-stop released?"}]})
     assert asked.data["kind"] == "question"
+
+
+def test_async_questions_keep_native_identity_options_and_nonblocking_reply_semantics():
+    protocol = ready()
+    started(protocol)
+    frame = {'method': 'item/completed', 'params': {
+        'threadId': 'thread-1', 'turnId': 'turn-1', 'item': {
+            'type': 'agentMessage', 'id': 'call_question', 'phase': 'final_answer',
+            'text': 'Choose the target while I inspect the camera.', 'memoryCitation': None,
+            'delivery': 'async', 'questions': [
+                {'title': 'Which object?', 'options': ['Cup', 'Bowl']},
+                {'title': 'Where should it go?', 'options': []},
+            ]}}}
+    opening = protocol.receive({**frame, 'method': 'item/started'})
+    assert all(event.kind != 'input_required' for event in opening.events)
+    update = protocol.receive(frame)
+    assert not update.outbound
+    question = next(event for event in update.events if event.kind == 'input_required')
+    assert question.turn_id == 'message-1'
+    assert question.data['reply_as_message'] is True
+    assert question.data['questions'] == [
+        {'id': '["request_user_input_async","call_question",0]', 'text': 'Which object?',
+         'choices': ['Cup', 'Bowl'], 'allow_other': True},
+        {'id': '["request_user_input_async","call_question",1]', 'text': 'Where should it go?',
+         'choices': [], 'allow_other': True},
+    ]
+    assert protocol.can_steer and not protocol.can_submit
+    key = question.data['request_id']
+    ids = [q['id'] for q in question.data['questions']]
+    answers = dict(zip(ids, [['The blue mug'], ['On the tray']]))
+    with pytest.raises(ValueError, match='user message'):
+        protocol.respond(key, answers)
+    with pytest.raises(ValueError, match='every question'):
+        protocol.response_message(key, {ids[0]: ['Cup']})
+    with pytest.raises(ValueError, match='one nonempty answer'):
+        protocol.response_message(key, {ids[0]: ['Cup', 'Bowl'], ids[1]: ['tray']})
+    text = protocol.response_message(key, answers)
+    lines = text.splitlines()
+    assert lines[0] == '<send_user_message_question_reply>'
+    assert lines[-1] == '</send_user_message_question_reply>'
+    assert json.loads(lines[1]) == [
+        {'questionItemId': ids[0], 'question': 'Which object?', 'answer': 'The blue mug'},
+        {'questionItemId': ids[1], 'question': 'Where should it go?', 'answer': 'On the tray'},
+    ]
+    assert all(event.kind != 'input_required' for event in protocol.receive(frame).events)
+    completed(protocol)
+    with pytest.raises(ValueError, match='not pending'):
+        protocol.response_message(key, answers)
+    assert all(event.kind != 'input_required' for event in protocol.receive(frame).events)
+
+
+def test_resume_does_not_reopen_historical_async_questions():
+    protocol = CodexConversation('model', session_id='thread-1', permissions='never')
+    initialize = protocol.begin().outbound[0]
+    resume = protocol.receive({'id': initialize['id'], 'result': {}}).outbound[1]
+    update = protocol.receive({'id': resume['id'], 'result': {'thread': {
+        'id': 'thread-1', 'turns': [{'id': 'old', 'status': 'completed', 'items': [{
+            'type': 'agentMessage', 'id': 'old-question', 'delivery': 'async',
+            'questions': [{'title': 'An old question', 'options': ['Yes', 'No']}],
+        }]}]}}})
+    assert not any(event.kind == 'input_required' for event in update.events)
+    with pytest.raises(ValueError, match='not pending'):
+        protocol.response_message('async-old-question', {})
 
 
 def test_codex_reports_settings_and_commands_when_ready():

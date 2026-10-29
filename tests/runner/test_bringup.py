@@ -69,7 +69,8 @@ def test_real_robot_joins_the_host_network_and_reaches_the_proxy_by_address(monk
         {"kind": "real", "discovery": {"discovery_server": "192.168.1.20:11811"}},
         "openrua-internal", "r", "open")
     assert server["env"] == ("FASTDDS_BUILTIN_TRANSPORTS=UDPv4",
-                             "ROS_DISCOVERY_SERVER=192.168.1.20:11811")
+                             "ROS_DISCOVERY_SERVER=192.168.1.20:11811",
+                             "ROS_SUPER_CLIENT=TRUE")
     assert server["static_peer"] is None
 
 
@@ -106,7 +107,8 @@ def test_the_agent_is_given_the_proxy_url_its_sandbox_can_reach(monkeypatch):
 
 def test_graph_probe_runs_inside_the_sandbox():
     argv = bringup.graph_probe("rc-1-sandbox")
-    assert argv[:3] == ["docker", "exec", "rc-1-sandbox"] and "ros2 node list" in argv[-1]
+    assert argv[:3] == ["docker", "exec", "rc-1-sandbox"]
+    assert "ros2 node list --no-daemon --spin-time 2.0" in argv[-1]
 
 
 # ---- ROS domain: chosen by the bring-up, verified after the first container

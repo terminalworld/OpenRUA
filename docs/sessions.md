@@ -71,7 +71,7 @@ conversation, and `openrua exec` holds no conversation at all
 Selecting a confirmed ended project conversation reconnects its native agent
 conversation to fresh robot resources. It withdraws the old queue and sends
 no historical actions. The next user instruction includes a reminder to
-inspect the current machine and scene. Older records and unknown executions
+inspect the current machine and scene. Older records and sessions whose execution owner is unavailable
 remain read-only; [project history](projects.md#resume-a-conversation) explains
 the distinction.
 
@@ -312,9 +312,21 @@ before recording a reconciliation note:
 openrua session --name shared resolve_unknown MESSAGE_ID "What was checked and observed"
 ```
 
-A lost native process is not automatically restarted. Reconciliation alone does
-not reconnect it or replay the task. The current CLI supports reconnecting clients
-to a live service; recovery of a crashed execution host is not implemented.
+A lost native process is not automatically restarted. If the session service is
+still running, select that conversation in `/resume` or run
+`openrua --resume SESSION_ID`. This reconnects the same native conversation in
+its existing sandbox and leaves the robot resources running. Repeated selection
+does not start another native process. A connection operation already in progress
+must finish before a disconnected agent can reconnect.
+
+Unconfirmed work remains unknown, and the queue remains paused. Inspect the
+robot and retained files, record a reconciliation note with `resolve_unknown`,
+then use `/continue` to release the queue. Reconnection does not replay an
+action or restore a past physical scene. Pending questions from the old native
+connection are removed; any new question must come from the reconnected agent.
+If reconnection fails, the history, project and robot resources remain available
+for inspection and another attempt. Recovery of a crashed execution host is not
+implemented.
 
 To end the session and retain its workspace, native profile and event journal:
 
@@ -339,7 +351,8 @@ stopped, and `clean --all` does not override this guard.
 
 To recreate a confirmed ended project's resources while retaining its conversation,
 run `openrua --resume SESSION_ID` from the original project. Reconnecting a client
-to a session that is still open only attaches to its existing resources. Use `/robot` within the current terminal to inspect or maintain its connection.
+to a session that is still open keeps its existing resources and reconnects its
+native agent if needed. Use `/robot` within the current terminal to inspect or maintain its connection.
 Ending and resuming is not required for ordinary driver updates.
 
 Ending stops the agent and the resources owned by OpenRUA. For a real robot,
@@ -439,15 +452,21 @@ release a newer pause. Unknown execution must first be reconciled with an
 explicit note. Reconciliation retains the uncertainty and the note; it does
 not silently turn the old operation into a success or replay it.
 
-Tool questions and approval replies are associated with a pending request,
-separate from queued new tasks. No automatic permission response is invented.
-Unsupported native requests remain visible for diagnosis and pause scheduling.
+Tool questions and approval replies are associated with a pending request.
+Blocking requests receive the agent's native reply. For asynchronous questions,
+the agent plugin formats a user message; accepting that message into the queue
+and dismissing its question happen in one transaction. Delivery follows the same
+steering, queueing and uncertainty rules as other messages, without pausing the
+agent. Clients show readable questions and answers instead of protocol markup.
+No automatic permission response is invented. Unsupported native requests remain
+visible for diagnosis and pause scheduling.
 
 ## Persistence and reconnecting
 
 A snapshot contains state and a matching event cursor. Clients reconnect by
-reading events after that cursor. Reconnection does not submit a message,
-restart the agent, or recover the execution owner.
+reading events after that cursor. This automatic event reconnection does not
+submit a message or restart the agent. Explicitly reopening a conversation
+through `/resume` can also reconnect a lost native process, as described above.
 
 A new execution owner takes an exclusive local lock and calls `recover`.
 Any old dispatch without a terminal record becomes `unknown`; it stays paused
@@ -460,12 +479,23 @@ events are retained for diagnosis; treat the journal and native logs as private
 session data. Closing a session retains its messages, pending queue and unknown
 outcomes. Explicit deletion remains separate from stopping resources.
 
+Native JSON messages can exceed the pipe buffer size. Incomplete large frames
+spill to a temporary file, then decode as a complete object and enter the
+journal without truncation. The complete decoded frame still occupies memory;
+terminal previews are a separate presentation choice. Malformed output is
+retained in a private diagnostic log and disconnects the native process.
+
 ## Validation scope
 
 Tests exercise the real SQLite implementation, concurrent client acceptance,
 separate store connections, retries after edits, cancellation ordering, crash
 recovery after dispatch intent, cursor replay, stale events and exclusive
-ownership. Execution tests use a fake native transport to inject failures.
+ownership. Execution tests use a fake native transport to inject failures, and
+real fixture subprocesses exercise fragmented frames larger than 4 MiB, EOF,
+cancelled reads, concurrent stderr output and shutdown. A live service test
+reconnects a failed native process in the same sandbox with the same native
+identity, retains the full output, and checks that uncertain actions are not
+replayed and robot resources stay owned.
 Local HTTP tests cover concurrent clients, a connection dropped before its
 response, request timeouts, cursor replay, request validation and explicit end.
 A CLI integration test exercises serve/chat/down through actual local HTTP with

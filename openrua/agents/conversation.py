@@ -22,6 +22,8 @@ class Event:
     optional boolean multiple, allow_other and secret fields (default false).
     Replies contain choice labels or, when allowed, one free-text answer.
     Plugins map these fields to their native question and answer formats.
+    reply_as_message marks a nonblocking question whose response_message
+    is delivered through the ordinary user-message queue, not as an RPC reply.
     steer_delivered / steer_rejected name the message_id a steer carried. A
     turn the agent starts by itself (a background task finished) arrives as
     turn_started with a turn ID the owner never submitted and
@@ -80,6 +82,10 @@ class ConversationProtocol(ABC):
     def respond(self, request_id: str, answers: dict[str, list[str]]) -> Update:
         """Answer the questions supplied in an input_required event by their IDs."""
         ...
+
+    def response_message(self, request_id: str, answers: dict[str, list[str]]) -> str:
+        """Validate and format a reply_as_message answer for the owner's queue."""
+        raise NotImplementedError("this agent does not answer questions through user messages")
 
     @property
     def can_steer(self) -> bool:

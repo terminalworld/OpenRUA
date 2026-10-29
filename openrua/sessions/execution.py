@@ -10,7 +10,9 @@ import asyncio
 import fcntl
 import json
 import os
+import shutil
 import signal
+import tempfile
 from pathlib import Path
 from typing import Awaitable, Callable, Protocol
 
@@ -25,62 +27,103 @@ class Transport(Protocol):
 
 
 class StdioTransport:
-    def __init__(self, process: asyncio.subprocess.Process, invalid_output: Path | None = None):
+    def __init__(self, process: asyncio.subprocess.Process, invalid_output: Path | None = None,
+                 buffer_bytes: int = 64 * 1024):
+        if buffer_bytes <= 0:
+            raise ValueError('the native stream buffer must be positive')
         self.process = process
         self.invalid_output = invalid_output
+        self.buffer_bytes = buffer_bytes
 
     @classmethod
     async def start(cls, argv: list[str], stderr_path: Path,
-                    max_frame_bytes: int = 4 * 1024 * 1024,
+                    buffer_bytes: int = 64 * 1024,
                     cwd: Path | None = None) -> StdioTransport:
+        if buffer_bytes <= 0:
+            raise ValueError('the native stream buffer must be positive')
         stderr_path.parent.mkdir(parents=True, exist_ok=True)
         with stderr_path.open("ab") as errors:
             process = await asyncio.create_subprocess_exec(
                 *argv, stdin=asyncio.subprocess.PIPE, stdout=asyncio.subprocess.PIPE,
-                stderr=errors, start_new_session=True, limit=max_frame_bytes, cwd=cwd)
-        return cls(process, stderr_path.with_suffix('.invalid-output.log'))
+                stderr=errors, start_new_session=True, limit=buffer_bytes, cwd=cwd)
+        return cls(process, stderr_path.with_suffix('.invalid-output.log'), buffer_bytes)
 
     async def read(self) -> dict | None:
         while True:
-            line = await self.process.stdout.readline()
-            if not line:
-                return None
-            if not line.strip():
-                continue
-            try:
-                frame = json.loads(line)
-                if isinstance(frame, dict):
-                    return frame
-            except (ValueError, UnicodeError):
-                pass
-            where = 'the native process output'
-            if self.invalid_output is not None:
-                fd = os.open(self.invalid_output, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
-                with os.fdopen(fd, 'ab') as stream:
-                    stream.write(line)
-                where = str(self.invalid_output)
-            raise ValueError(f'The agent returned a response that is not a JSON object. OpenRUA cannot read it. Check {where}. '
-                             'The agent is not connected. /continue cannot reconnect it.')
+            # The pipe limit bounds buffered chunks, not native message size.
+            # Spill unfinished large messages to disk while waiting for the
+            # delimiter. Decoding still needs one complete JSON object.
+            with tempfile.SpooledTemporaryFile(max_size=self.buffer_bytes) as raw:
+                nonblank = False
+                while True:
+                    complete = True
+                    try:
+                        chunk = await self.process.stdout.readuntil(b'\n')
+                    except asyncio.LimitOverrunError as exc:
+                        chunk = await self.process.stdout.readexactly(exc.consumed)
+                        complete = False
+                    except asyncio.IncompleteReadError as exc:
+                        chunk = exc.partial
+                        if not chunk and not raw.tell():
+                            return None
+                    raw.write(chunk)
+                    nonblank = nonblank or bool(chunk.strip())
+                    if complete:
+                        break
+                if not nonblank:
+                    continue
+                raw.seek(0)
+                try:
+                    frame = json.load(raw)
+                    if isinstance(frame, dict):
+                        return frame
+                except (ValueError, UnicodeError):
+                    pass
+                where = 'the native process output'
+                if self.invalid_output is not None:
+                    fd = os.open(self.invalid_output, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o600)
+                    raw.seek(0)
+                    with os.fdopen(fd, 'ab') as stream:
+                        shutil.copyfileobj(raw, stream, self.buffer_bytes)
+                    where = str(self.invalid_output)
+                raise ValueError(f'The agent returned a response that is not a JSON object. OpenRUA cannot read it. Check {where}. '
+                                 'The agent is disconnected. Use /resume in the terminal to reopen this conversation.')
 
     async def write(self, frame: dict) -> None:
         self.process.stdin.write((json.dumps(frame, ensure_ascii=False) + "\n").encode())
         await self.process.stdin.drain()
 
     async def close(self) -> None:
+        # The owner has stopped reading frames. Drain the pipe in bounded
+        # chunks so buffered stdout cannot prevent the child from exiting.
+        async def drain():
+            while await self.process.stdout.read(self.buffer_bytes):
+                pass
+        draining = asyncio.create_task(drain())
+        async def finished():
+            await self.process.wait()
+            await asyncio.shield(draining)
         if self.process.stdin:
             self.process.stdin.close()
         try:
-            await asyncio.wait_for(self.process.wait(), 5)
-        except asyncio.TimeoutError:
             try:
-                os.killpg(self.process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            try:
-                await asyncio.wait_for(self.process.wait(), 5)
+                await asyncio.wait_for(finished(), 5)
             except asyncio.TimeoutError:
-                os.killpg(self.process.pid, signal.SIGKILL)
-                await self.process.wait()
+                try:
+                    os.killpg(self.process.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+                try:
+                    await asyncio.wait_for(finished(), 5)
+                except asyncio.TimeoutError:
+                    try:
+                        os.killpg(self.process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    await asyncio.wait_for(finished(), 5)
+        finally:
+            draining.cancel()
+            await asyncio.gather(draining, return_exceptions=True)
 
 
 class Execution:
@@ -107,6 +150,11 @@ class Execution:
         # What the resource owner also does when a turn is interrupted (a
         # robot's motions canceled), started without holding the queue.
         self.on_interrupt: Callable[[], Awaitable[None]] | None = None
+
+    @property
+    def usable(self) -> bool:
+        """The native connection is open, including its startup handshake."""
+        return self._usable and not self._closing
 
     async def start(self, *, reopen: bool = False, context_note: str | None = None) -> None:
         if self._owner is not None:
@@ -153,15 +201,19 @@ class Execution:
                 if not pending or pending["status"] != "pending":
                     raise ValueError("The agent is no longer waiting for this answer.")
                 # Validate in the plugin before committing a send intent.
-                update = self.conversation.protocol.respond(request_id, params["answers"])
-                self.session.claim_response(request_id)
-                try:
-                    await self._update(update)
-                    self.session.response_sent(request_id)
-                except Exception as exc:
-                    self._lost(str(exc))
-                    raise
-                result = None
+                if pending.get('reply_as_message'):
+                    text = self.conversation.protocol.response_message(request_id, params['answers'])
+                    result = self.session.enqueue_response(request_id, text, params['answers'])
+                else:
+                    update = self.conversation.protocol.respond(request_id, params["answers"])
+                    self.session.claim_response(request_id)
+                    try:
+                        await self._update(update)
+                        self.session.response_sent(request_id)
+                    except Exception as exc:
+                        self._lost(str(exc))
+                        raise
+                    result = None
             elif operation == "configure":
                 if not self._usable:
                     raise ValueError("The agent is not connected. No settings were changed.")

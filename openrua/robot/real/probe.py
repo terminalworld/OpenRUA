@@ -16,12 +16,38 @@ draft fails validation until a person decides.
 
 from __future__ import annotations
 
-import ast
 import json
 import re
 from typing import Callable
 
 Run = Callable[[str], str]
+
+# A host-network sandbox can reach a ROS CLI daemon created for another
+# discovery server. Use ROS's direct node so every observation belongs to
+# this process's configured graph, without stopping somebody else's daemon.
+_GRAPH_FACTS = r"""
+import argparse, json
+from ros2cli.node.direct import DirectNode
+from ros2action.api import get_action_names_and_types
+from ros2param.api import call_get_parameters, get_value
+with DirectNode(argparse.Namespace()) as node:
+    graph = {
+        "topics": {name: types[0] for name, types in node.get_topic_names_and_types() if types},
+        "actions": {name: types[0] for name, types in get_action_names_and_types(node=node) if types},
+        "services": [name for name, _ in node.get_service_names_and_types()],
+        "controllers": {},
+    }
+    for action, kind in graph["actions"].items():
+        if kind.endswith("FollowJointTrajectory") or kind.endswith("GripperCommand"):
+            parameter = "joints" if kind.endswith("FollowJointTrajectory") else "joint"
+            try:
+                response = call_get_parameters(node=node, node_name=action.rsplit("/", 1)[0],
+                                               parameter_names=[parameter])
+                graph["controllers"][action] = get_value(parameter_value=response.values[0]) if response.values else None
+            except RuntimeError:
+                graph["controllers"][action] = None
+    print(json.dumps(graph))
+"""
 
 # The python that turns the published URDF into the facts a profile
 # carries; runs where urdfdom-py is installed (the sandbox image).
@@ -67,9 +93,9 @@ print(json.dumps({
 
 # A robot description is latched (TRANSIENT_LOCAL): echo it with that
 # durability, else ask the node that holds it as a parameter.
-_DESCRIPTION = ("(ros2 topic echo --once --qos-durability transient_local "
+_DESCRIPTION = ("(ros2 topic echo --no-daemon --once --qos-durability transient_local "
                 "--qos-reliability reliable --field data {topic} 2>/dev/null "
-                "|| ros2 param get {node} {param} 2>/dev/null "
+                "|| ros2 param get --no-daemon {node} {param} 2>/dev/null "
                 "| sed 's/^String value is: //')")
 
 
@@ -77,18 +103,8 @@ def read_graph(run: Run) -> dict:
     """The graph as seen from where ``run`` executes: topics, actions and
     services with their types, the joints each trajectory and gripper
     controller drives, and the URDF and SRDF facts when they are served."""
-    def typed(cmd: str) -> dict[str, str]:
-        out = {}
-        for line in run(cmd).splitlines():
-            name, _, rest = line.strip().partition(" [")
-            if name:
-                out[name] = rest.rstrip("]").split(", ")[0] if rest else ""
-        return out
-
-    graph = {"topics": typed("ros2 topic list -t"),
-             "actions": typed("ros2 action list -t"),
-             "services": [x.strip() for x in run("ros2 service list").splitlines() if x.strip()],
-             "urdf": None, "srdf": None, "controllers": {}}
+    graph = json.loads(run("python3 -c " + _shell_quote(_GRAPH_FACTS)))
+    graph.update(urdf=None, srdf=None)
     for key, topic, node, param, script in (
             ("urdf", "/robot_description", "/robot_state_publisher", "robot_description",
              _URDF_FACTS),
@@ -101,28 +117,7 @@ def read_graph(run: Run) -> dict:
             graph[key] = json.loads(out) if out.startswith("{") else None
         except Exception:  # noqa: BLE001  no description is a finding, not a failure
             graph[key] = None
-    # The joints a controller drives are its own parameters: an action
-    # /<controller>/follow_joint_trajectory is served by node /<controller>.
-    for action, kind in graph["actions"].items():
-        if kind.endswith("FollowJointTrajectory") or kind.endswith("GripperCommand"):
-            node = action.rsplit("/", 1)[0]
-            param = "joints" if kind.endswith("FollowJointTrajectory") else "joint"
-            try:
-                graph["controllers"][action] = _param_value(
-                    run(f"ros2 param get {node} {param} 2>/dev/null || true"))
-            except Exception:  # noqa: BLE001  a controller without the parameter
-                graph["controllers"][action] = None
     return graph
-
-
-def _param_value(out: str):
-    """`ros2 param get` output -> the value: a string or a list of them."""
-    out = out.strip()
-    for prefix in ("String values are: ", "String value is: "):
-        if out.startswith(prefix):
-            value = out[len(prefix):].strip()
-            return ast.literal_eval(value) if prefix.startswith("String values") else value
-    return None
 
 
 def _shell_quote(s: str) -> str:
@@ -150,11 +145,11 @@ def draft_profile(graph: dict, discovery: dict, *, ros_distro: str | None = None
     group, hand = _planning_group(srdf, arm_joints)
 
     y = []
-    y.append("# Drafted by `openrua probe` from the live graph. Lines marked TODO need")
-    y.append("# a person and fail validation until filled in; everything else was read")
-    y.append("# from the robot. Delete any port the robot does not actually serve: trial")
-    y.append("# preflight checks the listed ports, and the workspace documents them for")
-    y.append("# the agent.")
+    y.append("# Drafted by `openrua probe` from the selected ROS graph. Review these")
+    y.append("# observations against the intended robot before using them. Creating a")
+    y.append("# draft does not verify robot identity or readiness. Lines marked TODO")
+    y.append("# fail validation until filled in. Keep only ports the robot serves;")
+    y.append("# preflight checks those interfaces before an agent task starts.")
     y.append("# type: panda   # TODO if this is an instance of a bundled robot type (openrua")
     y.append("#               # robots): name it and delete the facts below that it supplies")
     y.append("machine:")

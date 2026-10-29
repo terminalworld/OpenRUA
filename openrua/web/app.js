@@ -11,6 +11,7 @@ import {
   toolSummary,
   typedAnswer,
   displayStatus,
+  messageText,
   robotPrompt,
 } from "/session.mjs";
 const $ = (id) => document.getElementById(id);
@@ -46,6 +47,7 @@ let turns = new Map(),
   outputs = new Map(),
   questionVersion = "",
   editTarget = null;
+const questionForms = new Map();
 function saveDraft() {
   sessionStorage.setItem(key, JSON.stringify({ clientId, pending, pendingRobot }));
 }
@@ -109,7 +111,7 @@ function turn(message) {
     turns.set(message.id, entry);
   }
   // A turn the agent started by itself has no instruction of its own.
-  entry.user.textContent = message.origin === "agent" ? "(the agent continued working on its own)" : message.text;
+  entry.user.textContent = message.origin === "agent" ? "(the agent continued working on its own)" : messageText(message);
   entry.status.textContent =
     displayStatus(message.status);
   return entry;
@@ -185,13 +187,32 @@ function edit(message, mode) {
     mode === "edit" ? "Edit queued message" : "Confirm what happened";
   $("edit-label").textContent =
     mode === "edit" ? "Instruction" : "What did you check and observe?";
-  $("edit-text").value = mode === "edit" ? message.text : "";
+  $("edit-text").value = mode === "edit" ? messageText(message) : "";
   $("edit-dialog").showModal();
 }
 function renderQuestions() {
   const version = JSON.stringify(state.requests);
   if (version === questionVersion) return;
   questionVersion = version;
+  const drafts = new Map();
+  for (const [id, previous] of questionForms) {
+    const answers = Object.fromEntries(previous.fields.map(({q, field, other}) => [q.id, {
+      choices: field.multiple ? Array.from(field.selectedOptions, o => o.value) : [field.value],
+      other: other?.value || '',
+    }]));
+    drafts.set(id, {answers, submitted: previous.submitted});
+    if (!state.requests[id] && previous.request.reply_as_message && !previous.submitted) {
+      const text = previous.fields.filter(({q}) => !q.secret).map(({q}) => {
+        const answer = [...answers[q.id].choices, answers[q.id].other].filter(Boolean).join(', ');
+        return answer ? `${q.text}\n${answer}` : '';
+      }).filter(Boolean).join('\n\n');
+      if (text) {
+        $("message").value = [$("message").value, text].filter(Boolean).join('\n\n');
+        notice('The question has closed. Your unfinished answer is in the message box.');
+      }
+    }
+  }
+  questionForms.clear();
   $("question-list").replaceChildren();
   $("questions").hidden = !Object.keys(state.requests).length;
   for (const request of Object.values(state.requests)) {
@@ -234,14 +255,23 @@ function renderQuestions() {
           field.required = !other.value.trim();
         };
       }
+      const draft = drafts.get(request.request_id)?.answers[q.id];
+      if (draft) {
+        if (field.multiple) for (const option of field.options) option.selected = draft.choices.includes(option.value);
+        else field.value = draft.choices[0] || '';
+        if (other) { other.value = draft.other; other.oninput(); }
+      }
       fields.push({ q, field, other });
     }
+    const savedForm = {request, fields, submitted: drafts.get(request.request_id)?.submitted || false};
+    questionForms.set(request.request_id, savedForm);
     const send = make("button", "Send answer", "primary");
     send.disabled = request.status !== "pending";
     form.append(send);
     form.onsubmit = async (e) => {
       e.preventDefault();
       send.disabled = true;
+      savedForm.submitted = true;
       const answers = {};
       for (const { q, field, other } of fields) {
         const values = field.multiple
@@ -345,7 +375,7 @@ function render() {
   for (const m of queued) {
     const row = make("div", undefined, "queue-item"),
       actions = make("div", undefined, "queue-actions");
-    row.append(make("p", m.text));
+    row.append(make("p", messageText(m)));
     if (m.held_reason) {
       row.append(make('p', `Not sent yet: ${m.held_reason}`, 'hint'));
       actions.append(button('Send this instruction now', () => {
@@ -369,7 +399,7 @@ function render() {
   for (const m of unknown) {
     const row = make("div", undefined, "queue-item");
     row.append(
-      make("p", m.text),
+      make("p", messageText(m)),
       button(
         "Record what happened",
         () => edit(m, "resolve_unknown"),

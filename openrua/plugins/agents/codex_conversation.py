@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 from importlib.metadata import version
+import json
 import re
 
 from openrua.agents.conversation import ConversationProtocol, Event, Update
@@ -48,6 +49,7 @@ class CodexConversation(ConversationProtocol):
         self._seen: set[str] = set()
         self._early: list[dict] = []
         self._requests: dict[str, tuple[Any, str, list[dict]]] = {}
+        self._seen_questions: set[str] = set()
         self._steers: dict[int, str] = {}   # request ID -> message ID it carried
         self._server_turn = False           # /compact: the server starts the turn
         self._skill_text: str | None = None
@@ -244,10 +246,21 @@ class CodexConversation(ConversationProtocol):
         phase = method.split("/")[1]
         if kind == "agentMessage":
             question = item.get("delivery") == "async" and item.get("questions")
-            return Update(events=[Event("item", self._active, {
+            update = Update(events=[Event("item", self._active, {
                 "phase": phase, "item_id": item["id"],
                 "kind": "question" if question else "message",
                 "text": item.get("text", ""), "output": "", "details": item})])
+            if question and phase == 'completed' and item['id'] not in self._seen_questions:
+                self._seen_questions.add(item['id'])
+                key = f"async-{item['id']}"
+                questions = [{
+                    'id': json.dumps(['request_user_input_async', item['id'], index], separators=(',', ':')),
+                    'text': row['title'], 'choices': row.get('options') or [], 'allow_other': True,
+                } for index, row in enumerate(question)]
+                self._requests[key] = (item['id'], 'async', questions)
+                update.events.append(Event('input_required', self._active, {
+                    'request_id': key, 'questions': questions, 'reply_as_message': True}))
+            return update
         if kind == "commandExecution":
             details = {k: item[k] for k in ("cwd", "exitCode", "durationMs") if item.get(k) is not None}
             return Update(events=[Event("item", self._active, {
@@ -413,6 +426,8 @@ class CodexConversation(ConversationProtocol):
         if request_id not in self._requests:
             raise ValueError("input request is not pending")
         native_id, method, questions = self._requests[request_id]
+        if method == 'async':
+            raise ValueError('this question is answered through a user message')
         if set(answers) != {q["id"] for q in questions} or not all(
                 isinstance(v, list) and v and all(isinstance(x, str) for x in v)
                 for v in answers.values()):
@@ -425,3 +440,17 @@ class CodexConversation(ConversationProtocol):
             result = {"decision": answers["decision"][0]}
         del self._requests[request_id]
         return Update([{"id": native_id, "result": result}])
+
+    def response_message(self, request_id: str, answers: dict[str, list[str]]) -> str:
+        request = self._requests.get(request_id)
+        if request is None or request[1] != 'async':
+            raise ValueError('input request is not pending')
+        questions = request[2]
+        if set(answers) != {q['id'] for q in questions} or not all(
+                isinstance(value, list) and len(value) == 1
+                and isinstance(value[0], str) and value[0].strip() for value in answers.values()):
+            raise ValueError('provide one nonempty answer for every question')
+        replies = [{'questionItemId': q['id'], 'question': q['text'], 'answer': answers[q['id']][0]}
+                   for q in questions]
+        return ('<send_user_message_question_reply>\n' + json.dumps(replies, ensure_ascii=False)
+                + '\n</send_user_message_question_reply>')

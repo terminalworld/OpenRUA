@@ -342,12 +342,31 @@ def test_history_without_live_resources_never_offers_to_stop(readonly, closed):
 
 def test_cancelling_history_or_selecting_current_conversation_keeps_resources():
     client = SimpleNamespace(url='http://127.0.0.1:1', token='token',
-        snapshot=lambda: pytest.fail('no departure has been selected'))
+        snapshot=lambda: {'state': {'connected': True}},
+        end=lambda: pytest.fail('no departure has been selected'))
     replies = iter([{'action': 'history'}, {'action': 'quit'},
                     {'action': 'history_all'}, {'action': 'select', 'id': 'current'},
                     {'action': 'quit', 'ended': True}])
     assert launcher.chat(client, 'current', lambda: [], lambda _: pytest.fail('same conversation'),
                          lambda _: next(replies), list_all=lambda: []) == 0
+
+
+def test_selecting_current_disconnected_conversation_reconnects_without_leaving():
+    initial = SimpleNamespace(url='http://127.0.0.1:1', token='old',
+        snapshot=lambda: {'state': {'connected': False}},
+        end=lambda: pytest.fail('reconnection must not stop robot resources'))
+    replacement = SimpleNamespace(url='http://127.0.0.1:1', token='new')
+    opened, screens = [], []
+    replies = iter([{'action': 'history'}, {'action': 'select', 'id': 'current'},
+                    {'action': 'quit', 'ended': True}])
+    def screen(spec):
+        screens.append(spec)
+        return next(replies)
+    assert launcher.chat(initial, 'current', lambda: [{'id': 'current'}],
+                         lambda name: opened.append(name) or (replacement, name), screen) == 0
+    assert opened == ['current']
+    assert [spec['mode'] for spec in screens] == ['chat', 'history', 'chat']
+    assert screens[-1]['connection']['token'] == 'new'
 
 
 def test_failed_resource_stop_cannot_open_another_conversation():

@@ -8,6 +8,7 @@ import uuid
 from pathlib import Path
 
 from openrua.cli import state
+from openrua.config import load_yaml
 from openrua.errors import UnavailableError, UsageError
 from openrua.robot.real.probe import draft_profile, read_graph
 from openrua.runner.bringup import sandbox_reachability
@@ -57,8 +58,17 @@ def _exec_in(sandbox: str):
 def run(args) -> int:
     if args.name:
         st = state.load(args.name, args.home)
+        directory = Path(st['run_directory']) if st.get('run_directory') else Path(st['workspace']).parent
+        configuration = directory / 'config.yaml'
+        if not configuration.is_file():
+            raise UnavailableError('the running robot has no saved connection configuration',
+                                   hint='use the project connection check, or run openrua probe with explicit discovery settings')
+        backend = load_yaml(configuration)['machine']['backend']
+        if backend['kind'] != 'real':
+            raise UsageError('probe drafts profiles for real robot connections',
+                             hint='choose a running real robot with --name')
         print(draft_profile(read_graph(_exec_in(st["sandbox"])),
-                            {"network": "host"}), end="")
+                            backend['discovery'], ros_distro=backend['ros_distro']), end="")
         return 0
     discovery = _discovery(args)
     backend = {"kind": "real", "discovery": discovery, "ros_distro": args.distro}

@@ -28,13 +28,27 @@ import yaml
 from openrua import __version__ as openrua_version
 
 
-def secret_strings(creds_dir: Path) -> list[str]:
-    """Every long string value in the credential files = a secret."""
+def secret_strings(creds_dir: Path, *, strict: bool = False) -> list[str]:
+    """Every long string value in the credential files = a secret.
+
+    Strict reads fail when existing files cannot be read or parsed, so a
+    caller about to publish data can refuse an incomplete redaction list.
+    An absent profile directory still supplies no credentials.
+    """
     secrets: list[str] = []
-    for f in creds_dir.glob("*.json"):
+    if strict:
+        try:
+            files = [f for f in creds_dir.iterdir() if f.name.endswith('.json')]
+        except FileNotFoundError:
+            return []
+    else:
+        files = creds_dir.glob("*.json")
+    for f in files:
         try:
             blob = json.loads(f.read_text())
         except Exception:  # noqa: BLE001
+            if strict:
+                raise
             continue
 
         def walk(v):
@@ -51,7 +65,7 @@ def secret_strings(creds_dir: Path) -> list[str]:
     return secrets
 
 
-def secret_strings_from_env_file(path: Path) -> list[str]:
+def secret_strings_from_env_file(path: Path, *, strict: bool = False) -> list[str]:
     """The values in a KEY=value env file = secrets, same rule as above.
 
     Used for the sandbox's minted auth token, which lives in a file rather
@@ -62,6 +76,8 @@ def secret_strings_from_env_file(path: Path) -> list[str]:
     try:
         text = path.read_text()
     except OSError:
+        if strict:
+            raise
         return []
     out = []
     for line in text.splitlines():
@@ -321,7 +337,22 @@ def write_config(trial_dir: Path, cfg: dict) -> Path:
 
 
 def write_result(trial_dir: Path, record: dict) -> None:
-    (trial_dir / "result.json").write_text(json.dumps(record, indent=2))
+    """Replace a result only after the complete new record is durable."""
+    data = json.dumps(record, indent=2) + "\n"
+    fd, temporary = tempfile.mkstemp(prefix='.result-', dir=trial_dir)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, trial_dir / 'result.json')
+        directory = os.open(trial_dir, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        Path(temporary).unlink(missing_ok=True)
 
 
 def session_provenance(robot_file: Path | None, cfg: dict, code_root: Path,

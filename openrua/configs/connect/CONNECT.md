@@ -61,8 +61,12 @@ is in the project's `.openrua/connect/<session>/<step>.log`.
 4. **Together** (`probe`, then `config`): one command (`backend.launch`)
    starts every driver and stops them all on SIGINT, releasing the arm
    first if its driver needs that; names that collide between drivers are
-   namespaced apart. With the robot up, `probe` reads the graph into
-   `robot.draft.yaml`; `robot.yaml` takes its machine facts from there,
+   namespaced apart. Set the driver's ROS distro, discovery settings and
+   sandbox dependencies in `backend` first. With the robot up, `probe`
+   reads that connection using its sandbox image into `robot.draft.yaml`.
+   Other robot facts and camera files may still be incomplete. A successful
+   probe means a draft was saved, not that the intended robot was verified.
+   Review the observed model and interfaces before `robot.yaml` takes its facts from there,
    plus what the graph cannot say (which end of the gripper's travel is
    open, what each camera is and where it is mounted, notes on how the
    robot behaves), and `backend.startup_checks`: what has to be true

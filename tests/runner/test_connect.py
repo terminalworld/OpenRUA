@@ -1,9 +1,12 @@
 """Connecting a robot: the folder, the checks and the move, without docker."""
 
 import asyncio
+import contextlib
+import io
 from types import SimpleNamespace
 
 import pytest
+import yaml
 
 from openrua.agents.conversation import Event
 from openrua.runner import connect
@@ -62,6 +65,79 @@ def test_config_passes_only_without_a_todo_outside_comments(tmp_path):
     with open(tmp_path / "log", "w") as out:
         ok, summary = done._config(out)
     assert not ok and summary.startswith("1 TODO left") and "robot.yaml:" in summary
+
+
+@pytest.mark.parametrize('discovery', [
+    {'discovery_server': '192.0.2.10:11811'},
+    {'static_peers': ['192.0.2.11', '192.0.2.12']},
+    {'network': 'host'},
+])
+@pytest.mark.parametrize('custom_image', [None, 'robot-tools:tested'])
+def test_probe_uses_project_connection_even_before_robot_facts_are_complete(
+        tmp_path, monkeypatch, discovery, custom_image):
+    from openrua.cli import build_parser
+    from openrua.cli.commands import probe
+    from openrua.config.schema import sandbox_image
+
+    backend = {'kind': 'real', 'ros_distro': 'humble', 'discovery': discovery,
+               'launch': 'TODO', 'sandbox_install': 'apt-get install robot-messages'}
+    if custom_image:
+        backend['sandbox_image'] = custom_image
+    done, _ = checks(tmp_path, yaml.safe_dump({
+        'machine': {'backend': backend, 'robot': {'model': 'TODO'},
+                    'cameras': {'list': [{'name': 'camera', 'type': 'not-written-yet.yaml'}]}}}))
+    started, stopped = [], []
+    monkeypatch.setattr(probe, 'sandbox_up', lambda *a, **kw: started.append(kw))
+    monkeypatch.setattr(probe, 'sandbox_down', stopped.append)
+
+    def graph(run):
+        settings = started[-1]
+        env = dict(item.split('=', 1) for item in settings['env'])
+        observed = ({'discovery_server': env['ROS_DISCOVERY_SERVER']}
+                    if env.get('ROS_DISCOVERY_SERVER') else
+                    {'static_peers': settings['static_peer'].split(',')}
+                    if settings.get('static_peer') else {'network': 'host'})
+        # Each discovery path represents a distinct live graph.
+        name = 'selected_robot' if observed == discovery else 'unrelated_robot'
+        return {'topics': {'/joint_states': 'sensor_msgs/msg/JointState'},
+                'actions': {}, 'services': [], 'urdf': {'name': name}}
+
+    monkeypatch.setattr(probe, 'read_graph', graph)
+
+    def command(argv, stdout, stderr):
+        args = build_parser().parse_args(argv[3:])
+        with contextlib.redirect_stdout(stdout):
+            return args.fn(args)
+
+    monkeypatch.setattr(connect.subprocess, 'call', command)
+    ok, summary = done._probe(io.StringIO())
+    assert ok, summary
+    draft = yaml.safe_load((done.folder / 'robot.draft.yaml').read_text())['machine']
+    assert draft['robot']['model'] == 'selected_robot'
+    assert draft['backend']['discovery'] == discovery
+    assert draft['backend']['ros_distro'] == 'humble'
+    assert started[0]['image'] == (custom_image or sandbox_image('humble', backend['sandbox_install']))
+    assert 'review' in summary.lower()
+    assert stopped == [started[0]['name']]
+
+
+@pytest.mark.parametrize('invalid', [
+    {'discovery': {}},
+    {'discovery': {'network': 'host', 'discovery_server': '192.0.2.10:11811'}},
+    {'ros_distro': 'TODO'},
+    {'ros_dist': 'humble'},
+])
+def test_probe_rejects_unknown_connection_instead_of_using_a_default_graph(
+        tmp_path, monkeypatch, invalid):
+    from openrua.errors import ConfigError
+    data = yaml.safe_load(FAKE_ROBOT)
+    data['machine']['backend'].update(invalid)
+    done, _ = checks(tmp_path, yaml.safe_dump(data))
+    called = []
+    monkeypatch.setattr(connect.subprocess, 'call', lambda *a, **kw: called.append(a) or 0)
+    with pytest.raises(ConfigError):
+        done._probe(io.StringIO())
+    assert not called
 
 
 @pytest.mark.parametrize('build_succeeds', [True, False])

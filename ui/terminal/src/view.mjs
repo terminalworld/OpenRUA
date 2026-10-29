@@ -1,7 +1,7 @@
 import {existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {Container, Editor, Markdown, Spacer, Text, matchesKey, truncateToWidth, visibleWidth, wrapTextWithAnsi} from '@earendil-works/pi-tui';
-import {toolSummary} from './session.mjs';
+import {messageText, toolSummary} from './session.mjs';
 import {accent, bold, border, brand, green, muted, panel, red, selected, style, yellow} from './theme.mjs';
 export {accent, bold, green, muted, red, yellow} from './theme.mjs';
 
@@ -179,7 +179,7 @@ export class PendingMessages {
     const messages = this.messages.filter(message => PENDING.has(message.status));
     const labels = {queued: 'Waiting', dispatching: 'Sending to the agent', steering: 'Adding to the current response'};
     const lines = messages.slice(-3).map(message => yellow(truncateToWidth(
-      `${message.held_reason ? 'Needs your review (/queue)' : labels[message.status]}: ${plain(message.text).replace(/\s+/g, ' ')}`, width, '…')));
+      `${message.held_reason ? 'Needs your review (/queue)' : labels[message.status]}: ${plain(messageText(message)).replace(/\s+/g, ' ')}`, width, '…')));
     if (messages.length > 3) lines.unshift(muted(`${messages.length} pending messages · /queue to inspect`));
     return lines;
   }
@@ -220,7 +220,7 @@ export class Transcript extends Container {
       turn.user.setText(muted('⏺ The agent continued working on its own.'));
     } else {
       const note = message.status === 'steered' ? 'The agent received this message during its current response.' : '';
-      turn.user.setText(`${note ? muted(note) + '\n' : ''}${accent('❯')} ${bold(plain(message.text))}`);
+      turn.user.setText(`${note ? muted(note) + '\n' : ''}${accent('❯')} ${bold(plain(messageText(message)))}`);
     }
     const result = RESULT[message.status];
     if (result) turn.result.setText(result(plain(message.uncertainty ?? message.resolution ?? '')));
