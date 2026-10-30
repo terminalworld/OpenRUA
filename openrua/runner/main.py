@@ -26,7 +26,7 @@ from openrua.runner.limits import add_limit_options, limit_overrides
 from openrua.runner.live import not_ready_hint, not_ready_message
 from openrua.runner import record
 from openrua.runner.operators import OPERATORS
-from openrua.runner.trial import run_trial
+from openrua.runner.trial import REAL_RECORD_FPS, run_trial
 from openrua.sandbox import project, workspace
 
 # Benchmark data lands under the caller's working directory by default
@@ -35,6 +35,11 @@ RUNS_ROOT = Path("runs")
 
 
 def add_recording_options(ap: argparse.ArgumentParser) -> None:
+    ap.add_argument(
+        "--record-fps", type=float, default=None, metavar="FPS",
+        help=f"requested frames per second per real robot camera (default: {REAL_RECORD_FPS:g}); "
+             "actual capture depends on camera input and computer load",
+    )
     ap.add_argument(
         "--record-wait", type=float, default=None, metavar="SECONDS",
         help="wait up to SECONDS for a saved frame from every selected camera "
@@ -199,6 +204,15 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
     input_config = deepcopy(cfg)
     cfg = deepcopy(cfg)
     record_cameras = args.record
+    record_fps = getattr(args, "record_fps", None)
+    if record_fps is not None:
+        if isinstance(record_fps, bool) or not math.isfinite(record_fps) or record_fps <= 0:
+            raise UsageError("--record-fps must be a positive finite number")
+        if cfg["machine"]["backend"].get("kind") != "real":
+            raise UsageError("--record-fps controls live cameras on a real robot")
+        if record_cameras is None:
+            raise UsageError("--record-fps requires camera recording",
+                             hint="remove --no-record; with bench, pass --record")
     record_wait = getattr(args, "record_wait", None)
     if record_wait is not None:
         if not math.isfinite(record_wait) or record_wait <= 0:
@@ -225,6 +239,8 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
             raise UsageError(f"no camera named {', '.join(missing)} to record",
                              hint=f"this robot has: {', '.join(sorted(named)) or 'no cameras'}")
         if not named:
+            if record_fps is not None:
+                raise UsageError("--record-fps needs at least one camera in the robot configuration")
             if record_wait is not None:
                 raise UsageError("--record-wait needs at least one camera in the robot configuration")
             record_cameras = None
@@ -283,6 +299,7 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
                     record_size=args.record_size, progress=getattr(args, "progress", None),
                     judge=getattr(args, "judge", None),
                     provenance=prov,
+                    **({'record_fps': record_fps} if record_fps is not None else {}),
                     **({'record_wait': record_wait} if record_wait is not None else {}),
                     **({'export_video': True} if record_cameras is not None
                        and not getattr(args, "no_video", False) else {}),

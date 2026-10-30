@@ -80,12 +80,15 @@ def test_a_real_robot_needs_its_task(tmp_path, ran):
 def test_recording_check_and_video_flags_reach_the_runner(tmp_path, ran):
     file = tmp_path / 'arm.yaml'
     file.write_text(REAL)
-    execute.run(parse(tmp_path, str(file), 'inspect', '--record-wait', '7', '--no-video'))
+    execute.run(parse(tmp_path, str(file), 'inspect', '--record-wait', '7',
+                      '--record-fps', '10', '--no-video'))
     trials = ran[0][2]
     assert trials.record == () and trials.record_wait == 7
+    assert trials.record_fps == 10
     assert trials.no_video is True
     execute.run(parse(tmp_path, str(file), 'inspect'))
     assert ran[-1][2].record_wait is None and ran[-1][2].no_video is False
+    assert ran[-1][2].record_fps is None
 
 
 def test_explicit_agent_uses_its_own_model_in_an_existing_project(tmp_path, project_root, ran, monkeypatch):

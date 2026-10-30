@@ -228,6 +228,7 @@ is still attempted.
 | `interrupted` | when present and true, the runner was stopped after the operator had already ended; the operator's termination is preserved and the command exits 130 |
 | `preflight` | every check and its verdict, from the sandbox's own vantage, before the agent started |
 | `recording_check` | when `--record-wait` is used, the wait limit, elapsed wait and whether every selected camera saved its first complete frame before the task started |
+| `record_fps` | the target sampling rate per camera for a real robot recording, including the default; this is not the measured frame rate |
 | `video_export` | the per-camera video export status, output files and errors; encoding failure does not change the task verdict |
 | `agent_version` | the CLI version the sandbox reported |
 | `limits` | what the agent could reach: `internet`, `web_search`, `account_connectors` |
@@ -266,6 +267,8 @@ Updates are atomic. `input_config` preserves the input and `config` contains the
 effective settings used to write `config.yaml`. The run-level `config.json` is
 kept from the first invocation; inspect a trial's own provenance for its actual
 runtime facts, especially when appending trials to an existing run.
+For real robot recordings, `record_fps` stores the effective target rate per
+camera, including the default. It does not report the achieved capture rate.
 
 ## Budgets and quota walls
 
@@ -359,22 +362,34 @@ on failure or interruption. The execution result is saved before the
 recorder is stopped, so a recording cleanup failure cannot erase a
 completed task.
 
-The recorder samples the cameras' ROS topics at two frames per second and
-saves the images under `frames/`, with their capture times in
-`frames/index.jsonl`. It reads a camera's `/compressed` topic when there
-is one and runs at a low CPU priority, so the robot's control loop on the
-same computer comes first.
+The recorder samples the cameras' ROS topics at two frames per second by
+default. Use `--record-fps 10` to request ten frames per second from each
+selected camera. The rate must be a positive, finite number. It applies
+to real robot recordings; simulation benchmarks use `--record-every`.
+An explicit rate requires recording to be enabled and cameras to be
+configured. The actual rate depends on the camera's published frames and
+the computer's capture and write throughput.
+
+Images are saved under `frames/`, with their capture times in
+`frames/index.jsonl`. The recorder reads a camera's `/compressed` topic
+when there is one and runs at a low CPU priority, so the robot's control
+loop on the same computer comes first. The effective target rate is saved
+as `record_fps` in the trial's `result.json` and `provenance.json`, including
+when the default is used. Frame counts and timestamps show what was
+actually captured.
 
 For an experiment that needs an opening image from every camera, add
 `--record-wait SECONDS`:
 
 ```bash
 openrua exec ./my-robot.yaml "put the cup on the plate" \
-  --record wrist,scene --record-wait 15
+  --record wrist,scene --record-fps 10 --record-wait 20
 ```
 
-This waits up to 15 seconds for every selected camera to save a complete
-frame before starting the agent. A timeout or recording failure stops the
+This requests ten frames per second per camera and waits up to 20 seconds
+for every selected camera to save a complete frame before starting the
+agent. The wait ends as soon as all selected cameras have saved a frame;
+it does not change the sampling rate. A timeout or recording failure stops the
 run before the agent starts, records the cause and releases the run's
 resources. The check is optional; without the flag, the agent starts
 without waiting for camera frames. It requires a real robot with recording

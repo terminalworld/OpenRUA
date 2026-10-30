@@ -304,8 +304,8 @@ usage: openrua exec [-h] [--robot ROBOT] [-C WORKSPACE] [--trust-workspace]
                     [--model MODEL] [--run-id RUN_ID] [--runs-root RUNS_ROOT]
                     [--wall-clock-min WALL_CLOCK_MIN]
                     [--ros-domain ROS_DOMAIN] [--record [CAMERAS]]
-                    [--no-record] [--record-wait SECONDS] [--no-video]
-                    [--internet {open,model-only}]
+                    [--no-record] [--record-fps FPS] [--record-wait SECONDS]
+                    [--no-video] [--internet {open,model-only}]
                     [--web-search | --no-web-search]
                     [--account-connectors | --no-account-connectors]
                     [task_or_robot] [task]
@@ -362,9 +362,12 @@ options:
   --ros-domain ROS_DOMAIN
                         ROS_DOMAIN_ID (default: a free one; a real robot: 0)
   --record [CAMERAS]    record the cameras for openrua demo (names, or none
-                        for all); a real robot's run is recorded anyway, two
-                        frames a second
+                        for all); a real robot's run is recorded by default;
+                        --record-fps sets its rate
   --no-record           do not record a real robot's cameras
+  --record-fps FPS      requested frames per second per real robot camera
+                        (default: 2); actual capture depends on camera input
+                        and computer load
   --record-wait SECONDS
                         wait up to SECONDS for a saved frame from every
                         selected camera before starting a real robot task
@@ -816,7 +819,7 @@ usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
                      --task-suite TASK_SUITE [--task-ids TASK_IDS]
                      [--seeds SEEDS] [--operator {agent,none,script}]
                      [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
-                     [--record-every N] [--record-size WxH]
+                     [--record-every N] [--record-size WxH] [--record-fps FPS]
                      [--record-wait SECONDS] [--no-video]
                      [--wall-clock-min WALL_CLOCK_MIN]
                      [--internet {open,model-only}]
@@ -868,6 +871,9 @@ options:
                         of the profile's camera resolution (the graph's
                         cameras keep theirs, so a replay is unaffected); a
                         sharper demo costs render time per step
+  --record-fps FPS      requested frames per second per real robot camera
+                        (default: 2); actual capture depends on camera input
+                        and computer load
   --record-wait SECONDS
                         wait up to SECONDS for a saved frame from every
                         selected camera before starting a real robot task
