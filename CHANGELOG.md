@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- Add a Star History chart to the README with light and dark themes.
+
 ## 0.33.0
 
 - Export one MP4 per recorded camera after each recorded trial has released
