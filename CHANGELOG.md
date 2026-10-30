@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.33.1
+
 - Add `--record-fps` to select the target sampling rate per real robot camera,
   such as `--record-fps 10`. The default remains two frames per second.
   Record the effective target rate in trial results and provenance while
