@@ -221,3 +221,13 @@ in [GitHub Issues](https://github.com/terminalworld/OpenRUA/issues).
 If something fails, include your OpenRUA version, agent, environment, and the
 command or steps that led to it. Please remove credentials and private data
 from any logs you share.
+
+## <img src="docs/media/fluent/sparkles.svg" width="30" height="24" alt="">Star History
+
+<a href="https://www.star-history.com/?repos=terminalworld%2FOpenRUA&amp;type=date&amp;legend=top-left">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=terminalworld/OpenRUA&amp;type=date&amp;theme=dark&amp;legend=top-left">
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=terminalworld/OpenRUA&amp;type=date&amp;theme=light&amp;legend=top-left">
+    <img alt="OpenRUA GitHub stars over time" src="https://api.star-history.com/chart?repos=terminalworld/OpenRUA&amp;type=date&amp;theme=light&amp;legend=top-left" width="100%">
+  </picture>
+</a>
