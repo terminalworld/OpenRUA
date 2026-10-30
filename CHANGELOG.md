@@ -9,6 +9,8 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+## 0.33.0
+
 - Export one MP4 per recorded camera after each recorded trial has released
   its robot and agent resources. Videos follow recording timestamps; original
   images and indexes remain in place. Use `--no-video` to keep frames without
@@ -30,6 +32,9 @@ Unreleased until a release is cut, and the release decides its number.
   configuration instead of being rewritten by the transport.
 - Include the camera-video encoder in the standard installation. The `demo`
   extra remains necessary for edited terminal and camera videos.
+- Validate Kimi Code with Bedrock Kimi K3 and ZCode with Mistral GLM 5.3
+  Flash using bounded image/function API checks and actual native file-tool
+  roundtrips. These checks do not include robot tasks.
 
 ## 0.32.0
 

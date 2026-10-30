@@ -44,14 +44,14 @@ The manifest's `default_options` maps to Kimi's native configuration:
 | `max_context_size` | The selected model's context limit, in tokens |
 | `capabilities` | The model's native capability names, such as `tool_use`, `thinking` and `image_in` |
 
-For example, an AWS Bedrock Kimi K2.5 route can use these manifest fields:
+For example, an AWS Bedrock Kimi K3 route can use these manifest fields:
 
 ```yaml
-default_model: moonshotai.kimi-k2.5
+default_model: us.moonshotai.kimi-k3
 default_options:
   provider_type: openai
   api_base_url: https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1
-  max_context_size: 262144
+  max_context_size: 1048576
   capabilities: [tool_use, thinking, image_in]
 whitelist:
 - ^bedrock-runtime\.us-east-1\.amazonaws\.com$
@@ -61,7 +61,7 @@ Use the endpoint and model ID available in your AWS Region. This route expects
 a **Bedrock API key** as a bearer token; an IAM access key is not interchangeable
 with it. The profile stores the provided key and does not generate SigV4
 signatures or refresh expiring AWS tokens. See the
-[Bedrock model card](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-moonshot-ai-kimi-k2-5.html)
+[Bedrock model card](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-moonshot-ai-kimi-k3.html)
 and [authentication options](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-chat-completions.html).
 
 Kimi owns the protocol implementation. OpenRUA passes the declared provider
@@ -69,8 +69,10 @@ type and model metadata to it without inferring them from the endpoint URL.
 Only declare image input when the selected model supports it. The endpoint
 must support the native CLI's streaming chat and tool calls, including tool
 results in subsequent turns; image tasks also need compatible image input.
-The generated configuration is tested locally. Live Bedrock account access
-and robot tasks still require validation with the selected account and model.
+The generated configuration is tested with the native CLI. A bounded K3
+check through Bedrock verified image input and a function call. A separate
+native Kimi Code check wrote the requested file and completed its turn.
+Robot tasks remain a separate validation step.
 
 ## Native profile scope
 
