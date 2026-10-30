@@ -111,6 +111,10 @@ def test_a_crashing_check_becomes_a_finding(tmp_path):
 
 
 def test_json_and_text_are_the_same_report(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(doctor.checks, "engine_error", lambda: "")
+    monkeypatch.setattr(doctor.checks, "engine_version", lambda: "Docker version fixture")
+    monkeypatch.setattr(doctor.checks, "engine_rootless", lambda: False)
+    monkeypatch.setattr(doctor.checks.shutil, "which", lambda _: "/usr/bin/docker")
     monkeypatch.setattr(doctor.checks, "docker_inspect", _fake_docker({}))
     r = doctor.run(home=tmp_path)
     d = json.loads(r.to_json())

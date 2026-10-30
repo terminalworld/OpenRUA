@@ -21,7 +21,12 @@ version_argv:
 - kimi
 - --version
 default_options:
+  provider_type: kimi
   api_base_url: https://api.moonshot.ai/v1
+  max_context_size: 131072
+  capabilities:
+  - tool_use
+  - image_in
 entry_point: kimi
 prepare: apt-get update && apt-get install -y --no-install-recommends curl ca-certificates xz-utils build-essential
   python3 git && mkdir -p /opt/openrua-kimi/node && cd /opt/openrua-kimi && curl -fsSL https://nodejs.org/dist/v24.14.0/node-v24.14.0-linux-$(uname

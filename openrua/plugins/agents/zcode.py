@@ -79,6 +79,18 @@ class ZCode(Agent):
 
     def prepare_api_profile(self, key_file: Path, dest: Path, *,
                             limits: dict | None = None) -> PreparedProfile:
+        native_options = {}
+        for name in ('model_config', 'model_options'):
+            value = self.default_options.get(name, {})
+            try:
+                if not isinstance(value, dict):
+                    raise ValueError
+                normalized = json.loads(json.dumps(value, allow_nan=False))
+                if normalized != value:
+                    raise ValueError
+            except (TypeError, ValueError):
+                raise ValueError(f'default_options.{name} must be a JSON object in the ZCode agent manifest') from None
+            native_options[name] = normalized
         key = read_api_key(key_file)
         directory, _ = _copy_profile(key_file, dest, None, False, "")
         config = {"schemaVersion": 1, "config": {
@@ -88,6 +100,13 @@ class ZCode(Agent):
                 "personalModelIds": [self.default_model]}}]},
             "modelConfigRules": {"providerModelRules": [], "manualProviderModelRules": []},
             "defaultModelSelection": {"providerId": "openrua", "modelId": self.default_model}}}
+        if native_options['model_config']:
+            config['config']['modelConfigRules']['providerModelRules'] = [{
+                'providerId': 'openrua', 'modelId': self.default_model,
+                'config': native_options['model_config'],
+            }]
+        if native_options['model_options']:
+            config['config']['defaultModelSelection']['options'] = native_options['model_options']
         with open(directory / "provider_config.json", "x", encoding="utf-8",
                   opener=lambda path, flags: os.open(path, flags, 0o600)) as stream:
             json.dump(config, stream)

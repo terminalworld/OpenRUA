@@ -3,6 +3,12 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
+
+try:
+    import tomllib
+except ImportError:
+    import tomli as tomllib
 
 from openrua import agents, config
 from openrua.cli import build_parser
@@ -33,6 +39,10 @@ def test_api_configuration_and_private_profile_do_not_load_native_credentials(tm
     assert 'api_key = "synthetic-kimi-key"' in content
     assert 'model = "kimi-k2.6"' in content
     assert 'base_url = "https://api.moonshot.ai/v1"' in content
+    native_config = tomllib.loads(content)
+    assert native_config['providers']['openrua']['type'] == 'kimi'
+    assert native_config['models']['openrua']['max_context_size'] == 131072
+    assert native_config['models']['openrua']['capabilities'] == ['tool_use', 'image_in']
     assert not (profile.directory / 'credentials').exists()
     assert profile.read_secrets() == ['synthetic-kimi-key']
     assert (profile.directory / 'config.toml').stat().st_mode & 0o777 == 0o600
@@ -43,6 +53,60 @@ def test_api_configuration_and_private_profile_do_not_load_native_credentials(tm
     with pytest.raises(ValueError, match='nonempty'):
         agent.prepare_api_profile(key, profile.directory)
     assert (profile.directory / 'config.toml').exists()
+
+
+def test_project_manifest_selects_native_openai_route_and_model_metadata(tmp_path):
+    manifest = yaml.safe_load(MANIFEST.read_text())
+    manifest['default_model'] = 'moonshotai.kimi-k2.5'
+    manifest['default_options'] = {
+        'provider_type': 'openai',
+        'api_base_url': 'https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1',
+        'max_context_size': 262144,
+        'capabilities': ['tool_use', 'thinking', 'image_in'],
+    }
+    manifest['whitelist'] = [r'^bedrock-runtime\.us-east-1\.amazonaws\.com$']
+    path = tmp_path / 'kimi-bedrock.yaml'
+    path.write_text(yaml.safe_dump(manifest))
+    agent = agents.get(str(path))
+    key = tmp_path / 'key'
+    key.write_text('synthetic-bedrock-bearer-token')
+    profile = agent.prepare_api_profile(key, tmp_path / 'profile')
+    native = tomllib.loads((profile.directory / 'config.toml').read_text())
+    assert native['providers']['openrua'] == {
+        'type': 'openai',
+        'base_url': manifest['default_options']['api_base_url'],
+        'api_key': 'synthetic-bedrock-bearer-token',
+    }
+    assert native['models']['openrua'] == {
+        'provider': 'openrua', 'model': 'moonshotai.kimi-k2.5',
+        'max_context_size': 262144, 'capabilities': ['tool_use', 'thinking', 'image_in'],
+    }
+    assert agent.whitelist == tuple(manifest['whitelist'])
+    assert not (profile.directory / 'credentials').exists()
+    assert profile.read_secrets() == ['synthetic-bedrock-bearer-token']
+    assert agent.conversation('box', agent.default_model, '').protocol.begin().outbound
+
+
+def test_api_profile_preserves_explicit_text_only_capabilities(tmp_path):
+    agent = agents.get(str(MANIFEST))
+    agent.default_options = {**agent.default_options, 'capabilities': ['tool_use']}
+    key = tmp_path / 'key'
+    key.write_text('synthetic-key')
+    profile = agent.prepare_api_profile(key, tmp_path / 'profile')
+    native = tomllib.loads((profile.directory / 'config.toml').read_text())
+    assert native['models']['openrua']['capabilities'] == ['tool_use']
+
+
+@pytest.mark.parametrize(('option', 'value'), [
+    ('provider_type', ''), ('max_context_size', True),
+    ('max_context_size', 0), ('capabilities', 'image_in'),
+])
+def test_invalid_api_metadata_fails_before_reading_credentials(tmp_path, option, value):
+    agent = agents.get(str(MANIFEST))
+    agent.default_options = {**agent.default_options, option: value}
+    with pytest.raises(ValueError, match=option):
+        agent.prepare_api_profile(tmp_path / 'absent-key', tmp_path / 'profile')
+    assert not (tmp_path / 'profile').exists()
 
 
 def test_all_launch_modes_use_native_kimi_and_exact_resume():

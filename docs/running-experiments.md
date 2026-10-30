@@ -121,7 +121,9 @@ openrua bench --config capbench --run-id lift-demo \
 openrua demo runs/capbench/lift-demo/trials/capbench_lift-0/seed0 --speed 4
 ```
 
-The video is `demo.mp4` in that trial directory; `result.json` has the
+The edited video is `demo.mp4` in that trial directory. The recorded run
+also exports one MP4 per camera under `videos/`, using the saved recording
+timestamps. `result.json` has the
 benchmark's verdict and `provenance.json` the resolved configuration and
 software versions. The bundled CaP-Bench configuration selects Claude
 Opus 5 at high reasoning effort; `--agent` and `--model` select another.
@@ -145,6 +147,7 @@ Recording adds rendering time to the run.
     commands.sh               what ran: the agent's shell, write and edit operations, or the replayed file
     ops.jsonl                 the same operations with output heads and wall times
     frames/                   camera frames: a simulated robot's sim steps (--record), a real robot's cameras two a second
+    videos/                   one MP4 per recorded camera
     bridge.log, moveit.log    the robot's own logs
     workspace/                what the agent left in /workspace
     attempts/                 earlier attempts of the same trial, moved aside
@@ -224,6 +227,8 @@ is still attempted.
 | `cleanup` | `status` is `pending`, `completed` or `failed`; `errors` lists each failed step with its error and traceback. This is independent of task success and termination. |
 | `interrupted` | when present and true, the runner was stopped after the operator had already ended; the operator's termination is preserved and the command exits 130 |
 | `preflight` | every check and its verdict, from the sandbox's own vantage, before the agent started |
+| `recording_check` | when `--record-wait` is used, the wait limit, elapsed wait and whether every selected camera saved its first complete frame before the task started |
+| `video_export` | the per-camera video export status, output files and errors; encoding failure does not change the task verdict |
 | `agent_version` | the CLI version the sandbox reported |
 | `limits` | what the agent could reach: `internet`, `web_search`, `account_connectors` |
 | `wall_seconds` | elapsed harness time at this snapshot; after cleanup, the whole span including boot, preflight, operator, judgment and teardown |
@@ -344,21 +349,37 @@ clip gets short enough for a README. Rendering needs the `demo` extra: `pip inst
 costs wall clock on whole-room scenes, which the agent's budget would
 pay for; record the replay, not the experiment.
 
-A real robot's run cannot be replayed, so `openrua exec` records its
-cameras unless `--no-record` says not to (`--record wrist,scene` picks
-cameras; `bench` records a real robot only with `--record`). Capture starts
-after preflight, just before execution, and stops when execution ends,
-before the human verdict prompt. It also stops on failure or interruption.
-The execution result is saved before the recorder is stopped, so a
-recording cleanup failure cannot erase a completed task.
+## Camera recordings and automatic videos
 
-The frames
-come from the cameras' ROS topics, two a second, into the same
-`frames/` layout, each numbered with its wall time, and `openrua demo`
-composes them with the agent's commands in the same way. The grabber
-reads a camera's `/compressed` topic when there is one and runs at a low
-CPU priority, so the robot's control loop on the same computer comes
-first.
+`openrua exec` records a real robot's cameras by default. Use `--no-record`
+to disable capture, or `--record wrist,scene` to select cameras by their
+configured names. Capture starts after preflight, before the task, and
+stops when execution ends, before the human verdict prompt. It also stops
+on failure or interruption. The execution result is saved before the
+recorder is stopped, so a recording cleanup failure cannot erase a
+completed task.
+
+The recorder samples the cameras' ROS topics at two frames per second and
+saves the images under `frames/`, with their capture times in
+`frames/index.jsonl`. It reads a camera's `/compressed` topic when there
+is one and runs at a low CPU priority, so the robot's control loop on the
+same computer comes first.
+
+For an experiment that needs an opening image from every camera, add
+`--record-wait SECONDS`:
+
+```bash
+openrua exec ./my-robot.yaml "put the cup on the plate" \
+  --record wrist,scene --record-wait 15
+```
+
+This waits up to 15 seconds for every selected camera to save a complete
+frame before starting the agent. A timeout or recording failure stops the
+run before the agent starts, records the cause and releases the run's
+resources. The check is optional; without the flag, the agent starts
+without waiting for camera frames. It requires a real robot with recording
+enabled. Passing the check establishes that capture has started, not that
+every moment of the subsequent task will be recorded.
 
 `result.json` records the capture interval, received frame counts and
 first/last capture times per camera, missing cameras and recording errors.
@@ -369,13 +390,36 @@ separately from the task verdict. Diagnostics are saved in
 `frames/camera.log`. Existing frames remain available when capture fails;
 an incomplete image payload is not published as a frame.
 
-To create a video from those saved frames, without running the robot again:
+After a recorded run releases its execution resources, OpenRUA automatically
+exports `<trial-directory>/videos/<camera>.mp4` for each recorded camera.
+The original images and `frames/index.jsonl` remain available. Use
+`--no-video` with `exec` or `bench` to skip this encoding step while keeping
+camera capture enabled.
+
+Each video follows the intervals in the frame index, with the last saved
+image held until the next one. Real robot timestamps come from the recorder's
+wall clock, not the camera's sensor timestamp. Simulator timestamps are also
+wall-clock times, taken when rendered frames are recorded, rather than
+simulation time. These videos therefore retain pauses between captures;
+they do not turn sparse images into a continuous measurement of the scene.
+The final frame has no following timestamp, so its display duration is
+inferred and recorded in `result.json` under `video_export`.
+
+Video export errors are reported separately from the task result. To retry
+encoding, or export a previous recording, use:
+
+```bash
+openrua demo <trial-directory> --camera-only
+```
+
+This reads the saved frames without starting the robot or agent. To make the
+edited demonstration with commands beside the camera views, keep the
+existing command:
 
 ```bash
 openrua demo <trial-directory>
 ```
 
-This produces an edited demonstration of camera frames and commands, not
-a recording at the original wall-clock speed. The frame index retains the
-capture times for analysis. Frames from previous runs are kept as recorded;
-this execution-only capture interval applies to new runs.
+This produces `demo.mp4` at the selected editing speed. It is separate from
+the per-camera videos. Frames from previous runs are kept as recorded;
+their original capture intervals are not changed by either export.

@@ -1,4 +1,4 @@
-"""Preview Kimi Code plugin with native OAuth or explicit Moonshot API auth."""
+"""Preview Kimi Code plugin with native OAuth or explicit API auth."""
 from __future__ import annotations
 
 import json
@@ -90,13 +90,23 @@ class Kimi(Agent):
             f"{(source / 'oauth').resolve()}:/kimi-home/oauth"), secrets)
 
     def prepare_api_profile(self, key_file, dest, *, limits=None):
+        provider_type = self.default_options.get('provider_type')
+        context_size = self.default_options.get('max_context_size')
+        capabilities = self.default_options.get('capabilities')
+        if not isinstance(provider_type, str) or not provider_type.strip():
+            raise ValueError('set default_options.provider_type in the Kimi agent manifest to a native provider type')
+        if type(context_size) is not int or context_size <= 0:
+            raise ValueError('set default_options.max_context_size in the Kimi agent manifest to a positive integer')
+        if (not isinstance(capabilities, list) or
+                not all(isinstance(c, str) and c.strip() for c in capabilities)):
+            raise ValueError('set default_options.capabilities in the Kimi agent manifest to a list of native capability names')
         key = read_api_key(key_file)
         directory, _ = _copy_profile(key_file, dest, None, False, '')
         q = json.dumps
         content = ('default_model = "openrua"\ntelemetry = false\nauto_session_title = false\nbuiltin_product_skills = false\n'
-                   '[providers.openrua]\ntype = "kimi"\napi_key = ' + q(key) + '\nbase_url = ' + q(self.default_options['api_base_url']) + '\n'
+                   '[providers.openrua]\ntype = ' + q(provider_type) + '\napi_key = ' + q(key) + '\nbase_url = ' + q(self.default_options['api_base_url']) + '\n'
                    '[models.openrua]\nprovider = "openrua"\nmodel = ' + q(self.default_model) + '\n'
-                   'max_context_size = 131072\ncapabilities = ["tool_use", "image_in"]\n')
+                   'max_context_size = ' + str(context_size) + '\ncapabilities = ' + q(capabilities) + '\n')
         with open(directory / 'config.toml', 'x', encoding='utf-8',
                   opener=lambda p, f: os.open(p, f, 0o600)) as stream:
             stream.write(content)

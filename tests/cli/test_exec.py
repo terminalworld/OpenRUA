@@ -77,6 +77,17 @@ def test_a_real_robot_needs_its_task(tmp_path, ran):
     assert ran == []
 
 
+def test_recording_check_and_video_flags_reach_the_runner(tmp_path, ran):
+    file = tmp_path / 'arm.yaml'
+    file.write_text(REAL)
+    execute.run(parse(tmp_path, str(file), 'inspect', '--record-wait', '7', '--no-video'))
+    trials = ran[0][2]
+    assert trials.record == () and trials.record_wait == 7
+    assert trials.no_video is True
+    execute.run(parse(tmp_path, str(file), 'inspect'))
+    assert ran[-1][2].record_wait is None and ran[-1][2].no_video is False
+
+
 def test_explicit_agent_uses_its_own_model_in_an_existing_project(tmp_path, project_root, ran, monkeypatch):
     monkeypatch.setattr(execute.updates, 'notice', lambda *a: None)
     projects.save_selection(project_root, dict(robot='panda', sim='robosuite', bench='', agent='codex', model='codex-only-model'))

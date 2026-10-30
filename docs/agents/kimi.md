@@ -19,13 +19,58 @@ openrua config set --user --agent kimi --auth api --api-key-file /absolute/path/
 openrua --setup
 ```
 
-The API file contains only the raw Moonshot Open Platform key. The bundled
-endpoint is `https://api.moonshot.ai/v1`. Kimi Coding subscription credentials
+The API file contains only the raw key for the selected provider. The bundled
+configuration uses a Moonshot Open Platform key and
+`https://api.moonshot.ai/v1`. Kimi Coding subscription credentials
 and Open Platform API keys are different authentication sources. Local checks
 inspect files; provider quota is established by the provider when used.
 
 For a preconfigured project, `openrua --agent kimi` selects it for that new
 session. Missing sandbox images are prepared through the ordinary startup flow.
+
+## Other API providers
+
+Copy the [bundled manifest](../../openrua/configs/agents/kimi.yaml) into your
+project, keep its install recipe and `entry_point: kimi`, and edit the model,
+provider options and network whitelist. Choose the file through **Other agent
+or configuration file…** and select **API key (billed separately)**.
+
+The manifest's `default_options` maps to Kimi's native configuration:
+
+| Option | Meaning |
+|---|---|
+| `provider_type` | Native provider protocol, such as `kimi` or `openai` for OpenAI Chat Completions |
+| `api_base_url` | That provider's API base URL |
+| `max_context_size` | The selected model's context limit, in tokens |
+| `capabilities` | The model's native capability names, such as `tool_use`, `thinking` and `image_in` |
+
+For example, an AWS Bedrock Kimi K2.5 route can use these manifest fields:
+
+```yaml
+default_model: moonshotai.kimi-k2.5
+default_options:
+  provider_type: openai
+  api_base_url: https://bedrock-runtime.us-east-1.amazonaws.com/openai/v1
+  max_context_size: 262144
+  capabilities: [tool_use, thinking, image_in]
+whitelist:
+- ^bedrock-runtime\.us-east-1\.amazonaws\.com$
+```
+
+Use the endpoint and model ID available in your AWS Region. This route expects
+a **Bedrock API key** as a bearer token; an IAM access key is not interchangeable
+with it. The profile stores the provided key and does not generate SigV4
+signatures or refresh expiring AWS tokens. See the
+[Bedrock model card](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-moonshot-ai-kimi-k2-5.html)
+and [authentication options](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-chat-completions.html).
+
+Kimi owns the protocol implementation. OpenRUA passes the declared provider
+type and model metadata to it without inferring them from the endpoint URL.
+Only declare image input when the selected model supports it. The endpoint
+must support the native CLI's streaming chat and tool calls, including tool
+results in subsequent turns; image tasks also need compatible image input.
+The generated configuration is tested locally. Live Bedrock account access
+and robot tasks still require validation with the selected account and model.
 
 ## Native profile scope
 
@@ -59,6 +104,8 @@ two shared-chat turns. These establish the documented chat paths; robot-task
 performance, native subscription validity and benchmark reproduction remain
 separate validation work.
 
-For another model or endpoint, copy the bundled manifest into the project,
-change its owned settings, then choose **Other agent or configuration file…**. The normal
-model field cannot override a profile that was prepared for another model.
+The normal model field cannot override a profile that was prepared for another
+model. Change `default_model` and its provider metadata together in the project
+manifest before preparing a new API profile. See
+[Kimi's provider documentation](https://moonshotai.github.io/kimi-code/en/configuration/providers.html)
+for its native configuration semantics.

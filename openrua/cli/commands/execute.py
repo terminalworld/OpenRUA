@@ -29,7 +29,7 @@ from openrua.cli.progress import Progress
 from openrua.config import compose, paths, projects
 from openrua.errors import UsageError
 from openrua.runner.limits import LIMITS, add_limit_options
-from openrua.runner.main import run_set
+from openrua.runner.main import add_recording_options, run_set
 
 
 def _source(composed) -> Path:
@@ -105,6 +105,7 @@ def run(args) -> int:
         task=task, task_suite=suite, task_ids=[task_id], seeds=[args.seed], project=root,
         operator="agent", record=recording(args, real),
         record_every=1, record_size=None, wall_clock_min=args.wall_clock_min,
+        record_wait=args.record_wait, no_video=args.no_video,
         runs_root=args.runs_root, run_id=run_id, ros_domain=args.ros_domain,
         credentials_dir=None, account_alias=None, script=None, token_file=None,
         **{key: getattr(args, key) for key in LIMITS})
@@ -155,5 +156,6 @@ def add_parser(sub) -> None:
                    "a real robot's run is recorded anyway, two frames a second")
     p.add_argument("--no-record", action="store_true",
                    help="do not record a real robot's cameras")
+    add_recording_options(p)
     add_limit_options(p, "default: only the model service, as in a benchmark run")
     p.set_defaults(fn=run)

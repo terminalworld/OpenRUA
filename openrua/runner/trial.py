@@ -11,6 +11,7 @@ oracle-retry.
 from __future__ import annotations
 
 import os
+import math
 import signal
 import traceback
 import hashlib
@@ -170,16 +171,21 @@ def operate(cfg: dict, machine, sandbox_name: str, operator, ctx: dict) -> dict:
 REAL_RECORD_FPS = 2.0   # frames a second per camera: enough to see a run, light on the robot's computer
 
 
-def record_cameras_of(cfg: dict, sandbox: str, frames: Path, names: tuple[str, ...]) -> CameraTap:
-    """A real robot renders nothing: its frames come from its camera
-    topics, REAL_RECORD_FPS a second, into the frames/ layout ``openrua
-    demo`` reads. ``names`` picks cameras (empty: all of them)."""
+def _recording_cameras(cfg: dict, names: tuple[str, ...]) -> dict[str, str]:
     named, _ = camera_topics(cfg)
     chosen = {n: t for n, t in named.items() if not names or n in names}
     missing = sorted(set(names) - set(named))
     if missing or not chosen:
         raise ValueError(f"no camera to record named {', '.join(missing) or 'on this robot'}"
                          f"; it has: {', '.join(sorted(named)) or 'none'}")
+    return chosen
+
+
+def record_cameras_of(cfg: dict, sandbox: str, frames: Path, names: tuple[str, ...]) -> CameraTap:
+    """A real robot renders nothing: its frames come from its camera
+    topics, REAL_RECORD_FPS a second, into the frames/ layout ``openrua
+    demo`` reads. ``names`` picks cameras (empty: all of them)."""
+    chosen = _recording_cameras(cfg, names)
     tap = CameraTap(sandbox, chosen, fps=REAL_RECORD_FPS, record=frames)
     tap.start()
     return tap
@@ -252,7 +258,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
               account_alias=None, script=None, token_file=None, task=None,
               record_cameras=None, record_every=1, record_size=None,
               progress=None, judge=None, project_root: Path | None = None,
-              prompt_template: str | None = None, provenance: dict | None = None):
+              prompt_template: str | None = None, provenance: dict | None = None,
+              record_wait: float | None = None, export_video: bool = False):
     """One trial: claim the directory, bring the robot and sandbox up,
     start the episode, preflight, operate, score, write the record.
     ``task`` is the task sentence for a robot with no truth side (a real
@@ -261,10 +268,21 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     ``record_cameras`` (None, or a tuple of camera names, empty for the
     profile's default) makes the robot write its frames under the trial,
     one step in ``record_every``, at ``record_size`` (WxH) when given.
+    ``record_wait`` optionally waits this many seconds for every selected
+    real camera to save a complete frame before starting the operator.
+    ``export_video`` exports recorded cameras after cleanup, while this
+    attempt still owns its files. Export failure does not change the verdict.
     ``progress`` receives the agent's steps as it works (a person
     watching); ``judge``, on a robot nothing scores, is asked whether the
     task was done, given the agent's last words, and answers True, False
     or None (no answer)."""
+    real = cfg.get("machine", {}).get("backend", {}).get("kind") == "real"
+    if record_wait is not None:
+        if isinstance(record_wait, bool) or not math.isfinite(record_wait) or record_wait <= 0:
+            raise ValueError("--record-wait must be a positive number of seconds.")
+        if not real or record_cameras is None:
+            raise ValueError("--record-wait requires a real robot with camera recording enabled.")
+        _recording_cameras(cfg, record_cameras)
     input_config = deepcopy(cfg)
     cfg = deepcopy(cfg)
     selected_agent = cfg.setdefault("agent", {})
@@ -302,6 +320,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         "active_wall_cap_min": wall_cap_min,
         "cleanup": {"status": "pending", "errors": []},
     }
+    if record_wait is not None:
+        rec["recording_check"] = {"timeout_s": record_wait, "status": "pending", "elapsed_seconds": 0.0}
     limits = cfg["protocol"]["limits"]
     if project_root is not None:
         project_root = project_root.expanduser().resolve()
@@ -354,7 +374,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     machine = None
     tap = None
     op_meta = None
-    real = cfg.get("machine", {}).get("backend", {}).get("kind") == "real"
+    recording_check_started = None
 
     def persist(*, refresh_secrets: bool = True) -> None:
         # Each snapshot states how far the runner got; later scoring or
@@ -399,6 +419,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             "ros_domain": ros_domain,
             "agent_cli": {"name": agent.name, "version_pin": agent.version},
         }
+        if record_wait is not None:
+            trial_provenance["record_wait"] = record_wait
         record.write_run_config(run_dir, record.scrub_value(trial_provenance, secrets))
         record.write_trial_provenance(trial_dir, record.scrub_value(trial_provenance, secrets))
         mounts = profile.mounts
@@ -447,6 +469,13 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         if real and record_cameras is not None:
             tap = record_cameras_of(cfg, sandbox_name, trial_dir / "frames", record_cameras)
             rec["recorded_cameras"] = sorted(tap.cameras)
+            if record_wait is not None:
+                persist()
+                recording_check_started = time.monotonic()
+                tap.wait_for_frames(record_wait)
+                rec["recording_check"].update(
+                    status="passed", elapsed_seconds=round(time.monotonic() - recording_check_started, 3))
+                persist()
         op_meta = operate(cfg, machine, sandbox_name, operator, {
             "machine": machine,
             "trial_dir": trial_dir,
@@ -495,6 +524,9 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
                 if answer is not None:
                     rec["success"] = bool(answer)
     except KeyboardInterrupt:
+        if record_wait is not None and rec["recording_check"]["status"] == "pending":
+            rec["recording_check"].update(status="canceled", elapsed_seconds=(
+                round(time.monotonic() - recording_check_started, 3) if recording_check_started is not None else 0.0))
         # Stopped outside the agent's segment: during bring-up, preflight,
         # a quota wait, or the verdict. No verdict then.
         if op_meta is None:
@@ -507,6 +539,9 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             if sandbox_live:
                 clean("active motion", lambda: halt(cfg, sandbox_name, agent_stopped=False))
     except Exception as exc:  # noqa: BLE001; anomaly ledger, not a crash
+        if record_wait is not None and rec["recording_check"]["status"] == "pending":
+            rec["recording_check"].update(status="failed", elapsed_seconds=(
+                round(time.monotonic() - recording_check_started, 3) if recording_check_started is not None else 0.0))
         rec.setdefault("success", None)
         if op_meta is None:
             rec["termination"] = "anomaly"
@@ -539,6 +574,19 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
                     # read succeeded before artifact collection. Only skip a
                     # reread when we just removed that profile ourselves.
                     persist(refresh_secrets=not profile_removed)
+            if export_video and record_cameras is not None:
+                from openrua.runner.video import export_videos
+
+                safe_rec = record.scrub_value(rec, secrets)
+                try:
+                    export_videos(trial_dir, safe_rec, secrets=secrets)
+                except KeyboardInterrupt:
+                    rec["interrupted"] = True
+                finally:
+                    if "video_export" in safe_rec:
+                        rec["video_export"] = safe_rec["video_export"]
+                    # Encoding time is not part of the execution's elapsed time.
+                    record.write_result(trial_dir, record.scrub_value(rec, secrets))
         finally:
             held.release()
     return record.scrub_value(rec, secrets)

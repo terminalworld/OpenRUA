@@ -15,6 +15,7 @@ from __future__ import annotations
 import base64
 import json
 import logging
+import math
 import subprocess
 import threading
 import time
@@ -70,6 +71,7 @@ class CameraTap:
         self._stopped: float | None = None
         self._stopping = False
         self.lock = threading.Lock()
+        self._changed = threading.Condition(self.lock)
 
     def start(self) -> None:
         args = [f"--camera={n}={t}" for n, t in self.cameras.items()]
@@ -90,9 +92,47 @@ class CameraTap:
         return self._proc is not None and self._proc.poll() is None
 
     def _fail(self, message: str) -> None:
-        with self.lock:
+        with self._changed:
             if message not in self._errors:
                 self._errors.append(message)
+            self._changed.notify_all()
+
+    def wait_for_frames(self, timeout_s: float) -> None:
+        """Wait for a complete saved frame from every requested camera.
+
+        This checks recording startup, not coverage of the subsequent task.
+        Exceptions leave ownership with the caller, which must stop the tap.
+        """
+        if isinstance(timeout_s, bool) or not math.isfinite(timeout_s) or timeout_s <= 0:
+            raise ValueError("The recording wait must be a positive number of seconds.")
+        if self.record is None or not self.cameras:
+            raise ValueError("Waiting for saved frames requires recording at least one camera.")
+        deadline = time.monotonic() + timeout_s
+        with self._changed:
+            while True:
+                missing = sorted(set(self.cameras) - set(self._received))
+                error = "; ".join(self._errors)
+                if not error and (self._stopping or self._stopped is not None):
+                    error = "Camera recording stopped before the startup check completed."
+                if not error and self._proc is None:
+                    error = "Camera recording has not started."
+                if not error and self._proc.poll() is not None:
+                    error = f"The camera process exited with code {self._proc.returncode}."
+                if error:
+                    stderr = self._stderr.decode(errors="replace").strip()
+                    if stderr:
+                        error += "\n" + stderr
+                    raise RuntimeError(f"Camera recording could not start: {error}\n"
+                                       f"Camera log: {self.record / 'camera.log'}")
+                if not missing:
+                    return
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError(
+                        f"No saved frame from {', '.join(missing)} after {timeout_s:g} seconds. "
+                        "The task has not started. Check the camera topics and log before retrying.\n"
+                        f"Camera log: {self.record / 'camera.log'}")
+                self._changed.wait(remaining)
 
     def _read_errors(self, proc) -> None:
         log = None
@@ -133,11 +173,6 @@ class CameraTap:
                     if len(data) != size:
                         raise ValueError(f"incomplete frame from {name}: received {len(data)} of {size} bytes")
                     frames.append((name, mime, data))
-                with self.lock:
-                    for name, mime, data in frames:
-                        self.latest[name] = {"t": head["t"], "mime": mime, "data": data}
-                        received = self._received.setdefault(name, {"count": 0, "first_t": head["t"]})
-                        received.update(count=received["count"] + 1, last_t=head["t"])
                 if index is not None and frames:
                     files = []
                     for name, mime, data in frames:
@@ -146,6 +181,12 @@ class CameraTap:
                         files.append(file)
                     index.write(json.dumps({"step": self.ticks, "t": head["t"], "files": files}) + "\n")
                     index.flush()
+                with self._changed:
+                    for name, mime, data in frames:
+                        self.latest[name] = {"t": head["t"], "mime": mime, "data": data}
+                        received = self._received.setdefault(name, {"count": 0, "first_t": head["t"]})
+                        received.update(count=received["count"] + 1, last_t=head["t"])
+                    self._changed.notify_all()
                 if frames:
                     self.ticks += 1
         except (OSError, ValueError, KeyError, TypeError) as exc:
@@ -183,7 +224,9 @@ class CameraTap:
         proc = self._proc
         if proc is None:
             return
-        self._stopping = True
+        with self._changed:
+            self._stopping = True
+            self._changed.notify_all()
         shutdown_errors = []
         exited = False
         try:

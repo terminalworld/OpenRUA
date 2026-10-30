@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from openrua import demo
+from openrua.errors import UsageError
+from openrua.runner import lock, record
 
 
 def run(args) -> int:
+    if args.camera_only:
+        return _camera_videos(args)
     style = demo.Style(fps=args.fps, font_size=args.font_size, speed=args.speed,
                        typing=not args.no_typing, quality=args.quality,
                        gif_width=args.gif_width, gif_fps=args.gif_fps)
@@ -32,15 +37,72 @@ def run(args) -> int:
     return 0
 
 
+def _camera_videos(args) -> int:
+    from openrua.demo.cameras import export_camera_videos
+
+    presentation = dict(gif=False, cameras="", pace=1.0, from_motion=None,
+                        ops=None, size=None, fps=20, quality=18, speed=1.0,
+                        font_size=13, gif_width=640, gif_fps=8, no_typing=False)
+    for name, default in presentation.items():
+        if getattr(args, name) != default:
+            raise UsageError(f"--{name.replace('_', '-')} is for the terminal and camera demo",
+                             hint="use --camera-only alone to export every camera at its recorded times")
+    trial = Path(args.trial).expanduser().resolve()
+    if not trial.is_dir():
+        raise UsageError(f"Trial directory does not exist: {trial}")
+    claim = lock.acquire(trial, stem="")
+    if claim is None:
+        raise UsageError("This trial is still running or another export is using it",
+                         hint="retry after it finishes")
+    try:
+        result_path = trial / "result.json"
+        try:
+            result = json.loads(result_path.read_text()) if result_path.exists() else None
+        except (OSError, ValueError) as exc:
+            raise UsageError(f"Could not read {result_path}: {exc}") from exc
+        if result is not None and not isinstance(result, dict):
+            raise UsageError(f"Expected an object in {result_path}")
+        output = Path(args.out).expanduser().resolve() if args.out else trial / "videos"
+        try:
+            report = export_camera_videos(trial / "frames", output)
+        except KeyboardInterrupt:
+            if result is not None:
+                result["video_export"] = {"status": "canceled", "errors": ["Video export was interrupted."]}
+                record.write_result(trial, result)
+            raise
+        if result is not None:
+            result["video_export"] = report
+            record.write_result(trial, result)
+        for name, camera in report.get('cameras', {}).items():
+            if camera.get('file'):
+                print(f"{name}: {camera['file']}")
+        if report['status'] == 'completed':
+            print('Camera videos exported at their recorded times. Original frames are kept.')
+        else:
+            print('Camera video export is incomplete. Original frames are kept.')
+            for error in report.get('errors', []):
+                print(error)
+        if result is not None:
+            print(f"Export details: {result_path}")
+        return 0 if report["status"] == "completed" else 1
+    finally:
+        claim.release()
+
+
 def add_parser(sub) -> None:
     p = sub.add_parser(
-        "demo", help="render a recorded trial as a video (terminal + cameras)",
+        "demo", help="export camera videos or a terminal and camera demo from a recorded trial",
         description="Compose demo.mp4 from a trial that ran with --record: the "
         "commands typed on the left, the robot's cameras on the right, one "
-        "sim step per frame. Needs the demo extra "
-        "(pip install 'openrua[demo]').")
+        "sim step per frame. This edited demo needs the demo extra "
+        "(pip install 'openrua[demo]'). Use --camera-only to export one MP4 "
+        "per camera at its recorded times; no extra installation is needed.")
     p.add_argument("trial", help="a trial directory under runs/ that ran with --record")
-    p.add_argument("--out", default=None, help="output file (default: <trial>/demo.mp4)")
+    p.add_argument("--out", default=None,
+                   help="output file (default: <trial>/demo.mp4); with --camera-only, "
+                        "output directory (default: <trial>/videos/)")
+    p.add_argument("--camera-only", action="store_true",
+                   help="export every recorded camera to its own MP4 using the frame timestamps")
     p.add_argument("--gif", action="store_true",
                    help="also write demo.gif next to it (640 px wide, 8 fps; keep it "
                    "short with --ops and --speed)")
