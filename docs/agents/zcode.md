@@ -63,11 +63,14 @@ for this provider and model; `model_options` selects its initial native
 options. ZCode validates the native fields. Empty objects preserve its defaults.
 The explicit option maps above keep ZCode's generic reasoning defaults from
 sending fields intended for other providers to Mistral.
+The selected Flash model accepts `low`, `high` and `max` reasoning levels;
+its API rejects `none`. The example selects `low`.
 
 The provider must support streaming chat, tool calls and tool-result messages
 through ZCode's native client. A bounded direct API check verified this Flash
-model's image input and function calls. Native CLI and robot-task validation
-are separate checks.
+model's image input and function calls. A separate native ZCode check wrote
+the requested file and completed the turn through the same endpoint.
+Robot tasks remain a separate validation step.
 
 ## Native profile scope
 
