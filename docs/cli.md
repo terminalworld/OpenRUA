@@ -102,7 +102,7 @@ start or reconnect (without a subcommand):
 | `down` | power a robot and its terminal off, retaining session files |
 | `bench` | run a benchmark: one trial per task and seed |
 | `ps` | list the attempts running under a runs root (--all: stale claims too) |
-| `demo` | render a recorded trial as a video (terminal + cameras) |
+| `demo` | export camera videos or a terminal and camera demo from a recorded trial |
 | `probe` | draft a robot profile from a live ROS 2 graph |
 | `config` | view or save project settings; --user for personal preferences |
 | `skills` | list reusable methods, import a skill, or set project accumulation |
@@ -304,7 +304,8 @@ usage: openrua exec [-h] [--robot ROBOT] [-C WORKSPACE] [--trust-workspace]
                     [--model MODEL] [--run-id RUN_ID] [--runs-root RUNS_ROOT]
                     [--wall-clock-min WALL_CLOCK_MIN]
                     [--ros-domain ROS_DOMAIN] [--record [CAMERAS]]
-                    [--no-record] [--internet {open,model-only}]
+                    [--no-record] [--record-wait SECONDS] [--no-video]
+                    [--internet {open,model-only}]
                     [--web-search | --no-web-search]
                     [--account-connectors | --no-account-connectors]
                     [task_or_robot] [task]
@@ -364,6 +365,12 @@ options:
                         for all); a real robot's run is recorded anyway, two
                         frames a second
   --no-record           do not record a real robot's cameras
+  --record-wait SECONDS
+                        wait up to SECONDS for a saved frame from every
+                        selected camera before starting a real robot task
+                        (default: start without waiting)
+  --no-video            keep recorded frames without automatically exporting
+                        camera MP4s
   --internet {open,model-only}
                         open, or only the agent's model service and login,
                         through a whitelist proxy (default: only the model
@@ -810,6 +817,7 @@ usage: openrua bench [-h] --config CONFIG [--robot ROBOT] [--sim SIM]
                      [--seeds SEEDS] [--operator {agent,none,script}]
                      [--task TASK] [--script SCRIPT] [--record [CAMERAS]]
                      [--record-every N] [--record-size WxH]
+                     [--record-wait SECONDS] [--no-video]
                      [--wall-clock-min WALL_CLOCK_MIN]
                      [--internet {open,model-only}]
                      [--web-search | --no-web-search]
@@ -860,6 +868,12 @@ options:
                         of the profile's camera resolution (the graph's
                         cameras keep theirs, so a replay is unaffected); a
                         sharper demo costs render time per step
+  --record-wait SECONDS
+                        wait up to SECONDS for a saved frame from every
+                        selected camera before starting a real robot task
+                        (default: start without waiting)
+  --no-video            keep recorded frames without automatically exporting
+                        camera MP4s
   --wall-clock-min WALL_CLOCK_MIN
                         override of the config's
                         protocol.active_wall_clock_minutes (the config is the
@@ -918,23 +932,30 @@ options:
 ## openrua demo
 
 ```
-usage: openrua demo [-h] [--out OUT] [--gif] [--cameras CAMERAS]
-                    [--pace FACTOR] [--from-motion SECONDS] [--ops START:END]
-                    [--size WxH] [--fps FPS] [--quality CRF] [--speed SPEED]
+usage: openrua demo [-h] [--out OUT] [--camera-only] [--gif]
+                    [--cameras CAMERAS] [--pace FACTOR]
+                    [--from-motion SECONDS] [--ops START:END] [--size WxH]
+                    [--fps FPS] [--quality CRF] [--speed SPEED]
                     [--font-size FONT_SIZE] [--gif-width GIF_WIDTH]
                     [--gif-fps GIF_FPS] [--no-typing]
                     trial
 
 Compose demo.mp4 from a trial that ran with --record: the commands typed on
-the left, the robot's cameras on the right, one sim step per frame. Needs the
-demo extra (pip install 'openrua[demo]').
+the left, the robot's cameras on the right, one sim step per frame. This
+edited demo needs the demo extra (pip install 'openrua[demo]'). Use --camera-
+only to export one MP4 per camera at its recorded times; no extra installation
+is needed.
 
 positional arguments:
   trial                 a trial directory under runs/ that ran with --record
 
 options:
   -h, --help            show this help message and exit
-  --out OUT             output file (default: <trial>/demo.mp4)
+  --out OUT             output file (default: <trial>/demo.mp4); with
+                        --camera-only, output directory (default:
+                        <trial>/videos/)
+  --camera-only         export every recorded camera to its own MP4 using the
+                        frame timestamps
   --gif                 also write demo.gif next to it (640 px wide, 8 fps;
                         keep it short with --ops and --speed)
   --cameras CAMERAS     main view and inset by name (default: the first two

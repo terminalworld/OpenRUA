@@ -9,6 +9,28 @@ Unreleased until a release is cut, and the release decides its number.
 
 ## Unreleased
 
+- Export one MP4 per recorded camera after each recorded trial has released
+  its robot and agent resources. Videos follow recording timestamps; original
+  images and indexes remain in place. Use `--no-video` to keep frames without
+  encoding, or `openrua demo <trial> --camera-only` to export them later.
+  Export failures and cancellation preserve the task outcome and are recorded
+  separately in `result.json`. The edited terminal and camera demo is unchanged.
+- Add optional `--record-wait SECONDS` for real robot tasks. It waits for a
+  complete saved frame from every selected camera before starting the agent;
+  timeout or capture failure stops the attempt and releases its resources.
+  The default still starts without waiting. This checks recording startup,
+  not continuous coverage throughout the task.
+- Let Kimi API manifests declare the native provider type, model context size
+  and capabilities, including OpenAI Chat Completions routes such as Bedrock.
+  Custom Kimi manifests must now set `provider_type`, `max_context_size` and
+  `capabilities` in `default_options`; copy the bundled defaults and adjust
+  them for the selected model. ZCode manifests can supply native model rules
+  and options, allowing services such as Mistral-hosted GLM to use their own
+  supported reasoning parameters. These settings stay in the native CLI's
+  configuration instead of being rewritten by the transport.
+- Include the camera-video encoder in the standard installation. The `demo`
+  extra remains necessary for edited terminal and camera videos.
+
 ## 0.32.0
 
 - Record real robot cameras during task execution, starting after preflight

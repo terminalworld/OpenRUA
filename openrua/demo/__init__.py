@@ -2,10 +2,10 @@
 cameras on the right, from the artifacts a recorded trial leaves
 behind (``frames/`` and ``ops.jsonl``).
 
-``render(trial)`` is the whole interface; ``openrua demo <trial>`` is
-its command. The unit reads files and imports ``openrua.errors`` only;
-its rendering libraries are the ``demo`` extra
-(``pip install 'openrua[demo]'``).
+``render(trial)`` composes the edited demo using the ``demo`` extra.
+``cameras.export_camera_videos(frames, output)`` exports each camera
+at its recorded times using the base installation. The unit reads
+files and has no robot or agent dependencies.
 """
 
 from openrua.demo.compose import Style, render  # noqa: F401

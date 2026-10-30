@@ -32,6 +32,17 @@ def requires_image(name: str):
 
 
 @pytest.fixture
+def docker_daemon():
+    """Live tests require a reachable daemon before creating their resources."""
+    try:
+        result = subprocess.run(['docker', 'info'], capture_output=True, timeout=15)
+    except (OSError, subprocess.TimeoutExpired):
+        pytest.skip('Docker daemon is unavailable')
+    if result.returncode:
+        pytest.skip('Docker daemon is unavailable')
+
+
+@pytest.fixture
 def proxy_address(monkeypatch):
     """A real robot's sandbox sits on the host network and reaches the
     proxy by address, which OpenRUA reads from the running proxy

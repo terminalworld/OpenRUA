@@ -21,7 +21,7 @@ PKG = Path(__file__).resolve().parents[2] / "openrua" / "proxy"
 
 
 @pytest.fixture
-def network():
+def network(docker_daemon):
     """Every live proxy test owns its network, including on a clean CI runner."""
     name = "openrua-proxy-check-" + uuid.uuid4().hex[:12]
     subprocess.run(["docker", "network", "create", "--internal", name],

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 from copy import deepcopy
+import math
 import signal
 import threading
 from contextlib import contextmanager
@@ -31,6 +32,18 @@ from openrua.sandbox import project, workspace
 # Benchmark data lands under the caller's working directory by default
 # (--runs-root overrides); the package never writes into itself.
 RUNS_ROOT = Path("runs")
+
+
+def add_recording_options(ap: argparse.ArgumentParser) -> None:
+    ap.add_argument(
+        "--record-wait", type=float, default=None, metavar="SECONDS",
+        help="wait up to SECONDS for a saved frame from every selected camera "
+             "before starting a real robot task (default: start without waiting)",
+    )
+    ap.add_argument(
+        "--no-video", action="store_true",
+        help="keep recorded frames without automatically exporting camera MP4s",
+    )
 
 
 
@@ -87,6 +100,7 @@ def add_arguments(ap: argparse.ArgumentParser, include_home: bool = True) -> Non
         "profile's camera resolution (the graph's cameras keep theirs, so a "
         "replay is unaffected); a sharper demo costs render time per step",
     )
+    add_recording_options(ap)
     ap.add_argument(
         "--wall-clock-min", type=float, default=None,
         help="override of the config's protocol.active_wall_clock_minutes "
@@ -139,8 +153,6 @@ def run(args: argparse.Namespace) -> int:
     # Parsed once, here; provenance records the same value.
     args.record = (None if args.record is None
                    else tuple(c.strip() for c in args.record.split(",") if c.strip()))
-    record_cameras = args.record
-
     home = paths.home(args.home)
     cfg_path = paths.find("benchmarks", args.config).resolve()
     cfg = load_config(cfg_path, args.robot, home, sim=args.sim,
@@ -187,6 +199,15 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
     input_config = deepcopy(cfg)
     cfg = deepcopy(cfg)
     record_cameras = args.record
+    record_wait = getattr(args, "record_wait", None)
+    if record_wait is not None:
+        if not math.isfinite(record_wait) or record_wait <= 0:
+            raise UsageError("--record-wait must be a positive number of seconds")
+        if cfg["machine"]["backend"].get("kind") != "real":
+            raise UsageError("--record-wait checks live cameras on a real robot")
+        if record_cameras is None:
+            raise UsageError("--record-wait requires camera recording",
+                             hint="remove --no-record; with bench, pass --record")
     if cfg["machine"]["backend"].get("kind") != "sim" and not args.task:
         raise UsageError("a real robot has no benchmark task to ask for",
                          hint="pass --task \"<what the agent should do>\"")
@@ -204,6 +225,8 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
             raise UsageError(f"no camera named {', '.join(missing)} to record",
                              hint=f"this robot has: {', '.join(sorted(named)) or 'no cameras'}")
         if not named:
+            if record_wait is not None:
+                raise UsageError("--record-wait needs at least one camera in the robot configuration")
             record_cameras = None
     elif record_cameras == () and not cfg["machine"].get("cameras", {}).get("record"):
         raise UsageError("--record needs camera names: the robot profile sets no "
@@ -260,6 +283,9 @@ def _run_set(cfg: dict, cfg_path: Path, args: argparse.Namespace, home: Path,
                     record_size=args.record_size, progress=getattr(args, "progress", None),
                     judge=getattr(args, "judge", None),
                     provenance=prov,
+                    **({'record_wait': record_wait} if record_wait is not None else {}),
+                    **({'export_video': True} if record_cameras is not None
+                       and not getattr(args, "no_video", False) else {}),
                     **({'project_root': project_root, 'prompt_template': prompt}
                        if project_root is not None else {}),
                 )

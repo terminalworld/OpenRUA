@@ -172,6 +172,8 @@ def test_a_truncated_frame_keeps_prior_complete_frames_and_reports_failure(tmp_p
     assert tap.latest['wrist']['data'] == b'complete'
     assert list(tmp_path.glob('*.jpg')) == [tmp_path / '000000_wrist.jpg']
     assert len((tmp_path / 'index.jsonl').read_text().splitlines()) == 1
+    with pytest.raises(RuntimeError, match='incomplete frame'):
+        tap.wait_for_frames(10)
 
 
 @pytest.mark.parametrize('header', [b'not json\n', b'[]\n',
@@ -236,6 +238,133 @@ def test_clean_camera_stop_retains_per_camera_first_and_last_frame_times(monkeyp
     assert status['cameras'] == {'wrist': {'count': 2, 'first_t': 2.0, 'last_t': 3.0}}
     assert status['missing_cameras'] == []
     assert not tap.running
+
+
+def test_recording_wait_requires_a_complete_saved_frame_from_every_camera(monkeypatch, tmp_path):
+    import threading
+
+    initial = _stream((2.0, [('wrist', b'one')]), (2.5, [('scene', b'complete')]))
+    tap = _local_tap(monkeypatch, tmp_path,
+                     f'import sys\nsys.stdout.buffer.write({initial[:-3]!r})\nsys.stdout.buffer.flush()\n'
+                     'sys.stdin.buffer.readline()\n'
+                     f'sys.stdout.buffer.write({initial[-3:]!r})\nsys.stdout.buffer.flush()\n'
+                     'sys.stdin.buffer.read()\n', {'wrist': '/w', 'scene': '/s'})
+    finished = threading.Event()
+    failures = []
+
+    def wait():
+        try:
+            tap.wait_for_frames(3)
+        except Exception as exc:
+            failures.append(exc)
+        finally:
+            finished.set()
+
+    tap.start()
+    waiter = threading.Thread(target=wait)
+    try:
+        waiter.start()
+        with tap._changed:
+            assert tap._changed.wait_for(lambda: 'wrist' in tap._received, timeout=3)
+        assert (tmp_path / 'frames/000000_wrist.jpg').read_bytes() == b'one'
+        assert not (tmp_path / 'frames/000001_scene.jpg').exists()
+        assert not finished.wait(0.05)
+        tap._proc.stdin.write(b'finish frame\n')
+        tap._proc.stdin.flush()
+        assert finished.wait(3)
+        assert not failures
+        assert (tmp_path / 'frames/000001_scene.jpg').read_bytes() == b'complete'
+        assert len((tmp_path / 'frames/index.jsonl').read_text().splitlines()) == 2
+    finally:
+        tap.stop()
+        waiter.join(timeout=3)
+
+
+def test_recording_wait_timeout_names_missing_camera_and_keeps_ownership(monkeypatch, tmp_path):
+    stream = _stream((2.0, [('wrist', b'one')]))
+    tap = _local_tap(monkeypatch, tmp_path,
+                     f'import sys\nsys.stdout.buffer.write({stream!r})\nsys.stdout.buffer.flush()\n'
+                     'sys.stdin.buffer.read()\n', {'wrist': '/w', 'scene': '/s'})
+    tap.start()
+    try:
+        with tap._changed:
+            assert tap._changed.wait_for(lambda: 'wrist' in tap._received, timeout=3)
+        with pytest.raises(TimeoutError, match='No saved frame from scene after 0.01 seconds') as error:
+            tap.wait_for_frames(0.01)
+        assert str(tmp_path / 'frames/camera.log') in str(error.value)
+        assert tap.running
+    finally:
+        tap.stop()
+
+
+def test_recording_wait_reports_process_failure_without_waiting_for_the_deadline(monkeypatch, tmp_path):
+    import time
+
+    tap = _local_tap(monkeypatch, tmp_path,
+                     'import sys\nsys.stderr.write("ROS setup failed\\n")\nraise SystemExit(4)\n')
+    tap.start()
+    try:
+        started = time.monotonic()
+        with pytest.raises(RuntimeError, match='Camera recording could not start'):
+            tap.wait_for_frames(10)
+        assert time.monotonic() - started < 3
+    finally:
+        tap.stop()
+    assert 'ROS setup failed' in tap.status()['stderr']
+
+
+def test_a_failed_index_write_cannot_satisfy_the_recording_wait(monkeypatch, tmp_path):
+    from pathlib import Path
+
+    original = Path.open
+
+    class FailedIndex(io.StringIO):
+        def flush(self):
+            raise OSError('disk full')
+
+    monkeypatch.setattr(Path, 'open', lambda path, *a, **kw:
+                        FailedIndex() if path.name == 'index.jsonl' else original(path, *a, **kw))
+    tap = cameras.CameraTap('box', {'wrist': '/w'}, record=tmp_path)
+    tap._proc = SimpleNamespace(stdout=io.BytesIO(_stream((2.0, [('wrist', b'one')]))), poll=lambda: None)
+    tap._read()
+    assert (tmp_path / '000000_wrist.jpg').read_bytes() == b'one'
+    assert tap.status()['missing_cameras'] == ['wrist']
+    with pytest.raises(RuntimeError, match='disk full'):
+        tap.wait_for_frames(10)
+
+
+@pytest.mark.parametrize('timeout', [0, -1, float('inf'), float('nan'), True])
+def test_recording_wait_rejects_an_invalid_deadline(tmp_path, timeout):
+    tap = cameras.CameraTap('box', {'wrist': '/w'}, record=tmp_path)
+    with pytest.raises(ValueError, match='positive number'):
+        tap.wait_for_frames(timeout)
+
+
+def test_recording_wait_remains_interruptible_in_the_main_thread(tmp_path):
+    import subprocess
+    import sys
+
+    result = subprocess.run([sys.executable, '-c', '''
+import os, signal, sys, threading, time
+from pathlib import Path
+from types import SimpleNamespace
+from openrua.robot.cameras import CameraTap
+
+tap = CameraTap('box', {'front': '/front'}, record=Path(sys.argv[1]))
+tap._proc = SimpleNamespace(poll=lambda: None)
+timer = threading.Timer(0.05, lambda: os.kill(os.getpid(), signal.SIGINT))
+started = time.monotonic()
+timer.start()
+try:
+    tap.wait_for_frames(30)
+except KeyboardInterrupt:
+    assert time.monotonic() - started < 3
+else:
+    raise AssertionError('The recording wait ignored the interrupt')
+finally:
+    timer.join()
+''', str(tmp_path)], capture_output=True, timeout=5)
+    assert result.returncode == 0, result.stderr.decode()
 
 
 def test_camera_exit_retains_native_error_and_cannot_be_reported_complete(monkeypatch, tmp_path):

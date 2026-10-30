@@ -23,6 +23,8 @@ version_argv:
 - --version
 default_options:
   api_base_url: https://open.bigmodel.cn/api/paas/v4
+  model_config: {}
+  model_options: {}
 entry_point: zcode
 prepare: apt-get update && apt-get install -y --no-install-recommends curl ca-certificates xz-utils build-essential
   python3 git && mkdir -p /opt/openrua-zcode/node /opt/openrua-zcode/source && cd /opt/openrua-zcode && curl -fsSL

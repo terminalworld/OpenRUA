@@ -161,7 +161,7 @@ def test_up_surfaces_docker_stderr_on_bad_network(tmp_path):
         and "openrua-definitely-missing-net" in str(e.value)
 
 
-def test_up_refuses_a_corpse(tmp_path):
+def test_up_refuses_a_corpse(tmp_path, docker_daemon):
     # alpine has no bash: docker accepts the run, the container dies at
     # once; up must refuse to hand back the name.
     import subprocess
