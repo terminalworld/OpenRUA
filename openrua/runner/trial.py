@@ -181,12 +181,13 @@ def _recording_cameras(cfg: dict, names: tuple[str, ...]) -> dict[str, str]:
     return chosen
 
 
-def record_cameras_of(cfg: dict, sandbox: str, frames: Path, names: tuple[str, ...]) -> CameraTap:
+def record_cameras_of(cfg: dict, sandbox: str, frames: Path, names: tuple[str, ...],
+                      fps: float = REAL_RECORD_FPS) -> CameraTap:
     """A real robot renders nothing: its frames come from its camera
-    topics, REAL_RECORD_FPS a second, into the frames/ layout ``openrua
+    topics, ``fps`` a second, into the frames/ layout ``openrua
     demo`` reads. ``names`` picks cameras (empty: all of them)."""
     chosen = _recording_cameras(cfg, names)
-    tap = CameraTap(sandbox, chosen, fps=REAL_RECORD_FPS, record=frames)
+    tap = CameraTap(sandbox, chosen, fps=fps, record=frames)
     tap.start()
     return tap
 
@@ -259,7 +260,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
               record_cameras=None, record_every=1, record_size=None,
               progress=None, judge=None, project_root: Path | None = None,
               prompt_template: str | None = None, provenance: dict | None = None,
-              record_wait: float | None = None, export_video: bool = False):
+              record_wait: float | None = None, export_video: bool = False,
+              record_fps: float | None = None):
     """One trial: claim the directory, bring the robot and sandbox up,
     start the episode, preflight, operate, score, write the record.
     ``task`` is the task sentence for a robot with no truth side (a real
@@ -270,6 +272,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     one step in ``record_every``, at ``record_size`` (WxH) when given.
     ``record_wait`` optionally waits this many seconds for every selected
     real camera to save a complete frame before starting the operator.
+    ``record_fps`` sets the requested sample rate of each real camera.
     ``export_video`` exports recorded cameras after cleanup, while this
     attempt still owns its files. Export failure does not change the verdict.
     ``progress`` receives the agent's steps as it works (a person
@@ -277,6 +280,13 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
     task was done, given the agent's last words, and answers True, False
     or None (no answer)."""
     real = cfg.get("machine", {}).get("backend", {}).get("kind") == "real"
+    if record_fps is not None:
+        if isinstance(record_fps, bool) or not math.isfinite(record_fps) or record_fps <= 0:
+            raise ValueError("--record-fps must be a positive finite number.")
+        if not real or record_cameras is None:
+            raise ValueError("--record-fps requires a real robot with camera recording enabled.")
+        _recording_cameras(cfg, record_cameras)
+    fps = REAL_RECORD_FPS if record_fps is None else record_fps
     if record_wait is not None:
         if isinstance(record_wait, bool) or not math.isfinite(record_wait) or record_wait <= 0:
             raise ValueError("--record-wait must be a positive number of seconds.")
@@ -320,6 +330,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         "active_wall_cap_min": wall_cap_min,
         "cleanup": {"status": "pending", "errors": []},
     }
+    if real and record_cameras is not None:
+        rec["record_fps"] = fps
     if record_wait is not None:
         rec["recording_check"] = {"timeout_s": record_wait, "status": "pending", "elapsed_seconds": 0.0}
     limits = cfg["protocol"]["limits"]
@@ -419,6 +431,8 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
             "ros_domain": ros_domain,
             "agent_cli": {"name": agent.name, "version_pin": agent.version},
         }
+        if real and record_cameras is not None:
+            trial_provenance["record_fps"] = fps
         if record_wait is not None:
             trial_provenance["record_wait"] = record_wait
         record.write_run_config(run_dir, record.scrub_value(trial_provenance, secrets))
@@ -467,7 +481,7 @@ def run_trial(cfg, cfg_path, run_dir, task_suite, task_id, seed, operator,
         if not conf["ok"]:
             raise RuntimeError(f"preflight failed: {','.join(conf['failed'])}")
         if real and record_cameras is not None:
-            tap = record_cameras_of(cfg, sandbox_name, trial_dir / "frames", record_cameras)
+            tap = record_cameras_of(cfg, sandbox_name, trial_dir / "frames", record_cameras, fps)
             rec["recorded_cameras"] = sorted(tap.cameras)
             if record_wait is not None:
                 persist()
